@@ -1,0 +1,917 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>FabricMinecraftScreen</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.1.6"><span class="versions-dropdown-button-text">0.1.6</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../../runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="../../../../../0.2.0/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../../0.1.5/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../0.1.4/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../0.1.3/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../0.1.2/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../0.1.1/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../0.1.0/runtime/minecraft-fabric-1.20.4/dev.s7a.strata.runtime.minecraft.fabric/-fabric-minecraft-screen/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:minecraft-fabric-1.20.4/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:minecraft-fabric-1.20.4/main" data-filter=":runtime:minecraft-fabric-1.20.4/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="minecraft-fabric-1.20.4::dev.s7a.strata.runtime.minecraft.fabric/FabricMinecraftScreen///PointingToDeclaration//-970807371">
+  <div class="breadcrumbs"><a href="../../index.html">minecraft-fabric-1.20.4</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.minecraft.fabric</a><span class="delimiter">/</span><span class="current">FabricMinecraftScreen</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Fabric</span><wbr><span>Minecraft</span><wbr><span><span>Screen</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">FabricMinecraftScreen</a> : <span data-unresolved-link="net.minecraft.client.gui.screens/Screen///PointingToDeclaration/">Screen</span>, <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a>, <a href="../../../../runtime/core/dev.s7a.strata.runtime.spi/-runtime-ui-diagnostics-owner/index.html">RuntimeUiDiagnosticsOwner</a>, <span data-unresolved-link="dev.s7a.strata.runtime.minecraft.fabric/FabricMinecraftInputReset///PointingToDeclaration/">FabricMinecraftInputReset</span><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.1.6/runtime/minecraft-fabric-1.21.8-legacy/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftScreen.kt#L43">source</a>)</span></span></div><p class="paragraph">Fabric client screen backed by one common Minecraft UI host on Minecraft 1.21.8 and compatible primitive-input releases.</p><p class="paragraph">The host is confined to the client thread and is terminally owned by this screen. Native primitive callbacks are detached into the same typed common input protocol used by newer adapters. The optional parent is retained for navigation but is never owned or closed.</p><h4 class="tableheader">See also</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../create-minecraft-screen.html"><span>create</span><wbr><span>Minecraft</span><wbr><span><span>Screen</span></span></a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="1686131933%2FProperties%2F-970807371" anchor-label="backgroundMusic" id="1686131933%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1686131933%2FProperties%2F-970807371"><span>background</span><wbr><span><span>Music</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1686131933%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span></div></div><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#1686131933%2FProperties%2F-970807371">backgroundMusic</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.sounds/Music///PointingToDeclaration/">Music</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-224125575%2FProperties%2F-970807371" anchor-label="currentFocusPath" id="-224125575%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-224125575%2FProperties%2F-970807371"><span>current</span><wbr><span>Focus</span><wbr><span><span>Path</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-224125575%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span></div></div><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#-224125575%2FProperties%2F-970807371">currentFocusPath</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/ComponentPath///PointingToDeclaration/">ComponentPath</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1492068344%2FProperties%2F-970807371" anchor-label="focused" id="-1492068344%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1492068344%2FProperties%2F-970807371"><span><span>focused</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1492068344%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@get:</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span></div></div><span class="token keyword">open </span><span class="token keyword">var </span><a href="index.html#-1492068344%2FProperties%2F-970807371">focused</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.components.events/GuiEventListener///PointingToDeclaration/">GuiEventListener</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1284882367%2FProperties%2F-970807371" anchor-label="height" id="1284882367%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1284882367%2FProperties%2F-970807371"><span><span>height</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1284882367%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="index.html#1284882367%2FProperties%2F-970807371">height</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2064215586%2FProperties%2F-970807371" anchor-label="isDragging" id="2064215586%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#2064215586%2FProperties%2F-970807371"><span>is</span><wbr><span><span>Dragging</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2064215586%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="index.html#2064215586%2FProperties%2F-970807371">isDragging</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1108831376%2FProperties%2F-970807371" anchor-label="isFocused" id="1108831376%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1108831376%2FProperties%2F-970807371"><span>is</span><wbr><span><span>Focused</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1108831376%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">var </span><a href="index.html#1108831376%2FProperties%2F-970807371">isFocused</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="597975916%2FProperties%2F-970807371" anchor-label="isPauseScreen" id="597975916%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-pause-screen.html"><span>is</span><wbr><span>Pause</span><wbr><span><span>Screen</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="597975916%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="is-pause-screen.html">isPauseScreen</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="678545761%2FProperties%2F-970807371" anchor-label="narrationMessage" id="678545761%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#678545761%2FProperties%2F-970807371"><span>narration</span><wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="678545761%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#678545761%2FProperties%2F-970807371">narrationMessage</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.network.chat/Component///PointingToDeclaration/">Component</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1250554555%2FProperties%2F-970807371" anchor-label="rectangle" id="-1250554555%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1250554555%2FProperties%2F-970807371"><span><span>rectangle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1250554555%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#-1250554555%2FProperties%2F-970807371">rectangle</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.navigation/ScreenRectangle///PointingToDeclaration/">ScreenRectangle</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="283669783%2FProperties%2F-970807371" anchor-label="tabOrderGroup" id="283669783%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#283669783%2FProperties%2F-970807371"><span>tab</span><wbr><span>Order</span><wbr><span><span>Group</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="283669783%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#283669783%2FProperties%2F-970807371">tabOrderGroup</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="238969852%2FProperties%2F-970807371" anchor-label="title" id="238969852%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#238969852%2FProperties%2F-970807371"><span><span>title</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="238969852%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">val </span><a href="index.html#238969852%2FProperties%2F-970807371">title</a><span class="token operator">: </span><span data-unresolved-link="net.minecraft.network.chat/Component///PointingToDeclaration/">Component</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-750227378%2FProperties%2F-970807371" anchor-label="width" id="-750227378%2FProperties%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-750227378%2FProperties%2F-970807371"><span><span>width</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-750227378%2FProperties%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="index.html#-750227378%2FProperties%2F-970807371">width</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-71917340%2FFunctions%2F-970807371" anchor-label="added" id="-71917340%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="added.html"><span><span>added</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-71917340%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="added.html"><span class="token function">added</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1139811131%2FFunctions%2F-970807371" anchor-label="afterKeyboardAction" id="1139811131%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1139811131%2FFunctions%2F-970807371"><span>after</span><wbr><span>Keyboard</span><wbr><span><span>Action</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1139811131%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#1139811131%2FFunctions%2F-970807371"><span class="token function">afterKeyboardAction</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1840894745%2FFunctions%2F-970807371" anchor-label="afterMouseAction" id="-1840894745%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1840894745%2FFunctions%2F-970807371"><span>after</span><wbr><span>Mouse</span><wbr><span><span>Action</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1840894745%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1840894745%2FFunctions%2F-970807371"><span class="token function">afterMouseAction</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1324714924%2FFunctions%2F-970807371" anchor-label="afterMouseMove" id="1324714924%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1324714924%2FFunctions%2F-970807371"><span>after</span><wbr><span>Mouse</span><wbr><span><span>Move</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1324714924%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#1324714924%2FFunctions%2F-970807371"><span class="token function">afterMouseMove</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1347051527%2FFunctions%2F-970807371" anchor-label="captureCanvasFrame" id="1347051527%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="capture-canvas-frame.html"><span>capture</span><wbr><span>Canvas</span><wbr><span><span>Frame</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1347051527%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="capture-canvas-frame.html"><span class="token function">captureCanvasFrame</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../../runtime/core/dev.s7a.strata.runtime.render/-draw-command/index.html">DrawCommand</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Captures the last complete presentation from immutable CPU images and exact native-generation snapshots only.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1334070002%2FFunctions%2F-970807371" anchor-label="charTyped" id="-1334070002%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="char-typed.html"><span>char</span><wbr><span><span>Typed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1334070002%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="char-typed.html"><span class="token function">charTyped</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">character<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-char/index.html">Char</a><span class="token punctuation">, </span></span><span class="parameter ">modifierFlags<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1371662206%2FFunctions%2F-970807371" anchor-label="children" id="1371662206%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1371662206%2FFunctions%2F-970807371"><span><span>children</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1371662206%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#1371662206%2FFunctions%2F-970807371"><span class="token function">children</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword">out </span><span data-unresolved-link="net.minecraft.client.gui.components.events/GuiEventListener///PointingToDeclaration/">GuiEventListener</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1935800741%2FFunctions%2F-970807371" anchor-label="clearFocus" id="-1935800741%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1935800741%2FFunctions%2F-970807371"><span>clear</span><wbr><span><span>Focus</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1935800741%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1935800741%2FFunctions%2F-970807371"><span class="token function">clearFocus</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-992826644%2FFunctions%2F-970807371" anchor-label="close" id="-992826644%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="close.html"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-992826644%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Stops input and source callbacks during native consumer failure or device shutdown without navigating to another screen. </p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="319066213%2FFunctions%2F-970807371" anchor-label="getChildAt" id="319066213%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#319066213%2FFunctions%2F-970807371"><span>get</span><wbr><span>Child</span><wbr><span><span>At</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="319066213%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#319066213%2FFunctions%2F-970807371"><span class="token function">getChildAt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">d<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">e<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Optional.html">Optional</a><span class="token operator">&lt;</span><span data-unresolved-link="net.minecraft.client.gui.components.events/GuiEventListener///PointingToDeclaration/">GuiEventListener</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1620482148%2FFunctions%2F-970807371" anchor-label="handleComponentClicked" id="-1620482148%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1620482148%2FFunctions%2F-970807371"><span>handle</span><wbr><span>Component</span><wbr><span><span>Clicked</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1620482148%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1620482148%2FFunctions%2F-970807371"><span class="token function">handleComponentClicked</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span>&nbsp;</span>style<span class="token operator">: </span><span data-unresolved-link="net.minecraft.network.chat/Style///PointingToDeclaration/">Style</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1522541730%2FFunctions%2F-970807371" anchor-label="handleDelayedNarration" id="-1522541730%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1522541730%2FFunctions%2F-970807371"><span>handle</span><wbr><span>Delayed</span><wbr><span><span>Narration</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1522541730%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1522541730%2FFunctions%2F-970807371"><span class="token function">handleDelayedNarration</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1408676890%2FFunctions%2F-970807371" anchor-label="init" id="1408676890%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1408676890%2FFunctions%2F-970807371"><span><span>init</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1408676890%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#1408676890%2FFunctions%2F-970807371"><span class="token function">init</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">minecraft<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client/Minecraft///PointingToDeclaration/">Minecraft</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">i<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">j<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="389623745%2FFunctions%2F-970807371" anchor-label="isMouseOver" id="389623745%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#389623745%2FFunctions%2F-970807371"><span>is</span><wbr><span>Mouse</span><wbr><span><span>Over</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="389623745%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#389623745%2FFunctions%2F-970807371"><span class="token function">isMouseOver</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">d<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">e<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="597975916%2FFunctions%2F-970807371" anchor-label="isPauseScreen" id="597975916%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-pause-screen.html"><span>is</span><wbr><span>Pause</span><wbr><span><span>Screen</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="597975916%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="is-pause-screen.html"><span class="token function">isPauseScreen</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-898326127%2FFunctions%2F-970807371" anchor-label="keyPressed" id="-898326127%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="key-pressed.html"><span>key</span><wbr><span><span>Pressed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-898326127%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="key-pressed.html"><span class="token function">keyPressed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">keyValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">scanCode<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">modifierFlags<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="119573094%2FFunctions%2F-970807371" anchor-label="keyReleased" id="119573094%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="key-released.html"><span>key</span><wbr><span><span>Released</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="119573094%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="key-released.html"><span class="token function">keyReleased</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">keyValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">scanCode<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">modifierFlags<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1400676529%2FFunctions%2F-970807371" anchor-label="magicalSpecialHackyFocus" id="1400676529%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#1400676529%2FFunctions%2F-970807371"><span>magical</span><wbr><span>Special</span><wbr><span>Hacky</span><wbr><span><span>Focus</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1400676529%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#1400676529%2FFunctions%2F-970807371"><span class="token function">magicalSpecialHackyFocus</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span>&nbsp;</span>guiEventListener<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.components.events/GuiEventListener///PointingToDeclaration/">GuiEventListener</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1164211832%2FFunctions%2F-970807371" anchor-label="mouseClicked" id="-1164211832%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mouse-clicked.html"><span>mouse</span><wbr><span><span>Clicked</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1164211832%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="mouse-clicked.html"><span class="token function">mouseClicked</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">buttonValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="399874759%2FFunctions%2F-970807371" anchor-label="mouseDragged" id="399874759%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mouse-dragged.html"><span>mouse</span><wbr><span><span>Dragged</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="399874759%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="mouse-dragged.html"><span class="token function">mouseDragged</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">buttonValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">deltaX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">deltaY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1693845055%2FFunctions%2F-970807371" anchor-label="mouseMoved" id="-1693845055%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mouse-moved.html"><span>mouse</span><wbr><span><span>Moved</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1693845055%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="mouse-moved.html"><span class="token function">mouseMoved</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1180020982%2FFunctions%2F-970807371" anchor-label="mouseReleased" id="1180020982%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mouse-released.html"><span>mouse</span><wbr><span><span>Released</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1180020982%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="mouse-released.html"><span class="token function">mouseReleased</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">buttonValue<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-331215872%2FFunctions%2F-970807371" anchor-label="mouseScrolled" id="-331215872%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mouse-scrolled.html"><span>mouse</span><wbr><span><span>Scrolled</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-331215872%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="mouse-scrolled.html"><span class="token function">mouseScrolled</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">deltaX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">deltaY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1121160345%2FFunctions%2F-970807371" anchor-label="narrationEnabled" id="-1121160345%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1121160345%2FFunctions%2F-970807371"><span>narration</span><wbr><span><span>Enabled</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1121160345%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1121160345%2FFunctions%2F-970807371"><span class="token function">narrationEnabled</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-265009207%2FFunctions%2F-970807371" anchor-label="nextFocusPath" id="-265009207%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-265009207%2FFunctions%2F-970807371"><span>next</span><wbr><span>Focus</span><wbr><span><span>Path</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-265009207%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="org.jetbrains.annotations/Nullable///PointingToDeclaration/"><span class="token annotation builtin">Nullable</span></span></div></div><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-265009207%2FFunctions%2F-970807371"><span class="token function">nextFocusPath</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">focusNavigationEvent<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.navigation/FocusNavigationEvent///PointingToDeclaration/">FocusNavigationEvent</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/ComponentPath///PointingToDeclaration/">ComponentPath</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="565708523%2FFunctions%2F-970807371" anchor-label="onClose" id="565708523%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-close.html"><span>on</span><wbr><span><span>Close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="565708523%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="on-close.html"><span class="token function">onClose</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1947901634%2FFunctions%2F-970807371" anchor-label="onFilesDrop" id="-1947901634%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1947901634%2FFunctions%2F-970807371"><span>on</span><wbr><span>Files</span><wbr><span><span>Drop</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1947901634%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1947901634%2FFunctions%2F-970807371"><span class="token function">onFilesDrop</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">list<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Path.html">Path</a><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="130844612%2FFunctions%2F-970807371" anchor-label="removed" id="130844612%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="removed.html"><span><span>removed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="130844612%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="removed.html"><span class="token function">removed</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2040851730%2FFunctions%2F-970807371" anchor-label="render" id="2040851730%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="render.html"><span><span>render</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2040851730%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="render.html"><span class="token function">render</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">graphics<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/GuiGraphics///PointingToDeclaration/">GuiGraphics</span><span class="token punctuation">, </span></span><span class="parameter ">mouseX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">mouseY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">partialTick<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="920011664%2FFunctions%2F-970807371" anchor-label="renderBackground" id="920011664%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#920011664%2FFunctions%2F-970807371"><span>render</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="920011664%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#920011664%2FFunctions%2F-970807371"><span class="token function">renderBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">guiGraphics<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/GuiGraphics///PointingToDeclaration/">GuiGraphics</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">i<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">j<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">f<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="866351385%2FFunctions%2F-970807371" anchor-label="renderDirtBackground" id="866351385%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#866351385%2FFunctions%2F-970807371"><span>render</span><wbr><span>Dirt</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="866351385%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#866351385%2FFunctions%2F-970807371"><span class="token function">renderDirtBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">guiGraphics<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/GuiGraphics///PointingToDeclaration/">GuiGraphics</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="614016104%2FFunctions%2F-970807371" anchor-label="renderTransparentBackground" id="614016104%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#614016104%2FFunctions%2F-970807371"><span>render</span><wbr><span>Transparent</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="614016104%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#614016104%2FFunctions%2F-970807371"><span class="token function">renderTransparentBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">guiGraphics<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/GuiGraphics///PointingToDeclaration/">GuiGraphics</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1015839675%2FFunctions%2F-970807371" anchor-label="renderWithTooltip" id="-1015839675%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1015839675%2FFunctions%2F-970807371"><span>render</span><wbr><span>With</span><wbr><span><span>Tooltip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1015839675%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="index.html#-1015839675%2FFunctions%2F-970807371"><span class="token function">renderWithTooltip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">guiGraphics<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui/GuiGraphics///PointingToDeclaration/">GuiGraphics</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">i<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">j<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">f<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1904187322%2FFunctions%2F-970807371" anchor-label="resetInputFromNative" id="1904187322%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="reset-input-from-native.html"><span>reset</span><wbr><span>Input</span><wbr><span>From</span><wbr><span><span>Native</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1904187322%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="reset-input-from-native.html"><span class="token function">resetInputFromNative</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Cancels captured pointer, hover, and focus state after a native window/input reset.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1399813962%2FFunctions%2F-970807371" anchor-label="resize" id="-1399813962%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-1399813962%2FFunctions%2F-970807371"><span><span>resize</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1399813962%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1399813962%2FFunctions%2F-970807371"><span class="token function">resize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">minecraft<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client/Minecraft///PointingToDeclaration/">Minecraft</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">i<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">j<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1433591907%2FFunctions%2F-970807371" anchor-label="setTooltipForNextRenderPass" id="1433591907%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#916058891%2FFunctions%2F-970807371"><span>set</span><wbr><span>Tooltip</span><wbr><span>For</span><wbr><span>Next</span><wbr><span>Render</span><wbr><span><span>Pass</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1433591907%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#916058891%2FFunctions%2F-970807371"><span class="token function">setTooltipForNextRenderPass</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">list<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span data-unresolved-link="net.minecraft.util/FormattedCharSequence///PointingToDeclaration/">FormattedCharSequence</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-510865450%2FFunctions%2F-970807371"><span class="token function">setTooltipForNextRenderPass</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">list<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span data-unresolved-link="net.minecraft.util/FormattedCharSequence///PointingToDeclaration/">FormattedCharSequence</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">clientTooltipPositioner<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.screens.inventory.tooltip/ClientTooltipPositioner///PointingToDeclaration/">ClientTooltipPositioner</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">bl<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-1477167796%2FFunctions%2F-970807371"><span class="token function">setTooltipForNextRenderPass</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">tooltip<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.components/Tooltip///PointingToDeclaration/">Tooltip</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">clientTooltipPositioner<span class="token operator">: </span><span data-unresolved-link="net.minecraft.client.gui.screens.inventory.tooltip/ClientTooltipPositioner///PointingToDeclaration/">ClientTooltipPositioner</span><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">bl<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-831068459%2FFunctions%2F-970807371" anchor-label="shouldCloseOnEsc" id="-831068459%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-831068459%2FFunctions%2F-970807371"><span>should</span><wbr><span>Close</span><wbr><span>On</span><wbr><span><span>Esc</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-831068459%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-831068459%2FFunctions%2F-970807371"><span class="token function">shouldCloseOnEsc</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="803229924%2FFunctions%2F-970807371" anchor-label="startRenderMonitoring" id="803229924%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start-render-monitoring.html"><span>start</span><wbr><span>Render</span><wbr><span><span>Monitoring</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="803229924%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="start-render-monitoring.html"><span class="token function">startRenderMonitoring</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../../runtime/core/dev.s7a.strata.runtime.diagnostics/-ui-render-monitor/index.html">UiRenderMonitor</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-197226935%2FFunctions%2F-970807371" anchor-label="tick" id="-197226935%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#-197226935%2FFunctions%2F-970807371"><span><span>tick</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-197226935%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#-197226935%2FFunctions%2F-970807371"><span class="token function">tick</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="893365040%2FFunctions%2F-970807371" anchor-label="triggerImmediateNarration" id="893365040%2FFunctions%2F-970807371" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft-fabric-1.20.4/main" data-filterable-set=":runtime:minecraft-fabric-1.20.4/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="index.html#893365040%2FFunctions%2F-970807371"><span>trigger</span><wbr><span>Immediate</span><wbr><span><span>Narration</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="893365040%2FFunctions%2F-970807371"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft-fabric-1.20.4/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html#893365040%2FFunctions%2F-970807371"><span class="token function">triggerImmediateNarration</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">bl<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

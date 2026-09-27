@@ -1,0 +1,546 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>MinecraftFontLoadLimits</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.1.6"><span class="versions-dropdown-button-text">0.1.6</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="../../../../../0.2.0/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../../0.1.5/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../0.1.4/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../0.1.3/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../0.1.2/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../0.1.1/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:minecraft/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:minecraft/main" data-filter=":runtime:minecraft/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="minecraft::dev.s7a.strata.runtime.minecraft.font/MinecraftFontLoadLimits///PointingToDeclaration//618123257">
+  <div class="breadcrumbs"><a href="../../index.html">minecraft</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.minecraft.font</a><span class="delimiter">/</span><span class="current">MinecraftFontLoadLimits</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Load</span><wbr><span><span>Limits</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">MinecraftFontLoadLimits</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>maxSources<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxSourceEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxPathLength<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxArchiveBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>256L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxAssetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>32 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDocumentBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>2 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDecompressedEntryBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>32L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDecompressedBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxFontDocuments<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxGlyphs<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxGlyphRowBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxJsonDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">64</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxJsonValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxReferenceDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">128</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxResolvedProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxImageDimension<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxImageBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>64L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxBitmapSheetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>8L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxTrueTypeFaces<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxTrueTypeInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024</span></span><span class="token punctuation">)</span><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.1.6/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontLoadLimits.kt#L34">source</a>)</span></span></div><p class="paragraph">Immutable input and allocation ceilings for one synchronous font snapshot and its image decoders. Counts include rejected records already processed, and byte ceilings describe payload rather than total JVM heap usage. Defaults accommodate the measured vanilla resources of every supported release; callers may choose tighter or larger finite budgets. No source, stream, mutable counter, or native resource is retained here, so limits may be shared across threads.</p><h4 class="tableheader">Throws</h4><div class="table"><div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-illegal-argument-exception/index.html"><span>Illegal</span><wbr><span>Argument</span><wbr><span><span>Exception</span></span></a></div></span></div><div><div class="title"><p class="paragraph">when a ceiling is negative or a depth or path ceiling is zero.</p></div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="-427317488%2FConstructors%2F618123257" anchor-label="MinecraftFontLoadLimits" id="-427317488%2FConstructors%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-load-limits.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Load</span><wbr><span><span>Limits</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-427317488%2FConstructors%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">maxSources<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter ">maxSourceEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxPathLength<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxArchiveBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>256L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxAssetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>32 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxDocumentBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>2 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxDecompressedEntryBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>32L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxDecompressedBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxFontDocuments<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxGlyphs<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxGlyphRowBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxJsonDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">64</span><span class="token punctuation">, </span></span><span class="parameter ">maxJsonValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxReferenceDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">128</span><span class="token punctuation">, </span></span><span class="parameter ">maxResolvedProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxImageDimension<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">maxImageBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>64L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxBitmapSheetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>8L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter ">maxTrueTypeFaces<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter ">maxTrueTypeInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024</span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="1608901383%2FProperties%2F618123257" anchor-label="maxArchiveBytes" id="1608901383%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-archive-bytes.html"><span>max</span><wbr><span>Archive</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1608901383%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-archive-bytes.html">maxArchiveBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">maximum compressed ZIP or JAR file size before opening its directory.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2084227445%2FProperties%2F618123257" anchor-label="maxAssetBytes" id="2084227445%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-asset-bytes.html"><span>max</span><wbr><span>Asset</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2084227445%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-asset-bytes.html">maxAssetBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum bytes returned for one encoded asset, also bounding all concurrently retained native face input payloads in one engine.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1044394571%2FProperties%2F618123257" anchor-label="maxBitmapSheetBytes" id="-1044394571%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-bitmap-sheet-bytes.html"><span>max</span><wbr><span>Bitmap</span><wbr><span>Sheet</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1044394571%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-bitmap-sheet-bytes.html">maxBitmapSheetBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">independent input ceiling for a bitmap provider's decoded sheet, unaffected by engine cache settings.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1865965311%2FProperties%2F618123257" anchor-label="maxDecompressedBytes" id="-1865965311%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-decompressed-bytes.html"><span>max</span><wbr><span>Decompressed</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1865965311%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-decompressed-bytes.html">maxDecompressedBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">aggregate expanded Unihex and PNG image-data bytes plus PNG four-byte pixel payloads examined by a snapshot.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1642685227%2FProperties%2F618123257" anchor-label="maxDecompressedEntryBytes" id="-1642685227%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-decompressed-entry-bytes.html"><span>max</span><wbr><span>Decompressed</span><wbr><span>Entry</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1642685227%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-decompressed-entry-bytes.html">maxDecompressedEntryBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">maximum expanded bytes in one Unihex ZIP entry or PNG image-data stream, including ignored ZIP entries.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="936364058%2FProperties%2F618123257" anchor-label="maxDocumentBytes" id="936364058%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-document-bytes.html"><span>max</span><wbr><span>Document</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="936364058%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-document-bytes.html">maxDocumentBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum bytes in a font document, pack metadata, or asset index.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1791975770%2FProperties%2F618123257" anchor-label="maxEntries" id="1791975770%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-entries.html"><span>max</span><wbr><span><span>Entries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1791975770%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-entries.html">maxEntries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">aggregate source paths and nested ZIP entries processed by one snapshot, including rejected sources.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2028114143%2FProperties%2F618123257" anchor-label="maxFontDocuments" id="-2028114143%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-font-documents.html"><span>max</span><wbr><span>Font</span><wbr><span><span>Documents</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2028114143%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-font-documents.html">maxFontDocuments</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">total font document locations accepted across the source stack.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1514933453%2FProperties%2F618123257" anchor-label="maxGlyphRowBytes" id="1514933453%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-glyph-row-bytes.html"><span>max</span><wbr><span>Glyph</span><wbr><span>Row</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1514933453%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-glyph-row-bytes.html">maxGlyphRowBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">aggregate retained Unihex row payload, charged as sixteen Long values per record before allocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1130904823%2FProperties%2F618123257" anchor-label="maxGlyphs" id="-1130904823%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-glyphs.html"><span>max</span><wbr><span><span>Glyphs</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1130904823%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-glyphs.html">maxGlyphs</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">total explicit scalar records processed, including duplicate Unihex records, bitmap cells, advances, and skip lists.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1104394912%2FProperties%2F618123257" anchor-label="maxImageBytes" id="1104394912%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-image-bytes.html"><span>max</span><wbr><span>Image</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1104394912%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-image-bytes.html">maxImageBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">maximum four-byte pixel payload of one decoded sheet or glyph image.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="9561861%2FProperties%2F618123257" anchor-label="maxImageDimension" id="9561861%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-image-dimension.html"><span>max</span><wbr><span>Image</span><wbr><span><span>Dimension</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="9561861%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-image-dimension.html">maxImageDimension</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum width or height before allocating a decoded sheet or glyph image.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1965114161%2FProperties%2F618123257" anchor-label="maxInputBytes" id="-1965114161%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-input-bytes.html"><span>max</span><wbr><span>Input</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1965114161%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-input-bytes.html">maxInputBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">aggregate encoded bytes read while loading a snapshot or copying an in-memory source.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2085288369%2FProperties%2F618123257" anchor-label="maxJsonDepth" id="-2085288369%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-json-depth.html"><span>max</span><wbr><span>Json</span><wbr><span><span>Depth</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2085288369%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-json-depth.html">maxJsonDepth</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum JSON container nesting before tree parsing.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1703973766%2FProperties%2F618123257" anchor-label="maxJsonValues" id="1703973766%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-json-values.html"><span>max</span><wbr><span>Json</span><wbr><span><span>Values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1703973766%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-json-values.html">maxJsonValues</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum JSON tokens examined in one document before tree parsing.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1723079525%2FProperties%2F618123257" anchor-label="maxPathLength" id="1723079525%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-path-length.html"><span>max</span><wbr><span>Path</span><wbr><span><span>Length</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1723079525%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-path-length.html">maxPathLength</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum UTF-16 length of one source-relative path or archive entry name.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1413492296%2FProperties%2F618123257" anchor-label="maxProviders" id="1413492296%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-providers.html"><span>max</span><wbr><span><span>Providers</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1413492296%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-providers.html">maxProviders</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">total declared provider records processed across font documents.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="146703288%2FProperties%2F618123257" anchor-label="maxReferenceDepth" id="146703288%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-reference-depth.html"><span>max</span><wbr><span>Reference</span><wbr><span><span>Depth</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="146703288%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-reference-depth.html">maxReferenceDepth</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum active font-reference recursion depth.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1519572128%2FProperties%2F618123257" anchor-label="maxResolvedProviders" id="-1519572128%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-resolved-providers.html"><span>max</span><wbr><span>Resolved</span><wbr><span><span>Providers</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1519572128%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-resolved-providers.html">maxResolvedProviders</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">aggregate provider entries produced by reference expansion.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-625931307%2FProperties%2F618123257" anchor-label="maxSourceEntries" id="-625931307%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-source-entries.html"><span>max</span><wbr><span>Source</span><wbr><span><span>Entries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-625931307%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-source-entries.html">maxSourceEntries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">entries examined in one source or nested Unihex archive, including archive directories.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1310861106%2FProperties%2F618123257" anchor-label="maxSources" id="1310861106%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-sources.html"><span>max</span><wbr><span><span>Sources</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1310861106%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-sources.html">maxSources</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">source count accepted by one snapshot invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="531110204%2FProperties%2F618123257" anchor-label="maxTrueTypeFaces" id="531110204%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-true-type-faces.html"><span>max</span><wbr><span>True</span><wbr><span>Type</span><wbr><span><span>Faces</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="531110204%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-true-type-faces.html">maxTrueTypeFaces</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">maximum distinct resource-and-settings descriptors examined by a snapshot, independent of provider skips and filters.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-731719993%2FProperties%2F618123257" anchor-label="maxTrueTypeInputBytes" id="-731719993%2FProperties%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="max-true-type-input-bytes.html"><span>max</span><wbr><span>True</span><wbr><span>Type</span><wbr><span>Input</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-731719993%2FProperties%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="max-true-type-input-bytes.html">maxTrueTypeInputBytes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">aggregate encoded face input charged once for every distinct resource-and-settings descriptor, before native work.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1376035359%2FFunctions%2F618123257" anchor-label="checkPng" id="-1376035359%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="check-png.html"><span>check</span><wbr><span><span>Png</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1376035359%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="check-png.html"><span class="token function">checkPng</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">bytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Checks recognizable PNG dimensions and inflates image data into a fixed scratch buffer before native decoding. No decoded pixels are retained, and malformed PNG data or excessive expansion fails before native allocation. Other encoded formats return false and remain subject to a decoder's own format and allocation contract.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1959400379%2FFunctions%2F618123257" anchor-label="requireBitmapSheetSize" id="-1959400379%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="require-bitmap-sheet-size.html"><span>require</span><wbr><span>Bitmap</span><wbr><span>Sheet</span><wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1959400379%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="require-bitmap-sheet-size.html"><span class="token function">requireBitmapSheetSize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">height<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Applies generic image safety and the independent bitmap-sheet input ceiling before allocating a provider sheet. The default sheet ceiling allows the default raster cache to retain a sheet and its largest copied glyph together. Raising this input ceiling may cause repeated decoding under a smaller cache, but never changes provider selection between cache modes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-962365200%2FFunctions%2F618123257" anchor-label="requireImageSize" id="-962365200%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="require-image-size.html"><span>require</span><wbr><span>Image</span><wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-962365200%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="require-image-size.html"><span class="token function">requireImageSize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">height<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Rejects invalid or oversized image dimensions before native decoding or pixel-array allocation. Multiplication uses Long arithmetic; the four-byte payload must fit an Int-indexed native byte buffer even with larger custom limits.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

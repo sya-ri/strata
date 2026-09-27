@@ -1,0 +1,696 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>UiRenderMetric</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;runtime/core/dev.s7a.strata.runtime.diagnostics/-ui-render-metric/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.1.5"><span class="versions-dropdown-button-text">0.1.5</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../../runtime/core/dev.s7a.strata.runtime.diagnostics/-ui-render-metric/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="../../../../../0.2.0/runtime/core/dev.s7a.strata.runtime.diagnostics/-ui-render-metric/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../../0.1.6/runtime/core/dev.s7a.strata.runtime.diagnostics/-ui-render-metric/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../../not-found-version.html?v=0.1.4" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../../not-found-version.html?v=0.1.3" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../../not-found-version.html?v=0.1.2" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../../not-found-version.html?v=0.1.1" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:core/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:core/main" data-filter=":runtime:core/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="core::dev.s7a.strata.runtime.diagnostics/UiRenderMetric///PointingToDeclaration//-760020223">
+  <div class="breadcrumbs"><a href="../../index.html">core</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.diagnostics</a><span class="delimiter">/</span><span class="current">UiRenderMetric</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Ui</span><wbr><span>Render</span><wbr><span><span>Metric</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="index.html">UiRenderMetric</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="index.html">UiRenderMetric</a><span class="token operator">&gt; </span><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.1.5/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/diagnostics/UiRenderMetric.kt#L9">source</a>)</span></span></div><p class="paragraph">Actual callback and ownership work, never inferred from pixels or elapsed time. Counts are attempts unless named successful.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="ENTRY">Entries</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="ENTRY">
+        <h2 class="tableheader">Entries</h2>
+        <div class="table"><a data-name="650200088%2FClasslikes%2F-760020223" anchor-label="ObserveEvaluation" id="650200088%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-observe-evaluation/index.html">ObserveEvaluation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="650200088%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-observe-evaluation/index.html">ObserveEvaluation</a></div></div><div class="brief "><p class="paragraph">Structural application Observe invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1248698064%2FClasslikes%2F-760020223" anchor-label="StateComponentEvaluation" id="1248698064%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-state-component-evaluation/index.html">StateComponentEvaluation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1248698064%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-state-component-evaluation/index.html">StateComponentEvaluation</a></div></div><div class="brief "><p class="paragraph">Direct StateSource component argument invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2050762664%2FClasslikes%2F-760020223" anchor-label="FrameAttempt" id="2050762664%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-attempt/index.html">FrameAttempt</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2050762664%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-frame-attempt/index.html">FrameAttempt</a></div></div><div class="brief "><p class="paragraph">Requested host frame.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1817512542%2FClasslikes%2F-760020223" anchor-label="FrameSuccess" id="1817512542%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-success/index.html">FrameSuccess</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1817512542%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-frame-success/index.html">FrameSuccess</a></div></div><div class="brief "><p class="paragraph">Successfully completed host frame.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="162349477%2FClasslikes%2F-760020223" anchor-label="FrameFailure" id="162349477%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-failure/index.html">FrameFailure</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="162349477%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-frame-failure/index.html">FrameFailure</a></div></div><div class="brief "><p class="paragraph">Failed host frame.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1625225054%2FClasslikes%2F-760020223" anchor-label="FrameCacheHit" id="1625225054%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-cache-hit/index.html">FrameCacheHit</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1625225054%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-frame-cache-hit/index.html">FrameCacheHit</a></div></div><div class="brief "><p class="paragraph">Exact retained frame reuse.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-381001914%2FClasslikes%2F-760020223" anchor-label="RootEvaluation" id="-381001914%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-root-evaluation/index.html">RootEvaluation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-381001914%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-root-evaluation/index.html">RootEvaluation</a></div></div><div class="brief "><p class="paragraph">Screen root callback invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1554786933%2FClasslikes%2F-760020223" anchor-label="ContentEvaluation" id="1554786933%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-evaluation/index.html">ContentEvaluation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1554786933%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-content-evaluation/index.html">ContentEvaluation</a></div></div><div class="brief "><p class="paragraph">Deferred region callback invocation, excluding cached child access.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-712717770%2FClasslikes%2F-760020223" anchor-label="ContentEvaluationSuccess" id="-712717770%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-evaluation-success/index.html">ContentEvaluationSuccess</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-712717770%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-content-evaluation-success/index.html">ContentEvaluationSuccess</a></div></div><div class="brief "><p class="paragraph">Deferred callback returned successfully.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1827476694%2FClasslikes%2F-760020223" anchor-label="RowEvaluation" id="1827476694%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-row-evaluation/index.html">RowEvaluation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1827476694%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-row-evaluation/index.html">RowEvaluation</a></div></div><div class="brief "><p class="paragraph">Materialized virtual row callback invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-863555290%2FClasslikes%2F-760020223" anchor-label="NodeCreate" id="-863555290%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-node-create/index.html">NodeCreate</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-863555290%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-node-create/index.html">NodeCreate</a></div></div><div class="brief "><p class="paragraph">Newly created retained component or modifier.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-204371917%2FClasslikes%2F-760020223" anchor-label="NodeUpdate" id="-204371917%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-node-update/index.html">NodeUpdate</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-204371917%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-node-update/index.html">NodeUpdate</a></div></div><div class="brief "><p class="paragraph">Actual element update callback invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="598778525%2FClasslikes%2F-760020223" anchor-label="NodeDispose" id="598778525%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-node-dispose/index.html">NodeDispose</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="598778525%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-node-dispose/index.html">NodeDispose</a></div></div><div class="brief "><p class="paragraph">Retained entry cleanup began.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1016588414%2FClasslikes%2F-760020223" anchor-label="Measure" id="1016588414%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-measure/index.html">Measure</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1016588414%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-measure/index.html">Measure</a></div></div><div class="brief "><p class="paragraph">Actual measure callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="394037170%2FClasslikes%2F-760020223" anchor-label="Layout" id="394037170%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-layout/index.html">Layout</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="394037170%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-layout/index.html">Layout</a></div></div><div class="brief "><p class="paragraph">Actual layout callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="299667070%2FClasslikes%2F-760020223" anchor-label="Paint" id="299667070%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-paint/index.html">Paint</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="299667070%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-paint/index.html">Paint</a></div></div><div class="brief "><p class="paragraph">Actual ordinary paint callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2010940298%2FClasslikes%2F-760020223" anchor-label="OverlayPaint" id="-2010940298%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-overlay-paint/index.html">OverlayPaint</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2010940298%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-overlay-paint/index.html">OverlayPaint</a></div></div><div class="brief "><p class="paragraph">Actual post-child paint callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1125143304%2FClasslikes%2F-760020223" anchor-label="RootOverlayPaint" id="-1125143304%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-root-overlay-paint/index.html">RootOverlayPaint</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1125143304%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-root-overlay-paint/index.html">RootOverlayPaint</a></div></div><div class="brief "><p class="paragraph">Actual root-coordinate overlay callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1276378291%2FClasslikes%2F-760020223" anchor-label="Semantics" id="-1276378291%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-semantics/index.html">Semantics</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1276378291%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-semantics/index.html">Semantics</a></div></div><div class="brief "><p class="paragraph">Actual semantics callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-47967927%2FClasslikes%2F-760020223" anchor-label="LocalInvalidation" id="-47967927%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-local-invalidation/index.html">LocalInvalidation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-47967927%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-local-invalidation/index.html">LocalInvalidation</a></div></div><div class="brief "><p class="paragraph">Nonempty local phase invalidation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="167552025%2FClasslikes%2F-760020223" anchor-label="AncestorInvalidation" id="167552025%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-ancestor-invalidation/index.html">AncestorInvalidation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="167552025%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-ancestor-invalidation/index.html">AncestorInvalidation</a></div></div><div class="brief "><p class="paragraph">Phase invalidation propagated from a descendant.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="462262097%2FClasslikes%2F-760020223" anchor-label="StructureInvalidation" id="462262097%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-structure-invalidation/index.html">StructureInvalidation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="462262097%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-structure-invalidation/index.html">StructureInvalidation</a></div></div><div class="brief "><p class="paragraph">Direct-child structure changed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1657997277%2FClasslikes%2F-760020223" anchor-label="InitialContent" id="1657997277%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-initial-content/index.html">InitialContent</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1657997277%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-initial-content/index.html">InitialContent</a></div></div><div class="brief "><p class="paragraph">Initial deferred declaration.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-52901378%2FClasslikes%2F-760020223" anchor-label="SourceContent" id="-52901378%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-source-content/index.html">SourceContent</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-52901378%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-source-content/index.html">SourceContent</a></div></div><div class="brief "><p class="paragraph">Deferred source value changed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-304486646%2FClasslikes%2F-760020223" anchor-label="SourceReplacementContent" id="-304486646%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-source-replacement-content/index.html">SourceReplacementContent</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-304486646%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-source-replacement-content/index.html">SourceReplacementContent</a></div></div><div class="brief "><p class="paragraph">Deferred source identity changed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="173033148%2FClasslikes%2F-760020223" anchor-label="ParentDefinitionContent" id="173033148%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-parent-definition-content/index.html">ParentDefinitionContent</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="173033148%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-parent-definition-content/index.html">ParentDefinitionContent</a></div></div><div class="brief "><p class="paragraph">Parent supplied a new deferred definition.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1028868511%2FClasslikes%2F-760020223" anchor-label="RootValueChange" id="1028868511%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-root-value-change/index.html">RootValueChange</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1028868511%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-root-value-change/index.html">RootValueChange</a></div></div><div class="brief "><p class="paragraph">Root value changed after the frame cutoff.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-854838761%2FClasslikes%2F-760020223" anchor-label="Projection" id="-854838761%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-projection/index.html">Projection</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-854838761%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-projection/index.html">Projection</a></div></div><div class="brief "><p class="paragraph">Derived transformation invocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1355109125%2FClasslikes%2F-760020223" anchor-label="ProjectionEqual" id="1355109125%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-projection-equal/index.html">ProjectionEqual</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1355109125%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-projection-equal/index.html">ProjectionEqual</a></div></div><div class="brief "><p class="paragraph">Equal derived output stopped propagation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="730278729%2FClasslikes%2F-760020223" anchor-label="ConsumerNotification" id="730278729%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-consumer-notification/index.html">ConsumerNotification</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="730278729%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-consumer-notification/index.html">ConsumerNotification</a></div></div><div class="brief "><p class="paragraph">UI consumer received a committed tuple.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1452288975%2FClasslikes%2F-760020223" anchor-label="SubscriptionOpen" id="1452288975%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-subscription-open/index.html">SubscriptionOpen</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1452288975%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-subscription-open/index.html">SubscriptionOpen</a></div></div><div class="brief "><p class="paragraph">Root subscription established.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1168650693%2FClasslikes%2F-760020223" anchor-label="SubscriptionClose" id="-1168650693%2FClasslikes%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-togglable="ENTRY" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-subscription-close/index.html">SubscriptionClose</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1168650693%2FClasslikes%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><div class="block"><a href="-subscription-close/index.html">SubscriptionClose</a></div></div><div class="brief "><p class="paragraph">Root subscription close attempted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="-423817854%2FProperties%2F-760020223" anchor-label="entries" id="-423817854%2FProperties%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="entries.html"><span><span>entries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-423817854%2FProperties%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="entries.html">entries</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.enums/-enum-entries/index.html">EnumEntries</a><span class="token operator">&lt;</span><a href="index.html">UiRenderMetric</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns a representation of an immutable list of all enum entries, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-372974862%2FProperties%2F-760020223" anchor-label="name" id="-372974862%2FProperties%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../-ui-render-operation/-other/index.html#-372974862%2FProperties%2F-760020223"><span><span>name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-372974862%2FProperties%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-ui-render-operation/-other/index.html#-372974862%2FProperties%2F-760020223">name</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-739389684%2FProperties%2F-760020223" anchor-label="ordinal" id="-739389684%2FProperties%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../-ui-render-operation/-other/index.html#-739389684%2FProperties%2F-760020223"><span><span>ordinal</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-739389684%2FProperties%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="../-ui-render-operation/-other/index.html#-739389684%2FProperties%2F-760020223">ordinal</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1475587238%2FFunctions%2F-760020223" anchor-label="valueOf" id="-1475587238%2FFunctions%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="value-of.html"><span>value</span><wbr><span><span>Of</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1475587238%2FFunctions%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="value-of.html"><span class="token function">valueOf</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">value<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">UiRenderMetric</a></div><div class="brief "><p class="paragraph">Returns the enum constant of this type with the specified name. The string must match exactly an identifier used to declare an enum constant in this type. (Extraneous whitespace characters are not permitted.)</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1157342694%2FFunctions%2F-760020223" anchor-label="values" id="1157342694%2FFunctions%2F-760020223" data-filterable-set=":runtime:core/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:core/main" data-filterable-set=":runtime:core/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="values.html"><span><span>values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1157342694%2FFunctions%2F-760020223"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:core/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="values.html"><span class="token function">values</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><a href="index.html">UiRenderMetric</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Returns an array containing the constants of this enum type, in the order they're declared.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

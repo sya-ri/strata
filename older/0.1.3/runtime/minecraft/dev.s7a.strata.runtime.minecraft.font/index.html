@@ -1,0 +1,481 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>dev.s7a.strata.runtime.minecraft.font</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.1.3"><span class="versions-dropdown-button-text">0.1.3</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="../../../../0.2.0/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../0.1.6/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../0.1.5/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../0.1.4/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../0.1.2/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../0.1.1/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:minecraft/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:minecraft/main" data-filter=":runtime:minecraft/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="minecraft::dev.s7a.strata.runtime.minecraft.font////PointingToDeclaration//618123257">
+  <div class="breadcrumbs"><a href="../index.html">minecraft</a><span class="delimiter">/</span><span class="current">dev.s7a.strata.runtime.minecraft.font</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="-1292358740%2FClasslikes%2F618123257" anchor-label="MinecraftArchiveFontAssetSource" id="-1292358740%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-archive-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Archive</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1292358740%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-archive-font-asset-source/index.html">MinecraftArchiveFontAssetSource</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">archive<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Path.html">Path</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span>archive.toString()</span></span><span class="token punctuation">)</span> : <a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a></div><div class="brief "><p class="paragraph">ZIP or JAR pack source that opens and closes an archive for each operation. Files are read directly and never extracted to the filesystem. The caller must not modify the archive during snapshot loading.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-398200185%2FClasslikes%2F618123257" anchor-label="MinecraftBoundedFontAssetSource" id="-398200185%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-bounded-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Bounded</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-398200185%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a> : <a href="-minecraft-font-asset-source/index.html">MinecraftFontAssetSource</a></div><div class="brief "><p class="paragraph">Optional streaming-capable source contract that enforces limits before allocating complete results. Existing <a href="-minecraft-font-asset-source/index.html">MinecraftFontAssetSource</a> implementations keep their original callbacks, including interception through Kotlin delegation. Implementations own and close their streams synchronously and retain no mutable loading counter.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1042507710%2FClasslikes%2F618123257" anchor-label="MinecraftBoundedFontBackend" id="1042507710%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-bounded-font-backend/index.html"><span>Minecraft</span><wbr><span>Bounded</span><wbr><span>Font</span><wbr><span><span>Backend</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1042507710%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-minecraft-bounded-font-backend/index.html">MinecraftBoundedFontBackend</a> : <a href="-minecraft-font-backend/index.html">MinecraftFontBackend</a></div><div class="brief "><p class="paragraph">Optional backend capability that inspects image dimensions before allocating native or JVM pixels. Ownership and owner-thread confinement follow <a href="-minecraft-font-backend/index.html">MinecraftFontBackend</a>; existing backends keep their original callbacks.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-99985129%2FClasslikes%2F618123257" anchor-label="MinecraftDirectoryFontAssetSource" id="-99985129%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-directory-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Directory</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-99985129%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-directory-font-asset-source/index.html">MinecraftDirectoryFontAssetSource</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">directory<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Path.html">Path</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span>directory.toString()</span></span><span class="token punctuation">)</span> : <a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a></div><div class="brief "><p class="paragraph">Directory-backed pack source that closes each enumeration and read before returning. Reads reject symbolic links whose resolved target escapes the selected directory. The caller must not modify the directory concurrently with snapshot loading.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="850011520%2FClasslikes%2F618123257" anchor-label="MinecraftFontAssetSource" id="850011520%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="850011520%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-minecraft-font-asset-source/index.html">MinecraftFontAssetSource</a></div><div class="brief "><p class="paragraph">Synchronous source of pack-relative files for an immutable font snapshot. Paths use forward slashes, including <code class="lang-kotlin">assets/namespace/path</code> and optional <code class="lang-kotlin">pack.mcmeta</code>. A loader retains neither this source nor any returned mutable collection or array. Implementations own no persistent open stream; callers must obey any source-specific thread contract. Custom sources must bound allocation inside their callbacks; loaders also validate returned sizes before copying. Implement <a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a> to receive the current limits and stop while streaming or enumerating.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="570687287%2FClasslikes%2F618123257" anchor-label="MinecraftFontBackend" id="570687287%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-backend/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Backend</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="570687287%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-minecraft-font-backend/index.html">MinecraftFontBackend</a> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Owner-thread CPU image-decoding and TrueType services owned by one font engine. Implementations must not require Minecraft, a display, or a graphics context. Returned images and glyphs are detached, and close is idempotent. Custom decoders must bound their own allocations; <a href="-minecraft-bounded-font-backend/index.html">MinecraftBoundedFontBackend</a> receives each snapshot's explicit image ceilings.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1368732479%2FClasslikes%2F618123257" anchor-label="MinecraftFontBackendFactory" id="-1368732479%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-backend-factory/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Backend</span><wbr><span><span>Factory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1368732479%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-minecraft-font-backend-factory/index.html">MinecraftFontBackendFactory</a></div><div class="brief "><p class="paragraph">Creates independent owner-thread CPU backends without retaining a game or graphics context.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="575583323%2FClasslikes%2F618123257" anchor-label="MinecraftFontCompatibility" id="575583323%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-compatibility/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Compatibility</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="575583323%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-font-compatibility/index.html">MinecraftFontCompatibility</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>rasterizer<span class="token operator">: </span><a href="-minecraft-true-type-rasterizer/index.html">MinecraftTrueTypeRasterizer</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>packFormat<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>providerFilters<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>packOverlays<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>packFormatMinor<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>minorPackFormats<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>interleavedShadows<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>fractionalUnihexAdvance<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>rejectMalformedOverlayMetadata<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>bakedGlyphMetrics<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>saturatingCeil<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>preparedTextBounds<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable resource-format and rasterization capabilities selected by the caller's release adapter. No game version is inferred from names or runtime strings.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="114451728%2FClasslikes%2F618123257" anchor-label="MinecraftFontDiagnostic" id="114451728%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-diagnostic/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Diagnostic</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="114451728%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-font-diagnostic/index.html">MinecraftFontDiagnostic</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>kind<span class="token operator">: </span><a href="-minecraft-font-diagnostic/-kind/index.html">MinecraftFontDiagnostic.Kind</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>font<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.resource/-resource-id/index.html">ResourceId</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>source<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>message<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable diagnostic for a source, metadata section, font document, or provider excluded from a snapshot. Diagnostic strings describe external provenance and never select runtime behavior.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1116249557%2FClasslikes%2F618123257" anchor-label="MinecraftFontEngine" id="1116249557%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-engine/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Engine</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1116249557%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-font-engine/index.html">MinecraftFontEngine</a>&nbsp;<span><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-overloads/index.html"><span class="token annotation builtin">JvmOverloads</span></a>&nbsp;</span><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">snapshot<span class="token operator">: </span><a href="-minecraft-font-snapshot/index.html">MinecraftFontSnapshot</a><span class="token punctuation">, </span></span><span class="parameter ">backendFactory<span class="token operator">: </span><a href="-minecraft-font-backend-factory/index.html">MinecraftFontBackendFactory</a><span class="token punctuation">, </span></span><span class="parameter ">cacheEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">4096</span><span class="token punctuation">, </span></span><span class="parameter ">cacheBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>16L * 1024L * 1024L<span class="token punctuation">, </span></span><span class="parameter ">maxFaces<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">16</span></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Owner-thread portable glyph engine for one immutable resource state. The engine owns its backend and native faces, while returned glyphs retain only detached pixels and metrics. Its access-ordered raster cache is bounded by both entry count and pixel bytes; large values bypass the cache. Sheets share detached resource identity; bitmap scans share resource, grid, and cell identity with one current metric result per cell. TrueType faces and glyphs share resource and exact settings, with provider skips checked before glyph lookup. Other glyphs use snapshot-local provider identities and Unicode scalars; changing resources, limits, or options requires a new engine. Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled. Native faces have an independent entry bound of at most 16 and a combined encoded-input ceiling equal to the snapshot's maxAssetBytes. Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state. Preallocation-limit failures occupy ordinary bounded glyph-cache entries and retain only a message. A backend returning an image beyond its allocation contract permanently disables that face descriptor and closes its live face. Closing clears snapshot, cache, and native references and never invalidates returned glyphs. Glyph selection, cache eviction, and terminal cleanup share this owner to preserve resource lifetime boundaries.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1429225953%2FClasslikes%2F618123257" anchor-label="MinecraftFontGlyph" id="-1429225953%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-glyph/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Glyph</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1429225953%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-font-glyph/index.html">MinecraftFontGlyph</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>advance<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>left<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>top<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>right<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>bottom<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>image<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>channel<span class="token operator">: </span><a href="-minecraft-glyph-channel/index.html">MinecraftGlyphChannel</a><span class="token operator"> = </span>MinecraftGlyphChannel.Color<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>boldOffset<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">1.0f</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>shadowOffset<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">1.0f</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>orientation<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.render/-sampled-image-orientation/index.html">SampledImageOrientation</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>oversizedRasterSize<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable detached glyph pixels and native logical metrics. Ink bounds are relative to the same top-left logical origin supplied to Minecraft text drawing. The image contains the complete sampled glyph rectangle, ready for ordinary RGBA tint multiplication; intensity backends replicate coverage into every channel before returning it. A null image represents an advance without ink unless <a href="../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-glyph/--root--.html">oversizedRasterSize</a> records an atlas-rejected source raster. <a href="../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-glyph/--root--.html">channel</a> records provenance without requiring another shader conversion. <a href="../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-glyph/--root--.html">orientation</a> preserves reversed native source coordinates through normalized ink bounds without rearranging pixels. Advance and ink metrics may retain native NaN or infinity; callers must omit non-finite final quads before constructing portable geometry. Finite bounds remain normalized, while offsets stay finite and non-negative. Values are safe to retain after their engine and native face close.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-15414083%2FClasslikes%2F618123257" anchor-label="MinecraftFontLoadLimitException" id="-15414083%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-load-limit-exception/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Load</span><wbr><span>Limit</span><wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-15414083%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-font-load-limit-exception/index.html">MinecraftFontLoadLimitException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html">IllegalArgumentException</a></div><div class="brief "><p class="paragraph">Identifies a bounded-input rejection so source enumeration can exclude only the affected pack. Custom asset sources may throw this type when stopping enumeration at their supplied ceiling. The exception retains a detached explanation and no source, stream, or failed input.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1945773063%2FClasslikes%2F618123257" anchor-label="MinecraftFontLoadLimits" id="-1945773063%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-load-limits/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span>Load</span><wbr><span><span>Limits</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1945773063%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-font-load-limits/index.html">MinecraftFontLoadLimits</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>maxSources<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxSourceEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxPathLength<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxArchiveBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>256L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxAssetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>32 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDocumentBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>2 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDecompressedEntryBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>32L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxDecompressedBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxFontDocuments<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxGlyphs<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxGlyphRowBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxJsonDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">64</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxJsonValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxReferenceDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">128</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxResolvedProviders<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxImageDimension<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxImageBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>64L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxBitmapSheetBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>8L * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxTrueTypeFaces<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">256</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxTrueTypeInputBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span>128L * 1024 * 1024</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable input and allocation ceilings for one synchronous font snapshot and its image decoders. Counts include rejected records already processed, and byte ceilings describe payload rather than total JVM heap usage. Defaults accommodate the measured vanilla resources of every supported release; callers may choose tighter or larger finite budgets. No source, stream, mutable counter, or native resource is retained here, so limits may be shared across threads.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2099724691%2FClasslikes%2F618123257" anchor-label="MinecraftFontOptions" id="-2099724691%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-options/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Options</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2099724691%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-font-options/index.html">MinecraftFontOptions</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>uniform<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>japaneseVariants<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>rightToLeft<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable font-provider selections and fallback text direction captured with one resource snapshot.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1321731859%2FClasslikes%2F618123257" anchor-label="MinecraftFontSnapshot" id="1321731859%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-font-snapshot/index.html"><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Snapshot</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1321731859%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-font-snapshot/index.html">MinecraftFontSnapshot</a></div><div class="brief "><p class="paragraph">Immutable detached font-provider graph loaded directly from a resource-pack stack. All referenced bytes and sparse Unihex rows are owned snapshots; no source, stream, native face, or game object is retained. The same snapshot may be shared across threads and independent engines.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="29094031%2FClasslikes%2F618123257" anchor-label="MinecraftGlyphChannel" id="29094031%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-glyph-channel/index.html"><span>Minecraft</span><wbr><span>Glyph</span><wbr><span><span>Channel</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="29094031%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-minecraft-glyph-channel/index.html">MinecraftGlyphChannel</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-minecraft-glyph-channel/index.html">MinecraftGlyphChannel</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Describes the native text shader's interpretation of detached source texels.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="792951003%2FClasslikes%2F618123257" anchor-label="MinecraftIndexedFontAssetSource" id="792951003%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-indexed-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Indexed</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="792951003%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-indexed-font-asset-source/index.html">MinecraftIndexedFontAssetSource</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">index<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Path.html">Path</a><span class="token punctuation">, </span></span><span class="parameter ">objects<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/nio/file/Path.html">Path</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-minecraft-font-load-limits/index.html">MinecraftFontLoadLimits</a></span></span><span class="token punctuation">)</span> : <a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a></div><div class="brief "><p class="paragraph">Offline source for a Minecraft asset index and its already-downloaded object directory. Construction snapshots the index; object bytes are read synchronously without downloading or starting the game. Resolved object paths must remain inside the supplied object directory.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-933321375%2FClasslikes%2F618123257" anchor-label="MinecraftMemoryFontAssetSource" id="-933321375%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-memory-font-asset-source/index.html"><span>Minecraft</span><wbr><span>Memory</span><wbr><span>Font</span><wbr><span>Asset</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-933321375%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-memory-font-asset-source/index.html">MinecraftMemoryFontAssetSource</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">files<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-minecraft-font-load-limits/index.html">MinecraftFontLoadLimits</a></span></span><span class="token punctuation">)</span> : <a href="-minecraft-bounded-font-asset-source/index.html">MinecraftBoundedFontAssetSource</a></div><div class="brief "><p class="paragraph">Immutable thread-safe in-memory pack source used by adapters and deterministic fixtures. Construction copies all bytes and paths; reads always return a fresh array.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-543436255%2FClasslikes%2F618123257" anchor-label="MinecraftTrueTypeFace" id="-543436255%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-true-type-face/index.html"><span>Minecraft</span><wbr><span>True</span><wbr><span>Type</span><wbr><span><span>Face</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-543436255%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-minecraft-true-type-face/index.html">MinecraftTrueTypeFace</a> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Owner-thread native face borrowed only by one font engine. Every returned glyph is detached from the face; close releases all native handles and is idempotent.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1450974237%2FClasslikes%2F618123257" anchor-label="MinecraftTrueTypeRasterizer" id="-1450974237%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-true-type-rasterizer/index.html"><span>Minecraft</span><wbr><span>True</span><wbr><span>Type</span><wbr><span><span>Rasterizer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1450974237%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-minecraft-true-type-rasterizer/index.html">MinecraftTrueTypeRasterizer</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-minecraft-true-type-rasterizer/index.html">MinecraftTrueTypeRasterizer</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Selects the native CPU rasterization contract supplied by a supported release adapter.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1279706981%2FClasslikes%2F618123257" anchor-label="MinecraftTrueTypeSettings" id="-1279706981%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-true-type-settings/index.html"><span>Minecraft</span><wbr><span>True</span><wbr><span>Type</span><wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1279706981%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-true-type-settings/index.html">MinecraftTrueTypeSettings</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>size<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">11.0f</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>oversample<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">1.0f</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>shiftX<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.0f</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>shiftY<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.0f</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable TrueType provider settings passed to a CPU backend. Signed sizes and oversampling, including either signed zero, preserve the selected native provider's numeric behavior. A backend may reject a native operation that cannot be executed safely, but these values do not make a font document malformed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1895501456%2FClasslikes%2F618123257" anchor-label="MinecraftVisualGlyph" id="1895501456%2FClasslikes%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-visual-glyph/index.html"><span>Minecraft</span><wbr><span>Visual</span><wbr><span><span>Glyph</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1895501456%2FClasslikes%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-minecraft-visual-glyph/index.html">MinecraftVisualGlyph</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>codePoint<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>sourceIndex<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable visual-order Unicode scalar associated with its original logical UTF-16 position. The position identifies the first contributing scalar before shaping and bidirectional reordering; a Lam-Alef ligature belongs to the Lam. This preserves the original font spans after contractions, deliberately correcting native text processing's shifted style lookup. Values contain no backend ownership and can be shared across threads.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1575321475%2FFunctions%2F618123257" anchor-label="readMinecraftFontBytes" id="-1575321475%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="read-minecraft-font-bytes.html"><span>read</span><wbr><span>Minecraft</span><wbr><span>Font</span><wbr><span><span>Bytes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1575321475%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/InputStream.html">InputStream</a><span class="token punctuation">.</span><a href="read-minecraft-font-bytes.html"><span class="token function">readMinecraftFontBytes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">maximumBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></div><div class="brief "><p class="paragraph">Reads an encoded font asset with an inclusive byte ceiling, checking overflow before appending bytes. At most one byte beyond the ceiling is consumed to distinguish exact-size input from oversized input. This synchronous operation neither retains nor closes the stream; its caller owns closing on success and failure.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

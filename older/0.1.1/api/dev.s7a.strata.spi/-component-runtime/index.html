@@ -1,0 +1,433 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>ComponentRuntime</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;api/dev.s7a.strata.spi/-component-runtime/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.1.1"><span class="versions-dropdown-button-text">0.1.1</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="../../../../0.2.0/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../0.1.6/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../0.1.5/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../0.1.4/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../0.1.3/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../0.1.2/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../0.1.0/api/dev.s7a.strata.spi/-component-runtime/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":api/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":api/main" data-filter=":api/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="api::dev.s7a.strata.spi/ComponentRuntime///PointingToDeclaration//1081350600">
+  <div class="breadcrumbs"><a href="../../index.html">api</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.spi</a><span class="delimiter">/</span><span class="current">ComponentRuntime</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Component</span><wbr><span><span>Runtime</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">ComponentRuntime</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.1.1/api/src/main/kotlin/dev/s7a/strata/spi/ComponentRuntime.kt#L38">source</a>)</span></span></div><p class="paragraph">Privileged platform implementation of profile-backed standard components.</p><p class="paragraph">The API module retains only this platform-neutral contract while a runtime adapter resolves profile assets, synchronized bindings, and retained implementation nodes during one dynamically scoped screen evaluation. Every method runs synchronously on the evaluation owner thread and must not retain a callback-lifetime scope. Returned immutable elements and modifier chains own any retained snapshots or bindings; the caller owns those returned descriptions and the retained tree later owns their lifecycle resources. Validation, resolution, and arithmetic failures propagate unchanged without emitting a partial description.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="823332801%2FFunctions%2F1081350600" anchor-label="button" id="823332801%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="button.html"><span><span>button</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="823332801%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="button.html"><span class="token function">button</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed pointer button element.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-638863277%2FFunctions%2F1081350600" anchor-label="checkbox" id="-638863277%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="checkbox.html"><span><span>checkbox</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-638863277%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="checkbox.html"><span class="token function">checkbox</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-checkbox-state/index.html">CheckboxState</a><span class="token punctuation">, </span></span><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed Checkbox with caller-owned selected state.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2125106316%2FFunctions%2F1081350600" anchor-label="containerBackground" id="2125106316%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="container-background.html"><span>container</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2125106316%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="container-background.html"><span class="token function">containerBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">rows<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Appends the active profile's generic-container background and sizing behavior.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1533831869%2FFunctions%2F1081350600" anchor-label="cycleButton" id="1533831869%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="cycle-button.html"><span>cycle</span><wbr><span><span>Button</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1533831869%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="cycle-button.html"><span class="token function">cycleButton</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-cycle-button-state/index.html">CycleButtonState</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">labels<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed finite-option CycleButton.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="997638243%2FFunctions%2F1081350600" anchor-label="image" id="997638243%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="image.html"><span><span>image</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="997638243%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="image.html"><span class="token function">image</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">source<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-image-source/index.html">ImageSource</a><span class="token punctuation">, </span></span><span class="parameter ">sourceRegion<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-rect/index.html">IntRect</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">size<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one nearest-sampled image after resolving <a href="image.html">source</a> through the active resource manager when necessary.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="683143099%2FFunctions%2F1081350600" anchor-label="imageBackground" id="683143099%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="image-background.html"><span>image</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="683143099%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="image-background.html"><span class="token function">imageBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">source<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-image-source/index.html">ImageSource</a><span class="token punctuation">, </span></span><span class="parameter ">scale<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-image-scale/index.html">ImageScale</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Appends one nearest-sampled image background resolved from <a href="image-background.html">source</a>.</p></div><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="image-background.html"><span class="token function">imageBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">source<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-image-source/index.html">ImageSource</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-insets/index.html">Insets</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Appends one nine-slice image background resolved from <a href="image-background.html">source</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1526768231%2FFunctions%2F1081350600" anchor-label="loadingIndicator" id="1526768231%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="loading-indicator.html"><span>loading</span><wbr><span><span>Indicator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1526768231%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="loading-indicator.html"><span class="token function">loadingIndicator</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">size<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed discrete loading animation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-654823617%2FFunctions%2F1081350600" anchor-label="menuBackground" id="-654823617%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="menu-background.html"><span>menu</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-654823617%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="menu-background.html"><span class="token function">menuBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Appends the active profile's menu background behavior.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-420203974%2FFunctions%2F1081350600" anchor-label="playerHead" id="-420203974%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="player-head.html"><span>player</span><wbr><span><span>Head</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-420203974%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="player-head.html"><span class="token function">playerHead</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">source<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-player-skin-source/index.html">PlayerSkinSource</a><span class="token punctuation">, </span></span><span class="parameter ">size<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">showHat<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">loading<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">failure<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one player-head element and defers any asynchronous lookup represented by <a href="player-head.html">source</a> to node attachment.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-750779101%2FFunctions%2F1081350600" anchor-label="progressBar" id="-750779101%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="progress-bar.html"><span>progress</span><wbr><span><span>Bar</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-750779101%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="progress-bar.html"><span class="token function">progressBar</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">progress<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter ">size<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed determinate progress bar.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1199407651%2FFunctions%2F1081350600" anchor-label="retainEvaluator" id="-1199407651%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="retain-evaluator.html"><span>retain</span><wbr><span><span>Evaluator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1199407651%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="retain-evaluator.html"><span class="token function">retainEvaluator</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-component-evaluator/index.html">ComponentEvaluator</a></div><div class="brief "><p class="paragraph">Captures an owner-thread evaluator for content constructed after this callback-lifetime runtime closes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1086467104%2FFunctions%2F1081350600" anchor-label="scrollArea" id="1086467104%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="scroll-area.html"><span>scroll</span><wbr><span><span>Area</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1086467104%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="scroll-area.html"><span class="token function">scrollArea</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-scroll-state/index.html">ScrollState</a><span class="token punctuation">, </span></span><span class="parameter ">content<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a><span class="token punctuation">, </span></span><span class="parameter ">scrollRate<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed scroll viewport around exactly one <a href="scroll-area.html">content</a> root.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1239236967%2FFunctions%2F1081350600" anchor-label="scrollbar" id="-1239236967%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="scrollbar.html"><span><span>scrollbar</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1239236967%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="scrollbar.html"><span class="token function">scrollbar</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-scroll-state/index.html">ScrollState</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one independently placed profile-backed vertical scrollbar.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="548242903%2FFunctions%2F1081350600" anchor-label="slider" id="548242903%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slider.html"><span><span>slider</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="548242903%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider.html"><span class="token function">slider</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-slider-state/index.html">SliderState</a><span class="token punctuation">, </span></span><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed horizontal Slider.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1454289568%2FFunctions%2F1081350600" anchor-label="slot" id="-1454289568%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slot.html"><span><span>slot</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1454289568%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slot.html"><span class="token function">slot</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">binding<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-slot-binding/index.html">SlotBinding</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">highlightable<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">item<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one ordinary or synchronized profile-backed slot element.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1945137188%2FFunctions%2F1081350600" anchor-label="tab" id="-1945137188%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tab.html"><span><span>tab</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1945137188%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="tab.html"><span class="token function">tab</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">label<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">selected<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">indicator<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-tab-selection-indicator/index.html">TabSelectionIndicator</a><span class="token punctuation">, </span></span><span class="parameter ">customIndicator<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a><span class="token operator">?</span><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed tab element with an optional selected custom indicator root.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="322386456%2FFunctions%2F1081350600" anchor-label="text" id="322386456%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="text.html"><span><span>text</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="322386456%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="text.html"><span class="token function">text</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">text<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed text element.</p></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="text.html"><span class="token function">text</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">text<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">layout<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-text-layout/index.html">TextLayout</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed text element with an explicit line layout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1617472245%2FFunctions%2F1081350600" anchor-label="textArea" id="1617472245%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="text-area.html"><span>text</span><wbr><span><span>Area</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1617472245%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="text-area.html"><span class="token function">textArea</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-area-state/index.html">TextAreaState</a><span class="token punctuation">, </span></span><span class="parameter ">viewport<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-area-viewport/index.html">TextAreaViewport</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">wrap<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-text-wrap/index.html">TextWrap</a><span class="token punctuation">, </span></span><span class="parameter ">lineSpacing<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed multiline editor observing caller-owned text and scroll state.</p></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="text-area.html"><span class="token function">textArea</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-area-state/index.html">TextAreaState</a><span class="token punctuation">, </span></span><span class="parameter ">viewport<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-area-viewport/index.html">TextAreaViewport</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">font<span class="token operator">: </span><a href="../../dev.s7a.strata.resource/-resource-id/index.html">ResourceId</a><span class="token punctuation">, </span></span><span class="parameter ">wrap<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-text-wrap/index.html">TextWrap</a><span class="token punctuation">, </span></span><span class="parameter ">lineSpacing<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one multiline editor using an explicitly selected resource-pack font.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-269567339%2FFunctions%2F1081350600" anchor-label="textField" id="-269567339%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="text-field.html"><span>text</span><wbr><span><span>Field</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-269567339%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="text-field.html"><span class="token function">textField</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-field-state/index.html">TextFieldState</a><span class="token punctuation">, </span></span><span class="parameter ">size<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed text-field element observing <a href="text-field.html">state</a>.</p></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="text-field.html"><span class="token function">textField</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-field-state/index.html">TextFieldState</a><span class="token punctuation">, </span></span><span class="parameter ">size<span class="token operator">: </span><a href="../../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token punctuation">, </span></span><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">style<span class="token operator">: </span><a href="../../dev.s7a.strata.component/-text-style/index.html">TextStyle</a><span class="token punctuation">, </span></span><span class="parameter ">font<span class="token operator">: </span><a href="../../dev.s7a.strata.resource/-resource-id/index.html">ResourceId</a><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">key<span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element-key/index.html">ElementKey</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.element/-element/index.html">Element</a></div><div class="brief "><p class="paragraph">Creates one profile-backed text field with an explicitly selected resource-pack font. The default implementation rejects this capability so existing runtime implementations remain source and binary compatible.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2014045663%2FFunctions%2F1081350600" anchor-label="tooltip" id="-2014045663%2FFunctions%2F1081350600" data-filterable-set=":api/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/main" data-filterable-set=":api/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tooltip.html"><span><span>tooltip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2014045663%2FFunctions%2F1081350600"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="tooltip.html"><span class="token function">tooltip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">modifier<span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a><span class="token punctuation">, </span></span><span class="parameter ">text<span class="token operator">: </span><a href="../../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">delayMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../dev.s7a.strata.modifier/-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds one profile-backed delayed tooltip behavior.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

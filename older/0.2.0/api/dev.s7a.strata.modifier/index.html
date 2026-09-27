@@ -1,0 +1,841 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>dev.s7a.strata.modifier</title>
+<link href="../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;api/dev.s7a.strata.modifier/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.0"><span class="versions-dropdown-button-text">0.2.0</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../0.1.6/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../0.1.5/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../0.1.4/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../0.1.3/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../0.1.2/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../0.1.1/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../0.1.0/api/dev.s7a.strata.modifier/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector common-like" data-active="" aria-pressed="true" data-filter=":api/commonMain">common</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":api/commonMain" data-filter=":api/commonMain">
+                                <span class="checkbox--icon"></span>
+                                common
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="api::dev.s7a.strata.modifier////PointingToDeclaration//410371219">
+  <div class="breadcrumbs"><a href="../index.html">api</a><span class="delimiter">/</span><span class="current">dev.s7a.strata.modifier</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="1814555561%2FClasslikes%2F410371219" anchor-label="Modifier" id="1814555561%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-modifier/index.html"><span><span>Modifier</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1814555561%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Immutable ordered active modifier descriptions.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="98083421%2FClasslikes%2F410371219" anchor-label="ModifierElement" id="98083421%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-modifier-element/index.html"><span>Modifier</span><wbr><span><span>Element</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="98083421%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-modifier-element/index.html">ModifierElement</a></div><div class="brief "><p class="paragraph">Immutable value description for one active modifier node.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="918844077%2FClasslikes%2F410371219" anchor-label="ModifierNodeType" id="918844077%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-modifier-node-type/index.html"><span>Modifier</span><wbr><span>Node</span><wbr><span><span>Type</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="918844077%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-modifier-node-type/index.html">ModifierNodeType</a><span class="token operator">&lt;</span><a href="-modifier-node-type/index.html">E</a><span class="token operator"> : </span><a href="-modifier-element/index.html">ModifierElement</a><span class="token punctuation">, </span><a href="-modifier-node-type/index.html">N</a><span class="token operator"> : </span><a href="../dev.s7a.strata.node/-modifier-node/index.html">ModifierNode</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">elementClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><a href="-modifier-node-type/index.html">E</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">nodeClass<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="-modifier-node-type/index.html">N</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">validateLocal<span class="token operator">: </span><span class="token punctuation">(</span><a href="-modifier-node-type/index.html">E</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">createNode<span class="token operator">: </span><span class="token punctuation">(</span><a href="-modifier-node-type/index.html">E</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="-modifier-node-type/index.html">N</a><span class="token punctuation">, </span></span><span class="parameter ">updateNode<span class="token operator">: </span><span class="token punctuation">(</span><a href="-modifier-node-type/index.html">E</a><span class="token punctuation">, </span><a href="-modifier-node-type/index.html">E</a><span class="token punctuation">, </span><a href="-modifier-node-type/index.html">N</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.node/-dirty-mask/index.html">DirtyMask</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Stable referential token and typed bridge for one modifier description and node pair.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1009292951%2FFunctions%2F410371219" anchor-label="actionDispatcher" id="-1009292951%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="action-dispatcher.html"><span>action</span><wbr><span><span>Dispatcher</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1009292951%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="action-dispatcher.html"><span class="token function">actionDispatcher</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../dev.s7a.strata.action/-action-dispatcher/index.html">ActionDispatcher</a></div><div class="brief "><p class="paragraph">Captures the typed action handlers declared directly on this modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1252157404%2FFunctions%2F410371219" anchor-label="background" id="-1252157404%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="background.html"><span><span>background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1252157404%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="background.html"><span class="token function">background</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">color<span class="token operator">: </span><a href="../dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Paints a color across the modifier's complete local bounds before its content. The new behavior is appended inside the existing modifier chain, so existing outer paint behavior remains earlier.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1369257777%2FFunctions%2F410371219" anchor-label="containerBackground" id="1369257777%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="container-background.html"><span>container</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1369257777%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="container-background.html"><span class="token function">containerBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">rows<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">3</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Sizes the modified component to a Minecraft 26.2 generic chest panel and paints its background before content.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="624108826%2FFunctions%2F410371219" anchor-label="fillMaxHeight" id="624108826%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="fill-max-height.html"><span>fill</span><wbr><span>Max</span><wbr><span><span>Height</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="624108826%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="fill-max-height.html"><span class="token function">fillMaxHeight</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Fills a bounded parent height while preserving an unbounded height. The new behavior is appended inside the existing modifier chain and leaves the width policy unchanged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1748036288%2FFunctions%2F410371219" anchor-label="fillMaxSize" id="1748036288%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="fill-max-size.html"><span>fill</span><wbr><span>Max</span><wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1748036288%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="fill-max-size.html"><span class="token function">fillMaxSize</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Fills every bounded parent axis while preserving unbounded axes. The new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1098693505%2FFunctions%2F410371219" anchor-label="fillMaxWidth" id="1098693505%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="fill-max-width.html"><span>fill</span><wbr><span>Max</span><wbr><span><span>Width</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1098693505%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="fill-max-width.html"><span class="token function">fillMaxWidth</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Fills a bounded parent width while preserving an unbounded width. The new behavior is appended inside the existing modifier chain and leaves the height policy unchanged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="329099920%2FFunctions%2F410371219" anchor-label="focusable" id="329099920%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="focusable.html"><span><span>focusable</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="329099920%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="focusable.html"><span class="token function">focusable</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Makes the logical component a keyboard and text-input focus target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-212427171%2FFunctions%2F410371219" anchor-label="height" id="-212427171%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="height.html"><span><span>height</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-212427171%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="height.html"><span class="token function">height</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">height<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains the height to an exact requested size after clamping it into the parent constraints. The new behavior is appended inside the existing modifier chain and leaves the width policy unchanged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1027636699%2FFunctions%2F410371219" anchor-label="heightIn" id="-1027636699%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="height-in.html"><span>height</span><wbr><span><span>In</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1027636699%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="height-in.html"><span class="token function">heightIn</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">min<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">max<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>Int.MAX_VALUE</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains the height to an independently clamped inclusive range. A requested range disjoint from its parent range is pinned to the nearest parent boundary. <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/-companion/-m-a-x_-v-a-l-u-e.html">Int.MAX_VALUE</a> remains an unbounded maximum, and the new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2090660837%2FFunctions%2F410371219" anchor-label="imageBackground" id="-2090660837%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="image-background.html"><span>image</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2090660837%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="image-background.html"><span class="token function">imageBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">source<span class="token operator">: </span><a href="../dev.s7a.strata.component/-image-source/index.html">ImageSource</a><span class="token punctuation">, </span></span><span class="parameter ">scale<span class="token operator">: </span><a href="../dev.s7a.strata.component/-image-scale/index.html">ImageScale</a><span class="token operator"> = </span>ImageScale.Stretch</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Paints arbitrary immutable image pixels behind the modified component's content.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="image-background.html"><span class="token function">imageBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">source<span class="token operator">: </span><a href="../dev.s7a.strata.component/-image-source/index.html">ImageSource</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="../dev.s7a.strata.geometry/-insets/index.html">Insets</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a><span class="token operator"> = </span>NineSliceCenterMode.Tiled</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Paints arbitrary immutable image pixels as a Minecraft-compatible nine-slice background behind content.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1752929326%2FFunctions%2F410371219" anchor-label="initialFocus" id="-1752929326%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="initial-focus.html"><span>initial</span><wbr><span><span>Focus</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1752929326%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="initial-focus.html"><span class="token function">initialFocus</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Makes the logical component the initial focus target when layout has no retained focus owner.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="790392185%2FFunctions%2F410371219" anchor-label="menuBackground" id="790392185%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="menu-background.html"><span>menu</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="790392185%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="menu-background.html"><span class="token function">menuBackground</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Paints the selected Minecraft menu texture behind the modified component's content.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-272649022%2FFunctions%2F410371219" anchor-label="onAction" id="-272649022%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-action.html"><span>on</span><wbr><span><span>Action</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-272649022%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="on-action.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-action.html"><span class="token function">onAction</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">key<span class="token operator">: </span><a href="../dev.s7a.strata.action/-action-key/index.html">ActionKey</a><span class="token operator">&lt;</span><a href="on-action.html">T</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="on-action.html">T</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.action/-action-result/index.html">ActionResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles one typed component action emitted by the component wrapped by this modifier.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="704484090%2FFunctions%2F410371219" anchor-label="onActivate" id="704484090%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-activate.html"><span>on</span><wbr><span><span>Activate</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="704484090%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-activate.html"><span class="token function">onActivate</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs one action for a primary pointer press or a focused Enter or Space press and consumes that event.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-activate.html"><span class="token function">onActivate</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enabled<span class="token operator">: </span><a href="../dev.s7a.strata.state/-state-source/index.html">StateSource</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Keeps activation attached while its enabled value follows a frame-committed source. Pass the same source to the component's enabled argument when appearance and input must agree. Unlike the Boolean overload, a false source retains the action so it can become enabled without rebuilding its parent. Notifications never dispatch actions; pointer and keyboard input use the last committed value on the owner thread. The caller owns the source. Replacement, disposal, failure, and close release the runtime observation and action.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-activate.html"><span class="token function">onActivate</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Conditionally installs the shared pointer and keyboard activation behavior from <a href="on-activate.html">onActivate</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1231322780%2FFunctions%2F410371219" anchor-label="onCapturedPointerEvent" id="1231322780%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-captured-pointer-event.html"><span>on</span><wbr><span>Captured</span><wbr><span>Pointer</span><wbr><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1231322780%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-captured-pointer-event.html"><span class="token function">onCapturedPointerEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">onCancel<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/index.html">PointerEvent</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles pointer events and captures the button whose press this handler consumes.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-captured-pointer-event.html"><span class="token function">onCapturedPointerEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">button<span class="token operator">: </span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token punctuation">, </span></span><span class="parameter ">onCancel<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/index.html">PointerEvent</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Captures <a href="on-captured-pointer-event.html">button</a> locally when its press reaches this modifier and sends typed gesture notifications to its owner. Matching presses, movement, scrolling, and matching-button drag/release events are consumed immediately. Other buttons continue ordinary dispatch. Captured coordinates may lie outside the modifier bounds. Changing the button leaves an active gesture attached to its original subscription until release or cancellation. A remote subscription change retires its endpoints, so that old gesture cannot invoke replacement handlers. <a href="on-captured-pointer-event.html">onCancel</a> runs on the owner thread for interrupted gestures; it is not called for an ordinary release.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2023622426%2FFunctions%2F410371219" anchor-label="onCharacterInput" id="2023622426%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-character-input.html"><span>on</span><wbr><span>Character</span><wbr><span><span>Input</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2023622426%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-character-input.html"><span class="token function">onCharacterInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/-character/index.html">TextInputEvent.Character</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused committed-character callback.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-character-input.html"><span class="token function">onCharacterInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/-character/index.html">TextInputEvent.Character</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed text notifications while deciding <a href="on-character-input.html">propagation</a> immediately on the client. <a href="on-character-input.html">action</a> runs on the screen owner thread, on Paper for a remote screen, and returns no dispatch decision. IME state remains local; only the requested event variant is sent to the server.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1898368024%2FFunctions%2F410371219" anchor-label="onCheckedChange" id="1898368024%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-checked-change.html"><span>on</span><wbr><span>Checked</span><wbr><span><span>Change</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1898368024%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-checked-change.html"><span class="token function">onCheckedChange</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes Checkbox selected-value changes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1817684319%2FFunctions%2F410371219" anchor-label="onCycle" id="-1817684319%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-cycle.html"><span>on</span><wbr><span><span>Cycle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1817684319%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="on-cycle.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-cycle.html"><span class="token function">onCycle</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="on-cycle.html">T</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes typed CycleButton value changes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1489646315%2FFunctions%2F410371219" anchor-label="onDrag" id="1489646315%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-drag.html"><span>on</span><wbr><span><span>Drag</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1489646315%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-drag.html"><span class="token function">onDrag</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs <a href="on-drag.html">action</a> for every pointer drag that hits this modifier without consuming the event.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-drag.html"><span class="token function">onDrag</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-drag/index.html">PointerEvent.Drag</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every pointer drag that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-drag.html"><span class="token function">onDrag</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">button<span class="token operator">: </span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-drag/index.html">PointerEvent.Drag</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-drag.html">propagation</a> is applied immediately; <a href="on-drag.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1565898047%2FFunctions%2F410371219" anchor-label="onFocusChanged" id="-1565898047%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-focus-changed.html"><span>on</span><wbr><span>Focus</span><wbr><span><span>Changed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1565898047%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-focus-changed.html"><span class="token function">onFocusChanged</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-focus-event/index.html">FocusEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a callback for distinct retained focus transitions and makes the logical component focusable.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1167501240%2FFunctions%2F410371219" anchor-label="onHover" id="-1167501240%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-hover.html"><span>on</span><wbr><span><span>Hover</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1167501240%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-hover.html"><span class="token function">onHover</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-hover-event/index.html">PointerHoverEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Observes distinct pointer enter and exit transitions for this modifier's laid-out bounds.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1925905409%2FFunctions%2F410371219" anchor-label="onKeyEvent" id="-1925905409%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-key-event.html"><span>on</span><wbr><span>Key</span><wbr><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1925905409%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-event.html"><span class="token function">onKeyEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/index.html">KeyboardEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused callback for every key press and release.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-event.html"><span class="token function">onKeyEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">filter<span class="token operator">: </span><a href="../dev.s7a.strata.input/-keyboard-input-filter/index.html">KeyboardInputFilter</a><span class="token operator"> = </span>KeyboardInputFilter()<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/index.html">KeyboardEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed keyboard notifications with a fixed immediate dispatch result. Only events matching <a href="on-key-event.html">filter</a> invoke <a href="on-key-event.html">action</a> or cross a remote connection; other events continue propagation. The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote. <a href="on-key-event.html">propagation</a> is decided locally without waiting for that handler; dynamic result callbacks use the other overload.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1911701799%2FFunctions%2F410371219" anchor-label="onKeyPress" id="1911701799%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-key-press.html"><span>on</span><wbr><span>Key</span><wbr><span><span>Press</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1911701799%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-press.html"><span class="token function">onKeyPress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/-press/index.html">KeyboardEvent.Press</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused key-press callback.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-press.html"><span class="token function">onKeyPress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">filter<span class="token operator">: </span><a href="../dev.s7a.strata.input/-keyboard-input-filter/index.html">KeyboardInputFilter</a><span class="token operator"> = </span>KeyboardInputFilter()<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/-press/index.html">KeyboardEvent.Press</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed keyboard notifications with a fixed immediate dispatch result. Only events matching <a href="on-key-press.html">filter</a> invoke <a href="on-key-press.html">action</a> or cross a remote connection; other events continue propagation. The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote. <a href="on-key-press.html">propagation</a> is decided locally without waiting for that handler; dynamic result callbacks use the other overload.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-555929049%2FFunctions%2F410371219" anchor-label="onKeyRelease" id="-555929049%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-key-release.html"><span>on</span><wbr><span>Key</span><wbr><span><span>Release</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-555929049%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-release.html"><span class="token function">onKeyRelease</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/-release/index.html">KeyboardEvent.Release</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused key-release callback.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-key-release.html"><span class="token function">onKeyRelease</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">filter<span class="token operator">: </span><a href="../dev.s7a.strata.input/-keyboard-input-filter/index.html">KeyboardInputFilter</a><span class="token operator"> = </span>KeyboardInputFilter()<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-keyboard-event/-release/index.html">KeyboardEvent.Release</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed keyboard notifications with a fixed immediate dispatch result. Only events matching <a href="on-key-release.html">filter</a> invoke <a href="on-key-release.html">action</a> or cross a remote connection; other events continue propagation. The handler runs on the screen owner thread, on the hosting server or proxy when the screen is remote. <a href="on-key-release.html">propagation</a> is decided locally without waiting for that handler; dynamic result callbacks use the other overload.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-705602196%2FFunctions%2F410371219" anchor-label="onLeadingItemsRequested" id="-705602196%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-leading-items-requested.html"><span>on</span><wbr><span>Leading</span><wbr><span>Items</span><wbr><span><span>Requested</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-705602196%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-leading-items-requested.html"><span class="token function">onLeadingItemsRequested</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.action/-list-load-request/index.html">ListLoadRequest</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes demand for rows before a virtual list's loaded window.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="877628400%2FFunctions%2F410371219" anchor-label="onMove" id="877628400%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-move.html"><span>on</span><wbr><span><span>Move</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="877628400%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-move.html"><span class="token function">onMove</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs <a href="on-move.html">action</a> for every pointer move that hits this modifier without consuming the event.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-move.html"><span class="token function">onMove</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-move/index.html">PointerEvent.Move</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every pointer move that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-move.html"><span class="token function">onMove</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-move/index.html">PointerEvent.Move</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-move.html">propagation</a> is applied immediately; <a href="on-move.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-668157758%2FFunctions%2F410371219" anchor-label="onPointerEvent" id="-668157758%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-pointer-event.html"><span>on</span><wbr><span>Pointer</span><wbr><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-668157758%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-pointer-event.html"><span class="token function">onPointerEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/index.html">PointerEvent</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every typed pointer event that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-pointer-event.html"><span class="token function">onPointerEvent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/index.html">PointerEvent</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-pointer-event.html">propagation</a> is applied immediately; <a href="on-pointer-event.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1810425008%2FFunctions%2F410371219" anchor-label="onPreedit" id="1810425008%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-preedit.html"><span>on</span><wbr><span><span>Preedit</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1810425008%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-preedit.html"><span class="token function">onPreedit</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/-preedit/index.html">TextInputEvent.Preedit</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused input-method preedit callback.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-preedit.html"><span class="token function">onPreedit</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/-preedit/index.html">TextInputEvent.Preedit</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed text notifications while deciding <a href="on-preedit.html">propagation</a> immediately on the client. <a href="on-preedit.html">action</a> runs on the screen owner thread, on Paper for a remote screen, and returns no dispatch decision. IME state remains local; only the requested event variant is sent to the server.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="236877752%2FFunctions%2F410371219" anchor-label="onPress" id="236877752%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-press.html"><span>on</span><wbr><span><span>Press</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="236877752%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-press.html"><span class="token function">onPress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs <a href="on-press.html">action</a> for every primary pointer press that hits this modifier and consumes the event. Other button presses remain ignored so lower or earlier handlers can process them.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-press.html"><span class="token function">onPress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-press/index.html">PointerEvent.Press</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every pointer press that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-press.html"><span class="token function">onPress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">button<span class="token operator">: </span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-press/index.html">PointerEvent.Press</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-press.html">propagation</a> is applied immediately; <a href="on-press.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2055135148%2FFunctions%2F410371219" anchor-label="onRelease" id="2055135148%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-release.html"><span>on</span><wbr><span><span>Release</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2055135148%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-release.html"><span class="token function">onRelease</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs <a href="on-release.html">action</a> for every pointer release that hits this modifier and consumes the event.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-release.html"><span class="token function">onRelease</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-release/index.html">PointerEvent.Release</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every pointer release that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-release.html"><span class="token function">onRelease</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">button<span class="token operator">: </span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-release/index.html">PointerEvent.Release</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-release.html">propagation</a> is applied immediately; <a href="on-release.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1657016916%2FFunctions%2F410371219" anchor-label="onScroll" id="-1657016916%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-scroll.html"><span>on</span><wbr><span><span>Scroll</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1657016916%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-scroll.html"><span class="token function">onScroll</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Runs <a href="on-scroll.html">action</a> for every pointer scroll event that hits this modifier and consumes the event.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-scroll.html"><span class="token function">onScroll</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-scroll/index.html">PointerEvent.Scroll</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles every pointer scroll event that hits this modifier's laid-out bounds.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-scroll.html"><span class="token function">onScroll</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-pointer-event/-scroll/index.html">PointerEvent.Scroll</a><span class="token punctuation">, </span><a href="../dev.s7a.strata.geometry/-int-offset/index.html">IntOffset</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed pointer notifications within the modifier's hit region, including local coordinates. <a href="on-scroll.html">propagation</a> is applied immediately; <a href="on-scroll.html">action</a> runs on the screen owner thread, on the hosting server or proxy for remote screens. Only the subscribed event variant and optional button are delivered or transmitted.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="972872107%2FFunctions%2F410371219" anchor-label="onSelectionChange" id="972872107%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-selection-change.html"><span>on</span><wbr><span>Selection</span><wbr><span><span>Change</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="972872107%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="on-selection-change.html">K</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-selection-change.html"><span class="token function">onSelectionChange</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="on-selection-change.html">K</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes typed SelectionList key changes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1532407751%2FFunctions%2F410371219" anchor-label="onSliderChange" id="1532407751%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-slider-change.html"><span>on</span><wbr><span>Slider</span><wbr><span><span>Change</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1532407751%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-slider-change.html"><span class="token function">onSliderChange</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes Slider numeric-value changes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1597992814%2FFunctions%2F410371219" anchor-label="onTextInput" id="1597992814%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-text-input.html"><span>on</span><wbr><span>Text</span><wbr><span><span>Input</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1597992814%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-text-input.html"><span class="token function">onTextInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">callback<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/index.html">TextInputEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds a focused callback for both committed characters and input-method preedit updates.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-text-input.html"><span class="token function">onTextInput</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">propagation<span class="token operator">: </span><a href="../dev.s7a.strata.input/-input-result/index.html">InputResult</a><span class="token punctuation">, </span></span><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.input/-text-input-event/index.html">TextInputEvent</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Subscribes to typed text notifications while deciding <a href="on-text-input.html">propagation</a> immediately on the client. <a href="on-text-input.html">action</a> runs on the screen owner thread, on Paper for a remote screen, and returns no dispatch decision. IME state remains local; only the requested event variant is sent to the server.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1387859612%2FFunctions%2F410371219" anchor-label="onTrailingItemsRequested" id="1387859612%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-trailing-items-requested.html"><span>on</span><wbr><span>Trailing</span><wbr><span>Items</span><wbr><span><span>Requested</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1387859612%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="on-trailing-items-requested.html"><span class="token function">onTrailingItemsRequested</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="../dev.s7a.strata.action/-list-load-request/index.html">ListLoadRequest</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Handles and consumes demand for rows after a virtual list's loaded window.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1910657071%2FFunctions%2F410371219" anchor-label="padding" id="-1910657071%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="padding.html"><span><span>padding</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1910657071%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="padding.html"><span class="token function">padding</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">insets<span class="token operator">: </span><a href="../dev.s7a.strata.geometry/-insets/index.html">Insets</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds checked distances around the virtual child. The new behavior is appended inside the existing modifier chain. Measurement reports an <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-arithmetic-exception/index.html">ArithmeticException</a> if a measured child extent plus the checked inset total overflows.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="padding.html"><span class="token function">padding</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">all<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds one distance around every side of the virtual child. The new behavior is appended inside the existing modifier chain.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="padding.html"><span class="token function">padding</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">horizontal<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">vertical<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds equal horizontal and equal vertical distances around the virtual child. The new behavior is appended inside the existing modifier chain.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="padding.html"><span class="token function">padding</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">left<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">top<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">right<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">bottom<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds independently specified distances around the virtual child. Unspecified sides default to zero, and the new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-803097847%2FFunctions%2F410371219" anchor-label="panZoom" id="-803097847%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="pan-zoom.html"><span>pan</span><wbr><span><span>Zoom</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-803097847%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="pan-zoom.html"><span class="token function">panZoom</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">state<span class="token operator">: </span><a href="../dev.s7a.strata.component/-pan-zoom-state/index.html">PanZoomState</a><span class="token punctuation">, </span></span><span class="parameter ">panButton<span class="token operator">: </span><a href="../dev.s7a.strata.input/-pointer-button/index.html">PointerButton</a><span class="token operator"> = </span>PointerButton.Primary<span class="token punctuation">, </span></span><span class="parameter ">zoomStep<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">1.12</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Adds captured pointer panning and pointer-anchored scroll zooming.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1283044518%2FFunctions%2F410371219" anchor-label="scaleToFit" id="-1283044518%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="scale-to-fit.html"><span>scale</span><wbr><span>To</span><wbr><span><span>Fit</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1283044518%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="scale-to-fit.html"><span class="token function">scaleToFit</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">contentSize<span class="token operator">: </span><a href="../dev.s7a.strata.geometry/-int-size/index.html">IntSize</a><span class="token punctuation">, </span></span><span class="parameter ">contentAlignment<span class="token operator">: </span><a href="../dev.s7a.strata.layout/-alignment/index.html">Alignment</a><span class="token operator"> = </span>Alignment.Center<span class="token punctuation">, </span></span><span class="parameter ">allowUpscaling<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Measures the modified component subtree in a fixed content coordinate space and uniformly scales it to fit the resulting outer bounds without cropping.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="243445488%2FFunctions%2F410371219" anchor-label="semantics" id="243445488%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="semantics.html"><span><span>semantics</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="243445488%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="semantics.html"><span class="token function">semantics</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">value<span class="token operator">: </span><a href="../dev.s7a.strata.semantics/-semantics/index.html">Semantics</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Emits one separate unresolved semantics entry before entries produced by the modifier's content. The new behavior is appended inside the existing modifier chain, so existing outer entries remain earlier.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-490658886%2FFunctions%2F410371219" anchor-label="size" id="-490658886%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="size.html"><span><span>size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-490658886%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="size.html"><span class="token function">size</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">height<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains both axes to exact requested sizes after clamping them into the parent constraints. The new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1698398433%2FFunctions%2F410371219" anchor-label="sizeIn" id="-1698398433%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="size-in.html"><span>size</span><wbr><span><span>In</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1698398433%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="size-in.html"><span class="token function">sizeIn</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">minWidth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">minHeight<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">maxWidth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>Int.MAX_VALUE<span class="token punctuation">, </span></span><span class="parameter ">maxHeight<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>Int.MAX_VALUE</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains both axes to independently clamped inclusive ranges. A requested range disjoint from its parent range is pinned to the nearest parent boundary. <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/-companion/-m-a-x_-v-a-l-u-e.html">Int.MAX_VALUE</a> remains an unbounded maximum, and the new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="492706097%2FFunctions%2F410371219" anchor-label="tooltip" id="492706097%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tooltip.html"><span><span>tooltip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="492706097%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="tooltip.html"><span class="token function">tooltip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">text<span class="token operator">: </span><a href="../dev.s7a.strata.text/-ui-text/index.html">UiText</a><span class="token punctuation">, </span></span><span class="parameter ">delayMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">500</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Shows a profile-backed root tooltip while the modified element remains hovered.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="tooltip.html"><span class="token function">tooltip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">text<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">delayMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">500</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Literal-text overload of <a href="tooltip.html">tooltip</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1588635878%2FFunctions%2F410371219" anchor-label="width" id="-1588635878%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="width.html"><span><span>width</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1588635878%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="width.html"><span class="token function">width</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">width<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains the width to an exact requested size after clamping it into the parent constraints. The new behavior is appended inside the existing modifier chain and leaves the height policy unchanged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1318083448%2FFunctions%2F410371219" anchor-label="widthIn" id="-1318083448%2FFunctions%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="width-in.html"><span>width</span><wbr><span><span>In</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1318083448%2FFunctions%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-modifier/index.html">Modifier</a><span class="token punctuation">.</span><a href="width-in.html"><span class="token function">widthIn</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">min<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter ">max<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>Int.MAX_VALUE</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-modifier/index.html">Modifier</a></div><div class="brief "><p class="paragraph">Constrains the width to an independently clamped inclusive range. A requested range disjoint from its parent range is pinned to the nearest parent boundary. <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/-companion/-m-a-x_-v-a-l-u-e.html">Int.MAX_VALUE</a> remains an unbounded maximum, and the new behavior is appended inside the existing modifier chain.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>dev.s7a.strata.node</title>
+<link href="../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer></script><link href="../../../../styles/multimodule.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version"><dokka-template-command data="{&quot;@class&quot;: &quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;, &quot;location&quot;: &quot;api/dev.s7a.strata.node/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.0"><span class="versions-dropdown-button-text">0.2.0</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../0.1.6/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../0.1.5/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../0.1.4/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../0.1.3/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../0.1.2/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../0.1.1/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../0.1.0/api/dev.s7a.strata.node/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command></div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector common-like" data-active="" aria-pressed="true" data-filter=":api/commonMain">common</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":api/commonMain" data-filter=":api/commonMain">
+                                <span class="checkbox--icon"></span>
+                                common
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="api::dev.s7a.strata.node////PointingToDeclaration//410371219">
+  <div class="breadcrumbs"><a href="../index.html">api</a><span class="delimiter">/</span><span class="current">dev.s7a.strata.node</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="-1140850853%2FClasslikes%2F410371219" anchor-label="ChildTransform" id="-1140850853%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-child-transform/index.html"><span>Child</span><wbr><span><span>Transform</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1140850853%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-child-transform/index.html">ChildTransform</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>scale<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>offset<span class="token operator">: </span><a href="../dev.s7a.strata.geometry/-double-offset/index.html">DoubleOffset</a><span class="token operator"> = </span>DoubleOffset.Zero</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable uniform transform from one placed child's local coordinates into its parent's coordinates.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="414548601%2FClasslikes%2F410371219" anchor-label="ChildTransformNode" id="414548601%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-child-transform-node/index.html"><span>Child</span><wbr><span>Transform</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="414548601%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-child-transform-node/index.html">ChildTransformNode</a></div><div class="brief "><p class="paragraph">A node that supplies an additional uniform transform for each placed direct child's effective subtree.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1499161190%2FClasslikes%2F410371219" anchor-label="ClipChildrenNode" id="-1499161190%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-clip-children-node/index.html"><span>Clip</span><wbr><span>Children</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1499161190%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-clip-children-node/index.html">ClipChildrenNode</a></div><div class="brief "><p class="paragraph">A node whose effective descendants are clipped to this node's measured bounds for painting and pointer hit testing.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="988754688%2FClasslikes%2F410371219" anchor-label="ContentInvalidation" id="988754688%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-invalidation/index.html"><span>Content</span><wbr><span><span>Invalidation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="988754688%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-content-invalidation/index.html">ContentInvalidation</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-content-invalidation/index.html">ContentInvalidation</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Owner-thread reasons for deferred declaration work, independent of retained layout invalidation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="606283914%2FClasslikes%2F410371219" anchor-label="ContentKind" id="606283914%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-kind/index.html"><span>Content</span><wbr><span><span>Kind</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="606283914%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-content-kind/index.html">ContentKind</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-content-kind/index.html">ContentKind</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Distinguishes structural region evaluation from a direct argument binding.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1426222163%2FClasslikes%2F410371219" anchor-label="ContentWork" id="-1426222163%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-work/index.html"><span>Content</span><wbr><span><span>Work</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1426222163%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-content-work/index.html">ContentWork</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-content-work/index.html">ContentWork</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Actual lazy declaration work reported only while a runtime installs an observer.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1800183243%2FClasslikes%2F410371219" anchor-label="ContentWorkNode" id="1800183243%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-content-work-node/index.html"><span>Content</span><wbr><span>Work</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1800183243%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-content-work-node/index.html">ContentWorkNode</a></div><div class="brief "><p class="paragraph">Optional reporting of actual lazy content invocations, excluding cached child reads. The runtime installs an observer only during diagnostics and clears it before disposal or monitor close. Assignment must not evaluate content, call application code, or throw. Disabled work emits nothing.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="93983340%2FClasslikes%2F410371219" anchor-label="DeclarationProjectionNode" id="93983340%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-declaration-projection-node/index.html"><span>Declaration</span><wbr><span>Projection</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="93983340%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-declaration-projection-node/index.html">DeclarationProjectionNode</a></div><div class="brief "><p class="paragraph">Optional retained projection for resources whose committed state belongs to a node attachment. Read after the shared frame cutoff on the owner thread, without measurement or painting. Returning null declines remote support; reading this property must not mutate state or acquire resources.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-335044517%2FClasslikes%2F410371219" anchor-label="DeferredContentNode" id="-335044517%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-deferred-content-node/index.html"><span>Deferred</span><wbr><span>Content</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-335044517%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-deferred-content-node/index.html">DeferredContentNode</a> : <a href="-dynamic-children-node/index.html">DynamicChildrenNode</a></div><div class="brief "><p class="paragraph">Deferred declaration capability evaluated before frame-cache selection, without forcing measurement. The runtime evaluates pending content parent-first and reconciles its returned children before geometry. Implementations clear reasons after successful evaluation; cached child access does not count as evaluation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1456075527%2FClasslikes%2F410371219" anchor-label="DirtyMask" id="-1456075527%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-dirty-mask/index.html"><span>Dirty</span><wbr><span><span>Mask</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1456075527%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-inline/index.html"><span class="token annotation builtin">JvmInline</span></a></div></div><span class="token keyword">value </span><span class="token keyword">class </span><a href="-dirty-mask/index.html">DirtyMask</a></div><div class="brief "><p class="paragraph">Immutable set of phases affected by a property change.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1574864738%2FClasslikes%2F410371219" anchor-label="DirtyPhase" id="1574864738%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-dirty-phase/index.html"><span>Dirty</span><wbr><span><span>Phase</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1574864738%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-dirty-phase/index.html">DirtyPhase</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-dirty-phase/index.html">DirtyPhase</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">A retained pipeline phase that can be invalidated by an element update or node state change.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="74641175%2FClasslikes%2F410371219" anchor-label="DynamicChildrenNode" id="74641175%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-dynamic-children-node/index.html"><span>Dynamic</span><wbr><span>Children</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="74641175%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-dynamic-children-node/index.html">DynamicChildrenNode</a></div><div class="brief "><p class="paragraph">Privileged retained capability that materializes only the direct children needed by the next measure pass.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1336522548%2FClasslikes%2F410371219" anchor-label="FocusTargetNode" id="-1336522548%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-focus-target-node/index.html"><span>Focus</span><wbr><span>Target</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1336522548%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-focus-target-node/index.html">FocusTargetNode</a></div><div class="brief "><p class="paragraph">Retained capability that makes its logical component a keyboard and text-input focus target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1967147205%2FClasslikes%2F410371219" anchor-label="FrameCutoffNode" id="-1967147205%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-cutoff-node/index.html"><span>Frame</span><wbr><span>Cutoff</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1967147205%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-frame-cutoff-node/index.html">FrameCutoffNode</a></div><div class="brief "><p class="paragraph">Retained capability that publishes external observations at the start of every timed or untimed session frame.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1868081509%2FClasslikes%2F410371219" anchor-label="FrameTimeNode" id="-1868081509%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-frame-time-node/index.html"><span>Frame</span><wbr><span>Time</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1868081509%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-frame-time-node/index.html">FrameTimeNode</a></div><div class="brief "><p class="paragraph">Retained capability notified once for each explicitly timed host frame before cache reuse is decided.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-560543246%2FClasslikes%2F410371219" anchor-label="KeyboardInputNode" id="-560543246%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-keyboard-input-node/index.html"><span>Keyboard</span><wbr><span>Input</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-560543246%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-keyboard-input-node/index.html">KeyboardInputNode</a></div><div class="brief "><p class="paragraph">Retained capability that receives keyboard events while its logical component owns focus.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-707690177%2FClasslikes%2F410371219" anchor-label="LayoutNode" id="-707690177%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-layout-node/index.html"><span>Layout</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-707690177%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-layout-node/index.html">LayoutNode</a></div><div class="brief "><p class="paragraph">A node that places the direct children it measured.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1509225717%2FClasslikes%2F410371219" anchor-label="LifecycleNode" id="-1509225717%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-lifecycle-node/index.html"><span>Lifecycle</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1509225717%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-lifecycle-node/index.html">LifecycleNode</a></div><div class="brief "><p class="paragraph">A node that owns resources across attachment, detachment, and disposal.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1011039465%2FClasslikes%2F410371219" anchor-label="MeasureNode" id="-1011039465%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-measure-node/index.html"><span>Measure</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1011039465%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-measure-node/index.html">MeasureNode</a></div><div class="brief "><p class="paragraph">A node that determines its size from constraints and optionally measured direct children.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1405630926%2FClasslikes%2F410371219" anchor-label="ModifierNode" id="-1405630926%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-modifier-node/index.html"><span>Modifier</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1405630926%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-modifier-node/index.html">ModifierNode</a> : <a href="-node/index.html">Node</a>, <a href="-measure-node/index.html">MeasureNode</a>, <a href="-layout-node/index.html">LayoutNode</a></div><div class="brief "><p class="paragraph">Base retained node for one active modifier description.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-796201015%2FClasslikes%2F410371219" anchor-label="Node" id="-796201015%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-node/index.html"><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-796201015%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-node/index.html">Node</a></div><div class="brief "><p class="paragraph">Base retained node with phase invalidation only.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1999495547%2FClasslikes%2F410371219" anchor-label="OverlayPaintNode" id="1999495547%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-overlay-paint-node/index.html"><span>Overlay</span><wbr><span>Paint</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1999495547%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-overlay-paint-node/index.html">OverlayPaintNode</a></div><div class="brief "><p class="paragraph">A node that emits local drawing commands after its effective descendants.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="995455383%2FClasslikes%2F410371219" anchor-label="PaintNode" id="995455383%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-paint-node/index.html"><span>Paint</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="995455383%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-paint-node/index.html">PaintNode</a></div><div class="brief "><p class="paragraph">A node that emits local drawing commands.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1921043120%2FClasslikes%2F410371219" anchor-label="ParentDataDelegateNode" id="1921043120%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-parent-data-delegate-node/index.html"><span>Parent</span><wbr><span>Data</span><wbr><span>Delegate</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1921043120%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-parent-data-delegate-node/index.html">ParentDataDelegateNode</a></div><div class="brief "><p class="paragraph">Allows a transparent retained wrapper to forward parent-data lookup to one logical child. Layout and event modifiers remain on that child; the runtime forwards lookup without copying or executing them twice.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-27017570%2FClasslikes%2F410371219" anchor-label="ParentDataModifierNode" id="-27017570%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-parent-data-modifier-node/index.html"><span>Parent</span><wbr><span>Data</span><wbr><span>Modifier</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-27017570%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-parent-data-modifier-node/index.html">ParentDataModifierNode</a><span class="token operator">&lt;</span><a href="-parent-data-modifier-node/index.html">D</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Active modifier behavior that supplies typed data to its logical parent layout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="592648320%2FClasslikes%2F410371219" anchor-label="PointerCaptureNode" id="592648320%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-pointer-capture-node/index.html"><span>Pointer</span><wbr><span>Capture</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="592648320%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-pointer-capture-node/index.html">PointerCaptureNode</a> : <a href="-pointer-input-node/index.html">PointerInputNode</a></div><div class="brief "><p class="paragraph">Opts a pointer handler into exclusive delivery after it consumes a press.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="79504394%2FClasslikes%2F410371219" anchor-label="PointerHoverNode" id="79504394%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-pointer-hover-node/index.html"><span>Pointer</span><wbr><span>Hover</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="79504394%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-pointer-hover-node/index.html">PointerHoverNode</a></div><div class="brief "><p class="paragraph">Node capability that observes whether the latest pointer move hits its accumulated laid-out bounds.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-490108868%2FClasslikes%2F410371219" anchor-label="PointerInputNode" id="-490108868%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-pointer-input-node/index.html"><span>Pointer</span><wbr><span>Input</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-490108868%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-pointer-input-node/index.html">PointerInputNode</a></div><div class="brief "><p class="paragraph">A node that receives pointer events in its local coordinate space.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2115137141%2FClasslikes%2F410371219" anchor-label="ReactiveContentNode" id="2115137141%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-reactive-content-node/index.html"><span>Reactive</span><wbr><span>Content</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2115137141%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-reactive-content-node/index.html">ReactiveContentNode</a> : <a href="-deferred-content-node/index.html">DeferredContentNode</a></div><div class="brief "><p class="paragraph">Optional deferred-region capability for tracking caller-owned state read by its content callback. Successful evaluations replace dependencies; cached access preserves them and removal releases them before lifecycle cleanup.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-519362119%2FClasslikes%2F410371219" anchor-label="RootOverlayPaintNode" id="-519362119%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-root-overlay-paint-node/index.html"><span>Root</span><wbr><span>Overlay</span><wbr><span>Paint</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-519362119%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-root-overlay-paint-node/index.html">RootOverlayPaintNode</a></div><div class="brief "><p class="paragraph">A node that emits screen-coordinate drawing commands after the complete retained tree.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1016080872%2FClasslikes%2F410371219" anchor-label="SemanticsNode" id="1016080872%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-semantics-node/index.html"><span>Semantics</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1016080872%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-semantics-node/index.html">SemanticsNode</a></div><div class="brief "><p class="paragraph">A node that emits unresolved semantics entries.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-196185476%2FClasslikes%2F410371219" anchor-label="SessionAttachmentNode" id="-196185476%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-session-attachment-node/index.html"><span>Session</span><wbr><span>Attachment</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-196185476%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-session-attachment-node/index.html">SessionAttachmentNode</a> : <a href="-lifecycle-node/index.html">LifecycleNode</a></div><div class="brief "><p class="paragraph">Optional session-attachment lifetime for resources that cannot remain active while their retained tree is detached.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1781696014%2FClasslikes%2F410371219" anchor-label="StateObserverNode" id="1781696014%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-state-observer-node/index.html"><span>State</span><wbr><span>Observer</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1781696014%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-state-observer-node/index.html">StateObserverNode</a></div><div class="brief "><p class="paragraph">Retained capability consuming one tree-owned, revisioned snapshot per source.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1469633352%2FClasslikes%2F410371219" anchor-label="TextInputNode" id="-1469633352%2FClasslikes%2F410371219" data-filterable-set=":api/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":api/commonMain" data-filterable-set=":api/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-text-input-node/index.html"><span>Text</span><wbr><span>Input</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1469633352%2FClasslikes%2F410371219"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":api/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-text-input-node/index.html">TextInputNode</a></div><div class="brief "><p class="paragraph">Retained capability that receives committed text and preedit events while its logical component owns focus.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
