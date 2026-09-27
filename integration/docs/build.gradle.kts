@@ -529,7 +529,7 @@ val dokkaPagesRoot = rootProject.layout.buildDirectory.dir("dokka/html")
 val dokkaPagesInputs =
     dokkaPagesRoot.map { directory ->
         directory.asFileTree.matching {
-            exclude("pages-public-urls.txt", "releases/**")
+            exclude("pages-public-urls.txt", "older/**")
         }
     }
 val pagesPublicUrlInventory = rootProject.layout.buildDirectory.file("dokka/html/pages-public-urls.txt")
