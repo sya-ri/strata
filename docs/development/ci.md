@@ -11,9 +11,11 @@ It derives task selection, artifact coordinates, sequencing, and runtime Java co
 
 Configuration on demand is disabled because the Kotlin/JS workspace and dependency lock require a complete project model.
 Web-only checks use `-Pstrata.webOnly=true` to include the complete JavaScript workspace and its JVM parity dependencies without loading Minecraft adapters.
-This scope accepts only fully qualified module `check` and `jsTest` tasks; publication, coverage aggregation, and documentation use the complete build.
+This scope accepts only fully qualified module `check` and `jsTest` tasks; publication and coverage aggregation use the complete build.
 An invocation containing only `:ciMinecraftCheck` includes the Minecraft versions selected by `strata.minecraftVersions` and omits the documentation project.
-Adding documentation or any other task restores the complete project inventory.
+Adding `:integration:docs:checkMinecraftShowcaseParity` retains that project for the native showcase comparison without loading other Minecraft versions.
+The separate documentation job includes every runtime for Dokka and only the integration project supplying its assets.
+Other task combinations retain the complete project inventory.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
 
@@ -48,7 +50,8 @@ The always-running planner and `CI result` job distinguish planned skips from fa
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
 The planner creates one matrix job per selected Minecraft version in numeric order, with fail-fast disabled.
 GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
-Documentation runs once on the job owning its declared native input.
+Documentation and Dokka run in their own parallel job and upload the checked site.
+Only the native showcase comparison and its CPU reference rendering stay with the Minecraft job producing that evidence; the documentation job does not repeat either check or start a game.
 Common checks and Kover share one Gradle invocation so JVM tests run once.
 API/core JavaScript tests and Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 

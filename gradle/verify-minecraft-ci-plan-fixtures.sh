@@ -33,7 +33,8 @@ add_project "$valid_root" integration '2'
 add_documentation "$valid_root" '1.7'
 mkdir -p "$valid_root/runtime/shared/minecraft-fabric/lifecycle/common" "$valid_root/integration/shared/minecraft-fabric/canvas/common"
 
-bash "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/output"
+GITHUB_OUTPUT="$valid_root/docs-output" bash "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/output"
+grep -Fx 'docs_version=1.7' "$valid_root/docs-output" >/dev/null
 matrix_file="$valid_root/output/minecraft-matrix.json"
 loom_file="$valid_root/output/minecraft-loom-projects.txt"
 python3 - "$matrix_file" <<'PY'
@@ -46,6 +47,7 @@ assert len(entries) == 31
 assert all(len(entry["loom_projects"].splitlines()) == 2 for entry in entries)
 docs_entries = [entry for entry in entries if ":integration:docs:check" in entry["gradle_arguments"]]
 assert len(docs_entries) == 1
+assert all(":integration:docs:checkDokkaPagesStaging" not in entry["gradle_arguments"] for entry in entries)
 assert "integration/minecraft-fabric-1.7" in docs_entries[0]["loom_projects"].splitlines()
 projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
 assert len(projects) == len(set(projects)) == 62
@@ -53,7 +55,7 @@ assert [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for en
     *[f"1.{minor}" for minor in range(1, 31)], "2"]
 assert all(
     entry["gradle_arguments"].startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
-    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=")
+    or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions=")
     for entry in entries
 )
 PY

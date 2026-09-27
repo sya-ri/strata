@@ -51,7 +51,7 @@ if [[ $(printf '%s\n' "${runtime_versions[@]}") != $(printf '%s\n' "${integratio
 fi
 
 versions=("${runtime_versions[@]}")
-# Documentation must share the job that owns its actual native parity input.
+# Native showcase comparison shares the job that owns its actual parity input.
 # Read the checked build dependency instead of assuming the newest target owns it.
 docs_build="$project_root/integration/docs/build.gradle.kts"
 [[ -f "$docs_build" ]] || fail 'The documentation build is missing.'
@@ -85,8 +85,7 @@ for version in "${versions[@]}"; do
   job_name="Minecraft $version"
   documentation=false
   if [[ "$version" == "$docs_version" && "${STRATA_CI_DOCS:-true}" == true ]]; then
-    gradle_arguments=":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=$version"
-    job_name="$job_name and documentation"
+    gradle_arguments=":ciMinecraftCheck :integration:docs:checkMinecraftShowcaseParity -Pstrata.minecraftVersions=$version"
     documentation=true
   fi
   loom_project_lines=$(printf '%s\n' "${version_projects[@]}")
@@ -99,4 +98,5 @@ done
 mkdir -p "$output_directory"
 (IFS=,; printf '{"include":[%s]}\n' "${matrix_entries[*]}") > "$output_directory/minecraft-matrix.json"
 printf '%s\n' "${loom_projects[@]}" > "$output_directory/minecraft-loom-projects.txt"
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then echo "docs_version=$docs_version" >> "$GITHUB_OUTPUT"; fi
 echo "Planned ${#versions[@]} independent Minecraft version jobs."

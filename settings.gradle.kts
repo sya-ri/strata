@@ -122,8 +122,15 @@ dependencyResolutionManagement {
 rootProject.name = "strata"
 
 val webOnly = providers.gradleProperty("strata.webOnly").map(String::toBooleanStrict).getOrElse(false)
+val requestedTasks = gradle.startParameter.taskNames
+val minecraftChecksOnly = ":ciMinecraftCheck" in requestedTasks && requestedTasks.all {
+    it in setOf(":ciMinecraftCheck", ":integration:docs:checkMinecraftShowcaseParity")
+}
+val documentationChecksOnly = requestedTasks.isNotEmpty() && requestedTasks.all {
+    it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging")
+}
 val minecraftCheckVersions =
-    if (gradle.startParameter.taskNames == listOf(":ciMinecraftCheck")) {
+    if (minecraftChecksOnly || documentationChecksOnly) {
         providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
     } else {
         emptySet()
@@ -161,7 +168,9 @@ if (webOnly) {
         ":runtime:minecraft",
         ":runtime:minecraft-fonts-lwjgl",
     )
-    include(*commonProjectPaths.filter { minecraftCheckVersions.isEmpty() || it != ":integration:docs" }.toTypedArray())
+    include(*commonProjectPaths.filter {
+        minecraftCheckVersions.isEmpty() || it != ":integration:docs" || requestedTasks.any { task -> task.startsWith(":integration:docs:") }
+    }.toTypedArray())
 
     val versionedMinecraftProjectName = Regex("minecraft-fabric-[0-9]+(?:\\.[0-9]+)*")
     val versionedMinecraftProjectPaths =
@@ -177,7 +186,8 @@ if (webOnly) {
                     }.map { candidate -> ":$parentName:${candidate.name}" }
             }.sorted()
     val includedMinecraftProjects = versionedMinecraftProjectPaths.filter { path ->
-        minecraftCheckVersions.isEmpty() || path.substringAfterLast("minecraft-fabric-") in minecraftCheckVersions
+        minecraftCheckVersions.isEmpty() || path.substringAfterLast("minecraft-fabric-") in minecraftCheckVersions ||
+            (documentationChecksOnly && path.startsWith(":runtime:"))
     }
     include(*includedMinecraftProjects.toTypedArray())
 }

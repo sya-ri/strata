@@ -558,20 +558,18 @@ val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTar
     doLast {
         val expectedRuntimePaths = minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath).toSet()
         val actualRuntimePaths =
-            project(":runtime")
-                .subprojects
-                .filter { candidate -> candidate.name.startsWith("minecraft-fabric-") }
-                .map { candidate -> candidate.path }
+            file("runtime").listFiles().orEmpty()
+                .filter { candidate -> candidate.name.startsWith("minecraft-fabric-") && candidate.resolve("build.gradle.kts").isFile }
+                .map { candidate -> ":runtime:${candidate.name}" }
                 .toSet()
         check(actualRuntimePaths == expectedRuntimePaths) {
             "Minecraft runtime projects must match the target matrix: expected=$expectedRuntimePaths actual=$actualRuntimePaths"
         }
         val expectedIntegrationPaths = minecraftFabricTargets.map(MinecraftFabricTarget::integrationProjectPath).toSet()
         val actualIntegrationPaths =
-            project(":integration")
-                .subprojects
-                .filter { candidate -> candidate.name.startsWith("minecraft-fabric-") }
-                .map { candidate -> candidate.path }
+            file("integration").listFiles().orEmpty()
+                .filter { candidate -> candidate.name.startsWith("minecraft-fabric-") && candidate.resolve("build.gradle.kts").isFile }
+                .map { candidate -> ":integration:${candidate.name}" }
                 .toSet()
         check(actualIntegrationPaths == expectedIntegrationPaths) {
             "Minecraft integration projects must match the target matrix: expected=$expectedIntegrationPaths actual=$actualIntegrationPaths"
