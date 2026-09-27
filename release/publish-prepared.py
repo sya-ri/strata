@@ -2,7 +2,6 @@
 """Publish one destination from an immutable prepared release, without rebuilding it."""
 import argparse
 import base64
-import hashlib
 import importlib.util
 import json
 import os
@@ -62,7 +61,11 @@ def central(root, operation, allow_upload):
             data = (f'--{boundary}\r\nContent-Disposition: form-data; name="bundle"; filename="central-bundle.zip"\r\n'
                     'Content-Type: application/octet-stream\r\n\r\n').encode()
             data += (root / "central-bundle.zip").read_bytes() + f"\r\n--{boundary}--\r\n".encode()
-            request = urllib.request.Request("https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC",
+            groups = {line.split(":")[0] for line in (root / "maven-coordinates.txt").read_text().splitlines()}
+            prepared.require(len(groups) == 1, "Portal publication requires one Maven group.")
+            version = prepared.read_json(root / "prepared.json")["tag"].removeprefix("v")
+            query = urllib.parse.urlencode({"publishingType": "AUTOMATIC", "name": groups.pop() + "-" + version})
+            request = urllib.request.Request("https://central.sonatype.com/api/v1/publisher/upload?" + query,
                                              data=data, headers={"Authorization": "Bearer " + token,
                                                                  "Content-Type": "multipart/form-data; boundary=" + boundary})
             with urllib.request.build_opener(tool("hangar-release").NoRedirect()).open(request, timeout=300) as response:
@@ -94,7 +97,6 @@ def github_release(root, operation, identity):
     os.environ.setdefault("GITHUB_API_URL", "https://api.github.com")
     preflight = ["bash", str(CONTROLLER / "release/github-release-preflight.sh"), str(bundle)]
     subprocess.run(preflight, check=True)
-
     read = ["bash", str(CONTROLLER / "release/github-release-read.sh"), "find"]
     remote = json.loads(subprocess.check_output(read))
     if operation == "verify":
@@ -113,6 +115,8 @@ def github_release(root, operation, identity):
         subprocess.run(["gh", "api", "--method", "PATCH", f"repos/{os.environ['GITHUB_REPOSITORY']}/releases/{remote['id']}",
                         "-F", "draft=false", "-f", "make_latest=legacy"], stdout=subprocess.DEVNULL, check=True)
     subprocess.run(preflight, check=True)
+    remote = json.loads(subprocess.check_output(read))
+    prepared.require(remote is not None and not remote["draft"], "GitHub Release did not become public.")
 
 
 def main():
@@ -133,6 +137,7 @@ def main():
         central(root, args.operation, args.allow_maven_upload)
     elif args.destination == "github":
         github_release(root, args.operation, identity)
+        prepared.write_json(output / "github.json", {"state": "exact", "tag": identity["tag"], "sourceCommit": identity["sourceCommit"]})
     elif args.destination == "modrinth":
         reconcile("modrinth-stage" if args.operation == "release" else "modrinth-verify", root)
     elif args.destination == "hangar":

@@ -35,5 +35,4 @@ internal object MinecraftProfileCacheMixinRuntime {
             "mixin.runtimeVersion" to running,
         )
     }
-
 }

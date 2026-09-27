@@ -42,18 +42,15 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as matrix_file:
     entries = json.load(matrix_file)["include"]
-assert len(entries) == 5
-assert all(len(entry["loom_projects"].splitlines()) // 2 <= 7 for entry in entries)
+assert len(entries) == 31
+assert all(len(entry["loom_projects"].splitlines()) == 2 for entry in entries)
 docs_entries = [entry for entry in entries if ":integration:docs:check" in entry["gradle_arguments"]]
 assert len(docs_entries) == 1
 assert "integration/minecraft-fabric-1.7" in docs_entries[0]["loom_projects"].splitlines()
 projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
 assert len(projects) == len(set(projects)) == 62
-# Expensive old release families must not all occupy the same runner.
-oldest_owners = [next(index for index, entry in enumerate(entries)
-                     if f"runtime/minecraft-fabric-1.{minor}" in entry["loom_projects"].splitlines())
-                 for minor in range(1, 6)]
-assert len(set(oldest_owners)) == 5
+assert [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries] == [
+    *[f"1.{minor}" for minor in range(1, 31)], "2"]
 assert all(
     entry["gradle_arguments"].startswith(":ciMinecraftCheck -Pstrata.minecraftVersions=")
     or entry["gradle_arguments"].startswith(":ciMinecraftCheck :integration:docs:check :integration:docs:checkDokkaPagesStaging -Pstrata.minecraftVersions=")
@@ -79,7 +76,7 @@ import sys
 
 entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
 count = int(sys.argv[2])
-assert len(entries) == min(4, count)
+assert len(entries) == count
 assert len({entry["id"] for entry in entries}) == len(entries)
 projects = [project for entry in entries for project in entry["loom_projects"].splitlines()]
 expected = {f"{kind}/minecraft-fabric-1.{minor}"
@@ -88,11 +85,26 @@ assert set(projects) == expected and len(projects) == len(expected)
 assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == 1
 for entry in entries:
     versions = entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1].split(",")
-    assert 1 <= len(versions) <= 7
+    assert len(versions) == 1
     assert entry["loom_projects"].splitlines() == [f"{kind}/minecraft-fabric-{version}"
         for version in versions for kind in ("runtime", "integration")]
     if ":integration:docs:check" in entry["gradle_arguments"]:
         assert "1.1" in versions
+PY
+done
+
+for include_docs in false true; do
+  STRATA_MC_VERSIONS=1.10,1.2 STRATA_CI_DOCS=$include_docs bash \
+    "$project_root/gradle/plan-minecraft-ci.sh" "$valid_root" "$valid_root/selected"
+  python3 - "$valid_root/selected/minecraft-matrix.json" "$include_docs" <<'PY'
+import json
+import sys
+
+entries = json.load(open(sys.argv[1], encoding="utf-8"))["include"]
+include_docs = sys.argv[2] == "true"
+versions = [entry["gradle_arguments"].split("-Pstrata.minecraftVersions=")[1] for entry in entries]
+assert versions == (["1.2", "1.7", "1.10"] if include_docs else ["1.2", "1.10"])
+assert sum(":integration:docs:check" in entry["gradle_arguments"] for entry in entries) == int(include_docs)
 PY
 done
 
@@ -139,4 +151,4 @@ if bash "$project_root/gradle/plan-minecraft-ci.sh" "$malformed_root" "$malforme
 fi
 grep -F 'Invalid versioned Minecraft project directory' "$malformed_root/stderr.log" >/dev/null
 
-echo 'Verified Minecraft CI discovery, version ordering, pairing, and bounded shards.'
+echo 'Verified Minecraft CI discovery, version ordering, pairing, and independent version jobs.'

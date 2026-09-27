@@ -9,7 +9,7 @@ def summarize(root, selections, operation, *, curseforge_read_enabled=True):
     """Distinguish completed uploads from approval; missing evidence never becomes success."""
     states = {}
     for destination, enabled in selections.items():
-        if not enabled:
+        if not enabled and destination != "maven_central":
             states[destination] = "disabled"
             continue
         if destination == "hangar":
@@ -28,9 +28,14 @@ def summarize(root, selections, operation, *, curseforge_read_enabled=True):
         elif destination == "modrinth":
             names = ["verify", "finalize_project", "submit", "stage"] if operation == "verify" else ["finalize_project", "submit", "stage"]
             path = next((root / f"modrinth-receipts/{name}.json" for name in names if (root / f"modrinth-receipts/{name}.json").is_file()), None)
-            states[destination] = json.loads(path.read_text()).get("projectStatus", "unknown") if path else "not completed"
+            receipt = json.loads(path.read_text()) if path else {}
+            if receipt.get("listed") and not receipt.get("absent"):
+                states[destination] = "verified files" if receipt.get("operation") == "verify" else "versions listed; public verification pending"
+            else:
+                states[destination] = "not completed"
         else:
-            states[destination] = "see workflow step"
+            path = root / ("central-verify.json" if destination == "maven_central" else "github.json")
+            states[destination] = json.loads(path.read_text())["state"] if path.is_file() else "not completed"
     return states
 
 

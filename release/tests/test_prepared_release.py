@@ -8,6 +8,7 @@ import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
+from zipfile import ZipFile
 
 spec = importlib.util.spec_from_file_location("prepared", Path(__file__).parents[1] / "prepared-release.py")
 prepared = importlib.util.module_from_spec(spec)
@@ -75,9 +76,16 @@ class PreparedReleaseTest(unittest.TestCase):
             with tarfile.open(archive, "w:gz") as stream:
                 for file in source.iterdir():
                     stream.add(file, arcname=file.name)
+            wrapper = root / "artifact.zip"
+            with ZipFile(wrapper, "w") as files:
+                files.write(archive, "release-prepared.tar.gz")
+                files.writestr("release-prepared.sha256", prepared.sha256(archive))
             run = {"event": "workflow_dispatch", "head_branch": "master", "head_sha": "b" * 40,
                    "path": ".github/workflows/publish-release.yml", "conclusion": "failure"}
-            responses = [run, {"artifacts": [{"name": "prepared-v7.8.9-1", "expired": expired}]}]
+            artifact = {"name": "prepared-v7.8.9-1", "expired": expired, "id": 456,
+                        "workflow_run": {"id": 123, "head_sha": "b" * 40},
+                        "size_in_bytes": wrapper.stat().st_size, "digest": "sha256:" + prepared.sha256(wrapper)}
+            responses = [run, {"artifacts": [artifact]}]
             if expired:
                 responses.append({"immutable": True, "tag_name": "v7.8.9", "draft": False,
                                   "assets": [{"name": "release-prepared.tar.gz", "digest": "sha256:" + prepared.sha256(archive)}]})
@@ -85,6 +93,10 @@ class PreparedReleaseTest(unittest.TestCase):
 
             def download(command, **kwargs):
                 self.assertEqual("gh", command[0])
+                if command[1] == "api":
+                    self.assertTrue(command[2].endswith("/artifacts/456/zip"))
+                    kwargs["stdout"].write(wrapper.read_bytes())
+                    return
                 self.assertIn("download", command)
                 target = Path(command[command.index("--dir") + 1])
                 (target / "release-prepared.tar.gz").write_bytes(archive.read_bytes())

@@ -42,8 +42,9 @@ The always-running planner and `CI result` job distinguish planned skips from fa
 
 `writeCiSourceModel` exports the configured runtime/integration source roots from the existing Gradle target model.
 Shared-source selection uses that output; deletions and both sides of renames participate in the diff.
-The planner numerically orders selected versions into bounded shards, with fail-fast disabled.
-Documentation runs once on the shard owning its declared native input.
+The planner creates one matrix job per selected Minecraft version in numeric order, with fail-fast disabled.
+GitHub runs these jobs independently within the available runner concurrency, and a failed version can be retried separately.
+Documentation runs once on the job owning its declared native input.
 Common checks and Kover share one Gradle invocation so JVM tests run once.
 Web unit tests run once on Linux; Windows retains the platform-specific browser checks.
 

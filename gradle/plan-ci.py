@@ -12,7 +12,9 @@ def plan(paths, model=None, full=False):
     result = {name: False for name in ("common", "web", "docs", "docs_full", "workflow", "qodana", "all_minecraft")}
     versions = set()
     for path in paths:
-        if path.startswith(("release/", ".github/workflows/publish", ".github/workflows/release", ".github/actions/use-prepared")):
+        if path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")):
+            result["workflow"] = True
+        elif path.startswith(("release/", ".github/workflows/publish", ".github/workflows/release", ".github/actions/use-prepared")):
             result["workflow"] = True
         elif path.startswith((".github/workflows/qodana", "qodana.yaml", "gradle/prepare-qodana", "gradle/verify-qodana")):
             result.update(workflow=True, qodana=True)

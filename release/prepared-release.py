@@ -156,7 +156,21 @@ def restore(run_id, tag, commit, output, tag_object=None):
         if candidates:
             artifact = candidates[0]
             attempt = int(artifact["name"].rsplit("-", 1)[1])
-            subprocess.run(["gh", "run", "download", str(run_id), "--name", artifact["name"], "--dir", str(download)], check=True)
+            binding = artifact.get("workflow_run", {})
+            require(binding.get("id") == int(run_id) and binding.get("head_sha") == run["head_sha"],
+                    "Prepared artifact producer differs.")
+            wrapper = download / "artifact.zip"
+            with wrapper.open("wb") as stream:
+                subprocess.run(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact['id']}/zip"], stdout=stream, check=True)
+            require(artifact.get("digest") == "sha256:" + sha256(wrapper)
+                    and wrapper.stat().st_size == artifact["size_in_bytes"], "Prepared Actions artifact digest or size differs.")
+            with ZipFile(wrapper) as files:
+                require(sorted(files.namelist()) == ["release-prepared.sha256", "release-prepared.tar.gz"],
+                        "Unexpected prepared Actions artifact contents.")
+                for name in files.namelist():
+                    require(files.getinfo(name).file_size <= 4 * 1024**3, "Prepared Actions artifact is oversized.")
+                    with files.open(name) as source, (download / name).open("wb") as target:
+                        shutil.copyfileobj(source, target)
             digest = (download / "release-prepared.sha256").read_text().strip()
         else:
             release = github(f"repos/{repo}/releases/tags/{tag}")

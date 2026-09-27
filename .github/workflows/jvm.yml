@@ -31,8 +31,11 @@ jobs:
         if [[ "$EVENT" == pull_request ]]; then
           args=(--base "$BASE" --head "$HEAD")
           if git diff --no-renames --name-only "$BASE...$HEAD" | grep -Eq '^(runtime|integration)/(shared/|minecraft-fabric-)'; then
-            bash ./gradlew :writeCiSourceModel
-            args+=(--model build/github-actions/source-model.json)
+            GITHUB_OUTPUT= python3 gradle/plan-ci.py "${args[@]}" > /dev/null
+            if jq --exit-status '.common | not' build/github-actions/ci-plan.json > /dev/null; then
+              bash ./gradlew :writeCiSourceModel
+              args+=(--model build/github-actions/source-model.json)
+            fi
           fi
         fi
         python3 gradle/plan-ci.py "${args[@]}"
@@ -198,7 +201,6 @@ jobs:
       SDL_VIDEO_FORCE_EGL: '1'
     strategy:
       fail-fast: false
-      max-parallel: 4
       matrix: ${{ fromJSON(needs.minecraft-matrix.outputs.matrix) }}
     steps:
     - name: Check out source
