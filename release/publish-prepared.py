@@ -84,16 +84,14 @@ def github_release(root, operation, identity):
     for artifact in manifest["artifacts"]:
         name = artifact["githubAssetName"]
         shutil.copyfile(root / "modrinth" / artifact["relativePath"], bundle / name)
-        version = identity["tag"].removeprefix("v")
-        coordinate = "strata-runtime-minecraft-fabric-" + artifact["gameVersion"]
-        url = f"https://repo1.maven.org/maven2/dev/s7a/strata/{coordinate}/{version}/{name}.asc"
-        with urllib.request.urlopen(url, timeout=60) as response:
-            (bundle / (name + ".asc")).write_bytes(response.read(128 * 1024))
+        group, coordinate, version = artifact["mavenCoordinate"].split(":")
+        canonical = root / "maven" / group.replace(".", "/") / coordinate / version / artifact["fileName"]
+        shutil.copyfile(canonical.with_name(canonical.name + ".asc"), bundle / (name + ".asc"))
     verify_signatures(bundle, root / "signing-key.asc")
     shutil.copyfile(root.parent / "release-prepared.tar.gz", bundle / "release-prepared.tar.gz")
     (bundle / "SHA256SUMS").write_text("".join(f"{prepared.sha256(path)}  {path.name}\n" for path in sorted(bundle.iterdir())
                                                if path.name != "SHA256SUMS"), encoding="ascii")
-    os.environ.update(RELEASE_TAG=identity["tag"], CENTRAL_STATE="exact")
+    os.environ["RELEASE_TAG"] = identity["tag"]
     os.environ.setdefault("GITHUB_API_URL", "https://api.github.com")
     preflight = ["bash", str(CONTROLLER / "release/github-release-preflight.sh"), str(bundle)]
     subprocess.run(preflight, check=True)

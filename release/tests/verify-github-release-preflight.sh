@@ -116,7 +116,6 @@ run_preflight() {
       GITHUB_API_URL=https://api.github.test \
       GITHUB_REPOSITORY=test/strata \
       RELEASE_TAG=v0.1.0 \
-      CENTRAL_STATE=exact \
       FAKE_RELEASE_JSON="$release_json" \
       FAKE_RELEASE_INVENTORY="$inventory" \
       FAKE_RELEASE_BUNDLE="$bundle" \

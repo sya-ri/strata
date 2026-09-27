@@ -49,18 +49,22 @@ class PublishPreparedTest(unittest.TestCase):
                 (root / "modrinth/artifacts").mkdir(parents=True)
                 name = "strata-runtime-minecraft-fabric-1.20-7.8.9.jar"
                 (root / "modrinth/artifacts" / name).write_bytes(b"canonical jar")
+                canonical = root / "maven/dev/s7a/strata/strata-runtime-minecraft-fabric-1.20/7.8.9"
+                canonical.mkdir(parents=True)
+                (canonical / (name + ".asc")).write_bytes(b"original prepared signature")
                 (root.parent / "release-prepared.tar.gz").write_bytes(b"original archive")
-                (root / "modrinth/manifest.json").write_text(json.dumps({"artifacts": [{"githubAssetName": name, "gameVersion": "1.20", "relativePath": "artifacts/" + name}]}))
+                (root / "modrinth/manifest.json").write_text(json.dumps({"artifacts": [{"githubAssetName": name, "fileName": name, "mavenCoordinate": "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:7.8.9", "relativePath": "artifacts/" + name}]}))
                 draft = {"id": 42, "draft": True, "assets": [{"name": name}] if already_exists else []}
                 reads = [draft if already_exists else None] + ([] if already_exists else [draft]) + [{"draft": False}]
                 with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repo"}), patch.object(publisher, "verify_signatures"), patch.object(publisher.urllib.request, "urlopen") as download, patch.object(publisher.subprocess, "check_output", side_effect=[json.dumps(value).encode() for value in reads]), patch.object(publisher.subprocess, "run") as run:
-                    download.return_value.__enter__.return_value.read.return_value = b"signature"
                     publisher.github_release(root, "release", {"tag": "v7.8.9"})
+                    download.assert_not_called()
                 commands = [call.args[0] for call in run.call_args_list]
                 uploads = [Path(command[-1]).name for command in commands if command[:3] == ["gh", "release", "upload"]]
                 expected = {name + ".asc", "SHA256SUMS", "release-prepared.tar.gz"} | (set() if already_exists else {name})
                 self.assertEqual(expected, set(uploads))
                 self.assertEqual(b"original archive", (root.parent / "github-bundle/release-prepared.tar.gz").read_bytes())
+                self.assertEqual(b"original prepared signature", (root.parent / "github-bundle" / (name + ".asc")).read_bytes())
                 self.assertEqual(0 if already_exists else 1, sum(command[:3] == ["gh", "release", "create"] for command in commands))
                 self.assertFalse(any("gradlew" in str(command) for command in commands))
 

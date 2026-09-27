@@ -22,7 +22,7 @@ name: Publish release
         description: Reuse a successful preparation job (required for verification)
         type: string
       maven_central:
-        description: Allow new Maven upload; existing artifacts are always verified
+        description: Publish or verify Maven Central artifacts
         type: boolean
         default: true
       github_release:
@@ -135,7 +135,7 @@ jobs:
     needs:
     - source
     - prepare
-    if: always() && needs.source.result == 'success' && (needs.prepare.result == 'success' || (needs.prepare.result == 'skipped' && inputs.prepared_run_id
+    if: always() && inputs.maven_central && needs.source.result == 'success' && (needs.prepare.result == 'success' || (needs.prepare.result == 'skipped' && inputs.prepared_run_id
       != ''))
     environment: release
     runs-on: ubuntu-latest
@@ -177,8 +177,8 @@ jobs:
     name: Publish ${{ matrix.destination }}
     needs:
     - source
-    - central
-    if: needs.source.outputs.has_destinations == 'true'
+    - prepare
+    if: always() && needs.source.outputs.has_destinations == 'true' && needs.source.result == 'success' && (needs.prepare.result == 'success' || (needs.prepare.result == 'skipped' && inputs.prepared_run_id != ''))
     strategy:
       fail-fast: false
       matrix:

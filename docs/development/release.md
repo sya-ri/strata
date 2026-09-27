@@ -21,10 +21,12 @@ The manifest binds these bytes to the signed tag object, product commit, control
 `prepared-<tag>-<attempt>` retains this archive in Actions for 90 days.
 Preparation succeeds before any publication job consumes it.
 
-Maven Central is reconciled first; GitHub, Modrinth, CurseForge, and Hangar then run as independent jobs.
+Maven Central, GitHub, Modrinth, CurseForge, and Hangar run as independent parallel jobs after preparation.
+Only selected destinations run, so one service's outage does not block or restart the others.
 An exact existing publication is reused, an absent publication can be added, and a partial or conflicting publication stops that destination.
 Publication and verification run from the saved bundle using isolated controller tools; they do not configure, build, test, or sign the product again.
-GitHub receives the original preparation archive before its release becomes public and immutable.
+GitHub receives the original preparation archive and signatures from the saved Maven inventory before its release becomes public and immutable.
+It does not fetch signatures from Maven Central or wait for Central publication.
 
 ## Retry and verification
 
@@ -34,7 +36,7 @@ The preparation job must have succeeded, but the original run may have failed la
 
 | Input | Enabled behavior |
 | --- | --- |
-| `maven_central` | Allow the first upload of an absent Maven release. Canonical Maven checks still run when disabled. |
+| `maven_central` | Publish an absent Maven release or verify its exact files and signatures. Disabled destinations perform no remote checks. |
 | `github_release` | Create/resume the draft, check every asset, and publish it; verification requires a public exact release. |
 | `modrinth` | Add missing listed Fabric versions and verify their files independently of project review or description changes. |
 | `curseforge` | Add missing Fabric files using trusted upload receipts; optional read access also verifies public downloads. |

@@ -9,7 +9,7 @@ def summarize(root, selections, operation, *, curseforge_read_enabled=True):
     """Distinguish completed uploads from approval; missing evidence never becomes success."""
     states = {}
     for destination, enabled in selections.items():
-        if not enabled and destination != "maven_central":
+        if not enabled:
             states[destination] = "disabled"
             continue
         if destination == "hangar":

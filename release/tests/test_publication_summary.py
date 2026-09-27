@@ -14,6 +14,16 @@ def load(name):
 
 
 class PublicationSummaryTest(unittest.TestCase):
+    def test_disabled_central_does_not_require_or_reuse_a_remote_receipt(self):
+        module = load("publication-summary")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for receipt in (False, True):
+                if receipt:
+                    (root / "central-verify.json").write_text(json.dumps({"state": "exact"}))
+                self.assertEqual({"maven_central": "disabled", "hangar": "not completed"},
+                                 module.summarize(root, {"maven_central": False, "hangar": True}, "verify"))
+
     def test_modrinth_file_results_are_independent_of_project_review(self):
         module = load("publication-summary")
         with tempfile.TemporaryDirectory() as temporary:
