@@ -1751,7 +1751,7 @@ jobs:
             install_root="$(mktemp -d "$RUNNER_TEMP/strata-public-skill-install.XXXXXX")"
             (
               cd "$install_root"
-              npx --yes skills add "sya-ri/strata@$tag" --skill strata --agent codex --yes --copy
+              npx --yes skills add "https://github.com/sya-ri/strata/tree/$tag" --skill strata --agent codex --yes --copy
             )
             mapfile -d '' installed < <(find "$install_root" -type f -name SKILL.md -print0)
             [[ "${#installed[@]}" == "1" ]] || { echo "Skills CLI did not install exactly one Skill for $tag." >&2; exit 1; }
