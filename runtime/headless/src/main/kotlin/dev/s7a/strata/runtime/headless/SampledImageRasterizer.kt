@@ -90,9 +90,10 @@ internal object SampledImageRasterizer {
     }
 
     private class SampledColor(
-        tint: Int,
+        private val tint: Int,
         private val cutoff: Float,
     ) {
+        private val identityTint = tint == 0xFFFFFFFF.toInt()
         private val alpha = normalized(tint ushr 24)
         private val red = normalized(tint ushr 16)
         private val green = normalized(tint ushr 8)
@@ -104,6 +105,9 @@ internal object SampledImageRasterizer {
         ): Int {
             val sourceAlpha = normalized(source ushr 24) * alpha
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return destination
+            // Untinted opaque sampling is an exact overwrite, even at fractional destinations and clips.
+            if (sourceAlpha == 1f && identityTint) return source
+            if (sourceAlpha == 1f && source == 0xFFFFFFFF.toInt()) return tint
             val destinationWeight = normalized(destination ushr 24) * (1f - sourceAlpha)
             val outputAlpha = sourceAlpha + destinationWeight
             val alphaByte = quantize(outputAlpha)

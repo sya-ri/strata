@@ -6,6 +6,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -216,6 +217,19 @@ private object HeadlessImplementation {
             return
         }
         val source = command.color.value
+        if (source ushr 24 == 0xFF) {
+            // Source-over with an opaque fill is a row overwrite, including clips between logical texels.
+            val scale = dimensions.scale
+            val physicalLeft = maxOf(Math.multiplyExact(left, scale), clip?.left ?: 0)
+            val physicalTop = maxOf(Math.multiplyExact(top, scale), clip?.top ?: 0)
+            val physicalRight = minOf(Math.multiplyExact(right, scale), clip?.right ?: dimensions.physicalSize.width)
+            val physicalBottom = minOf(Math.multiplyExact(bottom, scale), clip?.bottom ?: dimensions.physicalSize.height)
+            for (y in physicalTop until physicalBottom) {
+                val row = Math.multiplyExact(y, dimensions.physicalSize.width)
+                pixels.fill(source, Math.addExact(row, physicalLeft), Math.addExact(row, physicalRight))
+            }
+            return
+        }
         for (logicalY in top until bottom) {
             for (logicalX in left until right) {
                 paintLogicalPixel(pixels, dimensions, logicalX, logicalY, source, clip)
@@ -237,6 +251,11 @@ private object HeadlessImplementation {
         val right = visible.right
         val bottom = visible.bottom
         if (right <= left || bottom <= top) {
+            return
+        }
+        if (command.source.width == 1 && command.source.height == 1) {
+            val color = ArgbColor(command.image.argbAt(command.source.left, command.source.top))
+            paintFill(pixels, dimensions, DrawCommand.FillRectangle(bounds, color), clip)
             return
         }
         val sourceWidth = command.source.width.toLong()
@@ -293,6 +312,11 @@ private object HeadlessImplementation {
         val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
         val visible = RasterMath.intersection(viewport, clip?.let { RasterClips.logical(it, dimensions.scale) } ?: bounds, bounds)
         if (visible.width == 0 || visible.height == 0) return
+        if (command.source.width == 1 && command.source.height == 1) {
+            val color = ArgbColor(command.image.argbAt(command.source.left, command.source.top))
+            paintFill(pixels, dimensions, DrawCommand.FillRectangle(bounds, color), clip)
+            return
+        }
         val scale = dimensions.scale
         val horizontal = PixelAxis(command.source.left, command.source.width, bounds.left, bounds.width, scale)
         val vertical = PixelAxis(command.source.top, command.source.height, bounds.top, bounds.height, scale)
@@ -399,6 +423,7 @@ private object HeadlessImplementation {
             destination: Int,
         ): Int {
             val sourceAlpha = source ushr 24 and 0xFF
+            if (sourceAlpha == 0xFF) return source
             val destinationAlpha = destination ushr 24 and 0xFF
             val alphaNumerator =
                 sourceAlpha.toLong() * 255L + destinationAlpha.toLong() * (255 - sourceAlpha).toLong()

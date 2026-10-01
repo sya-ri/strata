@@ -47,6 +47,30 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Single-texel nine-slice tiling
+
+Minecraft nine-slice painting retains the default tiled center mode and the public API.
+A repeated source axis of exactly one texel spans the entire destination axis in one nearest-sampled command; a 1×1 center therefore emits one command.
+Source axes wider than one texel retain their repeating pattern and clipped final tile.
+This is command coalescing without an additional cache or a change to input, semantics, or scroll state.
+The regression suite compares pixels across integer, reduced and fractional viewport scales, GUI densities, transparent and translucent texels and incomplete tiles, and checks retained clean-frame identity.
+Downstream benchmarks must preserve their fixed input workload and loaded class/JAR provenance, compare repeated runs on the same Java and host, and distinguish headless CPU/raster costs from native extraction and GPU completion.
+
+### Opaque portable paint
+
+An opaque source-over rectangle overwrites its covered physical pixel rows without per-texel alpha blending.
+Opaque integer blit samples also use the exact source color without the general alpha arithmetic.
+An integer or physical-pixel blit whose source rectangle is 1×1 delegates to the existing fill path, reading its immutable source color once instead of resampling it for every covered pixel.
+This equivalence retains source-over blending for transparent and translucent texels and uses the same clipped physical coverage.
+Fractional sampled images also overwrite with the source color when both the sampled pixel and tint are opaque and the tint leaves RGB unchanged.
+An opaque white source pixel with an opaque tint similarly overwrites with the exact tint color, including colored bitmap glyphs.
+Fractional clipping, nearest coordinate mapping, alpha cutoff, and non-identity tint continue through their existing paths; this does not broaden direct native eligibility or remove portable fallback uploads.
+The headless rasterizer resolves the viewport and nested physical clip before each row overwrite, including fractional clips that cut through scaled logical texels.
+Translucent fills retain the existing straight-ARGB blending path.
+This stateless fast path creates no cache and preserves command order, pixels, physical density, and the native portable-generation lifetime.
+Its regression compares independent physical pixel-center coverage across density, empty/offscreen extents, nested integer/fractional clips, and translucent destination pixels.
+Native measurements must continue to report actual rasterizations and uploads; reducing raster CPU work does not eliminate those operations.
+
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
 
