@@ -46,6 +46,7 @@
 /older/0.1.5/index.html
 /older/0.1.6/index.html
 /older/0.2.0/index.html
+/older/0.2.1/index.html
 /paper-api/index.html
 /runtime/core/index.html
 /runtime/headless/index.html

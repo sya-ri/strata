@@ -1,0 +1,781 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>dev.s7a.strata.runtime.remote</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;dev.s7a.strata.runtime.remote/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.1"><span class="versions-dropdown-button-text">0.2.1</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../runtime/remote/dev.s7a.strata.runtime.remote/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.1"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.1</span></a><a href="../../../../0.2.0/runtime/remote/dev.s7a.strata.runtime.remote/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../../not-found-version.html?v=0.1.6" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../../not-found-version.html?v=0.1.5" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../not-found-version.html?v=0.1.4" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../not-found-version.html?v=0.1.3" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../not-found-version.html?v=0.1.2" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../not-found-version.html?v=0.1.1" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:remote/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:remote/main" data-filter=":runtime:remote/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="remote::dev.s7a.strata.runtime.remote////PointingToDeclaration//1145674984">
+  <div class="breadcrumbs"><a href="../index.html">remote</a><span class="delimiter">/</span><span class="current">dev.s7a.strata.runtime.remote</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="1092823919%2FClasslikes%2F1145674984" anchor-label="RemoteAddress" id="1092823919%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-address/index.html"><span>Remote</span><wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1092823919%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-remote-address/index.html">RemoteAddress</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>endpoint<span class="token operator">: </span><a href="-remote-endpoint/index.html">RemoteEndpoint</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>incarnation<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/UUID.html">UUID</a><span class="token operator"> = </span>UUID.randomUUID()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Host-generated transport incarnation, independent of screen and operation identities. A newly joined backend chooses a fresh identity; frames for its predecessor cannot enter its protocol connection.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-278970470%2FClasslikes%2F1145674984" anchor-label="RemoteBindingSnapshot" id="-278970470%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-binding-snapshot/index.html"><span>Remote</span><wbr><span>Binding</span><wbr><span><span>Snapshot</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-278970470%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-remote-binding-snapshot/index.html">RemoteBindingSnapshot</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>generation<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>acknowledged<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>value<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>endpoint<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Detached source identity, replacement generation, edit confirmation, value, and current input endpoint.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1327029489%2FClasslikes%2F1145674984" anchor-label="RemoteBuiltins" id="-1327029489%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-builtins/index.html"><span>Remote</span><wbr><span><span>Builtins</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1327029489%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-remote-builtins/index.html">RemoteBuiltins</a></div><div class="brief "><p class="paragraph">Standard codec registration shared by every versioned Minecraft client adapter.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-554000665%2FClasslikes%2F1145674984" anchor-label="RemoteCanvas" id="-554000665%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-canvas/index.html"><span>Remote</span><wbr><span><span>Canvas</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-554000665%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-remote-canvas/index.html">RemoteCanvas</a></div><div class="brief "><p class="paragraph">Explicit client-installed Canvas renderer schemas and server-only references to their typed properties. Native source acquisition and GPU work follow the client's existing Canvas attachment and presenter contracts.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="770754505%2FClasslikes%2F1145674984" anchor-label="RemoteCapabilities" id="770754505%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-capabilities/index.html"><span>Remote</span><wbr><span><span>Capabilities</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="770754505%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-capabilities/index.html">RemoteCapabilities</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token punctuation">, </span></span><span class="parameter ">types<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Agreed limits and supported declaration schemas for one live player connection. A missing value at the adapter boundary means that negotiation has not completed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="49858801%2FClasslikes%2F1145674984" anchor-label="RemoteClientActions" id="49858801%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-client-actions/index.html"><span>Remote</span><wbr><span>Client</span><wbr><span><span>Actions</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="49858801%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-remote-client-actions/index.html">RemoteClientActions</a></div><div class="brief "><p class="paragraph">Owner-thread action sender captured by locally installed input behavior. An expired screen rejects calls without sending an event to a subsequent screen.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-405971592%2FClasslikes%2F1145674984" anchor-label="RemoteClientSession" id="-405971592%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-client-session/index.html"><span>Remote</span><wbr><span>Client</span><wbr><span><span>Session</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-405971592%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-client-session/index.html">RemoteClientSession</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">snapshot<span class="token operator">: </span><a href="-remote-message/-snapshot/index.html">RemoteMessage.Snapshot</a><span class="token punctuation">, </span></span><span class="parameter ">registry<span class="token operator">: </span><a href="-remote-registry/index.html">RemoteRegistry</a><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-message/index.html">RemoteMessage</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">One client-side retained declaration source bound to a server-issued session identity. All calls run under the construction execution owner; network receivers must enqueue work for that owner. Invalid patch bases request one snapshot; actions are never replayed during resynchronization.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1445380530%2FClasslikes%2F1145674984" anchor-label="RemoteClientStates" id="1445380530%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-client-states/index.html"><span>Remote</span><wbr><span>Client</span><wbr><span><span>States</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1445380530%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-client-states/index.html">RemoteClientStates</a> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Execution-owner-confined presentation-state store bounded by the current decoded screen and its negotiated entry limit. Keys combine a remote identity and a trusted type token; removed identities and terminal screens release their entries. Preparation runs before declaration evaluation, so incoming values never mutate state from a render callback.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1839335428%2FClasslikes%2F1145674984" anchor-label="RemoteComponentRuntime" id="1839335428%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-component-runtime/index.html"><span>Remote</span><wbr><span>Component</span><wbr><span><span>Runtime</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1839335428%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-component-runtime/index.html">RemoteComponentRuntime</a> : <a href="../../../api/dev.s7a.strata.spi/-component-runtime/index.html">ComponentRuntime</a></div><div class="brief "><p class="paragraph">Owner-thread declaration runtime for server-owned screens using the existing component DSL. It retains state and callbacks while projecting only portable properties; fonts and native widgets remain client-owned.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1512440097%2FClasslikes%2F1145674984" anchor-label="RemoteConnection" id="1512440097%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-connection/index.html"><span>Remote</span><wbr><span><span>Connection</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1512440097%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-connection/index.html">RemoteConnection</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">types<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Protocol negotiation and ordered transport for one authenticated connection, confined to its execution owner. The adapter supplies authenticated bytes and synchronous transport writes, never arbitrary peers. The fixed bootstrap limits apply until both greetings have been sent; thereafter both sides use their intersection. All partial buffers and the transport callback are released on close or protocol failure.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="388778921%2FClasslikes%2F1145674984" anchor-label="RemoteDeclaration" id="388778921%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-declaration/index.html"><span>Remote</span><wbr><span><span>Declaration</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="388778921%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-remote-declaration/index.html">RemoteDeclaration</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>type<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>value<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Detached typed component or modifier properties for one stable retained identity.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1956818282%2FClasslikes%2F1145674984" anchor-label="RemoteEditableValue" id="-1956818282%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-editable-value/index.html"><span>Remote</span><wbr><span>Editable</span><wbr><span><span>Value</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1956818282%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><span class="token keyword">interface </span><a href="-remote-editable-value/index.html">RemoteEditableValue</a></div><div class="brief "><p class="paragraph">Optional owner-thread value behavior for flushing committed edits before a business action or client tick. Implementations compare their local value with their last sent value and preserve unacknowledged newer edits.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="689874581%2FClasslikes%2F1145674984" anchor-label="RemoteEditBuffer" id="689874581%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-edit-buffer/index.html"><span>Remote</span><wbr><span>Edit</span><wbr><span><span>Buffer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="689874581%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-edit-buffer/index.html">RemoteEditBuffer</a><span class="token operator">&lt;</span><a href="-remote-edit-buffer/index.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">initial<span class="token operator">: </span><a href="-remote-edit-buffer/index.html">T</a><span class="token punctuation">, </span></span><span class="parameter ">generation<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">1</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Owner-thread optimistic editing state independent of any particular text or form control. Older acknowledgements cannot overwrite a newer local edit; a newer authoritative generation resets pending edits.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-919185658%2FClasslikes%2F1145674984" anchor-label="RemoteEditingState" id="-919185658%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-editing-state/index.html"><span>Remote</span><wbr><span>Editing</span><wbr><span><span>State</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-919185658%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-editing-state/index.html">RemoteEditingState</a><span class="token operator">&lt;</span><a href="-remote-editing-state/index.html">S</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token punctuation">, </span><a href="-remote-editing-state/index.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>state<span class="token operator">: </span><a href="-remote-editing-state/index.html">S</a><span class="token punctuation">, </span></span><span class="parameter ">type<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token punctuation">, </span></span><span class="parameter ">snapshot<span class="token operator">: </span><a href="-remote-binding-snapshot/index.html">RemoteBindingSnapshot</a><span class="token punctuation">, </span></span><span class="parameter ">decode<span class="token operator">: </span><span class="token punctuation">(</span><a href="../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="-remote-editing-state/index.html">T</a><span class="token punctuation">, </span></span><span class="parameter ">encode<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-editing-state/index.html">T</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">, </span></span><span class="parameter ">read<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-editing-state/index.html">S</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="-remote-editing-state/index.html">T</a><span class="token punctuation">, </span></span><span class="parameter ">write<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-editing-state/index.html">S</a><span class="token punctuation">, </span><a href="-remote-editing-state/index.html">T</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span> : <a href="-remote-editable-value/index.html">RemoteEditableValue</a></div><div class="brief "><p class="paragraph">One stable native editing state with optimistic value ordering shared by standard and custom controls. The enclosing <a href="-remote-client-states/index.html">RemoteClientStates</a> owns its lifetime and calls updates outside declaration evaluation. Unacknowledged values and unchanged confirmations never invoke <a href="../../../runtime/remote/dev.s7a.strata.runtime.remote/-remote-editing-state/--root--.html">write</a>, preserving native selection and composition.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1320444812%2FClasslikes%2F1145674984" anchor-label="RemoteElementContext" id="1320444812%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-element-context/index.html"><span>Remote</span><wbr><span>Element</span><wbr><span><span>Context</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1320444812%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-element-context/index.html">RemoteElementContext</a></div><div class="brief "><p class="paragraph">Complete decoded surroundings supplied to a trusted component factory. Factories use <a href="-remote-element-context/key.html">key</a> and <a href="../../../runtime/remote/dev.s7a.strata.runtime.remote/-remote-element-context/--root--.html">modifier</a> unchanged so remote identity and modifier order survive reconstruction.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1049442762%2FClasslikes%2F1145674984" anchor-label="RemoteEndpoint" id="1049442762%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-endpoint/index.html"><span>Remote</span><wbr><span><span>Endpoint</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1049442762%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-remote-endpoint/index.html">RemoteEndpoint</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-remote-endpoint/index.html">RemoteEndpoint</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Authenticated host of a remote screen on one native player connection. Proxies must never forward backend frames claiming the proxy endpoint.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1891035801%2FClasslikes%2F1145674984" anchor-label="RemoteFailure" id="1891035801%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-failure/index.html"><span>Remote</span><wbr><span><span>Failure</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1891035801%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-remote-failure/index.html">RemoteFailure</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-remote-failure/index.html">RemoteFailure</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Detached terminal reasons understood without exposing server exception messages or stack traces.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-850918586%2FClasslikes%2F1145674984" anchor-label="RemoteFrameInbox" id="-850918586%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-frame-inbox/index.html"><span>Remote</span><wbr><span>Frame</span><wbr><span><span>Inbox</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-850918586%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-frame-inbox/index.html">RemoteFrameInbox</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Bounded ingress between network callbacks and the connection's owner thread. Exhaustion permanently fails the inbox and clears its bytes; the owner must terminate the connection. Queue entries own defensive byte snapshots, bounded by both byte count and entry count.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-860305095%2FClasslikes%2F1145674984" anchor-label="RemoteFraming" id="-860305095%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-framing/index.html"><span>Remote</span><wbr><span><span>Framing</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-860305095%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-framing/index.html">RemoteFraming</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Ordered bounded framing for one player connection. Only one partially received logical message is retained; interleaving or replay is rejected. A zero-length cancellation frame retires that transfer without delivering partial application data. The owner supplies monotonic milliseconds and closes this object on disconnect or protocol failure.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1106862884%2FClasslikes%2F1145674984" anchor-label="RemoteImageCodec" id="1106862884%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-image-codec/index.html"><span>Remote</span><wbr><span>Image</span><wbr><span><span>Codec</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1106862884%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-image-codec/index.html">RemoteImageCodec</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">maximumBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>RemoteLimits().messageBytes</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Portable image sources retaining resource identifiers or bounded immutable straight-ARGB pixels. Transport fragmentation is handled independently; pixel decoding never allocates from unchecked dimensions.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1959141393%2FClasslikes%2F1145674984" anchor-label="RemoteLifecycleEvent" id="-1959141393%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-lifecycle-event/index.html"><span>Remote</span><wbr><span>Lifecycle</span><wbr><span><span>Event</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1959141393%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="-remote-lifecycle-event/index.html">RemoteLifecycleEvent</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="-remote-lifecycle-event/index.html">Owner</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Committed lifecycle notifications emitted inside the service's execution owner. Adapters translate these into their platform event API; listener failures never undo committed state. UI identity is scoped to the service and connection; application event fields are detached snapshots.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2108031015%2FClasslikes%2F1145674984" anchor-label="RemoteLimits" id="2108031015%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-limits/index.html"><span>Remote</span><wbr><span><span>Limits</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2108031015%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>frameBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>24 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>messageBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>8 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>valueDepth<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">64</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>collectionEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">65536</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>treeNodes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">8192</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>pendingBytes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>16 * 1024 * 1024<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>assemblyMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">10000</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>valueEntries<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>minOf(messageBytes, 262144)<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>reconstructionMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">1000</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>hudSessions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">16</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Hard per-connection admission bounds, negotiated by taking each endpoint's minimum. Byte limits include encoded headers; values are checked before incoming allocation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1590260412%2FClasslikes%2F1145674984" anchor-label="RemoteMessage" id="1590260412%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-message/index.html"><span>Remote</span><wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1590260412%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="-remote-message/index.html">RemoteMessage</a></div><div class="brief "><p class="paragraph">Typed messages carried over an already established player connection. Session and sequence validation belongs to the connection/session owners, not the byte decoder.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1775302992%2FClasslikes%2F1145674984" anchor-label="RemoteMessageCodec" id="1775302992%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-message-codec/index.html"><span>Remote</span><wbr><span>Message</span><wbr><span><span>Codec</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1775302992%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-message-codec/index.html">RemoteMessageCodec</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Version-one message schemas layered on the bounded value codec. All external discriminators are decoded into typed messages before dispatch.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-90209525%2FClasslikes%2F1145674984" anchor-label="RemoteModifierContext" id="-90209525%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-modifier-context/index.html"><span>Remote</span><wbr><span>Modifier</span><wbr><span><span>Context</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-90209525%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-modifier-context/index.html">RemoteModifierContext</a></div><div class="brief "><p class="paragraph">Trusted client inputs for one active modifier factory. <a href="../../../runtime/remote/dev.s7a.strata.runtime.remote/-remote-modifier-context/--root--.html">identity</a> remains stable while the corresponding server modifier survives reconciliation. State reads are confined to the client session's owner thread after preparation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2096823043%2FClasslikes%2F1145674984" anchor-label="RemoteNode" id="-2096823043%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-node/index.html"><span>Remote</span><wbr><span><span>Node</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2096823043%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-node/index.html">RemoteNode</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>declaration<span class="token operator">: </span><a href="-remote-declaration/index.html">RemoteDeclaration</a><span class="token punctuation">, </span></span><span class="parameter ">modifiers<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="-remote-declaration/index.html">RemoteDeclaration</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptyList()<span class="token punctuation">, </span></span><span class="parameter ">children<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptyList()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Detached logical component with ordered active modifiers and child identities. Both collections are defensive immutable snapshots.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1233109577%2FClasslikes%2F1145674984" anchor-label="RemotePacket" id="-1233109577%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-packet/index.html"><span>Remote</span><wbr><span><span>Packet</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1233109577%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="-remote-packet/index.html">RemotePacket</a></div><div class="brief "><p class="paragraph">Bounded native-channel envelope shared by direct servers, proxies, and clients. Discovery requests greetings from both hosts; subsequent frames target one exact host incarnation. The fixed envelope is included in the native channel bound and excluded from the negotiated inner fragment bound.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1581508201%2FClasslikes%2F1145674984" anchor-label="RemotePacketStream" id="-1581508201%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-packet-stream/index.html"><span>Remote</span><wbr><span>Packet</span><wbr><span><span>Stream</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1581508201%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-packet-stream/index.html">RemotePacketStream</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>address<span class="token operator">: </span><a href="-remote-address/index.html">RemoteAddress</a><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemotePacket.limits<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Execution-owner-confined ordering boundary for one host incarnation across asynchronous proxy message events. Retains at most the negotiated pending bytes and entry count; gaps expire on monotonic adapter ticks. Screen cancellation occupies its ordinary ordered frame position, so dropped transfers cannot leave sequence gaps. Terminal close releases all queued bytes and the native writer.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="500724251%2FClasslikes%2F1145674984" anchor-label="RemotePatch" id="500724251%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-patch/index.html"><span>Remote</span><wbr><span><span>Patch</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="500724251%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-patch/index.html">RemotePatch</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>root<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">changed<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-collection/index.html">Collection</a><span class="token operator">&lt;</span><a href="-remote-node/index.html">RemoteNode</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">removed<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-collection/index.html">Collection</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable changes between two successive complete declaration trees. Applying a patch validates the entire candidate before returning it, leaving the previous tree intact on failure.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1188759591%2FClasslikes%2F1145674984" anchor-label="RemotePreparationContext" id="1188759591%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-preparation-context/index.html"><span>Remote</span><wbr><span>Preparation</span><wbr><span><span>Context</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1188759591%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-preparation-context/index.html">RemotePreparationContext</a></div><div class="brief "><p class="paragraph">Callback-lifetime context for preparing decoded state before a client declaration becomes visible. Factories retain values through <a href="../../../runtime/remote/dev.s7a.strata.runtime.remote/-remote-preparation-context/--root--.html">states</a>, never this callback-lifetime context.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="544816923%2FClasslikes%2F1145674984" anchor-label="RemotePreparationPhase" id="544816923%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-preparation-phase/index.html"><span>Remote</span><wbr><span>Preparation</span><wbr><span><span>Phase</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="544816923%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-remote-preparation-phase/index.html">RemotePreparationPhase</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-remote-preparation-phase/index.html">RemotePreparationPhase</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Ordering for client state preparation, independent of component order in a received tree. Owners prepare compound native state before references such as scrollbars attach to its shared position.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1486827948%2FClasslikes%2F1145674984" anchor-label="RemoteProtocolException" id="1486827948%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-protocol-exception/index.html"><span>Remote</span><wbr><span>Protocol</span><wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1486827948%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-protocol-exception/index.html">RemoteProtocolException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>reason<span class="token operator">: </span><a href="-remote-failure/index.html">RemoteFailure</a><span class="token punctuation">, </span></span><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/IllegalArgumentException.html">IllegalArgumentException</a></div><div class="brief "><p class="paragraph">A terminal protocol failure carrying the reason exposed to both session owners.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-7408606%2FClasslikes%2F1145674984" anchor-label="RemoteRegistry" id="-7408606%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-registry/index.html"><span>Remote</span><wbr><span><span>Registry</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-7408606%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-registry/index.html">RemoteRegistry</a></div><div class="brief "><p class="paragraph">Explicit trusted client factories for negotiated component and modifier schemas. Registration is complete before a connection captures <a href="-remote-registry/types.html">types</a>; peers can never supply factories or class names. Property decoders validate untrusted values before invoking a typed factory.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="66040538%2FClasslikes%2F1145674984" anchor-label="RemoteScreenService" id="66040538%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-screen-service/index.html"><span>Remote</span><wbr><span>Screen</span><wbr><span><span>Service</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="66040538%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-screen-service/index.html">RemoteScreenService</a><span class="token operator">&lt;</span><a href="-remote-screen-service/index.html">Player</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token punctuation">, </span><a href="-remote-screen-service/index.html">Owner</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">endpoint<span class="token operator">: </span><a href="-remote-endpoint/index.html">RemoteEndpoint</a><span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-screen-service/index.html">Player</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">report<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">dispatchClose<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{ it() }<span class="token punctuation">, </span></span><span class="parameter ">notify<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-screen-service/index.html">Player</a><span class="token punctuation">, </span><a href="-remote-lifecycle-event/index.html">RemoteLifecycleEvent</a><span class="token operator">&lt;</span><a href="-remote-screen-service/index.html">Owner</a><span class="token operator">&gt;</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{ _, _ -&gt; }</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Owns authenticated player transports and declarations under one adapter execution owner. Network callbacks only enqueue bounded bytes; handlers never run in messaging callbacks.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1226663449%2FClasslikes%2F1145674984" anchor-label="RemoteScreenSession" id="1226663449%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-screen-session/index.html"><span>Remote</span><wbr><span>Screen</span><wbr><span><span>Session</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1226663449%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-screen-session/index.html">RemoteScreenSession</a> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Detached lifecycle handle for one host-owned screen. Status can be read from any thread; close uses the host's execution contract (Paper primary thread, Folia player region, or Velocity's UI queue). The common <a href="-remote-screen-session/ui-session.html">uiSession</a> requires its execution owner for all property reads and controls. Terminal handles retain no player, plugin, handler, or UI state references.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1009826032%2FClasslikes%2F1145674984" anchor-label="RemoteServerSession" id="1009826032%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-server-session/index.html"><span>Remote</span><wbr><span>Server</span><wbr><span><span>Session</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1009826032%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-server-session/index.html">RemoteServerSession</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">title<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">, </span></span><span class="parameter ">supportedTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="-remote-message/index.html">RemoteMessage</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">pausesGame<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">eventSession<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">controller<span class="token operator">: </span><a href="../../../runtime/core/dev.s7a.strata.runtime.spi/-runtime-ui-controller/index.html">RuntimeUiController</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">settings<span class="token operator">: </span><a href="-remote-ui-settings/index.html">RemoteUiSettings</a><span class="token operator"> = </span>RemoteUiSettings()<span class="token punctuation">, </span></span><span class="parameter ">content<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../../../api/dev.s7a.strata.element/-element/index.html">Element</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">One authoritative screen bound by its transport owner to one authenticated connection. All calls run under the construction execution owner; source callbacks remain owned by the shared core session. Only the current tree and current action table are retained, and terminal cleanup releases both.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1362811333%2FClasslikes%2F1145674984" anchor-label="RemoteSessionStatus" id="-1362811333%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-session-status/index.html"><span>Remote</span><wbr><span>Session</span><wbr><span><span>Status</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1362811333%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="-remote-session-status/index.html">RemoteSessionStatus</a></div><div class="brief "><p class="paragraph">Observable local state of a remote screen's ownership lifetime.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1161467249%2FClasslikes%2F1145674984" anchor-label="RemoteStateKey" id="1161467249%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-state-key/index.html"><span>Remote</span><wbr><span>State</span><wbr><span><span>Key</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1161467249%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-state-key/index.html">RemoteStateKey</a><span class="token operator">&lt;</span><a href="-remote-state-key/index.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">type<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.reflect/-k-class/index.html">KClass</a><span class="token operator">&lt;</span><a href="-remote-state-key/index.html">T</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Stable referential type token for one client extension's retained presentation state. Keep a singleton token per logical state kind; server data never selects a JVM class.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1499094630%2FClasslikes%2F1145674984" anchor-label="RemoteTextCodec" id="-1499094630%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-text-codec/index.html"><span>Remote</span><wbr><span>Text</span><wbr><span><span>Codec</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1499094630%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-remote-text-codec/index.html">RemoteTextCodec</a></div><div class="brief "><p class="paragraph">Portable unresolved text preserving translation arguments and resource-pack font selection. Opaque platform payloads require an explicit application extension and are rejected here.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2035775775%2FClasslikes%2F1145674984" anchor-label="RemoteTree" id="-2035775775%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-tree/index.html"><span>Remote</span><wbr><span><span>Tree</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2035775775%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-tree/index.html">RemoteTree</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>root<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">nodes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-collection/index.html">Collection</a><span class="token operator">&lt;</span><a href="-remote-node/index.html">RemoteNode</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Validated immutable rooted declaration tree; each component and modifier has a unique identity. Construction rejects cycles, shared children, unreachable records, and excess depth or node count.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2002165944%2FClasslikes%2F1145674984" anchor-label="RemoteUiSettings" id="-2002165944%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-ui-settings/index.html"><span>Remote</span><wbr><span>Ui</span><wbr><span><span>Settings</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2002165944%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-remote-ui-settings/index.html">RemoteUiSettings</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>presentation<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-presentation/index.html">UiPresentation</a><span class="token operator"> = </span>UiPresentation.Screen<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>category<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-category/index.html">UiCategory</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>inputPolicy<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-input-policy/index.html">UiInputPolicy</a><span class="token operator"> = </span>UiInputPolicy.BlockAll<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>visibility<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-visibility-policy/index.html">UiVisibilityPolicy</a><span class="token operator"> = </span>UiVisibilityPolicy()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>hudOrder<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable, typed presentation settings negotiated with the remote UI's initial snapshot.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2019983546%2FClasslikes%2F1145674984" anchor-label="RemoteValueCodec" id="2019983546%2FClasslikes%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-value-codec/index.html"><span>Remote</span><wbr><span>Value</span><wbr><span><span>Codec</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2019983546%2FClasslikes%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-remote-value-codec/index.html">RemoteValueCodec</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">limits<span class="token operator">: </span><a href="-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Strict bounded binary encoding for detached projection values. The format uses explicit tags, big-endian numbers, and length-prefixed strict UTF-8. Instances are immutable and do not retain encoded values or decoded buffers.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-2020822244%2FFunctions%2F1145674984" anchor-label="toUiCapabilities" id="-2020822244%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="to-ui-capabilities.html"><span>to</span><wbr><span>Ui</span><wbr><span><span>Capabilities</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2020822244%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-remote-capabilities/index.html">RemoteCapabilities</a><span class="token punctuation">.</span><a href="to-ui-capabilities.html"><span class="token function">toUiCapabilities</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../../api/dev.s7a.strata.ui/-ui-client-capabilities/index.html">UiClientCapabilities</a></div><div class="brief "><p class="paragraph">Copies negotiated application support without exposing wire framing or runtime implementation types.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
