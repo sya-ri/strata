@@ -22,6 +22,7 @@ import java.util.Base64
  * The coordinator owns no remote mutation.
  * It lists every deployment containing the release path, rejects duplicates and differing bundles, downloads all signed publication files, validates all four configured checksum sidecars for each base file, and stages detached signatures for an external OpenPGP verifier.
  * Detached signatures are required content but do not require their own checksum sidecars under the Central publication contract.
+ * Prepared bundles can explicitly require signature checksum sidecars; those bundles also require the original signature bytes and validate every sidecar.
  * Credentials are retained only by this instance, are never written or logged, and are redacted from transport failures.
  * One coordinator owns the authenticated session so credential handling, retries, and evidence validation cannot drift.
  */
@@ -41,6 +42,7 @@ internal class MavenCentralPortalCoordinator(
     private val retryBaseMillis: Long = DEFAULT_RETRY_MILLIS,
     private val sleeper: (Long) -> Unit = Thread::sleep,
     private val publicationFiles: List<String>? = null,
+    private val signatureChecksums: Boolean = false,
 ) {
     private val portalBase = portalBaseUri.toString().let { value -> if (value.endsWith('/')) value else "$value/" }
     private val authorization =
@@ -77,7 +79,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository, publicationFiles)
+        val release = Release.parse(coordinateLines, localRepository, publicationFiles, signatureChecksums)
         val deployment =
             discover(release, allowAbsent = true, incompleteAttempts, pollDelayMillis)
                 ?: return Receipt(State.ABSENT, null, null, 0, 0)
@@ -112,7 +114,7 @@ internal class MavenCentralPortalCoordinator(
         statusAttempts: Int = DEFAULT_STATUS_ATTEMPTS,
         statusDelayMillis: Long = DEFAULT_STATUS_DELAY_MILLIS,
     ): Receipt {
-        val release = Release.parse(coordinateLines, localRepository, publicationFiles)
+        val release = Release.parse(coordinateLines, localRepository, publicationFiles, signatureChecksums)
         val deployment =
             discover(release, allowAbsent = false, discoveryAttempts, discoveryDelayMillis)
                 ?: error("Central Publisher Portal deployment discovery unexpectedly returned no deployment.")
@@ -207,6 +209,11 @@ internal class MavenCentralPortalCoordinator(
 
             val signaturePath = "${base.relativePath}.asc"
             val signature = download(deployment.id, signaturePath)
+            if (signatureChecksums) {
+                val originalSignature = Files.readAllBytes(base.localPath.resolveSibling("${base.localPath.fileName}.asc"))
+                check(signature.contentEquals(originalSignature)) { "Central Publisher Portal signature differs from the prepared publication: $signaturePath" }
+                checksumCount += verifyChecksums(deployment, signaturePath, signature)
+            }
             validateListedSize(deployment, signaturePath, signature)
             writeEvidence(evidenceDirectory, signaturePath, signature)
             contentCount += 1
@@ -214,7 +221,8 @@ internal class MavenCentralPortalCoordinator(
         check(contentCount == release.baseFiles.size * 2) {
             "Central Publisher Portal signed-content inventory has an unexpected size."
         }
-        check(checksumCount == release.baseFiles.size * ChecksumAlgorithm.entries.size) {
+        val checksumMultiplier = if (signatureChecksums) 2 else 1
+        check(checksumCount == release.baseFiles.size * ChecksumAlgorithm.entries.size * checksumMultiplier) {
             "Central Publisher Portal checksum inventory has an unexpected size."
         }
         return Verification(contentCount, checksumCount)
@@ -625,7 +633,7 @@ internal class MavenCentralPortalCoordinator(
      * @property deploymentId non-secret immutable deployment identifier when exact.
      * @property deploymentState last typed Portal lifecycle state when exact.
      * @property verifiedContentFileCount signed base files and detached signatures downloaded and verified.
-     * @property verifiedChecksumCount checksum sidecars validated against downloaded base files; detached signatures are verified separately with OpenPGP.
+     * @property verifiedChecksumCount checksum sidecars validated against downloaded content, including signatures when the prepared bundle requires them; OpenPGP verification remains separate.
      */
     internal data class Receipt(
         val state: State,
@@ -710,6 +718,7 @@ internal class MavenCentralPortalCoordinator(
                 lines: List<String>,
                 localRepository: Path,
                 publicationFiles: List<String>?,
+                signatureChecksums: Boolean,
             ): Release {
                 val coordinates = lines.filter(String::isNotBlank).map(Coordinate::parse)
                 check(coordinates.isNotEmpty()) { "Central Publisher Portal verification requires at least one coordinate." }
@@ -740,7 +749,10 @@ internal class MavenCentralPortalCoordinator(
                     baseFiles
                         .flatMap { base ->
                             listOf(base.relativePath, "${base.relativePath}.asc") +
-                                ChecksumAlgorithm.entries.map { algorithm -> "${base.relativePath}.${algorithm.extension}" }
+                                ChecksumAlgorithm.entries.flatMap { algorithm ->
+                                    listOf("${base.relativePath}.${algorithm.extension}") +
+                                        if (signatureChecksums) listOf("${base.relativePath}.asc.${algorithm.extension}") else emptyList()
+                                }
                         }.toSet()
                 return Release(
                     coordinates = coordinates,

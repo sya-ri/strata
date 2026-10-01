@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 import uuid
@@ -103,7 +104,14 @@ def github_release(root, operation, identity):
     if remote is None:
         subprocess.run(["gh", "release", "create", identity["tag"], "--verify-tag", "--draft", "--title",
                         "Strata " + identity["tag"].removeprefix("v"), "--notes-file", str(root / "release-notes.md")], check=True)
-        remote = json.loads(subprocess.check_output(read))
+        # The release list can briefly lag a successful draft creation.
+        for attempt in range(5):
+            remote = json.loads(subprocess.check_output(read))
+            if remote is not None:
+                break
+            if attempt < 4:
+                time.sleep(1)
+        prepared.require(remote is not None, "Created GitHub draft is not yet visible; retry with the original prepared release.")
     if remote["draft"]:
         existing = {asset["name"] for asset in remote["assets"]}
         for path in sorted(bundle.iterdir()):

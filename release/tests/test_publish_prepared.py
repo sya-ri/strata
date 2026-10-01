@@ -43,8 +43,8 @@ class PublishPreparedTest(unittest.TestCase):
                 opener.assert_not_called()
 
     def test_github_resumes_only_missing_assets_and_preserves_original_preparation_bytes(self):
-        for already_exists in (False, True):
-            with self.subTest(already_exists=already_exists), tempfile.TemporaryDirectory() as temporary:
+        for already_exists, delayed_reads in ((False, 0), (False, 2), (False, 5), (True, 0)):
+            with self.subTest(already_exists=already_exists, delayed_reads=delayed_reads), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary) / "prepared"
                 (root / "modrinth/artifacts").mkdir(parents=True)
                 name = "strata-runtime-minecraft-fabric-1.20-7.8.9.jar"
@@ -55,14 +55,21 @@ class PublishPreparedTest(unittest.TestCase):
                 (root.parent / "release-prepared.tar.gz").write_bytes(b"original archive")
                 (root / "modrinth/manifest.json").write_text(json.dumps({"artifacts": [{"githubAssetName": name, "fileName": name, "mavenCoordinate": "dev.s7a.strata:strata-runtime-minecraft-fabric-1.20:7.8.9", "relativePath": "artifacts/" + name}]}))
                 draft = {"id": 42, "draft": True, "assets": [{"name": name}] if already_exists else []}
-                reads = [draft if already_exists else None] + ([] if already_exists else [draft]) + [{"draft": False}]
-                with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repo"}), patch.object(publisher, "verify_signatures"), patch.object(publisher.urllib.request, "urlopen") as download, patch.object(publisher.subprocess, "check_output", side_effect=[json.dumps(value).encode() for value in reads]), patch.object(publisher.subprocess, "run") as run:
-                    publisher.github_release(root, "release", {"tag": "v7.8.9"})
+                reads = [draft if already_exists else None] + ([] if already_exists else [None] * delayed_reads + [draft]) + [{"draft": False}]
+                with patch.dict(os.environ, {"GITHUB_REPOSITORY": "owner/repo"}), patch.object(publisher, "verify_signatures"), patch.object(publisher.urllib.request, "urlopen") as download, patch.object(publisher.time, "sleep") as sleep, patch.object(publisher.subprocess, "check_output", side_effect=[json.dumps(value).encode() for value in reads]), patch.object(publisher.subprocess, "run") as run:
+                    if delayed_reads == 5:
+                        with self.assertRaisesRegex(ValueError, "draft is not yet visible"):
+                            publisher.github_release(root, "release", {"tag": "v7.8.9"})
+                    else:
+                        publisher.github_release(root, "release", {"tag": "v7.8.9"})
                     download.assert_not_called()
+                    self.assertEqual(min(delayed_reads, 4), sleep.call_count)
                 commands = [call.args[0] for call in run.call_args_list]
                 uploads = [Path(command[-1]).name for command in commands if command[:3] == ["gh", "release", "upload"]]
                 expected = {name + ".asc", "SHA256SUMS", "release-prepared.tar.gz"} | (set() if already_exists else {name})
-                self.assertEqual(expected, set(uploads))
+                self.assertEqual(set() if delayed_reads == 5 else expected, set(uploads))
+                if delayed_reads == 5:
+                    self.assertFalse(any(command[:4] == ["gh", "api", "--method", "PATCH"] for command in commands))
                 self.assertEqual(b"original archive", (root.parent / "github-bundle/release-prepared.tar.gz").read_bytes())
                 self.assertEqual(b"original prepared signature", (root.parent / "github-bundle" / (name + ".asc")).read_bytes())
                 self.assertEqual(0 if already_exists else 1, sum(command[:3] == ["gh", "release", "create"] for command in commands))
