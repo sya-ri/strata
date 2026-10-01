@@ -16,9 +16,9 @@ import javax.imageio.ImageIO
  */
 internal object ComponentFontAssets {
     /**
-     * Loads the real resource-font implementation from detached synthetic PNG/JSON bytes.
+     * Prepares detached synthetic PNG/JSON bytes for the real resource-font loader.
      */
-    internal fun snapshot(): MinecraftFontSnapshot {
+    internal fun source(): MinecraftMemoryFontAssetSource {
         val codePoints = ((32..126).toList() + "日本語한글🙂…設定選択入力表示".codePoints().toArray().toList()).distinct()
         val rows = codePoints.chunked(16).map { row -> String(row.toIntArray(), 0, row.size) + "\u0000".repeat(16 - row.size) }
         val image = BufferedImage(128, rows.size * 8, BufferedImage.TYPE_INT_ARGB)
@@ -50,8 +50,14 @@ internal object ComponentFontAssets {
                 "component-bitmap-v1",
                 mapOf("assets/minecraft/font/default.json" to definition, "assets/strata_benchmark/textures/font/glyphs.png" to pixels),
             )
-        return MinecraftFontSnapshot.load(listOf(source), MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = true, rejectMalformedOverlayMetadata = true)).also { snapshot ->
+        return source
+    }
+
+    /**
+     * Loads one prepared detached bitmap source for the existing component corpus.
+     */
+    internal fun snapshot(): MinecraftFontSnapshot =
+        MinecraftFontSnapshot.load(listOf(source()), MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = true, rejectMalformedOverlayMetadata = true)).also { snapshot ->
             check(snapshot.diagnostics.isEmpty()) { "Synthetic component font preparation failed: ${snapshot.diagnostics}" }
         }
-    }
 }

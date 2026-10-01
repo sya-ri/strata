@@ -105,10 +105,14 @@ tasks.register<JavaExec>("jmhComponents") {
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
     val stress = providers.gradleProperty("strata.performance.stress").map(String::toBooleanStrict).getOrElse(false)
-    val corpus = if (stress) "stress" else "components"
+    val fonts = providers.gradleProperty("strata.performance.fonts").map(String::toBooleanStrict).getOrElse(false)
+    require(listOf(stress, fonts).count { it } <= 1) { "Choose one independent corpus" }
+    val corpus = if (fonts) "fonts" else if (stress) "stress" else "components"
     val suite = (if (smoke) "$corpus-smoke" else corpus) + (if (mode in setOf("sample")) "-sample" else "")
     val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
-    args(result.get().asFile.absolutePath, repetition.toString(), if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    args(result.get().asFile.absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    systemProperty("strata.performance.fonts", fonts)
+    systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.stress", stress)
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
@@ -148,3 +152,18 @@ val verifyStressRenderingWork by tasks.registering(JavaExec::class) {
 }
 
 tasks.named("check") { dependsOn(verifyStressRenderingWork) }
+
+val verifyFontWork by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Checks actual font providers, visual ordering, reference limits and bounded native/cache release."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.FontWorkEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
+}
+
+tasks.named("check") { dependsOn(verifyFontWork) }

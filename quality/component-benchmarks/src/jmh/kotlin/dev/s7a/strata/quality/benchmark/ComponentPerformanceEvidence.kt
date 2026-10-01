@@ -16,6 +16,10 @@ public object ComponentPerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
+        if (System.getProperty("strata.performance.fonts", "false").toBooleanStrict()) {
+            fonts(args)
+            return
+        }
         if (System.getProperty("strata.performance.stress", "false").toBooleanStrict()) {
             stress(args)
             return
@@ -43,6 +47,23 @@ public object ComponentPerformanceEvidence {
             inputs =
                 JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
                     mapOf("component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI())),
+        )
+    }
+
+    private fun fonts(args: Array<String>) {
+        val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
+        val benchmarks = listOf(FontProviderBenchmark::class.java, FontTextBenchmark::class.java)
+        val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
+        val parameters = if (smoke) mapOf("workload" to setOf(FontWorkload.BitmapCached.name, FontWorkload.StbFaces1.name, FontWorkload.FreeTypeFaces16.name, FontWorkload.ReferenceDepth129.name), "length" to setOf("32")) else emptyMap()
+        val options = args.drop(2) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
+        JmhPerformanceRunner.run(
+            options.toTypedArray(),
+            benchmarks,
+            mapOf("api" to "dev.s7a.strata.component.UiScope", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost", "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory"),
+            Path.of(args[0]),
+            args[1].toInt(),
+            JmhWorkloadInventory.capture(benchmarks, setOf(mode.shortLabel()), parameters),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture")))),
         )
     }
 
