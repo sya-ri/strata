@@ -72,6 +72,5 @@ public object NativePresentationCounters {
         name: String,
     ): Field =
         generateSequence(owner.javaClass as Class<*>?) { it.superclass }
-            .mapNotNull { type -> type.declaredFields.firstOrNull { it.name == name } }
-            .firstOrNull() ?: error("Missing native performance field: $name")
+            .firstNotNullOfOrNull { type -> type.declaredFields.firstOrNull { it.name == name } } ?: error("Missing native performance field: $name")
 }

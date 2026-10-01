@@ -47,6 +47,7 @@ public object ArtifactIdentity {
     /**
      * Records resourceTree evidence from the actual local bytes.
      */
+    @Suppress("unused") // Public Maven API consumed by downstream resource fixtures.
     public fun resourceTree(
         root: Path,
         marker: String,
@@ -65,6 +66,7 @@ public object ArtifactIdentity {
     /**
      * Records loadedResourceTree evidence from the actual local bytes.
      */
+    @Suppress("unused") // Public Maven API consumed by downstream loaded resource fixtures.
     public fun loadedResourceTree(
         loader: ClassLoader,
         marker: String,

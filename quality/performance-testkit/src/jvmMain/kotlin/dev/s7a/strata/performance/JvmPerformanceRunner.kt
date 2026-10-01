@@ -22,7 +22,7 @@ public object JvmPerformanceRunner {
     ): PerformanceSample<T> {
         repeat(plan.warmup) { operation(it) }
         val monitor = diagnosticsOwner?.let(::RuntimeWorkAccumulator)
-        try {
+        return monitor.use {
             val meter = JvmPerformanceMeter(name, plan.samples)
             var last: T? = null
             repeat(plan.samples) { index ->
@@ -34,9 +34,7 @@ public object JvmPerformanceRunner {
             }
             val report = meter.result()
             monitor?.let { report.add("diagnostics", it.snapshot()) }
-            return PerformanceSample(report, checkNotNull(last) { "Performance operation returned no result" })
-        } finally {
-            monitor?.close()
+            PerformanceSample(report, checkNotNull(last) { "Performance operation returned no result" })
         }
     }
 

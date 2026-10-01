@@ -23,6 +23,7 @@ internal class RenderMonitorImpl(
     private var onClose: (() -> Unit)?,
     activeSubscriptions: Int,
     private var monitoring: RenderMonitoring?,
+    private val maxNodeRecords: Int,
 ) : UiRenderMonitor {
     private val ownerGuard = OwnerGuard()
     private val totals = RenderWorkCounts()
@@ -170,7 +171,7 @@ internal class RenderMonitorImpl(
 
     private fun register(entry: RetainedEntry): RenderNodeRecord? {
         live[entry]?.let { return it }
-        if (4096 <= records.size) {
+        if (maxNodeRecords <= records.size) {
             overflowed = true
             return null
         }

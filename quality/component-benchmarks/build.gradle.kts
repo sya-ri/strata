@@ -104,9 +104,12 @@ tasks.register<JavaExec>("jmhComponents") {
     val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
-    val suite = (if (smoke) "components-smoke" else "components") + (if (mode in setOf("sample")) "-sample" else "")
+    val stress = providers.gradleProperty("strata.performance.stress").map(String::toBooleanStrict).getOrElse(false)
+    val corpus = if (stress) "stress" else "components"
+    val suite = (if (smoke) "$corpus-smoke" else corpus) + (if (mode in setOf("sample")) "-sample" else "")
     val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
-    args(result.get().asFile.absolutePath, repetition.toString(), "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    args(result.get().asFile.absolutePath, repetition.toString(), if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    systemProperty("strata.performance.stress", stress)
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
@@ -131,3 +134,17 @@ val changedPathFile = providers.gradleProperty("strata.performance.changedPaths"
 tasks.withType<JavaExec>().matching { it.name in setOf("verifyComponentRenderingWork", "jmhComponents") }.configureEach {
     changedPathFile.orNull?.let { systemProperty("strata.performance.changedPaths", it) }
 }
+
+val verifyStressRenderingWork by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Checks real stress edits, navigation, animation, multipixel tiling and terminal lifetimes without time thresholds."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.StressWorkEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
+tasks.named("check") { dependsOn(verifyStressRenderingWork) }

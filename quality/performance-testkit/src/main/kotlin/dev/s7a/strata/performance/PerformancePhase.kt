@@ -3,6 +3,7 @@ package dev.s7a.strata.performance
 /**
  * Named operation boundaries; readiness and evidence storage are outside steady measurements.
  */
+@Suppress("unused") // Public test-only Maven contract also used by downstream workloads.
 public enum class PerformancePhase {
     /**
      * Explicit cold initialization and loading.

@@ -9,6 +9,7 @@ import org.openjdk.jmh.runner.options.VerboseMode
  * Exact expected matrices from JMH's generated benchmark registry, without another annotation or timing engine.
  * Consumers register fixture classes, explicit standard modes and optional subsets of compiled parameter values.
  */
+@Suppress("unused") // Public Maven API also launched by Gradle JMH source sets outside the IDEA call graph.
 public object JmhWorkloadInventory {
     /**
      * Expands JMH-generated parameters and explicit mode overrides into complete workload identities.
@@ -55,7 +56,7 @@ public object JmhWorkloadInventory {
     }
 
     private fun combinations(parameters: Map<String, Set<String>>): List<Map<String, String>> =
-        parameters.toSortedMap().entries.fold(listOf(emptyMap<String, String>())) { combinations, (name, values) ->
+        parameters.toSortedMap().entries.fold(listOf(emptyMap())) { combinations, (name, values) ->
             require(combinations.size.toLong() * values.size <= 16_384) { "Oversized JMH parameter matrix" }
             combinations.flatMap { combination -> values.sorted().map { value -> combination + (name to value) } }
         }

@@ -105,8 +105,8 @@ public class JvmPerformanceMeter(
         val totalAfter = allocated(allThreads = true)
         val processAfter = process?.processCpuTime ?: -1
         val heapAfter = memory.heapMemoryUsage.used
-        if (0 <= cpuBefore && cpuBefore <= cpuAfter) cpuSamples.add(cpuAfter - cpuBefore)
-        if (0 <= allocationBefore && allocationBefore <= allocationAfter) allocationSamples.add(allocationAfter - allocationBefore)
+        if (cpuBefore in 0..cpuAfter) cpuSamples.add(cpuAfter - cpuBefore)
+        if (allocationBefore in 0..allocationAfter) allocationSamples.add(allocationAfter - allocationBefore)
         ownerCpu = addDelta(ownerCpu, cpuBefore, cpuAfter)
         ownerAllocation = addDelta(ownerAllocation, allocationBefore, allocationAfter)
         processCpu = addDelta(processCpu, processBefore, processAfter)
@@ -150,8 +150,7 @@ public class JvmPerformanceMeter(
     }
 
     private fun allocated(allThreads: Boolean): Long {
-        val allocation = this.allocation
-        if (allocation == null) return -1
+        val allocation = this.allocation ?: return -1
         if (allocation.isThreadAllocatedMemorySupported.not() || allocation.isThreadAllocatedMemoryEnabled.not()) return -1
         return runCatching { if (allThreads) allocation.totalThreadAllocatedBytes else allocation.currentThreadAllocatedBytes }
             .getOrDefault(

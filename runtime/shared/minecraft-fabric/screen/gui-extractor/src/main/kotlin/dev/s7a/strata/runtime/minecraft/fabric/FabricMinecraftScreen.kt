@@ -72,6 +72,9 @@ public class FabricMinecraftScreen private constructor(
     @InternalStrataRuntimeApi
     override fun startRenderMonitoring(): UiRenderMonitor = host.startRenderMonitoring()
 
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = host.startRenderMonitoring(maxNodeRecords)
+
     private val canvasPresentation = FabricMinecraftCanvasPresentation()
     private var attached = false
     private val portableFrames = FabricMinecraftPortableFrames()

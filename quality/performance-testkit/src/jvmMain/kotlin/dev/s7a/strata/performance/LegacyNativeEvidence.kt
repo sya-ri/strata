@@ -7,6 +7,7 @@ import com.google.gson.JsonObject
  * Frozen native-report field spelling, independent of the scenario and application domain.
  * This does not make evidence from different collector versions comparable.
  */
+@Suppress("unused") // Public migration API consumed by downstream native reports.
 public object LegacyNativeEvidence {
     /**
      * Translates a complete kit distribution to historical field names without recomputing statistics.

@@ -7,15 +7,19 @@ import com.google.gson.JsonObject
  *
  * @param owner the measured runtime diagnostics owner.
  * @param checkpointSamples optional fixed diagnostic window for an existing JMH workload.
+ * @param maxNodeRecords optional explicit capacity in 1..65,536; absent preserves the measured runtime's existing default.
  */
 public class RuntimeWorkMonitor(
     owner: Any,
     private val checkpointSamples: Int? = null,
+    maxNodeRecords: Int? = null,
 ) : AutoCloseable {
     private var monitor: Any? =
         run {
             require(checkpointSamples == null || 0 < checkpointSamples)
-            checkNotNull(HostReflection.invoke(owner, "startRenderMonitoring"))
+            require(maxNodeRecords == null || maxNodeRecords in 1..65_536)
+            val arguments = if (maxNodeRecords == null) emptyArray() else arrayOf(maxNodeRecords)
+            checkNotNull(HostReflection.invoke(owner, "startRenderMonitoring", *arguments))
         }
     private var remaining = 0
 

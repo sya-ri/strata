@@ -27,5 +27,6 @@ public enum class PerformanceHost {
     /**
      * Velocity declarations and delivery to an actual client.
      */
+    @Suppress("unused") // Public remote-host evidence identity for downstream proxy fixtures.
     Velocity,
 }

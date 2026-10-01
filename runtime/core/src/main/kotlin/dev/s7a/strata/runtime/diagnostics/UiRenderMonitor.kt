@@ -4,7 +4,7 @@ import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Owner-thread, opt-in work monitor with at most 4,096 node records per checkpoint interval and no frame history.
+ * Owner-thread, opt-in work monitor with a bounded node-record capacity per checkpoint interval (4,096 by default, up to 65,536 when explicitly requested) and no frame history.
  * Existing nodes form a baseline rather than being reported as newly created. Snapshots are copied only on request.
  * All methods reject operation reentry and foreign threads; close is idempotent and terminal host cleanup closes automatically.
  */

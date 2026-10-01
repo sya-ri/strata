@@ -63,6 +63,9 @@ public class FabricMinecraftScreen private constructor(
     @InternalStrataRuntimeApi
     override fun startRenderMonitoring(): UiRenderMonitor = host.startRenderMonitoring()
 
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = host.startRenderMonitoring(maxNodeRecords)
+
     private var attached = false
     private var lastClickTime = 0L
     private var lastClickButton = Int.MIN_VALUE

@@ -71,6 +71,7 @@ public object LoadedArtifactMetadata {
     /**
      * Hashes the exact loaded representative class resources and their nested declaration closure.
      */
+    @Suppress("unused") // Public Maven API consumed by downstream CPU and loaded-client fixtures.
     public fun captureClassHashes(classes: List<Class<*>>): JsonObject =
         JsonObject().apply {
             classClosure(classes).forEach { type ->
@@ -210,7 +211,7 @@ public object LoadedArtifactMetadata {
                 }
                 addProperty("hashedUrl", inputLocation.toExternalForm())
                 val inputConnection =
-                    if (inputLocation == location) connection else inputLocation.openConnection().apply { useCaches = false }
+                    if (inputLocation.toExternalForm() == location.toExternalForm()) connection else inputLocation.openConnection().apply { useCaches = false }
                 val (hash, bytes) = inputConnection.getInputStream().use(::sha256)
                 addProperty("sha256", hash)
                 addProperty("bytes", bytes)

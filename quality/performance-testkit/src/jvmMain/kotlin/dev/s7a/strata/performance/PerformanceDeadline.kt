@@ -15,6 +15,7 @@ public class PerformanceDeadline internal constructor(
     /**
      * Starts one nonnegative budget on the JDK monotonic clock; oversized durations fail before acquisition.
      */
+    @Suppress("unused") // Downstream fixtures construct JDK-clock suite budgets through this Maven API.
     public constructor(timeoutMillis: Long) : this(timeoutMillis, System::nanoTime)
 
     /**

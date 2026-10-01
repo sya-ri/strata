@@ -5,6 +5,7 @@ package dev.s7a.strata.performance
  * Only counters are retained; snapshots and serialization belong outside sample boundaries.
  * Overflow fails the invoking operation instead of wrapping into apparently valid work.
  */
+@Suppress("unused") // Public test-only Maven contract also used by downstream workloads.
 public class WorkCounter(
     names: List<String>,
 ) {

@@ -54,6 +54,7 @@ import net.minecraft.client.input.KeyEvent as MinecraftKeyEvent
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions", "TooGenericExceptionCaught")
 public class FabricMinecraftScreen private constructor(
+    @Suppress("CanBeParameter") // Owner methods, including diagnostics delegation, retain this host beyond construction.
     private val host: MinecraftUiHost,
     private val inventory: FabricMinecraftInventoryBridge,
     private var parent: Screen?,
@@ -67,6 +68,9 @@ public class FabricMinecraftScreen private constructor(
 
     @InternalStrataRuntimeApi
     override fun startRenderMonitoring(): UiRenderMonitor = host.startRenderMonitoring()
+
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = host.startRenderMonitoring(maxNodeRecords)
 
     private var attached = false
     private val presentation = FabricMinecraftFramePresenter(minecraftClient)

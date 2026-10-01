@@ -156,10 +156,12 @@ internal object MinecraftHostImplementation {
             }
         }
 
-        override fun startRenderMonitoring(): UiRenderMonitor {
+        override fun startRenderMonitoring(): UiRenderMonitor = startRenderMonitoring(4096)
+
+        override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor {
             checkOwner()
             check(operation == null) { "Minecraft UI host operations are non-reentrant." }
-            return session.startRenderMonitoring()
+            return session.startRenderMonitoring(maxNodeRecords)
         }
 
         override fun detach() {

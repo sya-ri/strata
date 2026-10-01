@@ -140,3 +140,19 @@ It checks registered external input hashes and owns no timer or application oper
 Every measured fork and iteration must return its provenance confirmation; a missing, failed or incomplete profiler rejects the success receipt and shared summary.
 Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark annotations cannot bypass the fork-classpath constraints.
 Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.
+
+The separate stress corpus is selected with `-Pstrata.performance.stress=true` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
+It measures 100/1,000,000-row indexed virtual lists, eight-image Canvas churn at 256/1024 pixels, configured text lengths of 32/16,384 UTF-16 units, actual checkbox pointer activation, explicit animation-cell time advances, 128/4096-observer fan-out, and 1/2/4-pixel nine-slice patterns with transparency.
+These sizes are declared stress inputs, rather than claims about application limits or complete font-provider coverage.
+Its 39 generated cases preserve the existing component and historical matrices; JMH and the shared kit own all collection and comparison.
+The component `check` also asserts idle reuse, real changed work, bounded virtual-list nodes, input state, preserved multipixel tiling and released source subscriptions.
+Canvas pixel preparation and immutable profile/font loading remain outside the timed operations; native raster/upload/cache churn still needs loaded-client evidence.
+
+The native-free `:quality:remote-benchmarks:jmhRemote` corpus measures real declaration diffs, patch validation, update/snapshot codecs and framing-owner lifetimes.
+Its 30 generated cases use 100 nodes and the actual default 8192-node protocol bound, with stable, single-record and complete-record changes.
+The module's `check` verifies exact changed-record counts, immutable tree parity, canonical encoded messages and byte-identical fragmented delivery for every combination.
+Use the same three independent repetitions and separate AverageTime/SampleTime modes; smoke is a separate five-case input subset.
+These are protocol CPU measurements; actual Paper/Velocity owner scheduling, plugin messaging, backend switches and multisession behavior require separate real host evidence.
+
+The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
+The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.

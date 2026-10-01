@@ -34,7 +34,7 @@ public class WorkExpectation(
         exact.forEach { (name, expected) -> check(actual[name] == expected) { "$name: expected $expected, got ${actual[name]}" } }
         maximum.forEach { (name, bound) ->
             val value = checkNotNull(actual[name]) { "Missing performance metric: $name" }
-            check(0 <= value && value <= bound) { "$name: expected at most $bound, got $value" }
+            check(value in 0..bound) { "$name: expected at most $bound, got $value" }
         }
         minimum.forEach { (name, bound) ->
             val value = checkNotNull(actual[name]) { "Missing performance metric: $name" }
