@@ -304,6 +304,7 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
     for directory in directories:
         receipt, receipt_bytes = read_json_document(directory / "receipt.json")
         require(receipt.get("contract") == "strata-jmh-v1", "Unsupported JMH receipt")
+        require(receipt.get("fork_verification") == "loaded-artifacts-per-iteration-v1", "Missing actual JMH fork verification")
         validate_run_id(receipt.get("run_id"), "JMH invocation")
         validate_hash(receipt.get("harness_sha256"), "JMH harness")
         require(isinstance(receipt.get("arguments"), list) and bool(receipt["arguments"])
@@ -358,6 +359,14 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
             else:
                 median(value for fork in samples for value in fork)
             secondary = row.get("secondaryMetrics", {})
+            provenance = secondary.get("strata.provenance", {})
+            require(provenance.get("scoreUnit") == "verified" and provenance.get("score") == 1,
+                    "JMH fork artifacts were not verified")
+            confirmations = provenance.get("rawData")
+            require(isinstance(confirmations, list) and len(confirmations) == row["forks"]
+                    and all(isinstance(fork, list) and len(fork) == row["measurementIterations"]
+                            and all(type(value) in (int, float) and value == 1 for value in fork) for fork in confirmations),
+                    "Incomplete JMH fork provenance iterations")
             for name, unit in (("gc.alloc.rate.norm", "B/op"), ("gc.count", "counts")):
                 require(name in secondary and secondary[name].get("scoreUnit") == unit, f"Missing JMH GC metric: {name}")
                 median([secondary[name].get("score")])
@@ -373,7 +382,7 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
     verify_repetitions(receipts, repetitions)
     require(all(type(receipt.get("repetition")) is int for receipt in receipts), "Invalid JMH repetition index")
     require({receipt.get("repetition") for receipt in receipts} == set(range(repetitions)), "Missing or duplicate JMH repetition index")
-    verify_equal(receipts, ("contract", "arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads"))
+    verify_equal(receipts, ("contract", "fork_verification", "arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads"))
     stable(targets, "JMH loaded runtime")
     stable(inputs, "JMH fixture inputs")
     require(all(set(run) == set(runs[0]) for run in runs), "Changed JMH workload matrix")
@@ -394,7 +403,7 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
             summary["per_run_percentile_medians"] = {percentile: median(row["primaryMetric"]["scorePercentiles"][percentile] for row in rows)
                                                      for percentile in ("50.0", "95.0", "99.0")}
         summaries.append(summary)
-    conditions = {field: receipts[0][field] for field in ("arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads")}
+    conditions = {field: receipts[0][field] for field in ("fork_verification", "arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads")}
     conditions["inputs"] = inputs[0]
     conditions["controls"] = [{"benchmark": key[0], "params": dict(key[2]),
                                **{field: runs[0][key][field] for field in control_keys}}

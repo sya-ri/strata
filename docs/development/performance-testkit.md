@@ -134,3 +134,9 @@ Use the same repetition and mode properties and packaged summary/comparison comm
 JMH evidence requires an independent fork and rejects JVM flags that redirect the classpath, replace its classloader, patch modules or inject instrumentation agents.
 Such flags could make parent-loaded artifact identities certify different child code; they fail before any output directory or success receipt is created.
 Ordinary heap, GC and native-access JVM options remain supported and are recorded by JMH.
+
+`JmhForkProfiler` uses JMH's standard internal-profiler lifecycle to verify actual child-loaded target, collector, harness and fixture class trees, including generated benchmark classes, before sampling.
+It checks registered external input hashes and owns no timer or application operation.
+Every measured fork and iteration must return its provenance confirmation; a missing, failed or incomplete profiler rejects the success receipt and shared summary.
+Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark annotations cannot bypass the fork-classpath constraints.
+Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.

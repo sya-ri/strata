@@ -8,6 +8,13 @@ public final class dev/s7a/strata/performance/ArtifactIdentity {
 	public final fun tree (Ljava/nio/file/Path;)Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/performance/JmhForkProfiler : org/openjdk/jmh/profile/InternalProfiler {
+	public fun <init> (Ljava/lang/String;)V
+	public fun afterIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/results/IterationResult;)Ljava/util/Collection;
+	public fun beforeIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;)V
+	public fun getDescription ()Ljava/lang/String;
+}
+
 public final class dev/s7a/strata/performance/JmhPerformanceRunner {
 	public static final field INSTANCE Ldev/s7a/strata/performance/JmhPerformanceRunner;
 	public final fun run ([Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;Ljava/util/Map;)V

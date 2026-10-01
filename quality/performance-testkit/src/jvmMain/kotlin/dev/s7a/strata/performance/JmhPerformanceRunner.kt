@@ -6,9 +6,7 @@ import org.openjdk.jmh.results.RunResult
 import org.openjdk.jmh.results.format.ResultFormatType
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.CommandLineOptions
-import org.openjdk.jmh.runner.options.Options
 import org.openjdk.jmh.runner.options.OptionsBuilder
-import java.lang.management.ManagementFactory
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -47,15 +45,17 @@ public object JmhPerformanceRunner {
         require(Files.exists(destination).not()) { "JMH evidence already exists: $destination" }
         val loader = forkLoader(inputFixtures)
         val cli = CommandLineOptions(*inputArguments)
-        verifyForkArguments(cli)
-        val runtime = LoadedArtifactMetadata.capture(loader, inputTargets, inputTargets.keys)
-        LoadedArtifactMetadata.verifyComplete(runtime)
-        val fixtureIdentity = ArtifactIdentity.applicationTrees(inputFixtures)
-        val harnessIdentity = ArtifactIdentity.fullCodeSource(Runner::class.java)
-        val collectorIdentity = PerformanceJson.collectorIdentity()
+        val forkIdentity = JmhForkConfiguration.capture(cli, inputFixtures, inputTargets, inputFiles)
+        val runtime = forkIdentity.getAsJsonObject("runtime")
+        val fixtureIdentity = forkIdentity.getAsJsonObject("fixtures").entrySet().associate { it.key to it.value.asString }
+        val certifiedClasses = fixtureIdentity.keys.map { Class.forName(it, false, loader) }
+        val harnessIdentity = forkIdentity.get("harness").asString
+        val collectorIdentity = forkIdentity.getAsJsonObject("collector")
+        val gson = Gson()
         val options =
             OptionsBuilder()
                 .parent(cli)
+                .addProfiler(JmhForkProfiler::class.java, forkIdentity.toString())
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)
                 .result(destination.resolve("results.json").toString())
@@ -64,7 +64,7 @@ public object JmhPerformanceRunner {
         Files.createDirectory(destination)
         val results = Runner(options).run()
         verifyMatrix(results, inputWorkloads)
-        check(ArtifactIdentity.applicationTrees(inputFixtures) == fixtureIdentity) { "Benchmark fixture changed during JMH execution" }
+        check(ArtifactIdentity.applicationTrees(certifiedClasses) == fixtureIdentity) { "Benchmark fixture changed during JMH execution" }
         check(ArtifactIdentity.fullCodeSource(Runner::class.java) == harnessIdentity) { "JMH harness changed during execution" }
         check(PerformanceJson.collectorIdentity() == collectorIdentity) { "Collector changed during JMH execution" }
         check(LoadedArtifactMetadata.capture(loader, inputTargets, inputTargets.keys) == runtime) { "Measured runtime changed during JMH execution" }
@@ -72,7 +72,6 @@ public object JmhPerformanceRunner {
         val archivedTargets = archiveTargets(runtime, destination)
         archive(sourceUrl(Runner::class.java), destination.resolve("harness.jar"), harnessIdentity)
         archive(sourceUrl(JvmPerformanceMeter::class.java), destination.resolve("collector.jar"), collectorIdentity.get("code_source_sha256").asString)
-        val gson = Gson()
         PerformanceJson.writeNew(
             destination.resolve("receipt.json"),
             JsonObject().apply {
@@ -80,6 +79,7 @@ public object JmhPerformanceRunner {
                 addProperty("status", "passed")
                 addProperty("run_id", UUID.randomUUID().toString())
                 addProperty("repetition", repetition)
+                addProperty("fork_verification", "loaded-artifacts-per-iteration-v1")
                 addProperty("results_sha256", ArtifactIdentity.file(destination.resolve("results.json")))
                 addProperty("harness_sha256", harnessIdentity)
                 add("arguments", gson.toJsonTree(inputArguments))
@@ -114,6 +114,17 @@ public object JmhPerformanceRunner {
             }
         check(actual.size == actual.toSet().size && actual.toSet() == expected) { "JMH did not complete the registered workload matrix" }
         check(results.all { result -> result.primaryResult.score.isFinite() && 0 <= result.primaryResult.score }) { "JMH returned an unavailable primary measurement" }
+        check(
+            results.all { run ->
+                0 < run.params.forks && run.benchmarkResults.size == run.params.forks &&
+                    run.benchmarkResults.all { fork ->
+                        fork.iterationResults.size == run.params.measurement.count &&
+                            fork.iterationResults.all { iteration ->
+                                iteration.secondaryResults["strata.provenance"]?.score == 1.0
+                            }
+                    }
+            },
+        ) { "JMH fork provenance did not complete every measured iteration" }
     }
 
     private fun forkLoader(fixtures: List<Class<*>>): ClassLoader {
@@ -123,17 +134,6 @@ public object JmhPerformanceRunner {
         }
         require(fixtures.all { Class.forName(it.name, false, loader) === it }) { "JMH fixture resolves outside its fork classpath" }
         return loader
-    }
-
-    private fun verifyForkArguments(options: Options) {
-        require(0 < options.forkCount.orElse(1)) { "JMH evidence requires an independent fork" }
-        val arguments =
-            options.jvmArgs.orElse(ManagementFactory.getRuntimeMXBean().inputArguments) +
-                options.jvmArgsPrepend.orElse(emptyList()) + options.jvmArgsAppend.orElse(emptyList())
-        val redirects = listOf("-cp", "-classpath", "--class-path", "--module-path", "-p", "--patch-module", "--upgrade-module-path", "-Xbootclasspath", "-Djava.system.class.loader", "-Djava.class.path", "-javaagent", "-agentlib", "-agentpath")
-        require(arguments.none { argument -> redirects.any { flag -> argument == flag || argument.startsWith("$flag=") || argument.startsWith("$flag:") || argument.startsWith("$flag/") || argument.startsWith("$flag ") } }) {
-            "JMH evidence cannot certify a redirected or instrumented fork classpath"
-        }
     }
 
     private fun fixtureInputs(inputs: Map<String, Path>): Map<String, Path> {

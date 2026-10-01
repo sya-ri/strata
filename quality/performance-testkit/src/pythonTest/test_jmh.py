@@ -41,11 +41,13 @@ class JmhEvidenceTest(unittest.TestCase):
                    "threads": 1, "forks": 1, "jvm": "java", "jvmArgs": [], "jdkVersion": "25", "vmName": "OpenJDK", "vmVersion": "25",
                    "warmupIterations": 3, "warmupTime": "1 s", "warmupBatchSize": 1,
                    "measurementIterations": 1, "measurementTime": "1 s", "measurementBatchSize": 1,
-                   "primaryMetric": metric, "secondaryMetrics": {"gc.alloc.rate.norm": {"score": 16, "scoreUnit": "B/op"},
+                   "primaryMetric": metric, "secondaryMetrics": {"strata.provenance": {"score": 1, "scoreUnit": "verified", "rawData": [[1]]},
+                                                                  "gc.alloc.rate.norm": {"score": 16, "scoreUnit": "B/op"},
                                                                   "gc.count": {"score": 0, "scoreUnit": "counts"}}}
             content = json.dumps([row]).encode()
             (directory / "results.json").write_bytes(content)
             receipt = {"contract": "strata-jmh-v1", "status": "passed", "run_id": str(uuid.uuid4()), "repetition": repetition,
+                       "fork_verification": "loaded-artifacts-per-iteration-v1",
                        "results_sha256": kit.sha256_bytes(content), "harness_sha256": kit.digest(HARNESS),
                        "arguments": ["fixture.Frame.*", "-bm", mode], "fixture_identity": {"fixture.Frame": "1" * 64},
                        "environment": {"java": "25"}, "collector_identity": kit.collector_identity(COLLECTOR),
@@ -87,6 +89,30 @@ class JmhEvidenceTest(unittest.TestCase):
         receipt = json.loads(path.read_bytes())
         receipt["results_sha256"] = kit.sha256_bytes(content)
         path.write_text(json.dumps(receipt), encoding="utf-8")
+
+    def test_missing_or_incomplete_fork_confirmation_rejects_success(self):
+        for mutation in ("receipt", "missing", "score", "iteration", "boolean"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                directories = self.prepare(Path(temporary))
+                path = directories[0] / "receipt.json"
+                if mutation == "receipt":
+                    receipt = json.loads(path.read_bytes())
+                    receipt.pop("fork_verification")
+                    path.write_text(json.dumps(receipt), encoding="utf-8")
+                else:
+                    raw = json.loads((directories[0] / "results.json").read_bytes())
+                    metric = raw[0]["secondaryMetrics"]["strata.provenance"]
+                    if mutation == "missing":
+                        raw[0]["secondaryMetrics"].pop("strata.provenance")
+                    elif mutation == "score":
+                        metric["score"] = 0
+                    elif mutation == "iteration":
+                        metric["rawData"] = [[]]
+                    else:
+                        metric["rawData"] = [[True]]
+                    self.replace_raw(directories[0], raw)
+                with self.assertRaises(kit.EvidenceError):
+                    kit.summarize_jmh(directories, COLLECTOR)
 
     def test_incomplete_matrix_metrics_conditions_archives_and_duplicate_runs_fail(self):
         for mutation in ("matrix", "metric", "condition", "archive", "duplicate", "boolean_index", "raw_hash"):
