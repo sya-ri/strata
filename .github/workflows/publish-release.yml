@@ -111,7 +111,7 @@ jobs:
       run: bash ./gradlew check -x :integration:docs:check koverHtmlReport koverXmlReport -Pkover -Pstrata.webDemoInstallSystemDependencies=true
       working-directory: product
     - name: Build and verify signed publication inputs
-      run: bash ./gradlew verifyPublishedConsumer modrinthReleaseManifest hangarReleaseManifest -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$SOURCE_COMMIT"
+      run: bash ./gradlew --init-script ../release/prepare-fabric-sources.gradle verifyPublishedConsumer modrinthReleaseManifest hangarReleaseManifest -Pstrata.sourceRevision="$RELEASE_TAG" -Pstrata.sourceCommit="$SOURCE_COMMIT"
         -Pstrata.modrinthProjectId="$(jq -r .projectId release/modrinth-project.json)"
       working-directory: product
       env:

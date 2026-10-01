@@ -17,6 +17,9 @@ The protected `release` environment controls signing and publication credentials
 
 Preparation runs the full quality suite, Kover, and Qodana against the selected tag, builds and signs the artifacts, and checks a standalone Maven consumer.
 Before browser verification, it installs Chromium, Firefox, WebKit, and their Linux system dependencies using the tagged product's pinned Playwright CLI.
+The controller selects Loom's remapped Fabric sources before signing and consumer verification when the tagged build also registers the unremapped development sources.
+It applies the tagged runtime's declared Loom plugin before the root build configures that publication, so Maven and Gradle sources metadata refer to the same remapped JAR.
+It removes only that exact duplicate pair; an unexpected sources inventory fails preparation.
 It saves the generated Maven inventory, original artifacts and signatures, destination manifests, release notes, public signing key, and a file-by-file SHA-256 inventory in `release-prepared.tar.gz`.
 The manifest binds these bytes to the signed tag object, product commit, controller commit, workflow run, and attempt.
 `prepared-<tag>-<attempt>` retains this archive in Actions for 90 days.

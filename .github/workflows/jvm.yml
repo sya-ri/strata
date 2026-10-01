@@ -110,6 +110,7 @@ jobs:
         python3 -B -m unittest discover -s gradle/tests -p "test_*.py"
         bash release/tests/verify-github-release-preflight.sh
         bash release/tests/verify-github-release-read.sh
+        python3 -B release/tests/verify-fabric-sources.py
     - name: Test Java toolchain inventory
       shell: bash
       run: bash release/tests/verify-java-toolchain-inventory.sh
