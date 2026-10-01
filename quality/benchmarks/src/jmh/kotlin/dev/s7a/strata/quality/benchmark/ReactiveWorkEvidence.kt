@@ -1,5 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.PerformanceJson
+import dev.s7a.strata.performance.WorkExpectation
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -22,9 +24,7 @@ public object ReactiveWorkEvidence {
             state.setup()
             try {
                 state.nextFrame()
-                val work = state.workSnapshot()
-                check(work.overflowed.not())
-                check(work.counts.getValue(UiRenderMetric.FrameSuccess) == 1L)
+                val work = PerformanceJson.work(state.workSnapshot())
                 val expected =
                     when (workload) {
                         ReactiveWorkload.Static, ReactiveWorkload.MapEqual -> 0L
@@ -32,15 +32,12 @@ public object ReactiveWorkEvidence {
                         ReactiveWorkload.FanOut128 -> 128L
                         else -> 1L
                     }
-                check(work.counts.getValue(UiRenderMetric.ContentEvaluation) == expected) { "Unexpected evaluation count for $workload: $work" }
+                val exact = mutableMapOf(UiRenderMetric.FrameSuccess.name to 1L, UiRenderMetric.ContentEvaluation.name to expected)
                 if (expected == 0L) {
-                    listOf(UiRenderMetric.NodeUpdate, UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint).forEach { metric ->
-                        check(work.counts.getValue(metric) == 0L)
-                    }
+                    listOf(UiRenderMetric.NodeUpdate, UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint).forEach { metric -> exact[metric.name] = 0L }
                 }
-                if (workload == ReactiveWorkload.Independent128) check(work.counts.getValue(UiRenderMetric.ConsumerNotification) == 1L)
-                check(work.counts.getValue(UiRenderMetric.RowEvaluation) <= 7L)
-                check(work.nodes.size < 400)
+                if (workload == ReactiveWorkload.Independent128) exact[UiRenderMetric.ConsumerNotification.name] = 1L
+                WorkExpectation(exact = exact, maximum = mapOf(UiRenderMetric.RowEvaluation.name to 7L, "NodeInventorySize" to 399L)).verify(work)
                 val counts =
                     listOf(
                         UiRenderMetric.ContentEvaluation,
@@ -49,14 +46,14 @@ public object ReactiveWorkEvidence {
                         UiRenderMetric.Layout,
                         UiRenderMetric.Paint,
                         UiRenderMetric.RowEvaluation,
-                    ).map { work.counts.getValue(it) }
+                    ).map { work.getValue(it.name) }
                 println(
                     (
                         listOf(workload.name) + counts +
                             listOf(
-                                work.nodes.size,
-                                work.activeSubscriptions,
-                                work.counts.getValue(UiRenderMetric.ConsumerNotification),
+                                work.getValue("NodeInventorySize"),
+                                work.getValue("ActiveSubscriptions"),
+                                work.getValue(UiRenderMetric.ConsumerNotification.name),
                             )
                     ).joinToString(","),
                 )

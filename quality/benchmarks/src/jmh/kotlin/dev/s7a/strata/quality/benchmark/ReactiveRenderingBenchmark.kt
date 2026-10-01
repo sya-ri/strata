@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonObject
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Spacer
@@ -10,8 +11,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
+import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -58,7 +58,7 @@ public open class ReactiveRenderingBenchmark {
         private lateinit var session: RuntimeUiSession
         private lateinit var source: BenchmarkStateSource<Int>
         private lateinit var items: BenchmarkStateSource<List<Int>>
-        private var monitor: UiRenderMonitor? = null
+        private var monitor: RuntimeWorkMonitor? = null
         private var revision = 0
         private val normal = (0 until 200).toList()
         private val appended = (0..200).toList()
@@ -92,14 +92,15 @@ public open class ReactiveRenderingBenchmark {
                 }
             session.attach()
             session.frame(constraints)
-            if (monitoring) monitor = session.startRenderMonitoring()
+            if (monitoring) monitor = RuntimeWorkMonitor(session, checkpointSamples = 64)
         }
 
         /**
          * Measures source publication plus one frame; diagnostic intervals span 64 invocations.
          */
-        public fun nextFrame(): RuntimeUiFrame {
-            if (revision % 64 == 0) monitor?.checkpoint()
+        public fun nextFrame(): RuntimeUiFrame = monitor?.sample(::publishFrame) ?: publishFrame()
+
+        private fun publishFrame(): RuntimeUiFrame {
             revision += 1
             when (scenario) {
                 ReactiveWorkload.Static -> Unit
@@ -113,18 +114,21 @@ public open class ReactiveRenderingBenchmark {
         /**
          * Returns detached work evidence outside timed invocations for the deterministic verification runner.
          */
-        public fun workSnapshot(): UiRenderSnapshot = checkNotNull(monitor).snapshot()
+        public fun workSnapshot(): JsonObject = checkNotNull(monitor).snapshot()
 
         /**
          * Verifies complete interval evidence and releases every retained resource on the worker thread.
          */
         @TearDown(Level.Trial)
         public fun close() {
-            monitor?.let {
-                check(it.snapshot().overflowed.not())
-                it.close()
+            try {
+                monitor?.let {
+                    it.snapshot()
+                    it.close()
+                }
+            } finally {
+                session.close()
             }
-            session.close()
         }
     }
 }

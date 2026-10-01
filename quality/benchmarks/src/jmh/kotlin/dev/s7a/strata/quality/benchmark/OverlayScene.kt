@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonObject
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
@@ -10,9 +11,8 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
-import dev.s7a.strata.runtime.diagnostics.UiRenderSnapshot
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
@@ -43,21 +43,22 @@ internal class OverlayScene(
                 }
             }
         }
-    private val monitor: UiRenderMonitor?
+    private val monitor: RuntimeWorkMonitor?
     private var revision = 0
 
     init {
         require(0 < width && 0 < layers)
         session.attach()
         session.frame(constraints)
-        monitor = if (monitoring) session.startRenderMonitoring() else null
+        monitor = if (monitoring) RuntimeWorkMonitor(session, checkpointSamples = 64) else null
     }
 
     /**
      * Publishes a new lower color and returns the next frame, checkpointing every 64 updates.
      */
-    fun nextFrame(): RuntimeUiFrame {
-        if (revision % 64 == 0) monitor?.checkpoint()
+    fun nextFrame(): RuntimeUiFrame = monitor?.sample(::publishFrame) ?: publishFrame()
+
+    private fun publishFrame(): RuntimeUiFrame {
         revision += 1
         source.publish(ArgbColor(if (revision % 2 == 0) 0xFF102030.toInt() else 0xFF304050.toInt()))
         return session.frame(constraints)
@@ -74,7 +75,7 @@ internal class OverlayScene(
     /**
      * Returns detached bounded evidence; monitoring must be enabled by the owner.
      */
-    fun snapshot(): UiRenderSnapshot = checkNotNull(monitor).snapshot()
+    fun snapshot(): JsonObject = checkNotNull(monitor).snapshot()
 
     /**
      * Independently computes the uniform expected pixel with integer opaque-destination source-over.

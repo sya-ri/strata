@@ -1,5 +1,6 @@
 package dev.s7a.strata.integration.web
 
+import dev.s7a.strata.performance.PerformancePhase
 import dev.s7a.strata.runtime.web.WebTheme
 import dev.s7a.strata.runtime.web.mountWeb
 import dev.s7a.strata.runtime.web.renderWebDocument
@@ -21,6 +22,8 @@ public fun main() {
         val host = mountWeb(ReactiveScenario().definition(), root, ReactiveScenario.viewport, theme)
         check(initial === root.firstElementChild) { "Initial DOM was replaced during startup." }
         root.setAttribute("data-mounted", "true")
+        window.asDynamic().strataVerifyPerformanceCollector = { WebPerformanceCollectorCheck.verify() }
+        window.asDynamic().strataMeasurePerformance = { phase: String -> WebPerformanceFixture(theme, PerformancePhase.valueOf(phase)).measure() }
         window.addEventListener("pagehide", { host.close() })
     }
 }

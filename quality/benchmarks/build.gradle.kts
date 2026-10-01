@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     add("jmh", project(":api"))
+    add("jmh", project(":quality:performance-testkit"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:headless"))
 }

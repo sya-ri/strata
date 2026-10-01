@@ -10,6 +10,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://maven.fabricmc.net/")
 }
 
 gradlePlugin {
@@ -24,6 +25,7 @@ gradlePlugin {
 }
 
 dependencies {
+    compileOnly(libs.fabric.loom.build)
     testImplementation(gradleTestKit())
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

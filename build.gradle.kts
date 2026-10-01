@@ -11,6 +11,7 @@ import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
+import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
@@ -530,6 +531,7 @@ private val minecraftTargetByProjectPath =
 val releasePublicationProjectPaths =
     listOf(
         ":api",
+        ":quality:performance-testkit",
         ":paper-api",
         ":velocity-api",
         ":runtime:core",
@@ -543,9 +545,9 @@ val releasePublicationProjectPaths =
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
 val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
-        "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
+        if (projectPath == ":quality:performance-testkit") "$group:strata-performance-testkit" else "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
-val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
+val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":quality:performance-testkit")
 val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
@@ -1335,6 +1337,14 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            tasks.withType<LibraryClientProductionRunTask>().configureEach {
+                dependsOn(":quality:performance-testkit:jvmJar")
+                verificationLibraries.from(
+                    providers.provider {
+                        project(":quality:performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
+                    },
+                )
+            }
             val remoteVerification = rootProject.file("integration/shared/minecraft-fabric/transport/verification/src")
             val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
             extensions.configure<KotlinJvmProjectExtension> {
@@ -1346,6 +1356,7 @@ subprojects {
             }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
+                    dependencies.add(implementationConfigurationName, project(":quality:performance-testkit"))
                     java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
                     java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))

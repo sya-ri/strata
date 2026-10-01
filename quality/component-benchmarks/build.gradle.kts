@@ -1,0 +1,113 @@
+import me.champeau.jmh.JmhBytecodeGeneratorTask
+import dev.detekt.gradle.extensions.DetektExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.api.artifacts.VersionCatalogsExtension
+
+plugins {
+    alias(libs.plugins.jmh)
+}
+
+extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+
+dependencies {
+    add("jmh", project(":api"))
+    add("jmh", project(":quality:performance-testkit"))
+    add("jmh", project(":runtime:core"))
+    add("jmh", project(":runtime:headless"))
+    add("jmh", project(":runtime:minecraft"))
+    add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
+}
+
+// The separate component corpus uses one isolated native generation, matching the shipped modern showcase.
+val componentCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val componentLwjglVersion = componentCatalog.findVersion("lwjgl-minecraft-263").orElseThrow().requiredVersion
+val componentNativeClassifier = providers.gradleProperty("strata.fontNatives").orElse(providers.provider {
+    val platform = when {
+        System.getProperty("os.name").startsWith("Windows") -> "windows"
+        System.getProperty("os.name").startsWith("Mac") -> "macos"
+        System.getProperty("os.name").startsWith("Linux") -> "linux"
+        else -> error("Set strata.fontNatives for this operating system")
+    }
+    val suffix = when (System.getProperty("os.arch")) {
+        "amd64", "x86_64" -> ""
+        "aarch64", "arm64" -> "-arm64"
+        "x86", "i386" -> "-x86"
+        "arm", "arm32", "armv7l" -> "-arm32"
+        else -> error("Set strata.fontNatives for this architecture")
+    }
+    "natives-$platform$suffix"
+}).get()
+require(componentNativeClassifier.matches(Regex("natives-[a-z0-9-]+")))
+dependencies {
+    add("jmhRuntimeOnly", "com.ibm.icu:icu4j:${componentCatalog.findVersion("icu-minecraft-262").orElseThrow().requiredVersion}")
+    listOf("lwjgl", "lwjgl-stb", "lwjgl-freetype").forEach { binding ->
+        add("jmhRuntimeOnly", "org.lwjgl:$binding:$componentLwjglVersion")
+        add("jmhRuntimeOnly", "org.lwjgl:$binding:$componentLwjglVersion:$componentNativeClassifier")
+    }
+}
+
+val componentLauncher = extensions.getByType<JavaToolchainService>().launcherFor {
+    languageVersion.set(JavaLanguageVersion.of(libs.versions.java.minecraft.get().toInt()))
+}
+
+val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped API-only component declarations").apply {
+    srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+    include("**/*Example.kt")
+}
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("jmh") { kotlin.source(showcaseSources) }
+}
+
+jmh {
+    jmhVersion.set(libs.versions.benchmark.harness)
+    includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ComponentRenderingBenchmark.*"))
+}
+
+val verifyComponentRenderingWork by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Exercises every shipped public component through a real Minecraft-profile host and the shared work assertions."
+    dependsOn("jmhClasses")
+    classpath = sourceSets.named("jmh").get().runtimeClasspath
+    mainClass.set("dev.s7a.strata.quality.benchmark.ComponentWorkEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
+tasks.named("check") { dependsOn(verifyComponentRenderingWork) }
+
+tasks.register<JavaExec>("captureComponentInventory") {
+    group = "verification"
+    description = "Stages exact component API performance assignments for review; never updates the verification baseline."
+    dependsOn("jmhClasses")
+    classpath = sourceSets.named("jmh").get().runtimeClasspath
+    mainClass.set("dev.s7a.strata.quality.benchmark.ComponentInventoryEvidence")
+    args(layout.buildDirectory.file("performance/component-api.tsv").get().asFile.absolutePath)
+}
+
+tasks.register<JavaExec>("jmhComponents") {
+    group = "verification"
+    description = "Runs the independent component corpus with JMH; the historical suite has a separate dependency graph."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.ComponentPerformanceEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
+    require(0 <= repetition)
+    val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
+    val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
+    require(mode in setOf("avgt", "sample"))
+    val suite = (if (smoke) "components-smoke" else "components") + (if (mode in setOf("sample")) "-sample" else "")
+    val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
+    args(result.get().asFile.absolutePath, repetition.toString(), "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    systemProperty("strata.performance.smoke", smoke)
+    systemProperty("strata.performance.mode", mode)
+}
+
+val changedPathFile = providers.gradleProperty("strata.performance.changedPaths").map { rootProject.file(it).absolutePath }
+tasks.withType<JavaExec>().matching { it.name in setOf("verifyComponentRenderingWork", "jmhComponents") }.configureEach {
+    changedPathFile.orNull?.let { systemProperty("strata.performance.changedPaths", it) }
+}

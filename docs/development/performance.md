@@ -21,6 +21,7 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 
 Run `./gradlew :quality:benchmarks:jmh` for average time and normalized allocation using the `gc` profiler.
 The [benchmark build](../../quality/benchmarks/build.gradle.kts) owns iteration, fork, and output settings; [benchmark sources](../../quality/benchmarks/src/jmh/kotlin) own scenes and viewports.
+Use the [performance testkit](performance-testkit.md) for shared collection, native host boundaries, work assertions, and evidence contracts instead of adding application-specific meters.
 
 Compare these costs separately:
 

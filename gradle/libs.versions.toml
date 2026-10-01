@@ -86,6 +86,8 @@ fabric-api1205 = "0.97.8+1.20.5"
 fabric-api1206 = "0.100.8+1.20.6"
 
 [libraries]
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "benchmark-harness" }
+fabric-loom-build = { module = "net.fabricmc:fabric-loom", version.ref = "fabric-loom" }
 dokka-versioning = { module = "org.jetbrains.dokka:versioning-plugin", version.ref = "dokka" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
 velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
