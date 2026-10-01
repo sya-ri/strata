@@ -30,6 +30,7 @@ Only selected destinations run, so one service's outage does not block or restar
 An exact existing publication is reused, an absent publication can be added, and a partial or conflicting publication stops that destination.
 Publication and verification run from the saved bundle using isolated controller tools; they do not configure, build, test, or sign the product again.
 GitHub receives the original preparation archive and signatures from the saved Maven inventory before its release becomes public and immutable.
+After creating a draft, the controller retries its read-only lookup briefly; if it stays invisible, publication stops and can resume from the same preparation.
 It does not fetch signatures from Maven Central or wait for Central publication.
 
 ## Retry and verification
@@ -51,6 +52,7 @@ A retry downloads the original Actions artifact or, after expiry, the matching i
 Both paths validate its producer, source identity, complete inventory, and hashes.
 Missing archives, mismatched tag objects, or unsuccessful preparation stop the run instead of silently rebuilding a supposedly identical release.
 Published Maven downloads are compared with the saved inventory and their original detached signatures.
+Portal verification also requires and checks the signature checksum sidecars when the saved preparation contains them; historical base-only inventories retain their original verification contract.
 
 ## Credentials and project setup
 

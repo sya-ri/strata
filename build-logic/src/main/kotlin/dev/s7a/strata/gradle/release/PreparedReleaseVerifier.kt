@@ -41,6 +41,7 @@ internal object PreparedReleaseVerifier {
                             password = requireNotNull(System.getenv("ORG_GRADLE_PROJECT_mavenCentralPassword")),
                             localRepository = root.resolve("maven").toPath(),
                             publicationFiles = files,
+                            signatureChecksums = root.resolve("maven").walkTopDown().any { it.isFile && it.name.endsWith(".asc.sha256") },
                         )
                     val evidence = output.resolve(operation.argument).toPath()
                     val result = if (operation == Operation.PORTAL_PREFLIGHT) verifier.preflight(coordinates, evidence) else verifier.verifyUntilPublished(coordinates, evidence)

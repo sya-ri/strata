@@ -32,6 +32,36 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     @Test
+    fun `prepared signature checksums require original signatures and reject unexpected files`() {
+        val fixture = fixture()
+        val server = server(fixture)
+        server.statuses.add(MavenCentralPortalCoordinator.DeploymentState.PUBLISHED)
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, signatureChecksums = true).preflight(fixture.coordinates, temporaryDirectory.resolve("missing-signature-checksums"), incompleteAttempts = 1)
+        }
+        server.addSignatureChecksums()
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server).preflight(fixture.coordinates, temporaryDirectory.resolve("legacy-policy"), incompleteAttempts = 1)
+        }
+        val receipt = fixture.coordinator(server, signatureChecksums = true).preflight(fixture.coordinates, temporaryDirectory.resolve("prepared-policy"))
+        assertEquals(10, receipt.verifiedContentFileCount)
+        assertEquals(40, receipt.verifiedChecksumCount)
+        server.addSignatureChecksums(corrupt = true)
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, signatureChecksums = true).preflight(fixture.coordinates, temporaryDirectory.resolve("corrupt-signature-checksum"))
+        }
+        server.addSignatureChecksums()
+        Files.writeString(fixture.repository.resolve("dev/s7a/strata/strata-api/0.1.1/strata-api-0.1.1.jar.asc"), "different signature")
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, signatureChecksums = true).preflight(fixture.coordinates, temporaryDirectory.resolve("different-signature"))
+        }
+        server.mode = Mode.EXTRA_PATH
+        assertThrows(IllegalStateException::class.java) {
+            fixture.coordinator(server, signatureChecksums = true).preflight(fixture.coordinates, temporaryDirectory.resolve("extra-prepared-file"), incompleteAttempts = 1)
+        }
+    }
+
+    @Test
     fun `non JVM artifacts are included in exact remote evidence`() {
         val fixture = fixture()
         val coordinate = fixture.coordinates.first()
@@ -383,6 +413,7 @@ internal class MavenCentralPortalCoordinatorTest {
             username: String = "user",
             password: String = "password",
             publicationFiles: List<String>? = null,
+            signatureChecksums: Boolean = false,
         ): MavenCentralPortalCoordinator =
             MavenCentralPortalCoordinator(
                 portalBaseUri = URI("${server.baseUrl}/"),
@@ -390,6 +421,7 @@ internal class MavenCentralPortalCoordinatorTest {
                 password = password,
                 localRepository = repository,
                 publicationFiles = publicationFiles,
+                signatureChecksums = signatureChecksums,
                 requestTimeout = Duration.ofSeconds(2),
                 retryBaseMillis = 0L,
                 sleeper = {},
@@ -397,7 +429,7 @@ internal class MavenCentralPortalCoordinatorTest {
     }
 
     private class MockCentralPortal(
-        fixture: Fixture,
+        private val fixture: Fixture,
     ) : AutoCloseable {
         private val executor = Executors.newCachedThreadPool()
         private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
@@ -446,6 +478,18 @@ internal class MavenCentralPortalCoordinatorTest {
             server.createContext("/api/v1/publisher/status") { exchange -> serveStatus(exchange) }
             server.createContext("/api/v1/publisher/deployment/") { exchange -> serveDownload(exchange) }
             server.start()
+        }
+
+        /** Adds the prepared bundle's signature sidecars without changing the legacy fixture. */
+        fun addSignatureChecksums(corrupt: Boolean = false) {
+            exactFiles.keys.filter { it.endsWith(".asc") }.toList().forEach { path ->
+                val content = exactFiles.getValue(path)
+                Files.write(fixture.repository.resolve(path), content)
+                CHECKSUMS.forEach { algorithm ->
+                    val digest = if (corrupt) "invalid checksum" else content.hash(algorithm.messageDigestName)
+                    exactFiles["$path.${algorithm.extension}"] = digest.toByteArray(StandardCharsets.UTF_8)
+                }
+            }
         }
 
         private fun serveDeployments(exchange: HttpExchange) {
