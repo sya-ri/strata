@@ -58,8 +58,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.2.0")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.0")
+    compileOnly("dev.s7a.strata:strata-api:0.2.1")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.1")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -70,7 +70,7 @@ Declare it as a required dependency in the consuming Mod so `UiDefinition.open()
 ```json
 {
   "depends": {
-    "strata": ">=0.2.0"
+    "strata": ">=0.2.1"
   }
 }
 ```
@@ -83,8 +83,8 @@ The matching Fabric client Mod is required for every player using the UI.
 
 | Platform | Installed Strata plugin | Consumer dependency (`compileOnly`) |
 | --- | --- | --- |
-| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.0` |
-| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.0` |
+| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.1` |
+| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.1` |
 
 Add these repositories to either plugin's `build.gradle.kts`:
 
@@ -99,7 +99,7 @@ Paper / Folia dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-paper-api:0.2.0")
+    compileOnly("dev.s7a.strata:strata-paper-api:0.2.1")
     compileOnly("io.papermc.paper:paper-api:<paper-api-version>")
 }
 ```
@@ -108,7 +108,7 @@ Velocity dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-velocity-api:0.2.0")
+    compileOnly("dev.s7a.strata:strata-velocity-api:0.2.1")
     compileOnly("com.velocitypowered:velocity-api:<velocity-api-version>")
 }
 ```
