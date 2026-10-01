@@ -1,0 +1,39 @@
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
+// The root build configures publications before the child's plugins block runs.
+// Apply that declared Loom plugin before publication captures Java's sources variant.
+gradle.projectsLoaded {
+    gradle.rootProject.allprojects.each { project ->
+        if (project.path.startsWith(':runtime:minecraft-fabric-')) {
+            project.pluginManager.withPlugin('com.vanniktech.maven.publish') {
+                def build = project.buildFile.text
+                def plugin = build.contains('alias(libs.plugins.fabricLoomRemap)') ? 'net.fabricmc.fabric-loom-remap' :
+                    build.contains('alias(libs.plugins.fabricLoom)') ? 'net.fabricmc.fabric-loom' : null
+                if (plugin == null) throw new GradleException('Unknown Fabric plugin declaration: ' + project.path)
+                project.pluginManager.apply(plugin)
+            }
+        }
+    }
+}
+gradle.projectsEvaluated {
+    gradle.rootProject.allprojects.each { project ->
+        def remap = project.tasks.findByName('remapSourcesJar')
+        def publishing = project.extensions.findByType(PublishingExtension)
+        if (remap == null || publishing == null) return
+        def original = project.tasks.getByName('sourcesJar').archiveFile.get().asFile
+        def canonical = remap.archiveFile.get().asFile
+        publishing.publications.withType(MavenPublication).each { publication ->
+            def sources = publication.artifacts.findAll { it.extension == 'jar' && it.classifier == 'sources' }
+            if (sources.size() == 1 && sources[0].file == canonical) return
+            if (sources.size() != 2 || sources.collect { it.file }.toSet() != [original, canonical].toSet()) {
+                throw new GradleException("Unexpected Fabric sources inventory: ${project.path}/${publication.name}")
+            }
+            publication.artifacts.remove(sources.find { it.file == original })
+            if (publication.artifacts.count { it.extension == 'jar' && it.classifier == 'sources' && it.file == canonical } != 1) {
+                throw new GradleException("Canonical Fabric sources missing: ${project.path}/${publication.name}")
+            }
+            project.logger.lifecycle("Selected remapped sources for ${project.path}/${publication.name}")
+        }
+    }
+}
