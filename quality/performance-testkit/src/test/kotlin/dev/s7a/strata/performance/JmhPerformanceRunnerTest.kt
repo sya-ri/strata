@@ -39,9 +39,28 @@ class JmhPerformanceRunnerTest {
         assertFalse(Files.exists(directory.resolve("results")))
     }
 
-    private fun run(inputs: Map<String, Path> = emptyMap()) {
+    @Test
+    fun redirectedForkCannotCertifyParentArtifacts() {
+        listOf("-cp other.jar", "--class-path=other.jar", "-Xbootclasspath/a:other.jar", "-javaagent:other.jar", "-Djava.system.class.loader=OtherLoader").forEach { argument ->
+            val failure = assertFailsWith<IllegalArgumentException> { run(arguments = arrayOf("-jvmArgsAppend", argument)) }
+            assertTrue(checkNotNull(failure.message).contains("fork classpath"))
+            assertFalse(Files.exists(directory.resolve("results")))
+        }
+    }
+
+    @Test
+    fun unForkedInvocationCannotCertifyIndependentEvidence() {
+        val failure = assertFailsWith<IllegalArgumentException> { run(arguments = arrayOf("-f", "0")) }
+        assertTrue(checkNotNull(failure.message).contains("independent fork"))
+        assertFalse(Files.exists(directory.resolve("results")))
+    }
+
+    private fun run(
+        inputs: Map<String, Path> = emptyMap(),
+        arguments: Array<String> = emptyArray(),
+    ) {
         JmhPerformanceRunner.run(
-            emptyArray(),
+            arguments,
             listOf(JmhPerformanceRunnerTest::class.java),
             mapOf("kit" to JvmPerformanceMeter::class.java.name),
             directory.resolve("results"),

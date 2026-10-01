@@ -130,3 +130,7 @@ It inherits the existing JMH plugin task's Java launcher and retains its three o
 The original `jmh` task and its result path remain unchanged.
 `:quality:benchmarks:check` verifies the actual generated historical matrix before either task is used.
 Use the same repetition and mode properties and packaged summary/comparison commands as the component corpus.
+
+JMH evidence requires an independent fork and rejects JVM flags that redirect the classpath, replace its classloader, patch modules or inject instrumentation agents.
+Such flags could make parent-loaded artifact identities certify different child code; they fail before any output directory or success receipt is created.
+Ordinary heap, GC and native-access JVM options remain supported and are recorded by JMH.

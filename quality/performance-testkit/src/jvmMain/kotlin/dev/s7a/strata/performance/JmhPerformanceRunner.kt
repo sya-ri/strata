@@ -6,7 +6,9 @@ import org.openjdk.jmh.results.RunResult
 import org.openjdk.jmh.results.format.ResultFormatType
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.CommandLineOptions
+import org.openjdk.jmh.runner.options.Options
 import org.openjdk.jmh.runner.options.OptionsBuilder
+import java.lang.management.ManagementFactory
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -44,6 +46,8 @@ public object JmhPerformanceRunner {
         val destination = output.toAbsolutePath().normalize()
         require(Files.exists(destination).not()) { "JMH evidence already exists: $destination" }
         val loader = forkLoader(inputFixtures)
+        val cli = CommandLineOptions(*inputArguments)
+        verifyForkArguments(cli)
         val runtime = LoadedArtifactMetadata.capture(loader, inputTargets, inputTargets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
         val fixtureIdentity = ArtifactIdentity.applicationTrees(inputFixtures)
@@ -51,7 +55,7 @@ public object JmhPerformanceRunner {
         val collectorIdentity = PerformanceJson.collectorIdentity()
         val options =
             OptionsBuilder()
-                .parent(CommandLineOptions(*inputArguments))
+                .parent(cli)
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)
                 .result(destination.resolve("results.json").toString())
@@ -119,6 +123,17 @@ public object JmhPerformanceRunner {
         }
         require(fixtures.all { Class.forName(it.name, false, loader) === it }) { "JMH fixture resolves outside its fork classpath" }
         return loader
+    }
+
+    private fun verifyForkArguments(options: Options) {
+        require(0 < options.forkCount.orElse(1)) { "JMH evidence requires an independent fork" }
+        val arguments =
+            options.jvmArgs.orElse(ManagementFactory.getRuntimeMXBean().inputArguments) +
+                options.jvmArgsPrepend.orElse(emptyList()) + options.jvmArgsAppend.orElse(emptyList())
+        val redirects = listOf("-cp", "-classpath", "--class-path", "--module-path", "-p", "--patch-module", "--upgrade-module-path", "-Xbootclasspath", "-Djava.system.class.loader", "-Djava.class.path", "-javaagent", "-agentlib", "-agentpath")
+        require(arguments.none { argument -> redirects.any { flag -> argument == flag || argument.startsWith("$flag=") || argument.startsWith("$flag:") || argument.startsWith("$flag/") || argument.startsWith("$flag ") } }) {
+            "JMH evidence cannot certify a redirected or instrumented fork classpath"
+        }
     }
 
     private fun fixtureInputs(inputs: Map<String, Path>): Map<String, Path> {
