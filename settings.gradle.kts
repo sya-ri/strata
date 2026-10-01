@@ -144,7 +144,7 @@ if (webOnly) {
         task.substringBeforeLast(':') in webProjectPaths &&
             (task.substringAfterLast(':') in setOf("check", "jsTest") ||
                 (task.substringBeforeLast(':') == ":quality:performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi")) ||
-                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhComponents", "captureComponentInventory")) ||
+                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhComponents", "captureComponentInventory")) ||
                 (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
     }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; use the complete build for other work." }
     include(*webProjectPaths.toTypedArray())

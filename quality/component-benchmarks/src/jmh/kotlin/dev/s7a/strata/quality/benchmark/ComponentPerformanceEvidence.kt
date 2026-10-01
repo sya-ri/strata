@@ -1,7 +1,8 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhPerformanceRunner
-import org.openjdk.jmh.annotations.Benchmark
+import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmPerformanceInputs
 import org.openjdk.jmh.annotations.Mode
 import java.nio.file.Path
 
@@ -22,12 +23,7 @@ public object ComponentPerformanceEvidence {
         val parameters = components.joinToString(",") { it.name }
         val benchmark = ComponentRenderingBenchmark::class.java
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
-        val expected =
-            benchmark.declaredMethods
-                .filter { it.isAnnotationPresent(Benchmark::class.java) }
-                .flatMap { method ->
-                    components.map { component -> JmhPerformanceRunner.workloadIdentity("${benchmark.name}.${method.name}", mode.shortLabel(), mapOf("component" to component.name)) }
-                }.toSet()
+        val expected = JmhWorkloadInventory.capture(listOf(benchmark), setOf(mode.shortLabel()), mapOf("component" to components.map { it.name }.toSet()))
         JmhPerformanceRunner.run(
             (args.drop(2) + listOf("-p", "component=$parameters")).toTypedArray(),
             listOf(ComponentRenderingBenchmark::class.java),
@@ -40,6 +36,9 @@ public object ComponentPerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             expected,
+            inputs =
+                JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
+                    mapOf("component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI())),
         )
     }
 }

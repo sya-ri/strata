@@ -10,8 +10,15 @@ public final class dev/s7a/strata/performance/ArtifactIdentity {
 
 public final class dev/s7a/strata/performance/JmhPerformanceRunner {
 	public static final field INSTANCE Ldev/s7a/strata/performance/JmhPerformanceRunner;
-	public final fun run ([Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;)V
+	public final fun run ([Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;Ljava/util/Map;)V
+	public static synthetic fun run$default (Ldev/s7a/strata/performance/JmhPerformanceRunner;[Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;Ljava/util/Map;ILjava/lang/Object;)V
 	public final fun workloadIdentity (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/JmhWorkloadInventory {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JmhWorkloadInventory;
+	public final fun capture (Ljava/util/List;Ljava/util/Set;Ljava/util/Map;Ljava/util/List;)Ljava/util/Set;
+	public static synthetic fun capture$default (Ldev/s7a/strata/performance/JmhWorkloadInventory;Ljava/util/List;Ljava/util/Set;Ljava/util/Map;Ljava/util/List;ILjava/lang/Object;)Ljava/util/Set;
 }
 
 public final class dev/s7a/strata/performance/JvmApiInventory {
@@ -23,6 +30,11 @@ public final class dev/s7a/strata/performance/JvmApiInventory {
 public final class dev/s7a/strata/performance/JvmArtifactIdentity {
 	public static final field INSTANCE Ldev/s7a/strata/performance/JvmArtifactIdentity;
 	public final fun capture (Ljava/lang/ClassLoader;Ljava/util/List;)Lcom/google/gson/JsonObject;
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceInputs {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceInputs;
+	public final fun read (Ljava/nio/file/Path;)Ljava/util/Map;
 }
 
 public final class dev/s7a/strata/performance/JvmPerformanceMeter {

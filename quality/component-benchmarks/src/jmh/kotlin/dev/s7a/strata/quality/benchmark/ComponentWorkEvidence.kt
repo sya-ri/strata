@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.PerformanceHost
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformancePhase
@@ -18,6 +19,7 @@ public object ComponentWorkEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.isEmpty())
+        verifyJmhInventory()
         val coverage = ComponentInventoryEvidence.verify()
         val selected = ComponentInventoryEvidence.select(ComponentInventoryEvidence.changedPaths())
         check(ComponentInventoryEvidence.select(setOf("api/src/main/kotlin/dev/s7a/strata/component/CanvasComponents.kt", "api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt")).toSet() == setOf(ComponentWorkload.Canvas, ComponentWorkload.TiledImage))
@@ -54,5 +56,15 @@ public object ComponentWorkEvidence {
             }
         }
         coverage.verifyCompleted(completed, selected.map { it.name }.toSet())
+    }
+
+    private fun verifyJmhInventory() {
+        val fixtures = listOf(ComponentRenderingBenchmark::class.java)
+        check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 4 * ComponentWorkload.entries.size)
+        check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 8 * ComponentWorkload.entries.size)
+        check(JmhWorkloadInventory.capture(fixtures, setOf("avgt"), mapOf("component" to setOf(ComponentWorkload.Row.name))).size == 4)
+        check(runCatching { JmhWorkloadInventory.capture(fixtures, setOf("avgt"), mapOf("unknown" to setOf("Row"))) }.exceptionOrNull() is IllegalArgumentException)
+        check(runCatching { JmhWorkloadInventory.capture(fixtures, setOf("avgt"), mapOf("component" to setOf("Unknown"))) }.exceptionOrNull() is IllegalArgumentException)
+        check(runCatching { JmhWorkloadInventory.capture(listOf(ComponentProfile::class.java), setOf("avgt")) }.exceptionOrNull() is IllegalArgumentException)
     }
 }

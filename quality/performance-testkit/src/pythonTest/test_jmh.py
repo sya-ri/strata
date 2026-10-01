@@ -9,7 +9,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 COLLECTOR = Path(os.environ["STRATA_PERFORMANCE_TESTKIT_JAR"]).resolve()
 HARNESS = Path(os.environ["STRATA_JMH_CORE_JAR"]).resolve()
@@ -53,7 +53,9 @@ class JmhEvidenceTest(unittest.TestCase):
                        "target_archives": {"fixture": "target-0.jar"}, "runtime_metadata": {"modules": [
                            {"module": "fixture", "representativeClass": representative, "status": "resolved", "classTree": tree,
                             "codeSource": {"status": "available", "sha256": kit.digest(COLLECTOR)},
-                            "classResource": {"status": "available", "entryName": entry, "sha256": resource_hash}}]}}
+                            "classResource": {"status": "available", "entryName": entry, "sha256": resource_hash}}]},
+                       "inputs": {"font": {"archive": "input-0.bin", "sha256": kit.sha256_bytes(b"font data")}}}
+            (directory / "input-0.bin").write_bytes(b"font data")
             (directory / "receipt.json").write_text(json.dumps(receipt), encoding="utf-8")
         return directories
 
@@ -111,5 +113,84 @@ class JmhEvidenceTest(unittest.TestCase):
                     (directories[1] / "results.json").write_bytes(b"changed")
                 if mutation not in ("matrix", "metric"):
                     path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaises(kit.EvidenceError):
+                    kit.summarize_jmh(directories, COLLECTOR)
+
+    def test_comparison_allows_only_target_changes_and_preserves_unavailable_ratios(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "baseline").mkdir()
+            (root / "candidate").mkdir()
+            baseline = self.prepare(root / "baseline")
+            candidate = self.prepare(root / "candidate")
+            for directory in candidate:
+                target = directory / "target-0.jar"
+                with ZipFile(target, "a") as archive:
+                    archive.writestr(ZipInfo("fixture/version.txt"), b"candidate target")
+                path = directory / "receipt.json"
+                receipt = json.loads(path.read_bytes())
+                receipt["runtime_metadata"]["modules"][0]["codeSource"]["sha256"] = kit.digest(target)
+                path.write_text(json.dumps(receipt), encoding="utf-8")
+            report = kit.compare_jmh(baseline, candidate, COLLECTOR)
+            self.assertEqual(["fixture"], report["changed_targets"])
+            self.assertEqual(0, report["cases"][0]["metrics"]["primary_score_median"]["delta"])
+            self.assertIsNone(report["cases"][0]["metrics"]["gc_count_median"]["candidate_to_baseline"])
+            self.assertIsNone(report["cases"][0]["metrics"]["gc_time_ms_median_available"]["delta"])
+            with self.assertRaises(kit.EvidenceError):
+                kit.compare_jmh(baseline, baseline, COLLECTOR)
+
+    def test_comparison_rejects_changed_inputs_fixture_harness_and_controls(self):
+        for mutation in ("input", "fixture", "harness", "environment", "options", "unit", "control"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / "baseline").mkdir()
+                (root / "candidate").mkdir()
+                baseline = self.prepare(root / "baseline")
+                candidate = self.prepare(root / "candidate")
+                for directory in candidate:
+                    path = directory / "receipt.json"
+                    receipt = json.loads(path.read_bytes())
+                    if mutation == "input":
+                        content = b"changed font data"
+                        (directory / "input-0.bin").write_bytes(content)
+                        receipt["inputs"]["font"]["sha256"] = kit.sha256_bytes(content)
+                    elif mutation == "fixture":
+                        receipt["fixture_identity"]["fixture.Frame"] = "2" * 64
+                    elif mutation == "harness":
+                        with ZipFile(directory / "harness.jar", "a") as archive:
+                            archive.writestr(ZipInfo("fixture/version.txt"), b"changed harness")
+                        receipt["harness_sha256"] = kit.digest(directory / "harness.jar")
+                    elif mutation == "environment":
+                        receipt["environment"]["java"] = "changed"
+                    elif mutation == "options":
+                        receipt["arguments"].append("changed")
+                    else:
+                        raw = json.loads((directory / "results.json").read_bytes())
+                        if mutation == "unit":
+                            raw[0]["primaryMetric"]["scoreUnit"] = "ms/op"
+                        else:
+                            raw[0]["measurementTime"] = "2 s"
+                        self.replace_raw(directory, raw)
+                        continue
+                    path.write_text(json.dumps(receipt), encoding="utf-8")
+                with self.assertRaises(kit.EvidenceError):
+                    kit.compare_jmh(baseline, candidate, COLLECTOR)
+
+    def test_input_archives_reject_missing_changed_unsafe_and_duplicate_files(self):
+        for mutation in ("missing", "changed", "unsafe", "duplicate"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                directories = self.prepare(Path(temporary))
+                directory = directories[1]
+                path = directory / "receipt.json"
+                receipt = json.loads(path.read_bytes())
+                if mutation == "missing":
+                    (directory / "input-0.bin").unlink()
+                elif mutation == "changed":
+                    (directory / "input-0.bin").write_bytes(b"changed input")
+                elif mutation == "unsafe":
+                    receipt["inputs"]["font"]["archive"] = "../input-0.bin"
+                else:
+                    receipt["inputs"]["another font"] = dict(receipt["inputs"]["font"])
+                path.write_text(json.dumps(receipt), encoding="utf-8")
                 with self.assertRaises(kit.EvidenceError):
                     kit.summarize_jmh(directories, COLLECTOR)

@@ -270,13 +270,35 @@ def _jmh_targets(directory: Path, receipt: dict) -> dict:
     return result
 
 
+def _jmh_inputs(directory: Path, receipt: dict) -> dict:
+    inputs = receipt.get("inputs")
+    require(isinstance(inputs, dict) and all(isinstance(name, str) and name.strip() for name in inputs),
+            "Missing JMH fixture input inventory")
+    require(len(inputs) <= 16384, "Oversized JMH fixture input inventory")
+    archives, result, total = set(), {}, 0
+    for name, entry in inputs.items():
+        require(isinstance(entry, dict), "Invalid JMH fixture input")
+        filename = entry.get("archive")
+        require(isinstance(filename, str) and re.fullmatch(r"input-[0-9]+\.bin", filename) is not None
+                and filename not in archives, "Unsafe or duplicate JMH fixture input archive")
+        archives.add(filename)
+        validate_hash(entry.get("sha256"), "JMH fixture input")
+        path = directory / filename
+        require(path.is_file(), "Missing preserved JMH fixture input")
+        total += path.stat().st_size
+        require(total <= 64 * 1024 * 1024, "Oversized JMH fixture inputs")
+        require(digest(path) == entry["sha256"], "Preserved JMH fixture input differs")
+        result[name] = entry["sha256"]
+    return result
+
+
 def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int = 3) -> dict:
     """Validate exact JMH matrices and archive-bound receipts, then aggregate independent runs.
 
     JMH owns all timings, percentiles and profiling. AverageTime scores are means,
     not per-operation p95/p99. Missing GC time remains unavailable instead of zero.
     """
-    receipts, runs, sources, targets = [], [], [], []
+    receipts, runs, sources, targets, inputs = [], [], [], [], []
     control_keys = ("jmhVersion", "mode", "threads", "forks", "jvm", "jvmArgs", "jdkVersion", "vmName", "vmVersion",
                     "warmupIterations", "warmupTime", "warmupBatchSize", "measurementIterations", "measurementTime", "measurementBatchSize")
     for directory in directories:
@@ -299,6 +321,7 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
         with ZipFile(directory / "harness.jar") as harness:
             require("org/openjdk/jmh/runner/Runner.class" in harness.namelist(), "Preserved archive is not the JMH harness")
         targets.append(_jmh_targets(directory, receipt))
+        inputs.append(_jmh_inputs(directory, receipt))
         content = (directory / "results.json").read_bytes()
         require(sha256_bytes(content) == receipt.get("results_sha256"), "JMH raw results changed")
         try:
@@ -352,6 +375,7 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
     require({receipt.get("repetition") for receipt in receipts} == set(range(repetitions)), "Missing or duplicate JMH repetition index")
     verify_equal(receipts, ("contract", "arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads"))
     stable(targets, "JMH loaded runtime")
+    stable(inputs, "JMH fixture inputs")
     require(all(set(run) == set(runs[0]) for run in runs), "Changed JMH workload matrix")
     summaries = []
     for key in sorted(runs[0]):
@@ -370,5 +394,49 @@ def summarize_jmh(directories: list[Path], collector_jar: Path, repetitions: int
             summary["per_run_percentile_medians"] = {percentile: median(row["primaryMetric"]["scorePercentiles"][percentile] for row in rows)
                                                      for percentile in ("50.0", "95.0", "99.0")}
         summaries.append(summary)
+    conditions = {field: receipts[0][field] for field in ("arguments", "fixture_identity", "harness_sha256", "environment", "registered_workloads")}
+    conditions["inputs"] = inputs[0]
+    conditions["controls"] = [{"benchmark": key[0], "params": dict(key[2]),
+                               **{field: runs[0][key][field] for field in control_keys}}
+                              for key in sorted(runs[0])]
     return {"contract": "strata-jmh-summary-v1", "status": "passed", "collector_identity": collector_identity(collector_jar),
-            "repetitions": repetitions, "case_count": len(summaries), "sources": sources, "cases": summaries}
+            "repetitions": repetitions, "case_count": len(summaries), "sources": sources, "cases": summaries,
+            "conditions": conditions, "target_identities": targets[0]}
+
+
+def compare_jmh(baseline: list[Path], candidate: list[Path], collector_jar: Path, repetitions: int = 3) -> dict:
+    """Compare revalidated raw evidence with identical workloads, inputs, collector and conditions.
+
+    Only target bytes may change. No timing threshold determines success, and a
+    zero baseline reports an unavailable ratio instead of division by zero.
+    """
+    before = summarize_jmh(baseline, collector_jar, repetitions)
+    after = summarize_jmh(candidate, collector_jar, repetitions)
+    require(before["conditions"] == after["conditions"], "JMH comparison inputs, fixture, harness or conditions changed")
+    sources = before["sources"] + after["sources"]
+    require(len({source["run_id"] for source in sources}) == 2 * repetitions, "JMH comparison reuses an invocation")
+    left_targets, right_targets = before["target_identities"], after["target_identities"]
+    require(left_targets.keys() == right_targets.keys()
+            and all(left_targets[name][0] == right_targets[name][0] for name in left_targets),
+            "JMH comparison target module or representative inventory changed")
+    rows = []
+    for old, new in zip(before["cases"], after["cases"], strict=True):
+        keys = ("benchmark", "mode", "params", "primary_unit")
+        require(all(old[key] == new[key] for key in keys), "JMH comparison workload or unit changed")
+        metrics = ("primary_score_median", "allocation_bytes_per_operation_median", "gc_count_median",
+                   "gc_time_ms_median_available")
+        row = {key: old[key] for key in keys}
+        row["metrics"] = {}
+        for metric in metrics:
+            left, right = old[metric], new[metric]
+            available = left is not None and right is not None
+            row["metrics"][metric] = {"baseline": left, "candidate": right,
+                                      "delta": right - left if available else None,
+                                      "candidate_to_baseline": right / left if available and left != 0 else None}
+        if old["mode"] == "sample":
+            row["per_run_percentile_medians"] = {"baseline": old["per_run_percentile_medians"],
+                                                  "candidate": new["per_run_percentile_medians"]}
+        rows.append(row)
+    return {"contract": "strata-jmh-comparison-v1", "status": "passed", "collector_identity": before["collector_identity"],
+            "baseline": before, "candidate": after, "cases": rows,
+            "changed_targets": sorted(name for name in left_targets if left_targets[name] != right_targets[name])}

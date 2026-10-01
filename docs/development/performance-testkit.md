@@ -11,10 +11,21 @@ Application code must not add another timing engine or interpret unavailable col
 JMH remains the harness for JVM microbenchmarks; `JvmPerformanceRunner` preserves existing synchronous workload boundaries when migrating downstream suites.
 `JmhPerformanceRunner` delegates unchanged CLI options to JMH and adds an immutable success receipt bound to the actual loaded collector, harness, benchmark fixture and target archives.
 It contains no timing or sampling loop and uses the consumer's existing JMH dependency.
+`JmhWorkloadInventory` expands the actual JMH-generated benchmark registry into the complete expected parameter/mode matrix; consumers do not implement another annotation-discovery engine.
+Unknown parameter names or values, missing generated fixtures and oversized matrices fail before collection.
 Each repetition owns a new output directory; failed raw output remains diagnostic evidence and cannot produce a success receipt.
 The exact registered benchmark/mode/parameter matrix must complete, and each successful invocation preserves its actual collector, JMH harness and target JARs alongside the raw results.
+The adapter requires the standard application/context classloader used by JMH forks; custom fixture loaders fail before execution rather than certifying targets from another loader.
+Consumers register external fixture files through `inputs`; the kit bounds, hashes and preserves those files outside measurement, and rejects changed or missing inputs.
+Compiled fixture trees identify generated inputs; resource fonts and other external data need explicit file registration.
+`JvmPerformanceInputs.read` accepts a standard UTF-8 JDK properties manifest with unique labels and absolute file paths.
+The component task registers all resolved non-Strata JVM libraries and native-classifier archives through that manifest, so a dependency change cannot masquerade as a runtime-only comparison.
+This preserves the supplied archives; it does not claim a hash of a GPU driver or an independently supplied native library.
 The packaged `python -m strata_performance jmh` command validates those archives, raw-result digests, independent repetitions, controlled conditions and complete workload matrices before aggregating with standard-library medians.
 Set `PYTHONPATH` to that measured JAR and supply `--collector-jar`, `--output`, and the three invocation directories; the summary refuses to overwrite an existing file.
+Use `python -m strata_performance compare-jmh --baseline <three-directories> --candidate <three-directories> --collector-jar <measured-jar> --output <new-file>` for a runtime comparison.
+It revalidates both raw suites, requires independent invocations with identical collector, harness, fixture, external inputs, workload matrix and conditions, and permits only target-byte changes within the same module/representative inventory.
+It reports medians, deltas and ratios without an absolute timing gate; unavailable GC time and ratios against a zero baseline remain unavailable.
 
 ## Evidence and work assertions
 
@@ -112,3 +123,10 @@ For local selection, pass `-Pstrata.performance.changedPaths=<UTF-8-path-list>` 
 The list contains repository-relative paths, one per line; known declaration and example owners select their feature union, and any unknown path selects the whole corpus.
 An empty list selects no component operations, but still verifies the complete API registration.
 Release verification omits this property and runs the entire corpus.
+
+The `:quality:benchmarks:jmhHistorical` entry point records the unchanged historical Rendering, ReactiveRendering and OverlayRendering fixtures through the shared kit.
+Its normal matrix contains 54 AverageTime cases; SampleTime uses a separate suite, and smoke collection is a separate one-case subset.
+It inherits the existing JMH plugin task's Java launcher and retains its three one-second warm-up iterations, five one-second measurement iterations, one fork, one thread, microsecond units and GC profiler.
+The original `jmh` task and its result path remain unchanged.
+`:quality:benchmarks:check` verifies the actual generated historical matrix before either task is used.
+Use the same repetition and mode properties and packaged summary/comparison commands as the component corpus.

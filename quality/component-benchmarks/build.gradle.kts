@@ -3,6 +3,8 @@ import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.jmh)
@@ -67,8 +69,10 @@ jmh {
 val verifyComponentRenderingWork by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Exercises every shipped public component through a real Minecraft-profile host and the shared work assertions."
-    dependsOn("jmhClasses")
-    classpath = sourceSets.named("jmh").get().runtimeClasspath
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.ComponentWorkEvidence")
     javaLauncher.set(componentLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
@@ -105,6 +109,22 @@ tasks.register<JavaExec>("jmhComponents") {
     args(result.get().asFile.absolutePath, repetition.toString(), "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
+    val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
+    doFirst {
+        val entries = Properties()
+        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
+            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
+            if (module != null) {
+                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
+                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
+            }
+        }
+        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
+        val manifest = inputsManifest.get().asFile
+        manifest.parentFile.mkdirs()
+        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
+        systemProperty("strata.performance.inputs", manifest.absolutePath)
+    }
 }
 
 val changedPathFile = providers.gradleProperty("strata.performance.changedPaths").map { rootProject.file(it).absolutePath }
