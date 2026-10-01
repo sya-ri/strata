@@ -139,21 +139,30 @@ private fun tile(
     source: IntRect,
     destination: IntRect,
 ) {
+    // Repeating one texel on an axis is exactly nearest stretching on that axis.
+    // Keep the other axis tiled, including its shortened final source segment.
+    val tileWidth = if (source.width == 1) destination.width else source.width
+    val tileHeight = if (source.height == 1) destination.height else source.height
     var destinationTop = destination.top
     while (destinationTop < destination.bottom) {
-        val height = minOf(source.height, Math.subtractExact(destination.bottom, destinationTop))
+        val height = minOf(tileHeight, Math.subtractExact(destination.bottom, destinationTop))
         var destinationLeft = destination.left
         while (destinationLeft < destination.right) {
-            val width = minOf(source.width, Math.subtractExact(destination.right, destinationLeft))
+            val width = minOf(tileWidth, Math.subtractExact(destination.right, destinationLeft))
             blit(
                 scope,
                 image,
-                IntRect(source.left, source.top, Math.addExact(source.left, width), Math.addExact(source.top, height)),
+                IntRect(
+                    source.left,
+                    source.top,
+                    Math.addExact(source.left, minOf(source.width, width)),
+                    Math.addExact(source.top, minOf(source.height, height)),
+                ),
                 IntRect(destinationLeft, destinationTop, Math.addExact(destinationLeft, width), Math.addExact(destinationTop, height)),
             )
-            destinationLeft = Math.addExact(destinationLeft, source.width)
+            destinationLeft = Math.addExact(destinationLeft, tileWidth)
         }
-        destinationTop = Math.addExact(destinationTop, source.height)
+        destinationTop = Math.addExact(destinationTop, tileHeight)
     }
 }
 
