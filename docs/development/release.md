@@ -16,6 +16,7 @@ Leave `prepared_run_id` empty only for the first preparation.
 The protected `release` environment controls signing and publication credentials.
 
 Preparation runs the full quality suite, Kover, and Qodana against the selected tag, builds and signs the artifacts, and checks a standalone Maven consumer.
+Before browser verification, it installs Chromium, Firefox, WebKit, and their Linux system dependencies using the tagged product's pinned Playwright CLI.
 It saves the generated Maven inventory, original artifacts and signatures, destination manifests, release notes, public signing key, and a file-by-file SHA-256 inventory in `release-prepared.tar.gz`.
 The manifest binds these bytes to the signed tag object, product commit, controller commit, workflow run, and attempt.
 `prepared-<tag>-<attempt>` retains this archive in Actions for 90 days.
