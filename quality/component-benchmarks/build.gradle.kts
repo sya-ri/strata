@@ -56,6 +56,8 @@ val componentLauncher = extensions.getByType<JavaToolchainService>().launcherFor
 val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped API-only component declarations").apply {
     srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
     include("**/*Example.kt")
+    // These complete native screens are not used by the portable component definitions.
+    exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
 }
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("jmh") { kotlin.source(showcaseSources) }

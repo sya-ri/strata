@@ -104,6 +104,7 @@ Its pixel, reload, native-hook, immutable-ownership, and weak-reference collecti
 Its properties receipt records the loaded collector identity; historical timings collected by another engine are not comparable.
 
 The independent `:quality:component-benchmarks:jmhComponents` corpus uses the same 26 compiled component definitions as documentation and Fabric parity.
+The complete Inventory and Social screen fixtures are not compiled into this portable component corpus; their native acceptance and rendered documentation remain separate.
 Set `-Pstrata.performance.repetition=0`, `1`, and `2` in independent invocations with the same Java, inputs and host conditions; preserve each `build/reports/jmh/components/run-<index>` directory.
 `-Pstrata.performance.smoke=true` runs only the Row fixture with one short iteration, under a separate `components-smoke` output directory.
 It verifies actual fork execution and receipt publication; it is not complete performance acceptance or a substitute for the three full invocations.
