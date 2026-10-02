@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import java.nio.file.Files
 import java.nio.file.Path
@@ -162,11 +163,11 @@ public object JvmPerformanceReports {
         }
 
     private fun identityRow(
-        identity: List<JsonElement>,
+        identity: List<String>,
         contract: PerformanceReportContract,
     ): JsonObject =
         JsonObject().apply {
-            contract.phaseKeys.zip(identity).forEach { (key, value) -> add(key, value.deepCopy()) }
+            contract.phaseKeys.zip(identity).forEach { (key, value) -> add(key, JsonParser.parseString(value)) }
         }
 
     private fun aggregate(

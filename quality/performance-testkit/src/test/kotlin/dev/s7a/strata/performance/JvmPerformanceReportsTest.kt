@@ -3,6 +3,7 @@ package dev.s7a.strata.performance
 import com.google.gson.JsonArray
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -155,6 +156,44 @@ class JvmPerformanceReportsTest {
             Files.writeString(selected, "changed after load", StandardOpenOption.APPEND)
             reports.forEach { path -> fixture.mutate(path) { it.objectField("collector_identity").addProperty("code_source_sha256", ArtifactIdentity.file(selected)) } }
             assertFails { fixture.summarize(reports) }
+        }
+    }
+
+    @Test
+    fun canonicalPhaseKeysMatchParsedNumbersAndKeepExactStructuredIdentities() {
+        val constructed =
+            JsonObject().apply {
+                add(
+                    "phases",
+                    JsonArray().apply {
+                        add(
+                            JsonObject().apply {
+                                addProperty("gui", 1)
+                                add(
+                                    "viewport",
+                                    JsonObject().apply {
+                                        addProperty("width", 640)
+                                        addProperty("height", 360)
+                                    },
+                                )
+                            },
+                        )
+                    },
+                )
+            }
+        val parsed = JsonParser.parseString("""{"phases":[{"gui":1.0,"viewport":{"height":360.00,"width":6.4e2}}]}""").asJsonObject
+        val keys = listOf("gui", "viewport")
+        PackagedEvidenceFixture().use { kit ->
+            fun index(report: JsonObject): Any? = kit.invoke("JvmPerformanceEvidence", "indexPhases", arrayOf(JsonObject::class.java, List::class.java, Int::class.javaObjectType), report, keys, 1)
+            val first = index(constructed) as Map<*, *>
+            val second = index(parsed) as Map<*, *>
+            assertEquals(first.keys, second.keys)
+            assertEquals(listOf("1", "{\"height\":3.6E+2,\"width\":6.4E+2}"), first.keys.single())
+            val large = JsonParser.parseString("""{"phases":[{"id":9007199254740992},{"id":9007199254740993},{"id":"9007199254740992"}]}""").asJsonObject
+            val distinct = kit.invoke("JvmPerformanceEvidence", "indexPhases", arrayOf(JsonObject::class.java, List::class.java, Int::class.javaObjectType), large, listOf("id"), 3) as Map<*, *>
+            assertEquals(3, distinct.size)
+            val duplicate = JsonParser.parseString("""{"phases":[{"id":1},{"id":1.00}]}""").asJsonObject
+            assertFails { kit.invoke("JvmPerformanceEvidence", "indexPhases", arrayOf(JsonObject::class.java, List::class.java, Int::class.javaObjectType), duplicate, listOf("id"), 2) }
         }
     }
 

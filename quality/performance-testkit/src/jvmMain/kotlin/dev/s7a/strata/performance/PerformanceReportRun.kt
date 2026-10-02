@@ -1,6 +1,5 @@
 package dev.s7a.strata.performance
 
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
 /**
@@ -9,5 +8,5 @@ import com.google.gson.JsonObject
 internal data class PerformanceReportRun(
     val report: JsonObject,
     val source: JsonObject,
-    val phases: Map<List<JsonElement>, JsonObject>,
+    val phases: Map<List<String>, JsonObject>,
 )

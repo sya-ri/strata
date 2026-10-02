@@ -3,6 +3,7 @@ package dev.s7a.strata.performance
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -80,23 +81,48 @@ public object JvmPerformanceEvidence {
 
     /**
      * Indexes actual phase identities without accepting duplicate or missing registrations.
-     * Structured identities remain JSON values, so viewport objects and ordinary scalar IDs are supported.
+     * Each key is canonical JSON text: object order and decimal spelling do not change an identity.
+     * Exact decimal values remain distinct without Gson's mixed-number equality/hash behavior.
      */
     public fun indexPhases(
         report: JsonObject,
         keys: List<String>,
         expectedCount: Int? = null,
-    ): Map<List<JsonElement>, JsonObject> {
+    ): Map<List<String>, JsonObject> {
         require(keys.isNotEmpty() && keys.toSet().size == keys.size)
-        val indexed = linkedMapOf<List<JsonElement>, JsonObject>()
+        val indexed = linkedMapOf<List<String>, JsonObject>()
         report.arrayField("phases").forEach { value ->
             val phase = value.asJsonObject
-            val identity = keys.map { checkNotNull(phase.get(it)).deepCopy() }
+            val identity = keys.map { canonicalIdentity(checkNotNull(phase.get(it))).toString() }
             require(indexed.put(identity, phase.deepCopy()) == null) { "Duplicate performance phase: $identity" }
         }
         require(indexed.isNotEmpty() && (expectedCount == null || indexed.size == expectedCount)) { "Incomplete performance phase inventory" }
         return indexed
     }
+
+    private fun canonicalIdentity(value: JsonElement): JsonElement =
+        when {
+            value.isJsonObject -> {
+                JsonObject().apply {
+                    value.asJsonObject
+                        .entrySet()
+                        .sortedBy { it.key }
+                        .forEach { (name, child) -> add(name, canonicalIdentity(child)) }
+                }
+            }
+
+            value.isJsonArray -> {
+                JsonArray().apply { value.asJsonArray.forEach { add(canonicalIdentity(it)) } }
+            }
+
+            value.isJsonPrimitive && value.asJsonPrimitive.isNumber -> {
+                JsonPrimitive(value.asBigDecimal.stripTrailingZeros())
+            }
+
+            else -> {
+                value.deepCopy()
+            }
+        }
 
     /**
      * Aggregates independent finite nonnegative measurements without pooling per-run latency quantiles.

@@ -65,6 +65,9 @@ Evidence processing uses Java and the JVM testkit; Python is not a requirement a
 CPU and native reports use `LoadedArtifactMetadata` directly; historical field-name projections and distribution adapters are removed.
 Consumers preserve the kit's distribution fields and unavailable values without translating them into an older schema.
 `JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
+Phase indexing returns canonical JSON text tuples, independent of parsed versus constructed number types and object property order.
+Equivalent decimal spellings share one identity; distinct exact values, including integers beyond double precision, remain distinct.
+Consumers use the shared index for both their declared matrix and raw reports; no numeric-key workaround belongs downstream.
 The loaded collector identity is captured once and returned as a detached copy; replacing that archive later cannot certify new receipts.
 `JvmPerformanceReports` validates raw phase reports against a consumer-declared `PerformanceReportContract`, aggregates registered metrics and compares complete image inventories.
 Each contract declares the workload, exact phase count and identities, required report/phase conditions, and runtime fields permitted to vary between candidates.
