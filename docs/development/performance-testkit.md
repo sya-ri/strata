@@ -215,9 +215,11 @@ Source bytes, PNG encoding and ZIP preparation happen outside measurement. Snaps
 The untimed work gate verifies actual provider output, complete generated registration, finite retention ceilings, reference-limit rejection and zero retained faces/pixels after close.
 These declared stress inputs do not claim exhaustive combinations of every configurable resource limit or GPU/native upload measurements.
 
-JMH fixture sources use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
+JMH fixtures and server performance fixtures use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
 Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
-The gate uses the actual JMH Kotlin source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain; it does not inspect arbitrary external helper internals or unresolved calls.
+The gate uses the actual JMH source set or Paper/Velocity integration main source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain.
+It checks the shared server-performance sources and host files named `PaperPerformance*.kt` or `VelocityPerformance*.kt`; the current executable server collector is the Paper fixture.
+It does not inspect arbitrary external helper internals or unresolved calls, and the file registration does not establish that a Velocity performance workload exists.
 The Web driver and portable fixtures still delegate their measurements to the kit; this JVM type-resolution gate does not claim to enforce JavaScript property access.
 
 The historical and remote work gates also compare the complete loaded headless and remote protocol binary surfaces against exact checked-in `headless-api.tsv` and `remote-api.tsv` registries.

@@ -5,7 +5,11 @@
 style:
   ForbiddenMethodCall:
     active: true
-    includes: ["**/src/jmh/**"]
+    includes:
+      - "**/src/jmh/**"
+      - "**/integration/server-performance/**"
+      - "**/PaperPerformance*.kt"
+      - "**/VelocityPerformance*.kt"
     methods:
       - "java.lang.System.nanoTime"
       - "java.lang.System.currentTimeMillis"
@@ -16,9 +20,16 @@ style:
       - "java.lang.management.ManagementFactory.getThreadMXBean"
       - "java.lang.management.ManagementFactory.getMemoryMXBean"
       - "java.lang.management.ManagementFactory.getGarbageCollectorMXBeans"
+      - "java.lang.management.ManagementFactory.getOperatingSystemMXBean"
       - "java.lang.management.ThreadMXBean.getCurrentThreadCpuTime"
       - "java.lang.management.ThreadMXBean.getThreadCpuTime"
       - "com.sun.management.ThreadMXBean.getThreadAllocatedBytes"
+      - "com.sun.management.ThreadMXBean.getCurrentThreadAllocatedBytes"
+      - "com.sun.management.ThreadMXBean.getTotalThreadAllocatedBytes"
+      - "com.sun.management.OperatingSystemMXBean.getProcessCpuTime"
+      - "java.lang.management.MemoryMXBean.getHeapMemoryUsage"
+      - "java.lang.management.GarbageCollectorMXBean.getCollectionCount"
+      - "java.lang.management.GarbageCollectorMXBean.getCollectionTime"
   MagicNumber:
     active: false
   ReturnCount:

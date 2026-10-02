@@ -74,7 +74,7 @@ internal class PaperPerformanceVerification(
                         latest = null
                         UiDefinition("Performance HUD", presentation = UiPresentation.Hud) {
                             Column { repeat(99) { Spacer() } }
-                        }.open(plugin, player).use { latest = it }
+                        }.open(plugin, player).use { session -> latest = session }
                     }
                 }
                 1
