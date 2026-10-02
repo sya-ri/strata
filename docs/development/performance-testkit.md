@@ -196,7 +196,11 @@ The separate stress corpus is selected with `-Pstrata.performance.stress=true` o
 It measures 100/1,000,000-row indexed virtual lists, eight-image Canvas churn at 256/1024 pixels, configured text lengths of 32/16,384 UTF-16 units, actual checkbox pointer activation, explicit animation-cell time advances, 128/4096-observer fan-out, and 1/2/4-pixel nine-slice patterns with transparency.
 These sizes are declared stress inputs, rather than claims about application limits or complete font-provider coverage.
 Its 39 generated cases preserve the existing component and historical matrices; JMH and the shared kit own all collection and comparison.
-The component `check` also asserts idle reuse, real changed work, bounded virtual-list nodes, input state, preserved multipixel tiling and released source subscriptions.
+The component `check` also asserts idle reuse, real changed work, bounded virtual-list nodes, input state and released source subscriptions.
+All 1/2/4-pixel nine-slice patterns must match an independent modulo-based pixel oracle before and after a size update; the one-pixel case has a drawing-work ceiling, while multipixel cases have no minimum command count.
+Command counts remain diagnostic measurements, so combining repeated pixels cannot fail admission merely by reducing work.
+The full-image oracle applies to integer presentation; fractional transforms sample each slice through its own rounded floating-point destination.
+A runtime boundary regression records a four-texel slice selecting a different texel from a merged logical image after shrinking, so an optimization must preserve that sampling contract rather than assuming that logical precomposition always has identical pixels.
 Canvas pixel preparation and immutable profile/font loading remain outside the timed operations; native raster/upload/cache churn still needs loaded-client evidence.
 
 The native-free `:quality:remote-benchmarks:jmhRemote` corpus measures real declaration diffs, patch validation, update/snapshot codecs and framing-owner lifetimes.

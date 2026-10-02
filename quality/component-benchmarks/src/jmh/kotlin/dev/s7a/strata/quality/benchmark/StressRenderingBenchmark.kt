@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import dev.s7a.strata.component.Canvas
 import dev.s7a.strata.component.Checkbox
 import dev.s7a.strata.component.CheckboxState
+import dev.s7a.strata.component.Image
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.LoadingIndicator
 import dev.s7a.strata.component.NineSliceCenterMode
@@ -28,6 +29,7 @@ import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.FrameTime
+import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
@@ -181,24 +183,67 @@ public open class StressRenderingBenchmark {
          */
         public val checked: Boolean get() = checkbox.checked
 
+        /**
+         * Checks tiled source pixels against an independent modulo-based image outside measurement.
+         * The oracle keeps borders, shortened final tiles and source alpha without fixing a command strategy.
+         */
+        public fun verifyNineSlicePixels(frame: RuntimeUiFrame) {
+            val extent = repeatExtent ?: return
+            if (extent == 1) check(frame.drawCommands.isNotEmpty() && frame.drawCommands.size <= 9) { "The one-pixel repeated center must keep bounded drawing work" }
+            val design = IntSize(319 + revision % 2, 239)
+            val image = images.first()
+
+            fun sourceCoordinate(
+                position: Int,
+                destination: Int,
+                sourceExtent: Int,
+            ): Int =
+                when (position) {
+                    0 -> 0
+                    destination - 1 -> sourceExtent - 1
+                    else -> 1 + (position - 1) % (sourceExtent - 2)
+                }
+            val expected =
+                createDrawImage(
+                    design,
+                    IntArray(design.width * design.height) { index ->
+                        image.argbAt(
+                            sourceCoordinate(index % design.width, design.width, image.size.width),
+                            sourceCoordinate(index / design.width, design.height, image.size.height),
+                        )
+                    },
+                )
+            createMinecraftUiHost(
+                UiDefinition("Nine-slice pixel oracle") { Stack { Image(ImageSource.Pixels(expected), size = design) } },
+                profile,
+                fontBackend = LwjglMinecraftFontBackendFactory,
+            ).use { oracle ->
+                oracle.attach()
+                val actualPixels = rasterizeHeadless(frame.drawCommands, viewport).copyArgb()
+                val expectedPixels = rasterizeHeadless(oracle.frame(viewport).drawCommands, viewport).copyArgb()
+                check(actualPixels.contentEquals(expectedPixels)) { "Nine-slice source pattern changed: $workload at $design" }
+            }
+        }
+
         private fun time(): FrameTime = FrameTime(revision.toLong() * 300_000_000L)
 
         private val count: Int get() = if (workload == StressWorkload.VirtualList1000000) 1_000_000 else 100
 
-        private fun tile(): Int? =
-            when (workload) {
-                StressWorkload.NineSlice1 -> 1
-                StressWorkload.NineSlice2 -> 2
-                StressWorkload.NineSlice4 -> 4
-                else -> null
-            }
+        private val repeatExtent: Int?
+            get() =
+                when (workload) {
+                    StressWorkload.NineSlice1 -> 1
+                    StressWorkload.NineSlice2 -> 2
+                    StressWorkload.NineSlice4 -> 4
+                    else -> null
+                }
 
         private fun prepareImages(): List<DrawImage> {
             val extent =
                 when (workload) {
                     StressWorkload.Canvas256 -> 256
                     StressWorkload.Canvas1024 -> 1024
-                    else -> tile()?.plus(2) ?: 1
+                    else -> repeatExtent?.plus(2) ?: 1
                 }
             return List(if (workload in setOf(StressWorkload.Canvas256, StressWorkload.Canvas1024)) 8 else 1) { phase ->
                 createDrawImage(
