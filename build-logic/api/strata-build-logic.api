@@ -13,6 +13,11 @@ public abstract class dev/s7a/strata/gradle/fabric/LibraryClientProductionRunTas
 	public abstract fun getVerificationLibraries ()Lorg/gradle/api/file/ConfigurableFileCollection;
 }
 
+public final class dev/s7a/strata/gradle/performance/PublishedPerformanceInventory {
+	public static final field INSTANCE Ldev/s7a/strata/gradle/performance/PublishedPerformanceInventory;
+	public final fun verify (Ljava/util/Set;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)I
+}
+
 public abstract class dev/s7a/strata/gradle/release/StrataReleaseExtension {
 	public fun <init> (Lorg/gradle/api/model/ObjectFactory;)V
 	public final fun getMavenArtifacts ()Lorg/gradle/api/provider/ListProperty;

@@ -31,6 +31,7 @@ public class StrataRuleSetProvider : RuleSetProvider {
                     RuleName("BooleanPrefixNegation") to ::BooleanPrefixNegationRule,
                     RuleName("GreaterThanComparison") to ::GreaterThanComparisonRule,
                     RuleName("StringLiteralComparison") to ::StringLiteralComparisonRule,
+                    RuleName("BrowserPerformanceOwnership") to ::BrowserPerformanceOwnershipRule,
                 ),
         )
 }

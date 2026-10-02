@@ -38,6 +38,11 @@ style:
     active: false
 
 strata:
+  BrowserPerformanceOwnership:
+    active: true
+    includes:
+      - "**/integration/web/src/jsMain/**"
+      - "**/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/**"
   NoNonNullAssertion:
     active: true
   BodyQualifiedName:

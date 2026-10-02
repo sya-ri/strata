@@ -13,6 +13,7 @@ import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
 import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
+import dev.s7a.strata.gradle.performance.PublishedPerformanceInventory
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
@@ -551,6 +552,23 @@ val releaseArtifactByProjectPath =
 val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":quality:performance-testkit")
 val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
+val verifyPublishedPerformanceInventory = tasks.register("verifyPublishedPerformanceInventory") {
+    group = "verification"
+    description = "Requires reviewed executable performance fixture registrations for every published project."
+    val inventory = rootProject.file("gradle/performance-modules.tsv")
+    inputs.file(inventory)
+    inputs.property("publishedProjects", releasePublicationProjectPaths)
+    doLast {
+        val count = PublishedPerformanceInventory.verify(
+            publishableProjectPaths,
+            inventory.readLines(Charsets.UTF_8),
+            { path -> rootProject.file(path).isFile },
+            { path -> rootProject.findProject(path.substringBeforeLast(':'))?.tasks?.findByName(path.substringAfterLast(':')) != null },
+        )
+        println("Verified $count module/host fixture registrations for ${publishableProjectPaths.size} published projects; completed performance evidence is verified separately.")
+    }
+}
+tasks.named("check") { dependsOn(verifyPublishedPerformanceInventory) }
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
     description = "Verifies that the typed Minecraft target matrix covers every versioned runtime and integration project."

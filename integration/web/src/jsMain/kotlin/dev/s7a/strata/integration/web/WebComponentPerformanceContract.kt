@@ -10,6 +10,7 @@ import dev.s7a.strata.runtime.web.WebTheme
 import dev.s7a.strata.runtime.web.mountWeb
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import kotlin.js.json
 
 /**
  * Exhaustive Web admission of the same compiled standard declarations used by portable and native verification.
@@ -23,15 +24,18 @@ internal object WebComponentPerformanceContract {
      * Produces build-time fixture data directly from the exhaustive compiled inventory.
      */
     fun inventory(): String {
-        val inventory = js("({})")
-        inventory.supported = supported().map { it.name }.toTypedArray()
-        inventory.unavailable =
+        val unavailable =
             ComponentWorkload.entries
                 .filter { available(it).not() }
                 .map { it.name }
                 .toTypedArray()
-        inventory.phases = phases.map { it.name }.toTypedArray()
-        return JSON.stringify(inventory)
+        return JSON.stringify(
+            json(
+                "supported" to supported().map { it.name }.toTypedArray(),
+                "unavailable" to unavailable,
+                "phases" to phases.map { it.name }.toTypedArray(),
+            ),
+        )
     }
 
     /**

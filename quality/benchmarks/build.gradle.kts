@@ -2,6 +2,7 @@ import dev.detekt.gradle.extensions.DetektExtension
 import me.champeau.jmh.JMHTask
 import me.champeau.jmh.JmhBytecodeGeneratorTask
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import java.util.Properties
 
 plugins {
@@ -84,12 +85,28 @@ tasks.register<JavaExec>("jmhHistorical") {
     require(mode in setOf("avgt", "sample"))
     val suite = (if (smoke) "historical-smoke" else "historical") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
-    val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
-    args(result.get().asFile.absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
+        .map { rootProject.file(it).resolve("$suite/run-$repetition") }
+        .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {
+        providers.gradleProperty("strata.performance.historicalRuntime").orNull?.let { path ->
+            val targets = Properties()
+            rootProject.file(path).bufferedReader(Charsets.UTF_8).use(targets::load)
+            val projects = setOf(":api", ":runtime:core", ":runtime:headless")
+            require(targets.stringPropertyNames() == projects) { "Register exactly the three historical runtime project paths" }
+            val archives = projects.map { project -> rootProject.file(targets.getProperty(project)).canonicalFile }
+            require(archives.toSet().size == projects.size && archives.all { it.isFile && it.extension == "jar" }) { "Historical runtime targets must be three distinct actual JARs" }
+            val artifacts = configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
+                .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in projects }
+            require(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == projects) { "Historical runtime classpath inventory changed" }
+            val replaced = artifacts.map { it.file.canonicalFile }.toSet()
+            classpath = files(classpath.files.filter { it.canonicalFile !in replaced }) + files(archives)
+            // The kit verifies the actual loaded class origins and preserves these targets; names never certify identity.
+        }
         val entries = Properties()
         configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
             val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier

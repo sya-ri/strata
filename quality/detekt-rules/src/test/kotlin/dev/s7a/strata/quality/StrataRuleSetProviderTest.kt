@@ -31,6 +31,7 @@ internal class StrataRuleSetProviderTest {
                 RuleName("BooleanPrefixNegation"),
                 RuleName("GreaterThanComparison"),
                 RuleName("StringLiteralComparison"),
+                RuleName("BrowserPerformanceOwnership"),
             ),
             ruleSet.rules.keys,
         )

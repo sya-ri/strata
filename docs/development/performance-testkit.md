@@ -8,6 +8,10 @@ The development branch can be published to an isolated local repository; the fir
 Consumers supply their real components, stable input, actions, readiness predicates, and expected work.
 The kit owns clocks, sample collection, distributions, native presentation counters, runtime monitoring, and collector provenance.
 Application code must not add another timing engine or interpret unavailable collection as zero work.
+Typed JVM detekt checks prohibit direct clocks and CPU/allocation/GC accounting in benchmark and server fixtures.
+Kotlin/JS lacks type-resolved detekt analysis, so the `BrowserPerformanceOwnership` source rule reserves direct browser-clock, timestamp-callback and raw JavaScript names for the kit, including imported aliases and callable references.
+It covers every helper in Web integration's `jsMain` and the shared canonical declaration directory, without restricting production animation clocks.
+This is a source ownership policy, not an adversarial JavaScript sandbox or a proof of every possible dynamic access.
 JMH remains the harness for JVM microbenchmarks; `JvmPerformanceRunner` preserves existing synchronous workload boundaries when migrating downstream suites.
 `JmhPerformanceRunner` delegates unchanged CLI options to JMH and adds an immutable success receipt bound to the actual loaded collector, harness, benchmark fixture and target archives.
 It contains no timing or sampling loop and uses the consumer's existing JMH dependency.
@@ -32,6 +36,15 @@ The request specifies `command` (`jmh-summary` or `jmh-comparison`), the actual 
 The task runs `PerformanceEvidenceCli` from the packaged collector with its normal Kotlin/Gson runtime classpath and refuses to overwrite output.
 An external application can call that same JVM entry point or the typed API using its resolved testkit artifact.
 
+For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
+The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
+JDK Properties requires escaped colons in these project-path keys and escaped backslashes in Windows paths.
+The task replaces only those three resolved project artifacts on the execution classpath, preserving the same compiled fixtures, collector, harness, external inputs and default 54-case matrix.
+The kit verifies the classes actually loaded in the parent and forks, then preserves their archives rather than trusting the selected filenames.
+Use `-Pstrata.performance.historicalOutputRoot=<new-directory>` for the other side's independent outputs; the ordinary historical output and defaults remain unchanged.
+Execute both modes three times with repetition indexes 0–2 for each side and process `jmh-comparison` separately for each mode.
+Older targets that cannot execute the unchanged fixture are failures, not permission to remove cases or loosen provenance checks.
+
 ```json
 {
   "command": "jmh-summary",
@@ -42,6 +55,13 @@ An external application can call that same JVM entry point or the typed API usin
 ```
 
 ## Evidence and work assertions
+
+The root `verifyPublishedPerformanceInventory` gate compares [reviewed module/host registrations](../../gradle/performance-modules.tsv) against the actual Maven publication model.
+Adding or removing a published project without updating its exact registration fails `check`; duplicate hosts, missing fixture source files and missing verification tasks also fail.
+This is an entry-point registration check, not completed measurement evidence and not a substitute for exact member inventories.
+Versioned Fabric registrations currently point to the shared loaded-client profile-cache probe, which already delegates its actual open/extraction measurements to `JvmPerformanceRunner`.
+Those short correctness probes do not establish three full-default native performance repetitions or native work-counter coverage for every supported rendering family.
+The test-only collector registers its own contract verification separately from runtime workload collection.
 
 `PerformanceCoverage` checks feature/host registration, selects the affected feature union, and rejects missing host/phase execution.
 `PerformanceInventory` connects exact discovered module/member identities to those registrations and source ownership.
