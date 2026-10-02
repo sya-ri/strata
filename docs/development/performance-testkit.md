@@ -21,11 +21,25 @@ Compiled fixture trees identify generated inputs; resource fonts and other exter
 `JvmPerformanceInputs.read` accepts a standard UTF-8 JDK properties manifest with unique labels and absolute file paths.
 The component task registers all resolved non-Strata JVM libraries and native-classifier archives through that manifest, so a dependency change cannot masquerade as a runtime-only comparison.
 This preserves the supplied archives; it does not claim a hash of a GPU driver or an independently supplied native library.
-The packaged `python -m strata_performance jmh` command validates those archives, raw-result digests, independent repetitions, controlled conditions and complete workload matrices before aggregating with standard-library medians.
-Set `PYTHONPATH` to that measured JAR and supply `--collector-jar`, `--output`, and the three invocation directories; the summary refuses to overwrite an existing file.
-Use `python -m strata_performance compare-jmh --baseline <three-directories> --candidate <three-directories> --collector-jar <measured-jar> --output <new-file>` for a runtime comparison.
-It revalidates both raw suites, requires independent invocations with identical collector, harness, fixture, external inputs, workload matrix and conditions, and permits only target-byte changes within the same module/representative inventory.
-It reports medians, deltas and ratios without an absolute timing gate; unavailable GC time and ratios against a zero baseline remain unavailable.
+`JmhPerformanceEvidence.summarize` validates actual archives, raw-result digests, independent repetitions, controlled conditions and complete workload matrices before aggregating per-run medians.
+`JmhPerformanceEvidence.compare` revalidates both raw suites and permits target-byte changes only within the same module/representative inventory.
+Collector, harness, fixture, external inputs, workload matrix and measurement conditions must match.
+Unavailable GC time and ratios against a zero baseline remain unavailable; absolute timings never determine success.
+
+The JVM-only `:quality:performance-testkit:processEvidence` task reads one UTF-8 JSON request via `-Pstrata.performance.request=<request-file>`.
+The request specifies `command` (`jmh-summary` or `jmh-comparison`), the actual `collector` JAR, a new `output` file, and either `runs` or `baseline`/`candidate` directory arrays.
+`repetitions` defaults to three independent invocations.
+The task runs `PerformanceEvidenceCli` from the packaged collector with its normal Kotlin/Gson runtime classpath and refuses to overwrite output.
+An external application can call that same JVM entry point or the typed API using its resolved testkit artifact.
+
+```json
+{
+  "command": "jmh-summary",
+  "collector": "/absolute/path/to/measured-testkit.jar",
+  "output": "/absolute/path/to/new-summary.json",
+  "runs": ["/absolute/path/to/run-0", "/absolute/path/to/run-1", "/absolute/path/to/run-2"]
+}
+```
 
 ## Evidence and work assertions
 
@@ -47,19 +61,23 @@ Whole-suite elapsed time includes preparation and cleanup and must not be report
 Recollect both baseline and candidate whenever that collector changes.
 Historical evidence keeps its original collector and workload contract; field-name compatibility alone is not measurement compatibility.
 
-The JVM JAR also contains the `strata_performance` Python package for existing evidence tools.
-It uses standard-library hashing, archive inspection, and median aggregation; it does not implement another benchmark runner.
-Import the package directly from the measured testkit JAR and pass that archive to `verify_collectors` before comparing reports.
-Every input report must identify that exact archive, including comparisons between different Strata runtime versions.
-The shared engine rejects missing collector receipts, duplicate repetitions and phases, missing or non-finite metrics, unsafe class archives, and CPU/native class-tree disagreement.
-Its identity is bound when imported; replacing the archive later cannot certify another collector's receipts.
-Consumers retain only their workload inventory, fixed correctness expectations, and report presentation.
-Frozen historical comparison tools retain their original reviewed-input contract and cannot admit these new collector receipts by field-name substitution.
+Evidence processing uses Java and the JVM testkit; Python is not a requirement and no Python compatibility package is shipped.
+`JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
+The loaded collector identity is captured once and returned as a detached copy; replacing that archive later cannot certify new receipts.
+`JvmPerformanceReports` validates raw phase reports against a consumer-declared `PerformanceReportContract`, aggregates registered metrics and compares complete image inventories.
+Each contract declares the workload, exact phase count and identities, required report/phase conditions, and runtime fields permitted to vary between candidates.
+Variant fields remain identical within each repetition group; sample counts are always controlled.
+Applications supply only fixture-specific assertions and output presentation.
+`NativePerformanceEvidence` verifies actual local archive origins, representative resources and complete CPU/native class-tree agreement without filename/version assumptions.
+Unsafe archives, missing inputs, non-finite measurements and invalid divisors reject success.
+A missing optional measurement remains unavailable, never zero.
+The JVM tests exercise these contracts against the actual packaged collector rather than a compiled-directory substitute.
 
 ## Host boundaries
 
 | Entry point | Collection boundary |
 | --- | --- |
+| `JvmPerformanceSchedule` | One owner-thread operation per host callback; the kit owns warm-up, sampling, deadline and terminal release. |
 | `JvmPerformanceRunner` | Caller-thread synchronous operations; fixture preparation and assertions can run outside each sample. |
 | `MinecraftPerformanceMeter` | Actual Fabric before/after extraction or rendering callbacks on the measured screen. Frame intervals and render-thread CPU are separate from extraction. |
 | `BrowserPerformanceMeter` | Synchronous action wall time and a separate action-to-animation-frame interval, with untimed preparation/assertion hooks. CPU accounting, allocation, and GPU completion remain unavailable. |

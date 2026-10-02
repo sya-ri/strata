@@ -11,6 +11,11 @@ import java.nio.file.StandardOpenOption
  */
 public object PerformanceJson {
     private val gson = GsonBuilder().setPrettyPrinting().serializeNulls().create()
+    private val loadedCollectorIdentity =
+        JsonObject().apply {
+            addProperty("contract", "strata-performance-testkit-v1")
+            addProperty("code_source_sha256", ArtifactIdentity.fullCodeSource(JvmPerformanceMeter::class.java))
+        }
 
     /**
      * Serializes a nonempty distribution using explicit nanosecond units.
@@ -60,11 +65,7 @@ public object PerformanceJson {
      * Records actual collector bytes separately from the measured application and Strata runtime.
      * A collector change requires fresh evidence on both sides of a comparison.
      */
-    public fun collectorIdentity(): JsonObject =
-        JsonObject().apply {
-            addProperty("contract", "strata-performance-testkit-v1")
-            addProperty("code_source_sha256", ArtifactIdentity.fullCodeSource(JvmPerformanceMeter::class.java))
-        }
+    public fun collectorIdentity(): JsonObject = loadedCollectorIdentity.deepCopy()
 
     /**
      * Captures complete runtime diagnostics; truncated node inventories cannot satisfy work assertions.

@@ -1,4 +1,4 @@
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.jvm.toolchain.JavaToolchainService
 
 kotlin {
     sourceSets {
@@ -16,23 +16,29 @@ kotlin {
     }
 }
 
-val pythonEvidenceTest by tasks.registering(Exec::class) {
+tasks.named<Jar>("jvmJar") {
+    // Removed resources can remain in incremental Copy outputs after upgrading an existing checkout.
+    exclude("**/*.py", "**/*.pyc")
+}
+
+tasks.register<JavaExec>("processEvidence") {
     group = "verification"
-    description = "Verifies evidence comparison using the Python standard library and the actual packaged testkit."
-    val archive = tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }
-    dependsOn(archive)
-    inputs.file(archive)
-    inputs.dir("src/pythonTest")
-    workingDir(projectDir)
-    commandLine("python", "-X", "utf8", "-m", "unittest", "discover", "-s", "src/pythonTest", "-v")
+    description = "Processes collector-bound evidence with the JVM testkit and no Python runtime."
+    val collector = tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }
+    dependsOn(collector)
+    classpath = files(collector) + configurations.getByName("jvmRuntimeClasspath")
+    javaLauncher.set(project.extensions.getByType<JavaToolchainService>().launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.java.baseline.get().toInt())) })
+    mainClass.set("dev.s7a.strata.performance.PerformanceEvidenceCli")
     doFirst {
-        environment("STRATA_PERFORMANCE_TESTKIT_JAR", archive.get().asFile.absolutePath)
-        val harness = configurations.getByName("jvmTestRuntimeClasspath").incoming.artifacts.artifacts.single { artifact ->
-            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
-            module?.group == "org.openjdk.jmh" && module.module == "jmh-core"
-        }
-        environment("STRATA_JMH_CORE_JAR", harness.file.absolutePath)
+        val request = providers.gradleProperty("strata.performance.request").orNull
+        require(request != null) { "Set strata.performance.request to one evidence request JSON file" }
+        args(rootProject.file(request).absolutePath)
     }
 }
 
-tasks.named("check") { dependsOn(pythonEvidenceTest) }
+tasks.named<Test>("jvmTest") {
+    val collector = tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }
+    dependsOn(collector)
+    inputs.file(collector)
+    systemProperty("strata.testkit.jar", collector.get().asFile.absolutePath)
+}

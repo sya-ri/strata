@@ -43,6 +43,7 @@ internal object ClassArchiveInventory {
                 '\\' !in name &&
                 '=' !in name &&
                 name.none(Char::isISOControl) &&
+                name.split('/').none { it.isEmpty() || it in setOf(".", "..") } &&
                 Path
                     .of(name)
                     .normalize()
