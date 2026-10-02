@@ -36,4 +36,3 @@ val pythonEvidenceTest by tasks.registering(Exec::class) {
 }
 
 tasks.named("check") { dependsOn(pythonEvidenceTest) }
-
