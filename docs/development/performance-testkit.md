@@ -170,6 +170,11 @@ The kit adds global counts with overflow checks and retains final and maximum su
 A single overflowing sample fails the whole interval; a truncated inventory is never accepted as complete evidence.
 
 The Web integration fixture runs `:integration:web:measureWebPerformance` through the kit's Playwright driver in Chromium, Firefox, and WebKit, for three independent repetitions and both themes.
+It retains the reactive six-phase fixture and also compiles the same 26 typed component definitions used by JMH and Fabric rather than maintaining another set of component samples.
+The compiled Web contract classifies every canonical definition exhaustively and exports its inventory during the normal site build.
+Before sampling, the actual themed host must mount and release every admitted definition and explicitly reject every unavailable definition without retaining DOM children.
+Admitted canonical definitions register Initial, Idle, Resize and Release; the reactive fixture additionally measures real state updates and pointer activation.
+These canonical definitions do not exercise every overload or capability: for example, the shipped multiline Text definition is unavailable on Web while the reactive fixture measures supported single-line text.
 Supply a new evidence file explicitly; the kit rejects an existing path before launching a browser and uses exclusive file creation to prevent concurrent replacement.
 
 ```powershell
@@ -177,11 +182,14 @@ mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy
 ```
 
 Each engine starts and closes a separate browser process for every repetition; the scenarios and phases within that invocation share one kit-owned run UUID.
+The loaded browser version must remain identical across an engine's three invocations; a version change rejects the group and still closes the changed invocation.
 The driver rejects duplicate engine/scenario/phase registrations and conditions that disagree with the collector's default 30 warm-up operations and 60 samples.
 Fixture-returned data cannot replace the driver-owned invocation or host identity, and operation failure closes the current page and browser before rejecting the matrix.
 `:quality:performance-testkit:verifyBrowserPerformanceDriver` tests these orchestration and failure contracts with synthetic browser lifetimes and is part of the kit's `check`; it is not real browser performance evidence.
 The driver records the actual linked testkit JS artifact and driver hashes separately from the complete application-bundle hash, browser version, viewport, and workload conditions.
 The kit captures input hashes before collection and verifies them again before writing evidence; an operation failure or changed input cannot produce a successful report.
+It also hashes and rechecks separately supplied fixture-input files and compares the loaded browser inventory with the independently exported build inventory before sampling.
+Every fixture registers its actual application-script URL; the kit hashes the response body fetched by the browser and rejects a response that differs from the captured bundle before sampling.
 Applications supply artifact paths, engines, fixture URLs and operations rather than implementing hashing, collection or report writing themselves.
 Before measurements, each browser verifies that operation and cleanup failures reject the interval and release the fixture exactly once.
 Preparation, assertion, collector cleanup, and evidence writing are outside synchronous action timing.

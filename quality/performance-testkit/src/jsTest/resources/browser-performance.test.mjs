@@ -7,10 +7,10 @@ import { join } from 'node:path';
 import { collectBrowserPerformance, measureBrowserMatrix } from '../../jsMain/resources/browser-performance.mjs';
 
 const conditions = { viewport: { width: 640, height: 480 }, warmup: 30, samples: 60 };
-const scenarios = ['native', 'minecraft'].map(id => ({ id, url: `http://fixture/${id}`, phases: ['Initial', 'Idle'] }));
+const scenarios = ['native', 'minecraft'].map(id => ({ id, url: `http://fixture/${id}`, targetUrl: 'http://fixture/application.js', phases: ['Initial', 'Idle'] }));
 const distribution = { samples: 60, p50_ns: 1, p95_ns: 2, p99_ns: 3, total_ns: 120, max_ns: 3 };
 
-function engine(name, { fail = false, onOperation = async () => {} } = {}) {
+function engine(name, { fail = false, onOperation = async () => {}, inventory, targetBytes = 'synthetic application', versionDrift = false } = {}) {
     const launches = [];
     return {
         launches,
@@ -19,15 +19,21 @@ function engine(name, { fail = false, onOperation = async () => {} } = {}) {
             const lifetime = { closed: false, pages: [] };
             launches.push(lifetime);
             return {
-                version: () => 'synthetic-browser',
+                version: () => versionDrift ? `synthetic-browser-${launches.length}` : 'synthetic-browser',
                 async newPage() {
                     const page = { closed: false };
                     lifetime.pages.push(page);
                     return {
                         on() {},
                         async goto() {},
+                        async waitForResponse(predicate) {
+                            const response = { url: () => 'http://fixture/application.js', ok: () => true, body: async () => new TextEncoder().encode(targetBytes) };
+                            assert.ok(predicate(response));
+                            return response;
+                        },
                         async waitForFunction() {},
                         async evaluate(callback, phase) {
+                            if (callback.toString().includes('strataPerformanceInventory')) return inventory;
                             if (phase === undefined) return true;
                             await onOperation();
                             if (fail) throw new Error('fixture operation failed');
@@ -120,6 +126,52 @@ test('an output created during collection cannot be overwritten', async t => {
     const browser = engine('chromium', { onOperation: () => writeFile(paths.outputPath, 'concurrent evidence') });
     await assert.rejects(collectBrowserPerformance({ ...paths, engines: [browser], scenarios, conditions }), { code: 'EEXIST' });
     assert.equal(await readFile(paths.outputPath, 'utf8'), 'concurrent evidence');
+});
+
+test('declared input artifacts belong to the kit and cannot change during collection', async t => {
+    const paths = await artifacts(t);
+    const manifest = join(paths.outputPath, '..', 'inventory.json');
+    await writeFile(manifest, 'registered fixture inputs');
+    const inputPaths = { fixtures: manifest };
+    const output = await collectBrowserPerformance({ ...paths, inputPaths, engines: [engine('chromium')], scenarios, conditions });
+    const hash = createHash('sha256').update('registered fixture inputs').digest('hex');
+    assert.ok(output.intervals.every(row => row.input_identities.fixtures === hash));
+    const changedOutput = join(paths.outputPath, '..', 'changed.json');
+    await assert.rejects(collectBrowserPerformance({
+        ...paths, outputPath: changedOutput, inputPaths,
+        engines: [engine('chromium', { onOperation: () => writeFile(manifest, 'changed fixtures') })], scenarios, conditions,
+    }), /input changed/);
+    await assert.rejects(readFile(changedOutput), { code: 'ENOENT' });
+});
+
+test('the loaded fixture inventory must match the declared inputs before sampling', async () => {
+    const inventory = { supported: ['Row'], unavailable: ['Canvas'], phases: ['Initial', 'Idle'] };
+    const registered = scenarios.map(scenario => ({ ...scenario, inventory }));
+    const accepted = await measureBrowserMatrix({ engines: [engine('chromium', { inventory })], scenarios: registered, conditions });
+    assert.equal(accepted.length, 12);
+    const browser = engine('chromium', { inventory: { ...inventory, supported: [] } });
+    await assert.rejects(measureBrowserMatrix({ engines: [browser], scenarios: registered, conditions }), /inventory differs/);
+    assert.equal(browser.launches.length, 1);
+    assert.ok(browser.launches[0].closed && browser.launches[0].pages.every(page => page.closed));
+});
+
+test('the response actually loaded by the browser must match the captured target bundle', async t => {
+    const paths = await artifacts(t);
+    const browser = engine('chromium', { targetBytes: 'another served bundle' });
+    await assert.rejects(collectBrowserPerformance({ ...paths, engines: [browser], scenarios, conditions }), /another application bundle/);
+    await assert.rejects(readFile(paths.outputPath), { code: 'ENOENT' });
+    assert.equal(browser.launches.length, 1);
+    assert.ok(browser.launches[0].closed && browser.launches[0].pages.every(page => page.closed));
+});
+
+test('browser version drift rejects the group and closes the changed invocation', async t => {
+    const paths = await artifacts(t);
+    const browser = engine('chromium', { versionDrift: true });
+    await assert.rejects(collectBrowserPerformance({ ...paths, engines: [browser], scenarios, conditions }), /version changed/);
+    await assert.rejects(readFile(paths.outputPath), { code: 'ENOENT' });
+    assert.equal(browser.launches.length, 2);
+    assert.ok(browser.launches.every(lifetime => lifetime.closed));
+    assert.equal(browser.launches[1].pages.length, 0);
 });
 
 test('operation failure closes the current page and browser without starting another invocation', async () => {

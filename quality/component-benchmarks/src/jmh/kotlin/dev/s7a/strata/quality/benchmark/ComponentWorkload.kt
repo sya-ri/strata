@@ -4,6 +4,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.PlayerSkinSource
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.integration.minecraft.fabric.createButtonShowcaseScreenDefinition
 import dev.s7a.strata.integration.minecraft.fabric.createCanvasShowcaseScreenDefinition
@@ -33,6 +34,8 @@ import dev.s7a.strata.integration.minecraft.fabric.createTiledImageShowcaseScree
 import dev.s7a.strata.integration.minecraft.fabric.createVirtualListShowcaseScreenDefinition
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.screen.ScreenDefinition
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.ui.UiDefinition
 
 /**
  * Real compiled showcase workloads; synthetic profile assets are declared separately from native font/resource evidence.
@@ -170,6 +173,16 @@ public enum class ComponentWorkload {
     ProgressBar,
 
     ;
+
+    /**
+     * Transfers the canonical declaration once and supplies loose child constraints for fixed-size components.
+     * Portable and browser hosts use this same wrapper during initial display, resizing and terminal release.
+     */
+    @OptIn(InternalStrataRuntimeApi::class)
+    public fun uiDefinition(): UiDefinition {
+        val payload = definition().transfer()
+        return UiDefinition(payload.title, pausesGame = payload.pausesGame) { Stack { payload.content(this) } }
+    }
 
     /**
      * Creates a fresh one-shot declaration; no host or previous frame is shared between lifetimes.

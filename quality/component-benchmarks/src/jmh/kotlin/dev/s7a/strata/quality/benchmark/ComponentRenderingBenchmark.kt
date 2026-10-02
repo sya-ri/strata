@@ -1,7 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
-import dev.s7a.strata.component.Stack
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerEvent
@@ -128,12 +127,7 @@ public open class ComponentRenderingBenchmark {
 
         private inline fun measured(crossinline operation: () -> RuntimeUiFrame): RuntimeUiFrame = monitor?.sample { operation() } ?: operation()
 
-        @Suppress("DEPRECATION") // The fixture adapter transfers each shipped one-shot compatibility definition exactly once.
-        private fun definition(): UiDefinition {
-            val payload = component.definition().transfer()
-            // The outer layout supplies loose child constraints so fixed-size list declarations remain valid during host resize.
-            return UiDefinition(payload.title, pausesGame = payload.pausesGame) { Stack { payload.content(this) } }
-        }
+        private fun definition(): UiDefinition = component.uiDefinition()
 
         /**
          * Closes monitoring and the retained host on its owner worker, including assertion failure paths.

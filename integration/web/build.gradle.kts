@@ -23,6 +23,15 @@ kotlin {
     }
 }
 
+// Reuse the exact API-only declarations and typed fixture inventory already exercised by JMH and Fabric.
+kotlin.sourceSets.named("jsMain") {
+    kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+    kotlin.include("**/*Example.kt")
+    kotlin.exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
+    kotlin.srcDir(rootProject.file("quality/component-benchmarks/src/jmh/kotlin"))
+    kotlin.include("**/ComponentWorkload.kt", "**/integration/web/*.kt")
+}
+
 val installWebBrowsers = tasks.register<Exec>("installWebBrowsers") {
     dependsOn(rootProject.tasks.named("kotlinNpmInstall"))
     commandLine("node", rootProject.layout.buildDirectory.file("js/node_modules/playwright/cli.js").get().asFile, "install", "chromium", "firefox", "webkit")
