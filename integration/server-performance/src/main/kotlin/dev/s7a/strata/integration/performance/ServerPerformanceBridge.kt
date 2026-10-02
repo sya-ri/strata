@@ -39,12 +39,14 @@ public class ServerPerformanceBridge(
     /**
      * Runs one kit-owned warm-up or sample at the current host scheduling opportunity.
      */
+    @Suppress("unused") // Called reflectively across the isolated plugin/collector classloader boundary.
     public fun advance(): Boolean = schedule.advance()
 
     /**
      * Publishes complete invocation-bound evidence without replacing a previous receipt.
      * Runtime representative identities do not claim complete shaded-module API discovery or native acknowledgement.
      */
+    @Suppress("unused") // Called reflectively across the isolated plugin/collector classloader boundary.
     public fun write(
         destination: String,
         runId: String,

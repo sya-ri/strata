@@ -68,11 +68,7 @@ public class ServerPerformanceInterval(
         check(Thread.currentThread() === owner)
         if (closed) return
         closed = true
-        try {
-            invoke(closeMethod)
-        } finally {
-            loader.close()
-        }
+        loader.use { invoke(closeMethod) }
     }
 
     private fun invoke(

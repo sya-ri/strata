@@ -15,8 +15,6 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import java.nio.file.Path
 import java.util.UUID
-import java.util.function.IntConsumer
-import java.util.function.IntFunction
 
 /**
  * Actual server-owner operations after the independent acknowledged presentation acceptance scene.
@@ -61,7 +59,7 @@ internal class PaperPerformanceVerification(
         ServerPerformanceInterval(
             kit,
             workload.interval,
-            IntFunction {
+            {
                 when (workload) {
                     PaperPerformanceWorkload.OwnerEntry -> {
                         entered = false
@@ -74,19 +72,14 @@ internal class PaperPerformanceVerification(
 
                     PaperPerformanceWorkload.HudLifetime -> {
                         latest = null
-                        try {
-                            latest =
-                                UiDefinition("Performance HUD", presentation = UiPresentation.Hud) {
-                                    Column { repeat(99) { Spacer() } }
-                                }.open(plugin, player)
-                        } finally {
-                            latest?.close()
-                        }
+                        UiDefinition("Performance HUD", presentation = UiPresentation.Hud) {
+                            Column { repeat(99) { Spacer() } }
+                        }.open(plugin, player).use { latest = it }
                     }
                 }
                 1
             },
-            IntConsumer {
+            {
                 when (workload) {
                     PaperPerformanceWorkload.OwnerEntry -> check(entered)
                     PaperPerformanceWorkload.Capabilities -> check(0 < capabilities)
