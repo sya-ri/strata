@@ -36,10 +36,7 @@ class LoadedArtifactMetadataTest {
             val bytes = Files.readAllBytes(temporary.resolve("classes/fixture/Probe.class"))
             val text = "fixture/Probe.class=${sha256(bytes)}\n"
             assertEquals(sha256(text.toByteArray(Charsets.UTF_8)), tree.get("sha256").asString)
-            val compatibility = JvmArtifactIdentity.capture(loader, listOf("fixture.Probe"))
-            val legacy = compatibility.getAsJsonObject("strata_class_sha256").getAsJsonObject("fixture.Probe")
-            assertEquals(sha256(bytes), legacy.getAsJsonObject("class_resource").get("sha256").asString)
-            assertEquals(ArtifactIdentity.file(jar), compatibility.getAsJsonObject("strata_jar_sha256").get(jar.toString()).asString)
+            assertEquals(sha256(bytes), module.getAsJsonObject("classResource").get("sha256").asString)
             assertNull(System.getProperty("strata.testkit.provenance.initialized"))
         }
     }
@@ -55,7 +52,6 @@ class LoadedArtifactMetadataTest {
         }.use { loader ->
             val evidence = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe"), setOf("fixture"))
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(evidence) }
-            assertFailsWith<IllegalStateException> { JvmArtifactIdentity.capture(loader, listOf("fixture.Probe")) }
         }
     }
 

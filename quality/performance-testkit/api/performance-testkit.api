@@ -42,11 +42,6 @@ public final class dev/s7a/strata/performance/JvmApiInventory {
 	public final fun componentEntryPoints (Ljava/lang/ClassLoader;Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
 }
 
-public final class dev/s7a/strata/performance/JvmArtifactIdentity {
-	public static final field INSTANCE Ldev/s7a/strata/performance/JvmArtifactIdentity;
-	public final fun capture (Ljava/lang/ClassLoader;Ljava/util/List;)Lcom/google/gson/JsonObject;
-}
-
 public final class dev/s7a/strata/performance/JvmPerformanceEvidence {
 	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceEvidence;
 	public final fun indexPhases (Lcom/google/gson/JsonObject;Ljava/util/List;Ljava/lang/Integer;)Ljava/util/Map;
@@ -102,11 +97,6 @@ public final class dev/s7a/strata/performance/JvmPerformanceSchedule : java/lang
 public final class dev/s7a/strata/performance/JvmPerformanceSequence : java/lang/AutoCloseable {
 	public fun close ()V
 	public final fun sample (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
-}
-
-public final class dev/s7a/strata/performance/LegacyNativeEvidence {
-	public static final field INSTANCE Ldev/s7a/strata/performance/LegacyNativeEvidence;
-	public final fun distribution (Lcom/google/gson/JsonElement;)Lcom/google/gson/JsonObject;
 }
 
 public final class dev/s7a/strata/performance/LoadedArtifactMetadata {

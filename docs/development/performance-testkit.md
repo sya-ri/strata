@@ -62,6 +62,8 @@ Recollect both baseline and candidate whenever that collector changes.
 Historical evidence keeps its original collector and workload contract; field-name compatibility alone is not measurement compatibility.
 
 Evidence processing uses Java and the JVM testkit; Python is not a requirement and no Python compatibility package is shipped.
+CPU and native reports use `LoadedArtifactMetadata` directly; historical field-name projections and distribution adapters are removed.
+Consumers preserve the kit's distribution fields and unavailable values without translating them into an older schema.
 `JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
 The loaded collector identity is captured once and returned as a detached copy; replacing that archive later cannot certify new receipts.
 `JvmPerformanceReports` validates raw phase reports against a consumer-declared `PerformanceReportContract`, aggregates registered metrics and compares complete image inventories.

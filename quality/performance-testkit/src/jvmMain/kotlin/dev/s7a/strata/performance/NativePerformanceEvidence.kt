@@ -25,6 +25,10 @@ public object NativePerformanceEvidence {
         require(names.isNotEmpty() && names.toSet().size == names.size) { "Duplicate or missing native module" }
         require(modules.filter { it.has("classTree") }.map { it.textField("representativeClass") }.toSet() == representatives) { "Incomplete native class-tree inventory" }
         require(modules.filter { it.has("classTree").not() }.map { it.textField("module") }.toSet() == nativeOnlyModules) { "Incomplete native-only inventory" }
+        val cpuMetadata = cpuReport.objectField("strata")
+        LoadedArtifactMetadata.verifyComplete(cpuMetadata)
+        val cpuModules = cpuMetadata.arrayField("modules").map { it.asJsonObject }
+        require(cpuModules.size == representatives.size && cpuModules.map { it.textField("representativeClass") }.toSet() == representatives) { "Incomplete or duplicate CPU module inventory" }
         return JsonArray().apply {
             modules.forEach { module ->
                 require(module.textField("status").contentEquals("resolved")) { "Unresolved native artifact" }
@@ -34,12 +38,12 @@ public object NativePerformanceEvidence {
                 verifyResource(path, representative, resource)
                 val receipt = JsonObject().apply { addProperty("module", module.textField("module")) }
                 if (module.has("classTree")) {
-                    val identity = cpuReport.objectField("strata_class_sha256").objectField(representative)
-                    val cpuPath = verifyOrigin(identity.objectField("code_source"))
-                    verifyResource(cpuPath, representative, identity.objectField("class_resource"))
-                    require(identity.objectField("class_resource").get("sha256") == resource.get("sha256")) { "CPU/native representative mismatch" }
+                    val identity = cpuModules.single { it.textField("representativeClass").contentEquals(representative) }
+                    val cpuPath = verifyOrigin(identity.objectField("codeSource"))
+                    verifyResource(cpuPath, representative, identity.objectField("classResource"))
+                    require(identity.objectField("classResource").get("sha256") == resource.get("sha256")) { "CPU/native representative mismatch" }
                     val tree = JvmEvidenceFiles.classTree(cpuPath)
-                    require(tree == module.objectField("classTree") && tree == JvmEvidenceFiles.classTree(path)) { "CPU/native class-tree mismatch" }
+                    require(tree == identity.objectField("classTree") && tree == module.objectField("classTree") && tree == JvmEvidenceFiles.classTree(path)) { "CPU/native class-tree mismatch" }
                     receipt.addProperty("cpu_jar_sha256", ArtifactIdentity.file(cpuPath))
                     receipt.add("native_class_tree", tree)
                 } else {

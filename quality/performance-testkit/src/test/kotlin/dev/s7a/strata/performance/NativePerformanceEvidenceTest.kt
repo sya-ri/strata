@@ -51,11 +51,13 @@ class NativePerformanceEvidenceTest {
         write(path, listOf("fixture/Probe.class"))
         val origin =
             JsonObject().apply {
+                addProperty("status", "available")
                 addProperty("url", path.toUri().toString())
                 addProperty("sha256", ArtifactIdentity.file(path))
             }
         val resource =
             JsonObject().apply {
+                addProperty("status", "available")
                 addProperty("entryName", "fixture/Probe.class")
                 addProperty("sha256", EntryIdentity.sha256("probe".byteInputStream()))
             }
@@ -69,22 +71,16 @@ class NativePerformanceEvidenceTest {
                 add("classTree", JvmEvidenceFiles.classTree(path))
             }
         val native = JsonObject().apply { add("strata", JsonObject().apply { add("modules", JsonArray().apply { add(module) }) }) }
-        val cpu =
-            JsonObject().apply {
-                add(
-                    "strata_class_sha256",
-                    JsonObject().apply {
-                        add(
-                            "fixture.Probe",
-                            JsonObject().apply {
-                                add("code_source", origin.deepCopy())
-                                add("class_resource", resource.deepCopy())
-                            },
-                        )
-                    },
-                )
-            }
+        val cpu = native.deepCopy()
+        cpu
+            .objectField("strata")
+            .arrayField("modules")
+            .single()
+            .asJsonObject
+            .objectField("classTree")
+            .addProperty("status", "available")
         assertEquals(1, NativePerformanceEvidence.verify(native, cpu, setOf("fixture.Probe"), emptySet()).size())
+        assertMalformedCpuReportsFail(native, cpu, module)
         module.objectField("classTree").addProperty("sha256", "0".repeat(64))
         assertFails { NativePerformanceEvidence.verify(native, cpu, setOf("fixture.Probe"), emptySet()) }
         module.add("classTree", JvmEvidenceFiles.classTree(path))
@@ -95,6 +91,34 @@ class NativePerformanceEvidenceTest {
         origin.addProperty("url", path.toUri().toString())
         native.objectField("strata").arrayField("modules").add(module.deepCopy())
         assertFails { NativePerformanceEvidence.verify(native, cpu, setOf("fixture.Probe"), emptySet()) }
+    }
+
+    private fun assertMalformedCpuReportsFail(
+        native: JsonObject,
+        cpu: JsonObject,
+        module: JsonObject,
+    ) {
+        val duplicateCpu = cpu.deepCopy()
+        duplicateCpu.objectField("strata").arrayField("modules").add(module.deepCopy())
+        assertFails { NativePerformanceEvidence.verify(native, duplicateCpu, setOf("fixture.Probe"), emptySet()) }
+        val missingTree = cpu.deepCopy()
+        missingTree
+            .objectField("strata")
+            .arrayField("modules")
+            .single()
+            .asJsonObject
+            .remove("classTree")
+        assertFails { NativePerformanceEvidence.verify(native, missingTree, setOf("fixture.Probe"), emptySet()) }
+        val changedCpu = cpu.deepCopy()
+        changedCpu
+            .objectField("strata")
+            .arrayField("modules")
+            .single()
+            .asJsonObject
+            .objectField("classTree")
+            .addProperty("sha256", "0".repeat(64))
+        assertFails { NativePerformanceEvidence.verify(native, changedCpu, setOf("fixture.Probe"), emptySet()) }
+        assertFails { NativePerformanceEvidence.verify(native, JsonObject().apply { add("strata_class_sha256", JsonObject()) }, setOf("fixture.Probe"), emptySet()) }
     }
 
     private fun write(

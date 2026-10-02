@@ -40,7 +40,7 @@ public object JvmPerformanceRunner {
 
     /**
      * Runs untimed preparation operations before an application-owned fixture snapshot.
-     * This compatibility entry point preserves existing workload boundaries during migration.
+     * Preparation and fixture snapshots remain outside the following measured interval.
      */
     public fun warmup(
         count: Int,
@@ -51,7 +51,7 @@ public object JvmPerformanceRunner {
     }
 
     /**
-     * Preserves interleaved legacy operations and their setup without a downstream sampling engine.
+     * Runs declared interleaved operations and their setup without a downstream sampling engine.
      * Failure propagates, incomplete intervals fail, and collector storage is released in either case.
      */
     public fun sequence(

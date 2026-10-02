@@ -11,6 +11,7 @@ import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -20,10 +21,12 @@ class JvmPerformanceReportsTest {
     @field:TempDir lateinit var directory: Path
 
     @Test
-    fun actualPublishedCollectorContainsNoPythonCompatibilityResources() {
+    fun actualPublishedCollectorContainsNoCompatibilityResourcesOrAdapters() {
         val collector = Path.of(requireNotNull(System.getProperty("strata.testkit.jar")))
         ZipFile(collector.toFile()).use { archive ->
             assertTrue(archive.entries().asSequence().none { it.name.endsWith(".py") || it.name.endsWith(".pyc") })
+            assertNull(archive.getEntry("dev/s7a/strata/performance/JvmArtifactIdentity.class"))
+            assertNull(archive.getEntry("dev/s7a/strata/performance/LegacyNativeEvidence.class"))
         }
     }
 
