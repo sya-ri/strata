@@ -72,7 +72,8 @@ The loaded collector identity is captured once and returned as a detached copy; 
 `JvmPerformanceReports` validates raw phase reports against a consumer-declared `PerformanceReportContract`, aggregates registered metrics and compares complete image inventories.
 Each contract declares the workload, exact phase count and identities, required report/phase conditions, and runtime fields permitted to vary between candidates.
 Variant fields remain identical within each repetition group; sample counts are always controlled.
-Applications supply only fixture-specific assertions and output presentation.
+Applications supply fixture-specific assertions, controlled input declarations and workload annotations.
+Report serialization and metric projections belong to the kit; consumers must not add independent report formatters, unit conversions or per-sample normalization.
 `NativePerformanceEvidence` verifies actual local archive origins, representative resources and complete CPU/native class-tree agreement without filename/version assumptions.
 Unsafe archives, missing inputs, non-finite measurements and invalid divisors reject success.
 A missing optional measurement remains unavailable, never zero.
