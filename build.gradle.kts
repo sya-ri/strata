@@ -8,6 +8,7 @@ import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
+import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
@@ -1404,6 +1405,19 @@ subprojects {
     val javaVersion = when (path) {
         ":velocity-api", ":runtime:velocity", ":examples:velocity", ":integration:velocity" -> velocityJavaVersion
         else -> minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
+    }
+
+    plugins.withId("me.champeau.jmh") {
+        val fixture = extensions.getByType<SourceSetContainer>().named("jmh")
+        val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(javaVersion))
+        }
+        tasks.named<Detekt>("detekt") {
+            // Standard type resolution covers aliases and references; benchmark sampling belongs to JMH/the kit.
+            classpath.from(fixture.map { it.runtimeClasspath })
+            jvmTarget.set(javaVersion.toString())
+            jdkHome.set(analysisJava.map { it.metadata.installationPath })
+        }
     }
 
     extensions.configure<JavaPluginExtension> {

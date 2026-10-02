@@ -3,6 +3,22 @@
 # ReturnCount is disabled because early returns make validation and lifecycle failure paths more direct.
 # MaxLineLength is disabled because code and documentation break at semantic boundaries instead of a fixed column.
 style:
+  ForbiddenMethodCall:
+    active: true
+    includes: ["**/src/jmh/**"]
+    methods:
+      - "java.lang.System.nanoTime"
+      - "java.lang.System.currentTimeMillis"
+      - "kotlin.system.measureNanoTime"
+      - "kotlin.system.measureTimeMillis"
+      - "kotlin.time.measureTime"
+      - "kotlin.time.measureTimedValue"
+      - "java.lang.management.ManagementFactory.getThreadMXBean"
+      - "java.lang.management.ManagementFactory.getMemoryMXBean"
+      - "java.lang.management.ManagementFactory.getGarbageCollectorMXBeans"
+      - "java.lang.management.ThreadMXBean.getCurrentThreadCpuTime"
+      - "java.lang.management.ThreadMXBean.getThreadCpuTime"
+      - "com.sun.management.ThreadMXBean.getThreadAllocatedBytes"
   MagicNumber:
     active: false
   ReturnCount:

@@ -163,3 +163,8 @@ The original CC0 geometric TTF fixture and all resolved control libraries are ar
 Source bytes, PNG encoding and ZIP preparation happen outside measurement. Snapshot loading has its own named operation; retained glyph resolution, cache/face churn, shaping and native-engine lifetimes are separate operations.
 The untimed work gate verifies actual provider output, complete generated registration, finite retention ceilings, reference-limit rejection and zero retained faces/pixels after close.
 These declared stress inputs do not claim exhaustive combinations of every configurable resource limit or GPU/native upload measurements.
+
+JMH fixture sources use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
+Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
+The gate uses the actual JMH source-set classpath and selected Java toolchain; it does not inspect arbitrary external helper internals or unresolved calls.
+The Web driver and portable fixtures still delegate their measurements to the kit; this JVM type-resolution gate does not claim to enforce JavaScript property access.

@@ -22,7 +22,7 @@ internal class StressStateSource<T>(
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
         val token = Any()
         observers[token] = observer
-        return StateSubscription(snapshot) { observers.remove(token) }
+        return StateSubscription(snapshot) { observers.remove(token).let { removed -> check(removed == null || removed === observer) } }
     }
 
     /**

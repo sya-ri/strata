@@ -7,6 +7,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -68,7 +69,7 @@ internal object FontPerformanceAssets {
         ByteArrayOutputStream().use { output ->
             ZipOutputStream(output).use { zip ->
                 zip.putNextEntry(ZipEntry("glyphs.hex").apply { time = 0 })
-                zip.write((32..127).joinToString("\n", postfix = "\n") { scalar -> "%04X:%s".format(scalar, "7E".repeat(16)) }.toByteArray(Charsets.US_ASCII))
+                zip.write((32..127).joinToString("\n", postfix = "\n") { scalar -> "%04X:%s".format(Locale.ROOT, scalar, "7E".repeat(16)) }.toByteArray(Charsets.US_ASCII))
                 zip.closeEntry()
             }
             output.toByteArray()
