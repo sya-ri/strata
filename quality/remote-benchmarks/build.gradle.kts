@@ -42,10 +42,13 @@ tasks.register<JavaExec>("jmhRemote") {
     val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
-    val suite = (if (smoke) "remote-smoke" else "remote") + (if (mode in setOf("sample")) "-sample" else "")
-    val includes = "RemoteProtocolBenchmark.*"
+    val sessions = providers.gradleProperty("strata.performance.remoteSessions").map(String::toBooleanStrict).getOrElse(false)
+    val family = if (sessions) "remote-sessions" else "remote"
+    val suite = (if (smoke) "$family-smoke" else family) + (if (mode in setOf("sample")) "-sample" else "")
+    val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
     val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
     args(result.get().asFile.absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    systemProperty("strata.performance.remoteSessions", sessions)
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
@@ -75,3 +78,14 @@ tasks.register<JavaExec>("captureRemoteInventory") {
     mainClass.set("dev.s7a.strata.quality.benchmark.RemoteWorkEvidence")
     args(layout.buildDirectory.file("performance/remote-api.tsv").get().asFile.absolutePath)
 }
+
+val verifyRemoteSessionWork by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Checks actual retained remote owners, shared revisions and terminal subscription release."
+    dependsOn(remoteGenerated, remoteGenerator)
+    classpath = remoteClasspath
+    javaLauncher.set(remoteLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.RemoteSessionWorkEvidence")
+}
+
+tasks.named("check") { dependsOn(verifyRemoteSessionWork) }

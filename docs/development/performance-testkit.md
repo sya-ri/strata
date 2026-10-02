@@ -181,3 +181,10 @@ Headless members register the existing rasterization and translucent-composition
 Full and smoke collection validate these surfaces first, and archive their reviewed registry as an explicit control input.
 The historical 54-case and remote 30-case matrices and their execution defaults remain unchanged.
 This is module registration backed by actual workload families, rather than proof that every member executes or a substitute for real remote transport evidence.
+
+The separate retained-remote corpus uses `-Pstrata.performance.remoteSessions=true` on `jmhRemote` and independent `remote-sessions` / `remote-sessions-sample` output directories.
+Its nine cases use real `RemoteServerSession` owners at one 100-node session, one session at the current 8192-node bound, and 16 shared-source sessions with 512 nodes each at the same aggregate bound.
+It measures unchanged projection, real shared revisions and complete create/attach/update/close lifetimes, with one current outbound message per peer and no output history.
+The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
+The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
+These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.

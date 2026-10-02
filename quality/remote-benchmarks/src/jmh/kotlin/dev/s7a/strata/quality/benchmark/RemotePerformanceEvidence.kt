@@ -17,11 +17,12 @@ public object RemotePerformanceEvidence {
     public fun main(args: Array<String>) {
         require(2 < args.size)
         RemoteWorkEvidence.verifySurface()
-        val fixtures = listOf(RemoteProtocolBenchmark::class.java)
+        val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
+        val fixtures = if (sessions) listOf(RemoteSessionBenchmark::class.java) else listOf(RemoteProtocolBenchmark::class.java)
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
-        val parameters = if (smoke) mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name)) else emptyMap()
+        val parameters = if (smoke) (if (sessions) mapOf("workload" to setOf(RemoteSessionWorkload.Single100.name)) else mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))) else emptyMap()
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
-        val options = args.drop(2) + if (smoke) listOf("-p", "nodes=100", "-p", "change=${RemoteChange.Single.name}") else emptyList()
+        val options = args.drop(2) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
         JmhPerformanceRunner.run(
             options.toTypedArray(),
             fixtures,

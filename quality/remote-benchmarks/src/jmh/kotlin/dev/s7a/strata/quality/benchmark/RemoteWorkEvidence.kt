@@ -59,12 +59,12 @@ public object RemoteWorkEvidence {
 
     /**
      * Rejects exact protocol API registration changes before full or smoke collection.
-     * Stable and changed inputs register separate idle and update protocol operations, without claiming transport latency.
+     * Protocol and retained-session inputs register idle, update and lifetime operations without claiming host transport latency.
      */
     public fun verifySurface() {
         val symbols = checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
         require(symbols.toSet().size == symbols.size) { "Duplicate remote performance API registration" }
-        val feature = "RemoteProtocol"
+        val feature = "Remote"
         val scenarios =
             JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).map { identity ->
                 val change =
@@ -79,10 +79,21 @@ public object RemoteWorkEvidence {
                 val phase = if (change == RemoteChange.Stable) PerformancePhase.Idle else PerformancePhase.Update
                 PerformanceScenario(identity, setOf(feature), setOf(PerformanceHost.Jvm), setOf(phase), "remote-protocol-v1")
             }
+        val lifetimePhases = mapOf("idle" to PerformancePhase.Idle, "update" to PerformancePhase.Update, "lifecycle" to PerformancePhase.Release)
+        val lifetimes =
+            JmhWorkloadInventory.capture(listOf(RemoteSessionBenchmark::class.java), setOf("avgt")).map { identity ->
+                val method =
+                    JsonParser
+                        .parseString(identity)
+                        .asJsonArray[0]
+                        .asString
+                        .substringAfterLast('.')
+                PerformanceScenario(identity, setOf(feature), setOf(PerformanceHost.Jvm), setOf(requireNotNull(lifetimePhases[method])), "retained-remote-v1")
+            }
         val surface = PerformanceInventory(protocolSurface(), mapOf("remote" to symbols.associateWith { feature }), mapOf("runtime/remote/src/" to setOf(feature)))
-        val coverage = PerformanceCoverage(mapOf(feature to setOf(PerformanceHost.Jvm)), scenarios, mapOf(feature to setOf(PerformancePhase.Idle, PerformancePhase.Update)))
+        val coverage = PerformanceCoverage(mapOf(feature to setOf(PerformanceHost.Jvm)), scenarios + lifetimes, mapOf(feature to setOf(PerformancePhase.Idle, PerformancePhase.Update, PerformancePhase.Release)))
         coverage.selectChangedPaths(surface)
-        println("Verified ${symbols.size} exact remote API symbols against ${scenarios.size} protocol cases")
+        println("Verified ${symbols.size} exact remote API symbols against ${scenarios.size} protocol and ${lifetimes.size} retained-session cases")
     }
 
     private fun protocolSurface(): Map<String, Set<String>> = JvmApiInventory.capture(javaClass.classLoader, mapOf("remote" to "dev.s7a.strata.runtime.remote.RemoteTree"))
