@@ -47,6 +47,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param playerName active local player name shown by the native screen.
  * @return one-shot screen definition reproducing the native screen geometry and draw order.
  */
+@Suppress("LongMethod") // Keep the complete immutable screen declaration in one readable composition.
 internal fun createSocialScreenDefinition(
     panel: ImageSource = socialPanel,
     searchIcon: ImageSource = socialSearchIcon,

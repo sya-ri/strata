@@ -31,6 +31,7 @@ import dev.s7a.strata.screen.ScreenDefinition
  * @param primaryContainerBinding optional binding used by the first upper Container cell.
  * @return one-shot screen definition used to verify live item rendering and authoritative container input in a loaded client.
  */
+@Suppress("LongMethod") // Keep the complete immutable screen declaration in one readable composition.
 internal fun createInventorySlotScreenDefinition(
     primaryPlayerBinding: SlotBinding = Slots.playerInventory(0),
     primaryContainerBinding: SlotBinding? = null,

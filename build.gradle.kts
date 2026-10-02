@@ -1409,11 +1409,13 @@ subprojects {
 
     plugins.withId("me.champeau.jmh") {
         val fixture = extensions.getByType<SourceSetContainer>().named("jmh")
+        val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh")
         val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }
         tasks.named<Detekt>("detekt") {
             // Standard type resolution covers aliases and references; benchmark sampling belongs to JMH/the kit.
+            source(fixtureKotlin.map { it.kotlin })
             classpath.from(fixture.map { it.runtimeClasspath })
             jvmTarget.set(javaVersion.toString())
             jdkHome.set(analysisJava.map { it.metadata.installationPath })

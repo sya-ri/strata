@@ -167,3 +167,15 @@ val verifyFontWork by tasks.registering(JavaExec::class) {
 }
 
 tasks.named("check") { dependsOn(verifyFontWork) }
+
+tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
+    group = "verification"
+    description = "Stages exact loaded portable runtime API assignments for review; verification never updates the baseline."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.RuntimeSurfaceInventoryEvidence")
+    javaLauncher.set(componentLauncher)
+    args(layout.buildDirectory.file("performance/runtime-api.tsv").get().asFile.absolutePath)
+}

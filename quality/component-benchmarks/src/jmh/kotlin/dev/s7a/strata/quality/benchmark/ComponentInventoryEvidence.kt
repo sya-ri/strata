@@ -51,6 +51,7 @@ public object ComponentInventoryEvidence {
     public fun changedPaths(): Set<String>? = System.getProperty("strata.performance.changedPaths")?.let { Files.readAllLines(Path.of(it), Charsets.UTF_8).toSet() }
 
     private fun registration(): ComponentPerformanceRegistration {
+        RuntimeSurfaceInventoryEvidence.verify()
         val resource = checkNotNull(javaClass.getResourceAsStream("/component-api.tsv")) { "The reviewed component API performance assignments are missing" }
         val rows = resource.bufferedReader(Charsets.UTF_8).use { it.readLines() }.map { line -> line.split('\t', limit = 2).also { require(it.size == 2) } }
         val assignments = rows.associate { row -> row[1] to ComponentWorkload.valueOf(row[0]).name }

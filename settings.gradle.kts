@@ -145,7 +145,7 @@ if (webOnly) {
             (task.substringAfterLast(':') in setOf("check", "jsTest") ||
                 (task.substringBeforeLast(':') in setOf(":runtime:core", ":runtime:minecraft") && task.substringAfterLast(':') in setOf("formatKotlin", "updateKotlinAbi")) ||
                 (task.substringBeforeLast(':') == ":quality:performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi")) ||
-                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhRemote", "jmhComponents", "captureComponentInventory")) ||
+                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhRemote", "jmhComponents", "captureComponentInventory", "captureRuntimeSurfaceInventory")) ||
                 (task.substringBeforeLast(':') == ":quality:detekt-rules" && task.substringAfterLast(':') in setOf("formatKotlin")) ||
                 (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
     }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; use the complete build for other work." }

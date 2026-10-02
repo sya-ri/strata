@@ -117,7 +117,12 @@ The component corpus is isolated in `quality:component-benchmarks`, so its nativ
 The `component-api.tsv` registry assigns every actual public component entry point, including overloads and generated state-binding aliases, to a typed executable workload.
 `:quality:component-benchmarks:check` compares the loaded API archive against that exact registry and verifies every registered idle/input/resize operation completes.
 `:quality:component-benchmarks:captureComponentInventory` stages a prospective registry under the build directory for review; verification never rewrites its baseline.
-The component registry covers these component entry points, rather than claiming complete coverage of every public SPI, resource provider, or remote host.
+The separate `runtime-api.tsv` registry preserves every JVM-visible public/protected symbol in the actual loaded API, core, Minecraft-profile and LWJGL font modules, including overloads and owners.
+Both full and narrow component collection validate these registrations against the loaded archives and the actual generated component, stress and font workloads before selecting operations.
+Registered benchmark methods have explicit idle, update, input, resize, preparation or release phases; an unknown method requires a reviewed phase assignment.
+`:quality:component-benchmarks:captureRuntimeSurfaceInventory` stages a prospective baseline for review without rewriting the checked-in registry.
+The binary inventory deliberately includes Kotlin internal declarations exposed publicly in JVM bytecode, so changing those declarations also requires a reviewed registry update.
+Registration associates module surfaces with executable workload families; it does not establish that each member executes, or substitute for loaded Fabric, Web, remote, Paper or Velocity evidence.
 
 For local selection, pass `-Pstrata.performance.changedPaths=<UTF-8-path-list>` to the component check or JMH task.
 The list contains repository-relative paths, one per line; known declaration and example owners select their feature union, and any unknown path selects the whole corpus.
@@ -166,5 +171,5 @@ These declared stress inputs do not claim exhaustive combinations of every confi
 
 JMH fixture sources use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
 Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
-The gate uses the actual JMH source-set classpath and selected Java toolchain; it does not inspect arbitrary external helper internals or unresolved calls.
+The gate uses the actual JMH Kotlin source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain; it does not inspect arbitrary external helper internals or unresolved calls.
 The Web driver and portable fixtures still delegate their measurements to the kit; this JVM type-resolution gate does not claim to enforce JavaScript property access.

@@ -16,6 +16,7 @@ public object ComponentPerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
+        RuntimeSurfaceInventoryEvidence.verify()
         if (System.getProperty("strata.performance.fonts", "false").toBooleanStrict()) {
             fonts(args)
             return
@@ -46,7 +47,7 @@ public object ComponentPerformanceEvidence {
             expected,
             inputs =
                 JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
-                    mapOf("component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI())),
+                    mapOf("component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI()), "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI())),
         )
     }
 
@@ -63,7 +64,7 @@ public object ComponentPerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             JmhWorkloadInventory.capture(benchmarks, setOf(mode.shortLabel()), parameters),
-            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture")))),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))), "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI())),
         )
     }
 
@@ -80,7 +81,7 @@ public object ComponentPerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             JmhWorkloadInventory.capture(listOf(benchmark), setOf(mode.shortLabel()), parameters),
-            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI())),
         )
     }
 }
