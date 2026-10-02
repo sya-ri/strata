@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
@@ -90,8 +91,12 @@ class JmhPerformanceEvidenceTest {
             val baseline = JmhEvidenceFixtureData(directory.resolve("baseline"), kit.archive).create()
             val candidate = JmhEvidenceFixtureData(directory.resolve("candidate"), kit.archive).create()
             val modifier = JmhEvidenceFixtureData(directory, kit.archive)
+            // A candidate group uses one actual runtime archive; rebuilding can change ZIP timestamps.
+            val changedTarget = candidate.first().resolve("target-0.jar")
+            EvidenceArchiveFixture.append(changedTarget)
             candidate.forEach { run ->
-                EvidenceArchiveFixture.append(run.resolve("target-0.jar"))
+                val target = run.resolve("target-0.jar")
+                if (target != changedTarget) Files.copy(changedTarget, target, StandardCopyOption.REPLACE_EXISTING)
                 modifier.mutateReceipt(run) { receipt ->
                     receipt
                         .objectField("runtime_metadata")
