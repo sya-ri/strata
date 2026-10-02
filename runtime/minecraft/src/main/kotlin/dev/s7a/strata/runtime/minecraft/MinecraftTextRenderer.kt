@@ -94,6 +94,84 @@ internal class MinecraftTextRenderer private constructor(
         return engine?.compatibility?.roundedWidth(width) ?: width.toInt()
     }
 
+    /**
+     * Measures a literal scalar range without preparing positioned glyphs or copying the substring.
+     * Font widths retain forward floating-point accumulation and native signed rounding; legacy widths retain exact integer addition.
+     * The caller supplies Unicode scalar boundaries within [text].
+     */
+    @JvmSynthetic
+    internal fun literalWidth(
+        text: String,
+        font: ResourceId,
+        start: Int,
+        end: Int,
+    ): Int {
+        check(Thread.currentThread() === owner && closed.not()) { "Text renderer is closed or accessed from another thread." }
+        require(0 <= start && start <= end && end <= text.length)
+        val currentEngine = engine
+        var position = start
+        if (currentEngine != null) {
+            var width = 0f
+            while (position < end) {
+                val codePoint = text.codePointAt(position)
+                width += currentEngine.glyph(font, codePoint).advance
+                position += Character.charCount(codePoint)
+            }
+            return currentEngine.compatibility.roundedWidth(width)
+        }
+        require(font == defaultFont) { "Custom fonts require a font-resource snapshot." }
+        val glyphs = checkNotNull(legacyGlyphs)
+        var width = 0
+        while (position < end) {
+            val codePoint = text[position].code
+            require(codePoint in 0x20..0x7E) { "Common Minecraft text supports only U+0020 through U+007E." }
+            width = Math.addExact(width, if (codePoint == 0x20) 4 else glyphs.getValue(codePoint).advance)
+            position += 1
+        }
+        require(0 <= width)
+        return width
+    }
+
+    /**
+     * Returns the last scalar boundary before the first prefix that exceeds [maximumWidth].
+     * One forward scan preserves literal-range rounding and first-overflow behavior, including zero or negative advances.
+     * The caller supplies a scalar boundary at [start]; ownership and font requirements match [literalWidth].
+     */
+    @JvmSynthetic
+    internal fun literalEndWithin(
+        text: String,
+        font: ResourceId,
+        start: Int,
+        maximumWidth: Int,
+    ): Int {
+        check(Thread.currentThread() === owner && closed.not()) { "Text renderer is closed or accessed from another thread." }
+        require(0 <= start && start <= text.length && 0 <= maximumWidth)
+        val currentEngine = engine
+        var end = start
+        if (currentEngine != null) {
+            var width = 0f
+            while (end < text.length) {
+                val codePoint = text.codePointAt(end)
+                width += currentEngine.glyph(font, codePoint).advance
+                if (maximumWidth < currentEngine.compatibility.roundedWidth(width)) break
+                end += Character.charCount(codePoint)
+            }
+            return end
+        }
+        require(font == defaultFont) { "Custom fonts require a font-resource snapshot." }
+        val glyphs = checkNotNull(legacyGlyphs)
+        var width = 0
+        while (end < text.length) {
+            val codePoint = text[end].code
+            require(codePoint in 0x20..0x7E) { "Common Minecraft text supports only U+0020 through U+007E." }
+            width = Math.addExact(width, if (codePoint == 0x20) 4 else glyphs.getValue(codePoint).advance)
+            require(0 <= width)
+            if (maximumWidth < width) break
+            end += 1
+        }
+        return end
+    }
+
     override fun close() {
         check(Thread.currentThread() === owner) { "Text renderer is confined to its owner thread." }
         if (closed) return

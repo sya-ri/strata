@@ -326,6 +326,17 @@ The asynchronous skin completion path must retain only its detached lifecycle ta
 Close must atomically reject late publication, drop a queued completion, clear a committed ready-image snapshot, clear its observer, and remain idempotent.
 Owner-thread draining must transfer an accepted completion at most once, and a closed lifecycle must never accept another snapshot commit.
 
+### Editable literal widths
+
+TextField measures literal scalar ranges directly, without constructing positioned glyph runs or copying each candidate substring.
+Resource-font metrics preserve forward floating-point addition and release-specific signed width rounding; compatibility glyphs preserve checked integer addition.
+Nonnegative finite advances below the native integer overflow range permit a scalar-boundary binary search for the first visible suffix.
+Negative, non-finite and overflow-capable advances retain the original scalar-order search; prefix subtraction and reversed accumulation would change native rounding.
+The visible endpoint accumulates widths once in forward scalar order and stops at the first prefix that exceeds the viewport, preserving the previous behavior even when later negative advances would fit again.
+A deterministic uncached-font test requires exactly one glyph lookup per scalar for a 16,384-unit zero-width value, rather than using elapsed time as a threshold.
+This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
+The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.

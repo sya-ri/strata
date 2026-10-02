@@ -133,7 +133,7 @@ private class MinecraftTextFieldElement(
             run.paint(scope, textOrigin.x, textOrigin.y)
             if (focused && enabled) {
                 paintPreeditBlock(scope, visible)
-                val cursorPosition = textOrigin.x.toLong() + width(composed.substring(visible.start, visualCursor))
+                val cursorPosition = textOrigin.x.toLong() + width(composed, visible.start, visualCursor)
                 if (cursorPosition < 0L || fieldSize.width.toLong() <= cursorPosition) return
                 val cursorX = cursorPosition.toInt()
                 val appendCursor = preedit == null && cursor == currentValue.length && currentValue.length < checkNotNull(state).maxLength
@@ -345,18 +345,45 @@ private class MinecraftTextFieldElement(
             text: String,
             visualCursor: Int,
         ): VisibleText {
-            var start = 0
-            while (start < visualCursor && innerWidth < width(text.substring(start, visualCursor))) {
-                start = nextScalar(text, start)
-            }
-            var end = start
-            while (end < text.length) {
-                val next = nextScalar(text, end)
-                val candidate = text.substring(start, next)
-                if (innerWidth < width(candidate)) break
-                end = next
-            }
+            val start = visibleStart(text, visualCursor)
+            val end = checkNotNull(textRenderer).literalEndWithin(text, font, start, innerWidth)
             return VisibleText(text.substring(start, end), start)
+        }
+
+        private fun visibleStart(
+            text: String,
+            visualCursor: Int,
+        ): Int {
+            if (width(text, 0, visualCursor) <= innerWidth) return 0
+            var start = 0
+            if (hasMonotoneWidths(text, visualCursor)) {
+                var end = visualCursor
+                while (start < end) {
+                    val middle = scalarBoundary(text, start + (end - start) / 2)
+                    if (width(text, middle, visualCursor) <= innerWidth) end = middle else start = nextScalar(text, middle)
+                }
+            } else {
+                while (start < visualCursor && innerWidth < width(text, start, visualCursor)) start = nextScalar(text, start)
+            }
+            return start
+        }
+
+        private fun hasMonotoneWidths(
+            text: String,
+            end: Int,
+        ): Boolean {
+            val renderer = checkNotNull(textRenderer)
+            var position = 0
+            var total = 0f
+            while (position < end) {
+                val advance = renderer.advance(font, text.codePointAt(position))
+                if (advance.isFinite().not() || advance < 0f) return false
+                total += advance
+                // Earlier native ceil can overflow after conversion; keep that exceptional path in scalar order.
+                if (Int.MAX_VALUE.toFloat() <= total) return false
+                position = nextScalar(text, position)
+            }
+            return true
         }
 
         private fun cursorAt(localX: Int): Int {
@@ -382,7 +409,7 @@ private class MinecraftTextFieldElement(
             var x = 0L
             while (position < text.length) {
                 val next = nextScalar(text, position)
-                val nextX = width(text.substring(0, next)).toLong()
+                val nextX = width(text, 0, next).toLong()
                 if (localX.toLong() < x + Math.floorDiv(nextX - x + 1L, 2L)) return position
                 x = nextX
                 position = next
@@ -407,8 +434,8 @@ private class MinecraftTextFieldElement(
             val start = maxOf(visible.start, blockStart)
             val end = minOf(visibleEnd, blockEnd)
             if (end <= start) return
-            val first = textOrigin.x.toLong() + width(visible.text.substring(0, start - visible.start))
-            val last = textOrigin.x.toLong() + width(visible.text.substring(0, end - visible.start))
+            val first = textOrigin.x.toLong() + width(visible.text, 0, start - visible.start)
+            val last = textOrigin.x.toLong() + width(visible.text, 0, end - visible.start)
             val left = minOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
             val right = maxOf(first, last).coerceIn(0L, fieldSize.width.toLong()).toInt()
             val top = Math.addExact(textOrigin.y, 9)
@@ -460,7 +487,11 @@ private class MinecraftTextFieldElement(
                 else -> 0x20 <= codePoint
             }
 
-        private fun width(text: String): Int = createRun(text).nativeWidth
+        private fun width(
+            text: String,
+            start: Int = 0,
+            end: Int = text.length,
+        ): Int = checkNotNull(textRenderer).literalWidth(text, font, start, end)
 
         private fun createRun(text: String): MinecraftTextRun = checkNotNull(textRenderer).create(UiText.Literal(text), textStyle, enabled, font, logicalOrder = true)
 
