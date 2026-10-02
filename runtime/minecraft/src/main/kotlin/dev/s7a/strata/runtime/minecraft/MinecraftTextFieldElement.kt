@@ -355,6 +355,7 @@ private class MinecraftTextFieldElement(
             visualCursor: Int,
         ): Int {
             if (width(text, 0, visualCursor) <= innerWidth) return 0
+            checkNotNull(textRenderer).literalIntegralStartWithin(text, font, visualCursor, innerWidth)?.let { return it }
             var start = 0
             if (hasMonotoneWidths(text, visualCursor)) {
                 var end = visualCursor
@@ -390,7 +391,7 @@ private class MinecraftTextFieldElement(
             val value = checkNotNull(state).value
             val composed = composedText(value)
             val visible = visibleText(composed, Math.addExact(cursor, preedit?.caretPosition ?: 0))
-            val position = positionAt(visible.text, localX.coerceIn(0, innerWidth))
+            val position = checkNotNull(textRenderer).literalPositionAt(visible.text, font, localX.coerceIn(0, innerWidth))
             val composedPosition = Math.addExact(visible.start, position)
             val compositionEnd = Math.addExact(cursor, preedit?.fullText?.length ?: 0)
             return when {
@@ -398,23 +399,6 @@ private class MinecraftTextFieldElement(
                 composedPosition < compositionEnd -> cursor
                 else -> composedPosition - (compositionEnd - cursor)
             }
-        }
-
-        private fun positionAt(
-            text: String,
-            localX: Int,
-        ): Int {
-            if (localX <= 0) return 0
-            var position = 0
-            var x = 0L
-            while (position < text.length) {
-                val next = nextScalar(text, position)
-                val nextX = width(text, 0, next).toLong()
-                if (localX.toLong() < x + Math.floorDiv(nextX - x + 1L, 2L)) return position
-                x = nextX
-                position = next
-            }
-            return text.length
         }
 
         private fun composedText(value: String): String =
