@@ -60,4 +60,9 @@ val measureWebPerformance = tasks.register<Exec>("measureWebPerformance") {
     dependsOn(buildWeb, collector)
     outputs.upToDateWhen { false }
     commandLine("node", rootProject.file("tools/web/build.mjs"), "performance", layout.buildDirectory.get().asFile, collector.get().archiveFile.get().asFile)
+    doFirst {
+        val output = providers.gradleProperty("strata.web.performanceOutput").orNull
+        require(output != null) { "Set strata.web.performanceOutput to one new evidence JSON file" }
+        args(rootProject.file(output).absolutePath)
+    }
 }

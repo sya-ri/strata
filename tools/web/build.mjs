@@ -6,12 +6,12 @@ import { createRequire } from 'node:module';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { measureBrowserMatrix } from '../../quality/performance-testkit/src/jsMain/resources/browser-performance.mjs';
+import { collectBrowserPerformance } from '../../quality/performance-testkit/src/jsMain/resources/browser-performance.mjs';
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(resolve(repository, 'build/js/package.json'));
 const { chromium, firefox, webkit } = require('playwright');
-const [mode, buildArgument, collectorArgument] = process.argv.slice(2);
+const [mode, buildArgument, collectorArgument, performanceOutputArgument] = process.argv.slice(2);
 assert.ok(mode === 'build' || mode === 'verify' || mode === 'performance', 'Expected build, verify, or performance mode');
 assert.ok(buildArgument, 'Expected an application build directory');
 const build = resolve(buildArgument);
@@ -49,21 +49,13 @@ try {
         } finally { await browser.close(); }
     } else if (mode === 'performance') {
         assert.ok(collectorArgument, 'Expected the actual linked testkit JS artifact');
-        const collectorPath = resolve(collectorArgument);
-        const collectorIdentity = {
-            artifact_sha256: createHash('sha256').update(await readFile(collectorPath)).digest('hex'),
-            driver_sha256: createHash('sha256').update(await readFile(resolve(repository, 'quality/performance-testkit/src/jsMain/resources/browser-performance.mjs'))).digest('hex'),
-        };
-        const targetIdentity = createHash('sha256').update(await readFile(resolve(site, 'application.js'))).digest('hex');
-        const intervals = await measureBrowserMatrix({
+        assert.ok(performanceOutputArgument, 'Expected a new performance evidence file');
+        await collectBrowserPerformance({
+            collectorPath: resolve(collectorArgument), targetPath: resolve(site, 'application.js'), outputPath: resolve(performanceOutputArgument),
             engines: [chromium, firefox, webkit],
             scenarios: ['', 'minecraft.html'].map(route => ({ id: `reactive-${route || 'native'}`, url: `${url}/${route}`, phases: ['Initial', 'Idle', 'Update', 'Input', 'Resize', 'Release'] })),
             conditions: { viewport: { width: 640, height: 480 }, warmup: 30, samples: 60, input_identity: 'strata-reactive-web-v1' },
-            collectorIdentity, targetIdentity,
         });
-        const evidence = resolve(build, 'performance');
-        await mkdir(evidence, { recursive: true });
-        await writeFile(resolve(evidence, 'browsers.json'), JSON.stringify({ status: 'passed', scope: 'Synchronous operation wall time and action-to-animation-frame latency; CPU/allocation/GPU completion unavailable', intervals }, null, 2));
     } else {
         const expected = JSON.parse(await readFile(resolve(build, 'parity/jvm.json'), 'utf8'));
         const receipts = [];

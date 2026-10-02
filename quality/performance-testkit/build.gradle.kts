@@ -42,3 +42,11 @@ tasks.named<Test>("jvmTest") {
     inputs.file(collector)
     systemProperty("strata.testkit.jar", collector.get().asFile.absolutePath)
 }
+
+val verifyBrowserPerformanceDriver = tasks.register<Exec>("verifyBrowserPerformanceDriver") {
+    group = "verification"
+    description = "Checks independent browser invocations, evidence identity and failure cleanup in the shared driver."
+    commandLine("node", "--test", layout.projectDirectory.file("src/jsTest/resources/browser-performance.test.mjs").asFile)
+}
+
+tasks.named("check") { dependsOn(verifyBrowserPerformanceDriver) }

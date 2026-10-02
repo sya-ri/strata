@@ -1,15 +1,60 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Captures the supplied linked artifact, loaded driver source and complete target bundle outside sampling. */
+async function captureArtifacts(collectorPath, targetPath) {
+    return {
+        collectorIdentity: {
+            artifact_sha256: await fileHash(collectorPath),
+            driver_sha256: await fileHash(fileURLToPath(import.meta.url)),
+        },
+        targetIdentity: await fileHash(targetPath),
+    };
+}
+
+async function fileHash(path) {
+    assert.ok((await stat(path)).isFile(), 'Performance input must be a regular file');
+    const hash = createHash('sha256');
+    for await (const chunk of createReadStream(path)) hash.update(chunk);
+    return hash.digest('hex');
+}
+
+/** Owns provenance and immutable report output as well as the complete browser collection matrix. */
+export async function collectBrowserPerformance({ collectorPath, targetPath, outputPath, ...matrix }) {
+    const existing = await stat(outputPath).catch(error => {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+    });
+    assert.equal(existing, null, 'Performance evidence path already exists');
+    const identity = await captureArtifacts(collectorPath, targetPath);
+    const intervals = await measureBrowserMatrix({ ...matrix, ...identity });
+    assert.deepEqual(await captureArtifacts(collectorPath, targetPath), identity, 'Performance input changed during collection');
+    const report = { status: 'passed', scope: 'Synchronous operation wall time and action-to-animation-frame latency; CPU/allocation/GPU completion unavailable', intervals };
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, JSON.stringify(report, null, 2), { flag: 'wx' });
+    return report;
+}
 
 /** Standard Playwright orchestration; applications expose only real fixture operations. */
 export async function measureBrowserMatrix({ engines, scenarios, conditions, collectorIdentity, targetIdentity, repetitions = 3 }) {
     assert.equal(repetitions, 3, 'Independent performance evidence requires three repetitions');
+    assert.equal(conditions.warmup, 30, 'The browser collector uses its default warm-up');
+    assert.equal(conditions.samples, 60, 'The browser collector uses its default sample count');
     assert.ok(scenarios.length && new Set(scenarios.map(item => item.id)).size === scenarios.length);
+    assert.ok(engines.length && new Set(engines.map(engine => engine.name())).size === engines.length);
+    for (const scenario of scenarios) {
+        assert.ok(scenario.phases.length && new Set(scenario.phases).size === scenario.phases.length);
+    }
     const intervals = [];
     for (const engine of engines) {
-        const browser = await engine.launch();
-        try {
-            for (let repetition = 0; repetition < repetitions; repetition += 1) {
+        for (let repetition = 0; repetition < repetitions; repetition += 1) {
+            const runId = randomUUID();
+            const browser = await engine.launch();
+            try {
                 for (const scenario of scenarios) {
                     const page = await browser.newPage({ viewport: conditions.viewport });
                     const errors = [];
@@ -28,13 +73,13 @@ export async function measureBrowserMatrix({ engines, scenarios, conditions, col
                                 assert.ok(distribution.p50_ns <= distribution.p95_ns && distribution.p95_ns <= distribution.p99_ns && distribution.p99_ns <= distribution.max_ns);
                             }
                             assert.deepEqual(errors, [], 'A failed browser fixture cannot produce successful evidence');
-                            intervals.push({ run_id: randomUUID(), scenario: scenario.id, phase, repetition, engine: engine.name(), browser_version: browser.version(), conditions, collector_identity: collectorIdentity, target_identity: targetIdentity, ...evidence });
+                            intervals.push({ ...evidence, run_id: runId, scenario: scenario.id, phase, repetition, engine: engine.name(), browser_version: browser.version(), conditions, collector_identity: collectorIdentity, target_identity: targetIdentity });
                             console.log(`Measured ${engine.name()} ${scenario.id}/${phase}, repetition ${repetition + 1}`);
                         }
                     } finally { await page.close(); }
                 }
-            }
-        } finally { await browser.close(); }
+            } finally { await browser.close(); }
+        }
     }
     assert.equal(intervals.length, engines.length * repetitions * scenarios.reduce((sum, item) => sum + item.phases.length, 0));
     return intervals;
