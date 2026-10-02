@@ -17,6 +17,32 @@ import java.nio.file.Path
  */
 internal class PerformanceOwnershipConfigTest {
     @Test
+    fun monotonicMarksAliasesAndReferencesCannotBecomeIndependentCollectors() {
+        val config = Files.newBufferedReader(Path.of(checkNotNull(System.getProperty("strata.detekt.config")))).use { reader -> YamlConfig.load(reader).subConfig("style").subConfig("ForbiddenMethodCall") }
+        KotlinAnalysisApiEngine().use { engine ->
+            val source =
+                engine.compile(
+                    code =
+                        """
+                        import kotlin.time.*
+                        import kotlin.time.TimeSource.Monotonic.markNow as clock
+                        fun clocks(source: TimeSource, mark: TimeMark, comparable: ComparableTimeMark, value: TimeSource.Monotonic.ValueTimeMark) {
+                            source.markNow()
+                            TimeSource.Monotonic.markNow()
+                            clock()
+                            mark.elapsedNow()
+                            comparable.elapsedNow()
+                            value.elapsedNow()
+                            val capture = TimeSource.Monotonic::markNow
+                            val elapsed = mark::elapsedNow
+                        }
+                        """.trimIndent(),
+                )
+            assertEquals(8, ForbiddenMethodCall(config).visitFile(source, LanguageVersionSettingsImpl.DEFAULT).size)
+        }
+    }
+
+    @Test
     fun clocksAndAccountingCannotBecomeIndependentJmhCollectors() {
         val config = Files.newBufferedReader(Path.of(checkNotNull(System.getProperty("strata.detekt.config")))).use { reader -> YamlConfig.load(reader).subConfig("style").subConfig("ForbiddenMethodCall") }
         assertTrue(config.valueOrDefault("active", false))

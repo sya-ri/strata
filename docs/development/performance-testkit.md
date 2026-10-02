@@ -291,6 +291,7 @@ These declared stress inputs do not claim exhaustive combinations of every confi
 
 JMH fixtures and server performance fixtures use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
 Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
+The typed gate also rejects Kotlin monotonic time marks and elapsed-duration reads, including aliases and callable references, rather than only inline timing helpers.
 The gate uses the actual JMH source set or Paper/Velocity integration main source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain.
 It checks the shared server-performance sources and all Paper/Velocity fixture main sources, including helpers without a performance filename.
 It does not inspect arbitrary external helper internals or unresolved calls.

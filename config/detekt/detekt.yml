@@ -17,6 +17,8 @@ style:
       - "kotlin.system.measureTimeMillis"
       - "kotlin.time.measureTime"
       - "kotlin.time.measureTimedValue"
+      - "kotlin.time.TimeSource.markNow"
+      - "kotlin.time.TimeMark.elapsedNow"
       - "java.lang.management.ManagementFactory.getThreadMXBean"
       - "java.lang.management.ManagementFactory.getMemoryMXBean"
       - "java.lang.management.ManagementFactory.getGarbageCollectorMXBeans"
