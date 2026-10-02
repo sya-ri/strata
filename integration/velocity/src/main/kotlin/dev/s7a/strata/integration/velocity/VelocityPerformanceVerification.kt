@@ -175,7 +175,7 @@ internal class VelocityPerformanceVerification(
         checkOwner()
         check(checkNotNull(pending).isCompletedExceptionally.not())
         if (workload == VelocityPerformanceWorkload.CapabilitiesSubmission && checkNotNull(pending).isDone) {
-            check(0 < checkNotNull(checkNotNull(capabilities).getNow(null)).types.size)
+            check(checkNotNull(checkNotNull(capabilities).getNow(null)).types.isNotEmpty())
         }
         sessions.forEach { session ->
             check(session.status == UiSessionStatus.Closed(UiCloseReason.Closed)) { "An acknowledged HUD did not close" }
@@ -186,6 +186,7 @@ internal class VelocityPerformanceVerification(
      * Event threads only enqueue snapshots; matching and readiness state are confined to the UI owner.
      */
     @Subscribe
+    @Suppress("unused") // Velocity invokes the registered listener through its event dispatcher.
     fun opened(event: StrataUiOpenedEvent) {
         if (event.player === player && event.ownerPlugin === plugin) {
             VelocityUi.execute(plugin) {
@@ -206,6 +207,7 @@ internal class VelocityPerformanceVerification(
      * Requires each actual server lifecycle notification before preparing another HUD group.
      */
     @Subscribe
+    @Suppress("unused") // Velocity invokes the registered listener through its event dispatcher.
     fun terminated(event: StrataUiClosedEvent) {
         if (event.player === player && event.ownerPlugin === plugin) {
             VelocityUi.execute(plugin) {
