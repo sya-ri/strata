@@ -173,3 +173,10 @@ JMH fixture sources use the existing typed detekt gate with the standard `Forbid
 Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
 The gate uses the actual JMH Kotlin source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain; it does not inspect arbitrary external helper internals or unresolved calls.
 The Web driver and portable fixtures still delegate their measurements to the kit; this JVM type-resolution gate does not claim to enforce JavaScript property access.
+
+The historical and remote work gates also compare the complete loaded headless and remote protocol binary surfaces against exact checked-in `headless-api.tsv` and `remote-api.tsv` registries.
+Their capture tasks (`captureHeadlessInventory` and `captureRemoteInventory`) stage prospective registrations for review without modifying verification baselines.
+Headless members register the existing rasterization and translucent-composition cases; remote members register the existing stable and changed declaration/codec/framing cases.
+Full and smoke collection validate these surfaces first, and archive their reviewed registry as an explicit control input.
+The historical 54-case and remote 30-case matrices and their execution defaults remain unchanged.
+This is module registration backed by actual workload families, rather than proof that every member executes or a substitute for real remote transport evidence.

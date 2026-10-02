@@ -65,3 +65,13 @@ tasks.register<JavaExec>("jmhRemote") {
         systemProperty("strata.performance.inputs", manifest.absolutePath)
     }
 }
+
+tasks.register<JavaExec>("captureRemoteInventory") {
+    group = "verification"
+    description = "Stages exact loaded remote API registration for review without updating its baseline."
+    dependsOn(remoteGenerated, remoteGenerator)
+    classpath = remoteClasspath
+    javaLauncher.set(remoteLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.RemoteWorkEvidence")
+    args(layout.buildDirectory.file("performance/remote-api.tsv").get().asFile.absolutePath)
+}

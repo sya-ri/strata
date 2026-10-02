@@ -17,6 +17,7 @@ public object HistoricalPerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
+        HistoricalWorkloadEvidence.verifySurface()
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
         val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else fixtures()
         val parameters = if (smoke) mapOf("viewport" to setOf(RenderingBenchmark.Viewport.Compact.name)) else emptyMap()
@@ -33,7 +34,7 @@ public object HistoricalPerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             expected,
-            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI())),
         )
     }
 

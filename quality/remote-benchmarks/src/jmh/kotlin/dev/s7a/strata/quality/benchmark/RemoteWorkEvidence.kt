@@ -1,8 +1,17 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonParser
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmApiInventory
+import dev.s7a.strata.performance.PerformanceCoverage
+import dev.s7a.strata.performance.PerformanceHost
+import dev.s7a.strata.performance.PerformanceInventory
+import dev.s7a.strata.performance.PerformancePhase
+import dev.s7a.strata.performance.PerformanceScenario
 import dev.s7a.strata.runtime.remote.RemoteMessage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * Actual protocol workload and byte-parity admission without time thresholds or a second benchmark runner.
@@ -14,7 +23,14 @@ public object RemoteWorkEvidence {
      */
     @JvmStatic
     public fun main(args: Array<String>) {
-        require(args.isEmpty())
+        require(args.size <= 1)
+        if (args.isNotEmpty()) {
+            val destination = Path.of(args.single()).toAbsolutePath().normalize()
+            Files.createDirectories(checkNotNull(destination.parent))
+            Files.writeString(destination, protocolSurface().getValue("remote").sorted().joinToString("\n", postfix = "\n"))
+            return
+        }
+        verifySurface()
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
         val benchmark = RemoteProtocolBenchmark()
         listOf(100, 8192).forEach { count ->
@@ -40,4 +56,34 @@ public object RemoteWorkEvidence {
             }
         }
     }
+
+    /**
+     * Rejects exact protocol API registration changes before full or smoke collection.
+     * Stable and changed inputs register separate idle and update protocol operations, without claiming transport latency.
+     */
+    public fun verifySurface() {
+        val symbols = checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+        require(symbols.toSet().size == symbols.size) { "Duplicate remote performance API registration" }
+        val feature = "RemoteProtocol"
+        val scenarios =
+            JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).map { identity ->
+                val change =
+                    RemoteChange.valueOf(
+                        JsonParser
+                            .parseString(identity)
+                            .asJsonArray[2]
+                            .asJsonObject
+                            .get("change")
+                            .asString,
+                    )
+                val phase = if (change == RemoteChange.Stable) PerformancePhase.Idle else PerformancePhase.Update
+                PerformanceScenario(identity, setOf(feature), setOf(PerformanceHost.Jvm), setOf(phase), "remote-protocol-v1")
+            }
+        val surface = PerformanceInventory(protocolSurface(), mapOf("remote" to symbols.associateWith { feature }), mapOf("runtime/remote/src/" to setOf(feature)))
+        val coverage = PerformanceCoverage(mapOf(feature to setOf(PerformanceHost.Jvm)), scenarios, mapOf(feature to setOf(PerformancePhase.Idle, PerformancePhase.Update)))
+        coverage.selectChangedPaths(surface)
+        println("Verified ${symbols.size} exact remote API symbols against ${scenarios.size} protocol cases")
+    }
+
+    private fun protocolSurface(): Map<String, Set<String>> = JvmApiInventory.capture(javaClass.classLoader, mapOf("remote" to "dev.s7a.strata.runtime.remote.RemoteTree"))
 }

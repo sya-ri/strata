@@ -16,6 +16,7 @@ public object RemotePerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
+        RemoteWorkEvidence.verifySurface()
         val fixtures = listOf(RemoteProtocolBenchmark::class.java)
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
         val parameters = if (smoke) mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name)) else emptyMap()
@@ -28,7 +29,7 @@ public object RemotePerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters),
-            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI())),
         )
     }
 }

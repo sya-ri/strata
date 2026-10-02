@@ -105,3 +105,13 @@ tasks.register<JavaExec>("jmhHistorical") {
         systemProperty("strata.performance.inputs", manifest.absolutePath)
     }
 }
+
+tasks.register<JavaExec>("captureHeadlessInventory") {
+    group = "verification"
+    description = "Stages exact loaded headless API registration for review without updating its baseline."
+    dependsOn(historicalGenerated, historicalGenerator)
+    classpath = historicalClasspath
+    javaLauncher.set(historicalLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalWorkloadEvidence")
+    args(layout.buildDirectory.file("performance/headless-api.tsv").get().asFile.absolutePath)
+}
