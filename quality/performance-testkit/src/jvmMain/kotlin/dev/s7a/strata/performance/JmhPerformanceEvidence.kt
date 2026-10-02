@@ -58,7 +58,7 @@ public object JmhPerformanceEvidence {
         val before = summarize(baseline, collector, repetitions)
         val after = summarize(candidate, collector, repetitions)
         JvmPerformanceEvidence.verifyEqual(listOf(before, after), setOf("conditions"))
-        val identities = (before.arrayField("sources") + after.arrayField("sources")).map { it.asJsonObject.textField("run_id") }
+        val identities = (before.arrayField("sources").toList() + after.arrayField("sources").toList()).map { it.asJsonObject.textField("run_id") }
         require(identities.toSet().size == 2 * repetitions) { "JMH comparison reuses an invocation" }
         val left = before.objectField("target_identities")
         val right = after.objectField("target_identities")

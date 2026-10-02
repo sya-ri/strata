@@ -16,6 +16,7 @@ public object JvmPerformanceEvidence {
      * Reads a bounded strict UTF-8 report and attaches the digest of that exact input snapshot.
      * The source receipt is transport metadata; the original file is never modified.
      */
+    @Suppress("unused") // Public Maven API used by downstream JVM evidence processors.
     public fun readReport(path: Path): JsonObject {
         val (report, receipt) = JvmEvidenceFiles.snapshot(path)
         require(report.has("source_receipt").not()) { "Raw evidence must not contain an injected source receipt" }

@@ -61,7 +61,7 @@ internal object JmhRunEvidence {
         require(registered.isNotEmpty() && registered.size == registered.toSet().size) { "Missing or duplicate registered JMH workload" }
         val resultPath = directory.resolve("results.json")
         val raw = JvmEvidenceFiles.array(resultPath, receipt.textField("results_sha256"))
-        require(0 < raw.size() && raw.size() <= 16_384) { "Missing or oversized JMH results" }
+        require(raw.size() in 1..16_384) { "Missing or oversized JMH results" }
         val rows = linkedMapOf<JmhEvidenceCase, JsonObject>()
         raw.forEach { value ->
             val row = value.asJsonObject

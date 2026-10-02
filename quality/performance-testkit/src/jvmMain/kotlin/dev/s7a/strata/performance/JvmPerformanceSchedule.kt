@@ -10,14 +10,13 @@ package dev.s7a.strata.performance
 public class JvmPerformanceSchedule<T : Any>(
     private val name: String,
     private val plan: PerformancePlan = PerformancePlan(),
-    diagnosticsOwner: Any? = null,
+    private var diagnosticsOwner: Any? = null,
     beforeSample: (Int) -> Unit = {},
     afterOperation: (Int, T) -> Unit = { _, _ -> },
     operation: (Int) -> T,
 ) : AutoCloseable {
     private val owner = Thread.currentThread()
     private val deadline = PerformanceDeadline(plan.preparationTimeoutMillis)
-    private var diagnosticsOwner: Any? = diagnosticsOwner
     private var beforeSample: ((Int) -> Unit)? = beforeSample
     private var afterOperation: ((Int, T) -> Unit)? = afterOperation
     private var operation: ((Int) -> T)? = operation

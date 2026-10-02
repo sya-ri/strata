@@ -17,6 +17,7 @@ public object JvmPerformanceReports {
      * Validates independent invocations and aggregates each run's metrics separately.
      * Missing optional measurements remain JSON null and absolute times never determine success.
      */
+    @Suppress("unused") // Public Maven API used by downstream JVM evidence processors.
     public fun summarize(
         paths: List<Path>,
         collector: Path,

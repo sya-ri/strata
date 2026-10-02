@@ -58,6 +58,7 @@ import net.minecraft.client.input.PreeditEvent as MinecraftPreeditEvent
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions", "TooGenericExceptionCaught", "LargeClass") // Native frame, resource, and input callbacks share this wrapper's lifetime.
 public class FabricMinecraftScreen private constructor(
+    @Suppress("CanBeParameter") // Post-construction frame, input and close callbacks read this retained host in shared source.
     private val host: MinecraftUiHost,
     private val inventory: FabricMinecraftInventoryBridge,
     private var parent: Screen?,
