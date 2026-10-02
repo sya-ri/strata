@@ -86,13 +86,8 @@ internal class PaperPerformanceVerification(
                     PaperPerformanceWorkload.HudLifetime -> check(checkNotNull(latest).status == UiSessionStatus.Closed(UiCloseReason.Closed)) { "HUD lifetime was not admitted and closed by its owner" }
                 }
             },
-            mapOf(
-                "paper-api" to "dev.s7a.strata.paper.PaperUi",
-                "paper-runtime" to "dev.s7a.strata.runtime.paper.PaperScreens",
-                "api" to "dev.s7a.strata.ui.UiDefinition",
-                "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
-                "remote" to "dev.s7a.strata.runtime.remote.RemoteServerSession",
-            ),
+            PaperPerformanceWorkload.representatives,
+            PaperPerformanceWorkload.inputLabels,
         )
 
     override fun close() {

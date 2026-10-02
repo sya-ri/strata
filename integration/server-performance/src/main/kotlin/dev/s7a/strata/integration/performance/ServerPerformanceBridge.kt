@@ -2,6 +2,7 @@ package dev.s7a.strata.integration.performance
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JvmPerformanceInputs
 import dev.s7a.strata.performance.JvmPerformanceSchedule
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
@@ -22,9 +23,16 @@ public class ServerPerformanceBridge(
     operation: IntFunction<Int>,
     verify: IntConsumer,
     representatives: Map<String, String>,
+    inputLabels: Set<String>,
 ) : AutoCloseable {
     private val plan = PerformancePlan()
     private val loader = ServerPerformanceBridge::class.java.classLoader
+    private val inputFiles =
+        JvmPerformanceInputs.read(Path.of(requireNotNull(System.getProperty("strata.server.performanceInputs")))).also { files ->
+            require(inputLabels.isNotEmpty() && files.keys == inputLabels) { "The declared server configuration input inventory is incomplete" }
+        }
+    private val inputIdentity = ServerPerformanceInputs.identity(inputFiles)
+    private val inputBytes = ServerPerformanceInputs.byteIdentity(inputFiles)
     private val runtime =
         LoadedArtifactMetadata
             .capture(
@@ -54,6 +62,9 @@ public class ServerPerformanceBridge(
     ) {
         require(UUID.fromString(runId).toString().contentEquals(runId)) { "Use a canonical invocation UUID" }
         val phase = schedule.complete().evidence
+        require(ServerPerformanceInputs.identity(inputFiles) == inputIdentity && ServerPerformanceInputs.byteIdentity(inputFiles) == inputBytes) {
+            "Server configuration changed during collection"
+        }
         val report =
             JsonObject().apply {
                 addProperty("schema_version", 1)
@@ -64,6 +75,9 @@ public class ServerPerformanceBridge(
                 addProperty("warmup", plan.warmup)
                 addProperty("required_repetitions", plan.repetitions)
                 addProperty("scope", "Synchronous server-owner operation; scheduling gaps and client application are outside samples. Runtime modules use representative identities; only collector and fixture use complete class trees.")
+                add("input_identity", inputIdentity.deepCopy())
+                add("input_file_sha256", inputBytes.deepCopy())
+                add("input_files", JsonObject().apply { inputFiles.forEach { (label, path) -> addProperty(label, path.toString()) } })
                 add(
                     "environment",
                     JsonObject().apply {
@@ -78,7 +92,7 @@ public class ServerPerformanceBridge(
                                 ManagementFactory
                                     .getRuntimeMXBean()
                                     .inputArguments
-                                    .filter { it.startsWith("-Dstrata.paper.run=").not() }
+                                    .filter { argument -> listOf("-Dstrata.paper.run=", "-Dstrata.velocity.run=", "-Dstrata.server.performanceInputs=").none(argument::startsWith) }
                                     .forEach(::add)
                             },
                         )

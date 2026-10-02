@@ -98,7 +98,7 @@ Window readiness uses the loaded host's `isIconified` contract when present, inc
 Only the verified legacy `getWindow` family uses GLFW attributes; an opaque modern handle is never passed to another window backend.
 Production GameTests put the unchanged testkit JAR on Loom's Java classpath through `LibraryClientProductionRunTask`, rather than publishing it as a Mod or merging its classes into an integration artifact.
 
-The host enum also identifies Paper and Velocity evidence, but an enum value does not prove that a real transport scenario has been registered or run.
+The host enum identifies Paper and Velocity evidence, but an enum value does not prove that a real transport scenario has run.
 Loaded Minecraft family verification, browser executions, and remote server/client measurements must be reported separately from JVM unit tests.
 
 The optional Paper acceptance fixture enables real primary-owner measurements with the server JVM property
@@ -115,6 +115,14 @@ then run the verified exact-version Paper server and the existing Fabric accepta
 Pass a fresh UUID as `strata.paper.run` to both server and client and preserve the server's plugin archives, logs,
 client receipts and the directory identified by `performanceDirectory` in `server.properties`.
 No Python program is required for this performance path.
+Both server fixtures also require `-Dstrata.server.performanceInputs=<absolute-UTF-8-properties-manifest>`.
+Each manifest value is an absolute path to an actual configuration file, decoded by the kit's `JvmPerformanceInputs`.
+Paper requires labels `server-properties`, `global-configuration` and `world-defaults` for `server.properties`, `config/paper-global.yml` and `config/paper-world-defaults.yml`.
+Velocity requires `proxy-configuration`, `first-backend` and `second-backend` for the proxy's `velocity.toml` and each backend's `server.properties`.
+Missing or extra labels fail before collection.
+The input adapter uses JDK Properties setting values for `.properties` files, so auto-generated timestamp comments do not change the controlled input; other configuration formats retain exact byte identity.
+Every original file hash is recorded independently through the kit, and changed settings or bytes during collection or subsequent processing reject success.
+The processor requires identical controlled input identities across repetitions and verifies the original files in the still-preserved invocation directories.
 Run the same pinned server, Java, collector, plugins and configuration three times with independent UUIDs.
 The JVM-only `:integration:paper:processPerformanceEvidence` task consumes a UTF-8 request through
 `-Pstrata.performance.request=<request-file>` containing `collector`, `output` and three `runs` performance directories.
@@ -122,6 +130,27 @@ It delegates report loading, invocation validation, phase aggregation and median
 while the fixture checks its three exact owner workloads and verifies the still-preserved actual plugin archives.
 It fails if the processor fixture differs from the measured fixture or any archive has changed.
 Successful unit tests of the loader and processor do not certify real server execution; loaded Paper and Velocity evidence remain separate.
+
+The optional Velocity fixture enables post-backend-switch measurements with
+`-Dstrata.velocity.performanceKit=<absolute-packaged-testkit.jar>` on the proxy.
+Prepare `:runtime:velocity:pluginJar`, `:examples:velocity:jar` and `:integration:velocity:jar` alongside the two ordinary Paper backends.
+Use the existing real proxy input/backend-switch transaction and pass `-Pstrata.velocity.performance=true` to the Fabric acceptance task.
+Only the final performance-enabled readiness wait is extended; ordinary acceptance keeps its historical waits.
+The fixture requires two negotiated HUD slots and acknowledged opening before measuring HUD close.
+Its four intervals separately measure owner-entry queue submission, capabilities queue submission, closing a 100-node HUD and closing two concurrent 100-node HUDs.
+Submission intervals do not measure queued execution, and close intervals do not include open, queue scheduling or client acknowledgement.
+The shared schedule owns 30 warm-up operations, 60 samples and the interval deadline.
+Every queued operation and expected lifecycle event must finish before the next opportunity or report publication.
+Event threads enqueue snapshots; all fixture state and collector operations stay on the physical UI owner.
+Failures and disconnects release live sessions, pending readiness and the isolated loader; partial interval files cannot certify a complete invocation.
+
+Preserve three independent proxy/backend/client invocations and the `performanceDirectory` from each proxy receipt.
+The JVM-only `:integration:velocity:processPerformanceEvidence` task consumes the same request shape as Paper.
+Both entry points delegate to `ServerPerformanceEvidence`, which uses shared-kit validation and aggregation.
+Every interval within one performance directory must belong to the same invocation, host, collector, environment and runtime archive identities; mixing individually valid intervals from different server invocations fails.
+Both hosts also identify the actual host API archive, so changing the server/proxy distribution invalidates the controlled archive identity.
+The summary contract is `strata-<host>-summary-v1`; previous host-specific summary envelopes are removed.
+No Python runner is required: launch the pinned server/proxy JARs with Java, then run the existing Fabric task through Gradle and process the preserved directories through the JVM entry point.
 
 ## Local verification
 
@@ -223,8 +252,9 @@ These declared stress inputs do not claim exhaustive combinations of every confi
 JMH fixtures and server performance fixtures use the existing typed detekt gate with the standard `ForbiddenMethodCall` rule.
 Direct JDK clocks, Kotlin timing helpers and CPU/allocation/GC MXBean collection are rejected, including resolved references and aliases; runtime input configuration remains allowed.
 The gate uses the actual JMH source set or Paper/Velocity integration main source set, including shared declarations compiled into that same module, its classpath and selected Java toolchain.
-It checks the shared server-performance sources and host files named `PaperPerformance*.kt` or `VelocityPerformance*.kt`; the current executable server collector is the Paper fixture.
-It does not inspect arbitrary external helper internals or unresolved calls, and the file registration does not establish that a Velocity performance workload exists.
+It checks the shared server-performance sources and all Paper/Velocity fixture main sources, including helpers without a performance filename.
+It does not inspect arbitrary external helper internals or unresolved calls.
+An executable fixture's source and unit tests are separate from successful real host evidence.
 The Web driver and portable fixtures still delegate their measurements to the kit; this JVM type-resolution gate does not claim to enforce JavaScript property access.
 
 The historical and remote work gates also compare the complete loaded headless and remote protocol binary surfaces against exact checked-in `headless-api.tsv` and `remote-api.tsv` registries.

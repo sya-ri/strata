@@ -129,7 +129,8 @@ internal object PaperRemoteGameTest {
         context: MinecraftLoadedTestContext,
         stage: Stage,
     ) {
-        context.waitFor(600) { minecraft -> matches(minecraft, stage) }
+        val ticks = if (stage == Stage.ProxyComplete && System.getProperty("strata.velocity.performance", "false").toBoolean()) 12_000 else 600
+        context.waitFor(ticks) { minecraft -> matches(minecraft, stage) }
         context.waitTicks(3)
         context.computeOnClient { check(matches(it, stage)) { "The $stage screen failed during presentation." } }
     }

@@ -8,8 +8,8 @@ style:
     includes:
       - "**/src/jmh/**"
       - "**/integration/server-performance/**"
-      - "**/PaperPerformance*.kt"
-      - "**/VelocityPerformance*.kt"
+      - "**/integration/paper/src/main/**"
+      - "**/integration/velocity/src/main/**"
     methods:
       - "java.lang.System.nanoTime"
       - "java.lang.System.currentTimeMillis"

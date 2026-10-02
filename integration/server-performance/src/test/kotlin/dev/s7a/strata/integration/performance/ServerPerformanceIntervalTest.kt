@@ -1,6 +1,10 @@
 package dev.s7a.strata.integration.performance
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JvmPerformanceEvidence
 import dev.s7a.strata.performance.JvmPerformanceReports
+import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformanceReportContract
 import dev.s7a.strata.performance.PerformanceReportMetric
 import org.junit.jupiter.api.Test
@@ -71,13 +75,17 @@ public class ServerPerformanceIntervalTest {
         withFixture { loader, directory ->
             val reports =
                 (0..2).map { repetition ->
-                    val report = directory.resolve("run-$repetition.json")
-                    val interval = create(loader, IntFunction { 1 }, IntConsumer {})
-                    try {
-                        repeat(90) { call(interval, "advance") }
-                        call(interval, "write", report, UUID.randomUUID().toString(), "test-owner")
-                    } finally {
-                        call(interval, "close")
+                    val runDirectory = Files.createDirectory(directory.resolve("run-$repetition"))
+                    val report = runDirectory.resolve("test-interval.json")
+                    val runId = UUID.randomUUID().toString()
+                    listOf("test-interval", "test-secondary").forEach { name ->
+                        val interval = create(loader, IntFunction { 1 }, IntConsumer {}, name)
+                        try {
+                            repeat(90) { call(interval, "advance") }
+                            call(interval, "write", runDirectory.resolve("$name.json"), runId, "test-owner")
+                        } finally {
+                            call(interval, "close")
+                        }
                     }
                     report
                 }
@@ -97,6 +105,54 @@ public class ServerPerformanceIntervalTest {
             assertEquals("passed", result.get("status").asString)
             assertEquals(3, result.getAsJsonArray("sources").size())
             assertEquals(1, result.getAsJsonArray("phases").size())
+            val request =
+                JsonObject().apply {
+                    addProperty("collector", requireNotNull(System.getProperty("strata.test.performanceKit")))
+                    addProperty("output", directory.resolve("host-summary.json").toString())
+                    add("runs", JsonArray().apply { reports.forEach { report -> add(checkNotNull(report.parent).toString()) } })
+                }
+            val requestPath = directory.resolve("host-request.json")
+            PerformanceJson.writeNew(requestPath, request)
+            val processorType = loader.loadClass(ServerPerformanceEvidence::class.java.name)
+            val processor = processorType.getField("INSTANCE").get(null)
+            val intervals = listOf("test-interval", "test-secondary")
+            val contractType = loader.loadClass(ServerPerformanceContract::class.java.name)
+            val contractConstructor = contractType.getConstructor(String::class.java, List::class.java, Map::class.java, Set::class.java)
+            val contract = contractConstructor.newInstance("test-owner", intervals, mapOf("control" to "kotlin.Unit"), setOf("fixture"))
+            val process = processorType.getMethod("process", Path::class.java, contractType, ClassLoader::class.java)
+            process.invoke(processor, requestPath, contract, loader)
+            val hostSummary = JvmPerformanceEvidence.readReport(directory.resolve("host-summary.json"))
+            assertEquals("passed", hostSummary.get("status").asString)
+            assertEquals(2, hostSummary.getAsJsonArray("workloads").size())
+            assertTrue(hostSummary.getAsJsonArray("workloads").all { it.asJsonObject.getAsJsonArray("sources").size() == 3 })
+            val unregistered = contractConstructor.newInstance("test-owner", intervals, mapOf("unregistered" to "kotlin.Unit"), setOf("fixture"))
+            assertFailsWith<InvocationTargetException> {
+                process.invoke(processor, requestPath, unregistered, loader)
+            }
+            val secondaryPath = checkNotNull(reports.first().parent).resolve("test-secondary.json")
+            val originalSecondary = Files.readString(secondaryPath)
+            val mixed = JvmPerformanceEvidence.readReport(secondaryPath)
+            mixed.remove("source_receipt")
+            mixed.addProperty("run_id", UUID.randomUUID().toString())
+            PerformanceJson.write(secondaryPath, mixed)
+            val mixedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("mixed-summary.json").toString()) }
+            val mixedRequestPath = directory.resolve("mixed-request.json")
+            PerformanceJson.writeNew(mixedRequestPath, mixedRequest)
+            assertFailsWith<InvocationTargetException> {
+                process.invoke(processor, mixedRequestPath, contract, loader)
+            }
+            assertFalse(Files.exists(directory.resolve("mixed-summary.json")))
+            Files.writeString(secondaryPath, originalSecondary)
+            Files.writeString(directory.resolve("fixture-input.txt"), "Changed after server collection")
+            val changedRequest = request.deepCopy().apply { addProperty("output", directory.resolve("changed-input-summary.json").toString()) }
+            val changedRequestPath = directory.resolve("changed-input-request.json")
+            PerformanceJson.writeNew(changedRequestPath, changedRequest)
+            val changedFailure =
+                assertFailsWith<InvocationTargetException> {
+                    process.invoke(processor, changedRequestPath, contract, loader)
+                }
+            assertTrue(checkNotNull(changedFailure.targetException.message).contains("configuration file changed"))
+            assertFalse(Files.exists(directory.resolve("changed-input-summary.json")))
             Files.copy(reports.first(), directory.resolve("copied.json"))
             assertFailsWith<IllegalArgumentException> {
                 JvmPerformanceReports.summarize(
@@ -124,15 +180,34 @@ public class ServerPerformanceIntervalTest {
         }
     }
 
+    @Test
+    public fun propertiesCommentsVaryWithoutChangingTheControlledSettings() {
+        withFixture { loader, directory ->
+            val first = directory.resolve("first.properties")
+            val second = directory.resolve("second.properties")
+            Files.writeString(first, "#first invocation\nseed=1\nport=25588\n")
+            Files.writeString(second, "#second invocation\nport=25588\nseed=1\n")
+            val type = loader.loadClass(ServerPerformanceInputs::class.java.name)
+            val adapter = type.getField("INSTANCE").get(null)
+            val identity = type.getMethod("identity", Map::class.java)
+            val bytes = type.getMethod("byteIdentity", Map::class.java)
+            assertEquals(identity.invoke(adapter, mapOf("configuration" to first)), identity.invoke(adapter, mapOf("configuration" to second)))
+            assertTrue(bytes.invoke(adapter, mapOf("configuration" to first)) != bytes.invoke(adapter, mapOf("configuration" to second)))
+            Files.writeString(second, "#second invocation\nport=25588\nseed=2\n")
+            assertTrue(identity.invoke(adapter, mapOf("configuration" to first)) != identity.invoke(adapter, mapOf("configuration" to second)))
+        }
+    }
+
     private fun create(
         loader: ClassLoader,
         operation: IntFunction<Int>,
         verify: IntConsumer,
+        name: String = "test-interval",
     ): Any =
         Class
             .forName(ServerPerformanceInterval::class.java.name, true, loader)
-            .getConstructor(Path::class.java, String::class.java, IntFunction::class.java, IntConsumer::class.java, Map::class.java)
-            .newInstance(Path.of(requireNotNull(System.getProperty("strata.test.performanceKit"))), "test-interval", operation, verify, mapOf("control" to "kotlin.Unit"))
+            .getConstructor(Path::class.java, String::class.java, IntFunction::class.java, IntConsumer::class.java, Map::class.java, Set::class.java)
+            .newInstance(Path.of(requireNotNull(System.getProperty("strata.test.performanceKit"))), name, operation, verify, mapOf("control" to "kotlin.Unit"), setOf("fixture"))
 
     private fun call(
         interval: Any,
@@ -168,7 +243,16 @@ public class ServerPerformanceIntervalTest {
 
                 override fun getResource(name: String): URL? = if (name.startsWith(prefix)) findResource(name) else super.getResource(name)
             }
-        loader.use { operation(it, directory) }
+        val input = directory.resolve("fixture-input.txt")
+        Files.writeString(input, "Stable fixture input")
+        val manifest = directory.resolve("inputs.properties")
+        Files.writeString(manifest, "fixture=${input.toString().replace('\\', '/')}\n")
+        val previous = System.setProperty("strata.server.performanceInputs", manifest.toString())
+        try {
+            loader.use { operation(it, directory) }
+        } finally {
+            if (previous == null) System.clearProperty("strata.server.performanceInputs") else System.setProperty("strata.server.performanceInputs", previous)
+        }
         // Windows rejects this deletion if either owned URL loader still retains the fixture archive.
         Files.delete(archive)
         Files.walk(directory).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach(Files::delete) }

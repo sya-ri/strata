@@ -11,7 +11,7 @@ import java.util.function.IntFunction
 
 /**
  * Loads the selected unmodified testkit JAR separately from a real server plugin's bundled runtime.
- * Only collector and bridge classes/resources resolve child-first; host classes retain the installed plugin loader.
+ * Only collector and shared server adapter classes/resources resolve child-first; host classes retain the installed plugin loader.
  * All calls and terminal cleanup remain on the host's physical owner thread.
  */
 public class ServerPerformanceInterval(
@@ -20,6 +20,7 @@ public class ServerPerformanceInterval(
     operation: IntFunction<Int>,
     verify: IntConsumer,
     representatives: Map<String, String>,
+    inputLabels: Set<String>,
 ) : AutoCloseable {
     private val owner = Thread.currentThread()
     private val loader = isolatedLoader(kit)
@@ -35,8 +36,8 @@ public class ServerPerformanceInterval(
             ) { "Server collector resolved from another artifact" }
             Class
                 .forName(ServerPerformanceBridge::class.java.name, true, loader)
-                .getConstructor(String::class.java, IntFunction::class.java, IntConsumer::class.java, Map::class.java)
-                .newInstance(name, operation, verify, representatives)
+                .getConstructor(String::class.java, IntFunction::class.java, IntConsumer::class.java, Map::class.java, Set::class.java)
+                .newInstance(name, operation, verify, representatives, inputLabels)
         }.onFailure { failure -> runCatching(loader::close).exceptionOrNull()?.let(failure::addSuppressed) }
             .getOrThrow()
     private val advanceMethod = bridge.javaClass.getMethod("advance")
@@ -89,7 +90,7 @@ public class ServerPerformanceInterval(
                     .toURI(),
             )
         require(Files.isRegularFile(kit) && Files.isRegularFile(fixture)) { "Server measurements require actual collector and fixture JARs" }
-        val prefixes = listOf("dev.s7a.strata.performance.", ServerPerformanceBridge::class.java.name)
+        val prefixes = listOf("dev.s7a.strata.performance.", "${ServerPerformanceBridge::class.java.packageName}.")
         val resourcePrefixes = prefixes.map { it.replace('.', '/') }
         return object : URLClassLoader(arrayOf(kit.toUri().toURL(), fixture.toUri().toURL()), fixtureType.classLoader) {
             override fun loadClass(

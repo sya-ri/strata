@@ -1397,6 +1397,10 @@ subprojects {
         }
     }
     if (path.startsWith(":integration:minecraft-fabric-")) {
+        providers.gradleProperty("strata.velocity.performance").orNull?.let { performance ->
+            tasks.withType<JavaExec>().configureEach { systemProperty("strata.velocity.performance", performance) }
+            tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.velocity.performance=$performance") }
+        }
         providers.gradleProperty("strata.velocity.run").orNull?.let { run ->
             tasks.withType<JavaExec>().configureEach { systemProperty("strata.velocity.run", run) }
             tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.velocity.run=$run") }

@@ -127,7 +127,7 @@ internal object PaperRemoteGameTest {
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
                 screen is FabricMinecraftScreen && Stage.decode(screen.title.string) == stage
             },
-            600,
+            if (stage == Stage.ProxyComplete && System.getProperty("strata.velocity.performance", "false").toBoolean()) 12_000 else 600,
         )
         context.waitTicks(3)
         onClient(context) { minecraft ->
