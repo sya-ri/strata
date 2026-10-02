@@ -95,6 +95,28 @@ Production GameTests put the unchanged testkit JAR on Loom's Java classpath thro
 The host enum also identifies Paper and Velocity evidence, but an enum value does not prove that a real transport scenario has been registered or run.
 Loaded Minecraft family verification, browser executions, and remote server/client measurements must be reported separately from JVM unit tests.
 
+The optional Paper acceptance fixture enables real primary-owner measurements with the server JVM property
+`-Dstrata.paper.performanceKit=<absolute-packaged-testkit.jar>`.
+It requires the existing negotiated player and acknowledged presentation checks to finish first, then advances
+`JvmPerformanceSchedule` once per server tick for owner entry, capabilities and a 100-node HUD open/close lifetime.
+Each interval uses 30 warm-up operations and 60 samples; application assertions and provenance capture stay outside timing.
+The fixture loads the selected unmodified collector through an isolated loader instead of bundling another copy into the plugin.
+Folia movement and region-migration acceptance cannot enable this primary-owner fixture.
+The measured open/close lifetime includes projection and plugin-message submission, but does not wait for native acknowledgement.
+
+Prepare `:runtime:paper:pluginJar`, `:examples:paper:jar`, `:integration:paper:jar` and the testkit `jvmJar` with mise,
+then run the verified exact-version Paper server and the existing Fabric acceptance task as separate JVM processes.
+Pass a fresh UUID as `strata.paper.run` to both server and client and preserve the server's plugin archives, logs,
+client receipts and the directory identified by `performanceDirectory` in `server.properties`.
+No Python program is required for this performance path.
+Run the same pinned server, Java, collector, plugins and configuration three times with independent UUIDs.
+The JVM-only `:integration:paper:processPerformanceEvidence` task consumes a UTF-8 request through
+`-Pstrata.performance.request=<request-file>` containing `collector`, `output` and three `runs` performance directories.
+It delegates report loading, invocation validation, phase aggregation and medians to `JvmPerformanceReports`,
+while the fixture checks its three exact owner workloads and verifies the still-preserved actual plugin archives.
+It fails if the processor fixture differs from the measured fixture or any archive has changed.
+Successful unit tests of the loader and processor do not certify real server execution; loaded Paper and Velocity evidence remain separate.
+
 ## Local verification
 
 Use the project's mise-selected Java and wrapper.
