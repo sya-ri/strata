@@ -65,6 +65,7 @@ internal class ReportEvidenceFixtureData(
      */
     fun summarize(
         paths: List<Path>,
+        measurementPath: List<String> = listOf("wall_p50_ns"),
         validate: (JsonObject) -> Unit = {},
     ): JsonObject =
         kit.invoke(
@@ -74,7 +75,7 @@ internal class ReportEvidenceFixtureData(
             paths,
             kit.archive,
             contract,
-            listOf(metric, allocation),
+            listOf(metricType.constructors.single { it.parameterCount == 4 }.newInstance("p50_ms", measurementPath, null, 1e-6), allocation),
             validate,
         ) as JsonObject
 

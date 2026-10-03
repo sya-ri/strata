@@ -13,6 +13,10 @@ plugins {
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
 
 dependencies {
+    implementation(project(":quality:performance-testkit"))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlin.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
     add("jmh", project(":api"))
     add("jmh", project(":quality:performance-testkit"))
     add("jmh", project(":runtime:core"))
@@ -68,7 +72,7 @@ jmh {
     includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ComponentRenderingBenchmark.*"))
 }
 
-val verifyComponentRenderingWork by tasks.registering(JavaExec::class) {
+val verifyComponentRenderingWork = tasks.register<JavaExec>("verifyComponentRenderingWork") {
     group = "verification"
     description = "Exercises every shipped public component through a real Minecraft-profile host and the shared work assertions."
     val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
@@ -141,7 +145,7 @@ tasks.withType<JavaExec>().matching { it.name in setOf("verifyComponentRendering
     changedPathFile.orNull?.let { systemProperty("strata.performance.changedPaths", it) }
 }
 
-val verifyStressRenderingWork by tasks.registering(JavaExec::class) {
+val verifyStressRenderingWork = tasks.register<JavaExec>("verifyStressRenderingWork") {
     group = "verification"
     description = "Checks real stress edits, navigation, animation, multipixel tiling and terminal lifetimes without time thresholds."
     val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
@@ -155,7 +159,7 @@ val verifyStressRenderingWork by tasks.registering(JavaExec::class) {
 
 tasks.named("check") { dependsOn(verifyStressRenderingWork) }
 
-val verifyFontWork by tasks.registering(JavaExec::class) {
+val verifyFontWork = tasks.register<JavaExec>("verifyFontWork") {
     group = "verification"
     description = "Checks actual font providers, visual ordering, reference limits and bounded native/cache release."
     val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
@@ -181,3 +185,29 @@ tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
     javaLauncher.set(componentLauncher)
     args(layout.buildDirectory.file("performance/runtime-api.tsv").get().asFile.absolutePath)
 }
+
+// Compiler ABI checks bind the reviewed host/member surface to the actual publication model.
+val publishedHostProjects = rootProject.file("gradle/performance-modules.tsv").readLines(Charsets.UTF_8)
+    .filter { it.isNotBlank() && it.startsWith('#').not() }
+    .map { it.substringBefore('\t') }.distinct()
+val publishedAbiChecks = publishedHostProjects.map { "$it:checkKotlinAbi" }
+tasks.register<JavaExec>("capturePublishedHostInventory") {
+    group = "verification"
+    description = "Stages exact compiler member/host assignments for review, without changing the checked-in registry."
+    dependsOn("classes", "test", ":verifyPublishedPerformanceInventory", publishedAbiChecks)
+    classpath = sourceSets.named("main").get().runtimeClasspath
+    javaLauncher.set(componentLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.PublishedHostInventoryCapture")
+    args(rootProject.projectDir.absolutePath, layout.buildDirectory.file("performance/prospective-published-host-api.tsv").get().asFile.absolutePath)
+}
+val verifyPublishedHostInventory = tasks.register<JavaExec>("verifyPublishedHostInventory") {
+    group = "verification"
+    description = "Rejects new, removed and unassigned compiler API members on every published physical host."
+    dependsOn("classes", "test", ":verifyPublishedPerformanceInventory", publishedAbiChecks)
+    classpath = sourceSets.named("main").get().runtimeClasspath
+    javaLauncher.set(componentLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.PublishedHostInventoryEvidence")
+    args(rootProject.projectDir.absolutePath)
+}
+tasks.named("check") { dependsOn(verifyPublishedHostInventory) }
+tasks.named("jmhComponents") { dependsOn(verifyPublishedHostInventory) }

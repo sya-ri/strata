@@ -1,6 +1,5 @@
 package dev.s7a.strata.performance
 
-import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import java.lang.management.ManagementFactory
 import java.util.function.Predicate
@@ -9,6 +8,7 @@ import java.util.function.Predicate
  * Actual Fabric extraction/render adapter, confined to the measured screen's client thread.
  * Event callbacks and native counters belong to the kit; consumers supply only state changes.
  * GPU completion, model mutation, readiness, and evidence storage are outside extraction samples.
+ * Complete operation frames include diagnostic instrumentation and frame pacing, rather than uninstrumented application latency.
  *
  * @param screen actual measured Fabric screen, not a preview or replacement presenter.
  * @param refresh application-owned state delivery before extraction.
@@ -40,10 +40,8 @@ public class MinecraftPerformanceMeter(
     private var result: JsonObject? = null
     private var failure: Throwable? = null
     private val thread = ManagementFactory.getThreadMXBean()
-    private val intervals = mutableListOf<Long>()
-    private val frameCpu = mutableListOf<Long>()
-    private var previousWall: Long? = null
-    private var previousCpu: Long? = null
+    private var frames: NativeFrameIntervals? = null
+    private var abandonedFrame = false
 
     init {
         FabricPerformanceCallbacks.register(screen, listOf("beforeExtract", "beforeRender")) { before() }
@@ -75,17 +73,16 @@ public class MinecraftPerformanceMeter(
         samples = 0
         result = null
         failure = null
-        intervals.clear()
-        frameCpu.clear()
-        previousWall = null
-        previousCpu = null
+        frames = NativeFrameIntervals(target)
+        abandonedFrame = false
         action = update
         meter = JvmPerformanceMeter(name, target)
         active = true
     }
 
     /**
-     * Successful completion or an actual callback failure; elapsed waiting cannot satisfy this condition.
+     * Successful completion includes the following boundary of the final operation frame.
+     * Callback failures propagate; elapsed waiting cannot satisfy this condition.
      */
     public val completed: Boolean
         get() {
@@ -111,6 +108,7 @@ public class MinecraftPerformanceMeter(
             addProperty("requested_samples", target)
             addProperty("remaining_warmup", warmup)
             addProperty("incomplete_extract", sampling)
+            addProperty("incomplete_frame", abandonedFrame || frames?.pending == true)
             addProperty("complete", active.not() && result != null && failure == null)
             failure?.let { addProperty("failure", it.toString()) }
             if (active.not() && result != null && failure == null) add("measurement", checkNotNull(result).deepCopy())
@@ -159,38 +157,45 @@ public class MinecraftPerformanceMeter(
         refresh = null
         result = null
         failure = null
-        intervals.clear()
-        frameCpu.clear()
+        abandonedFrame = false
     }
 
     private fun before() =
         observe {
+            val wall = System.nanoTime()
+            val cpu = currentCpu
+            check(sampling.not()) { "Native presentation callbacks were not paired" }
+            val spans = checkNotNull(frames)
+            if (spans.pending) spans.complete(wall, cpu)
             val hooks = checkNotNull(fixture)
             checkNotNull(windowGuard).verify()
             hooks.validateFrame()
-            val wall = System.nanoTime()
-            check(wall - deadline < 0) { "Native performance interval timed out" }
+            check(System.nanoTime() - deadline < 0) { "Native performance interval timed out" }
+            if (samples == target) {
+                result =
+                    checkNotNull(meter).result().apply {
+                        spans.appendTo(this)
+                        add("diagnostics", checkNotNull(monitor).snapshot())
+                        NativePresentationCounters.append(this, checkNotNull(screen), baseline)
+                    }
+                hooks.afterSamples(checkNotNull(result).deepCopy())
+                cancel()
+                return@observe
+            }
             if (ready.not()) ready = hooks.ready()
-            if (ready.not()) return@observe
-            val cpu = if (thread.isCurrentThreadCpuTimeSupported && thread.isThreadCpuTimeEnabled) thread.currentThreadCpuTime else -1L
-            val interval = previousWall?.let { wall - it }
-            val cpuInterval = previousCpu?.let { if (0 <= cpu && 0 <= it) cpu - it else null }
-            previousWall = wall
-            previousCpu = cpu
-            if (prepare(hooks).not()) return@observe
+            if (ready.not() || prepare(hooks).not()) return@observe
+            check(System.nanoTime() - deadline < 0) { "Native performance preparation timed out" }
+            if (warmup == 0) spans.start(System.nanoTime(), currentCpu)
             checkNotNull(action)(samples + warmup)
             checkNotNull(refresh)()
             if (warmup == 0) {
-                if (samples == 0) {
-                    intervals.clear()
-                    frameCpu.clear()
-                }
-                intervals.add(interval ?: 0L)
-                cpuInterval?.let(frameCpu::add)
                 checkNotNull(meter).begin()
                 sampling = true
             }
         }
+
+    private val currentCpu: Long?
+        get() = if (thread.isCurrentThreadCpuTimeSupported && thread.isThreadCpuTimeEnabled) thread.currentThreadCpuTime.takeIf { 0 <= it } else null
 
     private fun after() =
         observe {
@@ -207,17 +212,6 @@ public class MinecraftPerformanceMeter(
                 checkNotNull(meter).end()
                 checkNotNull(monitor).capture()
                 samples += 1
-                if (samples == target) {
-                    result =
-                        checkNotNull(meter).result().apply {
-                            add("render_thread_frame_cpu", if (frameCpu.size != target) JsonNull.INSTANCE else PerformanceJson.distribution(frameCpu))
-                            add("frame_interval", if (intervals.isEmpty()) JsonNull.INSTANCE else PerformanceJson.distribution(intervals))
-                            add("diagnostics", checkNotNull(monitor).snapshot())
-                            NativePresentationCounters.append(this, checkNotNull(screen), baseline)
-                        }
-                    checkNotNull(fixture).afterSamples(checkNotNull(result).deepCopy())
-                    cancel()
-                }
             }
         }
 
@@ -226,10 +220,6 @@ public class MinecraftPerformanceMeter(
         if (captured.not()) {
             hooks.captureAfterWarmup()
             captured = true
-            if (0 < settle) {
-                previousWall = null
-                previousCpu = null
-            }
         }
         if (0 < settle) return false
         if (prepared.not()) prepareMeasurement(hooks)
@@ -249,6 +239,8 @@ public class MinecraftPerformanceMeter(
         fixture = null
         sampling = false
         meter = null
+        abandonedFrame = abandonedFrame || frames?.pending == true
+        frames = null
         baseline = emptyMap()
         windowGuard = null
         val previous = monitor

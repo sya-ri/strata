@@ -58,7 +58,11 @@ Older targets that cannot execute the unchanged fixture are failures, not permis
 
 The root `verifyPublishedPerformanceInventory` gate compares [reviewed module/host registrations](../../gradle/performance-modules.tsv) against the actual Maven publication model.
 Adding or removing a published project without updating its exact registration fails `check`; duplicate hosts, missing fixture source files and missing verification tasks also fail.
-This is an entry-point registration check, not completed measurement evidence and not a substitute for exact member inventories.
+This entry-point registration check is paired with `:quality:component-benchmarks:verifyPublishedHostInventory`.
+The member gate first requires every published project's actual `checkKotlinAbi` task, then uses `CompilerApiInventory` and `PerformanceInventory` to reject new, removed or unassigned compiler declarations for each reviewed physical host.
+`:quality:component-benchmarks:capturePublishedHostInventory` stages prospective assignments for review without changing the checked-in registry.
+Compiler source visibility is distinct from the separate loaded-JVM inventories; those origin checks remain required.
+Registration is not completed measurement evidence or proof that every member executed.
 Versioned Fabric registrations currently point to the shared loaded-client profile-cache probe, which already delegates its actual open/extraction measurements to `JvmPerformanceRunner`.
 Those short correctness probes do not establish three full-default native performance repetitions or native work-counter coverage for every supported rendering family.
 The test-only collector registers its own contract verification separately from runtime workload collection.
@@ -96,7 +100,8 @@ Applications supply fixture-specific assertions, controlled input declarations a
 Report serialization and metric projections belong to the kit; consumers must not add independent report formatters, unit conversions or per-sample normalization.
 `NativePerformanceEvidence` verifies actual local archive origins, representative resources and complete CPU/native class-tree agreement without filename/version assumptions.
 Unsafe archives, missing inputs, non-finite measurements and invalid divisors reject success.
-A missing optional measurement remains unavailable, never zero.
+An explicit null optional measurement, including any null distribution ancestor along a registered path, remains unavailable, never zero.
+Missing fields and non-object ancestors remain malformed evidence.
 The JVM tests exercise these contracts against the actual packaged collector rather than a compiled-directory substitute.
 
 ## Host boundaries
@@ -112,6 +117,10 @@ The Fabric adapter uses the loaded host's callbacks and counters without dependi
 Missing callbacks or fields are adapter failures, rather than unsupported zero-cost work.
 `NativePerformanceFixture` supplies readiness, expensive evidence capture after warm-up, untimed settling frames, and application snapshots around collection.
 Resources and PNG files must be prepared or saved outside steady-state samples.
+Whole operation-frame intervals start after untimed readiness, evidence capture and application snapshots, then end at the next before-presentation callback.
+Success waits for the final operation frame's following boundary; it does not substitute a preceding warm-up frame or a zero interval.
+Native extraction counters and diagnostics still cover exactly the requested measured extractions, without another application action during finalization.
+Complete frames include diagnostic instrumentation and frame pacing; neither wall intervals nor render-thread CPU certify GPU completion or uninstrumented application latency.
 Closing a meter clears application callbacks, screen references, monitor ownership, and bounded sample storage.
 
 Window readiness uses the loaded host's `isIconified` contract when present, including SDL hosts.

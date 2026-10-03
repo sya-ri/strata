@@ -36,7 +36,12 @@ class MinecraftPerformanceMeterTest {
                     screen.hostFrameCount += 1
                     ScreenEvents.afterExtract(screen).fire()
                 }
+                assertFalse(meter.completed)
+                assertFalse(meter.receipt().get("complete").asBoolean)
+                assertTrue(meter.receipt().get("incomplete_frame").asBoolean)
+                ScreenEvents.beforeExtract(screen).fire()
                 assertTrue(meter.completed)
+                assertFalse(meter.receipt().get("incomplete_frame").asBoolean)
                 assertTrue(screen.monitorClosed)
                 assertEquals(listOf("update", "capture", "baseline", "update", "update", "complete"), order)
                 val evidence = meter.result()
@@ -83,6 +88,7 @@ class MinecraftPerformanceMeterTest {
                 assertEquals(failure, assertFailsWith<IllegalArgumentException> { meter.completed })
                 assertTrue(screen.monitorClosed)
                 assertFalse(meter.receipt().get("complete").asBoolean)
+                assertTrue(meter.receipt().get("incomplete_frame").asBoolean)
                 assertFalse(meter.receipt().has("measurement"))
             } finally {
                 ScreenEvents.release(screen)

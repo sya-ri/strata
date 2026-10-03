@@ -208,6 +208,8 @@ public object JvmPerformanceReports {
         path: List<String>,
     ): JsonElement {
         require(path.isNotEmpty())
-        return path.fold(root as JsonElement) { current, key -> checkNotNull(current.asJsonObject.get(key)) { "Missing measurement: $path" } }
+        return path.fold(root as JsonElement) { current, key ->
+            if (current.isJsonNull) current else checkNotNull(current.asJsonObject.get(key)) { "Missing measurement: $path" }
+        }
     }
 }
