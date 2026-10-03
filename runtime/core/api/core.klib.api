@@ -80,6 +80,7 @@ abstract interface dev.s7a.strata.runtime.diagnostics/UiRenderMonitor : kotlin/A
 
 abstract interface dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner { // dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner|null[0]
     abstract fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner.startRenderMonitoring|startRenderMonitoring(){}[0]
+    open fun startRenderMonitoring(kotlin/Int): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner.startRenderMonitoring|startRenderMonitoring(kotlin.Int){}[0]
 }
 
 sealed interface dev.s7a.strata.runtime.render/DrawCommand { // dev.s7a.strata.runtime.render/DrawCommand|null[0]
@@ -426,6 +427,7 @@ final class dev.s7a.strata.runtime/UiTree : dev.s7a.strata.runtime.spi/RuntimeUi
     final fun paint(): kotlin.collections/List<dev.s7a.strata.runtime.render/DrawCommand> // dev.s7a.strata.runtime/UiTree.paint|paint(){}[0]
     final fun semantics(): kotlin.collections/List<dev.s7a.strata.runtime.semantics/SemanticsEntry> // dev.s7a.strata.runtime/UiTree.semantics|semantics(){}[0]
     final fun startRenderMonitoring(): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime/UiTree.startRenderMonitoring|startRenderMonitoring(){}[0]
+    final fun startRenderMonitoring(kotlin/Int): dev.s7a.strata.runtime.diagnostics/UiRenderMonitor // dev.s7a.strata.runtime/UiTree.startRenderMonitoring|startRenderMonitoring(kotlin.Int){}[0]
     final fun update(dev.s7a.strata.element/Element) // dev.s7a.strata.runtime/UiTree.update|update(dev.s7a.strata.element.Element){}[0]
 }
 

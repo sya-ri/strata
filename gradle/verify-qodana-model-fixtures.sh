@@ -150,6 +150,7 @@ for version in "${fixture_versions[@]}"; do
     'TestSource;../shared/minecraft-fabric/transport/verification/src/gametest/kotlin'
     'TestSource;../shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin'
     'TestSource;../../examples/paper/src/main/kotlin'
+    'TestSource;../../quality/component-benchmarks/src/jmh/kotlin'
     'TestSource;../shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin'
     'TestSource;../shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin'
     'TestResource;../shared/font-parity/src/gametest/resources'
@@ -282,6 +283,7 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/verification/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/transport/paper-screens/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
+      {type: "TestSource", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/canvas/fixture-probe/src/gametest/kotlin"},
       {type: "TestSource", path: "file://$PROJECT_DIR$/integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin"},
       {type: "TestResource", path: "file://$PROJECT_DIR$/integration/shared/font-parity/src/gametest/resources"},
@@ -325,6 +327,11 @@ portable_jq -n --argjson versions "$fixture_versions_json" '
         {type: "Source", path: "file://$PROJECT_DIR$/examples/paper/src/main/kotlin"},
         {type: "TestSource", path: "file://$PROJECT_DIR$/examples/paper/src/test/kotlin"}
       ];
+      []
+    )]
+    + [projectModule(
+      "component-benchmarks";
+      [{type: "Source", path: "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"}];
       []
     )]
     + [projectModule(
@@ -372,6 +379,17 @@ assert_rejected() {
     exit 1
   fi
 }
+
+for component_name in component-benchmarks quality-component-benchmarks strata.quality.component-benchmarks; do
+  portable_jq --arg name "$component_name" \
+    '(.modules[] | select(.name == "component-benchmarks")).name = $name' \
+    "$fixture_root/Modules.json" > "$fixture_root/valid.json"
+  bash "$repository_root/gradle/verify-qodana-model.sh" \
+    "$fixture_root/valid.json" "$fixture_project" "$qodana_container_project_root" > "$fixture_root/valid.log"
+done
+
+assert_rejected '(.modules[] | select(.name == "component-benchmarks")).name = "unrelated-benchmarks"'
+assert_rejected '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"))'
 
 assert_rejected '.modules |= map(select(.name != "integration-minecraft-fabric-1.10"))'
 assert_rejected '.modules |= map(select(.name != "runtime-minecraft-fabric-1.10"))'
@@ -496,6 +514,38 @@ assert_project_rejected() {
     exit 1
   fi
 }
+
+fixture_component_iml="$fixture_project/integration/minecraft-fabric-1.10/integration-minecraft-fabric-1.10.iml"
+fixture_component_iml_backup="$fixture_root/integration-component-owner.iml"
+cp -- "$fixture_component_iml" "$fixture_component_iml_backup"
+for component_mutation in missing wrong-kind duplicate broader-root; do
+  cp -- "$fixture_component_iml_backup" "$fixture_component_iml"
+  case "$component_mutation" in
+    missing)
+      sed -i '\#quality/component-benchmarks/src/jmh/kotlin#d' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) |= map(select(.path != "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"))' \
+        "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+      ;;
+    wrong-kind)
+      sed -i '/quality\/component-benchmarks\/src\/jmh\/kotlin/s/isTestSource="true"/isTestSource="false"/' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin")).type = "Source"' \
+        "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+      ;;
+    duplicate)
+      component_source_line=$(grep -F 'quality/component-benchmarks/src/jmh/kotlin' "$fixture_component_iml")
+      sed -i '/<\/content>/i\'"$component_source_line" "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders) += [{type:"TestSource",path:"file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin"}]' \
+        "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+      ;;
+    broader-root)
+      sed -i 's#quality/component-benchmarks/src/jmh/kotlin#quality/component-benchmarks/src/jmh#' "$fixture_component_iml"
+      portable_jq '(.modules[] | select(.name == "integration-minecraft-fabric-1.10").contentEntries[0].sourceFolders[] | select(.path == "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin")).path = "file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh"' \
+        "$fixture_root/Modules.json" > "$fixture_root/invalid.json"
+      ;;
+  esac
+  assert_project_rejected "paired canonical component $component_mutation" "$fixture_root/invalid.json"
+done
+cp -- "$fixture_component_iml_backup" "$fixture_component_iml"
 
 "$fixture_python" - "$fixture_root/Modules.json" "$fixture_root/invalid.json" <<'PY'
 import pathlib

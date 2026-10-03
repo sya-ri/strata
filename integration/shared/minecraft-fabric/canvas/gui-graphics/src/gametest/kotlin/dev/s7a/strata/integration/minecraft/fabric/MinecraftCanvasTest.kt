@@ -120,6 +120,13 @@ private fun withMinecraftCanvasContext(
                 context.waitFor { condition() }
             }
 
+            override fun waitFor(
+                timeoutTicks: Int,
+                condition: () -> Boolean,
+            ) {
+                context.waitFor(timeoutTicks) { condition() }
+            }
+
             override fun waitTicks(ticks: Int) {
                 context.waitTicks(ticks)
             }
@@ -129,23 +136,25 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
             ): Path = context.takeScreenshot(name, output, size)
         }
+    val previousDecoration =
+        if (System.getProperty("strata.performance.nativeOutput") != null) {
+            adapter.onClient { GLFW.glfwGetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED) }
+        } else {
+            null
+        }
     var failure: Throwable? = null
     try {
+        if (previousDecoration != null) adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE) }
         action(adapter)
     } catch (caught: Throwable) {
         failure = caught
         throw caught
     } finally {
-        try {
-            adapter.configureViewport(IntSize(previous.first, previous.second), previous.third)
-        } catch (cleanup: Throwable) {
-            val primary = failure
-            if (primary == null) {
-                throw cleanup
-            } else if (primary !== cleanup) {
-                primary.addSuppressed(cleanup)
-            }
-        }
+        runCanvasTestCleanup(
+            failure,
+            { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) },
+            { if (previousDecoration != null) adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, previousDecoration) } },
+        )
     }
 }
 

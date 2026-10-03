@@ -97,9 +97,19 @@ public class UiTree(
             declarationId(entry),
             entry.element,
             (entry.node as? DeclarationProjectionNode)?.declarationProjection ?: entry.element.projection,
-            entry.modifiers.map { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
-            entry.children.map(::declaration),
+            entry.modifiers.snapshotMap { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
+            entry.children.snapshotMap(::declaration),
         )
+
+    /**
+     * Creates an owned snapshot list without temporary empty or singleton map buffers.
+     */
+    private inline fun <T, R> List<T>.snapshotMap(transform: (T) -> R): List<R> =
+        when (size) {
+            0 -> emptyList()
+            1 -> listOf(transform(this[0]))
+            else -> map(transform)
+        }
 
     private fun declarationId(entry: RetainedEntry): Long {
         if (entry.declarationId == 0L) {
@@ -112,13 +122,20 @@ public class UiTree(
     @InternalStrataRuntimeApi
     override fun startRenderMonitoring(): UiRenderMonitor = startMonitoring { }
 
+    @InternalStrataRuntimeApi
+    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = startMonitoring(maxNodeRecords) { }
+
     /**
      * Adds the owning session's boundary check without exposing its implementation to callers.
      */
-    internal fun startMonitoring(ownerBoundary: () -> Unit): UiRenderMonitor {
+    internal fun startMonitoring(
+        maxNodeRecords: Int = 4096,
+        ownerBoundary: () -> Unit,
+    ): UiRenderMonitor {
         ownerGuard.check()
         check(operationActive.not() && currentState === TreeState.Active) { "Monitoring requires an idle active tree." }
         ownerBoundary()
+        require(maxNodeRecords in 1..65_536) { "Invalid render monitoring node-record capacity." }
         check(monitoring.collector == null) { "Render monitoring is already active." }
         val collector =
             RenderMonitorImpl(
@@ -129,6 +146,7 @@ public class UiTree(
                 onClose = { monitoring.collector = null },
                 activeSubscriptions = observedSources.activeSubscriptions,
                 monitoring = monitoring,
+                maxNodeRecords = maxNodeRecords,
             )
         root?.let { collector.baseline(it.effectiveRoot) }
         monitoring.collector = collector

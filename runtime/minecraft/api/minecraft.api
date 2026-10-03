@@ -75,6 +75,10 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiHost
 	public abstract fun resetInputState ()V
 }
 
+public final class dev/s7a/strata/runtime/minecraft/MinecraftUiHost$DefaultImpls {
+	public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/minecraft/MinecraftUiHost;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/MinecraftUiPlatform : java/lang/AutoCloseable {
 	public abstract fun close ()V
 	public abstract fun image (Ldev/s7a/strata/resource/ResourceId;)Ldev/s7a/strata/render/DrawImage;

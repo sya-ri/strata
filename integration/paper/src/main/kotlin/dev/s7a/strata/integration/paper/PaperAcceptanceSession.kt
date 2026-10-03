@@ -59,6 +59,8 @@ internal class PaperAcceptanceSession(
     private var ticks = 0
     private var closed = false
     private var presentations: PaperUiPresentationVerification? = null
+    private var performance: PaperPerformanceVerification? = null
+    private var performanceDirectory: String = ""
     private var handle: RemoteScreenSession = PaperScreens.open(plugin, player, if (phase != Phase.Controls) ScreenDefinition("Strata verification moving") { Column { Text("Moving") } } else controls())
     private val migration = if (verifyMigration) player.teleportAsync(player.location.add(4096.0, 0.0, 0.0)) else CompletableFuture.completedFuture(true)
 
@@ -72,45 +74,72 @@ internal class PaperAcceptanceSession(
                 check(ticks++ < 1200) { "Paper acceptance timed out in $phase." }
                 journeyFinished = journey?.tick() ?: true
                 if (prepareControls().not()) return@runCatching false
-                if (phase != Phase.Presentations) check((handle.status is RemoteSessionStatus.Closed).not()) { "Acceptance screen closed: ${handle.status}" }
-                when (phase) {
-                    Phase.Migrating, Phase.Riding -> {
-                        error("Migration must complete before controls advance.")
-                    }
-
-                    Phase.Controls -> {
-                        updates.value++
-                        if (applied == 1 && activated == 1) {
-                            check(field.value.contentEquals("remote-日本語")) { "Server text does not match confirmed native input." }
-                            player.inventory.setItem(9, ItemStack(Material.DIRT, 7))
-                            handle = PaperScreens.open(plugin, player, inventory())
-                            phase = Phase.Inventory
-                        }
-                    }
-
-                    Phase.Inventory -> {
-                        if (inventoryRestored() && journeyFinished) {
-                            handle.close()
-                            presentations = PaperUiPresentationVerification(plugin, player)
-                            phase = Phase.Presentations
-                        }
-                    }
-
-                    Phase.Presentations -> {
-                        if (checkNotNull(presentations).tick()) {
-                            presentations?.close()
-                            presentations = null
-                            complete()
-                            return@runCatching true
-                        }
-                    }
+                if (phase !in setOf(Phase.Presentations, Phase.Performance)) check((handle.status is RemoteSessionStatus.Closed).not()) { "Acceptance screen closed: ${handle.status}" }
+                if (advancePhase()) {
+                    complete()
+                    true
+                } else {
+                    false
                 }
-                false
             }.getOrElse { failure ->
                 plugin.logger.severe("Paper acceptance failed: ${failure.message}")
                 close()
                 true
             }
+    }
+
+    private fun advancePhase(): Boolean =
+        when (phase) {
+            Phase.Migrating, Phase.Riding -> {
+                error("Migration must complete before controls advance.")
+            }
+
+            Phase.Controls -> {
+                updates.value++
+                if (applied == 1 && activated == 1) {
+                    check(field.value.contentEquals("remote-日本語")) { "Server text does not match confirmed native input." }
+                    player.inventory.setItem(9, ItemStack(Material.DIRT, 7))
+                    handle = PaperScreens.open(plugin, player, inventory())
+                    phase = Phase.Inventory
+                }
+                false
+            }
+
+            Phase.Inventory -> {
+                if (inventoryRestored() && journeyFinished) {
+                    handle.close()
+                    presentations = PaperUiPresentationVerification(plugin, player)
+                    phase = Phase.Presentations
+                }
+                false
+            }
+
+            Phase.Presentations -> {
+                advancePresentations()
+            }
+
+            Phase.Performance -> {
+                advancePerformance()
+            }
+        }
+
+    private fun advancePresentations(): Boolean {
+        if (checkNotNull(presentations).tick().not()) return false
+        presentations?.close()
+        presentations = null
+        if (System.getProperty("strata.paper.performanceKit") == null) return true
+        check(verifyMigration.not() && journey == null) { "Performance collection currently requires ordinary Paper ownership" }
+        performance = PaperPerformanceVerification(plugin, player)
+        performanceDirectory = checkNotNull(performance).directory.toAbsolutePath().toString()
+        phase = Phase.Performance
+        return false
+    }
+
+    private fun advancePerformance(): Boolean {
+        if (checkNotNull(performance).tick().not()) return false
+        performance?.close()
+        performance = null
+        return true
     }
 
     private fun inventoryRestored(): Boolean {
@@ -172,7 +201,7 @@ internal class PaperAcceptanceSession(
         val run = requireNotNull(System.getProperty("strata.paper.run"))
         val directory = plugin.dataFolder.toPath()
         Files.createDirectories(directory)
-        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\nuiPresentations=confirmed\nuiEvents=confirmed\nregionMigration=$verifyMigration\nminecartDistance=${journey?.travelled ?: 0.0}\n")
+        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=$playerId\nversion=${plugin.server.bukkitVersion}\ntext=confirmed\ncustomAction=$activated\nbutton=$applied\nslot=round-trip\nupdates=${updates.value}\nuiPresentations=confirmed\nuiEvents=confirmed\nregionMigration=$verifyMigration\nminecartDistance=${journey?.travelled ?: 0.0}\nperformanceDirectory=$performanceDirectory\n")
         handle = PaperScreens.open(plugin, player, ScreenDefinition("Strata verification complete") { Column { Text("Complete") } })
         player.inventory.setItem(9, original)
         journey?.close()
@@ -181,6 +210,8 @@ internal class PaperAcceptanceSession(
     }
 
     override fun close() {
+        performance?.close()
+        performance = null
         presentations?.close()
         presentations = null
         handle.close()
@@ -195,5 +226,5 @@ internal class PaperAcceptanceSession(
     /**
      * Server-owned acceptance progression decoded without protocol string discriminators.
      */
-    private enum class Phase { Migrating, Riding, Controls, Inventory, Presentations }
+    private enum class Phase { Migrating, Riding, Controls, Inventory, Presentations, Performance }
 }

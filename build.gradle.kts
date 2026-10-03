@@ -2,15 +2,20 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.papermc.hangarpublishplugin.model.Platforms
 import java.security.MessageDigest
+import java.util.UUID
 import com.vanniktech.maven.publish.Checksum
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
+import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
+import dev.s7a.strata.gradle.fabric.FabricClientResourceService
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
+import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
+import dev.s7a.strata.gradle.performance.PublishedPerformanceInventory
 import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
@@ -22,6 +27,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -35,6 +41,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -100,6 +107,12 @@ private data class MinecraftFabricTarget(
 ) {
     /** Gradle-owned lock service used to limit unrelated tasks that share mutable external resources. */
     abstract class ExclusiveTaskService : BuildService<BuildServiceParameters.None>
+
+    /** Inject the supported task-completion registry without reaching into Gradle internals. */
+    abstract class ClientTaskEvents {
+        @get:Inject
+        abstract val registry: BuildEventsListenerRegistry
+    }
 
     val runtimeProjectPath: String = ":runtime:minecraft-fabric-$version"
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
@@ -530,6 +543,7 @@ private val minecraftTargetByProjectPath =
 val releasePublicationProjectPaths =
     listOf(
         ":api",
+        ":quality:performance-testkit",
         ":paper-api",
         ":velocity-api",
         ":runtime:core",
@@ -543,11 +557,28 @@ val releasePublicationProjectPaths =
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
 val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
-        "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
+        if (projectPath == ":quality:performance-testkit") "$group:strata-performance-testkit" else "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
-val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core")
+val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":quality:performance-testkit")
 val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
+val verifyPublishedPerformanceInventory = tasks.register("verifyPublishedPerformanceInventory") {
+    group = "verification"
+    description = "Requires reviewed executable performance fixture registrations for every published project."
+    val inventory = rootProject.file("gradle/performance-modules.tsv")
+    inputs.file(inventory)
+    inputs.property("publishedProjects", releasePublicationProjectPaths)
+    doLast {
+        val count = PublishedPerformanceInventory.verify(
+            publishableProjectPaths,
+            inventory.readLines(Charsets.UTF_8),
+            { path -> rootProject.file(path).isFile },
+            { path -> rootProject.findProject(path.substringBeforeLast(':'))?.tasks?.findByName(path.substringAfterLast(':')) != null },
+        )
+        println("Verified $count module/host fixture registrations for ${publishableProjectPaths.size} published projects; completed performance evidence is verified separately.")
+    }
+}
+tasks.named("check") { dependsOn(verifyPublishedPerformanceInventory) }
 val verifyMinecraftFabricTargetMatrix = tasks.register("verifyMinecraftFabricTargetMatrix") {
     group = "verification"
     description = "Verifies that the typed Minecraft target matrix covers every versioned runtime and integration project."
@@ -965,12 +996,55 @@ private val selectedMinecraftClientTasks =
             add("${target.integrationProjectPath}:runProductionClientGameTest")
         }
     }
+private val minecraftClientParallelismSetting = providers.gradleProperty("strata.minecraftClientParallelism").getOrElse("auto")
+private val automaticMinecraftClients =
+    minecraftClientParallelismSetting == "auto" && providers.gradleProperty("strata.performance.nativeOutput").isPresent.not()
+private val minecraftClientParallelism =
+    (if (minecraftClientParallelismSetting == "auto") {
+        if (automaticMinecraftClients) {
+            minOf(Runtime.getRuntime().availableProcessors() / 2, gradle.startParameter.maxWorkerCount - 1).coerceAtLeast(1)
+        } else {
+            1
+        }
+    } else {
+        minecraftClientParallelismSetting.toInt()
+    }).also {
+        require(0 < it) { "strata.minecraftClientParallelism must be positive" }
+        require(it == 1 || providers.gradleProperty("strata.performance.nativeOutput").isPresent.not()) {
+            "Native performance collection requires serial Minecraft client execution"
+        }
+    }
+private val minecraftClientHeap =
+    providers.gradleProperty("strata.minecraftClientHeap").orNull
+        ?: if (automaticMinecraftClients) "1g" else "2g".takeIf { 1 < minecraftClientParallelism }
+private val minecraftClientResourceService =
+    if (automaticMinecraftClients) {
+        gradle.sharedServices.registerIfAbsent("minecraftClientResources", FabricClientResourceService::class) {
+            parameters.maximum.set(minecraftClientParallelism)
+            parameters.clientHeap.set(checkNotNull(minecraftClientHeap))
+        }.also { service ->
+            objects.newInstance(MinecraftFabricTarget.ClientTaskEvents::class.java).registry.onTaskCompletion(service)
+        }
+    } else {
+        null
+    }
 private val minecraftClientExecutionService =
     gradle.sharedServices.registerIfAbsent(
         "minecraftClientExecution",
         MinecraftFabricTarget.ExclusiveTaskService::class,
     ) {
-        maxParallelUsages.set(1)
+        maxParallelUsages.set(minecraftClientParallelism)
+    }
+private val minecraftClientPreparationService =
+    if (minecraftClientParallelism == 1) {
+        minecraftClientExecutionService
+    } else {
+        gradle.sharedServices.registerIfAbsent(
+            "minecraftClientPreparation",
+            MinecraftFabricTarget.ExclusiveTaskService::class,
+        ) {
+            maxParallelUsages.set(1)
+        }
     }
 private val minecraftRemapExecutionService =
     gradle.sharedServices.registerIfAbsent(
@@ -1067,7 +1141,8 @@ subprojects {
             }
         }
         tasks.matching { it.name in setOf("buildWeb", "verifyWeb", "jsBrowserTest") }.configureEach {
-            usesService(minecraftClientExecutionService)
+            usesService(minecraftClientPreparationService)
+            if (1 < minecraftClientParallelism) mustRunAfter(selectedMinecraftClientTasks)
         }
 
         extensions.configure<DetektExtension> {
@@ -1226,11 +1301,12 @@ subprojects {
     }
 
     tasks.matching { name in setOf("generateWebDemos", "checkWebDemos") }.configureEach {
-        usesService(minecraftClientExecutionService)
+        usesService(minecraftClientPreparationService)
+        if (1 < minecraftClientParallelism) mustRunAfter(selectedMinecraftClientTasks)
     }
 
     tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
-        usesService(minecraftClientExecutionService)
+        usesService(minecraftClientPreparationService)
         val assetTaskIndex = selectedMinecraftAssetTasks.indexOf(path)
         if (assetTaskIndex != -1) {
             mustRunAfter(selectedMinecraftAssetTasks.take(assetTaskIndex))
@@ -1248,10 +1324,36 @@ subprojects {
                 is JavaExec -> systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
             }
             usesService(minecraftClientExecutionService)
+            minecraftClientResourceService?.let { service ->
+                usesService(service)
+                doFirst { service.get().acquire(path) }
+            }
+            val target = checkNotNull(minecraftTargetByProjectPath[project.path])
+            usesService(
+                gradle.sharedServices.registerIfAbsent(
+                    "minecraftClient-${target.version}",
+                    MinecraftFabricTarget.ExclusiveTaskService::class,
+                ) {
+                    maxParallelUsages.set(1)
+                },
+            )
+            minecraftClientHeap?.let { heap ->
+                require(heap.matches(Regex("[1-9][0-9]*[kKmMgG]"))) {
+                    "strata.minecraftClientHeap must be a positive JVM heap size with a unit"
+                }
+                when (this) {
+                    is ClientProductionRunTask -> jvmArgs.add("-Xmx$heap")
+                    is JavaExec -> maxHeapSize = heap
+                }
+            }
             mustRunAfter(selectedMinecraftAssetTasks)
             val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)
             if (clientTaskIndex != -1) {
-                mustRunAfter(selectedMinecraftClientTasks.take(clientTaskIndex))
+                mustRunAfter(
+                    selectedMinecraftClientTasks.take(clientTaskIndex).filter { previous ->
+                        minecraftClientParallelism == 1 || previous.startsWith("${target.integrationProjectPath}:")
+                    },
+                )
             }
             doFirst {
                 val runDirectory =
@@ -1299,6 +1401,12 @@ subprojects {
                     check(licenseEntries == 1) {
                         "Published archive ${archive.name} must contain META-INF/LICENSE-strata exactly once; found $licenseEntries."
                     }
+                    if (name in setOf("sourcesJar", "remapSourcesJar")) {
+                        val entries = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                        check(entries.any { entry -> entry.endsWith(".kt") || entry.endsWith(".java") } && entries.none { entry -> entry.endsWith(".class") }) {
+                            "Published sources archive ${archive.name} must contain source files and no compiled classes."
+                        }
+                    }
                 }
             }
         }
@@ -1335,6 +1443,14 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            tasks.withType<LibraryClientProductionRunTask>().configureEach {
+                dependsOn(":quality:performance-testkit:jvmJar")
+                verificationLibraries.from(
+                    providers.provider {
+                        project(":quality:performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
+                    },
+                )
+            }
             val remoteVerification = rootProject.file("integration/shared/minecraft-fabric/transport/verification/src")
             val remoteVerificationFamily = remoteVerification.resolve(target.remoteNetworkFamily.sourceRoot)
             extensions.configure<KotlinJvmProjectExtension> {
@@ -1346,6 +1462,7 @@ subprojects {
             }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
+                    dependencies.add(implementationConfigurationName, project(":quality:performance-testkit"))
                     java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
                     java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
@@ -1358,6 +1475,15 @@ subprojects {
             val profileCacheTests = rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/profile-cache/kotlin")
             val continuousInputTests = rootProject.file("integration/shared/minecraft-fabric/input/fabric-client-gametest/src/continuous-input/kotlin")
             val renderMonitoringTests = rootProject.file("integration/shared/minecraft-fabric/scenarios/fabric-client-gametest/src/render-monitoring/kotlin")
+            val nativeComponentCases = objects.sourceDirectorySet("nativeComponentCases", "Canonical performance component cases").apply {
+                srcDir(rootProject.file("quality/component-benchmarks/src/jmh/kotlin"))
+                include("**/ComponentWorkload.kt")
+            }
+            val nativeShowcase = objects.sourceDirectorySet("nativePerformanceShowcase", "Compiled API-only showcase definitions").apply {
+                srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+                include("**/*Example.kt")
+                exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
+            }
             val continuousScrollTests =
                 rootProject.file(
                     if (target.version in legacyScrollTargets) {
@@ -1369,6 +1495,8 @@ subprojects {
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.matching { sourceSet -> sourceSet.name == "gametest" }.configureEach {
                     kotlin.srcDir(profileCacheTests)
+                    kotlin.source(nativeComponentCases)
+                    if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) kotlin.source(nativeShowcase)
                     kotlin.srcDir(continuousInputTests)
                     kotlin.srcDir(renderMonitoringTests)
                     kotlin.srcDir(continuousScrollTests)
@@ -1376,8 +1504,28 @@ subprojects {
             }
             extensions.configure<DetektExtension> {
                 source.from(profileCacheTests)
+                source.from(nativeComponentCases)
+                if (setOf(MinecraftFabricTarget.UiFamily.ExtractGui, MinecraftFabricTarget.UiFamily.ExtractHud).contains(target.uiFamily).not()) source.from(nativeShowcase)
                 source.from(continuousInputTests, continuousScrollTests)
                 source.from(renderMonitoringTests)
+            }
+            providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
+                val nativeOutput = rootProject.file(output).absoluteFile
+                providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
+                }
+                tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeOutput", nativeOutput.path) }
+                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
+                afterEvaluate {
+                    tasks.named<LibraryClientProductionRunTask>("runProductionClientGameTest") {
+                        // Each receipt retains its actual processed-mod origins across later invocations.
+                        runDir.set(layout.buildDirectory.dir("run/native-performance/${UUID.randomUUID()}"))
+                        doFirst {
+                            check(nativeOutput.resolve("report.json").exists().not() && nativeOutput.resolve("images").exists().not()) { "Use a fresh native performance directory" }
+                        }
+                    }
+                }
             }
             fontParityComparisonsByVersion[target.version]?.let { comparison ->
                 tasks.named("check") { dependsOn(comparison) }
@@ -1385,6 +1533,10 @@ subprojects {
         }
     }
     if (path.startsWith(":integration:minecraft-fabric-")) {
+        providers.gradleProperty("strata.velocity.performance").orNull?.let { performance ->
+            tasks.withType<JavaExec>().configureEach { systemProperty("strata.velocity.performance", performance) }
+            tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.velocity.performance=$performance") }
+        }
         providers.gradleProperty("strata.velocity.run").orNull?.let { run ->
             tasks.withType<JavaExec>().configureEach { systemProperty("strata.velocity.run", run) }
             tasks.withType<ClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.velocity.run=$run") }
@@ -1393,6 +1545,36 @@ subprojects {
     val javaVersion = when (path) {
         ":velocity-api", ":runtime:velocity", ":examples:velocity", ":integration:velocity" -> velocityJavaVersion
         else -> minecraftTargetByProjectPath[path]?.javaVersion ?: baselineJavaVersion
+    }
+
+    plugins.withId("me.champeau.jmh") {
+        val fixture = extensions.getByType<SourceSetContainer>().named("jmh")
+        val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh")
+        val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(javaVersion))
+        }
+        tasks.named<Detekt>("detekt") {
+            // Standard type resolution covers aliases and references; benchmark sampling belongs to JMH/the kit.
+            source(fixtureKotlin.map { it.kotlin })
+            classpath.from(fixture.map { it.runtimeClasspath })
+            jvmTarget.set(javaVersion.toString())
+            jdkHome.set(analysisJava.map { it.metadata.installationPath })
+        }
+    }
+
+    if (path in setOf(":integration:paper", ":integration:velocity")) {
+        val fixture = extensions.getByType<SourceSetContainer>().named("main")
+        val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("main")
+        val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(javaVersion))
+        }
+        tasks.named<Detekt>("detekt") {
+            // Host callbacks supply operations; only the isolated testkit collects owner costs.
+            source(fixtureKotlin.map { it.kotlin })
+            classpath.from(fixture.map { it.compileClasspath }, fixture.map { it.runtimeClasspath })
+            jvmTarget.set(javaVersion.toString())
+            jdkHome.set(analysisJava.map { it.metadata.installationPath })
+        }
     }
 
     extensions.configure<JavaPluginExtension> {
@@ -1516,12 +1698,28 @@ subprojects {
 
     if (publishableModule) {
         val artifactId = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
+        if (minecraftTargetByProjectPath[path]?.remapped == true) {
+            tasks.withType<AbstractArchiveTask>().matching { task -> task.name == "remapSourcesJar" }.configureEach {
+                archiveClassifier.set("sources")
+            }
+            afterEvaluate {
+                val rawSources = tasks.named("sourcesJar").get()
+                configurations.named("sourcesElements").get().outgoing.artifacts.removeIf { artifact ->
+                    rawSources in artifact.buildDependencies.getDependencies(null)
+                }
+            }
+        }
         extensions.configure<MavenPublishBaseExtension> {
             coordinates(group.toString(), artifactId, version.toString())
             configure(
                 KotlinJvm(
                     javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationJavadoc"),
-                    sourcesJar = SourcesJar.Sources(),
+                    sourcesJar =
+                        if (minecraftTargetByProjectPath[path]?.remapped == true) {
+                            SourcesJar.None()
+                        } else {
+                            SourcesJar.Sources()
+                        },
                 ),
             )
             publishToMavenCentral()
@@ -1792,7 +1990,7 @@ extensions.configure<StrataReleaseExtension> {
                 val suffixes = publication.artifacts.filter { it.extension.endsWith(".asc").not() }.map { artifact ->
                     artifact.classifier?.takeIf(String::isNotEmpty)?.let { "-$it.${artifact.extension}" } ?: ".${artifact.extension}"
                 }
-                (listOf(".pom", ".module") + suffixes).distinct().sorted().map { suffix -> "$identity:$suffix" }
+                (listOf(".pom", ".module") + suffixes).sorted().map { suffix -> "$identity:$suffix" }
             }
         }
     })

@@ -1,5 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.PerformanceJson
+import dev.s7a.strata.performance.WorkExpectation
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -28,18 +30,22 @@ public object OverlayWorkEvidence {
                     check(frame.drawCommands.size <= layers + 1) { "The overlay display list grew beyond the current layers." }
                     maximumCommands = maxOf(maximumCommands, frame.drawCommands.size)
                     if ((index + 1) % 64 == 0 || index + 1 == updates) {
-                        val work = scene.snapshot()
+                        val work = PerformanceJson.work(scene.snapshot())
                         val count = ((index % 64) + 1).toLong()
-                        check(work.overflowed.not())
-                        check(work.counts.getValue(UiRenderMetric.ObserveEvaluation) == count)
-                        check(work.counts.getValue(UiRenderMetric.Paint) == count)
-                        check(work.counts.getValue(UiRenderMetric.Measure) == 0L)
-                        check(work.counts.getValue(UiRenderMetric.Layout) == 0L)
-                        check(work.counts.getValue(UiRenderMetric.NodeCreate) == 0L)
-                        check(work.counts.getValue(UiRenderMetric.NodeDispose) == 0L)
-                        check(work.activeSubscriptions == 1)
-                        maximumNodes = maxOf(maximumNodes, work.nodes.size)
-                        check(maximumNodes <= layers * 3 + 10)
+                        WorkExpectation(
+                            exact =
+                                mapOf(
+                                    UiRenderMetric.ObserveEvaluation.name to count,
+                                    UiRenderMetric.Paint.name to count,
+                                    UiRenderMetric.Measure.name to 0L,
+                                    UiRenderMetric.Layout.name to 0L,
+                                    UiRenderMetric.NodeCreate.name to 0L,
+                                    UiRenderMetric.NodeDispose.name to 0L,
+                                    "ActiveSubscriptions" to 1L,
+                                ),
+                            maximum = mapOf("NodeInventorySize" to (layers * 3 + 10).toLong()),
+                        ).verify(work)
+                        maximumNodes = maxOf(maximumNodes, work.getValue("NodeInventorySize").toInt())
                     }
                 }
                 repeat(rasterFrames) {

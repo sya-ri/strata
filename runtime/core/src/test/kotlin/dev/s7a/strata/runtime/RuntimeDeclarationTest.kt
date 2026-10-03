@@ -56,6 +56,50 @@ internal class RuntimeDeclarationTest {
     }
 
     @Test
+    fun snapshotsKeepOwnedListsAfterReconciliationAndClose() {
+        val count = mutableStateOf(1)
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    Column {
+                        repeat(count.value) { index ->
+                            Spacer(key = ElementKey(index), modifier = Modifier.Empty.size(count.value, 1).size(2, 2))
+                        }
+                    }
+                }
+            }
+        session.attach()
+        val first = session.projectDeclarations { it }
+        val originalModifiers =
+            first.children
+                .single()
+                .modifiers
+                .map { it.element }
+        session.dispatchAction { count.value = 3 }
+        val expanded = session.projectDeclarations { it }
+        session.dispatchAction { count.value = 0 }
+        val empty = session.projectDeclarations { it }
+        session.close()
+        assertEquals(1, first.children.size)
+        assertEquals(
+            originalModifiers,
+            first.children
+                .single()
+                .modifiers
+                .map { it.element },
+        )
+        assertEquals(
+            2,
+            first.children
+                .single()
+                .modifiers.size,
+        )
+        assertEquals(3, expanded.children.size)
+        assertEquals(0, empty.children.size)
+        assertEquals(0, first.modifiers.size)
+    }
+
+    @Test
     fun projectionFailureKeepsPrimaryFailureAndCleansOwnershipOnce() {
         val probe = TestProbe()
         val failure = IllegalArgumentException("projection failed")

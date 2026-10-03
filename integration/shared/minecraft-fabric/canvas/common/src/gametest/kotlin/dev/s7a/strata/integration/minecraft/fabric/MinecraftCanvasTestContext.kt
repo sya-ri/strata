@@ -112,6 +112,15 @@ internal interface MinecraftCanvasTestContext {
     fun waitFor(condition: () -> Boolean)
 
     /**
+     * Delegates a caller-selected positive game-tick deadline to the loaded coordinator.
+     * Performance sampling and its preparation deadline remain owned by the shared meter.
+     */
+    fun waitFor(
+        timeoutTicks: Int,
+        condition: () -> Boolean,
+    )
+
+    /**
      * Advances the loaded client without blocking its render thread.
      */
     fun waitTicks(ticks: Int)

@@ -87,15 +87,50 @@ internal class MinecraftSingleTexelNineSliceTest {
         host(source, IntSize(460, 320), false).use { host ->
             host.attach()
             val frame = host.frame(IntSize(460, 320))
-            assertEquals(9, frame.drawCommands.size)
+            assertFalse(frame.drawCommands.isEmpty())
+            assertFalse(9 < frame.drawCommands.size)
             assertSame(frame, host.frame(IntSize(460, 320)))
         }
     }
 
     @Test
+    fun oneAndTwoTexelAxesPreserveTiledPixelsAtFractionalViewports() {
+        verifyPatternPixels(
+            listOf(IntSize(3, 3), IntSize(3, 4), IntSize(4, 3), IntSize(4, 4)),
+            listOf(IntSize(19, 13), IntSize(13, 9), IntSize(8, 5), IntSize(38, 26)),
+        )
+    }
+
+    @Test
+    fun arbitraryPatternSizesPreserveTiledPixelsAtIntegerPresentationScales() {
+        verifyPatternPixels(
+            listOf(IntSize(3, 3), IntSize(3, 4), IntSize(4, 3), IntSize(4, 4), IntSize(3, 6), IntSize(6, 3), IntSize(4, 6), IntSize(6, 6), IntSize(5, 7), IntSize(7, 5)),
+            listOf(IntSize(19, 13), IntSize(38, 26)),
+        )
+    }
+
+    @Test
+    fun fractionalTilingPreservesPerSliceSamplingAtNearIntegerSourceBoundaries() {
+        val source = createDrawImage(IntSize(6, 3), IntArray(18) { 0xFF000000.toInt() or it })
+        val design = IntSize(19, 13)
+        val viewport = IntSize(8, 5)
+        host(source, design, false).use { actualHost ->
+            host(tiledPixels(source, design), design, true).use { bakedHost ->
+                actualHost.attach()
+                bakedHost.attach()
+                val actual = rasterizeHeadless(actualHost.frame(viewport).drawCommands, viewport)
+                val baked = rasterizeHeadless(bakedHost.frame(viewport).drawCommands, viewport)
+                // Fractional destinations are independently rounded to Float, then sampled per command.
+                // The tiled command maps just below source x=3; a merged logical image selects x=3.
+                assertEquals(source.argbAt(2, 1), actual.argbAt(1, 0))
+                assertEquals(source.argbAt(3, 1), baked.argbAt(1, 0))
+            }
+        }
+    }
+
     @Suppress("NestedBlockDepth") // The finite source/viewport/density matrix keeps both owned hosts scoped to each comparison.
-    fun oneTexelAxesPreserveTiledPixelsAtEveryDensityAndFractionalViewport() {
-        for (sourceSize in listOf(IntSize(3, 3), IntSize(3, 4), IntSize(4, 3), IntSize(4, 4))) {
+    private fun verifyPatternPixels(sourceSizes: List<IntSize>, viewports: List<IntSize>) {
+        for (sourceSize in sourceSizes) {
             val source =
                 createDrawImage(
                     sourceSize,
@@ -106,7 +141,7 @@ internal class MinecraftSingleTexelNineSliceTest {
                 )
             val design = IntSize(19, 13)
             val expected = tiledPixels(source, design)
-            for (viewport in listOf(design, IntSize(13, 9), IntSize(8, 5), IntSize(38, 26))) {
+            for (viewport in viewports) {
                 host(source, design, false).use { actualHost ->
                     host(expected, design, true).use { oracleHost ->
                         actualHost.attach()

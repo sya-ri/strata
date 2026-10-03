@@ -1,9 +1,19 @@
+import dev.detekt.gradle.extensions.DetektExtension
+import me.champeau.jmh.JMHTask
+import me.champeau.jmh.JmhBytecodeGeneratorTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.jmh)
 }
 
+extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+
 dependencies {
     add("jmh", project(":api"))
+    add("jmh", project(":quality:performance-testkit"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:headless"))
 }
@@ -44,3 +54,84 @@ val verifyOverlayRenderingWork by tasks.registering(JavaExec::class) {
 }
 
 tasks.named("check") { dependsOn(verifyOverlayRenderingWork) }
+
+val historicalGenerated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+val historicalGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir })
+val historicalLauncher = tasks.named<JMHTask>("jmh").flatMap { it.javaLauncher }
+
+val verifyHistoricalWorkloads by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Checks the complete generated historical JMH matrix with the shared inventory gate."
+    dependsOn(historicalGenerated, historicalGenerator)
+    classpath = historicalClasspath
+    javaLauncher.set(historicalLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalWorkloadEvidence")
+}
+
+tasks.named("check") { dependsOn(verifyHistoricalWorkloads) }
+
+tasks.register<JavaExec>("jmhHistorical") {
+    group = "verification"
+    description = "Collects shared-kit JMH receipts with unchanged historical inputs and execution settings."
+    dependsOn(historicalGenerated, historicalGenerator)
+    classpath = historicalClasspath
+    javaLauncher.set(historicalLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalPerformanceEvidence")
+    val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
+    require(0 <= repetition)
+    val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
+    val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
+    require(mode in setOf("avgt", "sample"))
+    val targeted = providers.gradleProperty("strata.performance.workloads").isPresent || providers.gradleProperty("strata.performance.parameters").isPresent
+    val suite = (if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
+    providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
+    val includes = if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
+        .map { rootProject.file(it).resolve("$suite/run-$repetition") }
+        .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    systemProperty("strata.performance.smoke", smoke)
+    systemProperty("strata.performance.mode", mode)
+    val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
+    doFirst {
+        providers.gradleProperty("strata.performance.historicalRuntime").orNull?.let { path ->
+            val targets = Properties()
+            rootProject.file(path).bufferedReader(Charsets.UTF_8).use(targets::load)
+            val projects = setOf(":api", ":runtime:core", ":runtime:headless")
+            require(targets.stringPropertyNames() == projects) { "Register exactly the three historical runtime project paths" }
+            val archives = projects.map { project -> rootProject.file(targets.getProperty(project)).canonicalFile }
+            require(archives.toSet().size == projects.size && archives.all { it.isFile && it.extension == "jar" }) { "Historical runtime targets must be three distinct actual JARs" }
+            val artifacts = configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
+                .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in projects }
+            require(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == projects) { "Historical runtime classpath inventory changed" }
+            val replaced = artifacts.map { it.file.canonicalFile }.toSet()
+            classpath = files(classpath.files.filter { it.canonicalFile !in replaced }) + files(archives)
+            // The kit verifies the actual loaded class origins and preserves these targets; names never certify identity.
+        }
+        val entries = Properties()
+        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
+            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
+            if (module != null) {
+                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
+                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
+            }
+        }
+        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
+        val manifest = inputsManifest.get().asFile
+        manifest.parentFile.mkdirs()
+        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
+        systemProperty("strata.performance.inputs", manifest.absolutePath)
+    }
+}
+
+tasks.register<JavaExec>("captureHeadlessInventory") {
+    group = "verification"
+    description = "Stages exact loaded headless API registration for review without updating its baseline."
+    dependsOn(historicalGenerated, historicalGenerator)
+    classpath = historicalClasspath
+    javaLauncher.set(historicalLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalWorkloadEvidence")
+    args(layout.buildDirectory.file("performance/headless-api.tsv").get().asFile.absolutePath)
+}

@@ -1,0 +1,383 @@
+public final class dev/s7a/strata/performance/ArtifactIdentity {
+	public static final field INSTANCE Ldev/s7a/strata/performance/ArtifactIdentity;
+	public final fun applicationTrees (Ljava/util/List;)Ljava/util/Map;
+	public final fun file (Ljava/nio/file/Path;)Ljava/lang/String;
+	public final fun fullCodeSource (Ljava/lang/Class;)Ljava/lang/String;
+	public final fun loadedResourceTree (Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/util/Map;
+	public final fun resourceTree (Ljava/nio/file/Path;Ljava/lang/String;)Ljava/util/Map;
+	public final fun tree (Ljava/nio/file/Path;)Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/CompilerApiInventory {
+	public static final field INSTANCE Ldev/s7a/strata/performance/CompilerApiInventory;
+	public final fun capture (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/JmhForkProfiler : org/openjdk/jmh/profile/InternalProfiler {
+	public fun <init> (Ljava/lang/String;)V
+	public fun afterIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/results/IterationResult;)Ljava/util/Collection;
+	public fun beforeIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;)V
+	public fun getDescription ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/JmhPerformanceEvidence {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JmhPerformanceEvidence;
+	public final fun compare (Ljava/util/List;Ljava/util/List;Ljava/nio/file/Path;I)Lcom/google/gson/JsonObject;
+	public static synthetic fun compare$default (Ldev/s7a/strata/performance/JmhPerformanceEvidence;Ljava/util/List;Ljava/util/List;Ljava/nio/file/Path;IILjava/lang/Object;)Lcom/google/gson/JsonObject;
+	public final fun summarize (Ljava/util/List;Ljava/nio/file/Path;I)Lcom/google/gson/JsonObject;
+	public static synthetic fun summarize$default (Ldev/s7a/strata/performance/JmhPerformanceEvidence;Ljava/util/List;Ljava/nio/file/Path;IILjava/lang/Object;)Lcom/google/gson/JsonObject;
+}
+
+public final class dev/s7a/strata/performance/JmhPerformanceRunner {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JmhPerformanceRunner;
+	public final fun run ([Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;Ljava/util/Map;)V
+	public static synthetic fun run$default (Ldev/s7a/strata/performance/JmhPerformanceRunner;[Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/nio/file/Path;ILjava/util/Set;Ljava/util/Map;ILjava/lang/Object;)V
+	public final fun workloadIdentity (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/JmhWorkloadInventory {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JmhWorkloadInventory;
+	public final fun capture (Ljava/util/List;Ljava/util/Set;Ljava/util/Map;Ljava/util/List;)Ljava/util/Set;
+	public static synthetic fun capture$default (Ldev/s7a/strata/performance/JmhWorkloadInventory;Ljava/util/List;Ljava/util/Set;Ljava/util/Map;Ljava/util/List;ILjava/lang/Object;)Ljava/util/Set;
+}
+
+public final class dev/s7a/strata/performance/JvmApiInventory {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmApiInventory;
+	public final fun capture (Ljava/lang/ClassLoader;Ljava/util/Map;)Ljava/util/Map;
+	public final fun componentEntryPoints (Ljava/lang/ClassLoader;Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceEvidence {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceEvidence;
+	public final fun indexPhases (Lcom/google/gson/JsonObject;Ljava/util/List;Ljava/lang/Integer;)Ljava/util/Map;
+	public static synthetic fun indexPhases$default (Ldev/s7a/strata/performance/JvmPerformanceEvidence;Lcom/google/gson/JsonObject;Ljava/util/List;Ljava/lang/Integer;ILjava/lang/Object;)Ljava/util/Map;
+	public final fun median (Ljava/util/List;)D
+	public final fun projectContract (Lcom/google/gson/JsonElement;Ljava/util/Set;Ljava/util/Set;)Lcom/google/gson/JsonElement;
+	public static synthetic fun projectContract$default (Ldev/s7a/strata/performance/JvmPerformanceEvidence;Lcom/google/gson/JsonElement;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/google/gson/JsonElement;
+	public final fun readReport (Ljava/nio/file/Path;)Lcom/google/gson/JsonObject;
+	public final fun verifyCollectors (Ljava/util/List;Ljava/nio/file/Path;)Lcom/google/gson/JsonObject;
+	public final fun verifyEqual (Ljava/util/List;Ljava/util/Set;)V
+	public final fun verifyRepetitions (Ljava/util/List;I)V
+	public static synthetic fun verifyRepetitions$default (Ldev/s7a/strata/performance/JvmPerformanceEvidence;Ljava/util/List;IILjava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceInputs {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceInputs;
+	public final fun read (Ljava/nio/file/Path;)Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceMeter {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun begin ()V
+	public final fun end ()V
+	public final fun result ()Lcom/google/gson/JsonObject;
+	public final fun sample (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceReports {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceReports;
+	public final fun compare (Ljava/util/List;Ljava/util/List;Ljava/nio/file/Path;Ldev/s7a/strata/performance/PerformanceReportContract;Ljava/util/List;Lkotlin/jvm/functions/Function1;)Lcom/google/gson/JsonObject;
+	public static synthetic fun compare$default (Ldev/s7a/strata/performance/JvmPerformanceReports;Ljava/util/List;Ljava/util/List;Ljava/nio/file/Path;Ldev/s7a/strata/performance/PerformanceReportContract;Ljava/util/List;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/google/gson/JsonObject;
+	public final fun compareImages (Ljava/nio/file/Path;Ljava/nio/file/Path;I)Lcom/google/gson/JsonArray;
+	public final fun summarize (Ljava/util/List;Ljava/nio/file/Path;Ldev/s7a/strata/performance/PerformanceReportContract;Ljava/util/List;Lkotlin/jvm/functions/Function1;)Lcom/google/gson/JsonObject;
+	public static synthetic fun summarize$default (Ldev/s7a/strata/performance/JvmPerformanceReports;Ljava/util/List;Ljava/nio/file/Path;Ldev/s7a/strata/performance/PerformanceReportContract;Ljava/util/List;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/google/gson/JsonObject;
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceRunner {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceRunner;
+	public final fun measure (Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)Ldev/s7a/strata/performance/PerformanceSample;
+	public static synthetic fun measure$default (Ldev/s7a/strata/performance/JvmPerformanceRunner;Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/s7a/strata/performance/PerformanceSample;
+	public final fun sequence (ILjava/util/Map;Lkotlin/jvm/functions/Function2;)Ljava/util/Map;
+	public final fun warmup (ILkotlin/jvm/functions/Function1;)V
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceSchedule : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun advance ()Z
+	public fun close ()V
+	public final fun complete ()Ldev/s7a/strata/performance/PerformanceSample;
+}
+
+public final class dev/s7a/strata/performance/JvmPerformanceSequence : java/lang/AutoCloseable {
+	public fun close ()V
+	public final fun sample (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class dev/s7a/strata/performance/LoadedArtifactMetadata {
+	public static final field INSTANCE Ldev/s7a/strata/performance/LoadedArtifactMetadata;
+	public final fun capture (Ljava/lang/ClassLoader;Ljava/util/Map;Ljava/util/Set;)Lcom/google/gson/JsonObject;
+	public final fun captureClassHashes (Ljava/util/List;)Lcom/google/gson/JsonObject;
+	public final fun verifyComplete (Lcom/google/gson/JsonObject;)V
+}
+
+public final class dev/s7a/strata/performance/MinecraftPerformanceMeter : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Ljava/lang/Object;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun begin (Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ldev/s7a/strata/performance/NativePerformanceFixture;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun begin$default (Ldev/s7a/strata/performance/MinecraftPerformanceMeter;Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ldev/s7a/strata/performance/NativePerformanceFixture;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public fun close ()V
+	public final fun getCompleted ()Z
+	public final fun measure (Ljava/lang/Object;Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ldev/s7a/strata/performance/NativePerformanceFixture;Lkotlin/jvm/functions/Function1;)Lcom/google/gson/JsonObject;
+	public static synthetic fun measure$default (Ldev/s7a/strata/performance/MinecraftPerformanceMeter;Ljava/lang/Object;Ljava/lang/String;Ldev/s7a/strata/performance/PerformancePlan;Ldev/s7a/strata/performance/NativePerformanceFixture;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/google/gson/JsonObject;
+	public final fun receipt ()Lcom/google/gson/JsonObject;
+	public final fun result ()Lcom/google/gson/JsonObject;
+}
+
+public final class dev/s7a/strata/performance/NativePerformanceEvidence {
+	public static final field INSTANCE Ldev/s7a/strata/performance/NativePerformanceEvidence;
+	public final fun verify (Lcom/google/gson/JsonObject;Lcom/google/gson/JsonObject;Ljava/util/Set;Ljava/util/Set;)Lcom/google/gson/JsonArray;
+}
+
+public final class dev/s7a/strata/performance/NativePerformanceFixture {
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAfterSamples ()Lkotlin/jvm/functions/Function1;
+	public final fun getBeforeSamples ()Lkotlin/jvm/functions/Function0;
+	public final fun getCaptureAfterWarmup ()Lkotlin/jvm/functions/Function0;
+	public final fun getReady ()Lkotlin/jvm/functions/Function0;
+	public final fun getSettleFrames ()I
+	public final fun getValidateFrame ()Lkotlin/jvm/functions/Function0;
+}
+
+public final class dev/s7a/strata/performance/NativePresentationCounters {
+	public static final field INSTANCE Ldev/s7a/strata/performance/NativePresentationCounters;
+	public final fun append (Lcom/google/gson/JsonObject;Ljava/lang/Object;Ljava/util/Map;)V
+	public final fun read (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/PerformanceCoverage {
+	public fun <init> (Ljava/util/Map;Ljava/util/List;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/List;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun select (Ljava/util/Set;)Ljava/util/List;
+	public static synthetic fun select$default (Ldev/s7a/strata/performance/PerformanceCoverage;Ljava/util/Set;ILjava/lang/Object;)Ljava/util/List;
+	public final fun selectChangedPaths (Ldev/s7a/strata/performance/PerformanceInventory;Ljava/util/Set;)Ljava/util/List;
+	public static synthetic fun selectChangedPaths$default (Ldev/s7a/strata/performance/PerformanceCoverage;Ldev/s7a/strata/performance/PerformanceInventory;Ljava/util/Set;ILjava/lang/Object;)Ljava/util/List;
+	public final fun verify ()V
+	public final fun verifyCompleted (Ljava/util/Set;Ljava/util/Set;)V
+	public static synthetic fun verifyCompleted$default (Ldev/s7a/strata/performance/PerformanceCoverage;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)V
+	public final fun verifyEvidence (Ljava/util/List;Ldev/s7a/strata/performance/PerformancePlan;Ljava/util/Set;)V
+	public static synthetic fun verifyEvidence$default (Ldev/s7a/strata/performance/PerformanceCoverage;Ljava/util/List;Ldev/s7a/strata/performance/PerformancePlan;Ljava/util/Set;ILjava/lang/Object;)V
+}
+
+public final class dev/s7a/strata/performance/PerformanceDeadline {
+	public fun <init> (J)V
+	public final fun child (J)Ldev/s7a/strata/performance/PerformanceDeadline;
+	public final fun elapsedNanos ()J
+	public final fun isWithin ()Z
+}
+
+public final class dev/s7a/strata/performance/PerformanceDistribution {
+	public static final field Companion Ldev/s7a/strata/performance/PerformanceDistribution$Companion;
+	public fun <init> (IJJJJJ)V
+	public final fun component1 ()I
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun copy (IJJJJJ)Ldev/s7a/strata/performance/PerformanceDistribution;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/PerformanceDistribution;IJJJJJILjava/lang/Object;)Ldev/s7a/strata/performance/PerformanceDistribution;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaximum ()J
+	public final fun getP50 ()J
+	public final fun getP95 ()J
+	public final fun getP99 ()J
+	public final fun getSamples ()I
+	public final fun getTotal ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceDistribution$Companion {
+	public final fun of (Ljava/util/List;)Ldev/s7a/strata/performance/PerformanceDistribution;
+}
+
+public final class dev/s7a/strata/performance/PerformanceEvidence {
+	public fun <init> (Ljava/lang/String;Ldev/s7a/strata/performance/PerformanceHost;Ldev/s7a/strata/performance/PerformancePhase;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/util/Map;)V
+	public final fun getConditions ()Ljava/util/Map;
+	public final fun getHost ()Ldev/s7a/strata/performance/PerformanceHost;
+	public final fun getInputIdentity ()Ljava/lang/String;
+	public final fun getKitIdentity ()Ljava/lang/String;
+	public final fun getMetrics ()Ljava/util/Map;
+	public final fun getPhase ()Ldev/s7a/strata/performance/PerformancePhase;
+	public final fun getRepetition ()I
+	public final fun getScenario ()Ljava/lang/String;
+	public final fun getTargetIdentity ()Ljava/lang/String;
+	public final fun requireComparable (Ldev/s7a/strata/performance/PerformanceEvidence;)V
+}
+
+public final class dev/s7a/strata/performance/PerformanceEvidenceCli {
+	public static final field INSTANCE Ldev/s7a/strata/performance/PerformanceEvidenceCli;
+	public static final fun main ([Ljava/lang/String;)V
+}
+
+public final class dev/s7a/strata/performance/PerformanceHost : java/lang/Enum {
+	public static final field Jvm Ldev/s7a/strata/performance/PerformanceHost;
+	public static final field Minecraft Ldev/s7a/strata/performance/PerformanceHost;
+	public static final field Paper Ldev/s7a/strata/performance/PerformanceHost;
+	public static final field Velocity Ldev/s7a/strata/performance/PerformanceHost;
+	public static final field Web Ldev/s7a/strata/performance/PerformanceHost;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/performance/PerformanceHost;
+	public static fun values ()[Ldev/s7a/strata/performance/PerformanceHost;
+}
+
+public final class dev/s7a/strata/performance/PerformanceInventory {
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;)V
+	public final fun affectedFeatures (Ljava/util/Set;Ljava/util/Set;)Ljava/util/Set;
+	public static synthetic fun affectedFeatures$default (Ldev/s7a/strata/performance/PerformanceInventory;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Ljava/util/Set;
+	public final fun verify (Ljava/util/Set;)V
+}
+
+public final class dev/s7a/strata/performance/PerformanceJson {
+	public static final field INSTANCE Ldev/s7a/strata/performance/PerformanceJson;
+	public final fun collectorIdentity ()Lcom/google/gson/JsonObject;
+	public final fun diagnostics (Ljava/lang/Object;)Lcom/google/gson/JsonObject;
+	public final fun distribution (Ljava/util/List;)Lcom/google/gson/JsonObject;
+	public final fun frame (Lcom/google/gson/JsonObject;Ljava/lang/Object;)V
+	public final fun work (Lcom/google/gson/JsonObject;)Ljava/util/Map;
+	public final fun write (Ljava/nio/file/Path;Lcom/google/gson/JsonObject;)V
+	public final fun writeNew (Ljava/nio/file/Path;Lcom/google/gson/JsonObject;)V
+}
+
+public final class dev/s7a/strata/performance/PerformancePhase : java/lang/Enum {
+	public static final field Idle Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Initial Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Input Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Prepare Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Release Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Resize Ldev/s7a/strata/performance/PerformancePhase;
+	public static final field Update Ldev/s7a/strata/performance/PerformancePhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/performance/PerformancePhase;
+	public static fun values ()[Ldev/s7a/strata/performance/PerformancePhase;
+}
+
+public final class dev/s7a/strata/performance/PerformancePlan {
+	public fun <init> ()V
+	public fun <init> (IIIJ)V
+	public synthetic fun <init> (IIIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun copy (IIIJ)Ldev/s7a/strata/performance/PerformancePlan;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/PerformancePlan;IIIJILjava/lang/Object;)Ldev/s7a/strata/performance/PerformancePlan;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPreparationTimeoutMillis ()J
+	public final fun getRepetitions ()I
+	public final fun getSamples ()I
+	public final fun getWarmup ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceReportContract {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;II)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Ljava/util/Set;
+	public final fun component6 ()Ljava/util/Set;
+	public final fun component7 ()Ljava/util/Set;
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;II)Ldev/s7a/strata/performance/PerformanceReportContract;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/PerformanceReportContract;Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;IIILjava/lang/Object;)Ldev/s7a/strata/performance/PerformanceReportContract;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPhaseConditions ()Ljava/util/Set;
+	public final fun getPhaseCount ()I
+	public final fun getPhaseKeys ()Ljava/util/List;
+	public final fun getRepetitions ()I
+	public final fun getReportConditions ()Ljava/util/Set;
+	public final fun getSchemaVersion ()I
+	public final fun getVariantPhaseFields ()Ljava/util/Set;
+	public final fun getVariantReportFields ()Ljava/util/Set;
+	public final fun getWorkloadId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceReportMetric {
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;D)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/util/List;DILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()D
+	public final fun copy (Ljava/lang/String;Ljava/util/List;Ljava/util/List;D)Ldev/s7a/strata/performance/PerformanceReportMetric;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/PerformanceReportMetric;Ljava/lang/String;Ljava/util/List;Ljava/util/List;DILjava/lang/Object;)Ldev/s7a/strata/performance/PerformanceReportMetric;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDivisorPath ()Ljava/util/List;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPath ()Ljava/util/List;
+	public final fun getScale ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceSample {
+	public fun <init> (Lcom/google/gson/JsonObject;Ljava/lang/Object;)V
+	public final fun component1 ()Lcom/google/gson/JsonObject;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun copy (Lcom/google/gson/JsonObject;Ljava/lang/Object;)Ldev/s7a/strata/performance/PerformanceSample;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/PerformanceSample;Lcom/google/gson/JsonObject;Ljava/lang/Object;ILjava/lang/Object;)Ldev/s7a/strata/performance/PerformanceSample;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvidence ()Lcom/google/gson/JsonObject;
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceScenario {
+	public fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;)V
+	public final fun getFeatures ()Ljava/util/Set;
+	public final fun getHosts ()Ljava/util/Set;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getInputIdentity ()Ljava/lang/String;
+	public final fun getPhases ()Ljava/util/Set;
+}
+
+public final class dev/s7a/strata/performance/PerformanceSelection {
+	public fun <init> (Ljava/util/Set;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getIds ()Ljava/util/Set;
+	public final fun getNarrowed ()Z
+}
+
+public final class dev/s7a/strata/performance/RuntimeWorkAccumulator : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun capture ()V
+	public fun close ()V
+	public final fun snapshot ()Lcom/google/gson/JsonObject;
+}
+
+public final class dev/s7a/strata/performance/RuntimeWorkMonitor : java/lang/AutoCloseable {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun checkpoint ()V
+	public fun close ()V
+	public final fun sample (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun snapshot ()Lcom/google/gson/JsonObject;
+	public final fun verify (Ldev/s7a/strata/performance/WorkExpectation;)V
+}
+
+public final class dev/s7a/strata/performance/WorkCounter {
+	public fun <init> (Ljava/util/List;)V
+	public final fun record (I)V
+	public final fun reset ()V
+	public final fun snapshot ()Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/WorkExpectation {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun verify (Ljava/util/Map;Z)V
+	public static synthetic fun verify$default (Ldev/s7a/strata/performance/WorkExpectation;Ljava/util/Map;ZILjava/lang/Object;)V
+}
+

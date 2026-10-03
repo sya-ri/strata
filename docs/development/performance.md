@@ -21,6 +21,7 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 
 Run `./gradlew :quality:benchmarks:jmh` for average time and normalized allocation using the `gc` profiler.
 The [benchmark build](../../quality/benchmarks/build.gradle.kts) owns iteration, fork, and output settings; [benchmark sources](../../quality/benchmarks/src/jmh/kotlin) own scenes and viewports.
+Use the [performance testkit](performance-testkit.md) for shared collection, native host boundaries, work assertions, and evidence contracts instead of adding application-specific meters.
 
 Compare these costs separately:
 
@@ -66,7 +67,14 @@ Fractional sampled images also overwrite with the source color when both the sam
 An opaque white source pixel with an opaque tint similarly overwrites with the exact tint color, including colored bitmap glyphs.
 Fractional clipping, nearest coordinate mapping, alpha cutoff, and non-identity tint continue through their existing paths; this does not broaden direct native eligibility or remove portable fallback uploads.
 The headless rasterizer resolves the viewport and nested physical clip before each row overwrite, including fractional clips that cut through scaled logical texels.
-Translucent fills retain the existing straight-ARGB blending path.
+Translucent fills use the same clipped physical row coverage and preserve straight-ARGB half-up rounding for every command.
+Within one fill, a destination matching its first covered pixel reuses that pixel's exact blend result; other destination colors still blend independently.
+The two local scalar values expire with the command and retain no image or session history.
+This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
+When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
+Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
+This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
 This stateless fast path creates no cache and preserves command order, pixels, physical density, and the native portable-generation lifetime.
 Its regression compares independent physical pixel-center coverage across density, empty/offscreen extents, nested integer/fractional clips, and translucent destination pixels.
 Native measurements must continue to report actual rasterizations and uploads; reducing raster CPU work does not eliminate those operations.
@@ -319,19 +327,41 @@ After initial dynamic materialization settles, unchanged frames retain their imm
 The bounded regression scenario holds 128 independent regions, runs 100 unchanged frames, and requires one sibling content evaluation and one primitive update when one source changes.
 A changed label may legitimately invalidate ancestor measurement.
 
+### Detached declaration lists
+
+The core declaration cutoff creates owned child and modifier lists after reconciliation and reads each live projection again.
+Its internal snapshot constructor takes exclusive ownership of these fresh lists instead of copying them a second time.
+Empty and singleton snapshots use their exact list forms without intermediate map buffers.
+Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
+The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.
 Close must atomically reject late publication, drop a queued completion, clear a committed ready-image snapshot, clear its observer, and remain idempotent.
 Owner-thread draining must transfer an accepted completion at most once, and a closed lifecycle must never accept another snapshot commit.
 
+### Editable literal widths
+
+TextField measures literal scalar ranges directly, without constructing positioned glyph runs or copying each candidate substring.
+Resource-font metrics preserve forward floating-point addition and release-specific signed width rounding; compatibility glyphs preserve checked integer addition.
+Nonnegative finite advances below the native integer overflow range permit a scalar-boundary binary search for the first visible suffix.
+Integral advances whose combined absolute magnitude is at most 2^24 permit an exact two-scan suffix search, including negative spacing; every intermediate forward Float sum is then exact.
+Other negative, non-finite and overflow-capable advances retain the original scalar-order search; unrestricted prefix subtraction and reversed accumulation would change native rounding.
+That exceptional suffix search can still be quadratic; it is not covered by the exact-integer optimization.
+The visible endpoint accumulates widths once in forward scalar order and stops at the first prefix that exceeds the viewport, preserving the previous behavior even when later negative advances would fit again.
+Pointer hit testing also accumulates rounded prefix widths once, applying each signed midpoint in its original order even for zero, negative or non-finite advances.
+A deterministic uncached-font test requires exactly one glyph lookup per scalar for a 16,384-unit zero-width value, rather than using elapsed time as a threshold.
+This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
+The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
 It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
-The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and blends every covered foreground pixel.
+The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and applies every ordered foreground blend, using uniform-surface scalar evaluation where exact.
 These are different costs, and the headless timings are not native GPU frame-rate measurements.
-Repeated full-area alpha blending is proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
+Non-uniform full-area alpha blending remains proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
 Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
 
 `:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.

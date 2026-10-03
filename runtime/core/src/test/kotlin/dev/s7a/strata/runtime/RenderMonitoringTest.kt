@@ -27,6 +27,32 @@ import java.util.concurrent.atomic.AtomicReference
 @OptIn(InternalStrataRuntimeApi::class)
 internal class RenderMonitoringTest {
     @Test
+    fun explicitCapacityCompletesLargeTreesWithoutChangingDefaultAdmission() {
+        UiTree().use { tree ->
+            tree.update(evaluateComponentTree { Column { repeat(5000) { Spacer() } } })
+            tree.startRenderMonitoring().use { monitor ->
+                assertTrue(monitor.snapshot().overflowed)
+                assertEquals(4096, monitor.snapshot().nodes.size)
+            }
+            tree.startRenderMonitoring(8192).use { monitor ->
+                assertFalse(monitor.snapshot().overflowed)
+                assertEquals(5001, monitor.snapshot().nodes.size)
+                monitor.checkpoint()
+                assertEquals(5001, monitor.snapshot().nodes.size)
+            }
+            assertNull(tree.monitoring.collector)
+            listOf(0, 65_537).forEach { limit ->
+                assertThrows(IllegalArgumentException::class.java) { tree.startRenderMonitoring(limit) }
+                assertNull(tree.monitoring.collector)
+            }
+            tree.startRenderMonitoring(128).use { monitor ->
+                assertTrue(monitor.snapshot().overflowed)
+                assertEquals(128, monitor.snapshot().nodes.size)
+            }
+        }
+    }
+
+    @Test
     fun actualPipelineAndLifecycleMatchIndependentProbeCounts() {
         val probe = TestProbe()
         UiTree().use { tree ->

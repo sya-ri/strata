@@ -2,7 +2,7 @@ import dev.detekt.gradle.extensions.DetektExtension
 import groovy.json.JsonOutput
 import net.fabricmc.loom.LoomGradleExtension
 import net.fabricmc.loom.task.DownloadAssetsTask
-import net.fabricmc.loom.task.prod.ClientProductionRunTask
+import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask as ClientProductionRunTask
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete

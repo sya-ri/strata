@@ -37,6 +37,8 @@ internal class VelocityAcceptanceSession(
     private var switched: CompletableFuture<Boolean>? = null
     private var activations = 0
     private var presentations: VelocityUiPresentationVerification? = null
+    private var performance: VelocityPerformanceVerification? = null
+    private var performanceDirectory = ""
 
     /**
      * Retains the detached handle after its owner-thread open request completes.
@@ -79,18 +81,34 @@ internal class VelocityAcceptanceSession(
             presentations = verification
             verification
                 .start()
+                .thenCompose { startPerformance() }
                 .thenCompose {
                     VelocityUi.execute(plugin) {
                         checkOwner()
                         Files.createDirectories(directory)
                         val run = requireNotNull(System.getProperty("strata.velocity.run"))
-                        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=${player.uniqueId}\ntext=confirmed\nactivations=$activations\nbackendSwitch=confirmed\nownerThread=confirmed\nuiPresentations=confirmed\nuiEvents=confirmed\n")
+                        Files.writeString(directory.resolve("server.properties"), "runId=$run\nplayer=${player.uniqueId}\ntext=confirmed\nactivations=$activations\nbackendSwitch=confirmed\nownerThread=confirmed\nuiPresentations=confirmed\nuiEvents=confirmed\nperformanceDirectory=$performanceDirectory\n")
                     }
                 }.thenCompose {
                     VelocityUi.open(plugin, player) { UiDefinition("Strata proxy complete") { Column { Text("Proxy acceptance passed.") } } }
                 }.whenComplete { _, failure ->
                     if (failure != null) proxy.consoleCommandSource.sendMessage(Component.text("Strata proxy HUD verification failed: $failure"))
                 }
+        }
+    }
+
+    private fun startPerformance(): CompletableFuture<Unit> {
+        checkOwner()
+        if (System.getProperty("strata.velocity.performanceKit") == null) return CompletableFuture.completedFuture(Unit)
+        val verification = VelocityPerformanceVerification(plugin, proxy, player, directory)
+        performance = verification
+        performanceDirectory = verification.directory.toAbsolutePath().toString()
+        return verification.start().thenCompose {
+            VelocityUi.execute(plugin) {
+                checkOwner()
+                verification.close()
+                performance = null
+            }
         }
     }
 
@@ -117,6 +135,8 @@ internal class VelocityAcceptanceSession(
 
     override fun close() {
         checkOwner()
+        performance?.close()
+        performance = null
         handle?.close()
         handle = null
         switched = null

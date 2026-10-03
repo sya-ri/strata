@@ -6,12 +6,13 @@ import { createRequire } from 'node:module';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectBrowserPerformance } from '../../quality/performance-testkit/src/jsMain/resources/browser-performance.mjs';
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(resolve(repository, 'build/js/package.json'));
 const { chromium, firefox, webkit } = require('playwright');
-const [mode, buildArgument] = process.argv.slice(2);
-assert.ok(mode === 'build' || mode === 'verify', 'Expected build or verify mode');
+const [mode, buildArgument, collectorArgument, performanceOutputArgument] = process.argv.slice(2);
+assert.ok(mode === 'build' || mode === 'verify' || mode === 'performance', 'Expected build, verify, or performance mode');
 assert.ok(buildArgument, 'Expected an application build directory');
 const build = resolve(buildArgument);
 const site = resolve(build, 'site');
@@ -43,9 +44,30 @@ try {
                 const html = await page.evaluate(() => window.strataInitialDocument);
                 assert.ok(html.includes('Strata runtime parity'));
                 await writeFile(resolve(site, route || 'index.html'), html);
+                const inventory = JSON.parse(await page.evaluate(() => window.strataPerformanceInventory()));
+                if (route === '') await writeFile(resolve(site, 'performance-inventory.json'), JSON.stringify(inventory, null, 2));
+                else assert.deepEqual(inventory, JSON.parse(await readFile(resolve(site, 'performance-inventory.json'), 'utf8')));
             }
             console.log(`Built initial document and application bundle: ${site}`);
         } finally { await browser.close(); }
+    } else if (mode === 'performance') {
+        assert.ok(collectorArgument, 'Expected the actual linked testkit JS artifact');
+        assert.ok(performanceOutputArgument, 'Expected a new performance evidence file');
+        const inventoryPath = resolve(site, 'performance-inventory.json');
+        const inventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
+        assert.equal(inventory.supported.length + inventory.unavailable.length, 26, 'The compiled standard component inventory');
+        assert.equal(new Set([...inventory.supported, ...inventory.unavailable]).size, 26);
+        const scenarios = ['', 'minecraft.html'].flatMap(route => [
+            { id: `reactive-${route || 'native'}`, url: `${url}/${route}`, targetUrl: `${url}/application.js`, phases: ['Initial', 'Idle', 'Update', 'Input', 'Resize', 'Release'], inventory },
+            ...inventory.supported.map(component => ({ id: `component-${component}-${route || 'native'}`, url: `${url}/${route}?strata-component=${encodeURIComponent(component)}`, targetUrl: `${url}/application.js`, phases: inventory.phases, inventory })),
+        ]);
+        await collectBrowserPerformance({
+            collectorPath: resolve(collectorArgument), targetPath: resolve(site, 'application.js'), outputPath: resolve(performanceOutputArgument),
+            inputPaths: { 'standard-component-inventory': inventoryPath },
+            engines: [chromium, firefox, webkit],
+            scenarios,
+            conditions: { viewport: { width: 640, height: 480 }, warmup: 30, samples: 60, input_identity: 'strata-standard-components-and-reactive-web-v1' },
+        });
     } else {
         const expected = JSON.parse(await readFile(resolve(build, 'parity/jvm.json'), 'utf8'));
         const receipts = [];
@@ -90,6 +112,9 @@ async function verifyTheme(browser, engine, theme, expected) {
     assert.equal(await page.locator('progress').getAttribute('value'), '0.75');
     assert.equal(await page.getByRole('button', { name: 'Unavailable', exact: true }).isDisabled(), true);
     assert.equal(await page.evaluate(() => ['Alpha', 'Beta', 'Advance'].every(label => [...document.querySelectorAll('#strata-root > :not(progress)')].find(node => node.textContent === label) === window.originalNodes[label])), true);
+    assert.deepEqual(errors, []);
+    assert.deepEqual(await page.evaluate(() => JSON.parse(window.strataPerformanceInventory())), JSON.parse(await readFile(resolve(site, 'performance-inventory.json'), 'utf8')));
+    assert.equal(await page.evaluate(() => window.strataVerifyPerformanceCollector()), true, 'Compiled component admission and collector failure/cleanup contracts');
     assert.deepEqual(errors, []);
     const evidence = resolve(build, 'parity');
     await mkdir(evidence, { recursive: true });

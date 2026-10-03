@@ -31,7 +31,7 @@ def request(url: str) -> bytes:
 
 def gradle(arguments: list[str], log: Path) -> None:
     """Run a repository task and retain its complete output independently of the server log."""
-    command = [str(ROOT / "gradlew.bat" if os.name == "nt" else ROOT / "gradlew"), *arguments, "--max-workers=2", "--console=plain"]
+    command = ["mise.exe" if os.name == "nt" else "mise", "exec", "--", str(ROOT / "gradlew.bat" if os.name == "nt" else ROOT / "gradlew"), *arguments, "--no-daemon", "-Pkotlin.compiler.execution.strategy=in-process", "--max-workers=2", "--console=plain"]
     with log.open("w", encoding="utf-8") as output:
         subprocess.run(command, cwd=ROOT, stdout=output, stderr=subprocess.STDOUT, check=True)
 
