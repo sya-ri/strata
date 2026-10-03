@@ -2945,6 +2945,9 @@ api	Api	dev.s7a.strata.ui.UiVisibilityPolicy#method:17:resolve:(Ldev/s7a/strata/
 api	Api	dev.s7a.strata.ui.UiVisibilityPolicy#method:1:equals:(Ljava/lang/Object;)Z
 api	Api	dev.s7a.strata.ui.UiVisibilityPolicy#method:1:hashCode:()I
 api	Api	dev.s7a.strata.ui.UiVisibilityPolicy#type:17:java.lang.Object:
+core	Core	dev.s7a.strata.runtime.BlitCompositionKt#method:25:compactBlitPatterns:(Ljava/util/List;Ldev/s7a/strata/geometry/IntRect;)Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.BlitCompositionKt#method:25:composeDenseBlits:(Ljava/util/List;)Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.BlitCompositionKt#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.DescriptionValidator#constructor:1:()V
 core	Core	dev.s7a.strata.runtime.DescriptionValidator#method:17:validate:(Ldev/s7a/strata/element/Element;)V
 core	Core	dev.s7a.strata.runtime.DescriptionValidator#method:17:validateChildren:(Ljava/util/List;)V
@@ -3004,6 +3007,11 @@ core	Core	dev.s7a.strata.runtime.LocalDrawCommand$BlitImage#method:1:equals:(Lja
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$BlitImage#method:1:hashCode:()I
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$BlitImage#method:1:toString:()Ljava/lang/String;
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$BlitImage#type:25:java.lang.Object:dev.s7a.strata.runtime.LocalDrawCommand
+core	Core	dev.s7a.strata.runtime.LocalDrawCommand$ComposedBlits#constructor:1:(Ljava/util/List;Ldev/s7a/strata/geometry/IntRect;)V
+core	Core	dev.s7a.strata.runtime.LocalDrawCommand$ComposedBlits#method:17:getCommands:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.LocalDrawCommand$ComposedBlits#method:17:getDestination:()Ldev/s7a/strata/geometry/IntRect;
+core	Core	dev.s7a.strata.runtime.LocalDrawCommand$ComposedBlits#method:17:getOriginal:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.LocalDrawCommand$ComposedBlits#type:25:java.lang.Object:dev.s7a.strata.runtime.LocalDrawCommand
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$FillRectangle#method:17:component1:()Ldev/s7a/strata/geometry/IntRect;
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$FillRectangle#method:17:component2-e0e5deU:()I
 core	Core	dev.s7a.strata.runtime.LocalDrawCommand$FillRectangle#method:17:copy-RtejO-o:(Ldev/s7a/strata/geometry/IntRect;I)Ldev/s7a/strata/runtime/LocalDrawCommand$FillRectangle;
