@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.PerformanceSelection
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFails
 
@@ -39,8 +40,49 @@ internal class NativeComponentPerformanceEvidenceTest {
         assertFails { NativeComponentPerformanceEvidence.verify(report) }
     }
 
+    @Test
+    internal fun targetedEvidenceRequiresTheSameExplicitSelection() {
+        val report = complete()
+        val phases = report.getAsJsonArray("phases")
+        val names = phases.map { it.asJsonObject.get("case").asString }.toSet()
+        val selection = PerformanceSelection(names, "TextField")
+        report.add(
+            "phases",
+            JsonArray().apply {
+                phases
+                    .filter {
+                        it.asJsonObject
+                            .get("case")
+                            .asString
+                            .contentEquals("TextField")
+                    }.forEach(::add)
+            },
+        )
+        report.addProperty("workload_id", "native-components-selected-presented-v1")
+        report.add("selected_cases", JsonArray().apply { add("TextField") })
+        report.getAsJsonObject("native_resource_release").apply {
+            listOf("leases", "renderers").forEach { kind ->
+                addProperty("${kind}_opened", 0)
+                addProperty("${kind}_closed", 0)
+            }
+        }
+        NativeComponentPerformanceEvidence.verify(report, selection)
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        assertFails { NativeComponentPerformanceEvidence.verify(report, PerformanceSelection(names, "TextArea")) }
+        report.getAsJsonArray("phases").remove(0)
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection) }
+    }
+
+    @Test
+    internal fun duplicatedNativeIntervalsCannotPassSetValidation() {
+        val report = complete()
+        report.getAsJsonArray("phases").add(report.getAsJsonArray("phases")[0].deepCopy())
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+    }
+
     private fun complete(): JsonObject =
         JsonObject().apply {
+            addProperty("workload_id", "native-components-presented-v1")
             addProperty("status", "passed")
             addProperty("framebuffer_width", 1920)
             addProperty("framebuffer_height", 1080)

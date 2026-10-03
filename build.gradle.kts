@@ -1505,6 +1505,10 @@ subprojects {
             }
             providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
                 val nativeOutput = rootProject.file(output).absoluteFile
+                providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
+                }
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeOutput", nativeOutput.path) }
                 tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
                 afterEvaluate {

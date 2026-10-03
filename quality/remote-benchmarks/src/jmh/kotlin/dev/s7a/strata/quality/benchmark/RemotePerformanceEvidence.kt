@@ -3,6 +3,7 @@ package dev.s7a.strata.quality.benchmark
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmPerformanceInputs
+import dev.s7a.strata.performance.PerformanceSelection
 import org.openjdk.jmh.annotations.Mode
 import java.nio.file.Path
 
@@ -20,7 +21,17 @@ public object RemotePerformanceEvidence {
         val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
         val fixtures = if (sessions) listOf(RemoteSessionBenchmark::class.java) else listOf(RemoteProtocolBenchmark::class.java)
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
-        val parameters = if (smoke) (if (sessions) mapOf("workload" to setOf(RemoteSessionWorkload.Single100.name)) else mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))) else emptyMap()
+        val requested = System.getProperty("strata.performance.workloads")
+        require(sessions || requested == null) { "Workload selection requires the retained remote corpus" }
+        val parameters =
+            if (sessions) {
+                val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
+                mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
+            } else if (smoke) {
+                mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))
+            } else {
+                emptyMap()
+            }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val options = args.drop(2) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
         JmhPerformanceRunner.run(

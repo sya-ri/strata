@@ -4833,6 +4833,11 @@
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceScenario#public final fun getInputIdentity ()Ljava/lang/String;
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceScenario#public final fun getPhases ()Ljava/util/Set;
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceScenario#public fun <init> (Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/lang/String;)V
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceSelection#public final class dev/s7a/strata/performance/PerformanceSelection {
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceSelection#public final fun getIds ()Ljava/util/Set;
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceSelection#public final fun getNarrowed ()Z
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceSelection#public fun <init> (Ljava/util/Set;Ljava/lang/String;)V
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/PerformanceSelection#public synthetic fun <init> (Ljava/util/Set;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkAccumulator#public final class dev/s7a/strata/performance/RuntimeWorkAccumulator : java/lang/AutoCloseable {
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkAccumulator#public final fun capture ()V
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	jvm:dev/s7a/strata/performance/RuntimeWorkAccumulator#public final fun snapshot ()Lcom/google/gson/JsonObject;
@@ -4986,6 +4991,12 @@
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceScenario.phases.<get-phases>|<get-phases>(){}[0]#final fun <get-phases>(): kotlin.collections/Set<dev.s7a.strata.performance/PerformancePhase>
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceScenario.phases|{}phases[0]#final val phases
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceScenario|null[0]#final class dev.s7a.strata.performance/PerformanceScenario {
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection.<init>|<init>(kotlin.collections.Set<kotlin.String>;kotlin.String?){}[0]#constructor <init>(kotlin.collections/Set<kotlin/String>, kotlin/String? = ...)
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection.ids.<get-ids>|<get-ids>(){}[0]#final fun <get-ids>(): kotlin.collections/Set<kotlin/String>
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection.ids|{}ids[0]#final val ids
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection.narrowed.<get-narrowed>|<get-narrowed>(){}[0]#final fun <get-narrowed>(): kotlin/Boolean
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection.narrowed|{}narrowed[0]#final val narrowed
+:quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/PerformanceSelection|null[0]#final class dev.s7a.strata.performance/PerformanceSelection {
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/WorkCounter.<init>|<init>(kotlin.collections.List<kotlin.String>){}[0]#constructor <init>(kotlin.collections/List<kotlin/String>)
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/WorkCounter.record|record(kotlin.Int){}[0]#final fun record(kotlin/Int)
 :quality:performance-testkit@Collector	:quality:performance-testkit@Collector	klib:dev.s7a.strata.performance/WorkCounter.reset|reset(){}[0]#final fun reset()

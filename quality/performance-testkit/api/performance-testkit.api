@@ -342,6 +342,13 @@ public final class dev/s7a/strata/performance/PerformanceScenario {
 	public final fun getPhases ()Ljava/util/Set;
 }
 
+public final class dev/s7a/strata/performance/PerformanceSelection {
+	public fun <init> (Ljava/util/Set;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/util/Set;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getIds ()Ljava/util/Set;
+	public final fun getNarrowed ()Z
+}
+
 public final class dev/s7a/strata/performance/RuntimeWorkAccumulator : java/lang/AutoCloseable {
 	public fun <init> (Ljava/lang/Object;)V
 	public final fun capture ()V

@@ -10,6 +10,7 @@ import dev.s7a.strata.performance.NativePerformanceEvidence
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformanceReportContract
 import dev.s7a.strata.performance.PerformanceReportMetric
+import dev.s7a.strata.performance.PerformanceSelection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -78,6 +79,7 @@ internal object NativeComponentPerformanceEvidence {
     fun main(args: Array<String>) {
         require(args.size == 1)
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
+        val selection = PerformanceSelection(cases, request.get("workloads")?.asString)
         val collectorType = JvmPerformanceMeter::class.java
         val collector =
             Path.of(
@@ -100,10 +102,10 @@ internal object NativeComponentPerformanceEvidence {
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
-                contract(),
+                contract(selection),
                 metrics,
             ) { report ->
-                verify(report)
+                verify(report, selection)
                 arguments.add(
                     JsonObject().apply {
                         add(
@@ -134,11 +136,11 @@ internal object NativeComponentPerformanceEvidence {
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
     }
 
-    private fun contract(): PerformanceReportContract =
+    private fun contract(selection: PerformanceSelection): PerformanceReportContract =
         PerformanceReportContract(
-            "native-components-presented-v1",
+            if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1",
             listOf("case", "operation", "gui_scale"),
-            cases.size * 4,
+            selection.ids.size * 4,
             setOf(
                 "minecraft_version",
                 "java",
@@ -167,13 +169,22 @@ internal object NativeComponentPerformanceEvidence {
     /**
      * Requires the reviewed case/scale matrix, complete presentation boundaries and balanced native release.
      */
-    internal fun verify(report: JsonObject) {
+    internal fun verify(
+        report: JsonObject,
+        selection: PerformanceSelection = PerformanceSelection(cases),
+    ) {
+        val expectedId = if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1"
+        require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
+        report.getAsJsonArray("selected_cases")?.let { declared ->
+            require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
+        }
         require(report.get("status").asString.contentEquals("passed"))
         require(report.get("framebuffer_width").asInt == 1920 && report.get("framebuffer_height").asInt == 1080)
         require(report.get("vsync").asBoolean.not() && report.get("framerate_limit").asInt == 120)
         require(report.get("warmup").asInt == 30 && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == 120_000L)
         val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
-        require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == cases.flatMap { name -> (1..4).map { name to it } }.toSet()) { "Changed native component matrix" }
+        require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> (1..4).map { name to it } }.toSet()) { "Changed native component matrix" }
+        require(phases.size == selection.ids.size * 4) { "Duplicate native component intervals" }
         phases.forEach { phase ->
             require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == 60)
             require(phase.getAsJsonObject("frame_interval").get("samples").asInt == 60)
@@ -188,7 +199,8 @@ internal object NativeComponentPerformanceEvidence {
         }
         val release = report.getAsJsonObject("native_resource_release")
         listOf("leases", "renderers").forEach { kind ->
-            require(0 < release.get("${kind}_opened").asInt && release.get("${kind}_opened") == release.get("${kind}_closed")) { "Incomplete native resource release" }
+            require(0 <= release.get("${kind}_opened").asInt && release.get("${kind}_opened") == release.get("${kind}_closed"))
+            if ("NativeCanvas" in selection.ids) require(0 < release.get("${kind}_opened").asInt) { "Incomplete native resource release" }
         }
     }
 }

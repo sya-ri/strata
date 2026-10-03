@@ -287,6 +287,30 @@ The list contains repository-relative paths, one per line; known declaration and
 An empty list selects no component operations, but still verifies the complete API registration.
 Release verification omits this property and runs the entire corpus.
 
+For iterative fixes, `-Pstrata.performance.workloads=<comma-separated-IDs>` explicitly selects component or stress workloads through the shared `PerformanceSelection` contract.
+For example, select `TextField32,TextField16384` with `strata.performance.stress=true`, or `NineSlice1,NineSlice2,NineSlice4` for tiled-image work.
+Unknown, empty and duplicate IDs fail before collection; the complete API registration is still verified.
+Selected JMH runs use separate `*-selected` directories and their exact generated matrix remains bound to the evidence receipt.
+Keep all phases of the selected workloads, default warm-up/sampling settings and three independent invocations when comparing a baseline and candidate.
+This option currently supports component and stress collection, not the font corpus.
+
+The same option selects loaded native cases such as `TextField,NativeCanvas` at all four GUI scales.
+The native performance entry prepares the actual resource profile and then collects directly, without running ordinary profile-reload, input, inventory and pixel-regression scenes on every measurement invocation.
+Omitting the option retains the full 108-interval matrix and its existing acceptance contract.
+A proper subset uses the distinct `native-components-selected-presented-v1` workload ID; pass the same comma-separated IDs as `workloads` in the native summary request.
+The processor rejects missing scales, duplicates, leaked native ownership and a selection that disagrees with the request; targeted evidence cannot satisfy full-suite acceptance.
+
+During optimization, run only affected workload phases and the deterministic parity/invalidation checks needed by that change.
+Reuse completed unchanged evidence rather than restarting unrelated suites after each edit.
+Common changes with unknown impact need a broader representative matrix; explicit selection must record that limited scope.
+After the candidate is stable, collect the final required performance matrix serially and run the full ordinary GameTest acceptance once.
+Automatic correctness-client concurrency does not apply to performance collection.
+
+Retained remote collection also accepts workload IDs such as `Shared16At512` with `strata.performance.remoteSessions=true`; protocol-codec and font corpora reject unsupported workload selection rather than silently ignoring it.
+The historical shared-kit entry accepts method IDs such as `OverlayRenderingBenchmark.composition` and an optional `strata.performance.parameters` UTF-8 properties file containing compiled JMH parameter subsets, for example `width=320,1920`, `layers=1,64` and `monitoring=false` on separate lines.
+These selected runs have independent `*-selected` directories; omitting both options preserves the formal 54-case historical matrix and the original `jmh` task.
+`strata.performance.output` supplies a fresh invocation directory for component or remote evidence; historical collection keeps its existing `strata.performance.historicalOutputRoot` directory option.
+
 The `:quality:benchmarks:jmhHistorical` entry point records the unchanged historical Rendering, ReactiveRendering and OverlayRendering fixtures through the shared kit.
 Its normal matrix contains 54 AverageTime cases; SampleTime uses a separate suite, and smoke collection is a separate one-case subset.
 It inherits the existing JMH plugin task's Java launcher and retains its three one-second warm-up iterations, five one-second measurement iterations, one fork, one thread, microsecond units and GC profiler.

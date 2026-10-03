@@ -44,10 +44,13 @@ tasks.register<JavaExec>("jmhRemote") {
     require(mode in setOf("avgt", "sample"))
     val sessions = providers.gradleProperty("strata.performance.remoteSessions").map(String::toBooleanStrict).getOrElse(false)
     val family = if (sessions) "remote-sessions" else "remote"
-    val suite = (if (smoke) "$family-smoke" else family) + (if (mode in setOf("sample")) "-sample" else "")
+    val workloads = providers.gradleProperty("strata.performance.workloads").orNull
+    require(sessions || workloads == null) { "Workload selection requires the retained remote corpus" }
+    workloads?.let { systemProperty("strata.performance.workloads", it) }
+    val suite = (if (smoke) "$family-smoke" else family) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
-    val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
-    args(result.get().asFile.absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.remoteSessions", sessions)
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)

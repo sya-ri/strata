@@ -114,9 +114,12 @@ tasks.register<JavaExec>("jmhComponents") {
     val fonts = providers.gradleProperty("strata.performance.fonts").map(String::toBooleanStrict).getOrElse(false)
     require(listOf(stress, fonts).count { it } <= 1) { "Choose one independent corpus" }
     val corpus = if (fonts) "fonts" else if (stress) "stress" else "components"
-    val suite = (if (smoke) "$corpus-smoke" else corpus) + (if (mode in setOf("sample")) "-sample" else "")
-    val result = layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition")
-    args(result.get().asFile.absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    val workloads = providers.gradleProperty("strata.performance.workloads").orNull
+    require(fonts.not() || workloads == null) { "Workload selection currently supports the component and stress corpora" }
+    val suite = (if (smoke) "$corpus-smoke" else corpus) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    workloads?.let { systemProperty("strata.performance.workloads", it) }
+    val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    args(result.get().absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fonts", fonts)
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.stress", stress)
@@ -155,6 +158,10 @@ val verifyStressRenderingWork = tasks.register<JavaExec>("verifyStressRenderingW
     mainClass.set("dev.s7a.strata.quality.benchmark.StressWorkEvidence")
     javaLauncher.set(componentLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
+providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
+    verifyStressRenderingWork.configure { systemProperty("strata.performance.workloads", selected) }
 }
 
 tasks.named("check") { dependsOn(verifyStressRenderingWork) }

@@ -78,6 +78,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
         verifyVersionAsset(context)
         val output = outputDirectory()
         Files.createDirectories(output)
+        if (System.getProperty("strata.performance.nativeOutput") != null) {
+            runMinecraftCanvasTest(context, profile, output)
+            return
+        }
         verifyProfileCache(context, output)
         verifyKeyboardActivationAndScreenTransition(context, profile)
         verifyContinuousInput(context, profile, output)

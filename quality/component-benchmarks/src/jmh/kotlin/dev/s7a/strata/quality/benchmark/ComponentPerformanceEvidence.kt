@@ -3,6 +3,7 @@ package dev.s7a.strata.quality.benchmark
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmPerformanceInputs
+import dev.s7a.strata.performance.PerformanceSelection
 import org.openjdk.jmh.annotations.Mode
 import java.nio.file.Path
 
@@ -25,7 +26,11 @@ public object ComponentPerformanceEvidence {
             stress(args)
             return
         }
-        val selected = ComponentInventoryEvidence.select(ComponentInventoryEvidence.changedPaths())
+        val affected = ComponentInventoryEvidence.select(ComponentInventoryEvidence.changedPaths())
+        val requested = System.getProperty("strata.performance.workloads")
+        val selection = PerformanceSelection(ComponentWorkload.entries.map { it.name }.toSet(), requested)
+        val selected = affected.filter { it.name in selection.ids }
+        require(requested == null || selected.isNotEmpty()) { "Explicit workload selection has no changed-path intersection" }
         if (selected.isEmpty()) return
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
         val components = if (smoke) selected.take(1) else selected
@@ -72,8 +77,10 @@ public object ComponentPerformanceEvidence {
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
         val benchmark = StressRenderingBenchmark::class.java
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
-        val parameters = if (smoke) mapOf("workload" to setOf(StressWorkload.VirtualList100.name)) else emptyMap()
-        val options = args.drop(2) + if (smoke) listOf("-p", "workload=${StressWorkload.VirtualList100.name}") else emptyList()
+        val selection = PerformanceSelection(StressWorkload.entries.map { it.name }.toSet(), System.getProperty("strata.performance.workloads"))
+        val workloads = if (smoke) selection.ids.take(1).toSet() else selection.ids
+        val parameters = mapOf("workload" to workloads)
+        val options = args.drop(2) + listOf("-p", "workload=${workloads.joinToString(",")}")
         JmhPerformanceRunner.run(
             options.toTypedArray(),
             listOf(benchmark),

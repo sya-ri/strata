@@ -83,7 +83,10 @@ tasks.register<JavaExec>("jmhHistorical") {
     val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
-    val suite = (if (smoke) "historical-smoke" else "historical") + (if (mode in setOf("sample")) "-sample" else "")
+    val targeted = providers.gradleProperty("strata.performance.workloads").isPresent || providers.gradleProperty("strata.performance.parameters").isPresent
+    val suite = (if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
+    providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
     val includes = if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }

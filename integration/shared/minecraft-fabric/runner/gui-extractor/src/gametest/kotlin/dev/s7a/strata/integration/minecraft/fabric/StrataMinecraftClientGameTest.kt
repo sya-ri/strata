@@ -143,6 +143,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
         val output = parityOutput()
         Files.createDirectories(output)
+        if (System.getProperty("strata.performance.nativeOutput") != null) {
+            runMinecraftCanvasTest(context, profile, output)
+            return
+        }
         verifyProfileCache(context, output)
         verifyKeyboardActivationAndScreenTransition(context, profile)
         assertNativeTextInputFocus(context, profile)

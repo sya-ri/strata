@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.PerformanceJson
+import dev.s7a.strata.performance.PerformanceSelection
 import dev.s7a.strata.performance.WorkExpectation
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -19,7 +20,9 @@ public object StressWorkEvidence {
         require(args.isEmpty())
         check(JmhWorkloadInventory.capture(listOf(StressRenderingBenchmark::class.java), setOf("avgt")).size == 3 * StressWorkload.entries.size)
         println("stress,idleCommands,updatedCommands,nodes,subscriptions")
-        StressWorkload.entries.forEach(::verify)
+        RuntimeSurfaceInventoryEvidence.verify()
+        val selection = PerformanceSelection(StressWorkload.entries.map { it.name }.toSet(), System.getProperty("strata.performance.workloads"))
+        StressWorkload.entries.filter { it.name in selection.ids }.forEach(::verify)
     }
 
     private fun verify(workload: StressWorkload) {

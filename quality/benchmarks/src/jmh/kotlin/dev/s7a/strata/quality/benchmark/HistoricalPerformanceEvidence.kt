@@ -1,10 +1,14 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonParser
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmPerformanceInputs
+import dev.s7a.strata.performance.PerformanceSelection
 import org.openjdk.jmh.annotations.Mode
+import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Properties
 
 /**
  * Registers the unchanged historical fixtures with the shared JMH receipt adapter.
@@ -19,12 +23,32 @@ public object HistoricalPerformanceEvidence {
         require(2 < args.size)
         HistoricalWorkloadEvidence.verifySurface()
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
-        val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else fixtures()
-        val parameters = if (smoke) mapOf("viewport" to setOf(RenderingBenchmark.Viewport.Compact.name)) else emptyMap()
+        val requested = System.getProperty("strata.performance.workloads")
+        val parameterFile = System.getProperty("strata.performance.parameters")?.let(Path::of)
+        require(smoke.not() || (requested == null && parameterFile == null)) { "Smoke and targeted collection are separate scopes" }
+        val registered = fixtures()
+        val methods = JmhWorkloadInventory.capture(registered, setOf("avgt")).map { JsonParser.parseString(it).asJsonArray[0].asString }.toSet()
+        val selection = PerformanceSelection(methods.map { it.substringAfter("dev.s7a.strata.quality.benchmark.") }.toSet(), requested)
+        val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else registered.filter { fixture -> selection.ids.any { it.startsWith("${fixture.simpleName}.") } }
+        val parameters =
+            if (smoke) {
+                mapOf("viewport" to setOf(RenderingBenchmark.Viewport.Compact.name))
+            } else {
+                parameterFile
+                    ?.let { file ->
+                        val properties = Properties().apply { Files.newBufferedReader(file, Charsets.UTF_8).use(::load) }
+                        properties.stringPropertyNames().associateWith { name ->
+                            val values = properties.getProperty(name).split(',').map(String::trim)
+                            require(values.all(String::isNotBlank) && values.distinct().size == values.size) { "Empty or duplicate JMH parameter selection" }
+                            values.toSet()
+                        }
+                    }.orEmpty()
+            }
+        val includes = if (requested == null) listOf(args[2]) else selection.ids.map { Regex.escape("dev.s7a.strata.quality.benchmark.$it") }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
-        val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, listOf(args[2]))
+        val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
         JmhPerformanceRunner.run(
-            (args.drop(2) + if (smoke) listOf("-p", "viewport=${RenderingBenchmark.Viewport.Compact.name}") else emptyList()).toTypedArray(),
+            (includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }).toTypedArray(),
             fixtures,
             mapOf(
                 "api" to "dev.s7a.strata.component.UiScope",

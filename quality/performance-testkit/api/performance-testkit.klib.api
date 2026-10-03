@@ -170,6 +170,15 @@ final class dev.s7a.strata.performance/PerformanceScenario { // dev.s7a.strata.p
         final fun <get-phases>(): kotlin.collections/Set<dev.s7a.strata.performance/PerformancePhase> // dev.s7a.strata.performance/PerformanceScenario.phases.<get-phases>|<get-phases>(){}[0]
 }
 
+final class dev.s7a.strata.performance/PerformanceSelection { // dev.s7a.strata.performance/PerformanceSelection|null[0]
+    constructor <init>(kotlin.collections/Set<kotlin/String>, kotlin/String? = ...) // dev.s7a.strata.performance/PerformanceSelection.<init>|<init>(kotlin.collections.Set<kotlin.String>;kotlin.String?){}[0]
+
+    final val ids // dev.s7a.strata.performance/PerformanceSelection.ids|{}ids[0]
+        final fun <get-ids>(): kotlin.collections/Set<kotlin/String> // dev.s7a.strata.performance/PerformanceSelection.ids.<get-ids>|<get-ids>(){}[0]
+    final val narrowed // dev.s7a.strata.performance/PerformanceSelection.narrowed|{}narrowed[0]
+        final fun <get-narrowed>(): kotlin/Boolean // dev.s7a.strata.performance/PerformanceSelection.narrowed.<get-narrowed>|<get-narrowed>(){}[0]
+}
+
 final class dev.s7a.strata.performance/WorkCounter { // dev.s7a.strata.performance/WorkCounter|null[0]
     constructor <init>(kotlin.collections/List<kotlin/String>) // dev.s7a.strata.performance/WorkCounter.<init>|<init>(kotlin.collections.List<kotlin.String>){}[0]
 

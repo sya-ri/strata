@@ -11,6 +11,7 @@ import dev.s7a.strata.performance.MinecraftPerformanceMeter
 import dev.s7a.strata.performance.NativePerformanceFixture
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformancePlan
+import dev.s7a.strata.performance.PerformanceSelection
 import dev.s7a.strata.quality.benchmark.ComponentWorkload
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
@@ -43,9 +44,11 @@ internal class MinecraftNativePerformanceProbe(
      * [validateViewport] runs on the owner thread and must check actual framebuffer, GUI scale and option values.
      */
     internal fun run(conditions: JsonObject) {
+        val selection = PerformanceSelection(ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas", System.getProperty("strata.performance.workloads"))
         val report = conditions.deepCopy()
+        report.add("selected_cases", JsonArray().apply { selection.ids.forEach(::add) })
         report.addProperty("schema_version", 1)
-        report.addProperty("workload_id", "native-components-presented-v1")
+        report.addProperty("workload_id", if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1")
         report.addProperty("run_id", UUID.randomUUID().toString())
         val fixtureType = MinecraftNativePerformanceProbe::class.java
         val fixtureArchive =
@@ -73,22 +76,19 @@ internal class MinecraftNativePerformanceProbe(
         report.add("phases", phases)
         for (scale in 1..4) {
             context.configureViewport(viewport, scale)
-            ComponentWorkload.entries.forEach { workload ->
+            ComponentWorkload.entries.filter { it.name in selection.ids }.forEach { workload ->
                 phases.add(measure(scale, workload.name, workload::uiDefinition))
             }
-            phases.add(
-                measure(scale, "NativeCanvas") {
-                    val payload = createNativeCanvasScreenDefinition(canvas).transfer()
-                    UiDefinition(payload.title, pausesGame = payload.pausesGame) { payload.content(this) }
-                },
-            )
+            if ("NativeCanvas" in selection.ids) {
+                phases.add(measureNativeCanvas(scale))
+            }
             context.waitFor(2400) { canvas.leasesOpened == canvas.leasesClosed && canvas.renderersOpened == canvas.renderersClosed }
         }
         context.waitFor(2400) { canvas.leasesOpened == canvas.leasesClosed && canvas.renderersOpened == canvas.renderersClosed }
         report.add(
             "native_resource_release",
             context.onClient {
-                check(0 < canvas.leasesOpened && 0 < canvas.renderersOpened)
+                if ("NativeCanvas" in selection.ids) check(0 < canvas.leasesOpened && 0 < canvas.renderersOpened)
                 JsonObject().apply {
                     addProperty("leases_opened", canvas.leasesOpened)
                     addProperty("leases_closed", canvas.leasesClosed)
@@ -97,10 +97,19 @@ internal class MinecraftNativePerformanceProbe(
                 }
             },
         )
-        check(phases.size() == 4 * (ComponentWorkload.entries.size + 1))
+        check(phases.size() == 4 * selection.ids.size)
         report.addProperty("status", "passed")
         PerformanceJson.writeNew(output.resolve("report.json"), report)
     }
+
+    /**
+     * Measures the sampled/custom Canvas scene using the same presented-frame boundary as components.
+     */
+    private fun measureNativeCanvas(scale: Int): JsonObject =
+        measure(scale, "NativeCanvas") {
+            val payload = createNativeCanvasScreenDefinition(canvas).transfer()
+            UiDefinition(payload.title, pausesGame = payload.pausesGame) { payload.content(this) }
+        }
 
     private fun runtimeMetadata(): JsonObject =
         context.onClient {
