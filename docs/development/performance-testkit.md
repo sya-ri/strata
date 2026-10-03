@@ -45,6 +45,11 @@ Use `-Pstrata.performance.historicalOutputRoot=<new-directory>` for the other si
 Execute both modes three times with repetition indexes 0–2 for each side and process `jmh-comparison` separately for each mode.
 Older targets that cannot execute the unchanged fixture are failures, not permission to remove cases or loosen provenance checks.
 
+The separate `-Pstrata.performance.nonuniformOverlay=true` family measures prepared mixed-alpha/RGB images followed by 1, 16 or 64 full-area translucent fills at 320×180 and 1920×1080.
+It uses the same JMH defaults, controlled-runtime selection and shared evidence processing, with its own six-case fixture registration and `nonuniform-overlay` output directory.
+Source preparation is outside measurement; each operation allocates a fresh output and preserves every ordered blend.
+This family does not change the historical 54-case matrix or satisfy its acceptance.
+
 ```json
 {
   "command": "jmh-summary",
@@ -306,7 +311,10 @@ Common changes with unknown impact need a broader representative matrix; explici
 After the candidate is stable, collect the final required performance matrix serially and run the full ordinary GameTest acceptance once.
 Automatic correctness-client concurrency does not apply to performance collection.
 
-Retained remote collection also accepts workload IDs such as `Shared16At512` with `strata.performance.remoteSessions=true`; protocol-codec and font corpora reject unsupported workload selection rather than silently ignoring it.
+Retained remote collection also accepts workload IDs such as `Shared16At512` with `strata.performance.remoteSessions=true`.
+Protocol collection accepts compiled method IDs such as `RemoteProtocolBenchmark.diff` through the same shared selection contract, retaining both declared node counts and all three change patterns for each selected method.
+Omitting selection preserves its full 30-case matrix; unknown, duplicate or empty method IDs fail before collection, and selected evidence cannot satisfy full-suite acceptance.
+The font corpus rejects unsupported workload selection rather than silently ignoring it.
 The historical shared-kit entry accepts method IDs such as `OverlayRenderingBenchmark.composition` and an optional `strata.performance.parameters` UTF-8 properties file containing compiled JMH parameter subsets, for example `width=320,1920`, `layers=1,64` and `monitoring=false` on separate lines.
 These selected runs have independent `*-selected` directories; omitting both options preserves the formal 54-case historical matrix and the original `jmh` task.
 `strata.performance.output` supplies a fresh invocation directory for component or remote evidence; historical collection keeps its existing `strata.performance.historicalOutputRoot` directory option.
@@ -329,7 +337,13 @@ Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark an
 Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.
 
 The separate stress corpus is selected with `-Pstrata.performance.stress=true` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
-It measures 100/1,000,000-row indexed virtual lists, eight-image Canvas churn at 256/1024 pixels, configured text lengths of 32/16,384 UTF-16 units, actual checkbox pointer activation, explicit animation-cell time advances, 128/4096-observer fan-out, and 1/2/4-pixel nine-slice patterns with transparency.
+
+The supplemental `-Pstrata.performance.exceptionalText=true` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
+Its 18 independent idle/update/lifecycle cases use the unchanged JMH defaults and shared processing, with `exceptional-text` / `exceptional-text-sample` outputs; it does not change the existing stress matrix or font inputs.
+Resource preparation stays outside sampling, and its detached empty glyphs measure width/control work rather than native font rasterization.
+`verifyExceptionalTextWork` checks every combination's clean reuse, changed public value and semantics, equal-metric pixel stability and complete font-resource release without elapsed-time thresholds.
+Explicit workload selection accepts its compiled `ExceptionalTextWorkload` IDs through the same shared selection contract.
+The stress corpus measures 100/1,000,000-row indexed virtual lists, eight-image Canvas churn at 256/1024 pixels, configured text lengths of 32/16,384 UTF-16 units, actual checkbox pointer activation, explicit animation-cell time advances, 128/4096-observer fan-out, and 1/2/4-pixel nine-slice patterns with transparency.
 These sizes are declared stress inputs, rather than claims about application limits or complete font-provider coverage.
 Its 39 generated cases preserve the existing component and historical matrices; JMH and the shared kit own all collection and comparison.
 The component `check` also asserts idle reuse, real changed work, bounded virtual-list nodes, input state and released source subscriptions.

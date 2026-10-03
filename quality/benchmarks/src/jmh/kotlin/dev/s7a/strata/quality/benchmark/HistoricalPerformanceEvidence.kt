@@ -26,7 +26,7 @@ public object HistoricalPerformanceEvidence {
         val requested = System.getProperty("strata.performance.workloads")
         val parameterFile = System.getProperty("strata.performance.parameters")?.let(Path::of)
         require(smoke.not() || (requested == null && parameterFile == null)) { "Smoke and targeted collection are separate scopes" }
-        val registered = fixtures()
+        val registered = if (System.getProperty("strata.performance.nonuniformOverlay", "false").toBooleanStrict()) listOf(NonuniformOverlayBenchmark::class.java) else fixtures()
         val methods = JmhWorkloadInventory.capture(registered, setOf("avgt")).map { JsonParser.parseString(it).asJsonArray[0].asString }.toSet()
         val selection = PerformanceSelection(methods.map { it.substringAfter("dev.s7a.strata.quality.benchmark.") }.toSet(), requested)
         val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else registered.filter { fixture -> selection.ids.any { it.startsWith("${fixture.simpleName}.") } }

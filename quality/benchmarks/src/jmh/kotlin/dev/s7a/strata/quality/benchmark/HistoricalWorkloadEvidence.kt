@@ -30,6 +30,7 @@ public object HistoricalWorkloadEvidence {
         verifySurface()
         val fixtures = HistoricalPerformanceEvidence.fixtures()
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
+        check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 108)
         check(
             JmhWorkloadInventory
