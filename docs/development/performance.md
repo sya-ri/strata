@@ -67,7 +67,14 @@ Fractional sampled images also overwrite with the source color when both the sam
 An opaque white source pixel with an opaque tint similarly overwrites with the exact tint color, including colored bitmap glyphs.
 Fractional clipping, nearest coordinate mapping, alpha cutoff, and non-identity tint continue through their existing paths; this does not broaden direct native eligibility or remove portable fallback uploads.
 The headless rasterizer resolves the viewport and nested physical clip before each row overwrite, including fractional clips that cut through scaled logical texels.
-Translucent fills retain the existing straight-ARGB blending path.
+Translucent fills use the same clipped physical row coverage and preserve straight-ARGB half-up rounding for every command.
+Within one fill, a destination matching its first covered pixel reuses that pixel's exact blend result; other destination colors still blend independently.
+The two local scalar values expire with the command and retain no image or session history.
+This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
+When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
+Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
+This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
 This stateless fast path creates no cache and preserves command order, pixels, physical density, and the native portable-generation lifetime.
 Its regression compares independent physical pixel-center coverage across density, empty/offscreen extents, nested integer/fractional clips, and translucent destination pixels.
 Native measurements must continue to report actual rasterizations and uploads; reducing raster CPU work does not eliminate those operations.
@@ -320,6 +327,14 @@ After initial dynamic materialization settles, unchanged frames retain their imm
 The bounded regression scenario holds 128 independent regions, runs 100 unchanged frames, and requires one sibling content evaluation and one primitive update when one source changes.
 A changed label may legitimately invalidate ancestor measurement.
 
+### Detached declaration lists
+
+The core declaration cutoff creates owned child and modifier lists after reconciliation and reads each live projection again.
+Its internal snapshot constructor takes exclusive ownership of these fresh lists instead of copying them a second time.
+Empty and singleton snapshots use their exact list forms without intermediate map buffers.
+Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
+The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.
@@ -344,9 +359,9 @@ The separate stress corpus records initial ownership, clean frames and real upda
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
 It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
-The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and blends every covered foreground pixel.
+The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and applies every ordered foreground blend, using uniform-surface scalar evaluation where exact.
 These are different costs, and the headless timings are not native GPU frame-rate measurements.
-Repeated full-area alpha blending is proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
+Non-uniform full-area alpha blending remains proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
 Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
 
 `:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.

@@ -97,9 +97,19 @@ public class UiTree(
             declarationId(entry),
             entry.element,
             (entry.node as? DeclarationProjectionNode)?.declarationProjection ?: entry.element.projection,
-            entry.modifiers.map { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
-            entry.children.map(::declaration),
+            entry.modifiers.snapshotMap { modifier -> RuntimeDeclaration.Modifier(declarationId(modifier), modifier.element, (modifier.node as? DeclarationProjectionNode)?.declarationProjection ?: modifier.element.projection) },
+            entry.children.snapshotMap(::declaration),
         )
+
+    /**
+     * Creates an owned snapshot list without temporary empty or singleton map buffers.
+     */
+    private inline fun <T, R> List<T>.snapshotMap(transform: (T) -> R): List<R> =
+        when (size) {
+            0 -> emptyList()
+            1 -> listOf(transform(this[0]))
+            else -> map(transform)
+        }
 
     private fun declarationId(entry: RetainedEntry): Long {
         if (entry.declarationId == 0L) {
