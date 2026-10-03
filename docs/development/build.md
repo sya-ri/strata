@@ -84,6 +84,8 @@ Run aggregate coverage with `./gradlew :koverHtmlReport :koverXmlReport -Pkover`
 
 When artifact packaging or publication definitions change, run `./gradlew publishToMavenLocal` and inspect artifact contents and publication metadata.
 Controller-only changes use isolated publication fixtures and do not rebuild the product.
+Remapped Fabric publications remove the raw sources artifact from the Java component and retain the remapped artifact attached by Loom; the Maven publishing plugin must not attach a second raw sources JAR.
+The release inventory preserves every configured artifact suffix so its duplicate-entry validator rejects classifier collisions before publication.
 The [release procedure](release.md) defines external publication and credentials.
 
 Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.

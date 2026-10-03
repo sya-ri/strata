@@ -1692,12 +1692,23 @@ subprojects {
 
     if (publishableModule) {
         val artifactId = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
+        if (minecraftTargetByProjectPath[path]?.remapped == true) {
+            afterEvaluate {
+                val rawSources = tasks.named<Jar>("sourcesJar").get().archiveFile.get().asFile
+                configurations.named("sourcesElements").get().outgoing.artifacts.removeIf { artifact -> artifact.file == rawSources }
+            }
+        }
         extensions.configure<MavenPublishBaseExtension> {
             coordinates(group.toString(), artifactId, version.toString())
             configure(
                 KotlinJvm(
                     javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationJavadoc"),
-                    sourcesJar = SourcesJar.Sources(),
+                    sourcesJar =
+                        if (minecraftTargetByProjectPath[path]?.remapped == true) {
+                            SourcesJar.None()
+                        } else {
+                            SourcesJar.Sources()
+                        },
                 ),
             )
             publishToMavenCentral()
@@ -1968,7 +1979,7 @@ extensions.configure<StrataReleaseExtension> {
                 val suffixes = publication.artifacts.filter { it.extension.endsWith(".asc").not() }.map { artifact ->
                     artifact.classifier?.takeIf(String::isNotEmpty)?.let { "-$it.${artifact.extension}" } ?: ".${artifact.extension}"
                 }
-                (listOf(".pom", ".module") + suffixes).distinct().sorted().map { suffix -> "$identity:$suffix" }
+                (listOf(".pom", ".module") + suffixes).sorted().map { suffix -> "$identity:$suffix" }
             }
         }
     })
