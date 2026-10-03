@@ -3,7 +3,8 @@ package dev.s7a.strata.gradle.fabric
 import kotlin.math.ceil
 
 /**
- * Bound new admission by available physical RAM and CPU; unknown memory falls back to one client.
+ * Bound concurrency by available physical RAM and CPU while retaining the existing serial baseline.
+ * A conservative estimate cannot starve the first client; unknown memory also falls back to one.
  */
 internal fun fabricClientCapacity(
     freeMemoryBytes: Long,
@@ -25,5 +26,5 @@ internal fun fabricClientCapacity(
         } else {
             maximum
         }
-    return minOf(maximum, memoryLimit, cpuLimit)
+    return minOf(maximum, memoryLimit, cpuLimit).coerceAtLeast(1)
 }

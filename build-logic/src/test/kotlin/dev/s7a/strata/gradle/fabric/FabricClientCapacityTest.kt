@@ -22,9 +22,10 @@ internal class FabricClientCapacityTest {
         assertEquals(8, capacity(20, 0.0))
         assertEquals(4, capacity(10, 0.0))
         assertEquals(1, capacity(10, 0.95))
-        assertEquals(0, capacity(3, 0.0))
+        assertEquals(1, capacity(3, 0.0))
+        assertEquals(1, capacity(1, 1.0))
         assertEquals(1, fabricClientCapacity(-1, 2 * gibibyte, 2 * gibibyte, 32, -1.0, 16))
-        assertEquals(0, fabricClientCapacity(0, 2 * gibibyte, 2 * gibibyte, 32, -1.0, 16))
+        assertEquals(1, fabricClientCapacity(0, 2 * gibibyte, 2 * gibibyte, 32, -1.0, 16))
     }
 
     @Test

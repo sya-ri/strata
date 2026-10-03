@@ -34,7 +34,9 @@ Admission rechecks resources while waiting and before every launch, and task com
 Lower capacity stops additional launches until running clients finish; it does not cancel or restart an admitted test.
 The memory policy reserves 2 GiB for the desktop and unallocated Gradle heap, then budgets each client for its maximum heap plus 1 GiB of native memory.
 This is a conservative scheduling estimate, not a measured resident-memory guarantee; GPU memory is not queried.
-Unknown physical-memory support falls back to one client; insufficient resources fail admission after five minutes instead of waiting indefinitely.
+Automatic capacity never falls below one client, preserving the existing serial baseline even when conservative reservations exceed free memory.
+Unknown physical-memory support also falls back to one client; this minimum is not a guarantee that a host has enough RAM to run Minecraft.
+Admission waiting behind running clients fails after five minutes instead of waiting indefinitely.
 Automatic clients default to a 1 GiB maximum Java heap; `-Pstrata.minecraftClientHeap=2g` or another positive JVM heap size changes both the JVM limit and its admission budget.
 Use enough workers to make parallelism possible, for example `./gradlew check --max-workers=8`.
 For a fixed correctness ceiling, use `-Pstrata.minecraftClientParallelism=4 --max-workers=6`; this explicitly bypasses resource adaptation.
@@ -95,6 +97,8 @@ One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, as
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
+Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
+The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 The generated model co-locates common and JVM declarations without KMP source-set relationships, so `UnusedSymbol` can miss real calls across `expect`/`actual` declarations and typealiases.
 The configuration lists only the affected bridge files for that inspection; other inspections and the zero failure threshold remain enabled.
 Before extending that list, verify real callers and remove unused operations from every target; remove the exceptions when the analysis model can resolve those relationships.

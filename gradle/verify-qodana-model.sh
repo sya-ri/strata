@@ -447,6 +447,9 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
     target_source_allowed_owners='integration,paper-example'
     target_source_root='examples/paper'
+  elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' ]]; then
+    target_source_allowed_owners='integration'
+    target_source_root='quality/component-benchmarks'
   elif [[ "$repository_relative_path" == 'runtime/minecraft-fonts-lwjgl/'* ]]; then
     target_source_allowed_owners='font-backend'
     target_source_root='runtime/minecraft-fonts-lwjgl'
@@ -802,6 +805,8 @@ for version in "${expected_versions[@]}"; do
   runtime_font_source="file://\$PROJECT_DIR\$/runtime/minecraft-fabric-$version/src/font/kotlin"
   runtime_font_source_count=0
   integration_test_source_count=0
+  integration_component_source_count=0
+  integration_component_root_count=0
   while IFS=$'\t' read -r expected_owner expected_version expected_type expected_path; do
     if [[ "$expected_owner" == 'runtime' && \
       "$expected_version" == "$version" && \
@@ -813,12 +818,23 @@ for version in "${expected_versions[@]}"; do
       "$expected_type" == 'TestSource' ]]; then
       ((integration_test_source_count += 1))
     fi
+    if [[ "$expected_owner" == 'integration' && \
+      "$expected_version" == "$version" && \
+      "$expected_path" == 'file://$PROJECT_DIR$/quality/component-benchmarks/src/jmh/kotlin' ]]; then
+      ((integration_component_root_count += 1))
+      if [[ "$expected_type" == 'TestSource' ]]; then
+        ((integration_component_source_count += 1))
+      fi
+    fi
   done < "$expected_target_source_roots"
   if [[ "$runtime_font_source_count" -ne 1 ]]; then
     echo "The generated runtime IDEA module must contain exactly one owned font Source: version=$version count=$runtime_font_source_count" >&2
     exit 1
   elif [[ "$integration_test_source_count" -eq 0 ]]; then
     echo "The generated integration IDEA module must contain at least one TestSource: version=$version" >&2
+    exit 1
+  elif [[ "$integration_component_source_count" -ne 1 || "$integration_component_root_count" -ne 1 ]]; then
+    echo "The generated integration IDEA module must link exactly one canonical component TestSource: version=$version source=$integration_component_source_count total=$integration_component_root_count" >&2
     exit 1
   fi
 done
@@ -938,6 +954,11 @@ while IFS=$'\t' read -r module_name source_type source_url; do
     exit 1
   }
   classify_target_source_path "$repository_relative_path"
+  # The benchmark owner's own source remains outside native-target parity; foreign links do not.
+  if [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' && \
+    "$module_name" =~ ^(component-benchmarks|quality-component-benchmarks|strata\.quality\.component-benchmarks)$ ]]; then
+    target_source_allowed_owners=''
+  fi
   if $target_source_uses_target_namespace && [[ -z "$target_source_allowed_owners" ]]; then
     echo "Qodana project modules contain an unapproved target-namespace source root: $source_url" >&2
     exit 1
