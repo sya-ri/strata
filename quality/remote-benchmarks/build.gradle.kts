@@ -45,7 +45,6 @@ tasks.register<JavaExec>("jmhRemote") {
     val sessions = providers.gradleProperty("strata.performance.remoteSessions").map(String::toBooleanStrict).getOrElse(false)
     val family = if (sessions) "remote-sessions" else "remote"
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
-    require(sessions || workloads == null) { "Workload selection requires the retained remote corpus" }
     workloads?.let { systemProperty("strata.performance.workloads", it) }
     val suite = (if (smoke) "$family-smoke" else family) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"

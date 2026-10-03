@@ -15,12 +15,8 @@ public class RemotePatch(
     public val removed: Set<Long> = Collections.unmodifiableSet(removed.toSet())
 
     init {
-        require(
-            this.changed
-                .map { it.declaration.identity }
-                .distinct()
-                .size == this.changed.size,
-        ) { "Duplicate patch change." }
+        val identities = HashSet<Long>()
+        require(this.changed.all { identities.add(it.declaration.identity) }) { "Duplicate patch change." }
         require(this.removed.size == removed.size) { "Duplicate patch removal." }
         require(this.changed.none { it.declaration.identity in this.removed }) { "A patch both changes and removes an identity." }
     }

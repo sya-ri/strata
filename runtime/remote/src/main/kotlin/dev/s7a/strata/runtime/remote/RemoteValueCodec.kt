@@ -1,11 +1,13 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionValue
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import java.nio.BufferUnderflowException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.Objects
 
 /**
  * Strict bounded binary encoding for detached projection values.
@@ -21,7 +23,7 @@ public class RemoteValueCodec(
     public fun encode(value: ProjectionValue): ByteArray {
         val bytes = BoundedOutput(limits.messageBytes)
         val budget = RemoteWorkBudget(limits)
-        DataOutputStream(bytes).use { output -> write(output, value, 0, budget) }
+        EncodingOutput(bytes).use { output -> write(output, value, 0, budget) }
         budget.checkTime()
         return bytes.toByteArray()
     }
@@ -32,20 +34,21 @@ public class RemoteValueCodec(
     public fun decode(bytes: ByteArray): ProjectionValue {
         require(bytes.size <= limits.messageBytes) { "Remote message exceeds its byte limit." }
         return try {
-            DataInputStream(ByteArrayInputStream(bytes)).use { input ->
-                val budget = RemoteWorkBudget(limits)
-                val value = read(input, 0, budget)
-                budget.checkTime()
-                require(input.available() == 0) { "Trailing bytes in a remote value." }
-                value
-            }
+            val input = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
+            val budget = RemoteWorkBudget(limits)
+            val value = read(input, 0, budget)
+            budget.checkTime()
+            require(input.hasRemaining().not()) { "Trailing bytes in a remote value." }
+            value
         } catch (failure: IOException) {
+            throw IllegalArgumentException("Malformed remote value.", failure)
+        } catch (failure: BufferUnderflowException) {
             throw IllegalArgumentException("Malformed remote value.", failure)
         }
     }
 
     private fun write(
-        output: DataOutputStream,
+        output: EncodingOutput,
         value: ProjectionValue,
         depth: Int,
         budget: RemoteWorkBudget,
@@ -75,7 +78,11 @@ public class RemoteValueCodec(
             is ProjectionValue.Text -> {
                 require(value.value.length <= limits.messageBytes) { "Remote text exceeds its limit." }
                 output.writeByte(Tag.Text.code)
-                writeBytes(output, value.value.encodeToByteArray(throwOnInvalidSequence = true))
+                if (value.value.all { it.code < 128 }) {
+                    output.writeAscii(value.value)
+                } else {
+                    writeBytes(output, value.value.encodeToByteArray(throwOnInvalidSequence = true))
+                }
             }
 
             is ProjectionValue.Bytes -> {
@@ -94,34 +101,36 @@ public class RemoteValueCodec(
     }
 
     private fun read(
-        input: DataInputStream,
+        input: ByteBuffer,
         depth: Int,
         budget: RemoteWorkBudget,
     ): ProjectionValue {
         budget.visit()
         require(depth < limits.valueDepth) { "Remote value nesting exceeds its limit." }
-        val code = input.readUnsignedByte()
+        val code = input.get().toInt() and 255
         return when (requireNotNull(Tag.entries.find { it.code == code }) { "Unknown remote value tag." }) {
             Tag.Absent -> {
                 ProjectionValue.Absent
             }
 
             Tag.Flag -> {
-                val flag = input.readUnsignedByte()
+                val flag = input.get().toInt() and 255
                 require(flag <= 1) { "Invalid remote boolean." }
                 ProjectionValue.Flag(flag == 1)
             }
 
             Tag.Integer -> {
-                ProjectionValue.Integer(input.readLong())
+                ProjectionValue.Integer(input.long)
             }
 
             Tag.Real -> {
-                ProjectionValue.Real(input.readDouble())
+                ProjectionValue.Real(input.double)
             }
 
             Tag.Text -> {
-                ProjectionValue.Text(readBytes(input).decodeToString(throwOnInvalidSequence = true))
+                val bytes = readBytes(input)
+                val text = if (bytes.all { 0 <= it }) String(bytes, Charsets.UTF_8) else bytes.decodeToString(throwOnInvalidSequence = true)
+                ProjectionValue.Text(text)
             }
 
             Tag.Bytes -> {
@@ -129,8 +138,8 @@ public class RemoteValueCodec(
             }
 
             Tag.Sequence -> {
-                val size = input.readInt()
-                require(size in 0..minOf(limits.collectionEntries, input.available())) { "Invalid remote collection length." }
+                val size = input.int
+                require(size in 0..minOf(limits.collectionEntries, input.remaining())) { "Invalid remote collection length." }
                 ProjectionValue.Sequence(List(size) { read(input, depth + 1, budget) })
             }
         }
@@ -145,10 +154,10 @@ public class RemoteValueCodec(
         output.write(value)
     }
 
-    private fun readBytes(input: DataInputStream): ByteArray {
-        val size = input.readInt()
-        require(size in 0..minOf(limits.messageBytes, input.available())) { "Invalid remote byte length." }
-        return ByteArray(size).also(input::readFully)
+    private fun readBytes(input: ByteBuffer): ByteArray {
+        val size = input.int
+        require(size in 0..minOf(limits.messageBytes, input.remaining())) { "Invalid remote byte length." }
+        return ByteArray(size).also { input.get(it) }
     }
 
     /**
@@ -167,15 +176,44 @@ public class RemoteValueCodec(
     }
 
     /**
-     * Checks growth before ByteArrayOutputStream can allocate beyond the message budget.
+     * Uses ordinary JDK primitives while packing admitted ASCII into the same bounded output buffer.
+     * A text payload reserves once, creates no temporary encoder buffer, and preserves the inherited byte count.
+     */
+    private class EncodingOutput(
+        private val bytes: BoundedOutput,
+    ) : DataOutputStream(bytes) {
+        fun writeAscii(value: String) {
+            writeInt(value.length)
+            bytes.appendAscii(value)
+            // The bounded buffer proves the complete stream count remains within its positive Int limit.
+            written = Math.addExact(written, value.length)
+        }
+    }
+
+    /**
+     * Checks growth before allocating beyond the message budget and writes only to invocation-owned storage.
+     * The encoder never shares this buffer, so per-byte stream synchronization is unnecessary.
      */
     private class BoundedOutput(
         private val limit: Int,
     ) : ByteArrayOutputStream() {
+        /**
+         * Packs only caller-admitted ASCII after checking complete growth, without per-byte stream dispatch.
+         * This buffer belongs exclusively to one encode invocation and is copied before being returned.
+         */
+        fun appendAscii(value: String) {
+            require(value.length <= limit - count) { "Remote message exceeds its byte limit." }
+            val end = count + value.length
+            reserve(end)
+            for (index in value.indices) buf[count + index] = value[index].code.toByte()
+            count = end
+        }
+
         override fun write(value: Int) {
             require(count < limit) { "Remote message exceeds its byte limit." }
             reserve(count + 1)
-            super.write(value)
+            buf[count] = value.toByte()
+            count += 1
         }
 
         override fun write(
@@ -184,8 +222,10 @@ public class RemoteValueCodec(
             length: Int,
         ) {
             require(length <= limit - count) { "Remote message exceeds its byte limit." }
+            Objects.checkFromIndexSize(offset, length, bytes.size)
             reserve(count + length)
-            super.write(bytes, offset, length)
+            bytes.copyInto(buf, count, offset, offset + length)
+            count += length
         }
 
         private fun reserve(required: Int) {

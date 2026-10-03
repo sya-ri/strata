@@ -32,6 +32,7 @@ public object RemoteWorkEvidence {
         }
         verifySurface()
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
+        check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt"), includes = listOf("RemoteProtocolBenchmark.diff")).size == 6)
         val benchmark = RemoteProtocolBenchmark()
         listOf(100, 8192).forEach { count ->
             RemoteChange.entries.forEach { change ->
