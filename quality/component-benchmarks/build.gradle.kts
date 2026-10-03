@@ -211,3 +211,13 @@ val verifyPublishedHostInventory = tasks.register<JavaExec>("verifyPublishedHost
 }
 tasks.named("check") { dependsOn(verifyPublishedHostInventory) }
 tasks.named("jmhComponents") { dependsOn(verifyPublishedHostInventory) }
+
+tasks.register<JavaExec>("processNativeComponentEvidence") {
+    group = "verification"
+    description = "Validates three native component invocations and delegates all aggregation to the testkit."
+    dependsOn("classes")
+    classpath = sourceSets.named("main").get().runtimeClasspath
+    javaLauncher.set(componentLauncher)
+    mainClass.set("dev.s7a.strata.quality.benchmark.NativeComponentPerformanceEvidence")
+    providers.gradleProperty("strata.performance.request").orNull?.let { args(rootProject.file(it).absolutePath) }
+}

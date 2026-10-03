@@ -10,6 +10,7 @@ style:
       - "**/integration/server-performance/**"
       - "**/integration/paper/src/main/**"
       - "**/integration/velocity/src/main/**"
+      - "**/canvas/**/MinecraftNativePerformance*.kt"
     methods:
       - "java.lang.System.nanoTime"
       - "java.lang.System.currentTimeMillis"

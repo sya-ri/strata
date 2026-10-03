@@ -12,14 +12,25 @@ internal class NativeWindowGuard(
     private val minimized: () -> Boolean
 
     init {
-        val minecraft = Class.forName("net.minecraft.client.Minecraft", true, loader)
-        val client = checkNotNull(HostReflection.call(minecraft.getMethod("getInstance"), null))
-        val window = checkNotNull(HostReflection.invoke(client, "getWindow"))
-        val handleMethod =
-            listOf("handle", "getWindow").firstNotNullOfOrNull { name ->
-                window.javaClass.methods.firstOrNull { it.name == name && it.parameterCount == 0 }
-            } ?: error("Missing supported Minecraft Window native handle")
-        val handle = (HostReflection.call(handleMethod, window) as Number).toLong()
+        val minecraft =
+            try {
+                Class.forName("net.minecraft.client.Minecraft", true, loader)
+            } catch (_: ClassNotFoundException) {
+                null
+            }
+        val (window, handle, legacy) =
+            if (minecraft != null) {
+                val client = checkNotNull(HostReflection.call(minecraft.getMethod("getInstance"), null))
+                val actual = checkNotNull(HostReflection.invoke(client, "getWindow"))
+                val handleMethod =
+                    listOf("handle", "getWindow").firstNotNullOfOrNull { name ->
+                        actual.javaClass.methods.firstOrNull { it.name == name && it.parameterCount == 0 }
+                    } ?: error("Missing supported Minecraft Window native handle")
+                Triple(actual, (HostReflection.call(handleMethod, actual) as Number).toLong(), handleMethod.name.contentEquals("getWindow"))
+            } else {
+                val mapped = NativeMappedWindowAccess.load(loader)
+                Triple(mapped.first, mapped.second, true)
+            }
         check(handle != 0L) { "Native benchmark has no live window" }
         val iconified =
             try {
@@ -31,7 +42,7 @@ internal class NativeWindowGuard(
             if (iconified != null) {
                 { HostReflection.call(iconified, window) as Boolean }
             } else {
-                check(handleMethod == window.javaClass.getMethod("getWindow")) { "The loaded Window has no supported iconification contract" }
+                check(legacy) { "The loaded Window has no supported iconification contract" }
                 val glfw = Class.forName("org.lwjgl.glfw.GLFW", true, loader)
                 val attribute: Method = glfw.getMethod("glfwGetWindowAttrib", Long::class.javaPrimitiveType, Int::class.javaPrimitiveType)
                 val iconifiedAttribute = glfw.getField("GLFW_ICONIFIED").getInt(null)

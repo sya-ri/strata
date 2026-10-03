@@ -63,6 +63,34 @@ The member gate first requires every published project's actual `checkKotlinAbi`
 `:quality:component-benchmarks:capturePublishedHostInventory` stages prospective assignments for review without changing the checked-in registry.
 Compiler source visibility is distinct from the separate loaded-JVM inventories; those origin checks remain required.
 Registration is not completed measurement evidence or proof that every member executed.
+
+## Native component presentation
+
+The production Fabric GameTest can collect the 26 compiled canonical component declarations and the real sampled/custom Canvas scene with `-Pstrata.performance.nativeOutput=<new-absolute-directory>`.
+Invoke the selected `:integration:minecraft-fabric-<version>:runProductionClientGameTest` task three times with independent directories, with no other builds or performance workloads running during sampling.
+The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
+It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
+Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
+The 108-phase corpus measures settled presentation; it does not measure input, mutation, resize, release latency or GPU completion.
+Terminal native resource release is a correctness assertion outside timing.
+The ordinary Canvas acceptance path remains unchanged when the property is absent.
+Each invocation keeps a separate client directory beneath its integration project's `build/run/native-performance/`, preserving the actual processed-mod code sources needed for later archive/class-tree verification and satisfying the existing client-run containment contract.
+Do not delete these client directories before processing or replace their origins with standalone Maven files.
+For legacy production clients, window validation resolves intermediary client/window owners and descriptors through the actual Fabric mapping resolver; development-only class names are not assumed in a remapped client.
+Missing mappings, missing host members, dead handles and iconified windows reject collection rather than producing a valid zero-cost interval.
+
+Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
+The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
+The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
+The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
+Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
+
+Rendering/extraction-family representatives are 1.20.6, 1.21.1, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1, 26.2 and 26.3, selected from the existing target declarations.
+These ten tuples cover the current UI, Canvas and test-extraction families; they do not certify all combinations of transport, input, Java compatibility or resource loading across the 22 supported targets.
+The exact case registry is `quality/component-benchmarks/src/main/resources/native-components.tsv`; a changed canonical matrix requires review rather than an automatic baseline update.
+Fixture implementation or registration alone is not completed three-run native evidence.
 Versioned Fabric registrations currently point to the shared loaded-client profile-cache probe, which already delegates its actual open/extraction measurements to `JvmPerformanceRunner`.
 Those short correctness probes do not establish three full-default native performance repetitions or native work-counter coverage for every supported rendering family.
 The test-only collector registers its own contract verification separately from runtime workload collection.

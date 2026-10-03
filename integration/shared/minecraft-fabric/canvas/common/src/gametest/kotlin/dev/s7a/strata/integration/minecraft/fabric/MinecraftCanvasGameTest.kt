@@ -7,6 +7,7 @@ import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.file.Files
+import java.nio.file.Path
 import java.security.MessageDigest
 import javax.imageio.ImageIO
 
@@ -32,6 +33,10 @@ internal object MinecraftCanvasGameTest {
         context: MinecraftCanvasTestContext,
         profile: MinecraftUiProfile,
     ) {
+        System.getProperty("strata.performance.nativeOutput")?.let { output ->
+            MinecraftNativePerformanceEntry.run(context, profile, Path.of(output))
+            return
+        }
         val fixture = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
         var screen: FabricMinecraftScreen? = null
         var failure: Throwable? = null

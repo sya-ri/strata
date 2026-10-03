@@ -59,6 +59,8 @@ public object ComponentWorkEvidence {
     }
 
     private fun verifyJmhInventory() {
+        val nativeRows = checkNotNull(javaClass.getResourceAsStream("/native-components.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+        check(nativeRows.size == ComponentWorkload.entries.size + 1 && nativeRows.toSet() == ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas") { "Review the changed native component registration" }
         val fixtures = listOf(ComponentRenderingBenchmark::class.java)
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 4 * ComponentWorkload.entries.size)
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 8 * ComponentWorkload.entries.size)

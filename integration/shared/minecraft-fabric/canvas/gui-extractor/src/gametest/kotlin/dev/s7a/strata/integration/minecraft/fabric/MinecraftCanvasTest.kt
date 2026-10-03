@@ -116,6 +116,13 @@ private fun withMinecraftCanvasContext(
                 context.waitFor(Predicate<Minecraft> { condition() })
             }
 
+            override fun waitFor(
+                timeoutTicks: Int,
+                condition: () -> Boolean,
+            ) {
+                context.waitFor(Predicate<Minecraft> { condition() }, timeoutTicks)
+            }
+
             override fun waitTicks(ticks: Int) {
                 context.waitTicks(ticks)
             }
