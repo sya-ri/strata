@@ -36,7 +36,8 @@ The memory policy reserves 2 GiB for the desktop and unallocated Gradle heap, th
 This is a conservative scheduling estimate, not a measured resident-memory guarantee; GPU memory is not queried.
 Automatic capacity never falls below one client, preserving the existing serial baseline even when conservative reservations exceed free memory.
 Unknown physical-memory support also falls back to one client; this minimum is not a guarantee that a host has enough RAM to run Minecraft.
-Admission waiting behind running clients fails after five minutes instead of waiting indefinitely.
+Admission fails after five minutes without an admitted client completing, rather than limiting the total duration of a healthy queue.
+Only an actual admitted client completion refreshes the stalled-wait deadline; unrelated Gradle tasks cannot keep a stuck queue alive.
 Automatic clients default to a 1 GiB maximum Java heap; `-Pstrata.minecraftClientHeap=2g` or another positive JVM heap size changes both the JVM limit and its admission budget.
 Use enough workers to make parallelism possible, for example `./gradlew check --max-workers=8`.
 For a fixed correctness ceiling, use `-Pstrata.minecraftClientParallelism=4 --max-workers=6`; this explicitly bypasses resource adaptation.

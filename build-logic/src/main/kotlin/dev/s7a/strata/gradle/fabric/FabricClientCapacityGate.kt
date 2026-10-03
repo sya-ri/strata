@@ -10,24 +10,32 @@ import kotlin.concurrent.withLock
 internal class FabricClientCapacityGate(
     private val capacity: () -> Int,
     private val timeoutMillis: Long = TimeUnit.MINUTES.toMillis(5),
+    private val nanoTime: () -> Long = System::nanoTime,
 ) : AutoCloseable {
     private val lock = ReentrantLock()
     private val changed = lock.newCondition()
     private val admitted = mutableSetOf<String>()
     private var closed = false
+    private var completions = 0L
 
     /**
-     * Wait interruptibly for current capacity, failing rather than hanging indefinitely under resource pressure.
+     * Wait interruptibly for current capacity; fail after a stalled interval, not while admitted clients complete.
      */
     fun acquire(taskPath: String): Int =
         lock.withLock {
             check((taskPath in admitted).not()) { "Client task already admitted: $taskPath" }
-            val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
+            val timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
+            var deadline = nanoTime() + timeoutNanos
+            var observedCompletions = completions
             check(closed.not()) { "Client admission is closed" }
             var limit = capacity()
             while (limit <= admitted.size) {
                 check(closed.not()) { "Client admission is closed" }
-                val remaining = deadline - System.nanoTime()
+                if (observedCompletions != completions) {
+                    observedCompletions = completions
+                    deadline = nanoTime() + timeoutNanos
+                }
+                val remaining = deadline - nanoTime()
                 check(0 < remaining) { "Timed out waiting for client resources: $taskPath" }
                 changed.awaitNanos(minOf(remaining, TimeUnit.SECONDS.toNanos(1)))
                 check(closed.not()) { "Client admission is closed" }
@@ -42,7 +50,7 @@ internal class FabricClientCapacityGate(
      */
     fun release(taskPath: String): Unit =
         lock.withLock {
-            admitted.remove(taskPath)
+            if (admitted.remove(taskPath)) completions = Math.incrementExact(completions)
             changed.signalAll()
         }
 

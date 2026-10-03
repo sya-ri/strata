@@ -10,6 +10,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Verify changing resource admission, cancellation and memory boundaries without Minecraft or host-dependent thresholds.
@@ -87,6 +89,60 @@ internal class FabricClientCapacityTest {
             assertThrows(IllegalStateException::class.java) {
                 FabricClientCapacityGate({ 0 }, timeoutMillis = 0).use { it.acquire("timeout") }
             }
+        } finally {
+            gate.close()
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `completed clients keep a long healthy queue alive`() {
+        val time = AtomicLong()
+        val limit = AtomicInteger(4)
+        val observed = AtomicReference(CountDownLatch(1))
+        val executor = Executors.newSingleThreadExecutor()
+        val gate =
+            FabricClientCapacityGate({
+                observed.get().countDown()
+                limit.get()
+            }, timeoutMillis = 1000, nanoTime = time::get)
+        try {
+            (1..4).forEach { gate.acquire("client-$it") }
+            limit.set(1)
+            observed.set(CountDownLatch(1))
+            val queued = executor.submit<Int> { gate.acquire("queued") }
+            assertTrue(observed.get().await(2, TimeUnit.SECONDS))
+            (1..3).forEach { index ->
+                observed.set(CountDownLatch(1))
+                time.addAndGet(TimeUnit.MILLISECONDS.toNanos(750))
+                gate.release("client-$index")
+                assertTrue(observed.get().await(2, TimeUnit.SECONDS))
+            }
+            gate.release("client-4")
+            assertEquals(1, queued.get(2, TimeUnit.SECONDS))
+        } finally {
+            gate.close()
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `unrelated task completions cannot extend a stalled queue`() {
+        val time = AtomicLong()
+        val observed = CountDownLatch(1)
+        val executor = Executors.newSingleThreadExecutor()
+        val gate =
+            FabricClientCapacityGate({
+                observed.countDown()
+                0
+            }, timeoutMillis = 1000, nanoTime = time::get)
+        try {
+            val queued = executor.submit<Int> { gate.acquire("queued") }
+            assertTrue(observed.await(2, TimeUnit.SECONDS))
+            time.set(TimeUnit.SECONDS.toNanos(2))
+            gate.release("unrelated")
+            val failure = assertThrows(ExecutionException::class.java) { queued.get(2, TimeUnit.SECONDS) }
+            assertTrue(failure.cause is IllegalStateException)
         } finally {
             gate.close()
             executor.shutdownNow()
