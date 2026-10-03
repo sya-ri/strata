@@ -356,6 +356,7 @@ private class MinecraftTextFieldElement(
         ): Int {
             if (width(text, 0, visualCursor) <= innerWidth) return 0
             checkNotNull(textRenderer).literalIntegralStartWithin(text, font, visualCursor, innerWidth)?.let { return it }
+            checkNotNull(textRenderer).literalExactStartWithin(text, font, visualCursor, innerWidth)?.let { return it }
             var start = 0
             if (hasMonotoneWidths(text, visualCursor)) {
                 var end = visualCursor
@@ -364,7 +365,7 @@ private class MinecraftTextFieldElement(
                     if (width(text, middle, visualCursor) <= innerWidth) end = middle else start = nextScalar(text, middle)
                 }
             } else {
-                while (start < visualCursor && innerWidth < width(text, start, visualCursor)) start = nextScalar(text, start)
+                return checkNotNull(textRenderer).literalScalarStartWithin(text, font, visualCursor, innerWidth)
             }
             return start
         }
@@ -378,10 +379,10 @@ private class MinecraftTextFieldElement(
             var total = 0f
             while (position < end) {
                 val advance = renderer.advance(font, text.codePointAt(position))
-                if (advance.isFinite().not() || advance < 0f) return false
+                if (advance.isNaN() || advance < 0f) return false
                 total += advance
                 // Earlier native ceil can overflow after conversion; keep that exceptional path in scalar order.
-                if (Int.MAX_VALUE.toFloat() <= total) return false
+                if (Int.MAX_VALUE.toFloat() <= total && renderer.roundedWidth(total) != Int.MAX_VALUE) return false
                 position = nextScalar(text, position)
             }
             return true

@@ -6,6 +6,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiProfile
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -16,8 +17,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal object ComponentProfile {
     /**
      * Creates the complete profile outside timed operations; no native or application resource is acquired.
+     * The unchanged default is the component bitmap snapshot; supplemental metric fixtures may supply their own snapshot.
      */
-    internal fun create(): MinecraftUiProfile =
+    internal fun create(snapshot: MinecraftFontSnapshot = ComponentFontAssets.snapshot()): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(image(16, 16))
             containerBackground(image(256, 256))
@@ -44,7 +46,7 @@ internal object ComponentProfile {
             tooltipFrame(image(100, 100))
             textFieldNormal(image(200, 20))
             textFieldHighlighted(image(200, 20))
-            fonts(ComponentFontAssets.snapshot())
+            fonts(snapshot)
             buttonNormal(image(200, 20), 3, NineSliceCenterMode.Tiled)
             buttonHighlighted(image(200, 20), 3, NineSliceCenterMode.Tiled)
             buttonDisabled(image(200, 20), 1, NineSliceCenterMode.Tiled)

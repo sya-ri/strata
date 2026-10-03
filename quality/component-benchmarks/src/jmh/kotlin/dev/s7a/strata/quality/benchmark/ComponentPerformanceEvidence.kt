@@ -18,6 +18,10 @@ public object ComponentPerformanceEvidence {
     public fun main(args: Array<String>) {
         require(2 < args.size)
         RuntimeSurfaceInventoryEvidence.verify()
+        if (System.getProperty("strata.performance.exceptionalText", "false").toBooleanStrict()) {
+            exceptionalText(args)
+            return
+        }
         if (System.getProperty("strata.performance.fonts", "false").toBooleanStrict()) {
             fonts(args)
             return
@@ -85,6 +89,23 @@ public object ComponentPerformanceEvidence {
             options.toTypedArray(),
             listOf(benchmark),
             mapOf("api" to "dev.s7a.strata.component.UiScope", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost", "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory"),
+            Path.of(args[0]),
+            args[1].toInt(),
+            JmhWorkloadInventory.capture(listOf(benchmark), setOf(mode.shortLabel()), parameters),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI())),
+        )
+    }
+
+    private fun exceptionalText(args: Array<String>) {
+        val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
+        val selection = PerformanceSelection(ExceptionalTextWorkload.entries.map { it.name }.toSet(), System.getProperty("strata.performance.workloads"))
+        val parameters = mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
+        val benchmark = ExceptionalTextFieldBenchmark::class.java
+        val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
+        JmhPerformanceRunner.run(
+            (args.drop(2) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }).toTypedArray(),
+            listOf(benchmark),
+            mapOf("api" to "dev.s7a.strata.component.UiScope", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost"),
             Path.of(args[0]),
             args[1].toInt(),
             JmhWorkloadInventory.capture(listOf(benchmark), setOf(mode.shortLabel()), parameters),

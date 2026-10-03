@@ -112,17 +112,19 @@ tasks.register<JavaExec>("jmhComponents") {
     require(mode in setOf("avgt", "sample"))
     val stress = providers.gradleProperty("strata.performance.stress").map(String::toBooleanStrict).getOrElse(false)
     val fonts = providers.gradleProperty("strata.performance.fonts").map(String::toBooleanStrict).getOrElse(false)
-    require(listOf(stress, fonts).count { it } <= 1) { "Choose one independent corpus" }
-    val corpus = if (fonts) "fonts" else if (stress) "stress" else "components"
+    val exceptionalText = providers.gradleProperty("strata.performance.exceptionalText").map(String::toBooleanStrict).getOrElse(false)
+    require(listOf(stress, fonts, exceptionalText).count { it } <= 1) { "Choose one independent corpus" }
+    val corpus = if (fonts) "fonts" else if (stress) "stress" else if (exceptionalText) "exceptional-text" else "components"
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
-    require(fonts.not() || workloads == null) { "Workload selection currently supports the component and stress corpora" }
+    require(fonts.not() || workloads == null) { "Workload selection supports the component, stress and exceptional-text corpora" }
     val suite = (if (smoke) "$corpus-smoke" else corpus) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     workloads?.let { systemProperty("strata.performance.workloads", it) }
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    args(result.get().absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else if (exceptionalText) "ExceptionalTextFieldBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fonts", fonts)
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.stress", stress)
+    systemProperty("strata.performance.exceptionalText", exceptionalText)
     systemProperty("strata.performance.smoke", smoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
@@ -165,6 +167,20 @@ providers.gradleProperty("strata.performance.workloads").orNull?.let { selected 
 }
 
 tasks.named("check") { dependsOn(verifyStressRenderingWork) }
+
+val verifyExceptionalTextWork = tasks.register<JavaExec>("verifyExceptionalTextWork") {
+    group = "verification"
+    description = "Checks supplemental exceptional TextField metrics, clean frames, real updates and terminal font release."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.ExceptionalTextWorkEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
+tasks.named("check") { dependsOn(verifyExceptionalTextWork) }
 
 val verifyFontWork = tasks.register<JavaExec>("verifyFontWork") {
     group = "verification"

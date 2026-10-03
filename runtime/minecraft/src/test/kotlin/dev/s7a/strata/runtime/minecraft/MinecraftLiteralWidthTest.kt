@@ -124,10 +124,51 @@ internal class MinecraftLiteralWidthTest {
                 })
             })
         MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+            assertEquals(text.length - 23, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 8))
+            assertTrue(lookups <= 2 * text.length)
+            lookups = 0
             assertEquals(text.length - 23, renderer.literalIntegralStartWithin(text, FontTestResources.defaultFont, text.length, 8))
             assertTrue(lookups <= 2 * text.length)
             renderer.close()
-            assertThrows(IllegalStateException::class.java) { renderer.literalIntegralStartWithin(text, FontTestResources.defaultFont, text.length, 8) }
+            assertThrows(IllegalStateException::class.java) { renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 8) }
+        }
+    }
+
+    @Test
+    fun longSignedFractionalSuffixRequiresAtMostTwoGlyphScansWithoutCaching() {
+        val text = "AB".repeat(8_192)
+        val snapshot = FontTestResources.snapshot(FontTestResources.font("default", """{"type":"ttf","file":"test:input.ttf"}"""), "assets/test/font/input.ttf" to byteArrayOf(1))
+        var lookups = 0
+        val backend =
+            FontTestBackend(open = { _, _ ->
+                FontTestFace(lookup = { codePoint ->
+                    lookups += 1
+                    MinecraftFontGlyph(if (codePoint == 'A'.code) 0.75f else -0.5f, 0f, 0f, 0f, 0f, null)
+                })
+            })
+        MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+            assertEquals(text.length - 69, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 8))
+            assertTrue(lookups <= 2 * text.length)
+        }
+    }
+
+    @Test
+    fun cancellationRangesAdmitLargeTotalsAndTinyFractionalSpacingWithoutCaching() {
+        val text = "AB".repeat(8_192)
+        val snapshot = FontTestResources.snapshot(FontTestResources.font("default", """{"type":"ttf","file":"test:input.ttf"}"""), "assets/test/font/input.ttf" to byteArrayOf(1))
+        for (magnitude in listOf(5000f, 0.1f, Float.MIN_VALUE, Float.MAX_VALUE)) {
+            var lookups = 0
+            val backend =
+                FontTestBackend(open = { _, _ ->
+                    FontTestFace(lookup = { codePoint ->
+                        lookups += 1
+                        MinecraftFontGlyph(if (codePoint == 'A'.code) -magnitude else magnitude, 0f, 0f, 0f, 0f, null)
+                    })
+                })
+            MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend }, cacheEntries = 0)).use { renderer ->
+                assertEquals(0, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, text.length, 0))
+                assertEquals(text.length, lookups)
+            }
         }
     }
 
@@ -146,16 +187,19 @@ internal class MinecraftLiteralWidthTest {
                             'A'.code -> 16_777_216f
                             'B'.code -> 1f
                             'C'.code -> -16_777_216f
-                            else -> 1.25f
+                            'D'.code -> 1.25f
+                            else -> 0.1f
                         }
                     MinecraftFontGlyph(advance, 0f, 0f, 0f, 0f, null)
                 })
             })
         MinecraftTextRenderer.fonts(MinecraftFontEngine(snapshot, MinecraftFontBackendFactory { backend })).use { renderer ->
-            assertEquals(1, renderer.literalIntegralStartWithin("A", FontTestResources.defaultFont, 1, 0))
-            assertEquals(null, renderer.literalIntegralStartWithin("AB", FontTestResources.defaultFont, 2, 0))
-            assertEquals(null, renderer.literalIntegralStartWithin("ABC", FontTestResources.defaultFont, 3, 0))
-            assertEquals(null, renderer.literalIntegralStartWithin("D", FontTestResources.defaultFont, 1, 0))
+            assertEquals(1, renderer.literalExactStartWithin("A", FontTestResources.defaultFont, 1, 0))
+            assertEquals(null, renderer.literalExactStartWithin("AB", FontTestResources.defaultFont, 2, 0))
+            assertEquals(null, renderer.literalExactStartWithin("ABC", FontTestResources.defaultFont, 3, 0))
+            assertEquals(1, renderer.literalExactStartWithin("D", FontTestResources.defaultFont, 1, 0))
+            assertEquals(1, renderer.literalExactStartWithin("E", FontTestResources.defaultFont, 1, 0))
+            assertEquals(null, renderer.literalExactStartWithin("DE", FontTestResources.defaultFont, 2, 0))
             assertEquals(0, renderer.create(UiText.Literal("ABC"), TextStyle.TextField, logicalOrder = true).nativeWidth)
         }
     }
@@ -171,6 +215,7 @@ internal class MinecraftLiteralWidthTest {
                 while (expected < end && maximumWidth < renderer.create(UiText.Literal(text.substring(expected, end)), TextStyle.TextField, logicalOrder = true).nativeWidth) {
                     expected += Character.charCount(text.codePointAt(expected))
                 }
+                assertEquals(expected, renderer.literalExactStartWithin(text, FontTestResources.defaultFont, end, maximumWidth))
                 assertEquals(expected, renderer.literalIntegralStartWithin(text, FontTestResources.defaultFont, end, maximumWidth))
             }
         }

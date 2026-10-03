@@ -63,7 +63,7 @@ public object RuntimeSurfaceInventoryEvidence {
     }
 
     private fun registeredScenarios(): List<PerformanceScenario> {
-        val components = JmhWorkloadInventory.capture(listOf(ComponentRenderingBenchmark::class.java, StressRenderingBenchmark::class.java), setOf("avgt"))
+        val components = JmhWorkloadInventory.capture(listOf(ComponentRenderingBenchmark::class.java, StressRenderingBenchmark::class.java, ExceptionalTextFieldBenchmark::class.java), setOf("avgt"))
         val fonts = JmhWorkloadInventory.capture(listOf(FontProviderBenchmark::class.java, FontTextBenchmark::class.java), setOf("avgt"))
         return components.map { id -> PerformanceScenario(id, setOf(RuntimeSurfaceFeature.Api.name, RuntimeSurfaceFeature.Core.name, RuntimeSurfaceFeature.Minecraft.name), setOf(PerformanceHost.Jvm), setOf(phase(id)), "portable-rendering-v1") } +
             fonts.map { id -> PerformanceScenario(id, setOf(RuntimeSurfaceFeature.Fonts.name), setOf(PerformanceHost.Jvm), setOf(phase(id)), "portable-fonts-v1") }
