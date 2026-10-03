@@ -1401,6 +1401,12 @@ subprojects {
                     check(licenseEntries == 1) {
                         "Published archive ${archive.name} must contain META-INF/LICENSE-strata exactly once; found $licenseEntries."
                     }
+                    if (name in setOf("sourcesJar", "remapSourcesJar")) {
+                        val entries = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                        check(entries.any { entry -> entry.endsWith(".kt") || entry.endsWith(".java") } && entries.none { entry -> entry.endsWith(".class") }) {
+                            "Published sources archive ${archive.name} must contain source files and no compiled classes."
+                        }
+                    }
                 }
             }
         }
@@ -1693,9 +1699,14 @@ subprojects {
     if (publishableModule) {
         val artifactId = releaseArtifactByProjectPath.getValue(path).substringAfter(':')
         if (minecraftTargetByProjectPath[path]?.remapped == true) {
+            tasks.withType<AbstractArchiveTask>().matching { task -> task.name == "remapSourcesJar" }.configureEach {
+                archiveClassifier.set("sources")
+            }
             afterEvaluate {
-                val rawSources = tasks.named<Jar>("sourcesJar").get().archiveFile.get().asFile
-                configurations.named("sourcesElements").get().outgoing.artifacts.removeIf { artifact -> artifact.file == rawSources }
+                val rawSources = tasks.named("sourcesJar").get()
+                configurations.named("sourcesElements").get().outgoing.artifacts.removeIf { artifact ->
+                    rawSources in artifact.buildDependencies.getDependencies(null)
+                }
             }
         }
         extensions.configure<MavenPublishBaseExtension> {

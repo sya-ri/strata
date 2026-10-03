@@ -30,7 +30,10 @@ internal object MavenPublicationFiles {
                 }.groupBy({ it.first }, { it.second })
         check(files.keys == artifacts.toSet()) { "Publication file owners differ from the Maven coordinate inventory." }
         files.values.forEach { suffixes ->
-            check(suffixes.containsAll(listOf(".pom", ".module")) && 2 < suffixes.size) { "Publication metadata or artifacts are missing." }
+            check(
+                suffixes.containsAll(listOf(".pom", ".module", "-sources.jar", "-javadoc.jar")) &&
+                    suffixes.any { suffix -> suffix == ".jar" || suffix == ".klib" },
+            ) { "Publication metadata, binary, sources, or Javadoc artifacts are missing." }
         }
         return files
     }
