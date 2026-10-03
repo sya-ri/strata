@@ -12,6 +12,7 @@ import com.vanniktech.maven.publish.SourcesJar
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import dev.s7a.strata.gradle.fabric.FabricClientTestOptions
+import dev.s7a.strata.gradle.fabric.FabricClientResourceService
 import dev.s7a.strata.gradle.fabric.FabricToolchainManifest
 import dev.s7a.strata.gradle.fabric.LibraryClientProductionRunTask
 import dev.s7a.strata.gradle.performance.PublishedPerformanceInventory
@@ -26,6 +27,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -39,6 +41,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.MAVEN_PUBLICATIONS
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -104,6 +107,12 @@ private data class MinecraftFabricTarget(
 ) {
     /** Gradle-owned lock service used to limit unrelated tasks that share mutable external resources. */
     abstract class ExclusiveTaskService : BuildService<BuildServiceParameters.None>
+
+    /** Inject the supported task-completion registry without reaching into Gradle internals. */
+    abstract class ClientTaskEvents {
+        @get:Inject
+        abstract val registry: BuildEventsListenerRegistry
+    }
 
     val runtimeProjectPath: String = ":runtime:minecraft-fabric-$version"
     val integrationProjectPath: String = ":integration:minecraft-fabric-$version"
@@ -987,12 +996,55 @@ private val selectedMinecraftClientTasks =
             add("${target.integrationProjectPath}:runProductionClientGameTest")
         }
     }
+private val minecraftClientParallelismSetting = providers.gradleProperty("strata.minecraftClientParallelism").getOrElse("auto")
+private val automaticMinecraftClients =
+    minecraftClientParallelismSetting == "auto" && providers.gradleProperty("strata.performance.nativeOutput").isPresent.not()
+private val minecraftClientParallelism =
+    (if (minecraftClientParallelismSetting == "auto") {
+        if (automaticMinecraftClients) {
+            minOf(Runtime.getRuntime().availableProcessors() / 2, gradle.startParameter.maxWorkerCount - 1).coerceAtLeast(1)
+        } else {
+            1
+        }
+    } else {
+        minecraftClientParallelismSetting.toInt()
+    }).also {
+        require(0 < it) { "strata.minecraftClientParallelism must be positive" }
+        require(it == 1 || providers.gradleProperty("strata.performance.nativeOutput").isPresent.not()) {
+            "Native performance collection requires serial Minecraft client execution"
+        }
+    }
+private val minecraftClientHeap =
+    providers.gradleProperty("strata.minecraftClientHeap").orNull
+        ?: if (automaticMinecraftClients) "1g" else "2g".takeIf { 1 < minecraftClientParallelism }
+private val minecraftClientResourceService =
+    if (automaticMinecraftClients) {
+        gradle.sharedServices.registerIfAbsent("minecraftClientResources", FabricClientResourceService::class) {
+            parameters.maximum.set(minecraftClientParallelism)
+            parameters.clientHeap.set(checkNotNull(minecraftClientHeap))
+        }.also { service ->
+            objects.newInstance(MinecraftFabricTarget.ClientTaskEvents::class.java).registry.onTaskCompletion(service)
+        }
+    } else {
+        null
+    }
 private val minecraftClientExecutionService =
     gradle.sharedServices.registerIfAbsent(
         "minecraftClientExecution",
         MinecraftFabricTarget.ExclusiveTaskService::class,
     ) {
-        maxParallelUsages.set(1)
+        maxParallelUsages.set(minecraftClientParallelism)
+    }
+private val minecraftClientPreparationService =
+    if (minecraftClientParallelism == 1) {
+        minecraftClientExecutionService
+    } else {
+        gradle.sharedServices.registerIfAbsent(
+            "minecraftClientPreparation",
+            MinecraftFabricTarget.ExclusiveTaskService::class,
+        ) {
+            maxParallelUsages.set(1)
+        }
     }
 private val minecraftRemapExecutionService =
     gradle.sharedServices.registerIfAbsent(
@@ -1089,7 +1141,8 @@ subprojects {
             }
         }
         tasks.matching { it.name in setOf("buildWeb", "verifyWeb", "jsBrowserTest") }.configureEach {
-            usesService(minecraftClientExecutionService)
+            usesService(minecraftClientPreparationService)
+            if (1 < minecraftClientParallelism) mustRunAfter(selectedMinecraftClientTasks)
         }
 
         extensions.configure<DetektExtension> {
@@ -1248,11 +1301,12 @@ subprojects {
     }
 
     tasks.matching { name in setOf("generateWebDemos", "checkWebDemos") }.configureEach {
-        usesService(minecraftClientExecutionService)
+        usesService(minecraftClientPreparationService)
+        if (1 < minecraftClientParallelism) mustRunAfter(selectedMinecraftClientTasks)
     }
 
     tasks.matching { task -> task.name == "downloadAssets" }.configureEach {
-        usesService(minecraftClientExecutionService)
+        usesService(minecraftClientPreparationService)
         val assetTaskIndex = selectedMinecraftAssetTasks.indexOf(path)
         if (assetTaskIndex != -1) {
             mustRunAfter(selectedMinecraftAssetTasks.take(assetTaskIndex))
@@ -1270,10 +1324,36 @@ subprojects {
                 is JavaExec -> systemProperty("fabric.client.gametest.disableNetworkSynchronizer", true)
             }
             usesService(minecraftClientExecutionService)
+            minecraftClientResourceService?.let { service ->
+                usesService(service)
+                doFirst { service.get().acquire(path) }
+            }
+            val target = checkNotNull(minecraftTargetByProjectPath[project.path])
+            usesService(
+                gradle.sharedServices.registerIfAbsent(
+                    "minecraftClient-${target.version}",
+                    MinecraftFabricTarget.ExclusiveTaskService::class,
+                ) {
+                    maxParallelUsages.set(1)
+                },
+            )
+            minecraftClientHeap?.let { heap ->
+                require(heap.matches(Regex("[1-9][0-9]*[kKmMgG]"))) {
+                    "strata.minecraftClientHeap must be a positive JVM heap size with a unit"
+                }
+                when (this) {
+                    is ClientProductionRunTask -> jvmArgs.add("-Xmx$heap")
+                    is JavaExec -> maxHeapSize = heap
+                }
+            }
             mustRunAfter(selectedMinecraftAssetTasks)
             val clientTaskIndex = selectedMinecraftClientTasks.indexOf(path)
             if (clientTaskIndex != -1) {
-                mustRunAfter(selectedMinecraftClientTasks.take(clientTaskIndex))
+                mustRunAfter(
+                    selectedMinecraftClientTasks.take(clientTaskIndex).filter { previous ->
+                        minecraftClientParallelism == 1 || previous.startsWith("${target.integrationProjectPath}:")
+                    },
+                )
             }
             doFirst {
                 val runDirectory =

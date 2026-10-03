@@ -1,3 +1,15 @@
+public abstract class dev/s7a/strata/gradle/fabric/FabricClientResourceService : java/lang/AutoCloseable, org/gradle/api/services/BuildService, org/gradle/tooling/events/OperationCompletionListener {
+	public fun <init> ()V
+	public final fun acquire (Ljava/lang/String;)V
+	public fun close ()V
+	public fun onFinish (Lorg/gradle/tooling/events/FinishEvent;)V
+}
+
+public abstract interface class dev/s7a/strata/gradle/fabric/FabricClientResourceService$Parameters : org/gradle/api/services/BuildServiceParameters {
+	public abstract fun getClientHeap ()Lorg/gradle/api/provider/Property;
+	public abstract fun getMaximum ()Lorg/gradle/api/provider/Property;
+}
+
 public final class dev/s7a/strata/gradle/fabric/FabricClientTestOptions {
 	public static final field INSTANCE Ldev/s7a/strata/gradle/fabric/FabricClientTestOptions;
 	public final fun prepare (Ljava/io/File;Ljava/io/File;)V

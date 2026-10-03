@@ -19,12 +19,34 @@ Other task combinations retain the complete project inventory.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
 
-Two single-permit build services serialize shared work:
+Shared build services bound native verification and shared preparation:
 
 | Work | Reason |
 | --- | --- |
-| Selected Loom asset preparation and client launches | Protect the shared asset cache and native client environment; assets precede clients. |
+| Selected Loom asset preparation | Protect the shared asset cache; all selected assets precede clients. |
+| Client launches | `strata.minecraftClientParallelism=auto` is the default; resource admission adapts during execution. A positive integer selects a fixed ceiling. |
+| Clients belonging to the same Minecraft version | Keep development, production and published-coordinate runs exclusive within their target. |
 | Official-mapping `remapJar` | Bound concurrent mapped-game graphs on hosted runners. |
+
+Correctness verification automatically adapts new client admission to current free physical RAM and system CPU load.
+The automatic ceiling uses half the available processors and leaves one Gradle worker for prerequisite tasks; there is no fixed two-client ceiling.
+Admission rechecks resources while waiting and before every launch, and task completion wakes waiting clients.
+Lower capacity stops additional launches until running clients finish; it does not cancel or restart an admitted test.
+The memory policy reserves 2 GiB for the desktop and unallocated Gradle heap, then budgets each client for its maximum heap plus 1 GiB of native memory.
+This is a conservative scheduling estimate, not a measured resident-memory guarantee; GPU memory is not queried.
+Unknown physical-memory support falls back to one client; insufficient resources fail admission after five minutes instead of waiting indefinitely.
+Automatic clients default to a 1 GiB maximum Java heap; `-Pstrata.minecraftClientHeap=2g` or another positive JVM heap size changes both the JVM limit and its admission budget.
+Use enough workers to make parallelism possible, for example `./gradlew check --max-workers=8`.
+For a fixed correctness ceiling, use `-Pstrata.minecraftClientParallelism=4 --max-workers=6`; this explicitly bypasses resource adaptation.
+Fixed parallel clients default to a 2 GiB heap; fixed serial execution retains the existing heap unless explicitly supplied.
+Each client retains its own target's disposable run directory and image output; browser tests and web demonstration generation wait for selected clients in parallel mode.
+Frame fences, pixel, input and resource assertions remain enabled.
+Use one invocation and separate versioned targets rather than concurrent Gradle writers against the same checkout.
+
+Performance collection is serial and runs without other builds or clients on the same machine.
+`strata.performance.nativeOutput` disables automatic admission and forces serial execution without changing the existing performance heap.
+Combining that property with an explicitly fixed parallel ceiling fails during configuration.
+Passing correctness checks in parallel does not establish controlled performance evidence.
 
 Client tasks seed disposable project-build run directories after cleanup, disabling accessibility onboarding, tutorials, narration, and sound.
 The Canvas/Slot oracle temporarily hides the HUD and restores it even on failure, preventing late tutorial/recipe toasts from covering pixels.

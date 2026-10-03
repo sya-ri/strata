@@ -66,6 +66,11 @@ Registration is not completed measurement evidence or proof that every member ex
 
 ## Native component presentation
 
+During an optimization, repeat the affected CPU corpus and focused JVM correctness checks.
+Run native performance invocations separately after the candidate stabilizes, and run the full supported-version regression matrix once at the final verification boundary.
+If a later failure requires another implementation change, return to affected checks and performance evidence before repeating the final regression gate.
+Correctness-only clients use resource-aware admission that adapts during execution as described in [CI execution](ci.md); measurement clients remain exclusive on their machine.
+
 The production Fabric GameTest can collect the 26 compiled canonical component declarations and the real sampled/custom Canvas scene with `-Pstrata.performance.nativeOutput=<new-absolute-directory>`.
 Invoke the selected `:integration:minecraft-fabric-<version>:runProductionClientGameTest` task three times with independent directories, with no other builds or performance workloads running during sampling.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
