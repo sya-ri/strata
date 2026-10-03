@@ -32,7 +32,7 @@ internal object MavenPublicationFiles {
         files.values.forEach { suffixes ->
             check(
                 suffixes.containsAll(listOf(".pom", ".module", "-sources.jar", "-javadoc.jar")) &&
-                    suffixes.any { suffix -> suffix == ".jar" || suffix == ".klib" },
+                    suffixes.any(setOf(".jar", ".klib")::contains),
             ) { "Publication metadata, binary, sources, or Javadoc artifacts are missing." }
         }
         return files

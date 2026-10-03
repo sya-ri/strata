@@ -17,12 +17,9 @@ public class RuntimeDeclaration internal constructor(
     public val identity: Long,
     public val element: Element,
     public val projection: DeclarationProjection<*>?,
-    modifiers: List<Modifier>,
-    children: List<RuntimeDeclaration>,
+    public val modifiers: List<Modifier>,
+    public val children: List<RuntimeDeclaration>,
 ) {
-    public val modifiers: List<Modifier> = modifiers
-    public val children: List<RuntimeDeclaration> = children
-
     /**
      * A stable active modifier identity and its current immutable description.
      */
