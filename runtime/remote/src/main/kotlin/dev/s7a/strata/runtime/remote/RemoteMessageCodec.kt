@@ -223,7 +223,7 @@ public class RemoteMessageCodec(
 
     private fun number(value: Int): ProjectionValue = number(value.toLong())
 
-    private fun fields(vararg values: ProjectionValue): ProjectionValue = sequence(values.toList())
+    private fun fields(vararg values: ProjectionValue): ProjectionValue = sequence(values.asList())
 
     private fun sequence(values: List<ProjectionValue>): ProjectionValue = ProjectionValue.Sequence(values)
 

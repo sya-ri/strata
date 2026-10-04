@@ -36,6 +36,7 @@ public final class dev/s7a/strata/runtime/UiTree : dev/s7a/strata/runtime/spi/Ru
 	public final fun paint ()Ljava/util/List;
 	public final fun semantics ()Ljava/util/List;
 	public fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+	public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 	public final fun update (Ldev/s7a/strata/element/Element;)V
 }
 
@@ -337,6 +338,11 @@ public final class dev/s7a/strata/runtime/spi/RuntimeUiController : dev/s7a/stra
 
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner {
 	public abstract fun startRenderMonitoring ()Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+	public fun startRenderMonitoring (I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner$DefaultImpls {
+	public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/spi/RuntimeUiDiagnosticsOwner;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 }
 
 public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiFrame {
@@ -366,6 +372,10 @@ public abstract interface class dev/s7a/strata/runtime/spi/RuntimeUiSession : de
 	public abstract fun getTextInputFocus ()Ldev/s7a/strata/runtime/spi/RuntimeTextInputFocus;
 	public abstract fun projectDeclarations (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public abstract fun resetInputState ()V
+}
+
+public final class dev/s7a/strata/runtime/spi/RuntimeUiSession$DefaultImpls {
+	public static fun startRenderMonitoring (Ldev/s7a/strata/runtime/spi/RuntimeUiSession;I)Ldev/s7a/strata/runtime/diagnostics/UiRenderMonitor;
 }
 
 public final class dev/s7a/strata/runtime/spi/RuntimeUiSessionFactory {

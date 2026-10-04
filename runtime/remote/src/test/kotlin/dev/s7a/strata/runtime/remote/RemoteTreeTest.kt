@@ -41,6 +41,43 @@ internal class RemoteTreeTest {
         assertEquals(listOf(2L), before.nodes.getValue(1).children)
     }
 
+    @Test
+    fun wideAndDeepTreesKeepTheOriginalAdmissionBounds() {
+        val count = RemoteLimits().treeNodes
+        val wide = RemoteTree(1, listOf(node(1, (2..count).map(Int::toLong))) + (2..count).map { node(it.toLong()) })
+        assertEquals(count, wide.nodes.size)
+        val chain = (1L..64L).map { identity -> node(identity, if (identity == 64L) emptyList() else listOf(identity + 1)) }
+        assertEquals(64, RemoteTree(1, chain).nodes.size)
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, chain, RemoteLimits(valueDepth = 63)) }
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, emptyList()) }
+    }
+
+    @Test
+    fun modifierIdentitiesCannotAliasVisitedOrPendingComponents() {
+        val declaration = RemoteDeclaration(2, type, ProjectionValue.Absent)
+        val root = RemoteNode(RemoteDeclaration(1, type, ProjectionValue.Absent), listOf(declaration), listOf(2))
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(root, node(2))) }
+        val child = RemoteNode(declaration, listOf(RemoteDeclaration(1, type, ProjectionValue.Absent)))
+        assertThrows(IllegalArgumentException::class.java) { RemoteTree(1, listOf(node(1, listOf(2)), child)) }
+        assertThrows(IllegalArgumentException::class.java) { RemotePatch(1, listOf(node(1), node(1)), emptyList()) }
+    }
+
+    @Test
+    fun emptyAndPopulatedNodeListsRemainDetachedFromCallerMutation() {
+        val children = mutableListOf<Long>()
+        val modifiers = mutableListOf<RemoteDeclaration>()
+        val empty = RemoteNode(RemoteDeclaration(1, type, ProjectionValue.Absent), modifiers, children)
+        children.add(2)
+        modifiers.add(RemoteDeclaration(3, type, ProjectionValue.Absent))
+        val populated = RemoteNode(empty.declaration, modifiers, children)
+        children.clear()
+        modifiers.clear()
+        assertEquals(emptyList<Long>(), empty.children)
+        assertEquals(emptyList<RemoteDeclaration>(), empty.modifiers)
+        assertEquals(listOf(2L), populated.children)
+        assertEquals(listOf(3L), populated.modifiers.map { it.identity })
+    }
+
     private fun node(
         identity: Long,
         children: List<Long> = emptyList(),

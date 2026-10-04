@@ -67,6 +67,7 @@ public fun renderHeadless(
  * Owns the private implementation of the public headless facade.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions") // Keeps primitive validation and ordered rasterization under the same private owner.
 private object HeadlessImplementation {
     fun rasterize(
         commands: List<DrawCommand>,
@@ -103,9 +104,7 @@ private object HeadlessImplementation {
         dimensions: PhysicalDimensions,
     ): HeadlessImage {
         val snapshot = snapshotCommands(commands)
-        val pixels = IntArray(dimensions.area)
-        paintSnapshot(pixels, dimensions, snapshot)
-        return ImageImpl(dimensions.physicalSize, pixels)
+        return ImageImpl(dimensions.physicalSize, paintSnapshot(dimensions, snapshot))
     }
 
     private fun snapshotCommands(commands: List<DrawCommand>): List<DrawCommand> {
@@ -140,34 +139,53 @@ private object HeadlessImplementation {
         return snapshot
     }
 
+    @Suppress("CyclomaticComplexMethod") // Explicit command ordering includes materialization before each non-uniform primitive.
     private fun paintSnapshot(
-        pixels: IntArray,
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
-    ) {
+    ): IntArray {
+        val initialPixels = initialImagePixels(commands.firstOrNull(), dimensions)
+        val pixels = initialPixels ?: IntArray(dimensions.area)
+        var uniform = initialPixels == null
+        var uniformColor = 0
         val clips = ArrayList<IntRect>()
         val physicalViewport = IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height)
-        commands.forEach { command ->
-            when (command) {
+        var index = if (initialPixels == null) 0 else 1
+        while (index < commands.size) {
+            if (uniform.not()) {
+                val end = composeFullFillRun(pixels, dimensions, commands, index, clips.lastOrNull())
+                if (index < end) {
+                    index = end
+                    continue
+                }
+            }
+            when (val command = commands[index++]) {
                 is DrawCommand.FillRectangle -> {
-                    paintFill(pixels, dimensions, command, clips.lastOrNull())
+                    if ((uniform || command.color.value ushr 24 == 0xFF) && coversViewport(command.bounds, dimensions, clips.lastOrNull())) {
+                        uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
+                        uniform = true
+                    } else {
+                        if (uniform) pixels.fill(uniformColor)
+                        uniform = paintFill(pixels, dimensions, command, clips.lastOrNull())
+                        if (uniform) uniformColor = pixels[0]
+                    }
                 }
 
                 is DrawCommand.BlitImage -> {
+                    if (uniform) pixels.fill(uniformColor)
+                    uniform = false
                     paintBlit(pixels, dimensions, command, clips.lastOrNull())
                 }
 
                 is DrawCommand.SampledImage -> {
-                    SampledImageRasterizer.paint(
-                        pixels,
-                        dimensions.physicalSize,
-                        dimensions.scale,
-                        command,
-                        clips.lastOrNull() ?: physicalViewport,
-                    )
+                    if (uniform) pixels.fill(uniformColor)
+                    uniform = false
+                    paintSampled(pixels, dimensions, command, clips.lastOrNull() ?: physicalViewport)
                 }
 
                 is DrawCommand.BlitImagePixels -> {
+                    if (uniform) pixels.fill(uniformColor)
+                    uniform = false
                     paintBlitPixels(pixels, dimensions, command, clips.lastOrNull())
                 }
 
@@ -176,17 +194,7 @@ private object HeadlessImplementation {
                 }
 
                 is DrawCommand.PushClip -> {
-                    val bounds = command.bounds
-                    val visible =
-                        IntRect(
-                            bounds.left.coerceIn(0, dimensions.viewport.width),
-                            bounds.top.coerceIn(0, dimensions.viewport.height),
-                            bounds.right.coerceIn(0, dimensions.viewport.width),
-                            bounds.bottom.coerceIn(0, dimensions.viewport.height),
-                        )
-                    val scale = dimensions.scale
-                    val physical = IntRect(visible.left * scale, visible.top * scale, visible.right * scale, visible.bottom * scale)
-                    clips.add(RasterMath.intersection(clips.lastOrNull() ?: physicalViewport, physical))
+                    pushIntegerClip(clips, dimensions, command.bounds)
                 }
 
                 is DrawCommand.PushFractionalClip -> {
@@ -198,14 +206,163 @@ private object HeadlessImplementation {
                 }
             }
         }
+        if (uniform) pixels.fill(uniformColor)
+        return pixels
     }
 
+    /**
+     * Adopts a detached full-image copy only for the first unscaled, unclipped whole-viewport blit.
+     * Zero-alpha pixels normalize to transparent black, exactly matching source-over onto the empty output.
+     * The fresh copy becomes the output storage; this retains no source owner or second image-sized buffer.
+     */
+    private fun initialImagePixels(
+        command: DrawCommand?,
+        dimensions: PhysicalDimensions,
+    ): IntArray? {
+        val blit = command as? DrawCommand.BlitImage ?: return null
+        if (dimensions.scale != 1 || blit.image.size != dimensions.viewport) return null
+        val bounds = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        if (blit.source != bounds || blit.destination != bounds) return null
+        return blit.image.copyArgb().also { pixels ->
+            for (index in pixels.indices) if (pixels[index] ushr 24 == 0) pixels[index] = 0
+        }
+    }
+
+    /**
+     * Maps an ordered full-area translucent run over arbitrary destination pixels exactly.
+     * Channel lookup storage is bounded to 196,864 bytes and belongs only to this invocation.
+     * Every native half-up blend is preserved; partial coverage, clip changes, and other primitives end the run.
+     */
+    private fun composeFullFillRun(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        commands: List<DrawCommand>,
+        start: Int,
+        clip: IntRect?,
+    ): Int {
+        if (pixels.size < 262_144) return start
+        var end = start
+        while (end < commands.size) {
+            val fill = commands[end] as? DrawCommand.FillRectangle
+            if (fill == null || fill.color.value ushr 24 == 255 || coversViewport(fill.bounds, dimensions, clip).not()) break
+            end += 1
+        }
+        val layers = end - start
+        val minimumLayers = if (pixels.size < 1_048_576) 2 else 1
+        if (layers < minimumLayers) return start
+        val sources = IntArray(end - start) { (commands[start + it] as DrawCommand.FillRectangle).color.value }
+        val alpha = ByteArray(256)
+        val red = ByteArray(65_536)
+        val green = ByteArray(65_536)
+        val blue = ByteArray(65_536)
+        composeFillLookup(sources, alpha, red, green, blue)
+        val uniformChannels = red.all { it == red[0] } && green.all { it == green[0] } && blue.all { it == blue[0] }
+        if (uniformChannels && alpha.all { it == alpha[0] }) {
+            val color = ((alpha[0].toInt() and 255) shl 24) or ((red[0].toInt() and 255) shl 16) or ((green[0].toInt() and 255) shl 8) or (blue[0].toInt() and 255)
+            pixels.fill(color)
+            return end
+        }
+        for (position in pixels.indices) {
+            val color = pixels[position]
+            val initialAlpha = color ushr 24
+            val offset = initialAlpha shl 8
+            pixels[position] = ((alpha[initialAlpha].toInt() and 255) shl 24) or
+                ((red[offset or (color ushr 16 and 255)].toInt() and 255) shl 16) or
+                ((green[offset or (color ushr 8 and 255)].toInt() and 255) shl 8) or
+                (blue[offset or (color and 255)].toInt() and 255)
+        }
+        return end
+    }
+
+    /**
+     * Reuses an exactly equal prefix result before applying the remaining ordered fills.
+     * Two scalar values and one validity flag belong only to this lookup construction.
+     * The most opaque prefix often collapses adjacent inputs; misses retain every original rounded blend.
+     */
+    private fun composeFillLookup(
+        sources: IntArray,
+        alpha: ByteArray,
+        red: ByteArray,
+        green: ByteArray,
+        blue: ByteArray,
+    ) {
+        val prefixEnd = sources.indices.maxBy { sources[it] ushr 24 } + 1
+        var previousPrefix = 0
+        var previousResult = 0
+        var hasPrevious = false
+        for (initial in 0 until 65_536) {
+            val initialAlpha = initial ushr 8
+            val channel = initial and 255
+            var result = (initialAlpha shl 24) or (channel shl 16) or (channel shl 8) or channel
+            for (index in 0 until prefixEnd) result = RasterMath.blend(sources[index], result)
+            if (hasPrevious && result == previousPrefix) {
+                result = previousResult
+            } else {
+                previousPrefix = result
+                for (index in prefixEnd until sources.size) result = RasterMath.blend(sources[index], result)
+                previousResult = result
+                hasPrevious = true
+            }
+            alpha[initialAlpha] = (result ushr 24).toByte()
+            red[initial] = (result ushr 16).toByte()
+            green[initial] = (result ushr 8).toByte()
+            blue[initial] = result.toByte()
+        }
+    }
+
+    /**
+     * Paints sampled pixels after the caller has materialized its uniform surface.
+     */
+    private fun paintSampled(
+        pixels: IntArray,
+        dimensions: PhysicalDimensions,
+        command: DrawCommand.SampledImage,
+        clip: IntRect,
+    ) {
+        SampledImageRasterizer.paint(pixels, dimensions.physicalSize, dimensions.scale, command, clip)
+    }
+
+    /**
+     * Pushes the clipped physical coverage of an integer logical clip without reading output pixels.
+     */
+    private fun pushIntegerClip(
+        clips: MutableList<IntRect>,
+        dimensions: PhysicalDimensions,
+        bounds: IntRect,
+    ) {
+        val visible =
+            IntRect(
+                bounds.left.coerceIn(0, dimensions.viewport.width),
+                bounds.top.coerceIn(0, dimensions.viewport.height),
+                bounds.right.coerceIn(0, dimensions.viewport.width),
+                bounds.bottom.coerceIn(0, dimensions.viewport.height),
+            )
+        val scale = dimensions.scale
+        val physical = IntRect(visible.left * scale, visible.top * scale, visible.right * scale, visible.bottom * scale)
+        clips.add(RasterMath.intersection(clips.lastOrNull() ?: IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height), physical))
+    }
+
+    /**
+     * Whether the current fill and physical clip cover every output pixel at the verified density.
+     */
+    private fun coversViewport(
+        bounds: IntRect,
+        dimensions: PhysicalDimensions,
+        clip: IntRect?,
+    ): Boolean {
+        val horizontal = bounds.left <= 0 && dimensions.viewport.width <= bounds.right
+        val vertical = bounds.top <= 0 && dimensions.viewport.height <= bounds.bottom
+        val unclipped = clip == null || clip == IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height)
+        return horizontal && vertical && unclipped
+    }
+
+    @Suppress("CyclomaticComplexMethod") // Keep clipping, opaque overwrite and the full-coverage uniformity proof together.
     private fun paintFill(
         pixels: IntArray,
         dimensions: PhysicalDimensions,
         command: DrawCommand.FillRectangle,
         clip: IntRect?,
-    ) {
+    ): Boolean {
         val bounds = command.bounds
         val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
         val visible = RasterMath.intersection(viewport, clip?.let { RasterClips.logical(it, dimensions.scale) } ?: bounds, bounds)
@@ -214,27 +371,93 @@ private object HeadlessImplementation {
         val right = visible.right
         val bottom = visible.bottom
         if (right <= left || bottom <= top) {
-            return
+            return false
         }
         val source = command.color.value
+        val scale = dimensions.scale
+        val physicalLeft = maxOf(Math.multiplyExact(left, scale), clip?.left ?: 0)
+        val physicalTop = maxOf(Math.multiplyExact(top, scale), clip?.top ?: 0)
+        val physicalRight = minOf(Math.multiplyExact(right, scale), clip?.right ?: dimensions.physicalSize.width)
+        val physicalBottom = minOf(Math.multiplyExact(bottom, scale), clip?.bottom ?: dimensions.physicalSize.height)
+        if (physicalRight <= physicalLeft || physicalBottom <= physicalTop) return false
+        val fullWidth = physicalLeft == 0 && physicalRight == dimensions.physicalSize.width
+        val fullHeight = physicalTop == 0 && physicalBottom == dimensions.physicalSize.height
         if (source ushr 24 == 0xFF) {
             // Source-over with an opaque fill is a row overwrite, including clips between logical texels.
-            val scale = dimensions.scale
-            val physicalLeft = maxOf(Math.multiplyExact(left, scale), clip?.left ?: 0)
-            val physicalTop = maxOf(Math.multiplyExact(top, scale), clip?.top ?: 0)
-            val physicalRight = minOf(Math.multiplyExact(right, scale), clip?.right ?: dimensions.physicalSize.width)
-            val physicalBottom = minOf(Math.multiplyExact(bottom, scale), clip?.bottom ?: dimensions.physicalSize.height)
             for (y in physicalTop until physicalBottom) {
                 val row = Math.multiplyExact(y, dimensions.physicalSize.width)
                 pixels.fill(source, Math.addExact(row, physicalLeft), Math.addExact(row, physicalRight))
             }
-            return
+            return fullWidth && fullHeight
         }
-        for (logicalY in top until bottom) {
-            for (logicalX in left until right) {
-                paintLogicalPixel(pixels, dimensions, logicalX, logicalY, source, clip)
+        val same = paintTranslucentFill(pixels, dimensions.physicalSize.width, IntRect(physicalLeft, physicalTop, physicalRight, physicalBottom), source)
+        return same && fullWidth && fullHeight
+    }
+
+    /**
+     * Blends a constant source over clipped physical rows with exact reuse for equal destination pixels.
+     */
+    private fun paintTranslucentFill(
+        pixels: IntArray,
+        width: Int,
+        bounds: IntRect,
+        source: Int,
+    ): Boolean {
+        // One command has a constant source. Equal destinations therefore share the exact rounded result.
+        val reference = pixels[Math.addExact(Math.multiplyExact(bounds.top, width), bounds.left)]
+        val blended = RasterMath.blend(source, reference)
+        val area = bounds.width.toLong() * bounds.height
+        if (area in 4096L..<262144L) {
+            return paintPaletteFill(pixels, width, bounds, source, reference, blended)
+        }
+        for (y in bounds.top until bounds.bottom) {
+            val row = Math.multiplyExact(y, width)
+            for (index in Math.addExact(row, bounds.left) until Math.addExact(row, bounds.right)) {
+                val destination = pixels[index]
+                pixels[index] = if (destination == reference) blended else RasterMath.blend(source, destination)
             }
         }
+        return false
+    }
+
+    /**
+     * Reuses exact destination colors in a command-local 64-entry direct-mapped table.
+     * The constant source belongs to this call; a hash collision replaces its slot after an exact ARGB check.
+     * Two arrays and a validity mask are released on return and never retain image or frame owners.
+     */
+    private fun paintPaletteFill(
+        pixels: IntArray,
+        width: Int,
+        bounds: IntRect,
+        source: Int,
+        reference: Int,
+        blended: Int,
+    ): Boolean {
+        val destinations = IntArray(64)
+        val results = IntArray(64)
+        var valid = 0L
+        var uniform = true
+        for (y in bounds.top until bounds.bottom) {
+            val row = y * width
+            for (index in (row + bounds.left) until (row + bounds.right)) {
+                val destination = pixels[index]
+                if (destination == reference) {
+                    pixels[index] = blended
+                    continue
+                }
+                // Modular multiplication is intentional: only the top six hash bits select the slot.
+                val slot = (destination * -1640531527) ushr 26
+                val bit = 1L shl slot
+                if (valid and bit == 0L || destinations[slot] != destination) {
+                    destinations[slot] = destination
+                    results[slot] = RasterMath.blend(source, destination)
+                    valid = valid or bit
+                }
+                pixels[index] = results[slot]
+                if (uniform && results[slot] != blended) uniform = false
+            }
+        }
+        return uniform
     }
 
     private fun paintBlit(
@@ -258,6 +481,10 @@ private object HeadlessImplementation {
             paintFill(pixels, dimensions, DrawCommand.FillRectangle(bounds, color), clip)
             return
         }
+        if (dimensions.scale == 1 && command.source.width == bounds.width && command.source.height == bounds.height) {
+            paintUnscaledIdentityBlit(pixels, dimensions.physicalSize.width, command, visible)
+            return
+        }
         val sourceWidth = command.source.width.toLong()
         val sourceHeight = command.source.height.toLong()
         val destinationWidth = bounds.width.toLong()
@@ -270,6 +497,27 @@ private object HeadlessImplementation {
                 val sourceX = RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
                 val sourceColor = command.image.argbAt(sourceX, sourceY)
                 paintLogicalPixel(pixels, dimensions, logicalX, logicalY, sourceColor, clip)
+            }
+        }
+    }
+
+    /**
+     * Copies an unscaled matching source extent with exact blending and no nearest-coordinate divisions.
+     * The caller resolves physical clipping; validated image and output extents bound every index.
+     */
+    private fun paintUnscaledIdentityBlit(
+        pixels: IntArray,
+        width: Int,
+        command: DrawCommand.BlitImage,
+        visible: IntRect,
+    ) {
+        for (y in visible.top until visible.bottom) {
+            val sourceY = command.source.top + (y - command.destination.top)
+            val row = y * width
+            for (x in visible.left until visible.right) {
+                val sourceX = command.source.left + (x - command.destination.left)
+                val index = row + x
+                pixels[index] = RasterMath.blend(command.image.argbAt(sourceX, sourceY), pixels[index])
             }
         }
     }
@@ -425,12 +673,11 @@ private object HeadlessImplementation {
             val sourceAlpha = source ushr 24 and 0xFF
             if (sourceAlpha == 0xFF) return source
             val destinationAlpha = destination ushr 24 and 0xFF
-            val alphaNumerator =
-                sourceAlpha.toLong() * 255L + destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
-            if (alphaNumerator == 0L) {
-                return 0
-            }
-            val outputAlpha = (alphaNumerator + 127L) / 255L
+            // Transparent output is canonical black; other zero-alpha cases cancel the exact blend equation.
+            if (sourceAlpha == 0) return if (destinationAlpha == 0) 0 else destination
+            if (destinationAlpha == 0) return source
+            val alphaNumerator = sourceAlpha * 255 + destinationAlpha * (255 - sourceAlpha)
+            val outputAlpha = (alphaNumerator + 127) / 255
             val red =
                 channel(
                     source ushr 16 and 0xFF,
@@ -455,7 +702,7 @@ private object HeadlessImplementation {
                     destinationAlpha,
                     alphaNumerator,
                 )
-            return (outputAlpha.toInt() shl 24) or (red shl 16) or (green shl 8) or blue
+            return (outputAlpha shl 24) or (red shl 16) or (green shl 8) or blue
         }
 
         private fun channel(
@@ -463,12 +710,12 @@ private object HeadlessImplementation {
             destination: Int,
             sourceAlpha: Int,
             destinationAlpha: Int,
-            alphaNumerator: Long,
+            alphaNumerator: Int,
         ): Int {
+            // Both weights sum to at most 65,025; the rounded channel numerator remains below 16,613,888.
             val numerator =
-                source.toLong() * sourceAlpha.toLong() * 255L +
-                    destination.toLong() * destinationAlpha.toLong() * (255 - sourceAlpha).toLong()
-            return ((numerator + alphaNumerator / 2L) / alphaNumerator).toInt()
+                source * sourceAlpha * 255 + destination * destinationAlpha * (255 - sourceAlpha)
+            return (numerator + alphaNumerator / 2) / alphaNumerator
         }
     }
 

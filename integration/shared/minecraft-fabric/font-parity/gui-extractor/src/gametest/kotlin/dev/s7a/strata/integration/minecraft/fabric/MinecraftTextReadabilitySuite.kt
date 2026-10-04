@@ -121,7 +121,7 @@ internal object MinecraftTextReadabilitySuite {
     ): IntSize {
         val viewport = MinecraftTextReadabilityScene.viewport
         val size = IntSize(viewport.width * scale, viewport.height * scale)
-        context.input.resizeWindow(size.width, size.height)
+        resizeMinecraftTestWindow(context, IntSize(size.width, size.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(scale)
@@ -185,7 +185,7 @@ internal object MinecraftTextReadabilitySuite {
         MinecraftNumericFontCleanup.preserving({
             context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { MinecraftClientScreenAccess.setScreen(it, state.screen) })
         }) {
-            context.input.resizeWindow(state.width, state.height)
+            resizeMinecraftTestWindow(context, IntSize(state.width, state.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.options.guiScale().set(state.guiScale)

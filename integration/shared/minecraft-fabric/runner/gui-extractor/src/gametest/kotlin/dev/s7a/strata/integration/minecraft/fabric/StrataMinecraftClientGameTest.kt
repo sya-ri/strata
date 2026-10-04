@@ -111,7 +111,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     @Suppress("LongMethod")
     override fun runTest(context: ClientGameTestContext) {
         context.restoreDefaultGameOptions()
-        context.input.resizeWindow(viewport.width, viewport.height)
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
@@ -143,6 +143,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
         val output = parityOutput()
         Files.createDirectories(output)
+        if (System.getProperty("strata.performance.nativeOutput") != null) {
+            runMinecraftCanvasTest(context, profile, output)
+            return
+        }
         verifyProfileCache(context, output)
         verifyKeyboardActivationAndScreenTransition(context, profile)
         assertNativeTextInputFocus(context, profile)
@@ -244,14 +248,45 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         profile: MinecraftUiProfile,
         output: Path,
     ) {
+        for (scale in 1..4) {
+            closeFabricScreen(context)
+            val physicalSize = IntSize(viewport.width * scale, viewport.height * scale)
+            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    minecraft.options.guiScale().set(scale)
+                    minecraft.resizeGui()
+                    minecraft.window.setGuiScale(scale)
+                    check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
+                },
+            )
+            runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize)
+        }
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                minecraft.options.guiScale().set(1)
+                minecraft.resizeGui()
+            },
+        )
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun runSampledImagePixelParityAtScale(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+        scale: Int,
+        physicalSize: IntSize,
+    ) {
         closeFabricScreen(context)
         val headless =
             context.computeOnClient(
                 FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport)
+                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport, scale = scale)
                 },
             )
-        Files.write(output.resolve("strata-sampled-image-headless.png"), headless.encodePng())
+        Files.write(output.resolve("strata-sampled-image-scale-$scale-headless.png"), headless.encodePng())
 
         val presentation =
             runCatching {
@@ -270,16 +305,26 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
                 val observed = renderWork(context)
                 requireSampledImageParityWork(observed)
+                // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
+                val expectedDirect =
+                    when (scale) {
+                        1 -> 4L
+                        4 -> 1L
+                        else -> 2L
+                    }
+                require(observed.sampledImageDraws == expectedDirect * observed.renderExtractions) {
+                    "Fractional clipping at scale $scale must draw $expectedDirect cached images per extraction: $observed"
+                }
                 val fabricPath =
                     context.takeScreenshot(
                         TestScreenshotOptions
-                            .of("strata-sampled-image-fabric")
+                            .of("strata-sampled-image-scale-$scale-fabric")
                             .disableCounterPrefix()
-                            .withSize(viewport.width, viewport.height)
+                            .withSize(physicalSize.width, physicalSize.height)
                             .withDestinationDir(output),
                     )
                 NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                    requireImageSize(fabric, viewport)
+                    requireImageSize(fabric, physicalSize)
                     requireExactPixels(fabric, headless)
                 }
             }
@@ -646,7 +691,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 },
             )
         require(panel.size == industrialAssetSize) { "The test Mod industrial resource has an unexpected size." }
-        context.input.resizeWindow(industrialViewport.width, industrialViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(industrialViewport.width, industrialViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
         )
@@ -708,7 +753,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             context.computeOnClient(
                 FailableFunction<Minecraft, DrawImage, RuntimeException> { loadCurrentMinecraftPlayerSkin() },
             )
-        context.input.resizeWindow(playerHeadViewport.width, playerHeadViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(playerHeadViewport.width, playerHeadViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
         )
@@ -1101,7 +1146,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         for (showcase in ComponentShowcase.entries) {
             closeFabricScreen(context)
             val physicalSize = showcase.physicalSize
-            context.input.resizeWindow(physicalSize.width, physicalSize.height)
+            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.options.guiScale().set(showcase.scale)
@@ -1478,7 +1523,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         scroll: HeadlessImage,
     ) {
         closeFabricScreen(context)
-        context.input.resizeWindow(directJoinViewport.width, directJoinViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(directJoinViewport.width, directJoinViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.lastMpIp = directJoinAddress
@@ -1545,7 +1590,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         closeFabricScreen(context)
         val world = context.worldBuilder().setUseConsistentSettings(true).create()
         try {
-            context.input.resizeWindow(containerViewport.width, containerViewport.height)
+            resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.resizeGui()

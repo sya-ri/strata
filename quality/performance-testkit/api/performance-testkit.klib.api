@@ -1,0 +1,199 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <dev.s7a.strata:performance-testkit>
+final enum class dev.s7a.strata.performance/PerformanceHost : kotlin/Enum<dev.s7a.strata.performance/PerformanceHost> { // dev.s7a.strata.performance/PerformanceHost|null[0]
+    enum entry Jvm // dev.s7a.strata.performance/PerformanceHost.Jvm|null[0]
+    enum entry Minecraft // dev.s7a.strata.performance/PerformanceHost.Minecraft|null[0]
+    enum entry Paper // dev.s7a.strata.performance/PerformanceHost.Paper|null[0]
+    enum entry Velocity // dev.s7a.strata.performance/PerformanceHost.Velocity|null[0]
+    enum entry Web // dev.s7a.strata.performance/PerformanceHost.Web|null[0]
+
+    final val entries // dev.s7a.strata.performance/PerformanceHost.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.performance/PerformanceHost> // dev.s7a.strata.performance/PerformanceHost.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.performance/PerformanceHost // dev.s7a.strata.performance/PerformanceHost.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.performance/PerformanceHost> // dev.s7a.strata.performance/PerformanceHost.values|values#static(){}[0]
+}
+
+final enum class dev.s7a.strata.performance/PerformancePhase : kotlin/Enum<dev.s7a.strata.performance/PerformancePhase> { // dev.s7a.strata.performance/PerformancePhase|null[0]
+    enum entry Idle // dev.s7a.strata.performance/PerformancePhase.Idle|null[0]
+    enum entry Initial // dev.s7a.strata.performance/PerformancePhase.Initial|null[0]
+    enum entry Input // dev.s7a.strata.performance/PerformancePhase.Input|null[0]
+    enum entry Prepare // dev.s7a.strata.performance/PerformancePhase.Prepare|null[0]
+    enum entry Release // dev.s7a.strata.performance/PerformancePhase.Release|null[0]
+    enum entry Resize // dev.s7a.strata.performance/PerformancePhase.Resize|null[0]
+    enum entry Update // dev.s7a.strata.performance/PerformancePhase.Update|null[0]
+
+    final val entries // dev.s7a.strata.performance/PerformancePhase.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.performance/PerformancePhase> // dev.s7a.strata.performance/PerformancePhase.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): dev.s7a.strata.performance/PerformancePhase // dev.s7a.strata.performance/PerformancePhase.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.performance/PerformancePhase> // dev.s7a.strata.performance/PerformancePhase.values|values#static(){}[0]
+}
+
+final class dev.s7a.strata.performance/BrowserPerformanceMeter { // dev.s7a.strata.performance/BrowserPerformanceMeter|null[0]
+    constructor <init>(dev.s7a.strata.performance/PerformancePlan = ...) // dev.s7a.strata.performance/BrowserPerformanceMeter.<init>|<init>(dev.s7a.strata.performance.PerformancePlan){}[0]
+
+    final fun close() // dev.s7a.strata.performance/BrowserPerformanceMeter.close|close(){}[0]
+    final fun measure(kotlin/Function0<kotlin/Boolean> = ..., kotlin/Function1<kotlin/Int, kotlin/Unit> = ..., kotlin/Function1<kotlin/Int, kotlin/Unit> = ..., kotlin/Function0<kotlin/Unit> = ..., kotlin/Function1<kotlin/Int, kotlin/Unit>): kotlin.js/Promise<dev.s7a.strata.performance/BrowserPerformanceSample> // dev.s7a.strata.performance/BrowserPerformanceMeter.measure|measure(kotlin.Function0<kotlin.Boolean>;kotlin.Function1<kotlin.Int,kotlin.Unit>;kotlin.Function1<kotlin.Int,kotlin.Unit>;kotlin.Function0<kotlin.Unit>;kotlin.Function1<kotlin.Int,kotlin.Unit>){}[0]
+}
+
+final class dev.s7a.strata.performance/BrowserPerformanceSample { // dev.s7a.strata.performance/BrowserPerformanceSample|null[0]
+    constructor <init>(dev.s7a.strata.performance/PerformanceDistribution, dev.s7a.strata.performance/PerformanceDistribution) // dev.s7a.strata.performance/BrowserPerformanceSample.<init>|<init>(dev.s7a.strata.performance.PerformanceDistribution;dev.s7a.strata.performance.PerformanceDistribution){}[0]
+
+    final val animationFrame // dev.s7a.strata.performance/BrowserPerformanceSample.animationFrame|{}animationFrame[0]
+        final fun <get-animationFrame>(): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/BrowserPerformanceSample.animationFrame.<get-animationFrame>|<get-animationFrame>(){}[0]
+    final val operation // dev.s7a.strata.performance/BrowserPerformanceSample.operation|{}operation[0]
+        final fun <get-operation>(): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/BrowserPerformanceSample.operation.<get-operation>|<get-operation>(){}[0]
+
+    final fun component1(): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/BrowserPerformanceSample.component1|component1(){}[0]
+    final fun component2(): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/BrowserPerformanceSample.component2|component2(){}[0]
+    final fun copy(dev.s7a.strata.performance/PerformanceDistribution = ..., dev.s7a.strata.performance/PerformanceDistribution = ...): dev.s7a.strata.performance/BrowserPerformanceSample // dev.s7a.strata.performance/BrowserPerformanceSample.copy|copy(dev.s7a.strata.performance.PerformanceDistribution;dev.s7a.strata.performance.PerformanceDistribution){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.performance/BrowserPerformanceSample.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.performance/BrowserPerformanceSample.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.performance/BrowserPerformanceSample.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformanceCoverage { // dev.s7a.strata.performance/PerformanceCoverage|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin.collections/Set<dev.s7a.strata.performance/PerformanceHost>>, kotlin.collections/List<dev.s7a.strata.performance/PerformanceScenario>, kotlin.collections/Map<kotlin/String, kotlin.collections/Set<dev.s7a.strata.performance/PerformancePhase>> = ...) // dev.s7a.strata.performance/PerformanceCoverage.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.collections.Set<dev.s7a.strata.performance.PerformanceHost>>;kotlin.collections.List<dev.s7a.strata.performance.PerformanceScenario>;kotlin.collections.Map<kotlin.String,kotlin.collections.Set<dev.s7a.strata.performance.PerformancePhase>>){}[0]
+
+    final fun select(kotlin.collections/Set<kotlin/String>? = ...): kotlin.collections/List<dev.s7a.strata.performance/PerformanceScenario> // dev.s7a.strata.performance/PerformanceCoverage.select|select(kotlin.collections.Set<kotlin.String>?){}[0]
+    final fun selectChangedPaths(dev.s7a.strata.performance/PerformanceInventory, kotlin.collections/Set<kotlin/String>? = ...): kotlin.collections/List<dev.s7a.strata.performance/PerformanceScenario> // dev.s7a.strata.performance/PerformanceCoverage.selectChangedPaths|selectChangedPaths(dev.s7a.strata.performance.PerformanceInventory;kotlin.collections.Set<kotlin.String>?){}[0]
+    final fun verify() // dev.s7a.strata.performance/PerformanceCoverage.verify|verify(){}[0]
+    final fun verifyCompleted(kotlin.collections/Set<kotlin/Triple<kotlin/String, dev.s7a.strata.performance/PerformanceHost, dev.s7a.strata.performance/PerformancePhase>>, kotlin.collections/Set<kotlin/String>? = ...) // dev.s7a.strata.performance/PerformanceCoverage.verifyCompleted|verifyCompleted(kotlin.collections.Set<kotlin.Triple<kotlin.String,dev.s7a.strata.performance.PerformanceHost,dev.s7a.strata.performance.PerformancePhase>>;kotlin.collections.Set<kotlin.String>?){}[0]
+    final fun verifyEvidence(kotlin.collections/List<dev.s7a.strata.performance/PerformanceEvidence>, dev.s7a.strata.performance/PerformancePlan = ..., kotlin.collections/Set<kotlin/String>? = ...) // dev.s7a.strata.performance/PerformanceCoverage.verifyEvidence|verifyEvidence(kotlin.collections.List<dev.s7a.strata.performance.PerformanceEvidence>;dev.s7a.strata.performance.PerformancePlan;kotlin.collections.Set<kotlin.String>?){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformanceDistribution { // dev.s7a.strata.performance/PerformanceDistribution|null[0]
+    constructor <init>(kotlin/Int, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long) // dev.s7a.strata.performance/PerformanceDistribution.<init>|<init>(kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+
+    final val maximum // dev.s7a.strata.performance/PerformanceDistribution.maximum|{}maximum[0]
+        final fun <get-maximum>(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.maximum.<get-maximum>|<get-maximum>(){}[0]
+    final val p50 // dev.s7a.strata.performance/PerformanceDistribution.p50|{}p50[0]
+        final fun <get-p50>(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.p50.<get-p50>|<get-p50>(){}[0]
+    final val p95 // dev.s7a.strata.performance/PerformanceDistribution.p95|{}p95[0]
+        final fun <get-p95>(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.p95.<get-p95>|<get-p95>(){}[0]
+    final val p99 // dev.s7a.strata.performance/PerformanceDistribution.p99|{}p99[0]
+        final fun <get-p99>(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.p99.<get-p99>|<get-p99>(){}[0]
+    final val samples // dev.s7a.strata.performance/PerformanceDistribution.samples|{}samples[0]
+        final fun <get-samples>(): kotlin/Int // dev.s7a.strata.performance/PerformanceDistribution.samples.<get-samples>|<get-samples>(){}[0]
+    final val total // dev.s7a.strata.performance/PerformanceDistribution.total|{}total[0]
+        final fun <get-total>(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.total.<get-total>|<get-total>(){}[0]
+
+    final fun component1(): kotlin/Int // dev.s7a.strata.performance/PerformanceDistribution.component1|component1(){}[0]
+    final fun component2(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.component2|component2(){}[0]
+    final fun component3(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.component3|component3(){}[0]
+    final fun component4(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.component4|component4(){}[0]
+    final fun component5(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.component5|component5(){}[0]
+    final fun component6(): kotlin/Long // dev.s7a.strata.performance/PerformanceDistribution.component6|component6(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ..., kotlin/Long = ...): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/PerformanceDistribution.copy|copy(kotlin.Int;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.performance/PerformanceDistribution.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.performance/PerformanceDistribution.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.performance/PerformanceDistribution.toString|toString(){}[0]
+
+    final object Companion { // dev.s7a.strata.performance/PerformanceDistribution.Companion|null[0]
+        final fun of(kotlin.collections/List<kotlin/Long>): dev.s7a.strata.performance/PerformanceDistribution // dev.s7a.strata.performance/PerformanceDistribution.Companion.of|of(kotlin.collections.List<kotlin.Long>){}[0]
+    }
+}
+
+final class dev.s7a.strata.performance/PerformanceEvidence { // dev.s7a.strata.performance/PerformanceEvidence|null[0]
+    constructor <init>(kotlin/String, dev.s7a.strata.performance/PerformanceHost, dev.s7a.strata.performance/PerformancePhase, kotlin/Int, kotlin/String, kotlin/String, kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/String>, kotlin.collections/Map<kotlin/String, kotlin/Long?>) // dev.s7a.strata.performance/PerformanceEvidence.<init>|<init>(kotlin.String;dev.s7a.strata.performance.PerformanceHost;dev.s7a.strata.performance.PerformancePhase;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.String>;kotlin.collections.Map<kotlin.String,kotlin.Long?>){}[0]
+
+    final val conditions // dev.s7a.strata.performance/PerformanceEvidence.conditions|{}conditions[0]
+        final fun <get-conditions>(): kotlin.collections/Map<kotlin/String, kotlin/String> // dev.s7a.strata.performance/PerformanceEvidence.conditions.<get-conditions>|<get-conditions>(){}[0]
+    final val host // dev.s7a.strata.performance/PerformanceEvidence.host|{}host[0]
+        final fun <get-host>(): dev.s7a.strata.performance/PerformanceHost // dev.s7a.strata.performance/PerformanceEvidence.host.<get-host>|<get-host>(){}[0]
+    final val inputIdentity // dev.s7a.strata.performance/PerformanceEvidence.inputIdentity|{}inputIdentity[0]
+        final fun <get-inputIdentity>(): kotlin/String // dev.s7a.strata.performance/PerformanceEvidence.inputIdentity.<get-inputIdentity>|<get-inputIdentity>(){}[0]
+    final val kitIdentity // dev.s7a.strata.performance/PerformanceEvidence.kitIdentity|{}kitIdentity[0]
+        final fun <get-kitIdentity>(): kotlin/String // dev.s7a.strata.performance/PerformanceEvidence.kitIdentity.<get-kitIdentity>|<get-kitIdentity>(){}[0]
+    final val metrics // dev.s7a.strata.performance/PerformanceEvidence.metrics|{}metrics[0]
+        final fun <get-metrics>(): kotlin.collections/Map<kotlin/String, kotlin/Long?> // dev.s7a.strata.performance/PerformanceEvidence.metrics.<get-metrics>|<get-metrics>(){}[0]
+    final val phase // dev.s7a.strata.performance/PerformanceEvidence.phase|{}phase[0]
+        final fun <get-phase>(): dev.s7a.strata.performance/PerformancePhase // dev.s7a.strata.performance/PerformanceEvidence.phase.<get-phase>|<get-phase>(){}[0]
+    final val repetition // dev.s7a.strata.performance/PerformanceEvidence.repetition|{}repetition[0]
+        final fun <get-repetition>(): kotlin/Int // dev.s7a.strata.performance/PerformanceEvidence.repetition.<get-repetition>|<get-repetition>(){}[0]
+    final val scenario // dev.s7a.strata.performance/PerformanceEvidence.scenario|{}scenario[0]
+        final fun <get-scenario>(): kotlin/String // dev.s7a.strata.performance/PerformanceEvidence.scenario.<get-scenario>|<get-scenario>(){}[0]
+    final val targetIdentity // dev.s7a.strata.performance/PerformanceEvidence.targetIdentity|{}targetIdentity[0]
+        final fun <get-targetIdentity>(): kotlin/String // dev.s7a.strata.performance/PerformanceEvidence.targetIdentity.<get-targetIdentity>|<get-targetIdentity>(){}[0]
+
+    final fun requireComparable(dev.s7a.strata.performance/PerformanceEvidence) // dev.s7a.strata.performance/PerformanceEvidence.requireComparable|requireComparable(dev.s7a.strata.performance.PerformanceEvidence){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformanceInventory { // dev.s7a.strata.performance/PerformanceInventory|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin.collections/Set<kotlin/String>>, kotlin.collections/Map<kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/String>>, kotlin.collections/Map<kotlin/String, kotlin.collections/Set<kotlin/String>>) // dev.s7a.strata.performance/PerformanceInventory.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.collections.Set<kotlin.String>>;kotlin.collections.Map<kotlin.String,kotlin.collections.Map<kotlin.String,kotlin.String>>;kotlin.collections.Map<kotlin.String,kotlin.collections.Set<kotlin.String>>){}[0]
+
+    final fun affectedFeatures(kotlin.collections/Set<kotlin/String>, kotlin.collections/Set<kotlin/String>? = ...): kotlin.collections/Set<kotlin/String>? // dev.s7a.strata.performance/PerformanceInventory.affectedFeatures|affectedFeatures(kotlin.collections.Set<kotlin.String>;kotlin.collections.Set<kotlin.String>?){}[0]
+    final fun verify(kotlin.collections/Set<kotlin/String>) // dev.s7a.strata.performance/PerformanceInventory.verify|verify(kotlin.collections.Set<kotlin.String>){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformancePlan { // dev.s7a.strata.performance/PerformancePlan|null[0]
+    constructor <init>(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Long = ...) // dev.s7a.strata.performance/PerformancePlan.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Long){}[0]
+
+    final val preparationTimeoutMillis // dev.s7a.strata.performance/PerformancePlan.preparationTimeoutMillis|{}preparationTimeoutMillis[0]
+        final fun <get-preparationTimeoutMillis>(): kotlin/Long // dev.s7a.strata.performance/PerformancePlan.preparationTimeoutMillis.<get-preparationTimeoutMillis>|<get-preparationTimeoutMillis>(){}[0]
+    final val repetitions // dev.s7a.strata.performance/PerformancePlan.repetitions|{}repetitions[0]
+        final fun <get-repetitions>(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.repetitions.<get-repetitions>|<get-repetitions>(){}[0]
+    final val samples // dev.s7a.strata.performance/PerformancePlan.samples|{}samples[0]
+        final fun <get-samples>(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.samples.<get-samples>|<get-samples>(){}[0]
+    final val warmup // dev.s7a.strata.performance/PerformancePlan.warmup|{}warmup[0]
+        final fun <get-warmup>(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.warmup.<get-warmup>|<get-warmup>(){}[0]
+
+    final fun component1(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.component1|component1(){}[0]
+    final fun component2(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.component2|component2(){}[0]
+    final fun component3(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.component3|component3(){}[0]
+    final fun component4(): kotlin/Long // dev.s7a.strata.performance/PerformancePlan.component4|component4(){}[0]
+    final fun copy(kotlin/Int = ..., kotlin/Int = ..., kotlin/Int = ..., kotlin/Long = ...): dev.s7a.strata.performance/PerformancePlan // dev.s7a.strata.performance/PerformancePlan.copy|copy(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.performance/PerformancePlan.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // dev.s7a.strata.performance/PerformancePlan.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // dev.s7a.strata.performance/PerformancePlan.toString|toString(){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformanceScenario { // dev.s7a.strata.performance/PerformanceScenario|null[0]
+    constructor <init>(kotlin/String, kotlin.collections/Set<kotlin/String>, kotlin.collections/Set<dev.s7a.strata.performance/PerformanceHost>, kotlin.collections/Set<dev.s7a.strata.performance/PerformancePhase>, kotlin/String) // dev.s7a.strata.performance/PerformanceScenario.<init>|<init>(kotlin.String;kotlin.collections.Set<kotlin.String>;kotlin.collections.Set<dev.s7a.strata.performance.PerformanceHost>;kotlin.collections.Set<dev.s7a.strata.performance.PerformancePhase>;kotlin.String){}[0]
+
+    final val features // dev.s7a.strata.performance/PerformanceScenario.features|{}features[0]
+        final fun <get-features>(): kotlin.collections/Set<kotlin/String> // dev.s7a.strata.performance/PerformanceScenario.features.<get-features>|<get-features>(){}[0]
+    final val hosts // dev.s7a.strata.performance/PerformanceScenario.hosts|{}hosts[0]
+        final fun <get-hosts>(): kotlin.collections/Set<dev.s7a.strata.performance/PerformanceHost> // dev.s7a.strata.performance/PerformanceScenario.hosts.<get-hosts>|<get-hosts>(){}[0]
+    final val id // dev.s7a.strata.performance/PerformanceScenario.id|{}id[0]
+        final fun <get-id>(): kotlin/String // dev.s7a.strata.performance/PerformanceScenario.id.<get-id>|<get-id>(){}[0]
+    final val inputIdentity // dev.s7a.strata.performance/PerformanceScenario.inputIdentity|{}inputIdentity[0]
+        final fun <get-inputIdentity>(): kotlin/String // dev.s7a.strata.performance/PerformanceScenario.inputIdentity.<get-inputIdentity>|<get-inputIdentity>(){}[0]
+    final val phases // dev.s7a.strata.performance/PerformanceScenario.phases|{}phases[0]
+        final fun <get-phases>(): kotlin.collections/Set<dev.s7a.strata.performance/PerformancePhase> // dev.s7a.strata.performance/PerformanceScenario.phases.<get-phases>|<get-phases>(){}[0]
+}
+
+final class dev.s7a.strata.performance/PerformanceSelection { // dev.s7a.strata.performance/PerformanceSelection|null[0]
+    constructor <init>(kotlin.collections/Set<kotlin/String>, kotlin/String? = ...) // dev.s7a.strata.performance/PerformanceSelection.<init>|<init>(kotlin.collections.Set<kotlin.String>;kotlin.String?){}[0]
+
+    final val ids // dev.s7a.strata.performance/PerformanceSelection.ids|{}ids[0]
+        final fun <get-ids>(): kotlin.collections/Set<kotlin/String> // dev.s7a.strata.performance/PerformanceSelection.ids.<get-ids>|<get-ids>(){}[0]
+    final val narrowed // dev.s7a.strata.performance/PerformanceSelection.narrowed|{}narrowed[0]
+        final fun <get-narrowed>(): kotlin/Boolean // dev.s7a.strata.performance/PerformanceSelection.narrowed.<get-narrowed>|<get-narrowed>(){}[0]
+}
+
+final class dev.s7a.strata.performance/WorkCounter { // dev.s7a.strata.performance/WorkCounter|null[0]
+    constructor <init>(kotlin.collections/List<kotlin/String>) // dev.s7a.strata.performance/WorkCounter.<init>|<init>(kotlin.collections.List<kotlin.String>){}[0]
+
+    final fun record(kotlin/Int) // dev.s7a.strata.performance/WorkCounter.record|record(kotlin.Int){}[0]
+    final fun reset() // dev.s7a.strata.performance/WorkCounter.reset|reset(){}[0]
+    final fun snapshot(): kotlin.collections/Map<kotlin/String, kotlin/Long> // dev.s7a.strata.performance/WorkCounter.snapshot|snapshot(){}[0]
+}
+
+final class dev.s7a.strata.performance/WorkExpectation { // dev.s7a.strata.performance/WorkExpectation|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin/Long> = ..., kotlin.collections/Map<kotlin/String, kotlin/Long> = ..., kotlin.collections/Map<kotlin/String, kotlin/Long> = ...) // dev.s7a.strata.performance/WorkExpectation.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.Long>;kotlin.collections.Map<kotlin.String,kotlin.Long>;kotlin.collections.Map<kotlin.String,kotlin.Long>){}[0]
+
+    final fun verify(kotlin.collections/Map<kotlin/String, kotlin/Long?>, kotlin/Boolean = ...) // dev.s7a.strata.performance/WorkExpectation.verify|verify(kotlin.collections.Map<kotlin.String,kotlin.Long?>;kotlin.Boolean){}[0]
+}
+
+final object dev.s7a.strata.performance/BrowserPerformanceJson { // dev.s7a.strata.performance/BrowserPerformanceJson|null[0]
+    final fun distribution(dev.s7a.strata.performance/PerformanceDistribution): kotlin/String // dev.s7a.strata.performance/BrowserPerformanceJson.distribution|distribution(dev.s7a.strata.performance.PerformanceDistribution){}[0]
+    final fun sample(dev.s7a.strata.performance/BrowserPerformanceSample): kotlin/String // dev.s7a.strata.performance/BrowserPerformanceJson.sample|sample(dev.s7a.strata.performance.BrowserPerformanceSample){}[0]
+}

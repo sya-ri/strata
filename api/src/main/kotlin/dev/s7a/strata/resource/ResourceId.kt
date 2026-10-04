@@ -15,8 +15,8 @@ public data class ResourceId(
     public val path: String,
 ) {
     init {
-        require(namespacePattern.matches(namespace)) { "Resource namespace is invalid." }
-        require(pathPattern.matches(path)) { "Resource path is invalid." }
+        require(namespace.isNotEmpty() && namespace.all(::partCharacter)) { "Resource namespace is invalid." }
+        require(validPath(path)) { "Resource path is invalid." }
     }
 
     /**
@@ -27,7 +27,30 @@ public data class ResourceId(
     override fun toString(): String = "$namespace:$path"
 
     private companion object {
-        private val namespacePattern: Regex = Regex("[a-z0-9_.-]+")
-        private val pathPattern: Regex = Regex("(?!\\.{1,2}(?:/|$))(?!.*?/\\.{1,2}(?:/|$))[a-z0-9._-]+(?:/[a-z0-9._-]+)*")
+        private fun partCharacter(value: Char): Boolean = value in 'a'..'z' || value in '0'..'9' || value in "_.-"
+
+        private fun validPath(path: String): Boolean {
+            var start = 0
+            for (index in path.indices) {
+                if (path[index] == '/') {
+                    if (validSegment(path, start, index).not()) return false
+                    start = index + 1
+                } else if (partCharacter(path[index]).not()) {
+                    return false
+                }
+            }
+            return validSegment(path, start, path.length)
+        }
+
+        private fun validSegment(
+            path: String,
+            start: Int,
+            end: Int,
+        ): Boolean {
+            val length = end - start
+            if (length == 0) return false
+            if (length == 1 && path[start] == '.') return false
+            return (length == 2 && path[start] == '.' && path[start + 1] == '.').not()
+        }
     }
 }

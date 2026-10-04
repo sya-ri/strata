@@ -36,7 +36,7 @@ public class StrataMinecraftCanvasTerminalClientGameTest : FabricClientGameTest 
             MinecraftCanvasSuiteScope.TerminalOnly -> context.waitTicks(5)
         }
         PaperRemoteGameTest.run(context)
-        resizeMinecraftCanvasTestWindow(context, startingViewport.first, startingViewport.second)
+        resizeMinecraftTestWindow(context, startingViewport.first, startingViewport.second)
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(startingViewport.third)

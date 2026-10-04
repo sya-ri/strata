@@ -90,10 +90,10 @@ internal class UiSession(
     /**
      * Starts bounded diagnostics without changing content or requesting a frame.
      */
-    internal fun startRenderMonitoring(): UiRenderMonitor {
+    internal fun startRenderMonitoring(maxNodeRecords: Int = 4096): UiRenderMonitor {
         ownerGuard.check()
         check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
-        return checkNotNull(tree) { "Attach the session before starting monitoring." }.startMonitoring {
+        return checkNotNull(tree) { "Attach the session before starting monitoring." }.startMonitoring(maxNodeRecords) {
             check(operationKind == null && stateMutationActive.not()) { "Monitoring requires an idle session." }
         }
     }

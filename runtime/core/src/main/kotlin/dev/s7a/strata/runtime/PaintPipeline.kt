@@ -117,7 +117,7 @@ internal class PaintPipeline(
         return try {
             monitoring.record(metric, retained)
             callback(collector)
-            collector.snapshot()
+            composeDenseBlits(collector.snapshot())
         } finally {
             collector.close()
         }
@@ -129,7 +129,12 @@ internal class PaintPipeline(
         output: MutableList<DrawCommand>,
     ) {
         commands.forEach { command ->
-            transform(command, retained.localToTree)?.let(output::add)
+            if (command is LocalDrawCommand.ComposedBlits) {
+                val blits = if (retained.localToTree.integerTranslationOrNull() == null) command.original else command.commands
+                blits.forEach { original -> transform(original, retained.localToTree)?.let(output::add) }
+            } else {
+                transform(command, retained.localToTree)?.let(output::add)
+            }
         }
     }
 
@@ -194,6 +199,10 @@ internal class PaintPipeline(
                 }
             }
 
+            is LocalDrawCommand.ComposedBlits -> {
+                error("Composed blits must expand before fractional transformation.")
+            }
+
             is LocalDrawCommand.Platform -> {
                 throw UnsupportedOperationException(
                     "Platform draw commands require an exact integer-translation child transform.",
@@ -238,6 +247,10 @@ internal class PaintPipeline(
 
             is LocalDrawCommand.BlitImage -> {
                 DrawCommand.BlitImage(command.image, command.source, command.destination + IntOffset(x, y))
+            }
+
+            is LocalDrawCommand.ComposedBlits -> {
+                error("Composed blits must expand before transformation.")
             }
 
             is LocalDrawCommand.SampledImage -> {

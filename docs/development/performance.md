@@ -21,6 +21,7 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 
 Run `./gradlew :quality:benchmarks:jmh` for average time and normalized allocation using the `gc` profiler.
 The [benchmark build](../../quality/benchmarks/build.gradle.kts) owns iteration, fork, and output settings; [benchmark sources](../../quality/benchmarks/src/jmh/kotlin) own scenes and viewports.
+Use the [performance testkit](performance-testkit.md) for shared collection, native host boundaries, work assertions, and evidence contracts instead of adding application-specific meters.
 
 Compare these costs separately:
 
@@ -56,20 +57,93 @@ This is command coalescing without an additional cache or a change to input, sem
 The regression suite compares pixels across integer, reduced and fractional viewport scales, GUI densities, transparent and translucent texels and incomplete tiles, and checks retained clean-frame identity.
 Downstream benchmarks must preserve their fixed input workload and loaded class/JAR provenance, compare repeated runs on the same Java and host, and distinguish headless CPU/raster costs from native extraction and GPU completion.
 
+### Bounded repeating blit templates
+
+Dense image-only local paint retains its original immutable commands and lazily compacts tile-aligned patterns for exact integer translations.
+At most 1,048,576 input blits from one immutable source image are admitted, with at most 32 source-rectangle groups.
+Every group must form a complete row-major rectangular grid; groups must also be disjoint and cover their common bounds before command order can change.
+Grid validation uses sequential edges without per-tile division or a coverage array.
+Clips, mixed images or primitives, overlaps, gaps, and invalid grids preserve the original commands.
+
+Each admitted unstretched pattern uses one immutable template of at most 64 by 64 pixels, repeated with tile-aligned offsets and cropped final chunks.
+Template admission also bounds its two pixel arrays against the removed command allocation; larger or stretched source groups retain their original blits.
+Templates preserve unblended source ARGB, including transparent RGB, and use no source-sized snapshot or global cache.
+The original commands remain the sampling oracle for all fractional, scaled, or reflected tree transforms.
+
+The current local display list owns its templates and lazily creates them on the tree owner thread.
+Repaint replaces the list, and terminal disposal releases it; clean frames reuse the same list without reevaluation or new template allocation.
+Tests cover tile phase and cropped chunks at full HD, source replacement, clean-frame reuse, integer and fractional viewports, density, clips, semantics, input, and scroll position.
+
 ### Opaque portable paint
 
 An opaque source-over rectangle overwrites its covered physical pixel rows without per-texel alpha blending.
 Opaque integer blit samples also use the exact source color without the general alpha arithmetic.
+A nonzero-alpha source over a transparent destination is its exact straight-ARGB value, and a zero-alpha source preserves a nonzero-alpha destination; zero-alpha output remains transparent black.
+Unscaled integer blits with matching source and destination extents use direct source offsets and physical row indices after clipping, without nearest-coordinate division.
+When the first command is an unscaled, unclipped whole-viewport image blit, its detached pixel copy becomes the output storage directly.
+Zero-alpha pixels normalize to transparent black as in source-over onto an empty output; source ownership and pixels remain unchanged, and no second image-sized buffer is retained.
+Straight-ARGB blend numerators are bounded below 16,613,888, so integer arithmetic preserves the exact equations without Long division; coordinate calculations retain their overflow checks.
 An integer or physical-pixel blit whose source rectangle is 1×1 delegates to the existing fill path, reading its immutable source color once instead of resampling it for every covered pixel.
 This equivalence retains source-over blending for transparent and translucent texels and uses the same clipped physical coverage.
 Fractional sampled images also overwrite with the source color when both the sampled pixel and tint are opaque and the tint leaves RGB unchanged.
 An opaque white source pixel with an opaque tint similarly overwrites with the exact tint color, including colored bitmap glyphs.
 Fractional clipping, nearest coordinate mapping, alpha cutoff, and non-identity tint continue through their existing paths; this does not broaden direct native eligibility or remove portable fallback uploads.
 The headless rasterizer resolves the viewport and nested physical clip before each row overwrite, including fractional clips that cut through scaled logical texels.
-Translucent fills retain the existing straight-ARGB blending path.
-This stateless fast path creates no cache and preserves command order, pixels, physical density, and the native portable-generation lifetime.
+Translucent fills use the same clipped physical row coverage and preserve straight-ARGB half-up rounding for every command.
+Within one fill, a destination matching its first covered pixel reuses that pixel's exact blend result; other destination colors still blend independently.
+For covered areas from 4,096 to 262,143 physical pixels, a command-local 64-entry direct-mapped table additionally reuses exact destination ARGB values.
+Its constant source is fixed by the invocation, collisions check the complete destination value before reuse, and a collision recomputes the exact blend.
+Two 64-entry Int arrays and a validity mask expire with the command and retain no image or session history; smaller and larger scalar fills keep only the two local scalar values.
+An exact equality check on every covered palette result can restore the invocation's uniform state only after complete physical-viewport coverage.
+Partial coverage never establishes this state; subsequent ordered fills retain each intermediate rounding and materialize before reading primitives.
+This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
+When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
+Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
+This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
+For a nonuniform output of at least 262,144 physical pixels, two or more consecutive full-viewport translucent fills use an exact channel lookup table keyed by the initial alpha and channel value.
+At 1,048,576 physical pixels or more, a single full-area translucent fill uses the same bounded lookup instead of repeating its divisions at every pixel.
+The table applies each original blend in order, retains 196,864 bytes only for that invocation, and maps each physical destination once; its source array is bounded by the current fill run.
+During table construction, two scalar values reuse the remaining blends only when adjacent inputs produce exactly equal ARGB after the most opaque prefix.
+Unequal prefix results retain every original rounded blend; this adds no retained state or lookup storage.
+If every alpha and channel lookup entry is equal, the result is identical for every possible initial ARGB value and a row fill replaces per-pixel lookup.
+Smaller single fills, partial clips, opaque fills and intervening primitives preserve the scalar or bounded palette paths.
+These invocation-local paths create no retained cache and preserve command order, pixels, physical density, and the native portable-generation lifetime.
 Its regression compares independent physical pixel-center coverage across density, empty/offscreen extents, nested integer/fractional clips, and translucent destination pixels.
 Native measurements must continue to report actual rasterizations and uploads; reducing raster CPU work does not eliminate those operations.
+
+### Fractional portable sampling
+
+A sampled command whose entire immutable image is one texel reads its source once, preserving final-density coverage, orientation, alpha cutoff and continuous tint multiplication.
+An exactly opaque multiplied source overwrites clipped rows with one calculated color.
+A translucent source reuses its exact blend only for adjacent equal destination ARGB values; other pixels keep their original ordered Float composition.
+This path does not round a translucent tint before blending or assume that a one-texel subrectangle within a larger image is constant.
+
+For spans covering at least 4,096 physical pixels and four rows, nearest source X coordinates are calculated once in an invocation-local Int array bounded by the clipped physical width.
+Each entry uses the original pixel-center Float expressions; there is no incremental coordinate recurrence or accumulated rounding error.
+Smaller spans keep direct sampling, and source Y remains independently calculated for every row.
+An opaque sampled source with an opaque RGB tint computes its exact normalized channel products without reading destination channels.
+Within each command, scalar values remember the previous source ARGB, destination ARGB and exact result.
+An opaque tint result depends only on source; a translucent result additionally requires complete destination equality, including RGB in transparent pixels.
+Tint and discard cutoff stay fixed on this exclusively owned invocation, unequal keys recompute the original Float equations, and these values expire when the command returns.
+The pixel traversal reuses an exactly matching source/destination pair before calling color composition.
+This reuses repeated magnified texels without retaining any image reference.
+For the same large-span admission, an opaque nonwhite RGB tint may use 768 exact normalized channel products, bounded to three 256-entry primitive tables.
+Translucent composition lazily records rounded channel results by source alpha and source channel only while every admitted destination has the same complete ARGB value.
+The first unequal destination permanently disables and releases these blend tables for the command; subsequent pixels use the original Float equations, so a heterogeneous destination never triggers repeated table clearing or assumes uniformity.
+Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primitive values plus the 256 row references); other source alpha values use the original Float equations without allocating or replacing a row.
+The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
+The tables belong to one invocation, retain no source or destination image, preserve the original multiplication/division/rounding order, and expire before return.
+Whole one-texel images and smaller spans keep their existing paths.
+A zero-alpha tint preserves the destination without traversing its covered pixels.
+These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
+Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
+
+`DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.
+Compiled JMH include filters must select exactly the registered method names before forks start; a similarly named supplemental benchmark cannot extend an existing corpus implicitly.
+Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.denseSampledRaster=true` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
+Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
+This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
 
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
@@ -123,6 +197,13 @@ Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
 The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
+The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
+At density one this admits arbitrary fractional clip edges; at higher densities partial logical cells retain the portable fallback unless an inner clip or the image's visible extent makes the fractional boundary irrelevant.
+Destination edges exactly coincident with a physical pixel center retain portable drawing because native quad-edge ownership can omit a sample included by the portable half-open contract.
+No vertex bias or changed source interpolation is used to conceal that difference.
+The loaded parity scene compares full-frame patterned and translucent images at densities one through four and checks the actual direct-draw count, including the portable pixel-center-edge regression at density four.
+Source identity, source UVs, the original floating destination, display-list ordering, cache limits, and GPU retirement remain unchanged; no clipped image or new cache is constructed.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
@@ -319,19 +400,67 @@ After initial dynamic materialization settles, unchanged frames retain their imm
 The bounded regression scenario holds 128 independent regions, runs 100 unchanged frames, and requires one sibling content evaluation and one primitive update when one source changes.
 A changed label may legitimately invalidate ancestor measurement.
 
+### Detached declaration lists
+
+The core declaration cutoff creates owned child and modifier lists after reconciliation and reads each live projection again.
+Its internal snapshot constructor takes exclusive ownership of these fresh lists instead of copying them a second time.
+Empty and singleton snapshots use their exact list forms without intermediate map buffers.
+Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
+The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
+
+### Remote topology allocation
+
+Tree validation uses one declaration identity set for component and modifier uniqueness, a component visit count for connectivity, and parallel primitive identity/depth stacks bounded by the admitted node count.
+It preserves depth, cycle, shared-child, absent-child, modifier-collision, and aggregate admission checks before returning a detached immutable tree.
+Empty remote node lists reuse immutable empty lists; populated lists still defensively copy caller inputs.
+Patch duplicate validation uses one identity set; removal uses the standard key-set difference, preserving boxed identity reuse during membership checks.
+Message field arrays are exposed only to the immediately defensive projection sequence constructor, avoiding an extra intermediate list copy.
+These changes do not skip live projections, cache authoritative state, or change wire bytes.
+Resource identifiers validate the same ASCII namespace and nonempty path-segment grammar without per-identifier regex matchers, rejecting dot and parent segments as before.
+ASCII wire text packs into the invocation-owned bounded output buffer after one complete growth check and decodes through the JDK string constructor after verifying every byte is ASCII.
+It preserves the standard stream byte count and creates no temporary encoder buffer, per-field copy or retained scratch storage.
+Unicode and malformed sequences retain strict UTF-8 validation; text, byte, depth, aggregate and deadline limits remain unchanged.
+Decoding uses one invocation-local JDK ByteBuffer with explicit big-endian order, eliminating synchronized per-byte input dispatch while checking remaining bytes before allocation.
+Truncated primitives still fail as malformed values, and trailing bytes remain rejected.
+Primitive output uses the standard DataOutputStream format over exclusively owned bounded storage, with checked bulk copies and no per-byte monitor acquisition.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.
 Close must atomically reject late publication, drop a queued completion, clear a committed ready-image snapshot, clear its observer, and remain idempotent.
 Owner-thread draining must transfer an accepted completion at most once, and a closed lifecycle must never accept another snapshot commit.
 
+### Editable literal widths
+
+TextField measures literal scalar ranges directly, without constructing positioned glyph runs or copying each candidate substring.
+Resource-font metrics preserve forward floating-point addition and release-specific signed width rounding; compatibility glyphs preserve checked integer addition.
+Nonnegative advances permit a scalar-boundary binary search when the native integer rounding remains monotone, including positive infinity and overflow with saturating rounding.
+Release-specific rounding that wraps after overflow keeps its original scalar order.
+Ordinary integral advances retain the fixed-unit two-scan search when their combined absolute magnitude is at most 2^24, avoiding the generalized floating-point proof on this common path.
+Other finite advances permit an exact two-scan suffix search when their exact prefix range contains at most 2^24 common power-of-two units and stays within the finite Float range.
+This includes integral, fractional, negative, subnormal and large cancelling advances while proving that every suffix intermediate uses exact forward Float addition.
+Other metrics preserve exact forward accumulation while fetching each scalar advance only once.
+Attained minimum and maximum Float widths summarize the exact forward accumulation of all candidate suffix starts through each prefix.
+A fixed Float addition preserves the order of non-NaN candidates; an endpoint becoming NaN witnesses an actual permanently fitting suffix, because both native rounding modes map NaN to zero.
+At the final scalar, the minimum detects fitting widths in the monotone region and the maximum detects the legacy positive overflow region that wraps to a fitting negative width.
+Existence of a fitting suffix among starts up to a selected boundary is monotone even when individual signed widths are not.
+Binary search over that existence predicate returns the same first fitting scalar as the original ordered search, using at most O(n log n) Float additions and one glyph lookup per scalar.
+Prefix extrema let each query resume after its last admitted start; all-overwide values return after the initial scan.
+Four primitive arrays belong to one call, require storage proportional to the supplied UTF-16 range, and retain no text, font owner or history after return.
+Unrestricted prefix subtraction and reversed accumulation are not substitutes for exact native widths.
+The visible endpoint accumulates widths once in forward scalar order and stops at the first prefix that exceeds the viewport, preserving the previous behavior even when later negative advances would fit again.
+Pointer hit testing also accumulates rounded prefix widths once, applying each signed midpoint in its original order even for zero, negative or non-finite advances.
+A deterministic uncached-font test requires exactly one glyph lookup per scalar for a 16,384-unit zero-width value, rather than using elapsed time as a threshold.
+This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
+The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
 It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
-The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and blends every covered foreground pixel.
+The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and applies every ordered foreground blend, using uniform-surface scalar evaluation where exact.
 These are different costs, and the headless timings are not native GPU frame-rate measurements.
-Repeated full-area alpha blending is proportional to area and layer count; a narrow Observe or a direct State input does not remove that raster work.
+The eligible nonuniform full-area fill run performs at most 65,536 rounded channel-state blends per layer plus one mapping per physical pixel; other nonuniform alpha composition still scales with its covered area and layers.
 Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
 
 `:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.

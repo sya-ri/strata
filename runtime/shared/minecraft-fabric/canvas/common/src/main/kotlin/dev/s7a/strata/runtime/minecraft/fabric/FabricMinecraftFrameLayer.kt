@@ -84,6 +84,7 @@ internal inline fun submitFabricMinecraftFrameLayers(
  *
  * @param commands complete balanced display list.
  * @param viewport positive or empty logical viewport used only for visibility and bounded fallback allocation.
+ * @param scale positive final physical pixel density used to resolve fractional clip coverage without changing source sampling.
  * @return immutable layers in exact display-list order.
  */
 @JvmSynthetic
@@ -92,7 +93,9 @@ internal inline fun submitFabricMinecraftFrameLayers(
 internal fun partitionFabricMinecraftFrame(
     commands: List<DrawCommand>,
     viewport: IntSize,
+    scale: Int = 1,
 ): List<FabricMinecraftFrameLayer> {
+    require(0 < scale) { "Minecraft GUI scale must be positive." }
     val layers = ArrayList<FabricMinecraftFrameLayer>()
     val activeClips = ArrayList<IntRect>()
     val activeClipCommands = ArrayList<DrawCommand>()
@@ -127,10 +130,20 @@ internal fun partitionFabricMinecraftFrame(
 
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
-                if (isDirectFabricSampledImage(command) && fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
+                val directClip =
+                    if (isDirectFabricSampledImage(command, scale)) {
+                        if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
+                            visibleClip
+                        } else {
+                            pixelAlignedFabricSampledClip(activeClipCommands, visibleClip, scale)
+                        }
+                    } else {
+                        null
+                    }
+                if (directClip != null) {
                     flushPortable()
-                    command.destination.enclosingFabricViewportBounds(visibleClip)?.let { visible ->
-                        layers.add(FabricMinecraftFrameLayer.Sampled(command, visibleClip.takeIf { activeClips.isNotEmpty() }, visible))
+                    command.destination.enclosingFabricViewportBounds(directClip)?.let { visible ->
+                        layers.add(FabricMinecraftFrameLayer.Sampled(command, directClip.takeIf { activeClips.isNotEmpty() }, visible))
                     }
                 } else {
                     portable.add(command)
@@ -232,14 +245,48 @@ internal inline fun submitFabricMinecraftGuiCorners(
  * Checks the platform-independent direct subset before any native texture-capacity lookup.
  *
  * @param command immutable sampled command whose constructor already validates source containment.
+ * @param scale positive physical density used to reject ambiguous native quad-edge ownership at pixel centers.
  * @return true when native nearest sampling can preserve its source and compositing contract.
  */
 @JvmSynthetic
-internal fun isDirectFabricSampledImage(command: DrawCommand.SampledImage): Boolean =
+internal fun isDirectFabricSampledImage(
+    command: DrawCommand.SampledImage,
+    scale: Int = 1,
+): Boolean =
     command.orientation == SampledImageOrientation.Normal && command.tint == ArgbColor(-1) && command.alphaCutoff == 0f &&
-        command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel()
+        command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel() &&
+        command.destination.hasFabricPhysicalCenterEdge(scale).not()
 
 private fun Float.isWholeTexel(): Boolean = toDouble() == floor(toDouble())
+
+// Fractional clip edges discard physical pixel centers, rather than enclosing every touched logical cell.
+// Admit only coverage representable by the existing integer GUI scissor; source UVs and destination stay untouched.
+private fun pixelAlignedFabricSampledClip(
+    clips: List<DrawCommand>,
+    integerClip: IntRect,
+    scale: Int,
+): IntRect? {
+    var left = integerClip.left.toDouble()
+    var top = integerClip.top.toDouble()
+    var right = integerClip.right.toDouble()
+    var bottom = integerClip.bottom.toDouble()
+    clips.forEach { command ->
+        if (command is DrawCommand.PushFractionalClip) {
+            left = maxOf(left, command.bounds.left.toDouble()).coerceAtMost(integerClip.right.toDouble())
+            top = maxOf(top, command.bounds.top.toDouble()).coerceAtMost(integerClip.bottom.toDouble())
+            right = minOf(right, command.bounds.right.toDouble()).coerceAtLeast(integerClip.left.toDouble())
+            bottom = minOf(bottom, command.bounds.bottom.toDouble()).coerceAtLeast(integerClip.top.toDouble())
+        }
+    }
+
+    fun edge(value: Double): Double = ceil(value * scale - 0.5).coerceAtLeast(0.0) / scale
+    val resolvedLeft = edge(left)
+    val resolvedTop = edge(top)
+    val resolvedRight = edge(maxOf(left, right))
+    val resolvedBottom = edge(maxOf(top, bottom))
+    if (listOf(resolvedLeft, resolvedTop, resolvedRight, resolvedBottom).any { it != floor(it) }) return null
+    return IntRect(resolvedLeft.toInt(), resolvedTop.toInt(), resolvedRight.toInt(), resolvedBottom.toInt())
+}
 
 private fun includeFabricVisibleBounds(
     accumulated: IntRect?,

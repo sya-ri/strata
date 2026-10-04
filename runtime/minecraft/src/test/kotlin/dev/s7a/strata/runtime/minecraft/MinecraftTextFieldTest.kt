@@ -27,6 +27,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -38,6 +39,33 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftTextFieldTest {
+    @Test
+    fun longValueKeepsTheSameVisiblePixelsAndEndEditingAsItsSuffix() {
+        val value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(631).take(16_384)
+        val state = TextFieldState(value, maxLength = value.length)
+        val suffix = value.takeLast(64)
+        host(state, Modifier.Empty.initialFocus()).use { longHost ->
+            host(TextFieldState(suffix, maxLength = suffix.length), Modifier.Empty.initialFocus()).use { suffixHost ->
+                longHost.attach()
+                suffixHost.attach()
+                assertArrayEquals(
+                    rasterizeHeadless(suffixHost.frame(fieldSize).drawCommands, fieldSize).copyArgb(),
+                    rasterizeHeadless(longHost.frame(fieldSize).drawCommands, fieldSize).copyArgb(),
+                )
+                longHost.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Backspace, 0))
+                assertEquals(value.dropLast(1), state.value)
+                assertEquals(
+                    UiText.Literal(state.value),
+                    longHost
+                        .frame(fieldSize)
+                        .semantics
+                        .single()
+                        .semantics.label,
+                )
+            }
+        }
+    }
+
     @Test
     fun unfocusedFieldUsesExactSpriteEditBoxColorsAndSemantics() {
         val state = TextFieldState("A")

@@ -56,6 +56,21 @@ internal sealed interface LocalDrawCommand {
     }
 
     /**
+     * Retains a bounded dense blit grid and its original sampling commands.
+     * Integer translation uses bounded repeating templates; other transforms use [original].
+     * The retained display list owns both and releases them on repaint or terminal disposal.
+     */
+    class ComposedBlits(
+        val original: List<BlitImage>,
+        val destination: IntRect,
+    ) : LocalDrawCommand {
+        /**
+         * Validates and builds bounded templates on the tree owner thread only for integer presentation.
+         */
+        val commands: List<BlitImage> by lazy(LazyThreadSafetyMode.NONE) { compactBlitPatterns(original, destination) }
+    }
+
+    /**
      * Retains immutable sampled-image inputs until the owner thread translates them into tree coordinates.
      *
      * @property image the immutable source image retained by reference.

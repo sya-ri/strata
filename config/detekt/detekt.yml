@@ -3,6 +3,36 @@
 # ReturnCount is disabled because early returns make validation and lifecycle failure paths more direct.
 # MaxLineLength is disabled because code and documentation break at semantic boundaries instead of a fixed column.
 style:
+  ForbiddenMethodCall:
+    active: true
+    includes:
+      - "**/src/jmh/**"
+      - "**/integration/server-performance/**"
+      - "**/integration/paper/src/main/**"
+      - "**/integration/velocity/src/main/**"
+      - "**/canvas/**/MinecraftNativePerformance*.kt"
+    methods:
+      - "java.lang.System.nanoTime"
+      - "java.lang.System.currentTimeMillis"
+      - "kotlin.system.measureNanoTime"
+      - "kotlin.system.measureTimeMillis"
+      - "kotlin.time.measureTime"
+      - "kotlin.time.measureTimedValue"
+      - "kotlin.time.TimeSource.markNow"
+      - "kotlin.time.TimeMark.elapsedNow"
+      - "java.lang.management.ManagementFactory.getThreadMXBean"
+      - "java.lang.management.ManagementFactory.getMemoryMXBean"
+      - "java.lang.management.ManagementFactory.getGarbageCollectorMXBeans"
+      - "java.lang.management.ManagementFactory.getOperatingSystemMXBean"
+      - "java.lang.management.ThreadMXBean.getCurrentThreadCpuTime"
+      - "java.lang.management.ThreadMXBean.getThreadCpuTime"
+      - "com.sun.management.ThreadMXBean.getThreadAllocatedBytes"
+      - "com.sun.management.ThreadMXBean.getCurrentThreadAllocatedBytes"
+      - "com.sun.management.ThreadMXBean.getTotalThreadAllocatedBytes"
+      - "com.sun.management.OperatingSystemMXBean.getProcessCpuTime"
+      - "java.lang.management.MemoryMXBean.getHeapMemoryUsage"
+      - "java.lang.management.GarbageCollectorMXBean.getCollectionCount"
+      - "java.lang.management.GarbageCollectorMXBean.getCollectionTime"
   MagicNumber:
     active: false
   ReturnCount:
@@ -11,6 +41,11 @@ style:
     active: false
 
 strata:
+  BrowserPerformanceOwnership:
+    active: true
+    includes:
+      - "**/integration/web/src/jsMain/**"
+      - "**/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/**"
   NoNonNullAssertion:
     active: true
   BodyQualifiedName:

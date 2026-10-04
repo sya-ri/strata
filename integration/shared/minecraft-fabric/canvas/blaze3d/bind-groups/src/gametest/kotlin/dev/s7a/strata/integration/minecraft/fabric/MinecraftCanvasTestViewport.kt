@@ -18,13 +18,13 @@ import org.apache.commons.lang3.function.FailableFunction
  * Vulkan borrows the active client window on the render thread, applies [logicalSize] and [framebufferSize] independently, and resizes the main target without changing the platform window or swapchain.
  * Invalid dimensions fail before scheduling; unsupported backends, scheduling failures, and target resize failures propagate unchanged.
  */
-internal fun resizeMinecraftCanvasTestWindow(
+internal fun resizeMinecraftTestWindow(
     context: ClientGameTestContext,
     logicalSize: IntSize,
     framebufferSize: IntSize = logicalSize,
 ) {
-    require(0 < logicalSize.width && 0 < logicalSize.height) { "Canvas acceptance requires a positive logical viewport." }
-    require(0 < framebufferSize.width && 0 < framebufferSize.height) { "Canvas acceptance requires a positive framebuffer." }
+    require(0 < logicalSize.width && 0 < logicalSize.height) { "Minecraft acceptance requires a positive logical viewport." }
+    require(0 < framebufferSize.width && 0 < framebufferSize.height) { "Minecraft acceptance requires a positive framebuffer." }
     val backend =
         context.computeOnClient(
             FailableFunction<Minecraft, MinecraftCanvasTestBackend, RuntimeException> {

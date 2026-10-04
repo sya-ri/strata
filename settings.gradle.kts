@@ -136,13 +136,19 @@ val minecraftCheckVersions =
         emptySet()
     }
 val webProjectPaths = setOf(
-    ":api", ":runtime:core", ":runtime:web", ":runtime:headless", ":runtime:minecraft", ":runtime:remote",
-    ":integration:web", ":examples:web", ":quality:detekt-rules",
+    ":api", ":runtime:core", ":runtime:web", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
+    ":integration:web", ":examples:web", ":quality:detekt-rules", ":quality:performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
 )
 if (webOnly) {
     require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
-        task.substringBeforeLast(':') in webProjectPaths && task.substringAfterLast(':') in setOf("check", "jsTest")
-    }) { "strata.webOnly supports only fully qualified Web check and jsTest tasks; use the complete build for other work." }
+        task.substringBeforeLast(':') in webProjectPaths &&
+            (task.substringAfterLast(':') in setOf("check", "jsTest") ||
+                (task.substringBeforeLast(':') in setOf(":runtime:core", ":runtime:minecraft") && task.substringAfterLast(':') in setOf("formatKotlin", "updateKotlinAbi")) ||
+                (task.substringBeforeLast(':') == ":quality:performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi", "processEvidence")) ||
+                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhRemote", "jmhComponents", "captureComponentInventory", "captureRuntimeSurfaceInventory", "captureHeadlessInventory", "captureRemoteInventory")) ||
+                (task.substringBeforeLast(':') == ":quality:detekt-rules" && task.substringAfterLast(':') in setOf("formatKotlin")) ||
+                (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
+    }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; use the complete build for other work." }
     include(*webProjectPaths.toTypedArray())
 } else {
     val commonProjectPaths = listOf(
@@ -157,7 +163,8 @@ if (webOnly) {
         ":integration:web",
         ":integration:paper",
         ":integration:velocity",
-        ":quality:benchmarks",
+        ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
+        ":quality:performance-testkit",
         ":quality:detekt-rules",
         ":runtime:core",
         ":runtime:remote",

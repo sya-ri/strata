@@ -122,6 +122,7 @@ public object FabricUiSessions {
     /**
      * Passive overlays never synthesize pointer hover or consume gameplay input.
      */
+    @Suppress("KotlinConstantConditions") // The active HUD entry aliases Registry.interaction; loaded input probes verify it.
     public fun acceptsPointer(screen: FabricMinecraftScreen): Boolean {
         val entry = state.entries.values.find { it.screen === screen } ?: return true
         return entry.visible && entry.controls.interactionMode == UiInteractionMode.Cursor && (entry.presentation == UiPresentation.Screen || state.interaction === entry)
@@ -131,6 +132,7 @@ public object FabricUiSessions {
      * Current native input owner, excluding passive or hidden HUDs.
      */
     @JvmSynthetic
+    @Suppress("KotlinConstantConditions") // Entries and the active HUD owner share identity, verified in loaded-client probes.
     internal fun inputOwner(screen: FabricMinecraftScreen): UiSession? =
         state.entries.values
             .find { it.screen === screen && it.visible && (it.presentation == UiPresentation.Screen || state.interaction === it) }

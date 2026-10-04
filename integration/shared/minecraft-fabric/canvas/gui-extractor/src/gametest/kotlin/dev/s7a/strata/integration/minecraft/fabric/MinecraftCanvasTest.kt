@@ -104,7 +104,7 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
                 guiScale: Int,
             ) {
-                resizeMinecraftCanvasTestWindow(context, size)
+                resizeMinecraftTestWindow(context, size)
                 onClient {
                     val minecraft = Minecraft.getInstance()
                     minecraft.options.guiScale().set(guiScale)
@@ -114,6 +114,13 @@ private fun withMinecraftCanvasContext(
 
             override fun waitFor(condition: () -> Boolean) {
                 context.waitFor(Predicate<Minecraft> { condition() })
+            }
+
+            override fun waitFor(
+                timeoutTicks: Int,
+                condition: () -> Boolean,
+            ) {
+                context.waitFor(Predicate<Minecraft> { condition() }, timeoutTicks)
             }
 
             override fun waitTicks(ticks: Int) {

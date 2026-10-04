@@ -35,3 +35,9 @@ Regression tests change and clear a lower sibling under opaque and translucent f
 Separate core assertions retain child clips and both overlay kinds while invoking only the changed child's paint callback.
 The shared loaded-client scenario changes direct state inputs beneath clipped translucent post-child paint and opaque root paint: paint-only progress updates keep overlay callbacks at zero while portable composition does run; a text-width change also runs the ancestor overlay callbacks once after geometry propagation.
 The updated screenshot must equal the literal headless reference.
+
+For large performance fixtures, `startRenderMonitoring(maxNodeRecords)` explicitly selects a capacity in 1..65,536.
+The existing no-argument entry point retains its 4,096-record bound; live and retired identities share the selected bound until a checkpoint clears retired records.
+An overflow remains incomplete evidence and is never accepted by the performance testkit.
+Custom diagnostics owners may retain only the default capability and fail an unsupported larger request explicitly.
+The kit's optional `RuntimeWorkMonitor.maxNodeRecords` passes this request to the actual measured runtime without adding a runtime dependency or substituting another implementation.

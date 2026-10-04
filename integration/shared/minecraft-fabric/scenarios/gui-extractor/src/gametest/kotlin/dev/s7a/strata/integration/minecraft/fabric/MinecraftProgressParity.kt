@@ -48,7 +48,7 @@ internal object MinecraftProgressParity {
         output: Path,
     ): HeadlessImage {
         val assets = loadAssets(context)
-        context.input.resizeWindow(viewport.width, viewport.height)
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
         val headless = renderHeadless(profile, assets)
         val headlessPath = output.resolve("strata-progress-headless.png")

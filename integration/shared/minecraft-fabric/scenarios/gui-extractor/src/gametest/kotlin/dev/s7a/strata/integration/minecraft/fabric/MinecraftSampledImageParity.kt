@@ -111,6 +111,12 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         )
                     }
                     scope.fillRectangle(IntRect(60, 61, 92, 62), ArgbColor(0xFF123456.toInt()))
+                    scope.sampledImage(
+                        sampled,
+                        FloatRect(0.5f, 0f, 5.5f, 4f),
+                        FloatRect(104f, 40f, 136f, 64f),
+                        alphaCutoff = 0f,
+                    )
                 }
 
                 override fun close(): Unit = Unit

@@ -52,6 +52,8 @@ private class RuntimeUiSessionBridge(
 
     override fun startRenderMonitoring(): UiRenderMonitor = session.startRenderMonitoring()
 
+    override fun startRenderMonitoring(maxNodeRecords: Int): UiRenderMonitor = session.startRenderMonitoring(maxNodeRecords)
+
     override fun attach(): Unit = session.attach()
 
     override fun detach(): Unit = session.detach()

@@ -17,7 +17,7 @@ internal class MavenPublicationFilesTest {
             )
         val entries = artifacts.zip(suffixes).flatMap { (artifact, files) -> files.map { "$artifact:$it" } }
         assertEquals(artifacts.zip(suffixes).toMap(), MavenPublicationFiles.resolve(entries, artifacts))
-        for (invalid in listOf(entries.drop(6), entries + entries.first(), entries + "dev.s7a:paper:../escape", entries.filterNot { it.endsWith(":.pom") })) {
+        for (invalid in listOf(entries.drop(6), entries + entries.first(), entries + "dev.s7a:paper:../escape", entries.filterNot { it.endsWith(":.pom") }, entries.filterNot { it.endsWith(":-sources.jar") }, entries.filterNot { it.endsWith(":-javadoc.jar") }, entries.filterNot { it.endsWith(":.jar") || it.endsWith(":.klib") })) {
             assertThrows(IllegalStateException::class.java) { MavenPublicationFiles.resolve(invalid, artifacts) }
         }
         assertEquals(MavenPublicationFiles.legacySuffixes, MavenPublicationFiles.resolve(null, artifacts).getValue(artifacts.first()))

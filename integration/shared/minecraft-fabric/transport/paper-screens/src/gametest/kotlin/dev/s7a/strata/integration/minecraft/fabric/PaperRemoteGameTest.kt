@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.InputConstants
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
@@ -30,7 +31,7 @@ internal object PaperRemoteGameTest {
     fun run(context: ClientGameTestContext) {
         val address = System.getProperty("strata.paper.address") ?: return
         val run = requireNotNull(System.getProperty("strata.paper.run"))
-        context.input.resizeWindow(352, 240)
+        resizeMinecraftTestWindow(context, IntSize(352, 240))
         onClient(context) { minecraft ->
             minecraft.options.guiScale().set(1)
             minecraft.resizeGui()
@@ -127,7 +128,7 @@ internal object PaperRemoteGameTest {
                 val screen = MinecraftClientScreenAccess.currentScreen(minecraft)
                 screen is FabricMinecraftScreen && Stage.decode(screen.title.string) == stage
             },
-            600,
+            if (stage == Stage.ProxyComplete && System.getProperty("strata.velocity.performance", "false").toBoolean()) 12_000 else 600,
         )
         context.waitTicks(3)
         onClient(context) { minecraft ->

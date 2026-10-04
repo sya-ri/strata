@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants
 import dev.s7a.strata.component.SlotBinding
 import dev.s7a.strata.component.Slots
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
@@ -147,7 +148,7 @@ internal object InventorySlotSynchronizationGameTest {
                     stackMatches(menu.getSlot(chargeSlotIndex).item, Items.REDSTONE)
             },
         )
-        context.input.resizeWindow(industrialViewportWidth, industrialViewportHeight)
+        resizeMinecraftTestWindow(context, IntSize(industrialViewportWidth, industrialViewportHeight))
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
         context.setScreen { createMinecraftScreen(createIndustrialScreenDefinition(), profile, parent = null) }
         context.waitForScreen(FabricMinecraftScreen::class.java)

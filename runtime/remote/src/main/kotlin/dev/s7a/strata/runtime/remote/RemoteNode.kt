@@ -11,8 +11,8 @@ public class RemoteNode(
     modifiers: List<RemoteDeclaration> = emptyList(),
     children: List<Long> = emptyList(),
 ) {
-    public val modifiers: List<RemoteDeclaration> = Collections.unmodifiableList(modifiers.toList())
-    public val children: List<Long> = Collections.unmodifiableList(children.toList())
+    public val modifiers: List<RemoteDeclaration> = if (modifiers.isEmpty()) emptyList() else Collections.unmodifiableList(modifiers.toList())
+    public val children: List<Long> = if (children.isEmpty()) emptyList() else Collections.unmodifiableList(children.toList())
 
     override fun equals(other: Any?): Boolean = other is RemoteNode && declaration == other.declaration && modifiers == other.modifiers && children == other.children
 

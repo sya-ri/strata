@@ -43,6 +43,11 @@ profile:
         - "runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
 exclude:
+  # This runtime-sized optional row map is nonnull above the area cutoff; large-density independent pixel parity exercises that branch.
+  # Qodana incorrectly propagates its small-span null branch into the shared raster loop.
+  - name: KotlinConstantConditions
+    paths:
+      - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt
   # Kotlin explicit API mode requires visibility modifiers on declarations that Qodana marks as redundant.
   - name: RedundantVisibilityModifier
   # Dokka validates these links successfully; Qodana misses valid Kotlin/JVM exception tags and cross-module API links.
@@ -280,6 +285,11 @@ exclude:
       - examples/velocity/src/main/kotlin/dev/s7a/strata/examples/velocity/VelocityDemoPlugin.kt
       - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityAcceptancePlugin.kt
       - integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityUiPresentationVerification.kt
+      # Paper and Velocity compile these same physical sources into their own plugins; the IDE indexes only one owner.
+      # Real-JAR integration tests and independent real-server evidence exercise their construction, inputs and intervals.
+      - integration/server-performance/src/main/kotlin/dev/s7a/strata/integration/performance/ServerPerformanceBridge.kt
+      - integration/server-performance/src/main/kotlin/dev/s7a/strata/integration/performance/ServerPerformanceInputs.kt
+      - integration/server-performance/src/main/kotlin/dev/s7a/strata/integration/performance/ServerPerformanceContract.kt
       # Shared native sources are indexed under one exact-version owner; even calls within FabricRemoteScreens and Java calls to FabricRemotePayloadTypes lose their matching owner.
       # Every adapter compiles these calls, and integrated/Paper client receipts exercise their negotiation, updates, and teardown.
       - runtime/shared/minecraft-fabric/transport/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteScreens.kt

@@ -5,6 +5,9 @@ package dev.s7a.strata.integration.minecraft.fabric
 import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JvmPerformanceRunner
+import dev.s7a.strata.performance.PerformanceJson
+import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -55,9 +58,9 @@ internal class MinecraftProfileCacheProbe(
         check(minecraft.isSameThread)
         report.putAll(MinecraftProfileCacheMixinRuntime.verify())
         val fresh = measureFreshExtraction()
-        val start = System.nanoTime()
-        val profile = openProfile(minecraft)
-        report["open.first.nanos"] = (System.nanoTime() - start).toString()
+        val firstOpen = JvmPerformanceRunner.measure("profile first open", PerformancePlan(warmup = 0, samples = 1)) { openProfile(minecraft) }
+        val profile = firstOpen.value
+        report["open.first.nanos"] = firstOpen.evidence.get("wall_total_ns").asString
         val snapshot = MinecraftProfileCacheInspection.fonts(profile)
         report["snapshot.primitiveArrayBytes"] = MinecraftProfileCacheInspection.primitivePayloadBytes(snapshot).toString()
         report["snapshot.fontFamilies"] = snapshot.fontIds.size.toString()
@@ -86,9 +89,9 @@ internal class MinecraftProfileCacheProbe(
         check(rasterizeHeadless(host.frame(viewport).drawCommands, viewport).encodePng().contentEquals(oldPixels)) {
             "An old host's pixels changed when native resources reloaded."
         }
-        val start = System.nanoTime()
-        val replacement = openProfile(minecraft)
-        report["open.afterReload.nanos"] = (System.nanoTime() - start).toString()
+        val afterReload = JvmPerformanceRunner.measure("profile open after reload", PerformancePlan(warmup = 0, samples = 1)) { openProfile(minecraft) }
+        val replacement = afterReload.value
+        report["open.afterReload.nanos"] = afterReload.evidence.get("wall_total_ns").asString
         check(MinecraftProfileCacheInspection.fonts(replacement) !== retained) { "A new open reused a retired font snapshot." }
         retiredFonts += WeakReference(MinecraftProfileCacheInspection.fonts(replacement))
         verifyOptionReplacement(minecraft, replacement)
@@ -133,6 +136,7 @@ internal class MinecraftProfileCacheProbe(
         report["closedHostStillReachable"] = (closedHost != null).toString()
         report["status"] = "verified"
         report["verifiedAt"] = Instant.now().toString()
+        PerformanceJson.collectorIdentity().entrySet().forEach { (key, value) -> report["collector.$key"] = value.asString }
         Files.createDirectories(output)
         Files.writeString(output.resolve("profile-cache.properties"), report.entries.joinToString("\n", postfix = "\n") { "${it.key}=${it.value}" })
     }
@@ -145,29 +149,33 @@ internal class MinecraftProfileCacheProbe(
         host?.close()
     }
 
-    private fun measureFreshExtraction(): LongArray {
-        val elapsed = LongArray(2)
+    private fun measureFreshExtraction(): List<Long> {
         var previous: WeakReference<MinecraftUiProfile>? = null
-        elapsed.indices.forEach { index ->
-            val start = System.nanoTime()
-            val profile = extractMinecraftUiProfile()
-            elapsed[index] = System.nanoTime() - start
-            check(profile !== previous?.get()) { "The explicit public extraction factory unexpectedly cached its result." }
-            previous = WeakReference(profile)
-            retiredFonts += WeakReference(MinecraftProfileCacheInspection.fonts(profile))
-        }
-        return elapsed
+        val measured =
+            JvmPerformanceRunner.measure("profile fresh extraction", PerformancePlan(warmup = 0, samples = 2), afterOperation = { _, profile ->
+                check(profile !== previous?.get()) { "The explicit public extraction factory unexpectedly cached its result." }
+                previous = WeakReference(profile)
+                retiredFonts += WeakReference(MinecraftProfileCacheInspection.fonts(profile))
+            }) { extractMinecraftUiProfile() }
+        return measured.evidence
+            .getAsJsonObject("wall_distribution")
+            .getAsJsonArray("raw")
+            .map { it.asLong }
     }
 
     private fun measureWarmOpens(
         minecraft: Minecraft,
         profile: MinecraftUiProfile,
-    ): LongArray =
-        LongArray(8) {
-            val start = System.nanoTime()
-            check(openProfile(minecraft) === profile) { "Repeated normal opens extracted another immutable profile." }
-            System.nanoTime() - start
-        }
+    ): List<Long> {
+        val measured =
+            JvmPerformanceRunner.measure("profile warm open", PerformancePlan(warmup = 0, samples = 8)) {
+                openProfile(minecraft).also { check(it === profile) { "Repeated normal opens extracted another immutable profile." } }
+            }
+        return measured.evidence
+            .getAsJsonObject("wall_distribution")
+            .getAsJsonArray("raw")
+            .map { it.asLong }
+    }
 
     private fun verifyOptionReplacement(
         minecraft: Minecraft,
