@@ -6,6 +6,22 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 /**
+ * Checks whether an original destination edge meets a physical pixel center at positive [scale].
+ *
+ * Native quad rasterizers can exclude a sample included by the portable half-open coverage contract.
+ * The caller preserves those commands through exact fallback instead of biasing vertices or source interpolation.
+ * This pure check retains no geometry or native state and is safe on any thread.
+ */
+@JvmSynthetic
+internal fun FloatRect.hasFabricPhysicalCenterEdge(scale: Int): Boolean {
+    fun center(edge: Float): Boolean {
+        val physical = edge.toDouble() * scale
+        return physical - floor(physical) == 0.5
+    }
+    return center(left) || center(top) || center(right) || center(bottom)
+}
+
+/**
  * Bounds fractional drawing inside an integer viewport without constructing an unbounded integer envelope.
  *
  * The returned rectangle controls portable texture allocation only; callers retain the original floating-point destination for localization and sampling.

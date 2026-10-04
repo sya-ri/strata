@@ -700,7 +700,7 @@ public class FabricMinecraftScreen private constructor(
                 preparedLayers
             } else {
                 framePreparationCount += 1L
-                partitionFabricMinecraftFrame(commands, viewport)
+                partitionFabricMinecraftFrame(commands, viewport, scale)
             }
         val sampled = layers.filterIsInstance<FabricMinecraftFrameLayer.Sampled>().map { it.command.image }
         try {

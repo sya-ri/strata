@@ -248,14 +248,45 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         profile: MinecraftUiProfile,
         output: Path,
     ) {
+        for (scale in 1..4) {
+            closeFabricScreen(context)
+            val physicalSize = IntSize(viewport.width * scale, viewport.height * scale)
+            context.input.resizeWindow(physicalSize.width, physicalSize.height)
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                    minecraft.options.guiScale().set(scale)
+                    minecraft.resizeGui()
+                    minecraft.window.setGuiScale(scale)
+                    check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
+                },
+            )
+            runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize)
+        }
+        context.input.resizeWindow(viewport.width, viewport.height)
+        context.runOnClient(
+            FailableConsumer<Minecraft, RuntimeException> { minecraft ->
+                minecraft.options.guiScale().set(1)
+                minecraft.resizeGui()
+            },
+        )
+    }
+
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun runSampledImagePixelParityAtScale(
+        context: ClientGameTestContext,
+        profile: MinecraftUiProfile,
+        output: Path,
+        scale: Int,
+        physicalSize: IntSize,
+    ) {
         closeFabricScreen(context)
         val headless =
             context.computeOnClient(
                 FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport)
+                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport, scale = scale)
                 },
             )
-        Files.write(output.resolve("strata-sampled-image-headless.png"), headless.encodePng())
+        Files.write(output.resolve("strata-sampled-image-scale-$scale-headless.png"), headless.encodePng())
 
         val presentation =
             runCatching {
@@ -274,16 +305,26 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 )
                 val observed = renderWork(context)
                 requireSampledImageParityWork(observed)
+                // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
+                val expectedDirect =
+                    when (scale) {
+                        1 -> 4L
+                        4 -> 1L
+                        else -> 2L
+                    }
+                require(observed.sampledImageDraws == expectedDirect * observed.renderExtractions) {
+                    "Fractional clipping at scale $scale must draw $expectedDirect cached images per extraction: $observed"
+                }
                 val fabricPath =
                     context.takeScreenshot(
                         TestScreenshotOptions
-                            .of("strata-sampled-image-fabric")
+                            .of("strata-sampled-image-scale-$scale-fabric")
                             .disableCounterPrefix()
-                            .withSize(viewport.width, viewport.height)
+                            .withSize(physicalSize.width, physicalSize.height)
                             .withDestinationDir(output),
                     )
                 NativeImage.read(fabricPath.inputStream()).use { fabric ->
-                    requireImageSize(fabric, viewport)
+                    requireImageSize(fabric, physicalSize)
                     requireExactPixels(fabric, headless)
                 }
             }

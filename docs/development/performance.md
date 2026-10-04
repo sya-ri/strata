@@ -183,6 +183,13 @@ Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
 The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
+The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
+At density one this admits arbitrary fractional clip edges; at higher densities partial logical cells retain the portable fallback unless an inner clip or the image's visible extent makes the fractional boundary irrelevant.
+Destination edges exactly coincident with a physical pixel center retain portable drawing because native quad-edge ownership can omit a sample included by the portable half-open contract.
+No vertex bias or changed source interpolation is used to conceal that difference.
+The loaded parity scene compares full-frame patterned and translucent images at densities one through four and checks the actual direct-draw count, including the portable pixel-center-edge regression at density four.
+Source identity, source UVs, the original floating destination, display-list ordering, cache limits, and GPU retirement remain unchanged; no clipped image or new cache is constructed.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
