@@ -23,6 +23,8 @@ dev.s7a.strata.ui
 module:paper-api
 dev.s7a.strata.paper
 dev.s7a.strata.paper.event
+module:performance-testkit
+dev.s7a.strata.performance
 module:core
 dev.s7a.strata.runtime
 dev.s7a.strata.runtime.diagnostics
