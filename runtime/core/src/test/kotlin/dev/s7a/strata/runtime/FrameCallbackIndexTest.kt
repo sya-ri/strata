@@ -132,6 +132,7 @@ internal class FrameCallbackIndexTest {
                 tree.advanceFrame(FrameTime(7))
             }
             assertSame(failure, assertThrows(IllegalArgumentException::class.java, action))
+            assertEquals(emptyList<Throwable>(), failure.suppressed.toList())
             assertEquals(TreeState.Poisoned, tree.state)
             assertNull(field(checkNotNull(index), "root"))
             assertEquals(emptyList<Any>(), field(index, "cutoff"))
