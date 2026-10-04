@@ -36,6 +36,24 @@ final enum class dev.s7a.strata.performance/PerformancePhase : kotlin/Enum<dev.s
     final fun values(): kotlin/Array<dev.s7a.strata.performance/PerformancePhase> // dev.s7a.strata.performance/PerformancePhase.values|values#static(){}[0]
 }
 
+final enum class dev.s7a.strata.performance/PerformanceProfile : kotlin/Enum<dev.s7a.strata.performance/PerformanceProfile> { // dev.s7a.strata.performance/PerformanceProfile|null[0]
+    enum entry Quick // dev.s7a.strata.performance/PerformanceProfile.Quick|null[0]
+    enum entry Standard // dev.s7a.strata.performance/PerformanceProfile.Standard|null[0]
+
+    final val entries // dev.s7a.strata.performance/PerformanceProfile.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<dev.s7a.strata.performance/PerformanceProfile> // dev.s7a.strata.performance/PerformanceProfile.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun <#A1: kotlin/Any?> viewports(kotlin.collections/List<#A1>): kotlin.collections/List<#A1> // dev.s7a.strata.performance/PerformanceProfile.viewports|viewports(kotlin.collections.List<0:0>){0§<kotlin.Any?>}[0]
+    final fun plan(dev.s7a.strata.performance/PerformancePlan = ...): dev.s7a.strata.performance/PerformancePlan // dev.s7a.strata.performance/PerformanceProfile.plan|plan(dev.s7a.strata.performance.PerformancePlan){}[0]
+    final fun valueOf(kotlin/String): dev.s7a.strata.performance/PerformanceProfile // dev.s7a.strata.performance/PerformanceProfile.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<dev.s7a.strata.performance/PerformanceProfile> // dev.s7a.strata.performance/PerformanceProfile.values|values#static(){}[0]
+    final fun workloadId(kotlin/String): kotlin/String // dev.s7a.strata.performance/PerformanceProfile.workloadId|workloadId(kotlin.String){}[0]
+
+    final object Companion { // dev.s7a.strata.performance/PerformanceProfile.Companion|null[0]
+        final fun fromQuickFlag(kotlin/String?): dev.s7a.strata.performance/PerformanceProfile // dev.s7a.strata.performance/PerformanceProfile.Companion.fromQuickFlag|fromQuickFlag(kotlin.String?){}[0]
+    }
+}
+
 final class dev.s7a.strata.performance/BrowserPerformanceMeter { // dev.s7a.strata.performance/BrowserPerformanceMeter|null[0]
     constructor <init>(dev.s7a.strata.performance/PerformancePlan = ...) // dev.s7a.strata.performance/BrowserPerformanceMeter.<init>|<init>(dev.s7a.strata.performance.PerformancePlan){}[0]
 

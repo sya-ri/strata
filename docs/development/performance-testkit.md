@@ -6,6 +6,30 @@ Its JVM coordinate is `dev.s7a.strata:strata-performance-testkit`; Kotlin Multip
 The development branch can be published to an isolated local repository; the first official publication belongs to the next release, without replacing any existing release artifact.
 
 Consumers supply their real components, stable input, actions, readiness predicates, and expected work.
+
+## Quick investigation
+
+Use `-Pstrata.performance.quick=true` while finding candidates or checking an intermediate change.
+`PerformanceProfile.Quick` caps native and synchronous JVM intervals at three warm-up operations, ten samples and one independent execution, preserving smaller intervals and readiness deadlines.
+Its viewport selection keeps one middle entry of the registered matrix: GUI scales 1–4 select scale 3, while three CPU viewports select the middle viewport.
+Consumers retain every explicitly selected workload; without a selection, the screen runners choose one registered case.
+Reports use a separate `-quick` workload identity and require an explicit quick request for processing.
+The standard profile preserves existing sample counts, repetitions and complete viewport matrices; quick receipts cannot satisfy those acceptance contracts.
+
+For component, historical and remote JMH, the same Gradle flag uses no warm-up iterations, one 100 ms measurement iteration and one fork, under separate `*-quick` directories.
+With no explicit selection, the ordinary corpora use their existing smoke input subsets. Explicit workloads and historical parameter selections are retained; the independent raster corpora keep their selected input matrix.
+The original smoke option and every standard JMH configuration remain unchanged.
+Use `-Pstrata.performance.workloads=FanOut4096 -Pstrata.performance.stress=true` to investigate that stress case through `:quality:component-benchmarks:jmhComponents`.
+Smoke scores remain exploratory and are not compared with warmed standard measurements.
+
+For a loaded client, `./gradlew benchmarkMinecraftQuick -Pstrata.performance.nativeOutput=<fresh-directory>` selects one native component on the newest version in the repository's verified target catalog.
+Set `-Pstrata.minecraftVersions=<exact-version>` to choose a different single supported version and `-Pstrata.performance.workloads=TextField,NativeCanvas` to keep multiple explicit cases.
+The task runs the performance entry only, without the ordinary correctness scenes; it does not claim support for an unmeasured version.
+Add `"quick": true` to a native summary request and provide one run plus a real CPU receipt for binary provenance, as for standard collection.
+Before accepting a performance change, repeat the affected workloads using their unchanged standard settings and run the required correctness gates once the implementation is stable.
+
+## Collection ownership
+
 The kit owns clocks, sample collection, distributions, native presentation counters, runtime monitoring, and collector provenance.
 Application code must not add another timing engine or interpret unavailable collection as zero work.
 Typed JVM detekt checks prohibit direct clocks and CPU/allocation/GC accounting in benchmark and server fixtures.

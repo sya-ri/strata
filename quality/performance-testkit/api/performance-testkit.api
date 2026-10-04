@@ -274,6 +274,23 @@ public final class dev/s7a/strata/performance/PerformancePlan {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class dev/s7a/strata/performance/PerformanceProfile : java/lang/Enum {
+	public static final field Companion Ldev/s7a/strata/performance/PerformanceProfile$Companion;
+	public static final field Quick Ldev/s7a/strata/performance/PerformanceProfile;
+	public static final field Standard Ldev/s7a/strata/performance/PerformanceProfile;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun plan (Ldev/s7a/strata/performance/PerformancePlan;)Ldev/s7a/strata/performance/PerformancePlan;
+	public static synthetic fun plan$default (Ldev/s7a/strata/performance/PerformanceProfile;Ldev/s7a/strata/performance/PerformancePlan;ILjava/lang/Object;)Ldev/s7a/strata/performance/PerformancePlan;
+	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/performance/PerformanceProfile;
+	public static fun values ()[Ldev/s7a/strata/performance/PerformanceProfile;
+	public final fun viewports (Ljava/util/List;)Ljava/util/List;
+	public final fun workloadId (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/PerformanceProfile$Companion {
+	public final fun fromQuickFlag (Ljava/lang/String;)Ldev/s7a/strata/performance/PerformanceProfile;
+}
+
 public final class dev/s7a/strata/performance/PerformanceReportContract {
 	public fun <init> (Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;II)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;ILjava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V

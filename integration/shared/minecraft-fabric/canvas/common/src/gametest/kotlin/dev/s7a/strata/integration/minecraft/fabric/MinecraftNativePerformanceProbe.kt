@@ -10,7 +10,7 @@ import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.MinecraftPerformanceMeter
 import dev.s7a.strata.performance.NativePerformanceFixture
 import dev.s7a.strata.performance.PerformanceJson
-import dev.s7a.strata.performance.PerformancePlan
+import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceSelection
 import dev.s7a.strata.quality.benchmark.ComponentWorkload
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -36,19 +36,23 @@ internal class MinecraftNativePerformanceProbe(
     private val output: Path,
     private val validateViewport: (Int) -> Unit,
 ) {
+    private val profileMode = PerformanceProfile.fromQuickFlag(System.getProperty("strata.performance.quick"))
+    private val plan = profileMode.plan()
+
     /**
-     * Collects every canonical component and the real GPU fixture at four explicitly requested GUI scales.
+     * Collects the selected component matrix and GUI scales using the declared measurement profile.
      * Native resources must be loaded before entry, and output must be fresh for this independent process.
      * Run through production verification so loaded module origins are actual archives rather than development directories.
      * The caller supplies verified host, window and options metadata and restores its viewport after return.
      * [validateViewport] runs on the owner thread and must check actual framebuffer, GUI scale and option values.
      */
     internal fun run(conditions: JsonObject) {
-        val selection = PerformanceSelection(ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas", System.getProperty("strata.performance.workloads"))
+        val selection = PerformanceSelection(ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas", System.getProperty("strata.performance.workloads") ?: if (profileMode == PerformanceProfile.Quick) ComponentWorkload.entries.first().name else null)
         val report = conditions.deepCopy()
         report.add("selected_cases", JsonArray().apply { selection.ids.forEach(::add) })
         report.addProperty("schema_version", 1)
-        report.addProperty("workload_id", if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1")
+        report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1"))
+        if (profileMode == PerformanceProfile.Quick) report.addProperty("measurement_profile", profileMode.name)
         report.addProperty("run_id", UUID.randomUUID().toString())
         val fixtureType = MinecraftNativePerformanceProbe::class.java
         val fixtureArchive =
@@ -58,9 +62,9 @@ internal class MinecraftNativePerformanceProbe(
             )
         report.addProperty("fixture_archive", fixtureArchive.toUri().toString())
         report.addProperty("fixture_archive_sha256", ArtifactIdentity.fullCodeSource(MinecraftNativePerformanceProbe::class.java))
-        report.addProperty("warmup", PerformancePlan().warmup)
+        report.addProperty("warmup", plan.warmup)
         report.addProperty("settle_frames", 8)
-        report.addProperty("preparation_timeout_ms", PerformancePlan().preparationTimeoutMillis)
+        report.addProperty("preparation_timeout_ms", plan.preparationTimeoutMillis)
         report.addProperty(
             "image_directory",
             output
@@ -74,7 +78,8 @@ internal class MinecraftNativePerformanceProbe(
         report.addProperty("native_driver", canvas.backendDescription)
         val phases = JsonArray()
         report.add("phases", phases)
-        for (scale in 1..4) {
+        val scales = profileMode.viewports((1..4).toList())
+        for (scale in scales) {
             context.configureViewport(viewport, scale)
             ComponentWorkload.entries.filter { it.name in selection.ids }.forEach { workload ->
                 phases.add(measure(scale, workload.name, workload::uiDefinition))
@@ -97,7 +102,7 @@ internal class MinecraftNativePerformanceProbe(
                 }
             },
         )
-        check(phases.size() == 4 * selection.ids.size)
+        check(phases.size() == scales.size * selection.ids.size)
         report.addProperty("status", "passed")
         PerformanceJson.writeNew(output.resolve("report.json"), report)
     }
@@ -142,7 +147,7 @@ internal class MinecraftNativePerformanceProbe(
                 meter = MinecraftPerformanceMeter(screen)
                 checkNotNull(meter).begin(
                     "$name presented scale $scale",
-                    PerformancePlan(),
+                    plan,
                     NativePerformanceFixture(
                         ready = { context.currentScreen() === screen && context.hasOverlay().not() },
                         settleFrames = 8,
@@ -155,7 +160,7 @@ internal class MinecraftNativePerformanceProbe(
             }
             context.waitFor(2400) { checkNotNull(meter).completed }
             val result = context.onClient { checkNotNull(meter).result() }
-            check(result.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == PerformancePlan().samples)
+            check(result.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
             result.addProperty("case", name)
             result.addProperty("operation", "presented")
             result.addProperty("gui_scale", scale)
