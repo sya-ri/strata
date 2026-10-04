@@ -14,8 +14,6 @@ import dev.s7a.strata.node.ChildTransform
 import dev.s7a.strata.node.ChildTransformNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.node.FrameCutoffNode
-import dev.s7a.strata.node.FrameTimeNode
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.ParentDataModifierNode
@@ -37,7 +35,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal class Pipeline(
     private val ownerGuard: OwnerGuard,
     private val monitoring: RenderMonitoring = RenderMonitoring(),
+    private val dirtyTracker: DirtyTracker = DirtyTracker(monitoring),
 ) {
+    private val frameCallbacks = FrameCallbackIndex()
     private val paintPipeline = PaintPipeline(ownerGuard, monitoring)
     private val focusedInputPipeline = FocusedInputPipeline()
     private val inputPipeline = InputPipeline(focusedInputPipeline)
@@ -140,6 +140,7 @@ internal class Pipeline(
      * @throws Throwable when cancellation fails; the lifecycle owner still attempts remaining cleanup.
      */
     fun entryWillCleanup(entry: RetainedEntry) {
+        frameCallbacks.clear()
         inputPipeline.entryWillCleanup(entry)
     }
 
@@ -152,6 +153,7 @@ internal class Pipeline(
      * @throws Throwable when the previous capture owner rejects cancellation.
      */
     fun releaseRetainedReferences() {
+        frameCallbacks.clear()
         focusedInputPipeline.releaseRetainedReferences()
         inputPipeline.cancelCapture()
     }
@@ -171,7 +173,7 @@ internal class Pipeline(
      * @throws Throwable when capture fails; the tree performs terminal cleanup.
      */
     fun captureFrameState(root: RetainedNode) {
-        visitEntries(root.effectiveRoot) { entry -> (entry.node as? FrameCutoffNode)?.captureFrameState() }
+        frameCallbacks.capture(root, dirtyTracker.structureRevision)
     }
 
     /**
@@ -181,7 +183,7 @@ internal class Pipeline(
      * @throws Throwable when a commit fails; the tree performs terminal cleanup.
      */
     fun commitFrameState(root: RetainedNode) {
-        visitEntries(root.effectiveRoot) { entry -> (entry.node as? FrameCutoffNode)?.commitFrameState() }
+        frameCallbacks.commit(root, dirtyTracker.structureRevision)
     }
 
     /**
@@ -216,7 +218,7 @@ internal class Pipeline(
         root: RetainedNode,
         time: FrameTime,
     ) {
-        advanceFrameEntry(root.effectiveRoot, time)
+        frameCallbacks.advance(root, dirtyTracker.structureRevision, time)
     }
 
     /**
@@ -461,16 +463,6 @@ internal class Pipeline(
             }
         }
         return false
-    }
-
-    private fun advanceFrameEntry(
-        retained: RetainedEntry,
-        time: FrameTime,
-    ) {
-        (retained.node as? FrameTimeNode)?.onFrame(time)
-        for (index in 0 until retained.effectiveChildCount) {
-            advanceFrameEntry(retained.effectiveChildAt(index), time)
-        }
     }
 
     private fun visitEntries(

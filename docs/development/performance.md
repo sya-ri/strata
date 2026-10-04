@@ -48,6 +48,17 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Current-tree frame callbacks
+
+State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.
+The tree owner keys these lists by the current root identity and structural revision; ordinary phase invalidation preserves membership.
+Reconciliation of children or modifiers, including keyed reordering and dynamic child materialization, changes the structural token.
+Every cutoff is captured before the separate commit pass, and time-aware nodes still receive every supplied timestamp, including equal values.
+Cleanup clears the borrowed root and both lists before lifecycle callbacks, and terminal failure or close releases their backing storage.
+Only the current tree is retained; passive trees have empty lists and clean frames do not walk their nodes for these capabilities.
+Deterministic tests cover effective modifier order, identity reuse, replacement, reordering, invalidation and callback failure cleanup.
+The shared stress workload measures idle fan-out separately from updates that actually change all consumers.
+
 ### Single-texel nine-slice tiling
 
 Minecraft nine-slice painting retains the default tiled center mode and the public API.
