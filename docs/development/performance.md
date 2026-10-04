@@ -123,6 +123,11 @@ For spans covering at least 4,096 physical pixels and four rows, nearest source 
 Each entry uses the original pixel-center Float expressions; there is no incremental coordinate recurrence or accumulated rounding error.
 Smaller spans keep direct sampling, and source Y remains independently calculated for every row.
 An opaque sampled source with an opaque RGB tint computes its exact normalized channel products without reading destination channels.
+Within each command, three scalar values remember the previous source ARGB, destination ARGB and exact result.
+An opaque tint result depends only on source; a translucent result additionally requires complete destination equality, including RGB in transparent pixels.
+Tint and discard cutoff stay fixed on this exclusively owned invocation, unequal keys recompute the original Float equations, and all three values expire when the command returns.
+This reuses repeated magnified texels without a table of source colors or any image reference.
+A zero-alpha tint preserves the destination without traversing its covered pixels.
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 

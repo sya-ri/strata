@@ -38,6 +38,7 @@ internal object SampledImageRasterizer {
         val right = minOf(firstPixel(destination.right, scale), clip.right)
         val bottom = minOf(firstPixel(destination.bottom, scale), clip.bottom)
         if (right <= left || bottom <= top) return
+        if (command.tint.value ushr 24 == 0) return
 
         val color = SampledColor(command.tint.value, command.alphaCutoff)
         if (command.image.size.width == 1 && command.image.size.height == 1) {
@@ -117,6 +118,9 @@ internal object SampledImageRasterizer {
         private val red = normalized(tint ushr 16)
         private val green = normalized(tint ushr 8)
         private val blue = normalized(tint)
+        private var previousSource = 0
+        private var previousDestination = 0
+        private var previousResult = 0
 
         // A whole one-texel image always clamps to (0, 0), including fractional sources and flips.
         // Pass the clipped scalar span without allocating a rectangle for each command.
@@ -155,25 +159,43 @@ internal object SampledImageRasterizer {
             source: Int,
             destination: Int,
         ): Int {
+            val sourceAlphaByte = source ushr 24
+            if (sourceAlphaByte == 0 || alpha == 0f) return destination
+            if (sourceAlphaByte == 255 && alpha == 1f) return opaque(source)
+            if (source == previousSource && destination == previousDestination) return previousResult
             val sourceAlpha = normalized(source ushr 24) * alpha
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return destination
-            // Untinted opaque sampling is an exact overwrite, even at fractional destinations and clips.
-            if (sourceAlpha == 1f && identityTint) return source
-            if (sourceAlpha == 1f && source == 0xFFFFFFFF.toInt()) return tint
-            if (sourceAlpha == 1f) {
-                val outputRed = quantize(normalized(source ushr 16) * red)
-                val outputGreen = quantize(normalized(source ushr 8) * green)
-                val outputBlue = quantize(normalized(source) * blue)
-                return 0xFF000000.toInt() or (outputRed shl 16) or (outputGreen shl 8) or outputBlue
-            }
             val destinationWeight = normalized(destination ushr 24) * (1f - sourceAlpha)
             val outputAlpha = sourceAlpha + destinationWeight
             val alphaByte = quantize(outputAlpha)
-            if (alphaByte == 0) return 0
+            if (alphaByte == 0) return remember(source, destination, 0)
             val outputRed = channel(source ushr 16, destination ushr 16, red, sourceAlpha, destinationWeight, outputAlpha)
             val outputGreen = channel(source ushr 8, destination ushr 8, green, sourceAlpha, destinationWeight, outputAlpha)
             val outputBlue = channel(source, destination, blue, sourceAlpha, destinationWeight, outputAlpha)
-            return (alphaByte shl 24) or (outputRed shl 16) or (outputGreen shl 8) or outputBlue
+            return remember(source, destination, (alphaByte shl 24) or (outputRed shl 16) or (outputGreen shl 8) or outputBlue)
+        }
+
+        private fun opaque(source: Int): Int {
+            if (identityTint) return source
+            if (source == 0xFFFFFFFF.toInt()) return tint
+            if (source == previousSource) return previousResult
+            val outputRed = quantize(normalized(source ushr 16) * red)
+            val outputGreen = quantize(normalized(source ushr 8) * green)
+            val outputBlue = quantize(normalized(source) * blue)
+            return remember(source, 0, 0xFF000000.toInt() or (outputRed shl 16) or (outputGreen shl 8) or outputBlue)
+        }
+
+        // Tint and cutoff are fixed for this command. Opaque results depend only on source;
+        // translucent results additionally compare the complete destination, including transparent RGB.
+        private fun remember(
+            source: Int,
+            destination: Int,
+            result: Int,
+        ): Int {
+            previousSource = source
+            previousDestination = destination
+            previousResult = result
+            return result
         }
 
         private fun channel(

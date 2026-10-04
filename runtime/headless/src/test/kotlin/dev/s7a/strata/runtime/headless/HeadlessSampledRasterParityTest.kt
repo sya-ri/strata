@@ -39,16 +39,18 @@ internal class HeadlessSampledRasterParityTest {
                         FloatRect(1.125f, 2.625f, 46.875f, 23.125f),
                         FloatRect(2.375f, 1.125f, 3.625f, 2.875f),
                     )
-                for (destination in destinations) {
-                    for (orientation in SampledImageOrientation.entries) {
-                        for (tint in listOf(-1, 0xFF80FF40.toInt(), 0x80A4C6E8.toInt(), 0x00BFD7EF)) {
-                            for (cutoff in listOf(0f, 0.1f, 0.5f, 1f)) {
-                                val command = DrawCommand.SampledImage(image, sourceBounds, destination, ArgbColor(tint), cutoff, orientation)
-                                for (clip in listOf(IntRect(0, 0, physical.width, physical.height), IntRect(2, 3, physical.width - 3, physical.height - 2))) {
-                                    val expected = reference(backgrounds, physical, density, command, clip)
-                                    val actual = backgrounds.copyOf()
-                                    SampledImageRasterizer.paint(actual, physical, density, command, clip)
-                                    assertArrayEquals(expected, actual, "$density/$source/$destination/$orientation/$tint/$cutoff/$clip")
+                for (background in listOf(backgrounds, IntArray(backgrounds.size), IntArray(backgrounds.size) { 0x001337AA }, IntArray(backgrounds.size) { 0x804A6789.toInt() })) {
+                    for (destination in destinations) {
+                        for (orientation in SampledImageOrientation.entries) {
+                            for (tint in listOf(-1, 0xFF80FF40.toInt(), 0x80A4C6E8.toInt(), 0x00BFD7EF, 0x01020406)) {
+                                for (cutoff in listOf(0f, 0.1f, 0.5f, 1f)) {
+                                    val command = DrawCommand.SampledImage(image, sourceBounds, destination, ArgbColor(tint), cutoff, orientation)
+                                    for (clip in listOf(IntRect(0, 0, physical.width, physical.height), IntRect(2, 3, physical.width - 3, physical.height - 2))) {
+                                        val expected = reference(background, physical, density, command, clip)
+                                        val actual = background.copyOf()
+                                        SampledImageRasterizer.paint(actual, physical, density, command, clip)
+                                        assertArrayEquals(expected, actual, "$density/$source/$destination/$orientation/$tint/$cutoff/$clip")
+                                    }
                                 }
                             }
                         }
