@@ -4129,6 +4129,7 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#m
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#method:17:release:(Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#method:17:reserve:(Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId;Ljava/util/List;)Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#method:17:retainedSetCount:()I
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#method:17:reuse:(Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;I)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#method:17:seal:(Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources$WhenMappings#type:4121:java.lang.Object:

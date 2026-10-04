@@ -88,6 +88,7 @@ internal object MinecraftCanvasGameTest {
             )
         }
         MinecraftCanvasLifetimeGameTest.run(context, profile)
+        MinecraftPortableLayerReuseGameTest.run(context, profile)
         MinecraftCanvasCapacityGameTest.run(context, profile)
         MinecraftCanvasConsumptionGameTest.run(context, profile)
         MinecraftCanvasGenerationGameTest.run(context, profile)

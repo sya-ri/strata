@@ -136,15 +136,11 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
             ): Path = context.takeScreenshot(name, output, size)
         }
-    val previousDecoration =
-        if (System.getProperty("strata.performance.nativeOutput") != null) {
-            adapter.onClient { GLFW.glfwGetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED) }
-        } else {
-            null
-        }
+    val previousDecoration = adapter.onClient { GLFW.glfwGetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED) }
     var failure: Throwable? = null
     try {
-        if (previousDecoration != null) adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE) }
+        // Borderless verification preserves full-monitor framebuffer sizes on Windows without title-bar clamping.
+        adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE) }
         action(adapter)
     } catch (caught: Throwable) {
         failure = caught
@@ -153,7 +149,7 @@ private fun withMinecraftCanvasContext(
         runCanvasTestCleanup(
             failure,
             { adapter.configureViewport(IntSize(previous.first, previous.second), previous.third) },
-            { if (previousDecoration != null) adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, previousDecoration) } },
+            { adapter.onClient { GLFW.glfwSetWindowAttrib(minecraftTestWindowHandle(), GLFW.GLFW_DECORATED, previousDecoration) } },
         )
     }
 }

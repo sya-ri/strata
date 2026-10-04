@@ -160,24 +160,32 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 ### Bounded raster texture cache
 
 The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
-When a mixed portable-and-platform display list changes, portable textures may be reused only when the complete ordered list of localized immutable commands, image extents, viewport, and GUI scale is equal; platform layers are still extracted natively every time.
+When a mixed portable-and-platform display list changes, each portable texture at the same portable-layer index is reused when its localized immutable commands, logical extent, and GUI scale are equal; platform layers are still extracted natively every time.
+Placement is not part of this derived-pixel key, and a changed layer count does not invalidate equal layers at surviving indices.
+There is no historical content lookup or new application-facing cache.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
 See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
-Changed portable inputs allocate a complete replacement generation before any GUI output, rather than modifying a texture that unconsumed GUI work may still reference.
+Changed portable inputs reserve a complete replacement generation before any GUI output, sharing immutable resources for equal layers and allocating only changed layers, rather than modifying a texture that unconsumed GUI work may still reference.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
 Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
 The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.
 The separate portable pool reserves at most three generation sets per stable presenter and 64 per device before allocation, with each set bounded by the exact layer extents of one prepared portable list.
-These permits are independent of Canvas's native target-set budget and remain held through physical destruction, including partial allocation and Vulkan's deferred destruction queue.
+Each generation owns independent initialization and GUI-consumption fences and extraction pins, including for shared layers.
+After these settle, retirement drops that generation's resource references; shared storage remains owned by the remaining generations without retaining the old generation or its CPU inputs.
+The last retired reference retains its permit through physical destruction, including partial allocation and Vulkan's deferred destruction queue.
+These permits remain independent of Canvas's native target-set budget; sharing does not increase the reserved extent or generation limits.
 Portable pool exhaustion fails before GUI output; it never attaches stale pixels to new portable commands or needs another permit to close an existing generation.
 Terminal cleanup submits as required and completes recorded work, closes both native Canvas and portable resources, drains native destruction, and checks physical acknowledgements in that order.
 Pointer dispatch and inventory or skin refresh coalescing must still invalidate the frame path when observable presentation state changes.
 Loaded-client GameTests read render-work counters from the real Fabric screen and require an unchanged display list to perform no repartition, portable rasterization, or texture upload.
 They also require equivalent replacement portable layers to reuse their raster textures, inspect detached presenters for absent current texture generations and prepared-frame references, and wait for actual retirement before checking native destruction.
 The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
+Layer-sharing regressions additionally exercise hundreds of partial replacements, both retirement orders, changed extents, owner isolation, partial failure, quarantined initialization, and terminal cleanup.
+The loaded common suite changes one opaque region across a native Canvas barrier at GUI scales one through four, requires exactly one rasterization and upload, preserves the unchanged texture identity, and checks retained opaque, translucent, and transparent pattern texels against literal native screenshot pixels.
+Legacy OpenGL correctness windows temporarily remove their decorations to preserve full-monitor framebuffer extents on Windows and restore the previous size, GUI scale, and decorations during cleanup.
 
 ### Direct sampled-image texture cache
 

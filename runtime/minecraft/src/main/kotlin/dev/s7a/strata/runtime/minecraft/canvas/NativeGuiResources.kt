@@ -7,7 +7,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Device-owned lifetime registry for complete portable GUI resource generations.
  *
  * Each stable presenter may retain at most three sets and this device at most 64, independently of native Canvas target permits.
- * A set contains at most one resource for each exact positive layer extent supplied before allocation.
+ * A set contains one resource reference for each exact positive layer extent supplied before allocation.
+ * Unchanged layers may share immutable resources between generations of the same presenter; each generation retains independent fences and pins.
  * Cache release only requests retirement; initialization, extraction pins, actual GUI consumption, and physical destruction independently control release.
  * Resources and fences remain here rather than in screens or immutable core frames, including after partial initialization or GUI failure.
  * Every call belongs to the constructing render thread, and ordinary operations never wait for completion.
@@ -46,7 +47,7 @@ public class NativeGuiResources internal constructor(
     /**
      * Reserves one complete portable generation before the caller allocates any native resource.
      *
-     * The copied layer extents bound both resource count and each allocation's shape; the adapter must allocate them in this order.
+     * The copied layer extents bound both resource count and each allocation's shape; the adapter must allocate or reuse them in this order.
      * An empty extent list is valid and still requires sealing after any attempted initialization.
      * Full quotas fail before allocation or output, without changing the previous presentation or native Canvas's independent fallback policy.
      *
@@ -82,7 +83,7 @@ public class NativeGuiResources internal constructor(
      *
      * A partially allocated layer transfers through the same contract and may then throw its original initialization failure.
      * The caller still seals the whole set in a finally block before requesting retirement.
-     * The resource must match the next reserved extent and must not also belong to another set or owner.
+     * The resource must match the next reserved extent and must not already be registered; use [reuse] for existing immutable storage.
      *
      * @param set owned unsealed generation, including one whose cache already requested retirement.
      * @param resource exclusively owned native/CPU storage; ownership transfers only when this method returns normally.
@@ -98,6 +99,40 @@ public class NativeGuiResources internal constructor(
             check(record.sealed.not() && record.resources.size < record.extents.size) { "Portable GUI resources must match the reserved unsealed layer count." }
             check(sets.values.none { candidate -> candidate.resources.any { it.resource === resource } }) { "A portable GUI resource cannot have multiple owners." }
             record.resources += Resource(resource)
+        }
+
+    /**
+     * Appends an immutable layer from a live generation of the same presenter to the next reserved extent.
+     *
+     * Both generations retain independent initialization and GUI-consumption lifetimes.
+     * Retirement drops a generation's reference only after its fences and pins settle; storage closes after the last reference retires.
+     * No native allocation, upload, callback, or blocking wait occurs.
+     *
+     * @param set unsealed destination whose next extent must match the source layer.
+     * @param source complete sealed, live, nonquarantined generation of the same presenter.
+     * @param index source layer index in its reserved order.
+     * @throws IllegalStateException for an invalid generation, owner, extent, lifecycle, or thread.
+     * @throws IndexOutOfBoundsException for a source layer outside its reserved list.
+     * @throws ArithmeticException when the shared reference count cannot be represented.
+     */
+    public fun reuse(
+        set: NativeGuiResourceSet,
+        source: NativeGuiResourceSet,
+        index: Int,
+    ): Unit =
+        operation {
+            requireRunning()
+            val destination = requireSet(set)
+            val origin = requireSet(source)
+            check(destination.sealed.not() && destination.resources.size < destination.extents.size) { "Portable GUI reuse requires a remaining unsealed extent." }
+            check(origin.owner == destination.owner && origin.sealed && origin.resources.size == origin.extents.size) { "Portable GUI reuse requires a complete generation of the same presenter." }
+            check(origin.retired.not() && origin.quarantined.not()) { "Retired or quarantined portable GUI resources cannot be reused." }
+            check(destination.extents[destination.resources.size] == origin.extents[index]) { "Portable GUI reuse must match the reserved physical extent." }
+            val resource = origin.resources[index]
+            check(resource.release == Release.Live) { "Portable GUI reuse requires live immutable storage." }
+            val references = Math.incrementExact(resource.references)
+            destination.resources += resource
+            resource.references = references
         }
 
     /**
@@ -208,7 +243,7 @@ public class NativeGuiResources internal constructor(
      * This owner-thread diagnostic neither polls nor touches a native API and is safe after device shutdown.
      * Its count is separate from [NativeCanvasDevice.retainedTargetCount].
      *
-     * @return permits retained until all resources in each set acknowledge physical destruction.
+     * @return permits retained until each set's retired references are transferred to live generations or acknowledge physical destruction.
      * @throws IllegalStateException off the render thread.
      */
     public fun retainedSetCount(): Int {
@@ -306,8 +341,12 @@ public class NativeGuiResources internal constructor(
             sets.values.toList().forEach { record ->
                 failures.attempt { finishInitialization(record, force = true) }
                 failures.attempt { finishGui(record, force = true) }
-                record.resources.forEach { resource -> failures.attempt { requestClose(resource, retry = true) } }
+                releaseReferences(record)
             }
+            sets.values
+                .flatMap { it.resources }
+                .distinct()
+                .forEach { resource -> failures.attempt { requestClose(resource, retry = true) } }
             failures.throwIfPresent()
         }
 
@@ -331,7 +370,10 @@ public class NativeGuiResources internal constructor(
             failures.attempt { finishInitialization(record, force = false) }
             failures.attempt { finishGui(record, force = false) }
             if (releasable(record)) {
-                record.resources.forEach { resource -> failures.attempt { requestClose(resource, retry = false) } }
+                releaseReferences(record)
+                record.resources.forEach { resource ->
+                    if (resource.references == 0) failures.attempt { requestClose(resource, retry = false) }
+                }
                 failures.attempt { acknowledge(record, terminal = false) }
             }
         }
@@ -342,6 +384,12 @@ public class NativeGuiResources internal constructor(
         val initialized = record.sealed && record.initializationFence == null
         val unused = record.pins == 0 && record.pendingGui.not() && record.guiCompletion == null
         return record.retired && record.quarantined.not() && initialized && unused
+    }
+
+    private fun releaseReferences(record: ResourceSet) {
+        if (record.referencesReleased) return
+        record.referencesReleased = true
+        record.resources.forEach { it.references -= 1 }
     }
 
     private fun finishInitialization(
@@ -397,17 +445,19 @@ public class NativeGuiResources internal constructor(
         terminal: Boolean,
     ) {
         val failures = CanvasFailures()
-        record.resources.filter { it.release == Release.Requested }.forEach { resource ->
-            failures.attempt {
-                val destroyed = checkNotNull(resource.resource).isDestroyed()
-                if (destroyed) {
-                    resource.resource = null
-                    resource.release = Release.Destroyed
+        record.resources.forEach { resource ->
+            if (resource.release == Release.Requested) {
+                failures.attempt {
+                    val destroyed = checkNotNull(resource.resource).isDestroyed()
+                    if (destroyed) {
+                        resource.resource = null
+                        resource.release = Release.Destroyed
+                    }
+                    check(terminal.not() || destroyed) { "Portable GUI resource remains physically allocated after terminal retirement drain." }
                 }
-                check(terminal.not() || destroyed) { "Portable GUI resource remains physically allocated after terminal retirement drain." }
             }
         }
-        if (record.resources.all { it.release == Release.Destroyed }) sets.remove(record.token.value)
+        if (record.referencesReleased && record.resources.all { 0 < it.references || it.release == Release.Destroyed }) sets.remove(record.token.value)
         failures.throwIfPresent()
     }
 
@@ -455,12 +505,14 @@ public class NativeGuiResources internal constructor(
         var pendingGui = false
         var initializationFence: NativeCanvasFence? = null
         var guiCompletion: Completion? = null
+        var referencesReleased = false
     }
 
     private class Resource(
         var resource: NativeGuiResource?,
         var release: Release = Release.Live,
         var failure: Throwable? = null,
+        var references: Int = 1,
     )
 
     private enum class Release {
