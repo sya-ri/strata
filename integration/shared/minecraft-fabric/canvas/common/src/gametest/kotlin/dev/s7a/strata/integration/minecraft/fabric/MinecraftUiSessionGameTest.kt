@@ -100,7 +100,7 @@ internal object MinecraftUiSessionGameTest {
             { context.onClient { Minecraft.getInstance().options.pauseOnLostFocus = pauseOnLostFocus } },
         )
         result.getOrThrow()
-        Files.writeString(context.outputDirectory.resolve("strata-ui-sessions.txt"), "checked=hud-pixels,draw-order,category,hide,close,f1,exclusive-interaction,event-switch,event-close,retained-host,remapped-movement,native-player-movement,native-attack,permission-release,focus-release,toggle-release\n")
+        Files.writeString(context.outputDirectory.resolve("strata-ui-sessions.txt"), "checked=hud-pixels,draw-order,category,hide,close,f1,exclusive-interaction,hud-pointer-owner,hud-input-owner,event-switch,event-close,retained-host,remapped-movement,native-player-movement,native-attack,permission-release,focus-release,toggle-release\n")
     }
 
     private fun verifyHud(
@@ -168,7 +168,15 @@ internal object MinecraftUiSessionGameTest {
             above.setInteractionMode(UiInteractionMode.Cursor)
             check(hud.interactionMode == UiInteractionMode.None)
             check(above.interactionMode == UiInteractionMode.Cursor)
-            checkNotNull(FabricUiSessions.nativeScreen(above)).onClose()
+            val activeScreen = checkNotNull(FabricUiSessions.nativeScreen(above))
+            check(above.presentation == UiPresentation.Hud && FabricUiSessions.acceptsPointer(activeScreen)) {
+                "The current cursor HUD must pass the native pointer ownership gate."
+            }
+            val inputOwner = FabricUiSessions::class.java.declaredMethods.single { it.name.substringBefore('$') == "inputOwner" }
+            check(inputOwner.invoke(FabricUiSessions, activeScreen) === above) {
+                "The current cursor HUD must resolve to its actual session through the native input ownership gate."
+            }
+            activeScreen.onClose()
             check(above.interactionMode == UiInteractionMode.None)
             context.exchangeHudHidden(true)
             FabricUiSessions.tick()
