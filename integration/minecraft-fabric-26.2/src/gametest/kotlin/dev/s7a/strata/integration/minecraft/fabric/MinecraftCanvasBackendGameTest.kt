@@ -32,7 +32,7 @@ internal object MinecraftCanvasBackendGameTest {
      */
     internal fun run(context: ClientGameTestContext) {
         context.restoreDefaultGameOptions()
-        resizeMinecraftCanvasTestWindow(context, viewport)
+        resizeMinecraftTestWindow(context, viewport)
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)

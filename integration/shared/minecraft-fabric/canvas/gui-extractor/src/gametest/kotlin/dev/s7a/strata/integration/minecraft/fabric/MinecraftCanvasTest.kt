@@ -104,7 +104,7 @@ private fun withMinecraftCanvasContext(
                 size: IntSize,
                 guiScale: Int,
             ) {
-                resizeMinecraftCanvasTestWindow(context, size)
+                resizeMinecraftTestWindow(context, size)
                 onClient {
                     val minecraft = Minecraft.getInstance()
                     minecraft.options.guiScale().set(guiScale)

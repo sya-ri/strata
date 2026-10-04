@@ -129,7 +129,7 @@ public class StrataMinecraftFontGameTest : FabricClientGameTest {
         scale: Int,
         size: IntSize,
     ) {
-        context.input.resizeWindow(size.width, size.height)
+        resizeMinecraftTestWindow(context, IntSize(size.width, size.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(scale)

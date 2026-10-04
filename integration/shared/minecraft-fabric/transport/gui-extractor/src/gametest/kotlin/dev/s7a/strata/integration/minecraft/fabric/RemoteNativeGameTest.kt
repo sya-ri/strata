@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import com.mojang.blaze3d.platform.InputConstants
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -32,7 +33,7 @@ internal object RemoteNativeGameTest {
         context.worldBuilder().setUseConsistentSettings(true).create().use {
             context.waitFor(Predicate { minecraft -> minecraft.player != null && MinecraftClientScreenAccess.currentScreen(minecraft) == null })
             val server = context.computeOnClient(FailableFunction<Minecraft, MinecraftServer, RuntimeException> { checkNotNull(it.singleplayerServer) })
-            context.input.resizeWindow(352, 240)
+            resizeMinecraftTestWindow(context, IntSize(352, 240))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.options.guiScale().set(1)

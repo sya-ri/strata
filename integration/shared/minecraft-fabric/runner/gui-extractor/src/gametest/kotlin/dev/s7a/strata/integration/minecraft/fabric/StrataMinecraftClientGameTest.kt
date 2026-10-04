@@ -111,7 +111,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
     @Suppress("LongMethod")
     override fun runTest(context: ClientGameTestContext) {
         context.restoreDefaultGameOptions()
-        context.input.resizeWindow(viewport.width, viewport.height)
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
@@ -251,7 +251,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         for (scale in 1..4) {
             closeFabricScreen(context)
             val physicalSize = IntSize(viewport.width * scale, viewport.height * scale)
-            context.input.resizeWindow(physicalSize.width, physicalSize.height)
+            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.options.guiScale().set(scale)
@@ -262,7 +262,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             )
             runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize)
         }
-        context.input.resizeWindow(viewport.width, viewport.height)
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.guiScale().set(1)
@@ -691,7 +691,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 },
             )
         require(panel.size == industrialAssetSize) { "The test Mod industrial resource has an unexpected size." }
-        context.input.resizeWindow(industrialViewport.width, industrialViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(industrialViewport.width, industrialViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
         )
@@ -753,7 +753,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             context.computeOnClient(
                 FailableFunction<Minecraft, DrawImage, RuntimeException> { loadCurrentMinecraftPlayerSkin() },
             )
-        context.input.resizeWindow(playerHeadViewport.width, playerHeadViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(playerHeadViewport.width, playerHeadViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() },
         )
@@ -1146,7 +1146,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         for (showcase in ComponentShowcase.entries) {
             closeFabricScreen(context)
             val physicalSize = showcase.physicalSize
-            context.input.resizeWindow(physicalSize.width, physicalSize.height)
+            resizeMinecraftTestWindow(context, IntSize(physicalSize.width, physicalSize.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.options.guiScale().set(showcase.scale)
@@ -1523,7 +1523,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         scroll: HeadlessImage,
     ) {
         closeFabricScreen(context)
-        context.input.resizeWindow(directJoinViewport.width, directJoinViewport.height)
+        resizeMinecraftTestWindow(context, IntSize(directJoinViewport.width, directJoinViewport.height))
         context.runOnClient(
             FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                 minecraft.options.lastMpIp = directJoinAddress
@@ -1590,7 +1590,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         closeFabricScreen(context)
         val world = context.worldBuilder().setUseConsistentSettings(true).create()
         try {
-            context.input.resizeWindow(containerViewport.width, containerViewport.height)
+            resizeMinecraftTestWindow(context, IntSize(containerViewport.width, containerViewport.height))
             context.runOnClient(
                 FailableConsumer<Minecraft, RuntimeException> { minecraft ->
                     minecraft.resizeGui()

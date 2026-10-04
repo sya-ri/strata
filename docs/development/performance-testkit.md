@@ -169,6 +169,9 @@ Closing a meter clears application callbacks, screen references, monitor ownersh
 
 Window readiness uses the loaded host's `isIconified` contract when present, including SDL hosts.
 Only the verified legacy `getWindow` family uses GLFW attributes; an opaque modern handle is never passed to another window backend.
+Loaded correctness suites share one backend-aware viewport boundary for screen, font, transport and Canvas checks.
+OpenGL retains Fabric's physical resize operation; Vulkan changes logical and framebuffer test extents on the render thread without resizing the platform window or swapchain.
+Measured native workloads keep their fixed physical viewport; this correctness-fixture boundary does not change their inputs or sampler.
 Production GameTests put the unchanged testkit JAR on Loom's Java classpath through `LibraryClientProductionRunTask`, rather than publishing it as a Mod or merging its classes into an integration artifact.
 
 The host enum identifies Paper and Velocity evidence, but an enum value does not prove that a real transport scenario has run.

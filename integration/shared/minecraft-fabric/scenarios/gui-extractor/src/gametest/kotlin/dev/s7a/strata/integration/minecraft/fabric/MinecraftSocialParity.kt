@@ -58,7 +58,7 @@ internal object MinecraftSocialParity {
         output: Path,
     ): HeadlessImage {
         val assets = loadAssets(context)
-        context.input.resizeWindow(viewport.width, viewport.height)
+        resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { minecraft -> minecraft.resizeGui() })
         context.input.setCursorPos(0.0, 0.0)
         context.setScreen { DeterministicSocialInteractionsScreen() }
