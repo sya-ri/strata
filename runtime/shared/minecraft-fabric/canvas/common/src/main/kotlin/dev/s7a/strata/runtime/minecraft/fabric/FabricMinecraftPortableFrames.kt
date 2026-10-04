@@ -11,7 +11,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Caches the current portable image generation and borrows its complete texture list during ordered presentation.
  *
  * Every call belongs to the native render thread. The key is the complete ordered list of localized commands, logical extents, and GUI scales;
- * identical inputs reuse all uploads, while changed inputs create a separately fenced generation without in-place writes.
+ * identical layers at the same index reuse their uploads, while changed layers allocate immutable storage in a separately fenced generation.
  * A stable presenter identity admits at most three active or retired generations, within the device's separate 64-set portable budget.
  * Each set contains exactly its prepared command list's checked physical portable-layer extents, reserved before native allocation.
  * Release immediately drops screen-owned CPU and texture references; the independent device owns pending, retired, and physically releasing resources.
@@ -96,11 +96,16 @@ internal class FabricMinecraftPortableFrames {
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         var failure: Throwable? = null
         try {
-            images.forEach { input ->
-                rasterized()
-                val pixels = rasterizeHeadless(input.commands, input.size, input.scale)
-                textures.add(FabricMinecraftPortableTexture.create(pixels) { resource -> resources.add(set, resource) })
-                uploaded()
+            images.forEachIndexed { index, input ->
+                if (previous != null && previous.images.getOrNull(index)?.equivalent(input) == true) {
+                    resources.reuse(set, previous.set, index)
+                    textures.add(previous.textures[index])
+                } else {
+                    rasterized()
+                    val pixels = rasterizeHeadless(input.commands, input.size, input.scale)
+                    textures.add(FabricMinecraftPortableTexture.create(pixels) { resource -> resources.add(set, resource) })
+                    uploaded()
+                }
             }
         } catch (caught: Throwable) {
             failure = caught

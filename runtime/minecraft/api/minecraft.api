@@ -261,6 +261,7 @@ public final class dev/s7a/strata/runtime/minecraft/canvas/NativeGuiResources {
 	public final fun release (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
 	public final fun reserve (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceOwnerId;Ljava/util/List;)Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;
 	public final fun retainedSetCount ()I
+	public final fun reuse (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;I)V
 	public final fun seal (Ldev/s7a/strata/runtime/minecraft/canvas/NativeGuiResourceSet;)V
 }
 
