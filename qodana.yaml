@@ -43,6 +43,11 @@ profile:
         - "runtime/shared/minecraft-fabric/resources/event-callbacks/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java"
 failThreshold: 0
 exclude:
+  # This runtime-sized optional row map is nonnull above the area cutoff; large-density independent pixel parity exercises that branch.
+  # Qodana incorrectly propagates its small-span null branch into the shared raster loop.
+  - name: KotlinConstantConditions
+    paths:
+      - runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt
   # Kotlin explicit API mode requires visibility modifiers on declarations that Qodana marks as redundant.
   - name: RedundantVisibilityModifier
   # Dokka validates these links successfully; Qodana misses valid Kotlin/JVM exception tags and cross-module API links.
