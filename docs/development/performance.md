@@ -112,6 +112,20 @@ These invocation-local paths create no retained cache and preserve command order
 Its regression compares independent physical pixel-center coverage across density, empty/offscreen extents, nested integer/fractional clips, and translucent destination pixels.
 Native measurements must continue to report actual rasterizations and uploads; reducing raster CPU work does not eliminate those operations.
 
+### Fractional portable sampling
+
+A sampled command whose entire immutable image is one texel reads its source once, preserving final-density coverage, orientation, alpha cutoff and continuous tint multiplication.
+An exactly opaque multiplied source overwrites clipped rows with one calculated color.
+A translucent source reuses its exact blend only for adjacent equal destination ARGB values; other pixels keep their original ordered Float composition.
+This path does not round a translucent tint before blending or assume that a one-texel subrectangle within a larger image is constant.
+
+For spans covering at least 4,096 physical pixels and four rows, nearest source X coordinates are calculated once in an invocation-local Int array bounded by the clipped physical width.
+Each entry uses the original pixel-center Float expressions; there is no incremental coordinate recurrence or accumulated rounding error.
+Smaller spans keep direct sampling, and source Y remains independently calculated for every row.
+An opaque sampled source with an opaque RGB tint computes its exact normalized channel products without reading destination channels.
+These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
+Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
+
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
 

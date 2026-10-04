@@ -40,6 +40,18 @@ internal object SampledImageRasterizer {
         if (right <= left || bottom <= top) return
 
         val color = SampledColor(command.tint.value, command.alphaCutoff)
+        if (command.image.size.width == 1 && command.image.size.height == 1) {
+            color.paintConstant(pixels, physicalSize.width, left, top, right, bottom, command.image.argbAt(0, 0))
+            return
+        }
+        val sourceXs =
+            if (4 <= bottom - top && 4096L <= (right - left).toLong() * (bottom - top)) {
+                IntArray(right - left) { offset ->
+                    sampleX(left + offset, scale, command)
+                }
+            } else {
+                null
+            }
         for (y in top until bottom) {
             val sourceY =
                 sampleCoordinate(
@@ -54,20 +66,27 @@ internal object SampledImageRasterizer {
             var index = y * physicalSize.width + left
             for (x in left until right) {
                 val sourceX =
-                    sampleCoordinate(
-                        x,
-                        scale,
-                        destination.left,
-                        destination.right,
-                        if (command.orientation.flipX) command.source.right else command.source.left,
-                        if (command.orientation.flipX) command.source.left else command.source.right,
-                        command.image.size.width,
-                    )
+                    sourceXs?.get(x - left) ?: sampleX(x, scale, command)
                 pixels[index] = color.blend(command.image.argbAt(sourceX, sourceY), pixels[index])
                 index += 1
             }
         }
     }
+
+    private fun sampleX(
+        physical: Int,
+        scale: Int,
+        command: DrawCommand.SampledImage,
+    ): Int =
+        sampleCoordinate(
+            physical,
+            scale,
+            command.destination.left,
+            command.destination.right,
+            if (command.orientation.flipX) command.source.right else command.source.left,
+            if (command.orientation.flipX) command.source.left else command.source.right,
+            command.image.size.width,
+        )
 
     private fun firstPixel(
         edge: Float,
@@ -99,6 +118,39 @@ internal object SampledImageRasterizer {
         private val green = normalized(tint ushr 8)
         private val blue = normalized(tint)
 
+        // A whole one-texel image always clamps to (0, 0), including fractional sources and flips.
+        // Pass the clipped scalar span without allocating a rectangle for each command.
+        @Suppress("LongParameterList")
+        fun paintConstant(
+            pixels: IntArray,
+            width: Int,
+            left: Int,
+            top: Int,
+            right: Int,
+            bottom: Int,
+            source: Int,
+        ) {
+            val sourceAlpha = normalized(source ushr 24) * alpha
+            if (sourceAlpha < cutoff || sourceAlpha == 0f) return
+            if (sourceAlpha == 1f) {
+                val result = blend(source, 0)
+                for (y in top until bottom) pixels.fill(result, y * width + left, y * width + right)
+                return
+            }
+            var previousDestination = pixels[top * width + left]
+            var previousResult = blend(source, previousDestination)
+            for (y in top until bottom) {
+                for (index in y * width + left until y * width + right) {
+                    val destination = pixels[index]
+                    if (destination != previousDestination) {
+                        previousDestination = destination
+                        previousResult = blend(source, destination)
+                    }
+                    pixels[index] = previousResult
+                }
+            }
+        }
+
         fun blend(
             source: Int,
             destination: Int,
@@ -108,6 +160,12 @@ internal object SampledImageRasterizer {
             // Untinted opaque sampling is an exact overwrite, even at fractional destinations and clips.
             if (sourceAlpha == 1f && identityTint) return source
             if (sourceAlpha == 1f && source == 0xFFFFFFFF.toInt()) return tint
+            if (sourceAlpha == 1f) {
+                val outputRed = quantize(normalized(source ushr 16) * red)
+                val outputGreen = quantize(normalized(source ushr 8) * green)
+                val outputBlue = quantize(normalized(source) * blue)
+                return 0xFF000000.toInt() or (outputRed shl 16) or (outputGreen shl 8) or outputBlue
+            }
             val destinationWeight = normalized(destination ushr 24) * (1f - sourceAlpha)
             val outputAlpha = sourceAlpha + destinationWeight
             val alphaByte = quantize(outputAlpha)

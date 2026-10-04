@@ -50,6 +50,12 @@ It uses the same JMH defaults, controlled-runtime selection and shared evidence 
 Source preparation is outside measurement; each operation allocates a fresh output and preserves every ordered blend.
 This family does not change the historical 54-case matrix or satisfy its acceptance.
 
+The separate `-Pstrata.performance.sampledRaster=true` family measures fractional portable image generation with solid opaque, solid translucent and 64×64 patterned sources, each with an opaque non-identity RGB tint.
+Its 12 cases keep physical output at 320×180 or 1920×1080 while varying final density between one and four.
+Prepared immutable inputs exclude resource decoding; each operation allocates a fresh raster.
+It retains the same JMH defaults, actual loaded-runtime selection and shared evidence processing, writes `sampled-raster` outputs, and leaves every historical workload unchanged.
+Select it independently of smoke or nonuniform overlays, collect each mode three times per runtime side, and compare matching fixture and collector identities.
+
 ```json
 {
   "command": "jmh-summary",
