@@ -123,10 +123,18 @@ For spans covering at least 4,096 physical pixels and four rows, nearest source 
 Each entry uses the original pixel-center Float expressions; there is no incremental coordinate recurrence or accumulated rounding error.
 Smaller spans keep direct sampling, and source Y remains independently calculated for every row.
 An opaque sampled source with an opaque RGB tint computes its exact normalized channel products without reading destination channels.
-Within each command, three scalar values remember the previous source ARGB, destination ARGB and exact result.
+Within each command, scalar values remember the previous source ARGB, destination ARGB and exact result.
 An opaque tint result depends only on source; a translucent result additionally requires complete destination equality, including RGB in transparent pixels.
-Tint and discard cutoff stay fixed on this exclusively owned invocation, unequal keys recompute the original Float equations, and all three values expire when the command returns.
-This reuses repeated magnified texels without a table of source colors or any image reference.
+Tint and discard cutoff stay fixed on this exclusively owned invocation, unequal keys recompute the original Float equations, and these values expire when the command returns.
+The pixel traversal reuses an exactly matching source/destination pair before calling color composition.
+This reuses repeated magnified texels without retaining any image reference.
+For the same large-span admission, an opaque nonwhite RGB tint may use 768 exact normalized channel products, bounded to three 256-entry primitive tables.
+Translucent composition lazily records rounded channel results by source alpha and source channel only while every admitted destination has the same complete ARGB value.
+The first unequal destination permanently disables and releases these blend tables for the command; subsequent pixels use the original Float equations, so a heterogeneous destination never triggers repeated table clearing or assumes uniformity.
+Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primitive values plus the 256 row references); other source alpha values use the original Float equations without allocating or replacing a row.
+The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
+The tables belong to one invocation, retain no source or destination image, preserve the original multiplication/division/rounding order, and expire before return.
+Whole one-texel images and smaller spans keep their existing paths.
 A zero-alpha tint preserves the destination without traversing its covered pixels.
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.

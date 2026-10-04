@@ -61,6 +61,32 @@ internal class HeadlessSampledRasterParityTest {
         }
     }
 
+    @Test
+    fun denseChannelReusePreservesDestinationChangesAndEverySourceByte() {
+        val physical = IntSize(128, 64)
+        val imageSize = IntSize(64, 64)
+        val source =
+            IntArray(imageSize.width * imageSize.height) { index ->
+                ((index * 37 and 255) shl 24) or (index * 73471 and 0xFFFFFF)
+            }
+        val image = createDrawImage(imageSize, source)
+        val uniform = IntArray(physical.width * physical.height) { 0xFF234567.toInt() }
+        val transparent = IntArray(uniform.size) { 0x001337AA }
+        val changed = uniform.copyOf().apply { fill(0x80123456.toInt(), size / 3, size * 2 / 3) }
+        for (tint in listOf(-1, 0xFFBFD7EF.toInt(), 0x80A4C6E8.toInt(), 0x01020406)) {
+            for (background in listOf(uniform, transparent, changed, IntArray(uniform.size))) {
+                for (orientation in SampledImageOrientation.entries) {
+                    val command = DrawCommand.SampledImage(image, FloatRect(0.125f, 0.0625f, 63.9375f, 63.875f), FloatRect(-0.75f, -1.25f, 129.5f, 65.25f), ArgbColor(tint), 0f, orientation)
+                    val clip = IntRect(0, 0, physical.width, physical.height)
+                    val actual = background.copyOf()
+                    SampledImageRasterizer.paint(actual, physical, 1, command, clip)
+                    assertArrayEquals(reference(background, physical, 1, command, clip), actual, "$tint/$orientation")
+                }
+            }
+        }
+        assertArrayEquals(source, image.copyArgb())
+    }
+
     private fun reference(
         background: IntArray,
         size: IntSize,
