@@ -970,6 +970,11 @@ val benchmarkMinecraftQuick = tasks.register("benchmarkMinecraftQuick") {
     group = "verification"
     description = "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
     if (quickMinecraftBenchmarkRequested) {
+        require(
+            normalizedRequestedTaskNames.none { taskName ->
+                taskName == ":check" || taskName.substringAfterLast(':') in minecraftClientTaskNames
+            },
+        ) { "Run quick performance collection separately from correctness clients" }
         require(quickPerformance) { "benchmarkMinecraftQuick requires the quick profile" }
         require(providers.gradleProperty("strata.performance.nativeOutput").isPresent) { "Set strata.performance.nativeOutput to a fresh directory" }
         require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a quick run" }

@@ -23,6 +23,7 @@ Use `-Pstrata.performance.workloads=FanOut4096 -Pstrata.performance.stress=true`
 Smoke scores remain exploratory and are not compared with warmed standard measurements.
 
 For a loaded client, `./gradlew benchmarkMinecraftQuick -Pstrata.performance.nativeOutput=<fresh-directory>` selects one native component on the newest version in the repository's verified target catalog.
+Run this entry separately from `check` and explicit client GameTest tasks; combining them fails before execution so quick selection cannot narrow correctness acceptance or share its output directory.
 Set `-Pstrata.minecraftVersions=<exact-version>` to choose a different single supported version and `-Pstrata.performance.workloads=TextField,NativeCanvas` to keep multiple explicit cases.
 The task runs the performance entry only, without the ordinary correctness scenes; it does not claim support for an unmeasured version.
 Add `"quick": true` to a native summary request and provide one run plus a real CPU receipt for binary provenance, as for standard collection.
