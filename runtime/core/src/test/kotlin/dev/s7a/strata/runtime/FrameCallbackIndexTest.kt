@@ -45,6 +45,25 @@ internal class FrameCallbackIndexTest {
     }
 
     @Test
+    fun capableListsDeliverEveryPassWithoutAllocatingCollectionIterators() {
+        val log = ArrayList<String>()
+        val root = retained("root", log)
+        val index = FrameCallbackIndex()
+        index.capture(root, 0)
+        for (name in listOf("cutoff", "timed")) {
+            index.javaClass
+                .getDeclaredField(name)
+                .apply { isAccessible = true }
+                .set(index, IndexedOnlyList(root.node))
+        }
+        log.clear()
+        index.capture(root, 0)
+        index.commit(root, 0)
+        index.advance(root, 0, FrameTime(7))
+        assertEquals(listOf("capture root", "commit root", "time root 7"), log)
+    }
+
+    @Test
     fun unchangedTopologyReusesListsAndRevisionRebuildsForReorderedAddedAndRemovedChildren() {
         val log = ArrayList<String>()
         val root = retained("root", log)
@@ -157,6 +176,22 @@ internal class FrameCallbackIndexTest {
     ): RetainedNode {
         val element = CallbackElement(name, log)
         return RetainedNode(element, CallbackNode(name, log), null)
+    }
+
+    /**
+     * Makes accidental iterator construction fail independently of clock or allocation measurements.
+     */
+    private class IndexedOnlyList<T>(
+        private val value: T,
+    ) : AbstractList<T>() {
+        override val size: Int get() = 1
+
+        override fun get(index: Int): T {
+            require(index == 0)
+            return value
+        }
+
+        override fun iterator(): Iterator<T> = error("Frame callback passes must use indexed access")
     }
 
     /**

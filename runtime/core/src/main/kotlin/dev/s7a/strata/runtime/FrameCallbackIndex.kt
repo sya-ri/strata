@@ -23,7 +23,7 @@ internal class FrameCallbackIndex {
         revision: Long,
     ) {
         prepare(root, revision)
-        cutoff.forEach { it.captureFrameState() }
+        for (index in cutoff.indices) cutoff[index].captureFrameState()
     }
 
     /**
@@ -34,7 +34,7 @@ internal class FrameCallbackIndex {
         revision: Long,
     ) {
         prepare(root, revision)
-        cutoff.forEach { it.commitFrameState() }
+        for (index in cutoff.indices) cutoff[index].commitFrameState()
     }
 
     /**
@@ -46,7 +46,7 @@ internal class FrameCallbackIndex {
         time: FrameTime,
     ) {
         prepare(root, revision)
-        timed.forEach { it.onFrame(time) }
+        for (index in timed.indices) timed[index].onFrame(time)
     }
 
     /**
