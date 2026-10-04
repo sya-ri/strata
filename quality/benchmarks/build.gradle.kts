@@ -92,7 +92,8 @@ tasks.register<JavaExec>("jmhHistorical") {
     require(denseSampledRaster.not() || (smoke.not() && nonuniform.not() && sampledRaster.not())) { "Dense sampled rasters are a separate full-default corpus" }
     systemProperty("strata.performance.nonuniformOverlay", nonuniform)
     systemProperty("strata.performance.sampledRaster", sampledRaster)
-    systemProperty("strata.performance.denseSampledRaster", denseSampledRaster)
+    // Keep existing corpus fork arguments identical when the independent dense corpus is absent.
+    if (denseSampledRaster) systemProperty("strata.performance.denseSampledRaster", true)
     val suite = (if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
     providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
