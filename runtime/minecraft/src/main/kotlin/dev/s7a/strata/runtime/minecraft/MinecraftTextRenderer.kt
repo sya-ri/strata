@@ -343,10 +343,7 @@ internal class MinecraftTextRenderer private constructor(
         minimum: Float,
         maximum: Float,
         maximumWidth: Int,
-    ): Boolean {
-        if (minimum.isNaN() || maximum.isNaN()) return true
-        return roundedWidth(minimum) <= maximumWidth || roundedWidth(maximum) <= maximumWidth
-    }
+    ): Boolean = minimum.isNaN() || maximum.isNaN() || roundedWidth(minimum) <= maximumWidth || roundedWidth(maximum) <= maximumWidth
 
     /**
      * Returns the first scalar whose rounded prefix midpoint lies after [localX], or the text endpoint.

@@ -11,7 +11,7 @@ import dev.s7a.strata.render.createDrawImage
  * Original commands remain authoritative for fractional transforms and ineligible grids.
  */
 internal fun composeDenseBlits(commands: List<LocalDrawCommand>): List<LocalDrawCommand> {
-    if (commands.size < 64 || 1_048_576 < commands.size) return commands
+    if ((commands.size in 64..1_048_576).not()) return commands
     val image = (commands.first() as? LocalDrawCommand.BlitImage)?.image ?: return commands
     for (command in commands) {
         val blit = command as? LocalDrawCommand.BlitImage ?: return commands
@@ -54,8 +54,7 @@ private fun blitBounds(commands: List<LocalDrawCommand.BlitImage>): IntRect? {
     var top = first.top
     var right = first.right
     var bottom = first.bottom
-    for (command in commands) {
-        val destination = command.destination
+    for ((_, _, destination) in commands) {
         left = minOf(left, destination.left)
         top = minOf(top, destination.top)
         right = maxOf(right, destination.right)
@@ -86,8 +85,7 @@ private fun isBlitGrid(
     if (columns.toLong() * (bounds.height / size.height) != commands.size.toLong()) return false
     var left = bounds.left
     var top = bounds.top
-    for (command in commands) {
-        val cell = command.destination
+    for ((_, _, cell) in commands) {
         if (cell.width != size.width || cell.height != size.height) return false
         if (cell.left != left || cell.top != top) return false
         left = cell.right

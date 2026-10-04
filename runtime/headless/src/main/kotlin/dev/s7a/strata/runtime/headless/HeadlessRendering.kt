@@ -159,8 +159,7 @@ private object HeadlessImplementation {
                     continue
                 }
             }
-            val command = commands[index++]
-            when (command) {
+            when (val command = commands[index++]) {
                 is DrawCommand.FillRectangle -> {
                     if ((uniform || command.color.value ushr 24 == 0xFF) && coversViewport(command.bounds, dimensions, clips.lastOrNull())) {
                         uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
@@ -408,7 +407,7 @@ private object HeadlessImplementation {
         val reference = pixels[Math.addExact(Math.multiplyExact(bounds.top, width), bounds.left)]
         val blended = RasterMath.blend(source, reference)
         val area = bounds.width.toLong() * bounds.height
-        if (4096 <= area && area < 262144) {
+        if (area in 4096L..<262144L) {
             return paintPaletteFill(pixels, width, bounds, source, reference, blended)
         }
         for (y in bounds.top until bounds.bottom) {
