@@ -86,14 +86,17 @@ tasks.register<JavaExec>("jmhHistorical") {
     val targeted = providers.gradleProperty("strata.performance.workloads").isPresent || providers.gradleProperty("strata.performance.parameters").isPresent
     val nonuniform = providers.gradleProperty("strata.performance.nonuniformOverlay").map(String::toBooleanStrict).getOrElse(false)
     val sampledRaster = providers.gradleProperty("strata.performance.sampledRaster").map(String::toBooleanStrict).getOrElse(false)
+    val denseSampledRaster = providers.gradleProperty("strata.performance.denseSampledRaster").map(String::toBooleanStrict).getOrElse(false)
     require(nonuniform.not() || smoke.not()) { "Nonuniform overlays are a separate full-default corpus" }
     require(sampledRaster.not() || (smoke.not() && nonuniform.not())) { "Sampled rasters are a separate full-default corpus" }
+    require(denseSampledRaster.not() || (smoke.not() && nonuniform.not() && sampledRaster.not())) { "Dense sampled rasters are a separate full-default corpus" }
     systemProperty("strata.performance.nonuniformOverlay", nonuniform)
     systemProperty("strata.performance.sampledRaster", sampledRaster)
-    val suite = (if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    systemProperty("strata.performance.denseSampledRaster", denseSampledRaster)
+    val suite = (if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
     providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
-    val includes = if (sampledRaster) "SampledRasterBenchmark.*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    val includes = if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "SampledRasterBenchmark.*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })

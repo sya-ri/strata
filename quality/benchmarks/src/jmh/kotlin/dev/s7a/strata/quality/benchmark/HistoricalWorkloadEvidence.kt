@@ -32,6 +32,7 @@ public object HistoricalWorkloadEvidence {
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
         check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
         check(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")).size == 12)
+        check(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")).size == 6)
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 108)
         check(
             JmhWorkloadInventory

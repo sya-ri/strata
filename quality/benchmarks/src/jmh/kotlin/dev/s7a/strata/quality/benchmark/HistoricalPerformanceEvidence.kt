@@ -28,6 +28,7 @@ public object HistoricalPerformanceEvidence {
         require(smoke.not() || (requested == null && parameterFile == null)) { "Smoke and targeted collection are separate scopes" }
         val registered =
             when {
+                System.getProperty("strata.performance.denseSampledRaster", "false").toBooleanStrict() -> listOf(DenseSampledRasterBenchmark::class.java)
                 System.getProperty("strata.performance.sampledRaster", "false").toBooleanStrict() -> listOf(SampledRasterBenchmark::class.java)
                 System.getProperty("strata.performance.nonuniformOverlay", "false").toBooleanStrict() -> listOf(NonuniformOverlayBenchmark::class.java)
                 else -> fixtures()

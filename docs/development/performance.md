@@ -131,6 +131,11 @@ A zero-alpha tint preserves the destination without traversing its covered pixel
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 
+`DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.
+Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.denseSampledRaster=true` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
+Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
+This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
+
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
 
