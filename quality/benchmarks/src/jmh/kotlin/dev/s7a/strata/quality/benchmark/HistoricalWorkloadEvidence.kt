@@ -8,6 +8,9 @@ import dev.s7a.strata.performance.PerformanceHost
 import dev.s7a.strata.performance.PerformanceInventory
 import dev.s7a.strata.performance.PerformancePhase
 import dev.s7a.strata.performance.PerformanceScenario
+import org.openjdk.jmh.runner.BenchmarkList
+import org.openjdk.jmh.runner.format.OutputFormatFactory
+import org.openjdk.jmh.runner.options.VerboseMode
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -33,6 +36,15 @@ public object HistoricalWorkloadEvidence {
         check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
         check(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")).size == 12)
         check(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")).size == 6)
+        verifyIncludes(JmhWorkloadInventory.capture(fixtures, setOf("avgt")), listOf("(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"))
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")), listOf("NonuniformOverlayBenchmark.*"))
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*"))
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")), listOf("DenseSampledRasterBenchmark.*"))
+        check(
+            runCatching {
+                verifyIncludes(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")), listOf("SampledRasterBenchmark.*"))
+            }.exceptionOrNull() is IllegalArgumentException,
+        )
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 108)
         check(
             JmhWorkloadInventory
@@ -70,6 +82,25 @@ public object HistoricalWorkloadEvidence {
         val coverage = PerformanceCoverage(mapOf(feature to setOf(PerformanceHost.Jvm)), scenarios, mapOf(feature to phases.values.toSet()))
         coverage.selectChangedPaths(surface)
         println("Verified ${symbols.size} exact headless API symbols against ${scenarios.size} historical rasterization cases")
+    }
+
+    /**
+     * Requires the actual SDK include filters to select exactly the methods in the caller's registered fixture matrix.
+     * This input preflight runs outside collection and rejects newly compiled colliding names before JMH starts forks.
+     */
+    public fun verifyIncludes(
+        expected: Set<String>,
+        includes: List<String>,
+    ) {
+        val methods = expected.map { JsonParser.parseString(it).asJsonArray[0].asString }.toSet()
+        val output = OutputFormatFactory.createFormatInstance(System.out, VerboseMode.SILENT)
+        val selected =
+            BenchmarkList
+                .defaultList()
+                .find(output, includes, emptyList())
+                .map { it.username }
+                .toSet()
+        require(selected == methods) { "JMH include filters select methods outside the registered fixture matrix" }
     }
 
     private fun headlessSurface(): Map<String, Set<String>> = JvmApiInventory.capture(javaClass.classLoader, mapOf("headless" to "dev.s7a.strata.runtime.headless.HeadlessImage"))

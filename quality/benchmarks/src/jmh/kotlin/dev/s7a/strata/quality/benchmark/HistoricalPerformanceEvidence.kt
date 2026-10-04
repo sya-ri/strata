@@ -53,6 +53,7 @@ public object HistoricalPerformanceEvidence {
         val includes = if (requested == null) listOf(args[2]) else selection.ids.map { Regex.escape("dev.s7a.strata.quality.benchmark.$it") }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
+        HistoricalWorkloadEvidence.verifyIncludes(expected, includes)
         JmhPerformanceRunner.run(
             (includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }).toTypedArray(),
             fixtures,

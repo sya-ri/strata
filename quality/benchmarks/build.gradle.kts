@@ -97,7 +97,7 @@ tasks.register<JavaExec>("jmhHistorical") {
     val suite = (if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
     providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
-    val includes = if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "SampledRasterBenchmark.*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    val includes = if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
