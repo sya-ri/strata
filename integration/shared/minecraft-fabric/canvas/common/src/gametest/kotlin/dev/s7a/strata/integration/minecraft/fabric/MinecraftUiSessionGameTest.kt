@@ -172,6 +172,7 @@ internal object MinecraftUiSessionGameTest {
             check(above.presentation == UiPresentation.Hud && FabricUiSessions.acceptsPointer(activeScreen)) {
                 "The current cursor HUD must pass the native pointer ownership gate."
             }
+            @Suppress("StringLiteralComparison") // A JVM member name is an external reflection identifier, not domain state.
             val inputOwner = FabricUiSessions::class.java.declaredMethods.single { it.name.substringBefore('$') == "inputOwner" }
             check(inputOwner.invoke(FabricUiSessions, activeScreen) === above) {
                 "The current cursor HUD must resolve to its actual session through the native input ownership gate."
