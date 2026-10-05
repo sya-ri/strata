@@ -155,6 +155,36 @@
               </div>
             </div>
           </div>
+<a data-name="-1528680055%2FFunctions%2F797898075" anchor-label="rasterizeHeadlessInto" id="-1528680055%2FFunctions%2F797898075" data-filterable-set=":runtime:headless/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:headless/main" data-filterable-set=":runtime:headless/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="rasterize-headless-into.html"><span>rasterize</span><wbr><span>Headless</span><wbr><span><span>Into</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1528680055%2FFunctions%2F797898075"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:headless/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="rasterize-headless-into.html"><span class="token function">rasterizeHeadlessInto</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">commands<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../runtime/core/dev.s7a.strata.runtime.render/-draw-command/index.html">DrawCommand</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">bounds<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.geometry/-int-rect/index.html">IntRect</a><span class="token punctuation">, </span></span><span class="parameter ">scale<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">pixels<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int-array/index.html">IntArray</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Rasterizes an original-coordinate region into borrowed caller-owned ARGB storage for synchronous native upload. Materializes the transparent background lazily and writes only the checked physical region prefix; excess capacity remains untouched. Every output pixel is initialized before use, including empty commands and clipped primitives. The caller exclusively owns <a href="rasterize-headless-into.html">pixels</a> throughout this call, and no image, command, array or callback is retained. Preflight rejects invalid input before any storage changes. Pixel arithmetic follows <a href="rasterize-headless-region.html">rasterizeHeadlessRegion</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1326782799%2FFunctions%2F797898075" anchor-label="rasterizeHeadlessRegion" id="-1326782799%2FFunctions%2F797898075" data-filterable-set=":runtime:headless/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:headless/main" data-filterable-set=":runtime:headless/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="rasterize-headless-region.html"><span>rasterize</span><wbr><span>Headless</span><wbr><span><span>Region</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1326782799%2FFunctions%2F797898075"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:headless/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="rasterize-headless-region.html"><span class="token function">rasterizeHeadlessRegion</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">commands<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../../../runtime/core/dev.s7a.strata.runtime.render/-draw-command/index.html">DrawCommand</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">bounds<span class="token operator">: </span><a href="../../../api/dev.s7a.strata.geometry/-int-rect/index.html">IntRect</a><span class="token punctuation">, </span></span><span class="parameter ">scale<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-headless-image/index.html">HeadlessImage</a></div><div class="brief "><p class="paragraph">Rasterizes a nonnegative logical region for runtime presentation without translating source-sampling coordinates. Output storage contains only the checked physical extent of <a href="rasterize-headless-region.html">bounds</a>; ordered commands retain their original coordinates. Validation, clip balance, exact Float sampling and pixel composition follow <a href="rasterize-headless.html">rasterizeHeadless</a>. No commands, pixels or region history are retained after the returned immutable image is released.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
 <a data-name="1989843040%2FFunctions%2F797898075" anchor-label="renderHeadless" id="1989843040%2FFunctions%2F797898075" data-filterable-set=":runtime:headless/main"></a>
           <div class="table-row table-row_content" data-filterable-current=":runtime:headless/main" data-filterable-set=":runtime:headless/main">
             <div class="main-subrow keyValue ">
