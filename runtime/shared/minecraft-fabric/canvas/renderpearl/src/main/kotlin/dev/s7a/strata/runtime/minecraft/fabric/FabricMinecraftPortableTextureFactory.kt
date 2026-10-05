@@ -4,19 +4,21 @@ import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.renderpearl.api.GpuFormat
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout
-import com.mojang.renderpearl.api.pipeline.ColorTargetState
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology
 import com.mojang.renderpearl.api.pipeline.RenderPipeline
 import com.mojang.renderpearl.api.pipeline.UniformType
 import com.mojang.renderpearl.api.textures.FilterMode
 import com.mojang.renderpearl.api.textures.GpuTexture
-import com.mojang.renderpearl.api.textures.GpuTextureView
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.gui.render.TextureSetup
+import net.minecraft.client.renderer.RenderPipelines
+import net.minecraft.client.renderer.state.gui.BlitRenderState
 import net.minecraft.client.renderer.texture.AbstractTexture
-import java.util.Optional
+import org.joml.Matrix3x2f
 
 /**
  * Enables bounded index-texture sampling on this device-command adapter without reading source pixels.
@@ -32,20 +34,52 @@ internal fun supportsFabricMinecraftExactSampling(): Boolean {
 }
 
 /**
- * Transfers an empty native owner before allocating the output and axis texture or recording their GPU work.
- * The source remains pinned by the caller, and the receiving output generation seals initialization even on failure.
+ * Uploads only exact axis metadata for deferred GUI sampling, transferring ownership before allocation.
+ * The shared initialization signature also serves adapters which materialize output from [size] and [source].
+ * Returns true because this adapter samples the pinned source during GUI submission rather than an offscreen pass.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
+@Suppress("UNUSED_PARAMETER")
 internal fun initializeFabricMinecraftSampledTexture(
     indices: NativeImage,
     size: IntSize,
     source: AbstractTexture,
     retain: (AbstractTexture, NativeGuiResource) -> Unit,
+): Boolean {
+    initializeFabricMinecraftPortableTexture(indices, retain)
+    return true
+}
+
+/**
+ * Queues one exact sampled GUI quad using borrowed source and index textures under their existing generation fences.
+ * Bounds are enclosing integer GUI edges; the lookup records physical half-open coverage and original-coordinate texels.
+ */
+@JvmSynthetic
+internal fun drawFabricMinecraftExactSampledImage(
+    graphics: GuiGraphicsExtractor,
+    source: AbstractTexture,
+    prepared: AbstractTexture,
+    bounds: IntRect,
 ) {
-    val storage = FabricPortableNativeStorage()
-    retain(storage.texture, storage)
-    storage.initialize(indices, size, source)
+    RenderSystem.assertOnRenderThread()
+    graphics.guiRenderState.addGuiElement(
+        BlitRenderState(
+            samplingPipeline,
+            TextureSetup.doubleTexture(source.getTextureView(), source.getSampler(), prepared.getTextureView(), prepared.getSampler()),
+            Matrix3x2f(graphics.pose()),
+            bounds.left,
+            bounds.top,
+            bounds.right,
+            bounds.bottom,
+            0f,
+            1f,
+            0f,
+            1f,
+            -1,
+            graphics.scissorStack.peek(),
+        ),
+    )
 }
 
 /**
@@ -104,18 +138,6 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         texture.initialize(pixels)
     }
 
-    /**
-     * Initializes GPU output and its bounded lookup while retaining every partial native allocation.
-     */
-    @JvmSynthetic
-    internal fun initialize(
-        indices: NativeImage,
-        size: IntSize,
-        source: AbstractTexture,
-    ) {
-        texture.initialize(indices, size, source)
-    }
-
     @JvmSynthetic
     override fun close() {
         texture.destroy()
@@ -125,8 +147,6 @@ private class FabricPortableNativeStorage : NativeGuiResource {
     override fun isDestroyed(): Boolean = texture.isDestroyed()
 
     private class Texture : AbstractTexture() {
-        private var indexTexture: GpuTexture? = null
-        private var indexView: GpuTextureView? = null
         private val owned = FabricMinecraftNativeStorage()
 
         /**
@@ -146,32 +166,6 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         }
 
         /**
-         * Uploads only axis metadata, then writes all output pixels in one unblended GPU pass.
-         */
-        @JvmSynthetic
-        internal fun initialize(
-            indices: NativeImage,
-            size: IntSize,
-            source: AbstractTexture,
-        ) {
-            RenderSystem.assertOnRenderThread()
-            val device = RenderSystem.getDevice()
-            texture = owned.allocate { device.createTexture({ "Strata exact sampled output" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, size.width, size.height, 1, 1) }
-            sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
-            textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
-            indexTexture = owned.allocate { device.createTexture({ "Strata sampled axis indices" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, indices.width, indices.height, 1, 1) }
-            indexView = owned.allocate { device.createTextureView(checkNotNull(indexTexture)) }
-            val encoder = device.createCommandEncoder()
-            encoder.writeToTexture(checkNotNull(indexTexture), indices)
-            encoder.createRenderPass({ "Strata exact sampled image" }, checkNotNull(textureView), Optional.empty()).use { pass ->
-                pass.setPipeline(RenderSystem.getCompiledPipeline(fabricMinecraftSamplingPipeline()))
-                pass.setUniform("InSampler", source.getTextureView(), source.getSampler())
-                pass.setUniform("IndexSampler", checkNotNull(indexView), sampler)
-                pass.draw(3, 1, 0, 0)
-            }
-        }
-
-        /**
          * Requests independent native releases only after initialization and GUI-use fences complete.
          *
          * Successful release steps are not repeated after another step fails.
@@ -183,8 +177,6 @@ private class FabricPortableNativeStorage : NativeGuiResource {
             owned.close()
             textureView = null
             texture = null
-            indexView = null
-            indexTexture = null
         }
 
         /**
@@ -205,24 +197,12 @@ private class FabricPortableNativeStorage : NativeGuiResource {
 
 private val samplingPipeline: RenderPipeline =
     RenderPipeline
-        .builder()
-        .withLocation(minecraftResourceLocation("strata", "pipeline/sampled_exact"))
-        .withVertexShader(minecraftResourceLocation("strata", "core/canvas"))
-        .withFragmentShader(minecraftResourceLocation("strata", "core/sampled_exact"))
+        .builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+        .withLocation(minecraftResourceLocation("strata", "pipeline/sampled_gui"))
+        .withFragmentShader(minecraftResourceLocation("strata", "core/sampled_gui"))
         .withBindGroupLayout(
             BindGroupLayout
                 .builder()
-                .withUniform("InSampler", UniformType.COMBINED_IMAGE_SAMPLER)
-                .withUniform("IndexSampler", UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform("Sampler1", UniformType.COMBINED_IMAGE_SAMPLER)
                 .build(),
-        ).withDepthStencilState(Optional.empty())
-        .withColorTargetState(ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
-        .withCull(false)
-        .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-        .build()
-
-/**
- * Borrows an immutable pipeline description; compiled native programs belong to the device.
- */
-@JvmSynthetic
-internal fun fabricMinecraftSamplingPipeline(): RenderPipeline = samplingPipeline
+        ).build()

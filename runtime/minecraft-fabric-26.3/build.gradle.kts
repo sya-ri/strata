@@ -154,6 +154,9 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             check(metadata["environment"] == "client") {
                 "Fabric metadata must remain client-only."
             }
+            check(metadata["accessWidener"] == "strata-sampled-gui.accesswidener" && "strata-sampled-gui.accesswidener" in entryNames) {
+                "Exact GUI sampling requires its packaged host access contract."
+            }
             check(metadata["name"] == "Strata") {
                 "Fabric metadata must use the stable project name."
             }
@@ -241,6 +244,7 @@ dependencies {
 }
 
 loom {
+    accessWidenerPath.set(rootProject.file("runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/resources/strata-sampled-gui.accesswidener"))
     mods {
         register("strata") {
             sourceSet(sourceSets.main.get())

@@ -241,20 +241,25 @@ Ordinary native quads require both sample axes to select the headless texel with
 Floating-UV adapters admit stable fractional sources with integer-aligned physical destination edges.
 Preparation checks at most 4,096 samples per axis without reading source pixels; ambiguous, oversized, or unrepresentable native quad samples use exact lookup presentation when available, otherwise CPU region sampling.
 
-Texture-view, sampler, bind-group, and RenderPearl adapters can generate exact image pixels in one GPU offscreen pass when the device supports RGBA extents of at least 4,096 and each checked enclosing physical destination axis fits that bound.
+Texture-view, sampler, and bind-group adapters can generate exact image pixels in one GPU offscreen pass when the device supports RGBA extents of at least 4,096 and each checked enclosing physical destination axis fits that bound.
+The RenderPearl adapter samples the original source and exact index texture directly in one native GUI quad, preserving the host's GUI transform, scissor, vertex format and source-over blend through its textured GUI pipeline snippet.
+It allocates no destination image or offscreen pass; the existing source and portable-generation fences retain both queued inputs.
+Its packaged access widener exposes only the active extractor queue, scissor stack and textured GUI snippet; the artifact check requires that contract, and loaded parity validates submission using the production adapter.
 The CPU constructs only two axis-index rows and one output-extent row, using the same original-coordinate Float operation order and half-open physical coverage as Headless.
 Each little-endian RGBA integer encodes a source index plus one, with zero for an uncovered physical pixel; the shader decodes it and uses `texelFetch` without normalized source interpolation or GPU source-coordinate arithmetic.
 The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
-The pass writes straight RGBA without blending; ordered GUI composition remains unchanged.
+Offscreen passes write straight RGBA without blending, while direct GUI lookup applies the same ordered source-over composition as ordinary portable images.
 Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for commands outside their proven native quad subset.
 
-Exact GPU output and its axis texture belong to the existing current portable generation, with no additional history, identity lookup, or cache.
+Exact GPU output and its axis texture, or the direct GUI index texture alone, belong to the existing current portable generation, with no additional history, identity lookup, or cache.
 One prepared frame admits at most 256 exact outputs and 64 MiB of output-plus-lookup RGBA storage before deriving metadata or allocating native resources; exhaustion selects exact CPU fallback and is counted as capacity fallback.
 Their key includes commands, original sampling origin, logical extent, GUI density, and presentation mode.
-The generation reserves a conservative rectangle covering both allocations before acquiring either, and unchanged entries use the same prefix/suffix sharing rules as ordinary portable uploads.
+The generation reserves a conservative rectangle covering both allocations before acquiring either; direct GUI lookup keeps this upper bound even though it allocates only metadata.
+Unchanged entries use the same prefix/suffix sharing rules as ordinary portable uploads.
 Both native texture/view pairs, any fullscreen vertex buffer, and partial initialization stay owned until the existing initialization and GUI-consumption fences complete and physical destruction is acknowledged.
-The source-image cache remains pinned through preparation and submission, and is marked queued before the offscreen pass reads its texture.
-Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata and resample on the GPU while preserving the immutable source-image upload.
+The source-image cache remains pinned through preparation and submission, and is marked queued before an offscreen pass or direct GUI quad reads its texture.
+Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata while preserving the immutable source-image upload.
+Direct GUI lookup never adds a resampling draw; offscreen adapters additionally regenerate their destination pixels on the GPU.
 Moved exact outputs reuse native storage only when the same immutable source, physical extent, and every encoded axis selection and coverage value remain equal.
 This comparison reads bounded current-frame index metadata, never source pixels; translations with different original-coordinate Float sampling still invalidate the output.
 Moved CPU fallback runs may also reuse storage after comparing every ordered primitive's relative integer geometry and half-open physical coverage, immutable source identity, tint, cutoff and orientation.

@@ -723,8 +723,10 @@ public class FabricMinecraftScreen private constructor(
                         val source = checkNotNull(textureFor(sampling.command.image))
                         sampledQueued(sampling.command.image)
                         FabricMinecraftPortableTexture.create(sampling, source, retain).also {
-                            sampledImageDrawCount += 1L
-                            sampledImageResampleCount += 1L
+                            if (it.samplesDuringGui.not()) {
+                                sampledImageDrawCount += 1L
+                                sampledImageResampleCount += 1L
+                            }
                         }
                     },
                 ) { textures, portableQueued ->
@@ -760,9 +762,7 @@ public class FabricMinecraftScreen private constructor(
                                 } else {
                                     val output = textures[textureIndex++].texture
                                     portableQueued()
-                                    submitFabricMinecraftGuiCorners(layer.visibleBounds) { x0, y0, x1, y1 ->
-                                        graphics.blit(output.getTextureView(), output.getSampler(), x0, y0, x1, y1, 0f, 1f, 0f, 1f)
-                                    }
+                                    drawFabricMinecraftExactSampledImage(graphics, texture.texture, output, layer.visibleBounds)
                                 }
                             }
 
