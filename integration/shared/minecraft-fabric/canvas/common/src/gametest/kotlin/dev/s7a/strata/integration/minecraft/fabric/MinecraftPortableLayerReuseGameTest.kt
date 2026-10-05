@@ -95,22 +95,10 @@ internal object MinecraftPortableLayerReuseGameTest {
             check(after.rasterizations == before.rasterizations + 1 && after.uploads == before.uploads + 1) {
                 "Partial replacement must rasterize and upload exactly one changed region: before=$before, after=$after"
             }
-            context.onClient { hidden.value = createDrawImage(IntSize(2, 2), intArrayOf(0, -1, -1, 0x4088CC22)) }
-            context.waitFor { observation(owned)?.let { after.preparations < it.preparations } == true }
-            val afterHidden = context.onClient { checkNotNull(observation(owned)) }
-            check(afterHidden.textures.size == after.textures.size && after.textures.indices.all { afterHidden.textures[it] === after.textures[it] }) {
-                "Changing a fully clipped sampled image replaced a visible texture."
+            verifyInvisibleImageUpdate(context, owned, after) {
+                hidden.value = createDrawImage(IntSize(2, 2), intArrayOf(0, -1, -1, 0x4088CC22))
             }
-            check(afterHidden.rasterizations == after.rasterizations && afterHidden.uploads == after.uploads) {
-                "Invisible sampled inputs must not rasterize or upload: before=$after, after=$afterHidden"
-            }
-            val path = context.takeScreenshot("strata-portable-layer-reuse-scale-$scale", viewport)
-            val image = checkNotNull(ImageIO.read(path.toFile()))
-            check(image.getRGB(scale, scale) == 0xFF2255AA.toInt()) { "The changed portable region retained stale pixels." }
-            check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
-            check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
-            check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
-            Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nunchangedTextureIdentity=preserved\n")
+            verifyScreenshot(context, viewport, scale)
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -123,6 +111,37 @@ internal object MinecraftPortableLayerReuseGameTest {
                 { context.onClient { fixture.close() } },
             )
         }
+    }
+
+    private fun verifyInvisibleImageUpdate(
+        context: MinecraftCanvasTestContext,
+        screen: FabricMinecraftScreen,
+        before: Observation,
+        update: () -> Unit,
+    ) {
+        context.onClient { update() }
+        context.waitFor { observation(screen)?.let { before.preparations < it.preparations } == true }
+        val after = context.onClient { checkNotNull(observation(screen)) }
+        check(after.textures.size == before.textures.size && before.textures.indices.all { after.textures[it] === before.textures[it] }) {
+            "Changing a fully clipped sampled image replaced a visible texture."
+        }
+        check(after.rasterizations == before.rasterizations && after.uploads == before.uploads) {
+            "Invisible sampled inputs must not rasterize or upload: before=$before, after=$after"
+        }
+    }
+
+    private fun verifyScreenshot(
+        context: MinecraftCanvasTestContext,
+        viewport: IntSize,
+        scale: Int,
+    ) {
+        val path = context.takeScreenshot("strata-portable-layer-reuse-scale-$scale", viewport)
+        val image = checkNotNull(ImageIO.read(path.toFile()))
+        check(image.getRGB(scale, scale) == 0xFF2255AA.toInt()) { "The changed portable region retained stale pixels." }
+        check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
+        check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
+        check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
+        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nunchangedTextureIdentity=preserved\n")
     }
 
     private fun resourcesReleased(): Boolean = NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
