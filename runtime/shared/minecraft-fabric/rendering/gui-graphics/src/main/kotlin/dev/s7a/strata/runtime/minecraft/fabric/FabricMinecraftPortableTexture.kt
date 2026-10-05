@@ -82,6 +82,26 @@ internal class FabricMinecraftPortableTexture private constructor(
     }
 
     /**
+     * Generates GPU pixels from bounded axis metadata and a pinned source, then registers the non-owning output view.
+     * Every partial allocation and registration remains with the receiving generation if initialization fails.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        sampling: FabricMinecraftSamplingMap,
+        source: FabricMinecraftPortableTexture,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val indices = sampling.indices
+        val native = NativeImage(indices.size.width, indices.size.height, false)
+        pixels = native
+        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
+        registrationAttempted = true
+        Minecraft.getInstance().textureManager.register(location, texture)
+    }
+
+    /**
      * Takes one empty staged native owner before it allocates or uploads storage.
      *
      * The version helper invokes this only on the render thread and then retains no independent ownership.
@@ -157,6 +177,24 @@ internal class FabricMinecraftPortableTexture private constructor(
      * This factory retains only a process-local identifier counter; every texture and pixel buffer belongs to its returned or partially initialized owner.
      */
     internal companion object {
+        /**
+         * Transfers an empty registered-output owner before recording work against the caller's pinned source.
+         * The receiving generation must seal initialization and retain both borrows through their completion fences.
+         */
+        @JvmSynthetic
+        internal fun create(
+            sampling: FabricMinecraftSamplingMap,
+            source: FabricMinecraftPortableTexture,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            RenderSystem.assertOnRenderThread()
+            val location = minecraftResourceLocation("strata", "runtime/resampled/${sequence.getAndIncrement().toULong()}")
+            val owner = FabricMinecraftPortableTexture(location)
+            retain(owner)
+            owner.initialize(sampling, source)
+            return owner
+        }
+
         /**
          * Allocates distinct registration names without retaining textures or changing an existing generation's identity.
          */

@@ -16,8 +16,9 @@ dev.s7a.strata.runtime.headless.HeadlessRendering#method:25:renderHeadless:(Ldev
 dev.s7a.strata.runtime.headless.HeadlessRendering#type:17:java.lang.Object:
 dev.s7a.strata.runtime.headless.RasterClips#field:25:INSTANCE:Ldev/s7a/strata/runtime/headless/RasterClips;
 dev.s7a.strata.runtime.headless.RasterClips#method:17:logical:(Ldev/s7a/strata/geometry/IntRect;I)Ldev/s7a/strata/geometry/IntRect;
+dev.s7a.strata.runtime.headless.RasterClips#method:17:physical:(Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/IntRect;I)Ldev/s7a/strata/geometry/IntRect;
 dev.s7a.strata.runtime.headless.RasterClips#method:17:physical:(Ldev/s7a/strata/geometry/FloatRect;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/geometry/IntRect;
 dev.s7a.strata.runtime.headless.RasterClips#type:17:java.lang.Object:
 dev.s7a.strata.runtime.headless.SampledImageRasterizer#field:25:INSTANCE:Ldev/s7a/strata/runtime/headless/SampledImageRasterizer;
-dev.s7a.strata.runtime.headless.SampledImageRasterizer#method:17:paint:([ILdev/s7a/strata/geometry/IntSize;ILdev/s7a/strata/runtime/render/DrawCommand$SampledImage;Ldev/s7a/strata/geometry/IntRect;)V
+dev.s7a.strata.runtime.headless.SampledImageRasterizer#method:17:paint:([ILdev/s7a/strata/geometry/IntSize;ILdev/s7a/strata/runtime/render/DrawCommand$SampledImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntOffset;)V
 dev.s7a.strata.runtime.headless.SampledImageRasterizer#type:17:java.lang.Object:

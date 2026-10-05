@@ -71,6 +71,24 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     }
 
     /**
+     * Transfers bounded geometry metadata to GPU storage, then resamples a pinned source without reading its pixels.
+     * Source and output remain owned by their independently fenced, nested presentation borrows.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        sampling: FabricMinecraftSamplingMap,
+        source: FabricMinecraftPortableTexture,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val indices = sampling.indices
+        val native = NativeImage(indices.size.width, indices.size.height, false)
+        pixels = native
+        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
+    }
+
+    /**
      * Takes one empty staged native owner before it allocates or uploads storage.
      *
      * The version helper invokes this only on the render thread and then retains no independent ownership.
@@ -135,6 +153,22 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
      * Creates immutable portable uploads under an existing GUI-generation lifetime reservation without retaining a cache.
      */
     internal companion object {
+        /**
+         * Transfers an empty output owner before allocating an axis lookup or recording GPU sampling work.
+         * The caller marks the pinned source as queued before invoking this factory and seals output initialization on failure.
+         */
+        @JvmSynthetic
+        internal fun create(
+            sampling: FabricMinecraftSamplingMap,
+            source: FabricMinecraftPortableTexture,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            val owner = FabricMinecraftPortableTexture()
+            retain(owner)
+            owner.initialize(sampling, source)
+            return owner
+        }
+
         /**
          * Transfers an empty owner before allocating CPU pixels, GPU storage, or native views.
          *

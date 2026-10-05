@@ -33,12 +33,21 @@ internal class FabricMinecraftPortableImage(
     internal val scale: Int,
     @get:JvmSynthetic
     internal val origin: IntOffset = IntOffset.Zero,
+    @get:JvmSynthetic
+    internal val sampling: FabricMinecraftSamplingMap? = null,
 ) {
     /**
      * Exact positive physical upload and lifetime-reservation extent derived with checked arithmetic.
      */
     @get:JvmSynthetic
     internal val physicalSize: IntSize
+
+    /**
+     * Conservative allocation rectangle covering both GPU output and its three-row axis texture under one owner.
+     */
+    @get:JvmSynthetic
+    internal val reservationSize: IntSize
+        get() = sampling?.let { IntSize(maxOf(physicalSize.width, it.indices.size.width), Math.addExact(physicalSize.height, 3)) } ?: physicalSize
 
     init {
         require(0 < size.width && 0 < size.height) { "Portable image size must be positive." }
@@ -54,8 +63,8 @@ internal class FabricMinecraftPortableImage(
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftPortableImage): Boolean {
-        if (origin != other.origin) return false
-        return size == other.size && scale == other.scale && commands == other.commands
+        val sameGeometry = origin == other.origin && size == other.size && scale == other.scale
+        return sameGeometry && commands == other.commands && (sampling == null) == (other.sampling == null)
     }
 
     /**

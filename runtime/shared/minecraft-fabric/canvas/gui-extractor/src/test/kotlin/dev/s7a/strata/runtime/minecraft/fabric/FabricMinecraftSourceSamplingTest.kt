@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,9 +29,25 @@ internal class FabricMinecraftSourceSamplingTest {
         val safe = crop.copy(source = FloatRect(0.25f, 0.5f, 1.75f, 2f), destination = FloatRect(1f, 1f, 5f, 5f))
         for (scale in 1..4) assertTrue(isDirectFabricSampledImage(safe, scale, fractionalSource = true))
         val integer = crop.copy(source = FloatRect(0f, 0f, 2f, 2f), destination = FloatRect(1f, 1f, 2f, 2f))
-        assertTrue(isDirectFabricSampledImage(integer))
+        assertFalse(isDirectFabricSampledImage(integer))
+        assertTrue(isDirectFabricSampledImage(integer.copy(destination = FloatRect(1f, 1f, 5f, 5f))))
         val shifted = safe.copy(destination = FloatRect(0.25f, 0.25f, 4.25f, 4.25f))
         for (scale in 1..4) assertEquals(scale == 4, isDirectFabricSampledImage(shifted, scale, fractionalSource = true))
+    }
+
+    @Test
+    fun integerSourceBoundaryAlsoRequiresExactPortableFallback() {
+        val source = createDrawImage(IntSize(6, 4), IntArray(24) { it or 0xFF000000.toInt() })
+        val command = DrawCommand.SampledImage(source, FloatRect(0f, 0f, 6f, 4f), FloatRect(180f, 70f, 185f, 75f), alphaCutoff = 0f)
+        for (scale in 1..4) assertEquals(scale == 4, isDirectFabricSampledImage(command, scale))
+    }
+
+    @Test
+    fun exactLookupAdmitsBoundarySamplesButKeepsUnsupportedCompositingAndAxesInFallback() {
+        for (scale in 1..4) assertTrue(isDirectFabricSampledImage(crop, scale, exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0x80FFFFFF.toInt())), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(alphaCutoff = 0.5f), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(destination = FloatRect(0f, 0f, 4097f, 5f)), exactSampling = true))
     }
 
     @Test

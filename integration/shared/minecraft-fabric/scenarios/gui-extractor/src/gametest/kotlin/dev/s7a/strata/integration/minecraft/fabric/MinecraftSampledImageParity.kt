@@ -163,6 +163,7 @@ private fun PaintScope.paintFractionalSourceSamples(image: DrawImage) {
             FloatRect(0.25f, 0.5f, 5.75f, 3.5f),
             FloatRect(0.49f, 0.49f, 1.51f, 1.51f),
             FloatRect(0.1f, 0.1f, 1.9f, 1.9f),
+            FloatRect(0f, 0f, 6f, 4f),
         )
     sources.forEachIndexed { index, source ->
         val x = (144 + index % 8 * 8).toFloat()

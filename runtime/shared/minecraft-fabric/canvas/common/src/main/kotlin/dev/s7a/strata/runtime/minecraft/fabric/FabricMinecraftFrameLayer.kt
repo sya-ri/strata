@@ -6,8 +6,6 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.ArgbColor
-import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -31,6 +29,8 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val ineligibleSampledImages: Int = 0,
         @get:JvmSynthetic
         internal val absoluteCoordinates: Boolean = false,
+        @get:JvmSynthetic
+        internal val capacitySampledImages: Int = 0,
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -43,6 +43,8 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val clip: IntRect?,
         @get:JvmSynthetic
         internal val visibleBounds: IntRect,
+        @get:JvmSynthetic
+        internal val sampling: FabricMinecraftSamplingMap? = null,
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -99,6 +101,7 @@ internal fun partitionFabricMinecraftFrame(
     viewport: IntSize,
     scale: Int = 1,
     fractionalSource: Boolean = false,
+    exactSampling: Boolean = false,
 ): List<FabricMinecraftFrameLayer> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val layers = ArrayList<FabricMinecraftFrameLayer>()
@@ -108,6 +111,8 @@ internal fun partitionFabricMinecraftFrame(
     var portable = ArrayList<DrawCommand>()
     var portableBounds: IntRect? = null
     var portableIneligibleSampledImages = 0
+    var portableCapacitySampledImages = 0
+    val samplingBudget = FabricMinecraftSamplingBudget()
 
     fun flushPortable() {
         val bounds = portableBounds
@@ -115,12 +120,13 @@ internal fun partitionFabricMinecraftFrame(
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
             val absolute = portable.any { it is DrawCommand.SampledImage }
             val commands = if (absolute) portable.toList() else localizeFabricPortable(portable, bounds)
-            layers.add(FabricMinecraftFrameLayer.Portable(commands, bounds, portableIneligibleSampledImages, absolute))
+            layers.add(FabricMinecraftFrameLayer.Portable(commands, bounds, portableIneligibleSampledImages, absolute, portableCapacitySampledImages))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
         portableBounds = null
         portableIneligibleSampledImages = 0
+        portableCapacitySampledImages = 0
     }
 
     commands.forEach { command ->
@@ -137,8 +143,9 @@ internal fun partitionFabricMinecraftFrame(
 
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
-                val directClip =
-                    if (isDirectFabricSampledImage(command, scale, fractionalSource)) {
+                val ordinary = isDirectFabricSampledImage(command, scale, fractionalSource)
+                var directClip =
+                    if (isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)) {
                         if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
                             visibleClip
                         } else {
@@ -147,16 +154,22 @@ internal fun partitionFabricMinecraftFrame(
                     } else {
                         null
                     }
+                val capacity = directClip != null && ordinary.not() && samplingBudget.admit(command.destination, directClip, scale).not()
+                if (capacity) directClip = null
                 if (directClip != null) {
                     flushPortable()
                     command.destination.enclosingFabricViewportBounds(directClip)?.let { visible ->
-                        layers.add(FabricMinecraftFrameLayer.Sampled(command, directClip.takeIf { activeClips.isNotEmpty() }, visible))
+                        layers.add(sampledFabricLayer(command, directClip.takeIf { activeClips.isNotEmpty() }, visible, scale, fractionalSource))
                     }
                 } else {
                     val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEach
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible, activeClips, viewportBounds)
-                    portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
+                    if (capacity) {
+                        portableCapacitySampledImages = Math.incrementExact(portableCapacitySampledImages)
+                    } else {
+                        portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
+                    }
                 }
             }
 
@@ -212,7 +225,7 @@ internal fun partitionFabricMinecraftFrame(
  * Converts one capacity-starved direct layer into an equivalent tight portable fallback.
  *
  * @param layer sampled layer whose original destination and effective clip are retained.
- * @return localized portable layer bounded to visible output only.
+ * @return original-coordinate portable layer bounded to visible output only.
  */
 @JvmSynthetic
 internal fun portableFabricSampledFallback(layer: FabricMinecraftFrameLayer.Sampled): FabricMinecraftFrameLayer.Portable {
@@ -241,27 +254,16 @@ internal inline fun submitFabricMinecraftGuiCorners(
     submit(bounds.left, bounds.top, bounds.right, bounds.bottom)
 }
 
-/**
- * Checks the platform-independent direct subset before any native texture-capacity lookup.
- *
- * @param command immutable sampled command whose constructor already validates source containment.
- * @param scale positive physical density used to reject ambiguous native quad-edge ownership at pixel centers.
- * @param fractionalSource whether the adapter submits floating source UVs without converting source extents to integers.
- * @return true when native nearest sampling can preserve its source and compositing contract.
- */
-@JvmSynthetic
-internal fun isDirectFabricSampledImage(
+private fun sampledFabricLayer(
     command: DrawCommand.SampledImage,
-    scale: Int = 1,
-    fractionalSource: Boolean = false,
-): Boolean {
-    if (command.orientation != SampledImageOrientation.Normal || command.tint != ArgbColor(-1) || command.alphaCutoff != 0f) return false
-    if (command.destination.hasFabricPhysicalCenterEdge(scale)) return false
-    val integerSource = command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel()
-    return integerSource || (fractionalSource && hasStableFabricFractionalSourceSampling(command, scale))
+    clip: IntRect?,
+    visible: IntRect,
+    scale: Int,
+    fractionalSource: Boolean,
+): FabricMinecraftFrameLayer.Sampled {
+    val sampling = if (isDirectFabricSampledImage(command, scale, fractionalSource)) null else FabricMinecraftSamplingMap(command, visible, scale)
+    return FabricMinecraftFrameLayer.Sampled(command, clip, visible, sampling)
 }
-
-private fun Float.isWholeTexel(): Boolean = toDouble() == floor(toDouble())
 
 // Fractional clip edges discard physical pixel centers, rather than enclosing every touched logical cell.
 // Admit only coverage representable by the existing integer GUI scissor; source UVs and destination stay untouched.

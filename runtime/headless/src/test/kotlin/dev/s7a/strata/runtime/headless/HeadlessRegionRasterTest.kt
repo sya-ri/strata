@@ -55,6 +55,25 @@ internal class HeadlessRegionRasterTest {
     }
 
     @Test
+    fun largeRepeatedRowsAndFractionalClipsKeepTheirGlobalSamplingOrigin() {
+        val bounds = IntRect(25, 20, 155, 60)
+        val destination = FloatRect(24.25f, 19.25f, 156.75f, 61.75f)
+        val opaque = createDrawImage(IntSize(6, 4), IntArray(24) { 0xFF000000.toInt() or (it * 0x070903) })
+        for (scale in 1..4) {
+            for (source in listOf(image, opaque)) {
+                val commands =
+                    listOf(
+                        DrawCommand.FillRectangle(bounds, ArgbColor(0x806789AB.toInt())),
+                        DrawCommand.PushFractionalClip(FloatRect(26.1f, 20.25f, 154.7f, 59.8f)),
+                        sampled.copy(image = source, destination = destination),
+                        DrawCommand.PopClip,
+                    )
+                assertMatchesFullCrop(commands, bounds, scale)
+            }
+        }
+    }
+
+    @Test
     fun invalidRegionsAndClipsAreRejected() {
         assertThrows<IllegalArgumentException> { rasterizeHeadlessRegion(listOf(sampled), IntRect(-1, 0, 4, 5), 1) }
         assertThrows<IllegalArgumentException> { rasterizeHeadlessRegion(listOf(sampled), IntRect(0, 0, 0, 5), 1) }

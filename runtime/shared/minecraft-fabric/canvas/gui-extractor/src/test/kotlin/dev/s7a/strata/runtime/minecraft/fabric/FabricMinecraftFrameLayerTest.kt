@@ -131,7 +131,7 @@ internal class FabricMinecraftFrameLayerTest {
     @Test
     fun eligibleImagesSplitAtTheirExactOrderWhileUnsupportedSamplingStaysPortable() {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { 0x80336699.toInt() })
-        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(1.25f, 2.25f, 5.75f, 7.25f), alphaCutoff = 0f)
+        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(1.25f, 2.25f, 5.25f, 6.25f), alphaCutoff = 0f)
         val unsupported = direct.copy(source = FloatRect(0.5f, 0f, 3.5f, 4f))
         val platform = DrawCommand.Platform(TestPlatform, IntRect(0, 0, 1, 1))
         val commands =
@@ -151,7 +151,7 @@ internal class FabricMinecraftFrameLayerTest {
         val sampled = layers[1] as FabricMinecraftFrameLayer.Sampled
         assertSame(image, sampled.command.image)
         assertEquals(IntRect(1, 2, 8, 9), sampled.clip)
-        assertEquals(IntRect(1, 2, 6, 8), sampled.visibleBounds)
+        assertEquals(IntRect(1, 2, 6, 7), sampled.visibleBounds)
         val portableLayer = layers[2] as FabricMinecraftFrameLayer.Portable
         assertEquals(1, portableLayer.ineligibleSampledImages)
         val portableSampled = portableLayer.commands.filterIsInstance<DrawCommand.SampledImage>().single()
@@ -163,7 +163,7 @@ internal class FabricMinecraftFrameLayerTest {
     @Test
     fun directEligibilityPreservesFloatingPlacementExceptPhysicalPixelCenterEdges() {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { -1 })
-        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(1.25f, 2.25f, 5.75f, 7.25f), alphaCutoff = 0f)
+        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(1.25f, 2.25f, 5.25f, 6.25f), alphaCutoff = 0f)
 
         assertTrue(isDirectFabricSampledImage(direct))
         assertTrue(isDirectFabricSampledImage(direct.copy(destination = FloatRect(-200.25f, 300.25f, -190.25f, 311.75f))))
@@ -181,7 +181,7 @@ internal class FabricMinecraftFrameLayerTest {
     fun fractionalClipsUseDirectImagesOnlyWhenNativeScissorsPreserveEveryPhysicalPixel() {
         val viewport = IntSize(10, 10)
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { index -> (index * 0x112233) or 0x80000000.toInt() })
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(0f, 0f, 10f, 10f), alphaCutoff = 0f)
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 10f, 10f), alphaCutoff = 0f)
         val edges = listOf(-100f, 0f, 0.1f, 0.25f, 0.5f, 0.75f, 0.9f, 1f, 1.25f, 1.5f)
         for (scale in 1..4) {
             for (left in edges) {
@@ -232,7 +232,7 @@ internal class FabricMinecraftFrameLayerTest {
     @Test
     fun capacityFallbackKeepsOriginalFractionalSamplingAndEffectiveClip() {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { -1 })
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(3.25f, 4.25f, 8.75f, 9.25f), alphaCutoff = 0f)
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(3.25f, 4.25f, 8.75f, 8.25f), alphaCutoff = 0f)
         val sampled =
             partitionFabricMinecraftFrame(
                 listOf(DrawCommand.PushClip(IntRect(4, 5, 8, 9)), command, DrawCommand.PopClip),

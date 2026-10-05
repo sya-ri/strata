@@ -13,9 +13,16 @@ import dev.s7a.strata.render.DrawImage
 internal class FabricMinecraftFrameInputs(
     @get:JvmSynthetic internal val layers: List<FabricMinecraftFrameLayer>,
     private val scale: Int,
-    @get:JvmSynthetic internal val capacitySampledImages: Long = 0L,
+    capacitySampledImages: Long = 0L,
     unavailableIneligibleImages: Long = 0L,
 ) {
+    /**
+     * Counts exact-output budget exhaustion and unavailable supported source identities in this native borrow.
+     */
+    @get:JvmSynthetic
+    internal val capacitySampledImages: Long =
+        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().fold(capacitySampledImages) { count, layer -> Math.addExact(count, layer.capacitySampledImages.toLong()) }
+
     /**
      * Source identities requested in display-list order, retaining no native storage.
      */
@@ -27,9 +34,23 @@ internal class FabricMinecraftFrameInputs(
      */
     @get:JvmSynthetic
     internal val portable: List<FabricMinecraftPortableImage> =
-        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map {
-            val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
-            FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin)
+        layers.mapNotNull {
+            when (it) {
+                is FabricMinecraftFrameLayer.Portable -> {
+                    val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
+                    FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin)
+                }
+
+                is FabricMinecraftFrameLayer.Sampled -> {
+                    it.sampling?.let { sampling ->
+                        FabricMinecraftPortableImage(listOf(it.command), it.visibleBounds.size, scale, IntOffset(it.visibleBounds.left, it.visibleBounds.top), sampling)
+                    }
+                }
+
+                is FabricMinecraftFrameLayer.Platform -> {
+                    null
+                }
+            }
         }
 
     /**

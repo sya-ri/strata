@@ -236,24 +236,40 @@ Screen release removes the source-image reference from its owner cache, while th
 Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
-The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
-GUI extractor adapters submit floating source UVs directly and also admit fractional contained source rectangles with the same tint, cutoff, destination and clip checks when physical samples stay away from nearest-texel boundaries.
-Both axes of a fractional source rectangle check the CPU Float sample against normalized-UV interpolation and reserve a texel rounding margin; exact or nearby texel-boundary samples retain the portable path.
-The expanded subset requires integer-aligned physical destination edges and scans at most 4,096 samples per axis without reading image pixels; fractional physical edges, larger or unrepresentable axes use the existing fallback.
-The loaded parity scene covers quarter, eighth and decimal crops on both axes at GUI scales one through four, including densities where the same crop changes between direct and portable presentation.
-Adapters whose texture overload converts source extents to integers keep fractional source commands in the portable path.
+The accelerated subset is normal orientation, white tint, zero alpha cutoff, a contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+Ordinary native quads require both sample axes to select the headless texel with a rounding margin; this check includes integer source rectangles, because normalized UV interpolation can also misselect an integer-source boundary.
+Floating-UV adapters admit stable fractional sources with integer-aligned physical destination edges.
+Preparation checks at most 4,096 samples per axis without reading source pixels; ambiguous, oversized, or unrepresentable native quad samples use exact lookup presentation when available, otherwise CPU region sampling.
+
+Texture-view, sampler, bind-group, and RenderPearl adapters can generate exact image pixels in one GPU offscreen pass when the device supports RGBA extents of at least 4,096 and each checked enclosing physical destination axis fits that bound.
+The CPU constructs only two axis-index rows and one output-extent row, using the same original-coordinate Float operation order and half-open physical coverage as Headless.
+Each little-endian RGBA integer encodes a source index plus one, with zero for an uncovered physical pixel; the shader decodes it and uses `texelFetch` without normalized source interpolation or GPU source-coordinate arithmetic.
+The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
+The pass writes straight RGBA without blending; ordered GUI composition remains unchanged.
+Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for commands outside their proven native quad subset.
+
+Exact GPU output and its axis texture belong to the existing current portable generation, with no additional history, identity lookup, or cache.
+One prepared frame admits at most 256 exact outputs and 64 MiB of output-plus-lookup RGBA storage before deriving metadata or allocating native resources; exhaustion selects exact CPU fallback and is counted as capacity fallback.
+Their key includes commands, original sampling origin, logical extent, GUI density, and presentation mode.
+The generation reserves a conservative rectangle covering both allocations before acquiring either, and unchanged entries use the same prefix/suffix sharing rules as ordinary portable uploads.
+Both native texture/view pairs, any fullscreen vertex buffer, and partial initialization stay owned until the existing initialization and GUI-consumption fences complete and physical destruction is acknowledged.
+The source-image cache remains pinned through preparation and submission, and is marked queued before the offscreen pass reads its texture.
+Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata and resample on the GPU while preserving the immutable source-image upload.
+The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
 At density one this admits arbitrary fractional clip edges; at higher densities partial logical cells retain the portable fallback unless an inner clip or the image's visible extent makes the fractional boundary irrelevant.
-Destination edges exactly coincident with a physical pixel center retain portable drawing because native quad-edge ownership can omit a sample included by the portable half-open contract.
-No vertex bias or changed source interpolation is used to conceal that difference.
-The loaded parity scene compares full-frame patterned and translucent images at densities one through four and checks the actual direct-draw count, including the portable pixel-center-edge regression at density four.
-Source identity, source UVs, the original floating destination, display-list ordering, cache limits, and GPU retirement remain unchanged; no clipped image or new cache is constructed.
+Destination edges coincident with a physical pixel center use exact lookup or CPU region sampling because ordinary native quad-edge ownership can omit a headless sample.
+No vertex bias conceals the difference.
+The loaded scene compares full-frame patterned and translucent pixels and strictly checks both ordered GUI image draws and the additional GPU resampling passes.
+Source identity, the original floating destination, display-list ordering, source-cache limits, and GPU retirement remain unchanged.
 Unsupported sampled images wholly outside the logical viewport or the intersected active clip envelopes are omitted from portable runs' derived-pixel inputs, so changing an invisible image cannot invalidate an otherwise equal visible run.
 Direct-image barriers retain their exact display-list positions even when the image is clipped away; adjacent portable runs are not merged into a larger raster/upload extent.
 Fractional clip envelopes are conservative; partially covered images retain their original destinations and the existing physical pixel-center checks.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
+Sampled-image draws include GPU offscreen resampling passes; ordinary texture uploads include axis metadata writes, while sampled-image uploads count original immutable source pixels.
+CPU rasterization counters never count a GPU resample as CPU work, and measurements do not infer GPU completion time from render-thread extraction time.
 Both portable and direct-image uploads copy immutable ARGB source pixels into newly allocated NativeImage storage in one checked sequential write, preserving the native packed ABGR representation without an intermediate pixel array.
 The allocation address is borrowed only for the synchronous render-thread copy; the existing generation or sampled-image owner retains the NativeImage and GPU storage through upload and consumption fences.
 Copy preflight rejects a closed allocation, mismatched extents, non-RGBA format and overflowing address arithmetic before writing.

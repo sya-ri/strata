@@ -96,6 +96,7 @@ public class FabricMinecraftScreen private constructor(
     private var sampledImageDirectMissCount: Long = 0L
     private var sampledImageUploadCount: Long = 0L
     private var sampledImageDrawCount: Long = 0L
+    private var sampledImageResampleCount: Long = 0L
     private var sampledImageEvictionCount: Long = 0L
     private var sampledImageIneligibleFallbackCount: Long = 0L
     private var sampledImageCapacityFallbackCount: Long = 0L
@@ -700,7 +701,7 @@ public class FabricMinecraftScreen private constructor(
                 checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource = true), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource = true, exactSampling = supportsFabricMinecraftExactSampling()), scale)
             }
         try {
             sampledImages.present(
@@ -716,6 +717,14 @@ public class FabricMinecraftScreen private constructor(
                     resolved.portable,
                     { portableRasterizationCount += 1L },
                     { textureUploadCount += 1L },
+                    { sampling, retain ->
+                        val source = checkNotNull(textureFor(sampling.command.image))
+                        sampledQueued(sampling.command.image)
+                        FabricMinecraftPortableTexture.create(sampling, source, retain).also {
+                            sampledImageDrawCount += 1L
+                            sampledImageResampleCount += 1L
+                        }
+                    },
                 ) { textures, portableQueued ->
                     var textureIndex = 0
                     submitFabricMinecraftFrameLayers(resolved.layers, graphics::nextStratum) { layer ->
@@ -744,7 +753,15 @@ public class FabricMinecraftScreen private constructor(
                                 val texture = checkNotNull(textureFor(layer.command.image))
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L
-                                extractSampledLayer(graphics, layer, texture)
+                                if (layer.sampling == null) {
+                                    extractSampledLayer(graphics, layer, texture)
+                                } else {
+                                    val output = textures[textureIndex++].texture
+                                    portableQueued()
+                                    submitFabricMinecraftGuiCorners(layer.visibleBounds) { x0, y0, x1, y1 ->
+                                        graphics.blit(output.getTextureView(), output.getSampler(), x0, y0, x1, y1, 0f, 1f, 0f, 1f)
+                                    }
+                                }
                             }
 
                             is FabricMinecraftFrameLayer.Platform -> {

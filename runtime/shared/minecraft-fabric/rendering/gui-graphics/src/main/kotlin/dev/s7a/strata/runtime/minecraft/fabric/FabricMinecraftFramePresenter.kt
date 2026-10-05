@@ -143,7 +143,7 @@ internal class FabricMinecraftFramePresenter(
                 checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale)
             }
         try {
             sampledImages.present(
@@ -159,6 +159,11 @@ internal class FabricMinecraftFramePresenter(
                     resolved.portable,
                     { portableRasterizationCount += 1L },
                     { textureUploadCount += 1L },
+                    { sampling, retain ->
+                        val source = checkNotNull(textureFor(sampling.command.image))
+                        sampledQueued(sampling.command.image)
+                        FabricMinecraftPortableTexture.create(sampling, source, retain).also { sampledImageDrawCount += 1L }
+                    },
                 ) { textures, portableQueued ->
                     var textureIndex = 0
                     submitFabricMinecraftFrameLayers(
@@ -186,7 +191,14 @@ internal class FabricMinecraftFramePresenter(
                                 val texture = checkNotNull(textureFor(layer.command.image))
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L
-                                presentSampledLayer(graphics, layer, texture)
+                                if (layer.sampling == null) {
+                                    presentSampledLayer(graphics, layer, texture)
+                                } else {
+                                    val output = textures[textureIndex++]
+                                    portableQueued()
+                                    val bounds = layer.visibleBounds
+                                    FabricMinecraftTextureBlitter.blit(graphics, output.location, bounds.left, bounds.top, bounds.width, bounds.height, Math.multiplyExact(bounds.width, scale), Math.multiplyExact(bounds.height, scale))
+                                }
                             }
 
                             is FabricMinecraftFrameLayer.Platform -> {

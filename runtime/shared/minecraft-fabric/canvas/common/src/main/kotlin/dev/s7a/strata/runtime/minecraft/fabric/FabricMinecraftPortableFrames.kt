@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
+import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceOwnerId
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceSet
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResources
@@ -12,7 +13,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Every call belongs to the native render thread. The key is the complete ordered list of localized commands, logical extents, and GUI scales;
  * unchanged prefix and suffix layers reuse their uploads across index shifts, while changed layers allocate immutable storage in a separately fenced generation.
  * A stable presenter identity admits at most three active or retired generations, within the device's separate 64-set portable budget.
- * Each set contains exactly its prepared command list's checked physical portable-layer extents, reserved before native allocation.
+ * Each set reserves its checked layer extents before native allocation; exact GPU sampling includes a conservative rectangle covering output and axis metadata.
  * Release immediately drops screen-owned CPU and texture references; the independent device owns pending, retired, and physically releasing resources.
  * A full-presentation pin prevents reentrant screen cleanup or an intermediate GUI flush from destroying later layers.
  *
@@ -38,9 +39,10 @@ internal class FabricMinecraftPortableFrames {
     /**
      * Prepares all portable images before invoking the borrowed ordered GUI submission.
      *
-     * @param images immutable local image descriptions in portable-layer order.
+     * @param images immutable raster or exact GPU descriptions in their combined display-list order.
      * @param rasterized render-thread counter callback invoked once before each rasterization attempt, never retained.
      * @param uploaded render-thread counter callback invoked after each successful upload, never retained.
+     * @param sampled optional synchronous factory for exact GPU output; the caller pins and marks its source before recording the pass.
      * @param submit borrowed callback receiving every prepared texture and a marker it must invoke before each portable blit.
      * The callback must not retain either argument and may trigger reentrant screen release.
      * @throws Throwable when capacity, preparation, submission, or independently attempted cleanup fails.
@@ -50,6 +52,7 @@ internal class FabricMinecraftPortableFrames {
         images: List<FabricMinecraftPortableImage>,
         rasterized: () -> Unit,
         uploaded: () -> Unit,
+        sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
         submit: (List<FabricMinecraftPortableTexture>, () -> Unit) -> Unit,
     ) {
         if (images.isEmpty()) {
@@ -57,7 +60,7 @@ internal class FabricMinecraftPortableFrames {
             submit(emptyList()) {}
             return
         }
-        val prepared = prepare(images, rasterized, uploaded)
+        val prepared = prepare(images, rasterized, uploaded, sampled)
         val resources = prepared.resources
         resources.beginUse(prepared.set)
         FabricMinecraftFailures.runWithCleanup(
@@ -83,13 +86,14 @@ internal class FabricMinecraftPortableFrames {
         images: List<FabricMinecraftPortableImage>,
         rasterized: () -> Unit,
         uploaded: () -> Unit,
+        sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
     ): Prepared {
         val previous = current
         reuseCurrent(images)?.let { return it }
         val resources = NativeCanvasDevices.device(FabricNativeCanvasDriver).guiResources
         val identity = ownerId ?: resources.createOwnerId().also { ownerId = it }
         val matches = previous?.let { matchFabricMinecraftPortableImages(it.images, images) }
-        val set = resources.reserve(identity, images.map { it.physicalSize })
+        val set = resources.reserve(identity, images.map { it.reservationSize })
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         var failure: Throwable? = null
         try {
@@ -99,9 +103,7 @@ internal class FabricMinecraftPortableFrames {
                     resources.reuse(set, previous.set, source)
                     textures.add(previous.textures[source])
                 } else {
-                    rasterized()
-                    val pixels = input.rasterize()
-                    textures.add(FabricMinecraftPortableTexture.create(pixels) { resource -> resources.add(set, resource) })
+                    textures.add(prepareTexture(input, rasterized, sampled) { resource -> resources.add(set, resource) })
                     uploaded()
                 }
             }
@@ -127,6 +129,18 @@ internal class FabricMinecraftPortableFrames {
         current = prepared
         previous?.let { it.resources.release(it.set) }
         return prepared
+    }
+
+    private fun prepareTexture(
+        input: FabricMinecraftPortableImage,
+        rasterized: () -> Unit,
+        sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        retain: (NativeGuiResource) -> Unit,
+    ): FabricMinecraftPortableTexture {
+        val sampling = input.sampling
+        if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
+        rasterized()
+        return FabricMinecraftPortableTexture.create(input.rasterize(), retain)
     }
 
     private fun reuseCurrent(images: List<FabricMinecraftPortableImage>): Prepared? {
