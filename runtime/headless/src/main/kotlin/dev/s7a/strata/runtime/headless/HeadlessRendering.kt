@@ -61,7 +61,8 @@ public fun rasterizeHeadlessRegion(
 
 /**
  * Rasterizes an original-coordinate region into borrowed caller-owned ARGB storage for synchronous native upload.
- * Clears and writes only the checked physical region prefix; excess capacity remains untouched.
+ * Materializes the transparent background lazily and writes only the checked physical region prefix; excess capacity remains untouched.
+ * Every output pixel is initialized before use, including empty commands and clipped primitives.
  * The caller exclusively owns [pixels] throughout this call, and no image, command, array or callback is retained.
  * Preflight rejects invalid input before any storage changes. Pixel arithmetic follows [rasterizeHeadlessRegion].
  */
@@ -115,7 +116,6 @@ private object HeadlessImplementation {
         val dimensions = checkedDimensions(viewport, scale, origin)
         require(dimensions.area <= pixels.size) { "Borrowed raster storage must cover the physical region." }
         val snapshot = snapshotCommands(commands)
-        pixels.fill(0, 0, dimensions.area)
         paintSnapshot(dimensions, snapshot, pixels)
     }
 

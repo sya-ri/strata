@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
- * Verifies original-coordinate borrowed rasters, prefix clearing, independent immutable images, and preflight safety.
+ * Verifies original-coordinate borrowed rasters, lazy initialization, independent immutable images, and preflight safety.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessBorrowedRasterTest {
@@ -68,6 +68,42 @@ internal class HeadlessBorrowedRasterTest {
         rasterizeHeadlessInto(commands, bounds, 1, scratch)
         assertArrayEquals(rasterizeHeadlessRegion(commands, bounds, 1).copyArgb(), scratch.copyOf(area))
         for (index in area until scratch.size) assertEquals(-1, scratch[index])
+    }
+
+    @Test
+    fun transparentAndClippedFirstCommandsNeverExposePreviousPixels() {
+        val bounds = IntRect(180, 60, 184, 64)
+        val image =
+            createDrawImage(
+                IntSize(4, 4),
+                IntArray(16) { index ->
+                    when (index % 4) {
+                        0 -> 0x00123456
+                        1 -> -1
+                        2 -> 0x80445566.toInt()
+                        else -> 0x40123456
+                    }
+                },
+            )
+        val inputs =
+            listOf(
+                emptyList(),
+                listOf(DrawCommand.FillRectangle(bounds, ArgbColor(0x00123456))),
+                listOf(DrawCommand.BlitImage(image, IntRect(0, 0, 4, 4), bounds)),
+                listOf(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(180f, 60f, 184f, 64f), ArgbColor(0x806655AA.toInt()), 0.1f)),
+                listOf(DrawCommand.PushClip(IntRect(0, 0, 4, 4)), DrawCommand.BlitImage(image, IntRect(0, 0, 4, 4), bounds), DrawCommand.PopClip),
+                listOf(DrawCommand.PushFractionalClip(FloatRect(0.25f, 0.25f, 3.75f, 3.75f)), DrawCommand.BlitImagePixels(image, IntRect(0, 0, 4, 4), bounds), DrawCommand.PopClip),
+            )
+        for (scale in 1..4) {
+            val area = 16 * scale * scale
+            val scratch = IntArray(area + 17) { -1 }
+            for (commands in inputs) {
+                scratch.fill(-1)
+                rasterizeHeadlessInto(commands, bounds, scale, scratch)
+                assertArrayEquals(rasterizeHeadlessRegion(commands, bounds, scale).copyArgb(), scratch.copyOf(area))
+                for (index in area until scratch.size) assertEquals(-1, scratch[index])
+            }
+        }
     }
 
     @Test
