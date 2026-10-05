@@ -196,6 +196,7 @@ Matching scans the two lists linearly, does not hash source pixels, and retains 
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
 Prepared display-list inputs also retain their sampled-image list and localized portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
 Native texture availability is resolved inside every pinned borrow; resource reload or capacity exhaustion still selects the current portable fallback without retaining native handles in prepared CPU state.
+Both adapter families use the same borrow-scoped fallback classification and counts; unavailable supported images count as capacity fallback, while unsupported images count as ineligible fallback.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
 Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
 The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.

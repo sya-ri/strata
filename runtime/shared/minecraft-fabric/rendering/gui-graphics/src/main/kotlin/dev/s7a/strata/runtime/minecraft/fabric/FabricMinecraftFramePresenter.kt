@@ -153,14 +153,8 @@ internal class FabricMinecraftFramePresenter(
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
-                val resolved =
-                    inputs.resolve({ textureFor(it) != null }) { image ->
-                        if (sampledImages.supports(image)) {
-                            sampledImageCapacityFallbackCount += 1L
-                        } else {
-                            sampledImageIneligibleFallbackCount += 1L
-                        }
-                    }
+                val resolved = inputs.resolve({ textureFor(it) != null }, sampledImages::supports)
+                sampledImageCapacityFallbackCount = Math.addExact(sampledImageCapacityFallbackCount, resolved.capacitySampledImages)
                 sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
                 portableFrames.present(
                     resolved.portable,

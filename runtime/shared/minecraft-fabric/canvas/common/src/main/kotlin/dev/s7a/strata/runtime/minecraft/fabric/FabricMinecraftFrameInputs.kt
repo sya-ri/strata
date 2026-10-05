@@ -7,10 +7,13 @@ import dev.s7a.strata.render.DrawImage
  *
  * Reuse lasts only while the display-list identity, viewport and scale remain unchanged; screen release drops these inputs.
  * Texture availability is checked inside every native borrow, so reload and capacity fallback never reuse stale device state.
+ * Resolved fallback counts belong to that borrow and distinguish unavailable supported images from unsupported images.
  */
 internal class FabricMinecraftFrameInputs(
     @get:JvmSynthetic internal val layers: List<FabricMinecraftFrameLayer>,
     private val scale: Int,
+    @get:JvmSynthetic internal val capacitySampledImages: Long = 0L,
+    private val unavailableIneligibleImages: Long = 0L,
 ) {
     /**
      * Source identities requested in display-list order, retaining no native storage.
@@ -26,29 +29,32 @@ internal class FabricMinecraftFrameInputs(
         layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
 
     /**
-     * Number of unsupported sampled commands contained in the prepared portable runs.
+     * Number of unsupported sampled commands in portable runs, including unavailable direct layers in this borrow.
      */
     @get:JvmSynthetic
     internal val ineligibleSampledImages: Long =
-        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().fold(0L) { count, layer -> Math.addExact(count, layer.ineligibleSampledImages.toLong()) }
+        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, layer.ineligibleSampledImages.toLong()) }
 
     /**
      * Returns these inputs unchanged when every direct layer is available, or constructs this borrow's portable fallbacks.
-     * The callbacks are synchronous and never retained; [unavailable] runs once for each absent direct layer in display-list order.
+     * The callbacks are synchronous and never retained; [supported] classifies each absent direct layer in display-list order.
+     * Fallback counts describe this borrow only, preserving per-command capacity and ineligible accounting without native handles.
      */
     @JvmSynthetic
     internal fun resolve(
         available: (DrawImage) -> Boolean,
-        unavailable: (DrawImage) -> Unit,
+        supported: (DrawImage) -> Boolean,
     ): FabricMinecraftFrameInputs {
         var replacements: MutableList<FabricMinecraftFrameLayer>? = null
+        var capacity = 0L
+        var ineligible = 0L
         layers.forEachIndexed { index, layer ->
             if (layer is FabricMinecraftFrameLayer.Sampled && available(layer.command.image).not()) {
-                unavailable(layer.command.image)
+                if (supported(layer.command.image)) capacity += 1L else ineligible += 1L
                 val resolved = replacements ?: layers.toMutableList().also { replacements = it }
                 resolved[index] = portableFabricSampledFallback(layer)
             }
         }
-        return replacements?.let { FabricMinecraftFrameInputs(it, scale) } ?: this
+        return replacements?.let { FabricMinecraftFrameInputs(it, scale, capacity, ineligible) } ?: this
     }
 }

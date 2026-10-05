@@ -31,10 +31,16 @@ internal class FabricMinecraftFrameInputsTest {
                 inputs.resolve({ false }) {
                     assertSame(image, it)
                     unavailable += 1
+                    true
                 }
             assertEquals(2, unavailable)
             assertEquals(3, fallback.portable.size)
             assertEquals(0L, fallback.ineligibleSampledImages)
+            assertEquals(2L, fallback.capacitySampledImages)
+            val unsupported = inputs.resolve({ false }) { false }
+            assertEquals(2L, unsupported.ineligibleSampledImages)
+            assertEquals(0L, unsupported.capacitySampledImages)
+            assertEquals(0L, inputs.capacitySampledImages)
             assertEquals(1, inputs.portable.size)
             assertSame(inputs, inputs.resolve({ true }) { error("Restored storage must be used") })
             val last = fallback.layers.last() as FabricMinecraftFrameLayer.Portable
@@ -51,6 +57,7 @@ internal class FabricMinecraftFrameInputsTest {
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 2f, 2f), tint = ArgbColor(0x80FFFFFF.toInt()))
         val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command), IntSize(2, 2)), 1)
         assertEquals(1L, inputs.ineligibleSampledImages)
+        assertEquals(0L, inputs.capacitySampledImages)
         assertSame(inputs, inputs.resolve({ error("No direct images") }) { error("No fallback") })
     }
 }
