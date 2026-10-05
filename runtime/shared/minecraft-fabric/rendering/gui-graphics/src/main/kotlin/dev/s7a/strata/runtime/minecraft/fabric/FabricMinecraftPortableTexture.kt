@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -53,12 +52,17 @@ internal class FabricMinecraftPortableTexture private constructor(
      * This operation belongs to the render thread and may be invoked only once; no eager native rollback occurs.
      */
     @JvmSynthetic
-    internal fun initialize(image: HeadlessImage) {
+    internal fun initialize(
+        input: FabricMinecraftPortableImage,
+        argb: IntArray,
+    ) {
         RenderSystem.assertOnRenderThread()
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val native = NativeImage(image.size.width, image.size.height, false)
+        input.rasterizeInto(argb)
+        val size = input.physicalSize
+        val native = NativeImage(size.width, size.height, false)
         pixels = native
-        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
+        uploadFabricMinecraftArgbPixels(native, size) { x, y -> argb[y * size.width + x] }
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
         registrationAttempted = true
         Minecraft.getInstance().textureManager.register(location, texture)
@@ -205,21 +209,23 @@ internal class FabricMinecraftPortableTexture private constructor(
         /**
          * Transfers an empty owner before allocating CPU pixels, GPU storage, or a texture-manager entry.
          *
-         * @param image immutable complete layer image copied into owned native pixel storage.
+         * @param input immutable original-coordinate layer whose exact pixels are copied into owned native storage.
+         * @param argb frame-local scratch storage borrowed only through synchronous rasterization and copy.
          * @param retain reserved generation receiver, invoked once before allocation; the receiver must seal its generation even if this method throws.
          * @return an initialized immutable upload owned exclusively by the receiving generation.
          * @throws Throwable when ownership transfer or initialization fails; every resource allocated after transfer remains with that generation.
          */
         @JvmSynthetic
         internal fun create(
-            image: HeadlessImage,
+            input: FabricMinecraftPortableImage,
+            argb: IntArray,
             retain: (NativeGuiResource) -> Unit,
         ): FabricMinecraftPortableTexture {
             RenderSystem.assertOnRenderThread()
             val location = minecraftResourceLocation("strata", "runtime/portable/${sequence.getAndIncrement().toULong()}")
             val owner = FabricMinecraftPortableTexture(location)
             retain(owner)
-            owner.initialize(image)
+            owner.initialize(input, argb)
             return owner
         }
 

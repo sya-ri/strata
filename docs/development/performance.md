@@ -271,6 +271,10 @@ Preparation omits fills and integer blits proven invisible under the current vie
 Their color or source updates cannot invalidate a visible footer or neighboring text; nested fractional clips stay intact, and visible sampling anchors and direct-image barriers remain unchanged.
 Constant one-pixel sources need only equal coverage because every contained source coordinate selects their sole texel; no source pixel is read by the proof.
 Exhausted proofs retain the exact CPU raster path, and rasterization never translates the original Float coordinates.
+Changed CPU layers share one traversal-local ARGB scratch array sized to the largest newly rasterized layer after native lifetime reservation.
+Reused and GPU-only layers consume no scratch space; unchanged frames allocate none. The array is not retained beyond preparation or used as an immutable image backing.
+The internal borrowed raster bridge validates dimensions, capacity and command balance before clearing only the output prefix, preserves original-coordinate arithmetic, and copies into independently owned native upload storage before the next layer can reuse it.
+Failed allocation or rasterization follows the existing generation seal and release path; there is no additional cache or resource pool.
 The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.

@@ -97,13 +97,14 @@ internal class FabricMinecraftPortableFrames {
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         var failure: Throwable? = null
         try {
+            val rasterPixels = allocateRasterPixels(images, matches)
             images.forEachIndexed { index, input ->
                 val source = matches?.get(index) ?: -1
                 if (previous != null && 0 <= source) {
                     resources.reuse(set, previous.set, source)
                     textures.add(previous.textures[source])
                 } else {
-                    textures.add(prepareTexture(input, rasterized, sampled) { resource -> resources.add(set, resource) })
+                    textures.add(prepareTexture(input, rasterPixels, rasterized, sampled) { resource -> resources.add(set, resource) })
                     uploaded()
                 }
             }
@@ -131,8 +132,22 @@ internal class FabricMinecraftPortableFrames {
         return prepared
     }
 
+    private fun allocateRasterPixels(
+        images: List<FabricMinecraftPortableImage>,
+        matches: IntArray?,
+    ): IntArray? {
+        var area = 0
+        images.forEachIndexed { index, input ->
+            if (input.sampling == null && (matches?.get(index) ?: -1) < 0) {
+                area = maxOf(area, Math.multiplyExact(input.physicalSize.width, input.physicalSize.height))
+            }
+        }
+        return if (area == 0) null else IntArray(area)
+    }
+
     private fun prepareTexture(
         input: FabricMinecraftPortableImage,
+        pixels: IntArray?,
         rasterized: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
         retain: (NativeGuiResource) -> Unit,
@@ -140,7 +155,7 @@ internal class FabricMinecraftPortableFrames {
         val sampling = input.sampling
         if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
         rasterized()
-        return FabricMinecraftPortableTexture.create(input.rasterize(), retain)
+        return FabricMinecraftPortableTexture.create(input, checkNotNull(pixels), retain)
     }
 
     private fun reuseCurrent(images: List<FabricMinecraftPortableImage>): Prepared? {

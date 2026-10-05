@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
+import dev.s7a.strata.runtime.headless.rasterizeHeadlessInto
 import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -242,4 +243,12 @@ internal class FabricMinecraftPortableImage(
         } else {
             rasterizeHeadlessRegion(commands, IntRect(origin.x, origin.y, Math.addExact(origin.x, size.width), Math.addExact(origin.y, size.height)), scale)
         }
+
+    /**
+     * Borrows a frame-local ARGB buffer for exact region rasterization; retains no mutable storage or image view.
+     */
+    @JvmSynthetic
+    internal fun rasterizeInto(pixels: IntArray) {
+        rasterizeHeadlessInto(commands, IntRect(origin.x, origin.y, Math.addExact(origin.x, size.width), Math.addExact(origin.y, size.height)), scale, pixels)
+    }
 }

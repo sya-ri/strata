@@ -60,6 +60,24 @@ public fun rasterizeHeadlessRegion(
 }
 
 /**
+ * Rasterizes an original-coordinate region into borrowed caller-owned ARGB storage for synchronous native upload.
+ * Clears and writes only the checked physical region prefix; excess capacity remains untouched.
+ * The caller exclusively owns [pixels] throughout this call, and no image, command, array or callback is retained.
+ * Preflight rejects invalid input before any storage changes. Pixel arithmetic follows [rasterizeHeadlessRegion].
+ */
+@InternalStrataRuntimeApi
+@JvmSynthetic
+public fun rasterizeHeadlessInto(
+    commands: List<DrawCommand>,
+    bounds: IntRect,
+    scale: Int,
+    pixels: IntArray,
+) {
+    require(0 <= bounds.left && 0 <= bounds.top) { "Raster region origin must be nonnegative." }
+    HeadlessImplementation.rasterizeInto(commands, bounds.size, scale, IntOffset(bounds.left, bounds.top), pixels)
+}
+
+/**
  * Synchronously renders an element description through the retained core and rasterizes its paint output.
  *
  * Viewport and physical-size validation occurs before the description is validated or any node lifecycle hook runs.
@@ -87,6 +105,20 @@ public fun renderHeadless(
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // Keeps primitive validation and ordered rasterization under the same private owner.
 private object HeadlessImplementation {
+    fun rasterizeInto(
+        commands: List<DrawCommand>,
+        viewport: IntSize,
+        scale: Int,
+        origin: IntOffset,
+        pixels: IntArray,
+    ) {
+        val dimensions = checkedDimensions(viewport, scale, origin)
+        require(dimensions.area <= pixels.size) { "Borrowed raster storage must cover the physical region." }
+        val snapshot = snapshotCommands(commands)
+        pixels.fill(0, 0, dimensions.area)
+        paintSnapshot(dimensions, snapshot, pixels)
+    }
+
     fun rasterize(
         commands: List<DrawCommand>,
         viewport: IntSize,
@@ -162,9 +194,10 @@ private object HeadlessImplementation {
     private fun paintSnapshot(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
+        borrowed: IntArray? = null,
     ): IntArray {
-        val initialPixels = initialImagePixels(commands.firstOrNull(), dimensions)
-        val pixels = initialPixels ?: IntArray(dimensions.area)
+        val initialPixels = if (borrowed == null) initialImagePixels(commands.firstOrNull(), dimensions) else null
+        val pixels = borrowed ?: initialPixels ?: IntArray(dimensions.area)
         var uniform = initialPixels == null
         var uniformColor = 0
         val clips = ArrayList<IntRect>()
@@ -184,26 +217,26 @@ private object HeadlessImplementation {
                         uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
                         uniform = true
                     } else {
-                        if (uniform) pixels.fill(uniformColor)
+                        if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                         uniform = paintFill(pixels, dimensions, command, clips.lastOrNull())
                         if (uniform) uniformColor = pixels[0]
                     }
                 }
 
                 is DrawCommand.BlitImage -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintBlit(pixels, dimensions, command, clips.lastOrNull())
                 }
 
                 is DrawCommand.SampledImage -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintSampled(pixels, dimensions, command, clips.lastOrNull() ?: physicalViewport)
                 }
 
                 is DrawCommand.BlitImagePixels -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintBlitPixels(pixels, dimensions, command, clips.lastOrNull())
                 }
@@ -225,7 +258,7 @@ private object HeadlessImplementation {
                 }
             }
         }
-        if (uniform) pixels.fill(uniformColor)
+        if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
         return pixels
     }
 
@@ -259,7 +292,7 @@ private object HeadlessImplementation {
         start: Int,
         clip: IntRect?,
     ): Int {
-        if (pixels.size < 262_144) return start
+        if (dimensions.area < 262_144) return start
         var end = start
         while (end < commands.size) {
             val fill = commands[end] as? DrawCommand.FillRectangle
@@ -267,7 +300,7 @@ private object HeadlessImplementation {
             end += 1
         }
         val layers = end - start
-        val minimumLayers = if (pixels.size < 1_048_576) 2 else 1
+        val minimumLayers = if (dimensions.area < 1_048_576) 2 else 1
         if (layers < minimumLayers) return start
         val sources = IntArray(end - start) { (commands[start + it] as DrawCommand.FillRectangle).color.value }
         val alpha = ByteArray(256)
@@ -278,10 +311,10 @@ private object HeadlessImplementation {
         val uniformChannels = red.all { it == red[0] } && green.all { it == green[0] } && blue.all { it == blue[0] }
         if (uniformChannels && alpha.all { it == alpha[0] }) {
             val color = ((alpha[0].toInt() and 255) shl 24) or ((red[0].toInt() and 255) shl 16) or ((green[0].toInt() and 255) shl 8) or (blue[0].toInt() and 255)
-            pixels.fill(color)
+            pixels.fill(color, 0, dimensions.area)
             return end
         }
-        for (position in pixels.indices) {
+        for (position in 0 until dimensions.area) {
             val color = pixels[position]
             val initialAlpha = color ushr 24
             val offset = initialAlpha shl 8
