@@ -1,17 +1,53 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import com.mojang.blaze3d.buffers.GpuBuffer
+import com.mojang.blaze3d.pipeline.RenderPipeline
 import com.mojang.blaze3d.platform.NativeImage
+import com.mojang.blaze3d.shaders.ShaderType
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.FilterMode
 import com.mojang.blaze3d.textures.GpuTexture
+import com.mojang.blaze3d.textures.GpuTextureView
 import com.mojang.blaze3d.textures.TextureFormat
+import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import com.mojang.blaze3d.vertex.VertexFormat
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
+import java.util.OptionalInt
 
 /**
- * Checks whether one immutable image fits the active device's two-dimensional texture limit before direct-cache reservation.
+ * Enables bounded index-texture sampling on this device-command adapter without reading source pixels.
+ */
+@JvmSynthetic
+internal fun supportsFabricMinecraftExactSampling(): Boolean {
+    RenderSystem.assertOnRenderThread()
+    return 4_096 <= RenderSystem.getDevice().maxTextureSize
+}
+
+/**
+ * Transfers an empty native owner before allocating the output and axis texture or recording their GPU work.
+ * The source remains pinned by the caller, and the receiving output generation seals initialization even on failure.
+ * Returns false because this adapter materializes an offscreen output before ordinary GUI submission.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+@JvmSynthetic
+internal fun initializeFabricMinecraftSampledTexture(
+    indices: NativeImage,
+    size: IntSize,
+    source: AbstractTexture,
+    retain: (AbstractTexture, NativeGuiResource) -> Unit,
+): Boolean {
+    val storage = FabricPortableNativeStorage()
+    retain(storage.texture, storage)
+    storage.initialize(indices, size, source)
+    return false
+}
+
+/**
+ * Checks whether one immutable image fits the active device's RGBA texture limit before direct-cache reservation.
  *
  * @param image candidate source borrowed on the render thread.
  * @return true when both source dimensions can be allocated as one RGBA texture.
@@ -62,6 +98,18 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         texture.initialize(pixels)
     }
 
+    /**
+     * Initializes GPU output and its bounded lookup while retaining every partial native allocation.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        indices: NativeImage,
+        size: IntSize,
+        source: AbstractTexture,
+    ) {
+        texture.initialize(indices, size, source)
+    }
+
     @JvmSynthetic
     override fun close() {
         texture.destroy()
@@ -70,10 +118,11 @@ private class FabricPortableNativeStorage : NativeGuiResource {
     @JvmSynthetic
     override fun isDestroyed(): Boolean = texture.isDestroyed()
 
-    @Suppress("TooGenericExceptionCaught")
     private class Texture : AbstractTexture() {
-        private var destruction: FabricNativeCanvasDestruction? = null
-        private var closeRequested = false
+        private var indexTexture: GpuTexture? = null
+        private var vertexBuffer: GpuBuffer? = null
+        private var indexView: GpuTextureView? = null
+        private val owned = FabricMinecraftNativeStorage()
 
         /**
          * Allocates each native object into its owned field before the next operation can fail.
@@ -85,12 +134,47 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         internal fun initialize(pixels: NativeImage) {
             RenderSystem.assertOnRenderThread()
             val device = RenderSystem.getDevice()
-            val maximum = device.maxTextureSize
-            require(pixels.width <= maximum && pixels.height <= maximum) { "A portable GUI image exceeds the active device texture extent limit." }
-            texture = device.createTexture({ "Strata immutable portable layer" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, pixels.width, pixels.height, 1, 1)
+            texture = owned.allocate { device.createTexture({ "Strata immutable portable layer" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, pixels.width, pixels.height, 1, 1) }
             sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
-            textureView = device.createTextureView(checkNotNull(texture))
+            textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
             device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
+        }
+
+        /**
+         * Uploads only axis metadata, then writes all output pixels in one unblended GPU pass.
+         */
+        @JvmSynthetic
+        internal fun initialize(
+            indices: NativeImage,
+            size: IntSize,
+            source: AbstractTexture,
+        ) {
+            RenderSystem.assertOnRenderThread()
+            val device = RenderSystem.getDevice()
+            texture = owned.allocate { device.createTexture({ "Strata exact sampled output" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, size.width, size.height, 1, 1) }
+            sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+            textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
+            indexTexture = owned.allocate { device.createTexture({ "Strata sampled axis indices" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, indices.width, indices.height, 1, 1) }
+            indexView = owned.allocate { device.createTextureView(checkNotNull(indexTexture)) }
+            check(
+                device
+                    .precompilePipeline(fabricMinecraftSamplingPipeline()) { _, stage ->
+                        when (stage) {
+                            ShaderType.VERTEX -> FabricNativeCanvasShaders.vertex.replace("#version 150", "#version 330")
+                            ShaderType.FRAGMENT -> FabricMinecraftSamplingShaders.fragment.replace("#version 150", "#version 330")
+                        }
+                    }.isValid,
+            ) { "Exact sampled-image pipeline compilation failed." }
+            vertexBuffer = owned.allocate { device.createBuffer({ "Strata sampled fullscreen triangle" }, GpuBuffer.USAGE_VERTEX, 1) }
+            val encoder = device.createCommandEncoder()
+            encoder.writeToTexture(checkNotNull(indexTexture), indices)
+            encoder.createRenderPass({ "Strata exact sampled image" }, checkNotNull(textureView), OptionalInt.empty()).use { pass ->
+                pass.setPipeline(fabricMinecraftSamplingPipeline())
+                pass.bindTexture("InSampler", source.getTextureView(), source.getSampler())
+                pass.bindTexture("IndexSampler", checkNotNull(indexView), sampler)
+                pass.setVertexBuffer(0, checkNotNull(vertexBuffer))
+                pass.draw(0, 3)
+            }
         }
 
         /**
@@ -102,24 +186,12 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         @JvmSynthetic
         internal fun destroy() {
             RenderSystem.assertOnRenderThread()
-            if (closeRequested) return
-            if (destruction == null) destruction = trackPortableDestruction(listOfNotNull(texture, textureView))
-            var failure: Throwable? = null
-            try {
-                textureView?.close()
-                textureView = null
-            } catch (caught: Throwable) {
-                failure = caught
-            }
-            try {
-                texture?.close()
-                texture = null
-            } catch (caught: Throwable) {
-                val primary = failure
-                if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
-            }
-            failure?.let { throw it }
-            closeRequested = true
+            owned.close()
+            textureView = null
+            texture = null
+            indexView = null
+            indexTexture = null
+            vertexBuffer = null
         }
 
         /**
@@ -130,11 +202,29 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         @JvmSynthetic
         internal fun isDestroyed(): Boolean {
             RenderSystem.assertOnRenderThread()
-            check(closeRequested) { "Portable GUI destruction is queried only after successful close." }
-            return checkNotNull(destruction).isDestroyed()
+            return owned.isDestroyed()
         }
 
         @JvmSynthetic
         override fun close() = Unit
     }
 }
+
+private val samplingPipeline: RenderPipeline =
+    RenderPipeline
+        .builder()
+        .withLocation(minecraftResourceLocation("strata", "pipeline/sampled_exact"))
+        .withVertexShader(minecraftResourceLocation("strata", "core/canvas"))
+        .withFragmentShader(minecraftResourceLocation("strata", "core/sampled_exact"))
+        .withSampler("InSampler")
+        .withSampler("IndexSampler")
+        .canvasOutput()
+        .withCull(false)
+        .withVertexFormat(DefaultVertexFormat.EMPTY, VertexFormat.Mode.TRIANGLES)
+        .build()
+
+/**
+ * Borrows an immutable pipeline description; compiled native programs belong to the device.
+ */
+@JvmSynthetic
+internal fun fabricMinecraftSamplingPipeline(): RenderPipeline = samplingPipeline

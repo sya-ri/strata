@@ -15,6 +15,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.scaleToFit
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.screen.ScreenDefinition
@@ -121,6 +122,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         FloatRect(104f, 40f, 136f, 64f),
                         alphaCutoff = 0f,
                     )
+                    scope.paintFractionalSourceSamples(sampled)
                     scope.fillRectangle(IntRect(180, 96, 220, 124), ArgbColor(0x408123EF))
                     scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(-10f, 0f, -1f, 10f))
                     scope.fillRectangle(IntRect(184, 100, 216, 120), ArgbColor(0x8067AD11.toInt()))
@@ -138,5 +140,34 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
         ) {
             Canvas(source, contentSize)
         }
+    }
+}
+
+// Narrow, asymmetric and decimal crops exercise source-texel boundaries after native normalized UV interpolation.
+private fun PaintScope.paintFractionalSourceSamples(image: DrawImage) {
+    val sources =
+        listOf(
+            FloatRect(0.25f, 0.25f, 1.75f, 1.75f),
+            FloatRect(0.125f, 0.125f, 1.875f, 1.875f),
+            FloatRect(0.3f, 0.3f, 1.7f, 1.7f),
+            FloatRect(0.7f, 0.7f, 1.3f, 1.3f),
+            FloatRect(0.5f, 0f, 1.5f, 4f),
+            FloatRect(1.25f, 0f, 2.75f, 4f),
+            FloatRect(2.25f, 0f, 3.75f, 4f),
+            FloatRect(4.25f, 0f, 5.75f, 4f),
+            FloatRect(0f, 0.25f, 6f, 1.75f),
+            FloatRect(0f, 1.25f, 6f, 2.75f),
+            FloatRect(0f, 2.25f, 6f, 3.75f),
+            FloatRect(0.1f, 0.2f, 5.9f, 3.8f),
+            FloatRect(0.2f, 0.4f, 5.8f, 3.6f),
+            FloatRect(0.25f, 0.5f, 5.75f, 3.5f),
+            FloatRect(0.49f, 0.49f, 1.51f, 1.51f),
+            FloatRect(0.1f, 0.1f, 1.9f, 1.9f),
+            FloatRect(0f, 0f, 6f, 4f),
+        )
+    sources.forEachIndexed { index, source ->
+        val x = (144 + index % 8 * 8).toFloat()
+        val y = (40 + index / 8 * 8).toFloat()
+        sampledImage(image, source, FloatRect(x, y, x + 4f, y + 4f), alphaCutoff = 0f)
     }
 }

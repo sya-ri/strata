@@ -181,7 +181,7 @@ internal object MinecraftCanvasConsumptionGameTest {
         check(retained(portable, "current") == null) { "A closed screen retained or repopulated portable drawing and texture references." }
         check(retained(owner, "preparedCommands") == null) { "A closed screen retained or repopulated its display list." }
         check(retained(owner, "preparedViewport") == null) { "A closed screen retained or repopulated its prepared viewport." }
-        check((retained(owner, "preparedLayers") as List<*>).isEmpty()) { "A closed screen retained or repopulated its prepared layers." }
+        check(retained(owner, "preparedInputs") == null) { "A closed screen retained or repopulated its prepared layers." }
         check(retained(owner, "pointerPosition") == null) { "A closed screen retained or repopulated its native pointer position." }
         check(retained(owner, "pointerFrameCommands") == null) { "A closed screen retained or repopulated its pointer display list." }
     }

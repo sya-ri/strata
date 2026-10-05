@@ -3,7 +3,6 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
@@ -24,6 +23,19 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     private var storage: NativeGuiResource? = null
     private var nativeClosed = false
     private var closed = false
+    private var inlineSampling = false
+
+    /**
+     * Distinguishes deferred source sampling from an already-materialized output for native work counters.
+     * The flag becomes true only after index upload succeeds; it owns no resource or source reference.
+     */
+    @get:JvmSynthetic
+    internal val samplesDuringGui: Boolean
+        get() {
+            RenderSystem.assertOnRenderThread()
+            check(closed.not() && storage != null) { "Exact sampling mode requires initialized live native storage." }
+            return inlineSampling
+        }
 
     /**
      * Borrows the initialized native texture and sampler on the render thread without transferring generation-owned storage.
@@ -40,22 +52,23 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         }
 
     /**
-     * Initializes an already-retained owner with detached CPU pixels and a staged native upload.
+     * Initializes an already-retained owner through borrowed frame-local ARGB storage and a staged native upload.
      *
      * The caller must seal the owning generation in a finally path, because any thrown allocation or upload failure can leave partial GPU work.
      * This operation belongs to the render thread and may be invoked only once; no eager native rollback occurs.
      */
     @JvmSynthetic
-    internal fun initialize(image: HeadlessImage) {
+    internal fun initialize(
+        input: FabricMinecraftPortableImage,
+        argb: IntArray,
+    ) {
         RenderSystem.assertOnRenderThread()
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val native = NativeImage(image.size.width, image.size.height, false)
+        input.rasterizeInto(argb)
+        val size = input.physicalSize
+        val native = NativeImage(size.width, size.height, false)
         pixels = native
-        for (y in 0 until image.size.height) {
-            for (x in 0 until image.size.width) {
-                native.setPixel(x, y, image.argbAt(x, y))
-            }
-        }
+        uploadFabricMinecraftArgbPixels(native, size) { x, y -> argb[y * size.width + x] }
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
     }
 
@@ -70,12 +83,26 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val native = NativeImage(image.size.width, image.size.height, false)
         pixels = native
-        for (y in 0 until image.size.height) {
-            for (x in 0 until image.size.width) {
-                native.setPixel(x, y, image.argbAt(x, y))
-            }
-        }
+        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
+    }
+
+    /**
+     * Transfers bounded geometry metadata to GPU storage, then resamples a pinned source without reading its pixels.
+     * Source and output remain owned by their independently fenced, nested presentation borrows.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        sampling: FabricMinecraftSamplingMap,
+        source: FabricMinecraftPortableTexture,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val indices = sampling.indices
+        val native = NativeImage(indices.size.width, indices.size.height, false)
+        pixels = native
+        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        inlineSampling = initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
     }
 
     /**
@@ -144,22 +171,40 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
      */
     internal companion object {
         /**
+         * Transfers an empty output owner before allocating an axis lookup or recording GPU sampling work.
+         * The caller marks the pinned source as queued before invoking this factory and seals output initialization on failure.
+         */
+        @JvmSynthetic
+        internal fun create(
+            sampling: FabricMinecraftSamplingMap,
+            source: FabricMinecraftPortableTexture,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            val owner = FabricMinecraftPortableTexture()
+            retain(owner)
+            owner.initialize(sampling, source)
+            return owner
+        }
+
+        /**
          * Transfers an empty owner before allocating CPU pixels, GPU storage, or native views.
          *
-         * @param image immutable complete layer image copied into owned native pixel storage.
+         * @param input immutable original-coordinate layer whose exact pixels are copied into owned native storage.
+         * @param argb frame-local scratch storage borrowed only through synchronous rasterization and copy.
          * @param retain reserved generation receiver, invoked once before allocation; the receiver must seal its generation even if this method throws.
          * @return an initialized immutable upload owned exclusively by the receiving generation.
          * @throws Throwable when ownership transfer or initialization fails; every resource allocated after transfer remains with that generation.
          */
         @JvmSynthetic
         internal fun create(
-            image: HeadlessImage,
+            input: FabricMinecraftPortableImage,
+            argb: IntArray,
             retain: (NativeGuiResource) -> Unit,
         ): FabricMinecraftPortableTexture {
             RenderSystem.assertOnRenderThread()
             val owner = FabricMinecraftPortableTexture()
             retain(owner)
-            owner.initialize(image)
+            owner.initialize(input, argb)
             return owner
         }
 

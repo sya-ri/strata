@@ -14,6 +14,7 @@
   },
   "license": "MIT",
   "environment": "client",
+  "accessWidener": "strata-sampled-gui.accesswidener",
   "entrypoints": {
     "client": [
       "dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"

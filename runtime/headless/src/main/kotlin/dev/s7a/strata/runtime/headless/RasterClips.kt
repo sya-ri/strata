@@ -32,11 +32,21 @@ internal object RasterClips {
         bounds: FloatRect,
         size: IntSize,
         scale: Int,
+    ): IntRect = physical(bounds, IntRect(0, 0, size.width, size.height), scale)
+
+    /**
+     * Resolves original fractional coordinates within a nonnegative absolute physical raster region.
+     */
+    fun physical(
+        bounds: FloatRect,
+        viewport: IntRect,
+        scale: Int,
     ): IntRect {
         fun edge(
             value: Float,
-            extent: Int,
-        ): Int = ceil(value.toDouble() * scale - 0.5).coerceIn(0.0, extent.toDouble()).toInt()
-        return IntRect(edge(bounds.left, size.width), edge(bounds.top, size.height), edge(bounds.right, size.width), edge(bounds.bottom, size.height))
+            start: Int,
+            end: Int,
+        ): Int = ceil(value.toDouble() * scale - 0.5).coerceIn(start.toDouble(), end.toDouble()).toInt()
+        return IntRect(edge(bounds.left, viewport.left, viewport.right), edge(bounds.top, viewport.top, viewport.bottom), edge(bounds.right, viewport.left, viewport.right), edge(bounds.bottom, viewport.top, viewport.bottom))
     }
 }

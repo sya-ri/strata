@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.headless
 
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -22,8 +23,9 @@ internal object SampledImageRasterizer {
      * @param physicalSize the positive physical destination extent.
      * @param scale the positive integer logical-to-physical density.
      * @param command the immutable sampled-image command.
-     * @param clip the physical clip already intersected with the output viewport.
-     * The caller guarantees that clip coordinates fit in [physicalSize].
+     * @param clip the absolute physical clip already intersected with the output region.
+     * @param origin nonnegative absolute physical origin of [pixels]; source sampling remains absolute.
+     * The caller guarantees that clip coordinates relative to [origin] fit in [physicalSize].
      * Clipping preserves the source mapping from the original destination and the method retains no arguments.
      */
     @Suppress("CyclomaticComplexMethod") // Keep exact scalar reuse inside the pixel traversal without per-texel dispatch.
@@ -33,6 +35,7 @@ internal object SampledImageRasterizer {
         scale: Int,
         command: DrawCommand.SampledImage,
         clip: IntRect,
+        origin: IntOffset = IntOffset.Zero,
     ) {
         val destination = command.destination
         val left = maxOf(firstPixel(destination.left, scale), clip.left)
@@ -46,7 +49,7 @@ internal object SampledImageRasterizer {
         val constantImage = command.image.size.width == 1 && command.image.size.height == 1
         val color = SampledColor(command.tint.value, command.alphaCutoff, mapColumns && constantImage.not())
         if (constantImage) {
-            color.paintConstant(pixels, physicalSize.width, left, top, right, bottom, command.image.argbAt(0, 0))
+            color.paintConstant(pixels, physicalSize.width, left - origin.x, top - origin.y, right - origin.x, bottom - origin.y, command.image.argbAt(0, 0))
             return
         }
         val sourceXs =
@@ -61,7 +64,7 @@ internal object SampledImageRasterizer {
         var previousDestination = 0
         var previousResult = 0
         val rows =
-            if (mapColumns && command.source.height * 2 <= bottom - top) RowReuse(physicalSize.width, left, right) else null
+            if (mapColumns && command.source.height * 2 <= bottom - top) RowReuse(physicalSize.width, left - origin.x, right - origin.x) else null
         val opaqueTint = command.tint.value ushr 24 == 255
         // Transparent black over transparent black is already a valid zero result for any tint or cutoff.
         for (y in top until bottom) {
@@ -75,9 +78,9 @@ internal object SampledImageRasterizer {
                     if (command.orientation.flipY) command.source.top else command.source.bottom,
                     command.image.size.height,
                 )
-            if (rows?.prepare(pixels, y, sourceY) == true) continue
+            if (rows?.prepare(pixels, y - origin.y, sourceY) == true) continue
             var opaqueRow = opaqueTint
-            var index = y * physicalSize.width + left
+            var index = (y - origin.y) * physicalSize.width + left - origin.x
             for (x in left until right) {
                 val sourceX =
                     sourceXs?.get(x - left) ?: sampleX(x, scale, command)

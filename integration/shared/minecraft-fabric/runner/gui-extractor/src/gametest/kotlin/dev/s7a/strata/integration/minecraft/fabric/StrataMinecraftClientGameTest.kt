@@ -308,12 +308,11 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
                     when (scale) {
-                        1 -> 4L
-                        4 -> 1L
-                        else -> 2L
+                        1 -> 22L
+                        else -> 20L
                     }
-                require(observed.sampledImageDraws == expectedDirect * observed.renderExtractions) {
-                    "Fractional clipping at scale $scale must draw $expectedDirect cached images per extraction: $observed"
+                require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
+                    "Every eligible source must use its pinned GPU presentation at GUI$scale: $observed"
                 }
                 val fabricPath =
                     context.takeScreenshot(
@@ -868,7 +867,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(portableCurrent.get(portableFrames) == null) { "A detached Fabric screen retained portable drawing or texture ownership." }
         require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
         require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
-        require((retained("preparedLayers") as List<*>).isEmpty()) { "A detached Fabric screen retained prepared layers." }
+        require(retained("preparedInputs") == null) { "A detached Fabric screen retained prepared layers." }
         require(retained("pointerPosition") == null) { "A detached Fabric screen retained its native pointer position." }
         require(retained("pointerFrameCommands") == null) { "A detached Fabric screen retained pointer display-list ownership." }
     }
@@ -1013,6 +1012,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             sampledImageDirectMisses = counter("sampledImageDirectMissCount"),
             sampledImageUploads = counter("sampledImageUploadCount"),
             sampledImageDraws = counter("sampledImageDrawCount"),
+            sampledImageResamples = counter("sampledImageResampleCount"),
             sampledImageEvictions = counter("sampledImageEvictionCount"),
             sampledImageIneligibleFallbacks = counter("sampledImageIneligibleFallbackCount"),
             sampledImageCapacityFallbacks = counter("sampledImageCapacityFallbackCount"),
@@ -1086,6 +1086,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val sampledImageDirectMisses: Long,
         val sampledImageUploads: Long,
         val sampledImageDraws: Long,
+        val sampledImageResamples: Long,
         val sampledImageEvictions: Long,
         val sampledImageIneligibleFallbacks: Long,
         val sampledImageCapacityFallbacks: Long,

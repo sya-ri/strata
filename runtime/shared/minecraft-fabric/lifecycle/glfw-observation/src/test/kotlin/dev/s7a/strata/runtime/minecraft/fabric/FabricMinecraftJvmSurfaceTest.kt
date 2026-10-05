@@ -250,6 +250,14 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftCanvasPresentation",
                 "$packageName.FabricMinecraftPortableFrames",
                 "$packageName.FabricMinecraftPortableImage",
+                "$packageName.FabricMinecraftImageUploadKt",
+                "$packageName.FabricMinecraftSourceSamplingKt",
+                "$packageName.FabricMinecraftSamplingMap",
+                "$packageName.FabricMinecraftSamplingBudget",
+                "$packageName.FabricMinecraftNativeStorage",
+                "$packageName.FabricMinecraftSamplingShaders",
+                "$packageName.FabricMinecraftPortableReuseKt",
+                "$packageName.FabricMinecraftFrameInputs",
                 "$packageName.FabricMinecraftPortableTexture",
                 "$packageName.FabricMinecraftPortableTexture\$Companion",
                 "$packageName.FabricMinecraftPortableTextureFactoryKt",
@@ -323,6 +331,7 @@ internal class FabricMinecraftJvmSurfaceTest {
 
         private val expectedPublicMethods =
             mapOf(
+                "$packageName.mixin.lifecycle.FabricMinecraftNativeImageAccess" to setOf("strataPixels"),
                 "$packageName.FabricUiInput" to setOf("attackDelay", "beginScroll", "blocksLook", "endScroll", "getCapturing", "getDispatching", "getScrolling", "reset", "tick"),
                 "$packageName.FabricUiSessions" to setOf("acceptsPointer", "closeAll", "nativeScreen", "open", "prepareRender", "renderHuds", "resetInput", "tick", "visibleHuds"),
                 "$packageName.mixin.lifecycle.FabricUiKeyMappingAccess" to setOf("strataClicks", "strataDown", "strataKey"),

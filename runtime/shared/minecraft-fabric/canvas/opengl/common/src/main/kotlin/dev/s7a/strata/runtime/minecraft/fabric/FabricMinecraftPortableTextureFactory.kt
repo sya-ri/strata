@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.platform.TextureUtil
 import com.mojang.blaze3d.systems.RenderSystem
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -107,3 +108,26 @@ private class FabricPortableNativeStorage : NativeGuiResource {
         return true
     }
 }
+
+/**
+ * Preserves exact CPU region sampling on adapters without a generation-owned GPU lookup pass.
+ */
+@JvmSynthetic
+internal fun supportsFabricMinecraftExactSampling(): Boolean {
+    RenderSystem.assertOnRenderThread()
+    return false
+}
+
+/**
+ * Enforces the capability boundary before unsupported lookup allocation or source submission.
+ * The partitioner always selects CPU region sampling on this adapter.
+ */
+@Suppress("UNUSED_PARAMETER")
+@OptIn(InternalStrataRuntimeApi::class)
+@JvmSynthetic
+internal fun initializeFabricMinecraftSampledTexture(
+    indices: NativeImage,
+    size: IntSize,
+    source: AbstractTexture,
+    retain: (AbstractTexture, NativeGuiResource) -> Unit,
+): Unit = error("This adapter uses exact CPU region sampling.")

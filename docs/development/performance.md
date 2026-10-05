@@ -183,15 +183,23 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 ### Bounded raster texture cache
 
 The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
-When a mixed portable-and-platform display list changes, each portable texture at the same portable-layer index is reused when its localized immutable commands, logical extent, and GUI scale are equal; platform layers are still extracted natively every time.
-Placement is not part of this derived-pixel key, and a changed layer count does not invalidate equal layers at surviving indices.
+When a mixed portable-and-platform display list changes, each matched portable texture is reused when its immutable commands, logical extent, sampling origin, and GUI scale are equal; platform layers are still extracted natively every time.
+Integer-only runs use localized commands and omit placement from this derived-pixel key.
+Runs containing sampled images preserve their original absolute commands and raster origin, because translating Float pixel-center arithmetic can select a different texel, particularly at non-power-of-two GUI densities.
+The internal region rasterizer allocates only the tight visible run extent while evaluating the original global pixel centers and destinations; no full-viewport scratch image or extra cache is introduced.
+A changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
 See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs reserve a complete replacement generation before any GUI output, sharing immutable resources for equal layers and allocating only changed layers, rather than modifying a texture that unconsumed GUI work may still reference.
+Unchanged prefix and suffix layers retain their textures when insertion or removal shifts their indices; remaining equal layers may reuse the same previous index.
+Matching scans the two lists linearly, does not hash source pixels, and retains no historical image cache beyond the current generation.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
+Prepared display-list inputs also retain their sampled-image list and portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
+Native texture availability is resolved inside every pinned borrow; resource reload or capacity exhaustion still selects the current portable fallback without retaining native handles in prepared CPU state.
+Both adapter families use the same borrow-scoped fallback classification and counts; unavailable supported images count as capacity fallback, while unsupported images count as ineligible fallback.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
 Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
 The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.
@@ -208,6 +216,7 @@ They also require equivalent replacement portable layers to reuse their raster t
 The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
 Layer-sharing regressions additionally exercise hundreds of partial replacements, both retirement orders, changed extents, owner isolation, partial failure, quarantined initialization, and terminal cleanup.
 The loaded common suite changes one opaque region across a native Canvas barrier at GUI scales one through four, requires exactly one rasterization and upload, preserves the unchanged texture identity, and checks retained opaque, translucent, and transparent pattern texels against literal native screenshot pixels.
+It also inserts and removes a leading native/portable pair, preserves the shifted suffix texture, and checks the exact number of new uploads.
 Legacy OpenGL correctness windows temporarily remove their decorations to preserve full-monitor framebuffer extents on Windows and restore the previous size, GUI scale, and decorations during cleanup.
 
 ### Direct sampled-image texture cache
@@ -227,19 +236,63 @@ Screen release removes the source-image reference from its owner cache, while th
 Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
-The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+The accelerated subset is normal orientation, white tint, zero alpha cutoff, a contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+Ordinary native quads require both sample axes to select the headless texel with a rounding margin; this check includes integer source rectangles, because normalized UV interpolation can also misselect an integer-source boundary.
+Floating-UV adapters admit stable fractional sources with integer-aligned physical destination edges.
+Preparation checks at most 4,096 samples per axis without reading source pixels; ambiguous, oversized, or unrepresentable native quad samples use exact lookup presentation when available, otherwise CPU region sampling.
+
+Texture-view, sampler, and bind-group adapters can generate exact image pixels in one GPU offscreen pass when the device supports RGBA extents of at least 4,096 and each checked enclosing physical destination axis fits that bound.
+The RenderPearl adapter samples the original source and exact index texture directly in one native GUI quad, preserving the host's GUI transform, scissor, vertex format and source-over blend through its textured GUI pipeline snippet.
+It allocates no destination image or offscreen pass; the existing source and portable-generation fences retain both queued inputs.
+Its packaged access widener exposes only the active extractor queue, scissor stack and textured GUI snippet; the artifact check requires that contract, and loaded parity validates submission using the production adapter.
+The CPU constructs only two axis-index rows and one output-extent row, using the same original-coordinate Float operation order and half-open physical coverage as Headless.
+Each little-endian RGBA integer encodes a source index plus one, with zero for an uncovered physical pixel; the shader decodes it and uses `texelFetch` without normalized source interpolation or GPU source-coordinate arithmetic.
+The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
+Offscreen passes write straight RGBA without blending, while direct GUI lookup applies the same ordered source-over composition as ordinary portable images.
+Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for commands outside their proven native quad subset.
+
+Exact GPU output and its axis texture, or the direct GUI index texture alone, belong to the existing current portable generation, with no additional history, identity lookup, or cache.
+One prepared frame admits at most 256 exact outputs and 64 MiB of output-plus-lookup RGBA storage before deriving metadata or allocating native resources; exhaustion selects exact CPU fallback and is counted as capacity fallback.
+Their key includes commands, original sampling origin, logical extent, GUI density, and presentation mode.
+The generation reserves a conservative rectangle covering both allocations before acquiring either; direct GUI lookup keeps this upper bound even though it allocates only metadata.
+Unchanged entries use the same prefix/suffix sharing rules as ordinary portable uploads.
+Both native texture/view pairs, any fullscreen vertex buffer, and partial initialization stay owned until the existing initialization and GUI-consumption fences complete and physical destruction is acknowledged.
+The source-image cache remains pinned through preparation and submission, and is marked queued before an offscreen pass or direct GUI quad reads its texture.
+Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata while preserving the immutable source-image upload.
+Direct GUI lookup never adds a resampling draw; offscreen adapters additionally regenerate their destination pixels on the GPU.
+Moved exact outputs reuse native storage only when the same immutable source, physical extent, and every encoded axis selection and coverage value remain equal.
+This comparison reads bounded current-frame index metadata, never source pixels; translations with different original-coordinate Float sampling still invalidate the output.
+Moved CPU fallback runs may also reuse storage after comparing every ordered primitive's relative integer geometry and half-open physical coverage, immutable source identity, tint, cutoff and orientation.
+Nonconstant sampled images additionally compare their original-coordinate texel selection, with at most 4,096 physical pixels per axis and an 8,192-index proof budget for the complete run.
+The budget charges only the covered destination rows and columns that the proof actually scans, so many small glyphs do not each consume the entire enclosing image extent.
+Integer clip and fill edges are compared after exact clamping to the current image extent, including unchanged-origin runs whose invisible outer edges differ.
+Blit destinations retain their original integer sampling anchor; clipping never changes source selection or ordering.
+Preparation omits fills and integer blits proven invisible under the current viewport and integer clip bounds, including commands in mixed original-coordinate runs.
+Their color or source updates cannot invalidate a visible footer or neighboring text; nested fractional clips stay intact, and visible sampling anchors and direct-image barriers remain unchanged.
+Constant one-pixel sources need only equal coverage because every contained source coordinate selects their sole texel; no source pixel is read by the proof.
+Exhausted proofs retain the exact CPU raster path, and rasterization never translates the original Float coordinates.
+Changed CPU layers share one traversal-local ARGB scratch array sized to the largest newly rasterized layer after native lifetime reservation.
+Reused and GPU-only layers consume no scratch space; unchanged frames allocate none. The array is not retained beyond preparation or used as an immutable image backing.
+The internal borrowed raster bridge validates dimensions, capacity and command balance before lazily materializing the transparent output prefix, preserves original-coordinate arithmetic, and copies into independently owned native upload storage before the next layer can reuse it.
+Failed allocation or rasterization follows the existing generation seal and release path; there is no additional cache or resource pool.
+The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
 At density one this admits arbitrary fractional clip edges; at higher densities partial logical cells retain the portable fallback unless an inner clip or the image's visible extent makes the fractional boundary irrelevant.
-Destination edges exactly coincident with a physical pixel center retain portable drawing because native quad-edge ownership can omit a sample included by the portable half-open contract.
-No vertex bias or changed source interpolation is used to conceal that difference.
-The loaded parity scene compares full-frame patterned and translucent images at densities one through four and checks the actual direct-draw count, including the portable pixel-center-edge regression at density four.
-Source identity, source UVs, the original floating destination, display-list ordering, cache limits, and GPU retirement remain unchanged; no clipped image or new cache is constructed.
+Destination edges coincident with a physical pixel center use exact lookup or CPU region sampling because ordinary native quad-edge ownership can omit a headless sample.
+No vertex bias conceals the difference.
+The loaded scene compares full-frame patterned and translucent pixels and strictly checks both ordered GUI image draws and the additional GPU resampling passes.
+Source identity, the original floating destination, display-list ordering, source-cache limits, and GPU retirement remain unchanged.
 Unsupported sampled images wholly outside the logical viewport or the intersected active clip envelopes are omitted from portable runs' derived-pixel inputs, so changing an invisible image cannot invalidate an otherwise equal visible run.
 Direct-image barriers retain their exact display-list positions even when the image is clipped away; adjacent portable runs are not merged into a larger raster/upload extent.
 Fractional clip envelopes are conservative; partially covered images retain their original destinations and the existing physical pixel-center checks.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
+Sampled-image draws include GPU offscreen resampling passes; ordinary texture uploads include axis metadata writes, while sampled-image uploads count original immutable source pixels.
+CPU rasterization counters never count a GPU resample as CPU work, and measurements do not infer GPU completion time from render-thread extraction time.
+Both portable and direct-image uploads copy immutable ARGB source pixels into newly allocated NativeImage storage in one checked sequential write, preserving the native packed ABGR representation without an intermediate pixel array.
+The allocation address is borrowed only for the synchronous render-thread copy; the existing generation or sampled-image owner retains the NativeImage and GPU storage through upload and consumption fences.
+Copy preflight rejects a closed allocation, mismatched extents, non-RGBA format and overflowing address arithmetic before writing.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
 
 ### Minecraft resource-image resolution identity

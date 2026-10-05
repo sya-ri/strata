@@ -62,6 +62,7 @@ internal object MinecraftPortableLayerReuseGameTest {
         val fixture = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
         val color = context.onClient { mutableStateOf(ArgbColor(0xFF2277DD.toInt())) }
         val hidden = context.onClient { mutableStateOf(createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x80336699.toInt(), -1))) }
+        val prepend = context.onClient { mutableStateOf(false) }
         val pattern = ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(0x80FF0000.toInt(), 0xFF00FF00.toInt(), 0xFF0000FF.toInt(), 0)))
         var screen: FabricMinecraftScreen? = null
         var failure: Throwable? = null
@@ -72,6 +73,10 @@ internal object MinecraftPortableLayerReuseGameTest {
                         ScreenDefinition("Portable layer reuse acceptance") {
                             Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
                                 Row {
+                                    if (prepend.value) {
+                                        Spacer(Modifier.Empty.size(8, 16).background(ArgbColor(0xFFAA5522.toInt())))
+                                        Canvas(fixture.textureSource, IntSize(16, 16))
+                                    }
                                     Spacer(Modifier.Empty.size(16, 16).background(color.value))
                                     Canvas(fixture.textureSource, IntSize(16, 16))
                                     Spacer(Modifier.Empty.size(16, 16).imageBackground(pattern, ImageScale.Stretch))
@@ -88,16 +93,11 @@ internal object MinecraftPortableLayerReuseGameTest {
             context.waitFor { observation(owned)?.textures?.size == 2 }
             val before = context.onClient { checkNotNull(observation(owned)) }
             check(before.scale == scale) { "Portable reuse must observe the requested native GUI scale: requested=$scale, actual=${before.scale}" }
-            context.onClient { color.value = ArgbColor(0xFF2255AA.toInt()) }
-            context.waitFor { observation(owned)?.textures?.firstOrNull() !== before.textures.first() }
-            val after = context.onClient { checkNotNull(observation(owned)) }
-            check(after.textures.size == 2 && after.textures[1] === before.textures[1]) { "Changing the first portable region replaced an unchanged patterned texture." }
-            check(after.rasterizations == before.rasterizations + 1 && after.uploads == before.uploads + 1) {
-                "Partial replacement must rasterize and upload exactly one changed region: before=$before, after=$after"
-            }
+            val after = verifyVisibleImageUpdate(context, owned, before) { color.value = ArgbColor(0xFF2255AA.toInt()) }
             verifyInvisibleImageUpdate(context, owned, after) {
                 hidden.value = createDrawImage(IntSize(2, 2), intArrayOf(0, -1, -1, 0x4088CC22))
             }
+            verifyShiftedLayers(context, owned, context.onClient { checkNotNull(observation(owned)) }) { prepend.value = it }
             verifyScreenshot(context, viewport, scale)
         } catch (caught: Throwable) {
             failure = caught
@@ -110,6 +110,44 @@ internal object MinecraftPortableLayerReuseGameTest {
                 { context.waitFor { resourcesReleased() && fixture.leasesOpened == fixture.leasesClosed } },
                 { context.onClient { fixture.close() } },
             )
+        }
+    }
+
+    private fun verifyVisibleImageUpdate(
+        context: MinecraftCanvasTestContext,
+        screen: FabricMinecraftScreen,
+        before: Observation,
+        update: () -> Unit,
+    ): Observation {
+        context.onClient { update() }
+        context.waitFor { observation(screen)?.textures?.firstOrNull() !== before.textures.first() }
+        val after = context.onClient { checkNotNull(observation(screen)) }
+        check(after.textures.size == 2 && after.textures[1] === before.textures[1]) { "Changing the first portable region replaced an unchanged patterned texture." }
+        check(after.rasterizations == before.rasterizations + 1 && after.uploads == before.uploads + 1) {
+            "Partial replacement must rasterize and upload exactly one changed region: before=$before, after=$after"
+        }
+        return after
+    }
+
+    private fun verifyShiftedLayers(
+        context: MinecraftCanvasTestContext,
+        screen: FabricMinecraftScreen,
+        before: Observation,
+        update: (Boolean) -> Unit,
+    ) {
+        context.onClient { update(true) }
+        context.waitFor { observation(screen)?.textures?.size == 3 }
+        val inserted = context.onClient { checkNotNull(observation(screen)) }
+        check(inserted.textures.last() === before.textures.last()) { "Prepending a portable run replaced the unchanged suffix texture." }
+        check(inserted.rasterizations == before.rasterizations + 2 && inserted.uploads == before.uploads + 2) {
+            "Prepending must upload only the two new runs: before=$before, after=$inserted"
+        }
+        context.onClient { update(false) }
+        context.waitFor { observation(screen)?.textures?.size == 2 }
+        val removed = context.onClient { checkNotNull(observation(screen)) }
+        check(removed.textures.last() === before.textures.last()) { "Removing a portable run replaced the unchanged suffix texture." }
+        check(removed.rasterizations == inserted.rasterizations + 1 && removed.uploads == inserted.uploads + 1) {
+            "Removal must upload only the changed leading run: before=$inserted, after=$removed"
         }
     }
 
@@ -141,7 +179,7 @@ internal object MinecraftPortableLayerReuseGameTest {
         check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
         check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
         check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
-        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nunchangedTextureIdentity=preserved\n")
+        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nprependUploads=2\nremoveUploads=1\nshiftedTextureIdentity=preserved\nunchangedTextureIdentity=preserved\n")
     }
 
     private fun resourcesReleased(): Boolean = NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0

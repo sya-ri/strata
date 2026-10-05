@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.headless
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
@@ -42,6 +43,42 @@ public fun rasterizeHeadless(
 ): HeadlessImage = HeadlessImplementation.rasterize(commands, viewport, scale)
 
 /**
+ * Rasterizes a nonnegative logical region for runtime presentation without translating source-sampling coordinates.
+ * Output storage contains only the checked physical extent of [bounds]; ordered commands retain their original coordinates.
+ * Validation, clip balance, exact Float sampling and pixel composition follow [rasterizeHeadless].
+ * No commands, pixels or region history are retained after the returned immutable image is released.
+ */
+@InternalStrataRuntimeApi
+@JvmSynthetic
+public fun rasterizeHeadlessRegion(
+    commands: List<DrawCommand>,
+    bounds: IntRect,
+    scale: Int,
+): HeadlessImage {
+    require(0 <= bounds.left && 0 <= bounds.top) { "Raster region origin must be nonnegative." }
+    return HeadlessImplementation.rasterize(commands, bounds.size, scale, IntOffset(bounds.left, bounds.top))
+}
+
+/**
+ * Rasterizes an original-coordinate region into borrowed caller-owned ARGB storage for synchronous native upload.
+ * Materializes the transparent background lazily and writes only the checked physical region prefix; excess capacity remains untouched.
+ * Every output pixel is initialized before use, including empty commands and clipped primitives.
+ * The caller exclusively owns [pixels] throughout this call, and no image, command, array or callback is retained.
+ * Preflight rejects invalid input before any storage changes. Pixel arithmetic follows [rasterizeHeadlessRegion].
+ */
+@InternalStrataRuntimeApi
+@JvmSynthetic
+public fun rasterizeHeadlessInto(
+    commands: List<DrawCommand>,
+    bounds: IntRect,
+    scale: Int,
+    pixels: IntArray,
+) {
+    require(0 <= bounds.left && 0 <= bounds.top) { "Raster region origin must be nonnegative." }
+    HeadlessImplementation.rasterizeInto(commands, bounds.size, scale, IntOffset(bounds.left, bounds.top), pixels)
+}
+
+/**
  * Synchronously renders an element description through the retained core and rasterizes its paint output.
  *
  * Viewport and physical-size validation occurs before the description is validated or any node lifecycle hook runs.
@@ -69,12 +106,26 @@ public fun renderHeadless(
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // Keeps primitive validation and ordered rasterization under the same private owner.
 private object HeadlessImplementation {
+    fun rasterizeInto(
+        commands: List<DrawCommand>,
+        viewport: IntSize,
+        scale: Int,
+        origin: IntOffset,
+        pixels: IntArray,
+    ) {
+        val dimensions = checkedDimensions(viewport, scale, origin)
+        require(dimensions.area <= pixels.size) { "Borrowed raster storage must cover the physical region." }
+        val snapshot = snapshotCommands(commands)
+        paintSnapshot(dimensions, snapshot, pixels)
+    }
+
     fun rasterize(
         commands: List<DrawCommand>,
         viewport: IntSize,
         scale: Int,
+        origin: IntOffset = IntOffset.Zero,
     ): HeadlessImage {
-        val dimensions = checkedDimensions(viewport, scale)
+        val dimensions = checkedDimensions(viewport, scale, origin)
         return rasterizeSnapshot(commands, dimensions)
     }
 
@@ -143,13 +194,14 @@ private object HeadlessImplementation {
     private fun paintSnapshot(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
+        borrowed: IntArray? = null,
     ): IntArray {
-        val initialPixels = initialImagePixels(commands.firstOrNull(), dimensions)
-        val pixels = initialPixels ?: IntArray(dimensions.area)
+        val initialPixels = if (borrowed == null) initialImagePixels(commands.firstOrNull(), dimensions) else null
+        val pixels = borrowed ?: initialPixels ?: IntArray(dimensions.area)
         var uniform = initialPixels == null
         var uniformColor = 0
         val clips = ArrayList<IntRect>()
-        val physicalViewport = IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height)
+        val physicalViewport = dimensions.physicalBounds
         var index = if (initialPixels == null) 0 else 1
         while (index < commands.size) {
             if (uniform.not()) {
@@ -165,26 +217,26 @@ private object HeadlessImplementation {
                         uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
                         uniform = true
                     } else {
-                        if (uniform) pixels.fill(uniformColor)
+                        if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                         uniform = paintFill(pixels, dimensions, command, clips.lastOrNull())
                         if (uniform) uniformColor = pixels[0]
                     }
                 }
 
                 is DrawCommand.BlitImage -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintBlit(pixels, dimensions, command, clips.lastOrNull())
                 }
 
                 is DrawCommand.SampledImage -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintSampled(pixels, dimensions, command, clips.lastOrNull() ?: physicalViewport)
                 }
 
                 is DrawCommand.BlitImagePixels -> {
-                    if (uniform) pixels.fill(uniformColor)
+                    if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
                     paintBlitPixels(pixels, dimensions, command, clips.lastOrNull())
                 }
@@ -198,7 +250,7 @@ private object HeadlessImplementation {
                 }
 
                 is DrawCommand.PushFractionalClip -> {
-                    clips.add(RasterMath.intersection(clips.lastOrNull() ?: physicalViewport, RasterClips.physical(command.bounds, dimensions.physicalSize, dimensions.scale)))
+                    clips.add(RasterMath.intersection(clips.lastOrNull() ?: physicalViewport, RasterClips.physical(command.bounds, physicalViewport, dimensions.scale)))
                 }
 
                 DrawCommand.PopClip -> {
@@ -206,7 +258,7 @@ private object HeadlessImplementation {
                 }
             }
         }
-        if (uniform) pixels.fill(uniformColor)
+        if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
         return pixels
     }
 
@@ -221,8 +273,8 @@ private object HeadlessImplementation {
     ): IntArray? {
         val blit = command as? DrawCommand.BlitImage ?: return null
         if (dimensions.scale != 1 || blit.image.size != dimensions.viewport) return null
-        val bounds = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
-        if (blit.source != bounds || blit.destination != bounds) return null
+        val sourceBounds = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        if (blit.source != sourceBounds || blit.destination != dimensions.logicalBounds) return null
         return blit.image.copyArgb().also { pixels ->
             for (index in pixels.indices) if (pixels[index] ushr 24 == 0) pixels[index] = 0
         }
@@ -240,7 +292,7 @@ private object HeadlessImplementation {
         start: Int,
         clip: IntRect?,
     ): Int {
-        if (pixels.size < 262_144) return start
+        if (dimensions.area < 262_144) return start
         var end = start
         while (end < commands.size) {
             val fill = commands[end] as? DrawCommand.FillRectangle
@@ -248,7 +300,7 @@ private object HeadlessImplementation {
             end += 1
         }
         val layers = end - start
-        val minimumLayers = if (pixels.size < 1_048_576) 2 else 1
+        val minimumLayers = if (dimensions.area < 1_048_576) 2 else 1
         if (layers < minimumLayers) return start
         val sources = IntArray(end - start) { (commands[start + it] as DrawCommand.FillRectangle).color.value }
         val alpha = ByteArray(256)
@@ -259,10 +311,10 @@ private object HeadlessImplementation {
         val uniformChannels = red.all { it == red[0] } && green.all { it == green[0] } && blue.all { it == blue[0] }
         if (uniformChannels && alpha.all { it == alpha[0] }) {
             val color = ((alpha[0].toInt() and 255) shl 24) or ((red[0].toInt() and 255) shl 16) or ((green[0].toInt() and 255) shl 8) or (blue[0].toInt() and 255)
-            pixels.fill(color)
+            pixels.fill(color, 0, dimensions.area)
             return end
         }
-        for (position in pixels.indices) {
+        for (position in 0 until dimensions.area) {
             val color = pixels[position]
             val initialAlpha = color ushr 24
             val offset = initialAlpha shl 8
@@ -319,7 +371,7 @@ private object HeadlessImplementation {
         command: DrawCommand.SampledImage,
         clip: IntRect,
     ) {
-        SampledImageRasterizer.paint(pixels, dimensions.physicalSize, dimensions.scale, command, clip)
+        SampledImageRasterizer.paint(pixels, dimensions.physicalSize, dimensions.scale, command, clip, dimensions.physicalOrigin)
     }
 
     /**
@@ -332,14 +384,14 @@ private object HeadlessImplementation {
     ) {
         val visible =
             IntRect(
-                bounds.left.coerceIn(0, dimensions.viewport.width),
-                bounds.top.coerceIn(0, dimensions.viewport.height),
-                bounds.right.coerceIn(0, dimensions.viewport.width),
-                bounds.bottom.coerceIn(0, dimensions.viewport.height),
+                bounds.left.coerceIn(dimensions.logicalBounds.left, dimensions.logicalBounds.right),
+                bounds.top.coerceIn(dimensions.logicalBounds.top, dimensions.logicalBounds.bottom),
+                bounds.right.coerceIn(dimensions.logicalBounds.left, dimensions.logicalBounds.right),
+                bounds.bottom.coerceIn(dimensions.logicalBounds.top, dimensions.logicalBounds.bottom),
             )
         val scale = dimensions.scale
         val physical = IntRect(visible.left * scale, visible.top * scale, visible.right * scale, visible.bottom * scale)
-        clips.add(RasterMath.intersection(clips.lastOrNull() ?: IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height), physical))
+        clips.add(RasterMath.intersection(clips.lastOrNull() ?: dimensions.physicalBounds, physical))
     }
 
     /**
@@ -350,9 +402,9 @@ private object HeadlessImplementation {
         dimensions: PhysicalDimensions,
         clip: IntRect?,
     ): Boolean {
-        val horizontal = bounds.left <= 0 && dimensions.viewport.width <= bounds.right
-        val vertical = bounds.top <= 0 && dimensions.viewport.height <= bounds.bottom
-        val unclipped = clip == null || clip == IntRect(0, 0, dimensions.physicalSize.width, dimensions.physicalSize.height)
+        val horizontal = bounds.left <= dimensions.logicalBounds.left && dimensions.logicalBounds.right <= bounds.right
+        val vertical = bounds.top <= dimensions.logicalBounds.top && dimensions.logicalBounds.bottom <= bounds.bottom
+        val unclipped = clip == null || clip == dimensions.physicalBounds
         return horizontal && vertical && unclipped
     }
 
@@ -364,7 +416,7 @@ private object HeadlessImplementation {
         clip: IntRect?,
     ): Boolean {
         val bounds = command.bounds
-        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val viewport = dimensions.logicalBounds
         val visible = RasterMath.intersection(viewport, clip?.let { RasterClips.logical(it, dimensions.scale) } ?: bounds, bounds)
         val left = visible.left
         val top = visible.top
@@ -375,10 +427,10 @@ private object HeadlessImplementation {
         }
         val source = command.color.value
         val scale = dimensions.scale
-        val physicalLeft = maxOf(Math.multiplyExact(left, scale), clip?.left ?: 0)
-        val physicalTop = maxOf(Math.multiplyExact(top, scale), clip?.top ?: 0)
-        val physicalRight = minOf(Math.multiplyExact(right, scale), clip?.right ?: dimensions.physicalSize.width)
-        val physicalBottom = minOf(Math.multiplyExact(bottom, scale), clip?.bottom ?: dimensions.physicalSize.height)
+        val physicalLeft = maxOf(Math.multiplyExact(left, scale), clip?.left ?: dimensions.physicalBounds.left) - dimensions.physicalOrigin.x
+        val physicalTop = maxOf(Math.multiplyExact(top, scale), clip?.top ?: dimensions.physicalBounds.top) - dimensions.physicalOrigin.y
+        val physicalRight = minOf(Math.multiplyExact(right, scale), clip?.right ?: dimensions.physicalBounds.right) - dimensions.physicalOrigin.x
+        val physicalBottom = minOf(Math.multiplyExact(bottom, scale), clip?.bottom ?: dimensions.physicalBounds.bottom) - dimensions.physicalOrigin.y
         if (physicalRight <= physicalLeft || physicalBottom <= physicalTop) return false
         val fullWidth = physicalLeft == 0 && physicalRight == dimensions.physicalSize.width
         val fullHeight = physicalTop == 0 && physicalBottom == dimensions.physicalSize.height
@@ -467,7 +519,7 @@ private object HeadlessImplementation {
         clip: IntRect?,
     ) {
         val bounds = command.destination
-        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val viewport = dimensions.logicalBounds
         val visible = RasterMath.intersection(viewport, clip?.let { RasterClips.logical(it, dimensions.scale) } ?: bounds, bounds)
         val left = visible.left
         val top = visible.top
@@ -482,7 +534,7 @@ private object HeadlessImplementation {
             return
         }
         if (dimensions.scale == 1 && command.source.width == bounds.width && command.source.height == bounds.height) {
-            paintUnscaledIdentityBlit(pixels, dimensions.physicalSize.width, command, visible)
+            paintUnscaledIdentityBlit(pixels, dimensions.physicalSize.width, command, visible, dimensions.origin)
             return
         }
         val sourceWidth = command.source.width.toLong()
@@ -510,13 +562,14 @@ private object HeadlessImplementation {
         width: Int,
         command: DrawCommand.BlitImage,
         visible: IntRect,
+        origin: IntOffset,
     ) {
         for (y in visible.top until visible.bottom) {
             val sourceY = command.source.top + (y - command.destination.top)
-            val row = y * width
+            val row = (y - origin.y) * width
             for (x in visible.left until visible.right) {
                 val sourceX = command.source.left + (x - command.destination.left)
-                val index = row + x
+                val index = row + x - origin.x
                 pixels[index] = RasterMath.blend(command.image.argbAt(sourceX, sourceY), pixels[index])
             }
         }
@@ -532,7 +585,9 @@ private object HeadlessImplementation {
     ) {
         val physicalX = Math.multiplyExact(logicalX, dimensions.scale)
         val physicalY = Math.multiplyExact(logicalY, dimensions.scale)
-        val firstIndex = Math.addExact(Math.multiplyExact(physicalY, dimensions.physicalSize.width), physicalX)
+        val localX = physicalX - dimensions.physicalOrigin.x
+        val localY = physicalY - dimensions.physicalOrigin.y
+        val firstIndex = Math.addExact(Math.multiplyExact(localY, dimensions.physicalSize.width), localX)
         val firstDestination = pixels[firstIndex]
         val firstColor = RasterMath.blend(source, firstDestination)
         val left = maxOf(physicalX, clip?.left ?: physicalX)
@@ -540,8 +595,8 @@ private object HeadlessImplementation {
         val right = minOf(physicalX + dimensions.scale, clip?.right ?: (physicalX + dimensions.scale))
         val bottom = minOf(physicalY + dimensions.scale, clip?.bottom ?: (physicalY + dimensions.scale))
         for (dy in (top - physicalY) until (bottom - physicalY)) {
-            val row = Math.multiplyExact(Math.addExact(physicalY, dy), dimensions.physicalSize.width)
-            val first = Math.addExact(row, physicalX)
+            val row = Math.multiplyExact(Math.addExact(localY, dy), dimensions.physicalSize.width)
+            val first = Math.addExact(row, localX)
             for (dx in (left - physicalX) until (right - physicalX)) {
                 val index = Math.addExact(first, dx)
                 val destination = pixels[index]
@@ -557,7 +612,7 @@ private object HeadlessImplementation {
         clip: IntRect?,
     ) {
         val bounds = command.destination
-        val viewport = IntRect(0, 0, dimensions.viewport.width, dimensions.viewport.height)
+        val viewport = dimensions.logicalBounds
         val visible = RasterMath.intersection(viewport, clip?.let { RasterClips.logical(it, dimensions.scale) } ?: bounds, bounds)
         if (visible.width == 0 || visible.height == 0) return
         if (command.source.width == 1 && command.source.height == 1) {
@@ -568,16 +623,16 @@ private object HeadlessImplementation {
         val scale = dimensions.scale
         val horizontal = PixelAxis(command.source.left, command.source.width, bounds.left, bounds.width, scale)
         val vertical = PixelAxis(command.source.top, command.source.height, bounds.top, bounds.height, scale)
-        val left = maxOf(Math.multiplyExact(visible.left, scale), clip?.left ?: 0)
-        val right = minOf(Math.multiplyExact(visible.right, scale), clip?.right ?: dimensions.physicalSize.width)
-        val top = maxOf(Math.multiplyExact(visible.top, scale), clip?.top ?: 0)
-        val bottom = minOf(Math.multiplyExact(visible.bottom, scale), clip?.bottom ?: dimensions.physicalSize.height)
+        val left = maxOf(Math.multiplyExact(visible.left, scale), clip?.left ?: dimensions.physicalBounds.left)
+        val right = minOf(Math.multiplyExact(visible.right, scale), clip?.right ?: dimensions.physicalBounds.right)
+        val top = maxOf(Math.multiplyExact(visible.top, scale), clip?.top ?: dimensions.physicalBounds.top)
+        val bottom = minOf(Math.multiplyExact(visible.bottom, scale), clip?.bottom ?: dimensions.physicalBounds.bottom)
         for (y in top until bottom) {
             val sourceY = vertical.sourceAt(y)
-            val row = Math.multiplyExact(y, dimensions.physicalSize.width)
+            val row = Math.multiplyExact(y - dimensions.physicalOrigin.y, dimensions.physicalSize.width)
             for (x in left until right) {
                 val sourceColor = command.image.argbAt(horizontal.sourceAt(x), sourceY)
-                val index = Math.addExact(row, x)
+                val index = Math.addExact(row, x - dimensions.physicalOrigin.x)
                 pixels[index] = RasterMath.blend(sourceColor, pixels[index])
             }
         }
@@ -614,6 +669,7 @@ private object HeadlessImplementation {
     private fun checkedDimensions(
         viewport: IntSize,
         scale: Int,
+        origin: IntOffset = IntOffset.Zero,
     ): PhysicalDimensions {
         require(0 < viewport.width) { "Viewport width must be positive." }
         require(0 < viewport.height) { "Viewport height must be positive." }
@@ -621,7 +677,8 @@ private object HeadlessImplementation {
         val physicalWidth = checkedMultiply(viewport.width, scale, "Physical width")
         val physicalHeight = checkedMultiply(viewport.height, scale, "Physical height")
         val area = checkedMultiply(physicalWidth, physicalHeight, "Physical pixel area")
-        return PhysicalDimensions(viewport, IntSize(physicalWidth, physicalHeight), scale, area)
+        val physicalOrigin = if (origin == IntOffset.Zero) IntOffset.Zero else IntOffset(Math.multiplyExact(origin.x, scale), Math.multiplyExact(origin.y, scale))
+        return PhysicalDimensions(viewport, IntSize(physicalWidth, physicalHeight), scale, area, origin, physicalOrigin)
     }
 
     private fun checkedMultiply(
@@ -871,5 +928,10 @@ private object HeadlessImplementation {
         val physicalSize: IntSize,
         val scale: Int,
         val area: Int,
-    )
+        val origin: IntOffset,
+        val physicalOrigin: IntOffset,
+    ) {
+        val logicalBounds = IntRect(origin.x, origin.y, Math.addExact(origin.x, viewport.width), Math.addExact(origin.y, viewport.height))
+        val physicalBounds = if (scale == 1) logicalBounds else IntRect(physicalOrigin.x, physicalOrigin.y, Math.addExact(physicalOrigin.x, physicalSize.width), Math.addExact(physicalOrigin.y, physicalSize.height))
+    }
 }
