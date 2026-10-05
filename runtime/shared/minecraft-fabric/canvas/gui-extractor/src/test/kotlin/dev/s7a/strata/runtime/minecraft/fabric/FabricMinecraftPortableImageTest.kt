@@ -20,6 +20,34 @@ import org.junit.jupiter.api.Test
  */
 internal class FabricMinecraftPortableImageTest {
     @Test
+    fun changedIntegerClipAndFillEdgesOutsideTheImageRetainExactPixels() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(0xFF123456.toInt(), 0x80123456.toInt(), 0x40ABCDEF, -1))
+
+        fun commands(
+            clip: IntRect,
+            fill: IntRect,
+            x: Int,
+            y: Int,
+        ) = listOf(
+            DrawCommand.PushClip(clip),
+            DrawCommand.FillRectangle(fill, ArgbColor(0x40ABCDEF)),
+            DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(x + 1f, y + 1f, x + 5f, y + 5f), ArgbColor(0xC0AABBCC.toInt()), 0.2f),
+            DrawCommand.PopClip,
+        )
+        for (scale in 1..4) {
+            val original = FabricMinecraftPortableImage(commands(IntRect(0, 0, 640, 480), IntRect(170, 60, 210, 100), 180, 70), IntSize(12, 8), scale, IntOffset(180, 70))
+            val bounded = FabricMinecraftPortableImage(commands(IntRect(180, 70, 192, 78), IntRect(180, 70, 192, 78), 180, 70), original.size, scale, original.origin)
+            val moved = FabricMinecraftPortableImage(commands(IntRect(0, 0, 640, 480), IntRect(0, 0, 32, 28), 0, 0), original.size, scale)
+            for (equivalent in listOf(bounded, moved)) {
+                assertTrue(original.equivalent(equivalent), "GUI$scale")
+                assertArrayEquals(original.rasterize().copyArgb(), equivalent.rasterize().copyArgb())
+            }
+            val cropped = FabricMinecraftPortableImage(commands(IntRect(181, 70, 192, 78), IntRect(180, 70, 192, 78), 180, 70), original.size, scale, original.origin)
+            assertFalse(original.equivalent(cropped))
+        }
+    }
+
+    @Test
     fun translatedMixedRunsReuseOnlyExactOrderedPixelsAtEveryDensity() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(0xFF123456.toInt(), 0x80123456.toInt(), 0x40ABCDEF, -1))
         val solid = createDrawImage(IntSize(1, 1), intArrayOf(-1))

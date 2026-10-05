@@ -74,7 +74,7 @@ internal class FabricMinecraftPortableImage(
         val sameGeometry = origin == other.origin && size == other.size && scale == other.scale
         if (sameGeometry && commands == other.commands && other.sampling == null) return true
         if (size != other.size || scale != other.scale || other.sampling != null) return false
-        return origin != other.origin && translated(other)
+        return translated(other)
     }
 
     private fun translated(other: FabricMinecraftPortableImage): Boolean {
@@ -102,7 +102,7 @@ internal class FabricMinecraftPortableImage(
     ): Boolean =
         when (a) {
             is DrawCommand.FillRectangle -> {
-                b is DrawCommand.FillRectangle && a.color == b.color && sameRectangle(a.bounds, b.bounds, other)
+                b is DrawCommand.FillRectangle && a.color == b.color && sameRectangle(a.bounds, b.bounds, other, clipped = true)
             }
 
             is DrawCommand.BlitImage -> {
@@ -128,7 +128,7 @@ internal class FabricMinecraftPortableImage(
             }
 
             is DrawCommand.PushClip -> {
-                b is DrawCommand.PushClip && sameRectangle(a.bounds, b.bounds, other)
+                b is DrawCommand.PushClip && sameRectangle(a.bounds, b.bounds, other, clipped = true)
             }
 
             is DrawCommand.PushFractionalClip -> {
@@ -148,9 +148,17 @@ internal class FabricMinecraftPortableImage(
         a: IntRect,
         b: IntRect,
         other: FabricMinecraftPortableImage,
+        clipped: Boolean = false,
     ): Boolean {
-        val horizontal = a.left.toLong() - origin.x == b.left.toLong() - other.origin.x && a.right.toLong() - origin.x == b.right.toLong() - other.origin.x
-        val vertical = a.top.toLong() - origin.y == b.top.toLong() - other.origin.y && a.bottom.toLong() - origin.y == b.bottom.toLong() - other.origin.y
+        val minimum = if (clipped) 0L else Long.MIN_VALUE
+        val maximumX = if (clipped) size.width.toLong() else Long.MAX_VALUE
+        val maximumY = if (clipped) size.height.toLong() else Long.MAX_VALUE
+        val horizontal =
+            (a.left.toLong() - origin.x).coerceIn(minimum, maximumX) == (b.left.toLong() - other.origin.x).coerceIn(minimum, maximumX) &&
+                (a.right.toLong() - origin.x).coerceIn(minimum, maximumX) == (b.right.toLong() - other.origin.x).coerceIn(minimum, maximumX)
+        val vertical =
+            (a.top.toLong() - origin.y).coerceIn(minimum, maximumY) == (b.top.toLong() - other.origin.y).coerceIn(minimum, maximumY) &&
+                (a.bottom.toLong() - origin.y).coerceIn(minimum, maximumY) == (b.bottom.toLong() - other.origin.y).coerceIn(minimum, maximumY)
         return horizontal && vertical
     }
 
