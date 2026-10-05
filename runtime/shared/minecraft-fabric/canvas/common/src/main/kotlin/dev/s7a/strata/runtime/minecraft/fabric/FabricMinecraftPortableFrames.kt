@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceOwnerId
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceSet
@@ -101,7 +100,7 @@ internal class FabricMinecraftPortableFrames {
                     textures.add(previous.textures[source])
                 } else {
                     rasterized()
-                    val pixels = rasterizeHeadless(input.commands, input.size, input.scale)
+                    val pixels = input.rasterize()
                     textures.add(FabricMinecraftPortableTexture.create(pixels) { resource -> resources.add(set, resource) })
                     uploaded()
                 }

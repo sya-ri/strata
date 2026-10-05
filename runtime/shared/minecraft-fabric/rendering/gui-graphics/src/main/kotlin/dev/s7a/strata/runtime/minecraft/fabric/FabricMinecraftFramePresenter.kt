@@ -147,13 +147,12 @@ internal class FabricMinecraftFramePresenter(
             }
         try {
             sampledImages.present(
-                inputs.sampled,
+                inputs,
                 { sampledImageDirectHitCount += 1L },
                 { sampledImageDirectMissCount += 1L },
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
-            ) { textureFor, sampledQueued ->
-                val resolved = inputs.resolve({ textureFor(it) != null }, sampledImages::supports)
+            ) { resolved, textureFor, sampledQueued ->
                 sampledImageCapacityFallbackCount = Math.addExact(sampledImageCapacityFallbackCount, resolved.capacitySampledImages)
                 sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
                 portableFrames.present(
@@ -183,6 +182,7 @@ internal class FabricMinecraftFramePresenter(
                             }
 
                             is FabricMinecraftFrameLayer.Sampled -> {
+                                @Suppress("RedundantRequireNotNullCall") // The borrowed device lookup is nullable; resolved direct admission must retain that texture.
                                 val texture = checkNotNull(textureFor(layer.command.image))
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L

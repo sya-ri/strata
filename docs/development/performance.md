@@ -183,8 +183,11 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 ### Bounded raster texture cache
 
 The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
-When a mixed portable-and-platform display list changes, each matched portable texture is reused when its localized immutable commands, logical extent, and GUI scale are equal; platform layers are still extracted natively every time.
-Placement is not part of this derived-pixel key, and a changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
+When a mixed portable-and-platform display list changes, each matched portable texture is reused when its immutable commands, logical extent, sampling origin, and GUI scale are equal; platform layers are still extracted natively every time.
+Integer-only runs use localized commands and omit placement from this derived-pixel key.
+Runs containing sampled images preserve their original absolute commands and raster origin, because translating Float pixel-center arithmetic can select a different texel, particularly at non-power-of-two GUI densities.
+The internal region rasterizer allocates only the tight visible run extent while evaluating the original global pixel centers and destinations; no full-viewport scratch image or extra cache is introduced.
+A changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
@@ -194,7 +197,7 @@ Changed portable inputs reserve a complete replacement generation before any GUI
 Unchanged prefix and suffix layers retain their textures when insertion or removal shifts their indices; remaining equal layers may reuse the same previous index.
 Matching scans the two lists linearly, does not hash source pixels, and retains no historical image cache beyond the current generation.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
-Prepared display-list inputs also retain their sampled-image list and localized portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
+Prepared display-list inputs also retain their sampled-image list and portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
 Native texture availability is resolved inside every pinned borrow; resource reload or capacity exhaustion still selects the current portable fallback without retaining native handles in prepared CPU state.
 Both adapter families use the same borrow-scoped fallback classification and counts; unavailable supported images count as capacity fallback, while unsupported images count as ineligible fallback.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
@@ -234,7 +237,10 @@ Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
 The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
-GUI extractor adapters submit floating source UVs directly and also admit fractional contained source rectangles with the same tint, cutoff, destination and clip checks.
+GUI extractor adapters submit floating source UVs directly and also admit fractional contained source rectangles with the same tint, cutoff, destination and clip checks when physical samples stay away from nearest-texel boundaries.
+Both axes of a fractional source rectangle check the CPU Float sample against normalized-UV interpolation and reserve a texel rounding margin; exact or nearby texel-boundary samples retain the portable path.
+The expanded subset requires integer-aligned physical destination edges and scans at most 4,096 samples per axis without reading image pixels; fractional physical edges, larger or unrepresentable axes use the existing fallback.
+The loaded parity scene covers quarter, eighth and decimal crops on both axes at GUI scales one through four, including densities where the same crop changes between direct and portable presentation.
 Adapters whose texture overload converts source extents to integers keep fractional source commands in the portable path.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.

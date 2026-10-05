@@ -18,30 +18,31 @@ internal class FabricMinecraftSampledImageCache {
     /**
      * Pins requested source identities and borrows available textures through one complete ordered submission.
      *
-     * @param images source identities in display-list order; placement and GUI scale are deliberately absent.
+     * @param inputs immutable CPU frame inputs whose requested source identities are pinned in display-list order.
      * @param hit callback invoked for each requested identity that already has active device storage.
      * @param miss callback invoked for each requested identity without active device storage.
      * @param uploaded callback invoked after each successful native upload.
      * @param evicted callback invoked after each local least-recently-used owner eviction.
-     * @param submit borrowed callback that must mark an image queued immediately before each direct GUI draw.
+     * @param submit borrowed callback receiving the current resolved inputs and texture lookup; it must mark an image queued immediately before each direct GUI draw.
      * @throws Throwable when upload, native submission, or cleanup fails.
      */
     @Suppress("LongParameterList")
     @JvmSynthetic
     internal fun present(
-        images: List<DrawImage>,
+        inputs: FabricMinecraftFrameInputs,
         hit: () -> Unit,
         miss: () -> Unit,
         uploaded: () -> Unit,
         evicted: () -> Unit,
-        submit: (texture: (DrawImage) -> FabricMinecraftPortableTexture?, queued: (DrawImage) -> Unit) -> Unit,
+        submit: (resolved: FabricMinecraftFrameInputs, texture: (DrawImage) -> FabricMinecraftPortableTexture?, queued: (DrawImage) -> Unit) -> Unit,
     ) {
         if (released) {
             owner = device.openOwner()
             released = false
         }
-        device.borrow(owner, images, hit, miss, uploaded, evicted).use { borrowed ->
-            submit(borrowed::texture, borrowed::queued)
+        device.borrow(owner, inputs.sampled, hit, miss, uploaded, evicted).use { borrowed ->
+            val resolved = inputs.resolve({ borrowed.texture(it) != null }, ::supports)
+            submit(resolved, borrowed::texture, borrowed::queued)
         }
     }
 

@@ -182,6 +182,10 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/ca
 	public abstract fun strataCanvasRenderState ()Lnet/minecraft/client/renderer/state/gui/GuiRenderState;
 }
 
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftNativeImageAccess {
+	public abstract fun strataPixels ()J
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiKeyMappingAccess {
 	public abstract fun strataClicks ()I
 	public abstract fun strataClicks (I)V

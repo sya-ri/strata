@@ -115,6 +115,8 @@ The native cache key is the physical device generation and `DrawImage` referenti
 Source and destination rectangles, clip, GUI scale, overlay state, and frame revision are deliberately excluded.
 Pan and zoom may issue new destination geometry without another pixel copy or upload, player-marker movement cannot invalidate tile textures, and one replacement image uploads only that identity.
 Unsupported commands retain their exact semantics through a tightly bounded portable fallback layer.
+Sampled fallback runs retain their original absolute Float source-mapping coordinates while writing only the visible physical region.
+Moving a sampled run cannot reuse pixels calculated at another absolute origin solely because its translated geometry appears equal.
 
 Active, initializing, retired, and physically releasing native entries count against explicit entry and byte limits.
 Entries used by an extracted GUI frame remain pinned through the actual GUI-consumption fence.

@@ -11,6 +11,7 @@ import org.lwjgl.system.MemoryUtil
  * [pixel] reads immutable source storage only; it must not close or change the destination.
  */
 @JvmSynthetic
+@Suppress("KotlinConstantConditions") // Mixin injects the accessor into NativeImage before this loaded-client copy runs.
 internal inline fun uploadFabricMinecraftArgbPixels(
     image: NativeImage,
     size: IntSize,

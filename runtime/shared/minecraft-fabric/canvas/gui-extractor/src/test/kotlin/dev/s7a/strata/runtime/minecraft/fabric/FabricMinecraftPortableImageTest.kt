@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -22,6 +23,9 @@ internal class FabricMinecraftPortableImageTest {
         assertTrue(first.equivalent(same))
         assertFalse(first.equivalent(differentScale))
         assertFalse(first.equivalent(samePhysicalExtent))
+        val shifted = FabricMinecraftPortableImage(emptyList(), IntSize(3, 2), 2, IntOffset(180, 60))
+        assertFalse(first.equivalent(shifted))
+        assertTrue(shifted.equivalent(FabricMinecraftPortableImage(emptyList(), IntSize(3, 2), 2, IntOffset(180, 60))))
     }
 
     @Test
@@ -34,6 +38,12 @@ internal class FabricMinecraftPortableImageTest {
         }
         assertThrows(ArithmeticException::class.java) {
             FabricMinecraftPortableImage(emptyList(), IntSize(Int.MAX_VALUE, 1), 2)
+        }
+        assertThrows(ArithmeticException::class.java) {
+            FabricMinecraftPortableImage(emptyList(), IntSize(2, 1), 2, IntOffset(Int.MAX_VALUE - 2, 0))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            FabricMinecraftPortableImage(emptyList(), IntSize(2, 1), 1, IntOffset(-1, 0))
         }
     }
 }

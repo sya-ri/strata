@@ -168,6 +168,10 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient : 
 	public fun onInitializeClient ()V
 }
 
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftNativeImageAccess {
+	public abstract fun strataPixels ()J
+}
+
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricUiKeyMappingAccess {
 	public abstract fun strataClicks ()I
 	public abstract fun strataClicks (I)V

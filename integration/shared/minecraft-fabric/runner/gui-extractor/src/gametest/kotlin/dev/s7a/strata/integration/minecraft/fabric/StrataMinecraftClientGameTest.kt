@@ -308,9 +308,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
                     when (scale) {
-                        1 -> 5L
-                        4 -> 2L
-                        else -> 3L
+                        1 -> 4L
+                        2 -> 15L
+                        4 -> 18L
+                        else -> 2L
                     }
                 require(observed.sampledImageDraws == expectedDirect * observed.renderExtractions) {
                     "Fractional clipping at scale $scale must draw $expectedDirect cached images per extraction: $observed"

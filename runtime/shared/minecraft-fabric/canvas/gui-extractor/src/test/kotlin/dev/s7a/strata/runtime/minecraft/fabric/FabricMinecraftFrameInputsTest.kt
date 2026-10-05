@@ -43,10 +43,12 @@ internal class FabricMinecraftFrameInputsTest {
             assertEquals(0L, inputs.capacitySampledImages)
             assertEquals(1, inputs.portable.size)
             assertSame(inputs, inputs.resolve({ true }) { error("Restored storage must be used") })
-            val last = fallback.layers.last() as FabricMinecraftFrameLayer.Portable
             assertArrayEquals(
                 rasterizeHeadless(listOf(sampled.copy(destination = FloatRect(0f, 0f, 4f, 4f))), IntSize(4, 4), scale).copyArgb(),
-                rasterizeHeadless(last.commands, last.bounds.size, scale).copyArgb(),
+                fallback.portable
+                    .last()
+                    .rasterize()
+                    .copyArgb(),
             )
         }
     }

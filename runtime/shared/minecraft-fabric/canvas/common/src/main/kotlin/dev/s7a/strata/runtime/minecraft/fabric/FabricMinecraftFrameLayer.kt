@@ -16,11 +16,11 @@ import kotlin.math.floor
 /**
  * One ordered native presentation layer produced from a committed portable display list.
  *
- * Portable commands retain tight localized bounds, eligible sampled images retain their immutable source identity and floating destination, and platform payloads remain opaque.
+ * Portable commands retain tight visible bounds and exact sampling coordinates, eligible sampled images retain their immutable source identity and floating destination, and platform payloads remain opaque.
  */
 internal sealed interface FabricMinecraftFrameLayer {
     /**
-     * A tight CPU-rasterized fallback run in coordinates local to [bounds].
+     * A tight CPU-rasterized fallback run; sampled runs preserve absolute coordinates for exact Float arithmetic.
      */
     class Portable(
         @get:JvmSynthetic
@@ -29,6 +29,8 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val bounds: IntRect,
         @get:JvmSynthetic
         internal val ineligibleSampledImages: Int = 0,
+        @get:JvmSynthetic
+        internal val absoluteCoordinates: Boolean = false,
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -111,7 +113,9 @@ internal fun partitionFabricMinecraftFrame(
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            layers.add(FabricMinecraftFrameLayer.Portable(localizeFabricPortable(portable, bounds), bounds, portableIneligibleSampledImages))
+            val absolute = portable.any { it is DrawCommand.SampledImage }
+            val commands = if (absolute) portable.toList() else localizeFabricPortable(portable, bounds)
+            layers.add(FabricMinecraftFrameLayer.Portable(commands, bounds, portableIneligibleSampledImages, absolute))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
@@ -213,17 +217,11 @@ internal fun partitionFabricMinecraftFrame(
 @JvmSynthetic
 internal fun portableFabricSampledFallback(layer: FabricMinecraftFrameLayer.Sampled): FabricMinecraftFrameLayer.Portable {
     val bounds = layer.visibleBounds
-    val offset = IntOffset(-bounds.left, -bounds.top)
     val commands = ArrayList<DrawCommand>(3)
-    layer.clip?.let { clip -> commands.add(DrawCommand.PushClip(intersectFabricBounds(clip, bounds) + offset)) }
-    val destination = layer.command.destination
-    commands.add(
-        layer.command.copy(
-            destination = FloatRect(destination.left + offset.x, destination.top + offset.y, destination.right + offset.x, destination.bottom + offset.y),
-        ),
-    )
+    layer.clip?.let { clip -> commands.add(DrawCommand.PushClip(intersectFabricBounds(clip, bounds))) }
+    commands.add(layer.command)
     if (layer.clip != null) commands.add(DrawCommand.PopClip)
-    return FabricMinecraftFrameLayer.Portable(commands, bounds)
+    return FabricMinecraftFrameLayer.Portable(commands, bounds, absoluteCoordinates = true)
 }
 
 /**
@@ -256,10 +254,12 @@ internal fun isDirectFabricSampledImage(
     command: DrawCommand.SampledImage,
     scale: Int = 1,
     fractionalSource: Boolean = false,
-): Boolean =
-    command.orientation == SampledImageOrientation.Normal && command.tint == ArgbColor(-1) && command.alphaCutoff == 0f &&
-        (fractionalSource || (command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel())) &&
-        command.destination.hasFabricPhysicalCenterEdge(scale).not()
+): Boolean {
+    if (command.orientation != SampledImageOrientation.Normal || command.tint != ArgbColor(-1) || command.alphaCutoff != 0f) return false
+    if (command.destination.hasFabricPhysicalCenterEdge(scale)) return false
+    val integerSource = command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel()
+    return integerSource || (fractionalSource && hasStableFabricFractionalSourceSampling(command, scale))
+}
 
 private fun Float.isWholeTexel(): Boolean = toDouble() == floor(toDouble())
 

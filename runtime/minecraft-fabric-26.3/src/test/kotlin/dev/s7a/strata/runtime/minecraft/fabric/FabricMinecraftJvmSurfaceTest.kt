@@ -251,6 +251,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftPortableFrames",
                 "$packageName.FabricMinecraftPortableImage",
                 "$packageName.FabricMinecraftImageUploadKt",
+                "$packageName.FabricMinecraftSourceSamplingKt",
                 "$packageName.FabricMinecraftPortableReuseKt",
                 "$packageName.FabricMinecraftFrameInputs",
                 "$packageName.FabricMinecraftPortableTexture",

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.render.DrawImage
 
 /**
@@ -13,7 +14,7 @@ internal class FabricMinecraftFrameInputs(
     @get:JvmSynthetic internal val layers: List<FabricMinecraftFrameLayer>,
     private val scale: Int,
     @get:JvmSynthetic internal val capacitySampledImages: Long = 0L,
-    private val unavailableIneligibleImages: Long = 0L,
+    unavailableIneligibleImages: Long = 0L,
 ) {
     /**
      * Source identities requested in display-list order, retaining no native storage.
@@ -26,7 +27,10 @@ internal class FabricMinecraftFrameInputs(
      */
     @get:JvmSynthetic
     internal val portable: List<FabricMinecraftPortableImage> =
-        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
+        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map {
+            val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
+            FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin)
+        }
 
     /**
      * Number of unsupported sampled commands in portable runs, including unavailable direct layers in this borrow.

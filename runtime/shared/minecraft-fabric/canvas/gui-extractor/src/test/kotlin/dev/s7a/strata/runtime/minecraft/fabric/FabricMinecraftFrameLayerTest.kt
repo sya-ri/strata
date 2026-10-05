@@ -121,7 +121,8 @@ internal class FabricMinecraftFrameLayerTest {
         val layers = partitionFabricMinecraftFrame(listOf(clip, edge, interior, DrawCommand.PopClip, edge), IntSize(10, 10), scale = 2)
         assertEquals(3, layers.size)
         val portable = layers[0] as FabricMinecraftFrameLayer.Portable
-        assertEquals(DrawCommand.PushFractionalClip(FloatRect(0.5f, 0.5f, 3f, 3f)), portable.commands.first())
+        assertEquals(clip, portable.commands.first())
+        assertTrue(portable.absoluteCoordinates)
         assertEquals(edge, portable.commands.filterIsInstance<DrawCommand.SampledImage>().single())
         assertEquals(interior, (layers[1] as FabricMinecraftFrameLayer.Sampled).command)
         assertEquals(edge, (layers[2] as FabricMinecraftFrameLayer.Sampled).command)
@@ -229,7 +230,7 @@ internal class FabricMinecraftFrameLayerTest {
     }
 
     @Test
-    fun capacityFallbackKeepsFractionalSamplingAndLocalizesTheEffectiveClip() {
+    fun capacityFallbackKeepsOriginalFractionalSamplingAndEffectiveClip() {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { -1 })
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(3.25f, 4.25f, 8.75f, 9.25f), alphaCutoff = 0f)
         val sampled =
@@ -241,9 +242,10 @@ internal class FabricMinecraftFrameLayerTest {
         val fallback = portableFabricSampledFallback(sampled)
 
         assertEquals(IntRect(4, 5, 8, 9), fallback.bounds)
-        assertEquals(DrawCommand.PushClip(IntRect(0, 0, 4, 4)), fallback.commands.first())
+        assertTrue(fallback.absoluteCoordinates)
+        assertEquals(DrawCommand.PushClip(IntRect(4, 5, 8, 9)), fallback.commands.first())
         assertEquals(
-            FloatRect(-0.75f, -0.75f, 4.75f, 4.25f),
+            command.destination,
             fallback.commands
                 .filterIsInstance<DrawCommand.SampledImage>()
                 .single()
