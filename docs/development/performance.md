@@ -266,6 +266,8 @@ Moved CPU fallback runs may also reuse storage after comparing every ordered pri
 Nonconstant sampled images additionally compare their original-coordinate texel selection, with at most 4,096 physical pixels per axis and an 8,192-index proof budget for the complete run.
 Integer clip and fill edges are compared after exact clamping to the current image extent, including unchanged-origin runs whose invisible outer edges differ.
 Blit destinations retain their original integer sampling anchor; clipping never changes source selection or ordering.
+Preparation omits fills and integer blits proven invisible under the current viewport and integer clip bounds, including commands in mixed original-coordinate runs.
+Their color or source updates cannot invalidate a visible footer or neighboring text; nested fractional clips stay intact, and visible sampling anchors and direct-image barriers remain unchanged.
 Constant one-pixel sources need only equal coverage because every contained source coordinate selects their sole texel; no source pixel is read by the proof.
 Exhausted proofs retain the exact CPU raster path, and rasterization never translates the original Float coordinates.
 The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.

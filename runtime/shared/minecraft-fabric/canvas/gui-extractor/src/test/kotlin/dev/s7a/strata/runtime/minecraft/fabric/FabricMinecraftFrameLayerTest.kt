@@ -22,6 +22,45 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
     @Test
+    fun invisibleIntegerChangesDoNotInvalidateMixedOriginalCoordinateRuns() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
+        val replacement = createDrawImage(image.size, IntArray(4) { 0x80FFFFFF.toInt() })
+        val sampled = DrawCommand.SampledImage(image, FloatRect(0.125f, 0.25f, 1.875f, 2f), FloatRect(5.25f, 5.5f, 9.75f, 9.875f), alphaCutoff = 0.1f)
+        val viewport = IntSize(16, 16)
+
+        fun commands(
+            color: ArgbColor,
+            changedImage: Boolean,
+        ) = listOf(
+            DrawCommand.FillRectangle(IntRect(4, 4, 12, 12), ArgbColor(0x40ABCDEF)),
+            sampled,
+            DrawCommand.PushClip(IntRect(4, 4, 8, 8)),
+            DrawCommand.PushFractionalClip(FloatRect(4.25f, 4.5f, 7.75f, 7.875f)),
+            DrawCommand.FillRectangle(IntRect(9, 9, 11, 11), color),
+            DrawCommand.BlitImage(if (changedImage) replacement else image, IntRect(0, 0, 2, 2), IntRect(9, 9, 11, 11)),
+            DrawCommand.BlitImagePixels(if (changedImage) replacement else image, IntRect(0, 0, 2, 2), IntRect(9, 9, 11, 11)),
+            DrawCommand.PopClip,
+            DrawCommand.PopClip,
+        )
+        val before = commands(ArgbColor(-1), false)
+        val after = commands(ArgbColor(0x80000000.toInt()), true)
+        for (scale in 1..4) {
+            val first = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(before, viewport, scale), scale).portable.single()
+            val next = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(after, viewport, scale), scale).portable.single()
+            assertTrue(first.equivalent(next))
+            assertEquals(6, next.commands.size)
+            assertArrayEquals(rasterizeHeadless(before, viewport, scale).copyArgb(), rasterizeHeadless(after, viewport, scale).copyArgb())
+            val expected = rasterizeHeadless(before, viewport, scale)
+            val actual = first.rasterize()
+            for (y in 0 until actual.size.height) {
+                for (x in 0 until actual.size.width) {
+                    assertEquals(expected.argbAt(first.origin.x * scale + x, first.origin.y * scale + y), actual.argbAt(x, y))
+                }
+            }
+        }
+    }
+
+    @Test
     fun fractionalSourceRequiresFloatingUvSupportAndPreservesOtherEligibilityRules() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
         val command = DrawCommand.SampledImage(image, FloatRect(0.25f, 0.5f, 1.75f, 2f), FloatRect(1f, 1f, 5f, 5f), alphaCutoff = 0f)

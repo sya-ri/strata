@@ -86,7 +86,7 @@ internal inline fun submitFabricMinecraftFrameLayers(
  * Direct eligibility is limited to ordinary orientation, opaque-white tint and zero alpha cutoff.
  * Adapters with floating UV submission may admit fractional source edges; other adapters require integer texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
- * Invisible unsupported sampled commands are omitted from portable pixel inputs; direct-image barriers retain their exact display-list positions.
+ * Invisible portable primitives are omitted from pixel inputs; direct-image barriers retain their exact display-list positions.
  *
  * @param commands complete balanced display list.
  * @param viewport positive or empty logical viewport used only for visibility and bounded fallback allocation.
@@ -132,13 +132,15 @@ internal fun partitionFabricMinecraftFrame(
     commands.forEach { command ->
         when (command) {
             is DrawCommand.FillRectangle -> {
+                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEach
                 portable.add(command)
-                portableBounds = includeFabricVisibleBounds(portableBounds, command.bounds, activeClips, viewportBounds)
+                portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.BlitImage -> {
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
                 portable.add(command)
-                portableBounds = includeFabricVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
+                portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.SampledImage -> {
@@ -164,7 +166,7 @@ internal fun partitionFabricMinecraftFrame(
                 } else {
                     val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEach
                     portable.add(command)
-                    portableBounds = includeFabricVisibleBounds(portableBounds, visible, activeClips, viewportBounds)
+                    portableBounds = includeFabricVisibleBounds(portableBounds, visible)
                     if (capacity) {
                         portableCapacitySampledImages = Math.incrementExact(portableCapacitySampledImages)
                     } else {
@@ -174,8 +176,9 @@ internal fun partitionFabricMinecraftFrame(
             }
 
             is DrawCommand.BlitImagePixels -> {
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
                 portable.add(command)
-                portableBounds = includeFabricVisibleBounds(portableBounds, command.destination, activeClips, viewportBounds)
+                portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.PushClip -> {
@@ -294,14 +297,19 @@ private fun pixelAlignedFabricSampledClip(
     return IntRect(resolvedLeft.toInt(), resolvedTop.toInt(), resolvedRight.toInt(), resolvedBottom.toInt())
 }
 
-private fun includeFabricVisibleBounds(
-    accumulated: IntRect?,
+private fun visibleFabricBounds(
     commandBounds: IntRect,
     activeClips: List<IntRect>,
     viewportBounds: IntRect,
 ): IntRect? {
     val visible = activeClips.fold(intersectFabricBounds(viewportBounds, commandBounds), ::intersectFabricBounds)
-    if (visible.width <= 0 || visible.height <= 0) return accumulated
+    return visible.takeIf { 0 < it.width && 0 < it.height }
+}
+
+private fun includeFabricVisibleBounds(
+    accumulated: IntRect?,
+    visible: IntRect,
+): IntRect {
     val previous = accumulated ?: return visible
     return IntRect(
         minOf(previous.left, visible.left),
