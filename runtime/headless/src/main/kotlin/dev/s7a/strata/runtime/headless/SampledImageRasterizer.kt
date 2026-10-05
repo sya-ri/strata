@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
+import java.util.Arrays
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -59,6 +60,9 @@ internal object SampledImageRasterizer {
         var previousSource = 0
         var previousDestination = 0
         var previousResult = 0
+        val rows =
+            if (mapColumns && command.source.height * 2 <= bottom - top) RowReuse(physicalSize.width, left, right) else null
+        val opaqueTint = command.tint.value ushr 24 == 255
         // Transparent black over transparent black is already a valid zero result for any tint or cutoff.
         for (y in top until bottom) {
             val sourceY =
@@ -71,11 +75,14 @@ internal object SampledImageRasterizer {
                     if (command.orientation.flipY) command.source.top else command.source.bottom,
                     command.image.size.height,
                 )
+            if (rows?.prepare(pixels, y, sourceY) == true) continue
+            var opaqueRow = opaqueTint
             var index = y * physicalSize.width + left
             for (x in left until right) {
                 val sourceX =
                     sourceXs?.get(x - left) ?: sampleX(x, scale, command)
                 val source = command.image.argbAt(sourceX, sourceY)
+                if (rows != null && source ushr 24 != 255) opaqueRow = false
                 val destinationColor = pixels[index]
                 // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
                 if (source != previousSource || destinationColor != previousDestination) {
@@ -86,6 +93,7 @@ internal object SampledImageRasterizer {
                 pixels[index] = previousResult
                 index += 1
             }
+            rows?.finish(opaqueRow)
         }
     }
 
@@ -122,6 +130,45 @@ internal object SampledImageRasterizer {
         val relative = (center - destinationStart) / (destinationEnd - destinationStart)
         val sample = sourceStart * (1f - relative) + sourceEnd * relative
         return floor(sample).toInt().coerceIn(0, sourceSize - 1)
+    }
+
+    /**
+     * Borrows only the immediately preceding output row within one paint invocation.
+     * Opaque rows are destination-independent; other rows require exact original-destination equality.
+     * A lazily owned input span is bounded by the clipped width and becomes unreachable when paint returns.
+     */
+    private class RowReuse(
+        private val width: Int,
+        private val left: Int,
+        private val right: Int,
+    ) {
+        private var sourceY = -1
+        private var opaque = false
+        private var input: IntArray? = null
+
+        fun prepare(
+            pixels: IntArray,
+            y: Int,
+            sourceY: Int,
+        ): Boolean {
+            val start = y * width + left
+            val end = y * width + right
+            if (this.sourceY == sourceY) {
+                val previousInput = input
+                if (opaque || (previousInput != null && Arrays.equals(previousInput, 0, previousInput.size, pixels, start, end))) {
+                    pixels.copyInto(pixels, start, start - width, end - width)
+                    return true
+                }
+                if (previousInput == null) input = IntArray(right - left)
+            }
+            input?.let { pixels.copyInto(it, 0, start, end) }
+            this.sourceY = sourceY
+            return false
+        }
+
+        fun finish(opaque: Boolean) {
+            this.opaque = opaque
+        }
     }
 
     private class SampledColor(
@@ -165,7 +212,10 @@ internal object SampledImageRasterizer {
             }
             var previousDestination = pixels[top * width + left]
             var previousResult = blend(source, previousDestination)
+            val rows =
+                if (4 <= bottom - top && 4096L <= (right - left).toLong() * (bottom - top)) RowReuse(width, left, right) else null
             for (y in top until bottom) {
+                if (rows?.prepare(pixels, y, 0) == true) continue
                 for (index in y * width + left until y * width + right) {
                     val destination = pixels[index]
                     if (destination != previousDestination) {
@@ -174,6 +224,7 @@ internal object SampledImageRasterizer {
                     }
                     pixels[index] = previousResult
                 }
+                rows?.finish(false)
             }
         }
 

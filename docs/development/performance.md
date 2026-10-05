@@ -48,6 +48,17 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Repeated sampled rows
+
+Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
+An opaque source row with opaque tint is independent of destination pixels; every other row additionally requires exact equality of the original destination span before copying.
+Changed destination pixels, source rows, clips, density and orientation retain the ordinary scalar composition path.
+One input span is allocated lazily for destination-dependent reuse and is bounded by the current clipped row width; opaque reuse needs no span.
+This scratch state belongs to one paint invocation, is never shared between commands or frames, and owns no image or native resource.
+Constant translucent images use the same exact destination comparison, while opaque constant images retain their existing fill path.
+The independent pixel reference covers transparent, translucent and opaque patterned rows, fractional sampling, flips, cutoffs and destination changes at both ends of a row.
+The sampled and dense sampled JMH corpora measure this CPU fallback separately from native texture upload.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.

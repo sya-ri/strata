@@ -87,6 +87,51 @@ internal class HeadlessSampledRasterParityTest {
         assertArrayEquals(source, image.copyArgb())
     }
 
+    @Test
+    fun repeatedSourceRowsPreserveChangesAtEitherEndOfTheDestination() {
+        val viewport = IntSize(128, 64)
+        val imageSize = IntSize(7, 5)
+        val input =
+            IntArray(35) { index ->
+                val alpha = listOf(0, 255, 128, 1, 255)[index / imageSize.width]
+                (alpha shl 24) or (index * 73471 and 0xFFFFFF)
+            }
+        val image = createDrawImage(imageSize, input)
+        for (density in 1..4) {
+            val physical = IntSize(viewport.width * density, viewport.height * density)
+            val background =
+                IntArray(physical.width * physical.height) { index ->
+                    val x = index % physical.width
+                    val y = index / physical.width
+                    when {
+                        y % 7 == 3 && x == 2 -> 0x017195B3
+                        y % 7 == 4 && x == physical.width - 3 -> 0x80123456.toInt()
+                        else -> 0xFF000000.toInt() or (x * 173 and 0xFFFFFF)
+                    }
+                }
+            for (orientation in SampledImageOrientation.entries) {
+                for (tint in listOf(-1, 0xFFBFD7EF.toInt(), 0x80A4C6E8.toInt())) {
+                    for (cutoff in listOf(0f, 0.1f, 0.5f, 1f)) {
+                        val command =
+                            DrawCommand.SampledImage(
+                                image,
+                                FloatRect(0.125f, 0.0625f, 6.9375f, 4.875f),
+                                FloatRect(-0.75f, -1.25f, 129.5f, 65.25f),
+                                ArgbColor(tint),
+                                cutoff,
+                                orientation,
+                            )
+                        val clip = IntRect(2, 3, physical.width - 2, physical.height - 3)
+                        val actual = background.copyOf()
+                        SampledImageRasterizer.paint(actual, physical, density, command, clip)
+                        assertArrayEquals(reference(background, physical, density, command, clip), actual, "$density/$orientation/$tint/$cutoff")
+                    }
+                }
+            }
+        }
+        assertArrayEquals(input, image.copyArgb())
+    }
+
     private fun reference(
         background: IntArray,
         size: IntSize,
