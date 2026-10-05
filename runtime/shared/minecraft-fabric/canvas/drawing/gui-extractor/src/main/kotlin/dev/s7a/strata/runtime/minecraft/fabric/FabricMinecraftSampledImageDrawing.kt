@@ -6,7 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 /**
  * Extracts one cached sampled image through the modern matrix-stack GUI texture path.
  *
- * The unit quad is transformed to the original floating destination while normalized UVs retain the exact integer source-texel rectangle.
+ * The unit quad is transformed to the original floating destination while normalized UVs retain the floating source-texel rectangle.
  *
  * @param graphics active client-thread GUI extractor whose matrix is restored before return.
  * @param texture immutable cached texture borrowed through this synchronous extraction.

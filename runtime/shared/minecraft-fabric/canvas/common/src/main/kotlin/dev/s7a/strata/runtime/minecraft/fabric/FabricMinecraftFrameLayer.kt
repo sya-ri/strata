@@ -79,7 +79,8 @@ internal inline fun submitFabricMinecraftFrameLayers(
 /**
  * Partitions one committed frame into tight portable runs, independently cacheable sampled images, and platform barriers.
  *
- * Direct eligibility is deliberately limited to ordinary orientation, opaque-white tint, zero alpha cutoff, and integer source texel edges.
+ * Direct eligibility is limited to ordinary orientation, opaque-white tint and zero alpha cutoff.
+ * Adapters with floating UV submission may admit fractional source edges; other adapters require integer texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
  * Invisible unsupported sampled commands are omitted from portable pixel inputs; direct-image barriers retain their exact display-list positions.
  *
@@ -95,6 +96,7 @@ internal fun partitionFabricMinecraftFrame(
     commands: List<DrawCommand>,
     viewport: IntSize,
     scale: Int = 1,
+    fractionalSource: Boolean = false,
 ): List<FabricMinecraftFrameLayer> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val layers = ArrayList<FabricMinecraftFrameLayer>()
@@ -132,7 +134,7 @@ internal fun partitionFabricMinecraftFrame(
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
                 val directClip =
-                    if (isDirectFabricSampledImage(command, scale)) {
+                    if (isDirectFabricSampledImage(command, scale, fractionalSource)) {
                         if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
                             visibleClip
                         } else {
@@ -246,15 +248,17 @@ internal inline fun submitFabricMinecraftGuiCorners(
  *
  * @param command immutable sampled command whose constructor already validates source containment.
  * @param scale positive physical density used to reject ambiguous native quad-edge ownership at pixel centers.
+ * @param fractionalSource whether the adapter submits floating source UVs without converting source extents to integers.
  * @return true when native nearest sampling can preserve its source and compositing contract.
  */
 @JvmSynthetic
 internal fun isDirectFabricSampledImage(
     command: DrawCommand.SampledImage,
     scale: Int = 1,
+    fractionalSource: Boolean = false,
 ): Boolean =
     command.orientation == SampledImageOrientation.Normal && command.tint == ArgbColor(-1) && command.alphaCutoff == 0f &&
-        command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel() &&
+        (fractionalSource || (command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel())) &&
         command.destination.hasFabricPhysicalCenterEdge(scale).not()
 
 private fun Float.isWholeTexel(): Boolean = toDouble() == floor(toDouble())

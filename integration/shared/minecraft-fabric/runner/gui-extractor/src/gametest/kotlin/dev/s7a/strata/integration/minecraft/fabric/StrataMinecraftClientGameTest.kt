@@ -304,13 +304,13 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     },
                 )
                 val observed = renderWork(context)
-                requireSampledImageParityWork(observed)
+                requireSampledImageParityWork(observed, scale)
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
                     when (scale) {
-                        1 -> 4L
-                        4 -> 1L
-                        else -> 2L
+                        1 -> 5L
+                        4 -> 2L
+                        else -> 3L
                     }
                 require(observed.sampledImageDraws == expectedDirect * observed.renderExtractions) {
                     "Fractional clipping at scale $scale must draw $expectedDirect cached images per extraction: $observed"
@@ -964,7 +964,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
-    private fun requireSampledImageParityWork(observed: RenderWork) {
+    private fun requireSampledImageParityWork(
+        observed: RenderWork,
+        scale: Int,
+    ) {
         require(0L < observed.rasterizations) { "Sampled-image parity must rasterize portable layers: $observed" }
         require(0L < observed.textureUploads) { "Sampled-image parity must upload portable layers: $observed" }
         require(0L < observed.sampledImageDirectHits) { "Sampled-image parity must reuse a direct texture: $observed" }
@@ -972,8 +975,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
         require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
         require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
-        require(0L < observed.sampledImageIneligibleFallbacks) {
-            "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
+        require(if (scale == 1) observed.sampledImageIneligibleFallbacks == 0L else 0L < observed.sampledImageIneligibleFallbacks) {
+            "Fractional clip and pixel-center ownership must select the current density's portable fallbacks: $observed"
         }
         require(observed.sampledImageCapacityFallbacks == 0L) { "Sampled-image parity must fit the direct cache: $observed" }
         require(0L < observed.sampledImageRetainedEntries) { "Sampled-image parity must retain its direct texture: $observed" }

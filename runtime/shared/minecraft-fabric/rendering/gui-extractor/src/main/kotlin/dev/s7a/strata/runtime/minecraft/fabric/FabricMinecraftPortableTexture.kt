@@ -51,11 +51,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val native = NativeImage(image.size.width, image.size.height, false)
         pixels = native
-        for (y in 0 until image.size.height) {
-            for (x in 0 until image.size.width) {
-                native.setPixel(x, y, image.argbAt(x, y))
-            }
-        }
+        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
     }
 
@@ -70,11 +66,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val native = NativeImage(image.size.width, image.size.height, false)
         pixels = native
-        for (y in 0 until image.size.height) {
-            for (x in 0 until image.size.width) {
-                native.setPixel(x, y, image.argbAt(x, y))
-            }
-        }
+        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
     }
 

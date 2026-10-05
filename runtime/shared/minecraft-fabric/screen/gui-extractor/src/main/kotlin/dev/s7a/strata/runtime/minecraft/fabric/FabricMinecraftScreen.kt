@@ -700,7 +700,7 @@ public class FabricMinecraftScreen private constructor(
                 checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource = true), scale)
             }
         try {
             sampledImages.present(

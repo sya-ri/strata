@@ -183,8 +183,8 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 ### Bounded raster texture cache
 
 The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
-When a mixed portable-and-platform display list changes, each portable texture at the same portable-layer index is reused when its localized immutable commands, logical extent, and GUI scale are equal; platform layers are still extracted natively every time.
-Placement is not part of this derived-pixel key, and a changed layer count does not invalidate equal layers at surviving indices.
+When a mixed portable-and-platform display list changes, each matched portable texture is reused when its localized immutable commands, logical extent, and GUI scale are equal; platform layers are still extracted natively every time.
+Placement is not part of this derived-pixel key, and a changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
@@ -212,6 +212,7 @@ They also require equivalent replacement portable layers to reuse their raster t
 The common portable-lifetime tests exercise incomplete initialization, pinned close, repeated queue consumption, arbitrarily delayed fences, both capacity bounds, and physical destruction acknowledgement.
 Layer-sharing regressions additionally exercise hundreds of partial replacements, both retirement orders, changed extents, owner isolation, partial failure, quarantined initialization, and terminal cleanup.
 The loaded common suite changes one opaque region across a native Canvas barrier at GUI scales one through four, requires exactly one rasterization and upload, preserves the unchanged texture identity, and checks retained opaque, translucent, and transparent pattern texels against literal native screenshot pixels.
+It also inserts and removes a leading native/portable pair, preserves the shifted suffix texture, and checks the exact number of new uploads.
 Legacy OpenGL correctness windows temporarily remove their decorations to preserve full-monitor framebuffer extents on Windows and restore the previous size, GUI scale, and decorations during cleanup.
 
 ### Direct sampled-image texture cache
@@ -232,6 +233,8 @@ Resource reload invalidates every derived entry.
 After GUI queues are consumed or discarded, terminal shutdown stops acquisition, submits recorded work as required, completes it once, closes Canvas, portable-layer, and direct sampled-image resources, drains deferred native destruction, and requires physical acknowledgement before releasing entry and byte accounting.
 
 The required direct subset is normal orientation, white tint, zero alpha cutoff, an integer contained source rectangle, nearest sampling, and ordinary straight-alpha source-over pixels within the native texture limit.
+GUI extractor adapters submit floating source UVs directly and also admit fractional contained source rectangles with the same tint, cutoff, destination and clip checks.
+Adapters whose texture overload converts source extents to integers keep fractional source commands in the portable path.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
 At density one this admits arbitrary fractional clip edges; at higher densities partial logical cells retain the portable fallback unless an inner clip or the image's visible extent makes the fractional boundary irrelevant.
@@ -244,6 +247,9 @@ Direct-image barriers retain their exact display-list positions even when the im
 Fractional clip envelopes are conservative; partially covered images retain their original destinations and the existing physical pixel-center checks.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
+Both portable and direct-image uploads copy immutable ARGB source pixels into newly allocated NativeImage storage in one checked sequential write, preserving the native packed ABGR representation without an intermediate pixel array.
+The allocation address is borrowed only for the synchronous render-thread copy; the existing generation or sampled-image owner retains the NativeImage and GPU storage through upload and consumption fences.
+Copy preflight rejects a closed allocation, mismatched extents, non-RGBA format and overflowing address arithmetic before writing.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
 
 ### Minecraft resource-image resolution identity

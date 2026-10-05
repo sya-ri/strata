@@ -22,6 +22,20 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
     @Test
+    fun fractionalSourceRequiresFloatingUvSupportAndPreservesOtherEligibilityRules() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
+        val command = DrawCommand.SampledImage(image, FloatRect(0.25f, 0.5f, 1.75f, 2f), FloatRect(1f, 1f, 5f, 5f), alphaCutoff = 0f)
+        for (scale in 1..4) {
+            assertFalse(isDirectFabricSampledImage(command, scale))
+            assertTrue(isDirectFabricSampledImage(command, scale, fractionalSource = true))
+            val layer = partitionFabricMinecraftFrame(listOf(command), IntSize(8, 8), scale, fractionalSource = true).single() as FabricMinecraftFrameLayer.Sampled
+            assertSame(command, layer.command)
+            assertFalse(isDirectFabricSampledImage(command.copy(tint = ArgbColor(0x80FFFFFF.toInt())), scale, fractionalSource = true))
+            assertFalse(isDirectFabricSampledImage(command.copy(alphaCutoff = 0.1f), scale, fractionalSource = true))
+        }
+    }
+
+    @Test
     fun invisibleFallbackInputsAreOmittedWithoutMergingDirectImageBarriers() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
         val first = DrawCommand.FillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))
