@@ -97,8 +97,8 @@ internal object MinecraftPortableLayerReuseGameTest {
             verifyInvisibleImageUpdate(context, owned, after) {
                 hidden.value = createDrawImage(IntSize(2, 2), intArrayOf(0, -1, -1, 0x4088CC22))
             }
-            verifyScreenshot(context, viewport, scale)
             verifyShiftedLayers(context, owned, context.onClient { checkNotNull(observation(owned)) }) { prepend.value = it }
+            verifyScreenshot(context, viewport, scale)
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -179,7 +179,7 @@ internal object MinecraftPortableLayerReuseGameTest {
         check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
         check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
         check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
-        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nunchangedTextureIdentity=preserved\n")
+        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nprependUploads=2\nremoveUploads=1\nshiftedTextureIdentity=preserved\nunchangedTextureIdentity=preserved\n")
     }
 
     private fun resourcesReleased(): Boolean = NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
