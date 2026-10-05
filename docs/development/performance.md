@@ -257,6 +257,10 @@ The source-image cache remains pinned through preparation and submission, and is
 Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata and resample on the GPU while preserving the immutable source-image upload.
 Moved exact outputs reuse native storage only when the same immutable source, physical extent, and every encoded axis selection and coverage value remain equal.
 This comparison reads bounded current-frame index metadata, never source pixels; translations with different original-coordinate Float sampling still invalidate the output.
+Moved CPU fallback runs may also reuse storage after comparing every ordered primitive's relative integer geometry and half-open physical coverage, immutable source identity, tint, cutoff and orientation.
+Nonconstant sampled images additionally compare their original-coordinate texel selection, with at most 4,096 physical pixels per axis and an 8,192-index proof budget for the complete run.
+Constant one-pixel sources need only equal coverage because every contained source coordinate selects their sole texel; no source pixel is read by the proof.
+Exhausted proofs retain the exact CPU raster path, and rasterization never translates the original Float coordinates.
 The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.

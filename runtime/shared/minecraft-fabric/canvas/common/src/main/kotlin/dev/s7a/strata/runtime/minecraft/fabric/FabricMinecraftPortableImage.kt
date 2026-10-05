@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -8,6 +9,8 @@ import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * Describes one immutable portable command run within a positive image extent and its sampling origin.
@@ -61,14 +64,161 @@ internal class FabricMinecraftPortableImage(
     /**
      * Compares pixel inputs before allocating a replacement portable generation; performs no device work or allocation.
      * Exact GPU outputs may move when their bounded axis metadata proves identical source texels and coverage.
-     * CPU runs retain the original sampling origin because translated Float arithmetic is not generally equivalent.
+     * Moved CPU runs compare ordered coverage and exact original-coordinate samples under an 8,192-index proof budget.
+     * Rasterization always retains the original sampling origin; no Float translation is assumed equivalent.
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftPortableImage): Boolean {
         val indices = sampling
         if (indices != null) return size == other.size && scale == other.scale && other.sampling?.let(indices::equivalent) == true
         val sameGeometry = origin == other.origin && size == other.size && scale == other.scale
-        return sameGeometry && commands == other.commands && other.sampling == null
+        if (sameGeometry && commands == other.commands && other.sampling == null) return true
+        if (size != other.size || scale != other.scale || other.sampling != null) return false
+        return origin != other.origin && translated(other)
+    }
+
+    private fun translated(other: FabricMinecraftPortableImage): Boolean {
+        if (commands.isEmpty() || commands.size != other.commands.size) return false
+        var remaining = 8_192
+        for (index in commands.indices) {
+            val command = commands[index]
+            if (command is DrawCommand.SampledImage && (command.image.size.width != 1 || command.image.size.height != 1)) {
+                if (4_096 < physicalSize.width || 4_096 < physicalSize.height) return false
+                val cost = physicalSize.width + physicalSize.height
+                if (remaining < cost) return false
+                remaining -= cost
+            }
+            if (sameCommand(command, other.commands[index], other).not()) return false
+        }
+        return true
+    }
+
+    // The exhaustive ordered visitor proves each portable primitive without constructing translated commands or pixels.
+    @Suppress("CyclomaticComplexMethod")
+    private fun sameCommand(
+        a: DrawCommand,
+        b: DrawCommand,
+        other: FabricMinecraftPortableImage,
+    ): Boolean =
+        when (a) {
+            is DrawCommand.FillRectangle -> {
+                b is DrawCommand.FillRectangle && a.color == b.color && sameRectangle(a.bounds, b.bounds, other)
+            }
+
+            is DrawCommand.BlitImage -> {
+                if (b is DrawCommand.BlitImage) {
+                    val sameSource = a.image === b.image && a.source == b.source
+                    sameSource && sameRectangle(a.destination, b.destination, other)
+                } else {
+                    false
+                }
+            }
+
+            is DrawCommand.BlitImagePixels -> {
+                if (b is DrawCommand.BlitImagePixels) {
+                    val sameSource = a.image === b.image && a.source == b.source
+                    sameSource && sameRectangle(a.destination, b.destination, other)
+                } else {
+                    false
+                }
+            }
+
+            is DrawCommand.SampledImage -> {
+                b is DrawCommand.SampledImage && sameSamples(a, b, other)
+            }
+
+            is DrawCommand.PushClip -> {
+                b is DrawCommand.PushClip && sameRectangle(a.bounds, b.bounds, other)
+            }
+
+            is DrawCommand.PushFractionalClip -> {
+                b is DrawCommand.PushFractionalClip && sameCoverage(a.bounds, b.bounds, other)
+            }
+
+            DrawCommand.PopClip -> {
+                b == DrawCommand.PopClip
+            }
+
+            is DrawCommand.Platform -> {
+                false
+            }
+        }
+
+    private fun sameRectangle(
+        a: IntRect,
+        b: IntRect,
+        other: FabricMinecraftPortableImage,
+    ): Boolean {
+        val horizontal = a.left.toLong() - origin.x == b.left.toLong() - other.origin.x && a.right.toLong() - origin.x == b.right.toLong() - other.origin.x
+        val vertical = a.top.toLong() - origin.y == b.top.toLong() - other.origin.y && a.bottom.toLong() - origin.y == b.bottom.toLong() - other.origin.y
+        return horizontal && vertical
+    }
+
+    private fun sameCoverage(
+        a: FloatRect,
+        b: FloatRect,
+        other: FabricMinecraftPortableImage,
+    ): Boolean {
+        val horizontal = edge(a.left, origin.x, physicalSize.width) == edge(b.left, other.origin.x, physicalSize.width) && edge(a.right, origin.x, physicalSize.width) == edge(b.right, other.origin.x, physicalSize.width)
+        val vertical = edge(a.top, origin.y, physicalSize.height) == edge(b.top, other.origin.y, physicalSize.height) && edge(a.bottom, origin.y, physicalSize.height) == edge(b.bottom, other.origin.y, physicalSize.height)
+        return horizontal && vertical
+    }
+
+    private fun edge(
+        value: Float,
+        offset: Int,
+        extent: Int,
+    ): Int = (ceil(value.toDouble() * scale - 0.5) - offset.toDouble() * scale).coerceIn(0.0, extent.toDouble()).toInt()
+
+    private fun sameSamples(
+        a: DrawCommand.SampledImage,
+        b: DrawCommand.SampledImage,
+        other: FabricMinecraftPortableImage,
+    ): Boolean {
+        if (a.image !== b.image || a.source != b.source || a.orientation != b.orientation) return false
+        if (a.tint != b.tint || a.alphaCutoff != b.alphaCutoff) return false
+        if (sameCoverage(a.destination, b.destination, other).not()) return false
+        if (a.image.size.width == 1 && a.image.size.height == 1) return true
+        val source = a.source
+        val xStart = if (a.orientation.flipX) source.right else source.left
+        val xEnd = if (a.orientation.flipX) source.left else source.right
+        val yStart = if (a.orientation.flipY) source.bottom else source.top
+        val yEnd = if (a.orientation.flipY) source.top else source.bottom
+        return sameAxis(a.destination.left, a.destination.right, b.destination.left, b.destination.right, origin.x, other.origin.x, physicalSize.width, xStart, xEnd, a.image.size.width) &&
+            sameAxis(a.destination.top, a.destination.bottom, b.destination.top, b.destination.bottom, origin.y, other.origin.y, physicalSize.height, yStart, yEnd, a.image.size.height)
+    }
+
+    private fun sameAxis(
+        aStart: Float,
+        aEnd: Float,
+        bStart: Float,
+        bEnd: Float,
+        aOffset: Int,
+        bOffset: Int,
+        extent: Int,
+        sourceStart: Float,
+        sourceEnd: Float,
+        sourceSize: Int,
+    ): Boolean {
+        for (position in edge(aStart, aOffset, extent) until edge(aEnd, aOffset, extent)) {
+            val a = sample(aOffset * scale + position, aStart, aEnd, sourceStart, sourceEnd, sourceSize)
+            val b = sample(bOffset * scale + position, bStart, bEnd, sourceStart, sourceEnd, sourceSize)
+            if (a != b) return false
+        }
+        return true
+    }
+
+    private fun sample(
+        physical: Int,
+        start: Float,
+        end: Float,
+        sourceStart: Float,
+        sourceEnd: Float,
+        sourceSize: Int,
+    ): Int {
+        val center = (physical.toFloat() + 0.5f) / scale.toFloat()
+        val relative = (center - start) / (end - start)
+        return floor(sourceStart * (1f - relative) + sourceEnd * relative).toInt().coerceIn(0, sourceSize - 1)
     }
 
     /**
