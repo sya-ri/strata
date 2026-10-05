@@ -11,7 +11,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Caches the current portable image generation and borrows its complete texture list during ordered presentation.
  *
  * Every call belongs to the native render thread. The key is the complete ordered list of localized commands, logical extents, and GUI scales;
- * identical layers at the same index reuse their uploads, while changed layers allocate immutable storage in a separately fenced generation.
+ * unchanged prefix and suffix layers reuse their uploads across index shifts, while changed layers allocate immutable storage in a separately fenced generation.
  * A stable presenter identity admits at most three active or retired generations, within the device's separate 64-set portable budget.
  * Each set contains exactly its prepared command list's checked physical portable-layer extents, reserved before native allocation.
  * Release immediately drops screen-owned CPU and texture references; the independent device owns pending, retired, and physically releasing resources.
@@ -86,20 +86,19 @@ internal class FabricMinecraftPortableFrames {
         uploaded: () -> Unit,
     ): Prepared {
         val previous = current
-        if (previous != null && equivalent(previous.images, images)) {
-            // Equal pixels must not retain obsolete source-image storage through a previous command description.
-            return Prepared(images.toList(), previous.textures, previous.resources, previous.set).also { current = it }
-        }
+        reuseCurrent(images)?.let { return it }
         val resources = NativeCanvasDevices.device(FabricNativeCanvasDriver).guiResources
         val identity = ownerId ?: resources.createOwnerId().also { ownerId = it }
+        val matches = previous?.let { matchFabricMinecraftPortableImages(it.images, images) }
         val set = resources.reserve(identity, images.map { it.physicalSize })
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         var failure: Throwable? = null
         try {
             images.forEachIndexed { index, input ->
-                if (previous != null && previous.images.getOrNull(index)?.equivalent(input) == true) {
-                    resources.reuse(set, previous.set, index)
-                    textures.add(previous.textures[index])
+                val source = matches?.get(index) ?: -1
+                if (previous != null && 0 <= source) {
+                    resources.reuse(set, previous.set, source)
+                    textures.add(previous.textures[source])
                 } else {
                     rasterized()
                     val pixels = rasterizeHeadless(input.commands, input.size, input.scale)
@@ -125,10 +124,18 @@ internal class FabricMinecraftPortableFrames {
             }
             throw primary
         }
-        val prepared = Prepared(images.toList(), textures.toList(), resources, set)
+        val prepared = Prepared(images, textures.toList(), resources, set)
         current = prepared
         previous?.let { it.resources.release(it.set) }
         return prepared
+    }
+
+    private fun reuseCurrent(images: List<FabricMinecraftPortableImage>): Prepared? {
+        val previous = current ?: return null
+        if (previous.images === images) return previous
+        if (equivalent(previous.images, images).not()) return null
+        // Equal pixels must not retain obsolete source-image storage through a previous command description.
+        return Prepared(images, previous.textures, previous.resources, previous.set).also { current = it }
     }
 
     private fun retireCurrent() {

@@ -28,7 +28,7 @@ internal class FabricMinecraftFramePresenter(
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
     private var preparedScale: Int? = null
-    private var preparedLayers: List<FabricMinecraftFrameLayer> = emptyList()
+    private var preparedInputs: FabricMinecraftFrameInputs? = null
     private var pointerPosition: IntOffset? = null
     private var pointerFrameCommands: List<DrawCommand>? = null
     private var renderExtractionCount: Long = 0L
@@ -138,54 +138,38 @@ internal class FabricMinecraftFramePresenter(
         require(0 < scale) { "GUI scale must be positive." }
         val generation = portableFrames.releaseGeneration
         val reusePreparedFrame = commands === preparedCommands && viewport == preparedViewport && scale == preparedScale
-        val layers =
+        val inputs =
             if (reusePreparedFrame) {
-                preparedLayers
+                checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                partitionFabricMinecraftFrame(commands, viewport, scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale), scale)
             }
-        val sampled = layers.filterIsInstance<FabricMinecraftFrameLayer.Sampled>().map { it.command.image }
         try {
             sampledImages.present(
-                sampled,
+                inputs.sampled,
                 { sampledImageDirectHitCount += 1L },
                 { sampledImageDirectMissCount += 1L },
                 { sampledImageUploadCount += 1L },
                 { sampledImageEvictionCount += 1L },
             ) { textureFor, sampledQueued ->
-                val resolvedTextures = mutableMapOf<FabricMinecraftFrameLayer.Sampled, FabricMinecraftPortableTexture>()
                 val resolved =
-                    layers.map { layer ->
-                        if (layer is FabricMinecraftFrameLayer.Sampled) {
-                            val texture = textureFor(layer.command.image)
-                            if (texture == null) {
-                                if (sampledImages.supports(layer.command.image)) {
-                                    sampledImageCapacityFallbackCount += 1L
-                                } else {
-                                    sampledImageIneligibleFallbackCount += 1L
-                                }
-                                portableFabricSampledFallback(layer)
-                            } else {
-                                resolvedTextures[layer] = texture
-                                layer
-                            }
+                    inputs.resolve({ textureFor(it) != null }) { image ->
+                        if (sampledImages.supports(image)) {
+                            sampledImageCapacityFallbackCount += 1L
                         } else {
-                            layer
+                            sampledImageIneligibleFallbackCount += 1L
                         }
                     }
-                resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().forEach { layer ->
-                    sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, layer.ineligibleSampledImages.toLong())
-                }
-                val images = resolved.filterIsInstance<FabricMinecraftFrameLayer.Portable>().map { FabricMinecraftPortableImage(it.commands, it.bounds.size, scale) }
+                sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
                 portableFrames.present(
-                    images,
+                    resolved.portable,
                     { portableRasterizationCount += 1L },
                     { textureUploadCount += 1L },
                 ) { textures, portableQueued ->
                     var textureIndex = 0
                     submitFabricMinecraftFrameLayers(
-                        resolved,
+                        resolved.layers,
                         { FabricMinecraftFrameLayerBoundary.advance(graphics) },
                     ) { layer ->
                         when (layer) {
@@ -205,7 +189,7 @@ internal class FabricMinecraftFramePresenter(
                             }
 
                             is FabricMinecraftFrameLayer.Sampled -> {
-                                val texture = resolvedTextures.getValue(layer)
+                                val texture = checkNotNull(textureFor(layer.command.image))
                                 sampledQueued(layer.command.image)
                                 sampledImageDrawCount += 1L
                                 presentSampledLayer(graphics, layer, texture)
@@ -226,7 +210,7 @@ internal class FabricMinecraftFramePresenter(
             preparedCommands = commands
             preparedViewport = viewport
             preparedScale = scale
-            preparedLayers = layers
+            preparedInputs = inputs
         }
     }
 
@@ -241,7 +225,7 @@ internal class FabricMinecraftFramePresenter(
         preparedCommands = null
         preparedViewport = null
         preparedScale = null
-        preparedLayers = emptyList()
+        preparedInputs = null
         pointerPosition = null
         pointerFrameCommands = null
         FabricMinecraftFailures.runWithCleanup(portableFrames::release, sampledImages::release)

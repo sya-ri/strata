@@ -191,7 +191,11 @@ The full ordered commands and clips are replayed, so translucent overlays blend 
 See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.
 Sampled glyph geometry is rasterized at physical resolution, so a scale change requires a new raster and texture even when the logical display list is identical.
 Changed portable inputs reserve a complete replacement generation before any GUI output, sharing immutable resources for equal layers and allocating only changed layers, rather than modifying a texture that unconsumed GUI work may still reference.
+Unchanged prefix and suffix layers retain their textures when insertion or removal shifts their indices; remaining equal layers may reuse the same previous index.
+Matching scans the two lists linearly, does not hash source pixels, and retains no historical image cache beyond the current generation.
 The screen retains only its current portable generation, and equivalent replacement commands replace old CPU input references without uploading identical pixels again.
+Prepared display-list inputs also retain their sampled-image list and localized portable descriptions for the same command identity, viewport and GUI scale, avoiding reconstruction during static extraction.
+Native texture availability is resolved inside every pinned borrow; resource reload or capacity exhaustion still selects the current portable fallback without retaining native handles in prepared CPU state.
 Detachment, a zero-sized viewport, and terminal screen cleanup immediately clear every screen-owned texture, prepared-layer, and capture-receipt reference.
 Already queued native resources move to the screen-independent device owner and release only after their initialization and actual GUI-consumption fences complete.
 The complete prepared texture list is pinned across ordered submission, including intermediate legacy GUI flushes; reentrant screen close cannot free a later overlay or repopulate a closed screen's cache afterward.

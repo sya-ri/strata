@@ -868,7 +868,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(portableCurrent.get(portableFrames) == null) { "A detached Fabric screen retained portable drawing or texture ownership." }
         require(retained("preparedCommands") == null) { "A detached Fabric screen retained its display list." }
         require(retained("preparedViewport") == null) { "A detached Fabric screen retained its prepared viewport." }
-        require((retained("preparedLayers") as List<*>).isEmpty()) { "A detached Fabric screen retained prepared layers." }
+        require(retained("preparedInputs") == null) { "A detached Fabric screen retained prepared layers." }
         require(retained("pointerPosition") == null) { "A detached Fabric screen retained its native pointer position." }
         require(retained("pointerFrameCommands") == null) { "A detached Fabric screen retained pointer display-list ownership." }
     }
