@@ -52,6 +52,11 @@ internal enum class StrataGeneratedDocument(
      * Skill downstream-component guidance and example.
      */
     CustomComponents("skills/strata/references/custom-components.md"),
+
+    /**
+     * Task-specific custom remote projections and interoperability contracts.
+     */
+    RemoteExtensions("skills/strata/references/remote-extensions.md"),
     ;
 
     /**

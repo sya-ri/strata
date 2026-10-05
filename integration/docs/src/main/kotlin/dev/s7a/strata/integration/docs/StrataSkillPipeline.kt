@@ -52,6 +52,7 @@ internal object StrataSkillPipeline {
             "skills/strata/references/modifiers-and-layout.md" to StrataSkillMarkdown.modifiers(compiledModifiers, compiledStateAndBindings, signatures, stateExtensions),
             "skills/strata/references/patterns.md" to StrataSkillMarkdown.patterns(layoutExample, launch.releaseVersion, reactiveExample),
             "skills/strata/references/custom-components.md" to StrataSkillMarkdown.customComponents(customExample),
+            "skills/strata/references/remote-extensions.md" to StrataRemoteSkillMarkdown.remoteExtensions(),
         )
     }
 

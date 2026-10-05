@@ -118,7 +118,7 @@ Backend switches retire the visible remote screen and renew negotiation before a
 
 Use `onActivate` for ordinary server actions and typed modifiers for subscribed input notifications; see [modifiers](modifiers-and-layout.md#selection-guide).
 Focus, hover, immediate propagation, capture, and IME composition remain client behavior.
-See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [custom components](custom-components.md#remote-extensions) when client code is required.
+See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [remote extensions](remote-extensions.md#remote-extensions) when client code is required.
 
 ## Preview the same screen with Web or Headless
 

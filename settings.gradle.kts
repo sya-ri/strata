@@ -166,6 +166,7 @@ if (webOnly) {
         ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
         ":quality:performance-testkit",
         ":quality:detekt-rules",
+        ":quality:consumer-detekt-rules",
         ":runtime:core",
         ":runtime:remote",
         ":runtime:paper",
