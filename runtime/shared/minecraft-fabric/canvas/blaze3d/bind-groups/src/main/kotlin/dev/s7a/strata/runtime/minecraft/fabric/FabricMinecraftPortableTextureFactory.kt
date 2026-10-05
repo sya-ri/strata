@@ -11,12 +11,10 @@ import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.FilterMode
 import com.mojang.blaze3d.textures.GpuTexture
 import com.mojang.blaze3d.textures.GpuTextureView
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.texture.AbstractTexture
 import java.util.Optional
 
@@ -50,23 +48,6 @@ internal fun initializeFabricMinecraftSampledTexture(
     retain(storage.texture, storage)
     storage.initialize(indices, size, source)
     return false
-}
-
-/**
- * Queues the materialized exact output using the native GUI path and the existing portable generation lifetime.
- * The shared submission signature also serves adapters that read [source] directly in the GUI shader.
- */
-@JvmSynthetic
-@Suppress("UNUSED_PARAMETER")
-internal fun drawFabricMinecraftExactSampledImage(
-    graphics: GuiGraphicsExtractor,
-    source: AbstractTexture,
-    prepared: AbstractTexture,
-    bounds: IntRect,
-) {
-    submitFabricMinecraftGuiCorners(bounds) { x0, y0, x1, y1 ->
-        graphics.blit(prepared.getTextureView(), prepared.getSampler(), x0, y0, x1, y1, 0f, 1f, 0f, 1f)
-    }
 }
 
 /**

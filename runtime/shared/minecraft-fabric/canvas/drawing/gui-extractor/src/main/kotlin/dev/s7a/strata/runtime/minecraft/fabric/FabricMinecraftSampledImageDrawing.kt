@@ -1,7 +1,26 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.renderer.texture.AbstractTexture
+
+/**
+ * Queues the materialized exact output using the native GUI path and the existing portable generation lifetime.
+ * The shared submission signature also serves adapters that read [source] directly in the GUI shader.
+ */
+@JvmSynthetic
+@Suppress("UNUSED_PARAMETER")
+internal fun drawFabricMinecraftExactSampledImage(
+    graphics: GuiGraphicsExtractor,
+    source: AbstractTexture,
+    prepared: AbstractTexture,
+    bounds: IntRect,
+) {
+    submitFabricMinecraftGuiCorners(bounds) { x0, y0, x1, y1 ->
+        graphics.blit(prepared.getTextureView(), prepared.getSampler(), x0, y0, x1, y1, 0f, 1f, 0f, 1f)
+    }
+}
 
 /**
  * Extracts one cached sampled image through the modern matrix-stack GUI texture path.

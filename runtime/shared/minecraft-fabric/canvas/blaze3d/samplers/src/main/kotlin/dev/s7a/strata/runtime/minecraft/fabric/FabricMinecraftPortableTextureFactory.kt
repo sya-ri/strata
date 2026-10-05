@@ -30,6 +30,7 @@ internal fun supportsFabricMinecraftExactSampling(): Boolean {
 /**
  * Transfers an empty native owner before allocating the output and axis texture or recording their GPU work.
  * The source remains pinned by the caller, and the receiving output generation seals initialization even on failure.
+ * Returns false because this adapter materializes an offscreen output before ordinary GUI submission.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
@@ -38,10 +39,11 @@ internal fun initializeFabricMinecraftSampledTexture(
     size: IntSize,
     source: AbstractTexture,
     retain: (AbstractTexture, NativeGuiResource) -> Unit,
-) {
+): Boolean {
     val storage = FabricPortableNativeStorage()
     retain(storage.texture, storage)
     storage.initialize(indices, size, source)
+    return false
 }
 
 /**
