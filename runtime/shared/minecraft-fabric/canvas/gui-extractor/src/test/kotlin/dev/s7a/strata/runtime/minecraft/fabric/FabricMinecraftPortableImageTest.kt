@@ -20,6 +20,30 @@ import org.junit.jupiter.api.Test
  */
 internal class FabricMinecraftPortableImageTest {
     @Test
+    fun manySmallSamplesChargeOnlyTheirCoveredAxesInsideALargeRun() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0x80ABCDEF.toInt(), 0x40123456, 0))
+
+        fun commands(
+            x: Int,
+            y: Int,
+        ) = List(64) { index ->
+            val left = x + index % 16 * 24
+            val top = y + index / 16 * 32
+            DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(left.toFloat(), top.toFloat(), left + 8f, top + 8f), ArgbColor(0xC0ABCDEF.toInt()), 0.1f)
+        }
+        for (scale in 1..4) {
+            val before = FabricMinecraftPortableImage(commands(0, 0), IntSize(512, 256), scale)
+            val after = FabricMinecraftPortableImage(commands(180, 70), before.size, scale, IntOffset(180, 70))
+            assertTrue(before.equivalent(after), "GUI$scale")
+            assertArrayEquals(before.rasterize().copyArgb(), after.rasterize().copyArgb())
+            val changed = after.commands.toMutableList()
+            val last = changed.last() as DrawCommand.SampledImage
+            changed[changed.lastIndex] = last.copy(tint = ArgbColor(-1))
+            assertFalse(before.equivalent(FabricMinecraftPortableImage(changed, after.size, scale, after.origin)))
+        }
+    }
+
+    @Test
     fun changedIntegerClipAndFillEdgesOutsideTheImageRetainExactPixels() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(0xFF123456.toInt(), 0x80123456.toInt(), 0x40ABCDEF, -1))
 

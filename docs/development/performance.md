@@ -264,6 +264,7 @@ Moved exact outputs reuse native storage only when the same immutable source, ph
 This comparison reads bounded current-frame index metadata, never source pixels; translations with different original-coordinate Float sampling still invalidate the output.
 Moved CPU fallback runs may also reuse storage after comparing every ordered primitive's relative integer geometry and half-open physical coverage, immutable source identity, tint, cutoff and orientation.
 Nonconstant sampled images additionally compare their original-coordinate texel selection, with at most 4,096 physical pixels per axis and an 8,192-index proof budget for the complete run.
+The budget charges only the covered destination rows and columns that the proof actually scans, so many small glyphs do not each consume the entire enclosing image extent.
 Integer clip and fill edges are compared after exact clamping to the current image extent, including unchanged-origin runs whose invisible outer edges differ.
 Blit destinations retain their original integer sampling anchor; clipping never changes source selection or ordering.
 Preparation omits fills and integer blits proven invisible under the current viewport and integer clip bounds, including commands in mixed original-coordinate runs.

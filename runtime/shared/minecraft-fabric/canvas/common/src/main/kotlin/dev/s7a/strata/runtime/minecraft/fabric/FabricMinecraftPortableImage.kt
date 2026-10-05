@@ -84,7 +84,10 @@ internal class FabricMinecraftPortableImage(
             val command = commands[index]
             if (command is DrawCommand.SampledImage && (command.image.size.width != 1 || command.image.size.height != 1)) {
                 if (4_096 < physicalSize.width || 4_096 < physicalSize.height) return false
-                val cost = physicalSize.width + physicalSize.height
+                val bounds = command.destination
+                val width = edge(bounds.right, origin.x, physicalSize.width) - edge(bounds.left, origin.x, physicalSize.width)
+                val height = edge(bounds.bottom, origin.y, physicalSize.height) - edge(bounds.top, origin.y, physicalSize.height)
+                val cost = width + height
                 if (remaining < cost) return false
                 remaining -= cost
             }
