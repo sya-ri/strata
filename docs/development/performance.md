@@ -235,6 +235,9 @@ Destination edges exactly coincident with a physical pixel center retain portabl
 No vertex bias or changed source interpolation is used to conceal that difference.
 The loaded parity scene compares full-frame patterned and translucent images at densities one through four and checks the actual direct-draw count, including the portable pixel-center-edge regression at density four.
 Source identity, source UVs, the original floating destination, display-list ordering, cache limits, and GPU retirement remain unchanged; no clipped image or new cache is constructed.
+Sampled images wholly outside the logical viewport or the intersected active clip envelopes are removed before direct eligibility and portable partitioning.
+Such commands neither split portable runs nor remain in their derived-pixel keys, so changing an invisible image cannot invalidate an otherwise equal visible run.
+Fractional clip envelopes are conservative; partially covered images retain their original destinations and the existing physical pixel-center checks.
 Other command shapes retain exact output through a portable layer bounded to their visible command run rather than the complete viewport.
 Presentation counters distinguish direct hit, miss, upload, draw, eviction, ineligible and capacity fallback, retained entries and bytes, and ordinary portable rasterization and upload.
 After warm-up, stable image identities under destination or clip changes must report zero image uploads and zero sampled-image portable rasterizations.
