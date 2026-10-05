@@ -43,6 +43,7 @@ The [animated README demo](readme-demo/README.md) follows a fixed player list fr
 ## Changelog
 
 See the [changelog](../CHANGELOG.md) for release summaries and links to detailed changes and upgrade notes.
+See the [deprecation list](../DEPRECATION.md) for API migration examples and removal schedules.
 
 ## Develop Strata
 

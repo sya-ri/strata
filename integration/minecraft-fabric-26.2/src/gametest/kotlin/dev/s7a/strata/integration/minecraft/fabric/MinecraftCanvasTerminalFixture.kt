@@ -133,9 +133,9 @@ internal class MinecraftCanvasTerminalFixture {
 
     private fun definition(source: CanvasSource): ScreenDefinition =
         ScreenDefinition("Mixed Canvas terminal queue acceptance") {
-            Stack(Modifier.Empty.size(64, 48).background(ArgbColor(0xFF0000FF.toInt()))) {
+            Stack(Modifier.size(64, 48).background(ArgbColor(0xFF0000FF.toInt()))) {
                 Canvas(source, IntSize(32, 32))
-                Spacer(Modifier.Empty.size(8, 8).background(ArgbColor(0xFFFF0000.toInt())))
+                Spacer(Modifier.size(8, 8).background(ArgbColor(0xFFFF0000.toInt())))
             }
         }
 

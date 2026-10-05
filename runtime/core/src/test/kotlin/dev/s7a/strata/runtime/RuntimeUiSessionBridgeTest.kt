@@ -106,7 +106,7 @@ internal class RuntimeUiSessionBridgeTest {
                 evaluateComponentTree {
                     Spacer(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .size(2, 1)
                                 .onHover({ value -> transitions.add(value) }),
                     )
@@ -133,7 +133,7 @@ internal class RuntimeUiSessionBridgeTest {
             createRuntimeUiSession {
                 evaluateComponentTree {
                     Spacer(
-                        modifier = Modifier.Empty.size(2, 1).onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
+                        modifier = Modifier.size(2, 1).onCapturedPointerEvent({ value -> cancellations.add(value) }) { _, _ -> InputResult.Consumed },
                     )
                 }
             }

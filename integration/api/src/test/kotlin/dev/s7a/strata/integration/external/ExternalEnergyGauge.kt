@@ -29,7 +29,7 @@ import dev.s7a.strata.render.ArgbColor
 public fun UiScope.EnergyGauge(
     energy: Int,
     capacity: Int,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     require(0 < capacity) { "Energy capacity must be positive." }
@@ -41,7 +41,7 @@ public fun UiScope.EnergyGauge(
     ) {
         Spacer(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(fillWidth, 4)
                     .background(ArgbColor(0xFF00D4FF.toInt())),
         )

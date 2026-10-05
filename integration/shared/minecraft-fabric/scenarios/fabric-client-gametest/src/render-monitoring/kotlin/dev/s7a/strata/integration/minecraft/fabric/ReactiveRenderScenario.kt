@@ -61,7 +61,7 @@ internal object ReactiveRenderScenario {
         return ScreenDefinition("Reactive render acceptance") {
             Column(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(160, 48)
                         .background(ArgbColor(0xFF000000.toInt()))
                         .then(ReactiveRenderOverlays)
@@ -78,7 +78,7 @@ internal object ReactiveRenderScenario {
         ScreenDefinition("Reactive literal reference") {
             Column(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(160, 48)
                         .background(ArgbColor(0xFF000000.toInt()))
                         .then(ReactiveRenderOverlays)

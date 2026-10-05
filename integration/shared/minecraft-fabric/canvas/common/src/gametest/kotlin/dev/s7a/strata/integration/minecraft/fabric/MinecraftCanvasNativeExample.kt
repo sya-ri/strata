@@ -22,15 +22,15 @@ import dev.s7a.strata.screen.ScreenDefinition
  */
 internal fun createNativeCanvasScreenDefinition(fixture: MinecraftCanvasTestFixture): ScreenDefinition =
     ScreenDefinition("Native Canvas acceptance") {
-        Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
+        Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
             Column(spacing = 16) {
                 Row(spacing = 16) {
                     Canvas(fixture.textureSource, IntSize(32, 32))
                     Canvas(fixture.flippedTextureSource, IntSize(32, 32))
                     Canvas(fixture.textureSource, IntSize(32, 32))
-                    Stack(Modifier.Empty.size(32, 32).background(ArgbColor(0xFF0000FF.toInt()))) {
+                    Stack(Modifier.size(32, 32).background(ArgbColor(0xFF0000FF.toInt()))) {
                         Canvas(fixture.rendererSource, IntSize(32, 32))
-                        Spacer(Modifier.Empty.size(8, 8).background(ArgbColor(0xFFFFFFFF.toInt())))
+                        Spacer(Modifier.size(8, 8).background(ArgbColor(0xFFFFFFFF.toInt())))
                     }
                 }
                 Row(spacing = 16) {
@@ -38,7 +38,7 @@ internal fun createNativeCanvasScreenDefinition(fixture: MinecraftCanvasTestFixt
                         Canvas(fixture.textureSource, IntSize(32, 32))
                     }
                     Canvas(fixture.rendererSource, IntSize(32, 32))
-                    Stack(Modifier.Empty.size(32, 32).background(ArgbColor(0xFFFFFFFF.toInt()))) {
+                    Stack(Modifier.size(32, 32).background(ArgbColor(0xFFFFFFFF.toInt()))) {
                         Canvas(fixture.transparentSource, IntSize(32, 32))
                     }
                 }

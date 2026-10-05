@@ -63,7 +63,7 @@ internal class RuntimeDeclarationTest {
                 evaluateComponentTree {
                     Column {
                         repeat(count.value) { index ->
-                            Spacer(key = ElementKey(index), modifier = Modifier.Empty.size(count.value, 1).size(2, 2))
+                            Spacer(key = ElementKey(index), modifier = Modifier.size(count.value, 1).size(2, 2))
                         }
                     }
                 }
@@ -114,7 +114,7 @@ internal class RuntimeDeclarationTest {
     @Test
     fun projectionRejectsStateMutationAndActionReentrancy() {
         val state = mutableStateOf(0)
-        createRuntimeUiSession { evaluateComponentTree { Spacer(modifier = Modifier.Empty.size(state.value + 1, 1)) } }.use { session ->
+        createRuntimeUiSession { evaluateComponentTree { Spacer(modifier = Modifier.size(state.value + 1, 1)) } }.use { session ->
             session.attach()
             assertThrows(IllegalStateException::class.java) { session.projectDeclarations { state.value = 1 } }
         }

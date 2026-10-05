@@ -122,7 +122,7 @@ internal class VelocityScreensTest {
                         val field = TextFieldState("before")
                         ScreenDefinition("Proxy") {
                             Spacer(
-                                Modifier.Empty.onActivate {
+                                Modifier.onActivate {
                                     assertEquals(createdOn.get(), Thread.currentThread())
                                     field.value = "after"
                                     calls.incrementAndGet()
@@ -151,7 +151,7 @@ internal class VelocityScreensTest {
             val handle =
                 VelocityScreens
                     .open(fixture.owner, fixture.player) {
-                        ScreenDefinition("Before switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
+                        ScreenDefinition("Before switch") { Spacer(Modifier.onActivate { calls.incrementAndGet() }) }
                     }.get(5, TimeUnit.SECONDS)
             val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
             fixture.dropOutgoingFrame()
@@ -167,7 +167,7 @@ internal class VelocityScreensTest {
             assertNotEquals(previous, fixture.negotiate(discover = false))
             VelocityScreens
                 .open(fixture.owner, fixture.player) {
-                    ScreenDefinition("After switch") { Spacer(Modifier.Empty.onActivate { calls.incrementAndGet() }) }
+                    ScreenDefinition("After switch") { Spacer(Modifier.onActivate { calls.incrementAndGet() }) }
                 }.get(5, TimeUnit.SECONDS)
             fixture.activate(fixture.nextMessage() as RemoteMessage.Snapshot)
             assertTrue(fixture.nextMessage() is RemoteMessage.Acknowledgement)

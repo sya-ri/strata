@@ -18,6 +18,11 @@ Closing or switching from an event takes effect after its delivery boundary, and
 
 ## Composition and identity
 
+`Modifier` is an interface whose companion object is the empty chain and the starting receiver for modifier extensions.
+Use `Modifier.size(...)` to start a chain and `Modifier` alone when no behavior is needed.
+Implementations expose a stable read-only ordered snapshot through the runtime bridge and compare by that sequence, including empty-chain equality.
+Custom modifier behavior continues to use `ModifierElement` and `ModifierNodeType`; no factory overload or registration is needed for the companion receiver.
+
 The first description is the outermost retained node.
 The last description is nearest the component.
 Modifier positions reconcile by their referential `ModifierNodeType` token.

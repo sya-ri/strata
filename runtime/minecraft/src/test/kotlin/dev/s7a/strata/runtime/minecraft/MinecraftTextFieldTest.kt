@@ -44,8 +44,8 @@ internal class MinecraftTextFieldTest {
         val value = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(631).take(16_384)
         val state = TextFieldState(value, maxLength = value.length)
         val suffix = value.takeLast(64)
-        host(state, Modifier.Empty.initialFocus()).use { longHost ->
-            host(TextFieldState(suffix, maxLength = suffix.length), Modifier.Empty.initialFocus()).use { suffixHost ->
+        host(state, Modifier.initialFocus()).use { longHost ->
+            host(TextFieldState(suffix, maxLength = suffix.length), Modifier.initialFocus()).use { suffixHost ->
                 longHost.attach()
                 suffixHost.attach()
                 assertArrayEquals(
@@ -136,7 +136,7 @@ internal class MinecraftTextFieldTest {
     fun focusedEmptyFieldUsesTheNativeAppendCursorGlyphAndSelectedTextStyle() {
         val compactSize = IntSize(200, 15)
         val state = TextFieldState("", maxLength = 16)
-        val host = host(state, Modifier.Empty.initialFocus(), compactSize, TextStyle.Normal)
+        val host = host(state, Modifier.initialFocus(), compactSize, TextStyle.Normal)
         try {
             host.attach()
             val commands = host.frame(compactSize).drawCommands
@@ -180,7 +180,7 @@ internal class MinecraftTextFieldTest {
         val state = TextFieldState("A")
         var intercepted = 0
         val modifier =
-            Modifier.Empty
+            Modifier
                 .initialFocus()
                 .onCharacterInput {
                     intercepted += 1
@@ -199,7 +199,7 @@ internal class MinecraftTextFieldTest {
     @Test
     fun backspaceThenInsertionMovesTheCursorOnlyOnce() {
         val state = TextFieldState("ABC")
-        val host = host(state, Modifier.Empty.initialFocus())
+        val host = host(state, Modifier.initialFocus())
         try {
             host.attach()
             host.frame(fieldSize)
@@ -215,7 +215,7 @@ internal class MinecraftTextFieldTest {
     fun pointerCursorPlacementStartsAtTheVisibleScrolledText() {
         val state = TextFieldState("AAAAAAA")
         val compactSize = IntSize(12, 20)
-        val host = host(state, Modifier.Empty.initialFocus(), compactSize)
+        val host = host(state, Modifier.initialFocus(), compactSize)
         try {
             host.attach()
             host.frame(compactSize)

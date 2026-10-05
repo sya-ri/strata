@@ -42,9 +42,9 @@ internal class HeadlessRenderTest {
             )
         val description =
             evaluateComponentTree {
-                Stack(modifier = Modifier.Empty.background(ArgbColor(0xFF0000FF.toInt()))) {
+                Stack(modifier = Modifier.background(ArgbColor(0xFF0000FF.toInt()))) {
                     Canvas(source, IntSize(4, 2))
-                    Spacer(modifier = Modifier.Empty.size(1, 1).background(ArgbColor(0xFFFFFFFF.toInt())))
+                    Spacer(modifier = Modifier.size(1, 1).background(ArgbColor(0xFFFFFFFF.toInt())))
                 }
             }
 

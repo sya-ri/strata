@@ -124,7 +124,7 @@ internal class ModifierRuntimeLifecycleTest {
 
         val thrown =
             assertThrows(IllegalStateException::class.java) {
-                tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty))
+                tree.update(componentProbe.root(emptyList(), modifier = Modifier))
             }
 
         assertSame(failure, thrown)
@@ -167,7 +167,7 @@ internal class ModifierRuntimeLifecycleTest {
                     listOf(
                         componentProbe.element(
                             childId,
-                            modifier = Modifier.Empty.then(descendantModifier),
+                            modifier = Modifier.then(descendantModifier),
                             onAttach = {
                                 order += ModifierTestFixture.LifecycleObservation.Component(TestProbe.Event.Attach(childId))
                             },
@@ -222,9 +222,9 @@ internal class ModifierRuntimeLifecycleTest {
         tree.update(
             componentProbe.root(
                 listOf(
-                    componentProbe.element(TestProbe.ProbeId("first"), firstKey, modifier = Modifier.Empty.then(first)),
-                    componentProbe.element(TestProbe.ProbeId("removed"), removedKey, modifier = Modifier.Empty.then(removed)),
-                    componentProbe.element(TestProbe.ProbeId("retained"), retainedKey, modifier = Modifier.Empty.then(retained)),
+                    componentProbe.element(TestProbe.ProbeId("first"), firstKey, modifier = Modifier.then(first)),
+                    componentProbe.element(TestProbe.ProbeId("removed"), removedKey, modifier = Modifier.then(removed)),
+                    componentProbe.element(TestProbe.ProbeId("retained"), retainedKey, modifier = Modifier.then(retained)),
                 ),
             ),
         )
@@ -232,9 +232,9 @@ internal class ModifierRuntimeLifecycleTest {
         tree.update(
             componentProbe.root(
                 listOf(
-                    componentProbe.element(TestProbe.ProbeId("first"), firstKey, modifier = Modifier.Empty.then(first)),
-                    componentProbe.element(TestProbe.ProbeId("retained"), retainedKey, modifier = Modifier.Empty.then(retained)),
-                    componentProbe.element(TestProbe.ProbeId("added"), addedKey, modifier = Modifier.Empty.then(added)),
+                    componentProbe.element(TestProbe.ProbeId("first"), firstKey, modifier = Modifier.then(first)),
+                    componentProbe.element(TestProbe.ProbeId("retained"), retainedKey, modifier = Modifier.then(retained)),
+                    componentProbe.element(TestProbe.ProbeId("added"), addedKey, modifier = Modifier.then(added)),
                 ),
             ),
         )
@@ -320,7 +320,7 @@ internal class ModifierRuntimeLifecycleTest {
         val modifierProbe = ModifierTestFixture.Probe()
         val tree = UiTree()
         val installed = modifierFixture.modifier(modifierProbe, 86, ModifierTestFixture.Kind.First)
-        tree.update(componentProbe.root(emptyList(), modifier = Modifier.Empty.then(installed)))
+        tree.update(componentProbe.root(emptyList(), modifier = Modifier.then(installed)))
         modifierProbe.events.clear()
         componentProbe.events.clear()
         val provisional = modifierFixture.modifier(modifierProbe, 87, ModifierTestFixture.Kind.Second)
@@ -413,11 +413,11 @@ internal class ModifierRuntimeLifecycleTest {
                 ModifierTestFixture.Kind.First,
                 sharedNode = shared,
             )
-        owner.update(TestProbe().root(emptyList(), modifier = Modifier.Empty.then(ownerModifier)))
+        owner.update(TestProbe().root(emptyList(), modifier = Modifier.then(ownerModifier)))
         val other = UiTree()
         val thrown =
             assertThrows(IllegalStateException::class.java) {
-                other.update(TestProbe().root(emptyList(), modifier = Modifier.Empty.then(ownerModifier)))
+                other.update(TestProbe().root(emptyList(), modifier = Modifier.then(ownerModifier)))
             }
         assertTrue(thrown.message.orEmpty().contains("already"))
         assertEquals(TreeState.Active, owner.state)
@@ -429,7 +429,7 @@ internal class ModifierRuntimeLifecycleTest {
 
         val retiredOwner = UiTree()
         assertThrows(IllegalStateException::class.java) {
-            retiredOwner.update(TestProbe().root(emptyList(), modifier = Modifier.Empty.then(ownerModifier)))
+            retiredOwner.update(TestProbe().root(emptyList(), modifier = Modifier.then(ownerModifier)))
         }
         assertEquals(TreeState.Poisoned, retiredOwner.state)
         retiredOwner.close()
@@ -454,7 +454,7 @@ internal class ModifierRuntimeLifecycleTest {
             }
         }
         val element = modifierFixture.modifier(probe, 60, ModifierTestFixture.Kind.First)
-        tree.update(TestProbe().root(emptyList(), modifier = Modifier.Empty.then(element)))
+        tree.update(TestProbe().root(emptyList(), modifier = Modifier.then(element)))
         node = probe.nodes.getValue(60)
         val retainedNode = checkNotNull(node)
 
@@ -550,7 +550,7 @@ internal class ModifierRuntimeLifecycleTest {
                 ModifierTestFixture.Kind.First,
                 sharedNode = shared,
             )
-        val root = CrossCategoryElement(shared, Modifier.Empty.then(modifier))
+        val root = CrossCategoryElement(shared, Modifier.then(modifier))
         val tree = UiTree()
 
         val thrown = assertThrows(IllegalStateException::class.java) { tree.update(root) }

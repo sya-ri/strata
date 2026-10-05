@@ -32,7 +32,7 @@ internal fun createCycleButtonShowcaseScreenDefinition(): ScreenDefinition {
     val state = CycleButtonState(Difficulty.Normal) { value -> "Difficulty: ${value.label}" }
     return ScreenDefinition("CycleButton showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             CycleButton(state = state)

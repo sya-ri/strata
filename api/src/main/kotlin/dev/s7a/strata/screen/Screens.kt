@@ -23,7 +23,7 @@ public object Screens {
      * @throws ScreenDefinitionUnavailableException when [definition] was already transferred or closed.
      * @throws Throwable when the runtime fails during presentation.
      */
-    @Deprecated("Use UiDefinition.open() and retain its UiSession.")
+    @Deprecated("Use UiDefinition.open() and retain its UiSession. Scheduled for removal in 1.0.0.")
     @JvmStatic
     @OptIn(InternalStrataRuntimeApi::class)
     public fun open(definition: ScreenDefinition) {

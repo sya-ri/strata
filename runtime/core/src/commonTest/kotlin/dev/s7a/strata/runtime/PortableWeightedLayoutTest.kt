@@ -46,13 +46,13 @@ internal class PortableWeightedLayoutTest {
                         if (horizontal) {
                             Row {
                                 weights.forEachIndexed { index, weight ->
-                                    element(probe.element(TestProbe.ProbeId(index.toString()), modifier = Modifier.Empty.weight(weight)))
+                                    element(probe.element(TestProbe.ProbeId(index.toString()), modifier = Modifier.weight(weight)))
                                 }
                             }
                         } else {
                             Column {
                                 weights.forEachIndexed { index, weight ->
-                                    element(probe.element(TestProbe.ProbeId(index.toString()), modifier = Modifier.Empty.weight(weight)))
+                                    element(probe.element(TestProbe.ProbeId(index.toString()), modifier = Modifier.weight(weight)))
                                 }
                             }
                         }

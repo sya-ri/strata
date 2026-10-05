@@ -112,7 +112,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun assertExternalMenuAndText() {
         val menuHost =
             ScreenDefinition("external menu") {
-                Stack(modifier = Modifier.Empty.menuBackground()) {}
+                Stack(modifier = Modifier.menuBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         menuHost.attach()
         val menuFrame = menuHost.frame(IntSize(32, 32))
@@ -165,7 +165,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
     private fun assertExternalContainerAndSlot() {
         val containerHost =
             ScreenDefinition("external container") {
-                Stack(modifier = Modifier.Empty.containerBackground()) {}
+                Stack(modifier = Modifier.containerBackground()) {}
             }.let { definition -> createMinecraftUiHost(definition, profile()) }
         containerHost.attach()
         assertEquals(
@@ -272,7 +272,7 @@ internal class ExternalMinecraftUiHostIntegrationTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition(UiText.Literal("external button")) {
-                    Button("A", modifier = Modifier.Empty.onPress { presses += 1 })
+                    Button("A", modifier = Modifier.onPress { presses += 1 })
                 },
                 profile(),
             )
@@ -305,13 +305,13 @@ internal class ExternalMinecraftUiHostIntegrationTest {
             createMinecraftUiHost(
                 ScreenDefinition("external button activation") {
                     Column {
-                        Button("First", modifier = Modifier.Empty.onActivate { firstActivations += 1 })
+                        Button("First", modifier = Modifier.onActivate { firstActivations += 1 })
                         Button(
                             "Disabled",
                             enabled = false,
-                            modifier = Modifier.Empty.onActivate(enabled = false) { disabledActivations += 1 },
+                            modifier = Modifier.onActivate(enabled = false) { disabledActivations += 1 },
                         )
-                        Button("Second", modifier = Modifier.Empty.onActivate { secondActivations += 1 })
+                        Button("Second", modifier = Modifier.onActivate { secondActivations += 1 })
                     }
                 },
                 profile(),

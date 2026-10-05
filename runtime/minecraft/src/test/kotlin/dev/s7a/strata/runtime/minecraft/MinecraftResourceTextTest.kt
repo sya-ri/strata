@@ -268,7 +268,7 @@ internal class MinecraftResourceTextTest {
         assertEquals(1, backend.closeCalls)
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(9, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
             val commands = tree.paint().filterIsInstance<DrawCommand.SampledImage>()
@@ -368,7 +368,7 @@ internal class MinecraftResourceTextTest {
             }
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(14, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
             val commands = tree.paint()
@@ -411,7 +411,7 @@ internal class MinecraftResourceTextTest {
             }
         val tree = UiTree()
         try {
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             assertEquals(IntSize(5, 9), tree.measure(Constraints(maxWidth = 20, maxHeight = 9)))
             tree.layout()
             val commands = tree.paint().filterIsInstance<DrawCommand.SampledImage>()
@@ -477,7 +477,7 @@ internal class MinecraftResourceTextTest {
 
     private fun resourceTextCommands(run: MinecraftTextRun): List<DrawCommand> =
         UiTree().use { tree ->
-            tree.update(createMinecraftTextElement(run, Modifier.Empty, null))
+            tree.update(createMinecraftTextElement(run, Modifier, null))
             tree.measure(Constraints())
             tree.layout()
             tree.paint()

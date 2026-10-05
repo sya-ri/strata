@@ -95,7 +95,7 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding,
     ): ScreenDefinition =
         ScreenDefinition("Native Canvas and inventory Slot order") {
-            Stack(Modifier.Empty.background(ArgbColor(black))) {
+            Stack(Modifier.background(ArgbColor(black))) {
                 Row(spacing = panelSpacing) {
                     referenceSlot(binding, ArgbColor(black))
                     referenceSlot(binding, ArgbColor(white))
@@ -113,7 +113,7 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding?,
         color: ArgbColor,
     ) {
-        Stack(Modifier.Empty.size(panelSize, panelSize).background(color), contentAlignment = Alignment.Center) {
+        Stack(Modifier.size(panelSize, panelSize).background(color), contentAlignment = Alignment.Center) {
             Slot(bind = binding, highlightable = false)
         }
     }
@@ -123,11 +123,11 @@ internal object MinecraftCanvasSlotGameTest {
         binding: SlotBinding,
         order: CanvasOrder,
     ) {
-        Stack(Modifier.Empty.size(panelSize, panelSize), contentAlignment = Alignment.Center) {
+        Stack(Modifier.size(panelSize, panelSize), contentAlignment = Alignment.Center) {
             if (order == CanvasOrder.AfterSlot) Slot(bind = binding, highlightable = false)
             Canvas(fixture.textureSource, IntSize(panelSize, panelSize))
             if (order == CanvasOrder.BeforeSlot) Slot(bind = binding, highlightable = false)
-            Spacer(Modifier.Empty.size(overlaySize, overlaySize).background(ArgbColor(white)))
+            Spacer(Modifier.size(overlaySize, overlaySize).background(ArgbColor(white)))
         }
     }
 

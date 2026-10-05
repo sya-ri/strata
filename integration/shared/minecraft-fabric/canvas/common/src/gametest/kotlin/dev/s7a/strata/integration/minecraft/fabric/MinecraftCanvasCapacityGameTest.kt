@@ -47,7 +47,7 @@ internal object MinecraftCanvasCapacityGameTest {
                 context.onClient {
                     val definition =
                         ScreenDefinition("Native Canvas capacity acceptance") {
-                            Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
+                            Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
                                 Row {
                                     repeat(65) { index -> Canvas(fixture.textureSource, IntSize(4, 4), key = ElementKey(index)) }
                                 }

@@ -50,7 +50,7 @@ internal class RemoteSessionFleet(
                             Observe(source) { value ->
                                 // Observe and Column are both real projected records within the declared node budget.
                                 Column {
-                                    repeat(workload.nodes - 2) { Spacer(Modifier.Empty.background(ArgbColor(if (value % 2 == 0) -65536 else -16776961))) }
+                                    repeat(workload.nodes - 2) { Spacer(Modifier.background(ArgbColor(if (value % 2 == 0) -65536 else -16776961))) }
                                 }
                             }
                         }

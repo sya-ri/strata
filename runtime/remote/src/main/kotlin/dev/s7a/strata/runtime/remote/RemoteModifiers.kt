@@ -39,20 +39,20 @@ internal object RemoteModifiers {
             SemanticsRole.ProgressBar,
             SemanticsRole.SelectionList,
         ).forEach(registry::role)
-        registry.modifier(BuiltinProjection.ComponentAction.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier.Empty }
+        registry.modifier(BuiltinProjection.ComponentAction.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier }
         StandardModifierProjections.register { type, decode ->
-            registry.modifier(type, decode) { value, _ -> Modifier.Empty.then(value) }
+            registry.modifier(type, decode) { value, _ -> Modifier.then(value) }
         }
-        registry.modifier(BuiltinProjection.Padding.type, ::insets) { value, _ -> Modifier.Empty.padding(value) }
-        registry.modifier(BuiltinProjection.Background.type, ::color) { value, _ -> Modifier.Empty.background(value) }
-        registry.modifier(BuiltinProjection.Semantics.type, { semantics(it, registry) }) { value, _ -> Modifier.Empty.semantics(value) }
+        registry.modifier(BuiltinProjection.Padding.type, ::insets) { value, _ -> Modifier.padding(value) }
+        registry.modifier(BuiltinProjection.Background.type, ::color) { value, _ -> Modifier.background(value) }
+        registry.modifier(BuiltinProjection.Semantics.type, { semantics(it, registry) }) { value, _ -> Modifier.semantics(value) }
         registry.modifier(BuiltinProjection.ObservedActivation.type, { value ->
             val fields = ProjectionFields(value)
             val result = fields.flag() to endpoint(fields.value())
             fields.finish()
             result
         }) { (enabled, endpoint), actions ->
-            Modifier.Empty.onActivate(enabled) { actions.send(endpoint, BuiltinProjection.ObservedActivation.type, ProjectionValue.Absent) }
+            Modifier.onActivate(enabled) { actions.send(endpoint, BuiltinProjection.ObservedActivation.type, ProjectionValue.Absent) }
         }
     }
 

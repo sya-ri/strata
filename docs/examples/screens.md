@@ -43,7 +43,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createConfirmScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Strata parity") {
         Stack(
-            modifier = Modifier.Empty.size(320, 180).menuBackground(),
+            modifier = Modifier.size(320, 180).menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -60,11 +60,11 @@ internal fun createConfirmScreenDefinition(): ScreenDefinition =
                 Row(spacing = 4) {
                     Button(
                         "Yes",
-                        modifier = Modifier.Empty.onActivate {},
+                        modifier = Modifier.onActivate {},
                     )
                     Button(
                         "No",
-                        modifier = Modifier.Empty.onActivate {},
+                        modifier = Modifier.onActivate {},
                     )
                 }
             }
@@ -156,18 +156,18 @@ internal fun createSocialScreenDefinition(
     return ScreenDefinition("Social Interactions") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
         ) {
             Stack(
-                modifier = Modifier.Empty.size(320, 176),
+                modifier = Modifier.size(320, 176),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Stack(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .padding(left = 4)
                             .size(236, 112)
                             .imageBackground(
@@ -178,59 +178,59 @@ internal fun createSocialScreenDefinition(
                 ) {}
             }
             Column(
-                modifier = Modifier.Empty.size(222, 234).align(Alignment.TopCenter),
+                modifier = Modifier.size(222, 234).align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(modifier = Modifier.Empty.padding(top = 12)) {
+                Column(modifier = Modifier.padding(top = 12)) {
                     Column(
-                        modifier = Modifier.Empty.size(222, 32),
+                        modifier = Modifier.size(222, 32),
                         spacing = 14,
                     ) {
                         Text(
                             "Social Interactions",
-                            modifier = Modifier.Empty.align(HorizontalAlignment.Center),
+                            modifier = Modifier.align(HorizontalAlignment.Center),
                         )
                         Text("$playerName - New World - 1 player")
                     }
-                    Row(modifier = Modifier.Empty.padding(left = 1, top = 1), spacing = 1) {
-                        Tab("All", selected = true, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
-                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.Empty.onActivate {})
+                    Row(modifier = Modifier.padding(left = 1, top = 1), spacing = 1) {
+                        Tab("All", selected = true, width = 73, modifier = Modifier.onActivate {})
+                        Tab("Hidden", selected = false, width = 73, modifier = Modifier.onActivate {})
+                        Tab("Blocked", selected = false, width = 73, modifier = Modifier.onActivate {})
                     }
                     Row(
-                        modifier = Modifier.Empty.padding(left = 5, top = 9),
+                        modifier = Modifier.padding(left = 5, top = 9),
                         spacing = 3,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
                         Image(
                             searchIcon,
                             size = IntSize(12, 12),
-                            modifier = Modifier.Empty.padding(top = 2),
+                            modifier = Modifier.padding(top = 2),
                         )
                         TextField(
                             search,
                             size = IntSize(200, 15),
                             textStyle = TextStyle.Normal,
-                            modifier = Modifier.Empty.initialFocus(),
+                            modifier = Modifier.initialFocus(),
                         )
                     }
                     Row(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .padding(left = 3, top = 3)
                                 .size(216, 32)
                                 .background(ArgbColor(0xFF4A4A4A.toInt())),
                         spacing = 4,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
-                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.Empty.padding(left = 4))
+                        PlayerHead(source = playerSkin, scale = PlayerHeadScale(3), modifier = Modifier.padding(left = 4))
                         Text(playerName)
                     }
                 }
                 Button(
                     "Done",
                     width = 200,
-                    modifier = Modifier.Empty.align(HorizontalAlignment.Center).onActivate {},
+                    modifier = Modifier.align(HorizontalAlignment.Center).onActivate {},
                 )
             }
         }
@@ -297,25 +297,25 @@ internal fun createInventorySlotScreenDefinition(
     ScreenDefinition("Synchronized inventory") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
             Stack(
-                modifier = Modifier.Empty.containerBackground(rows = 3),
+                modifier = Modifier.containerBackground(rows = 3),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier.Empty.size(162, 156),
+                    modifier = Modifier.size(162, 156),
                     spacing = 3,
                 ) {
                     Column(spacing = 2) {
                         Text(
                             "Chest",
                             style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
+                            modifier = Modifier.padding(left = 1),
                         )
                         Grid(columns = 9) {
                             repeat(27) { index ->
@@ -331,14 +331,14 @@ internal fun createInventorySlotScreenDefinition(
                         Text(
                             "Inventory",
                             style = TextStyle.ContainerLabel,
-                            modifier = Modifier.Empty.padding(left = 1),
+                            modifier = Modifier.padding(left = 1),
                         )
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 1)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 1)) {
                             repeat(27) { index ->
                                 Slot(bind = Slots.playerInventory(9 + index))
                             }
                         }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
                             repeat(9) { index ->
                                 Slot(
                                     bind =
@@ -425,7 +425,7 @@ internal fun createIndustrialScreenDefinition(
     ScreenDefinition("Coal Generator") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
@@ -433,17 +433,17 @@ internal fun createIndustrialScreenDefinition(
         ) {
             Stack(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(176, 166)
                         .imageBackground(panel, ImageScale.Stretch),
             ) {
                 Column(
-                    modifier = Modifier.Empty.padding(left = 7, top = 5, right = 7, bottom = 7),
+                    modifier = Modifier.padding(left = 7, top = 5, right = 7, bottom = 7),
                     spacing = 5,
                 ) {
                     Text("Coal Generator")
                     Row(
-                        modifier = Modifier.Empty.size(162, 36),
+                        modifier = Modifier.size(162, 36),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
@@ -454,10 +454,10 @@ internal fun createIndustrialScreenDefinition(
                         ) {
                             Text("32 E/t")
                             Stack(
-                                modifier = Modifier.Empty.size(54, 8).background(bufferTrackColor),
+                                modifier = Modifier.size(54, 8).background(bufferTrackColor),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
-                                Spacer(modifier = Modifier.Empty.size(41, 6).background(bufferFillColor))
+                                Spacer(modifier = Modifier.size(41, 6).background(bufferFillColor))
                             }
                         }
                         machineSlot("Charge", chargeBinding)
@@ -469,7 +469,7 @@ internal fun createIndustrialScreenDefinition(
                                 Slot(bind = playerInventory(9 + index))
                             }
                         }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
                             repeat(9) { index ->
                                 Slot(bind = playerInventory(index))
                             }
@@ -567,16 +567,16 @@ internal fun createProgressScreenDefinition(
     ScreenDefinition("Power milestones") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Stack(modifier = Modifier.Empty.size(252, 140)) {
+            Stack(modifier = Modifier.size(252, 140)) {
                 Image(window, sourceRegion = IntRect(0, 0, 252, 140))
                 Column(
-                    modifier = Modifier.Empty.padding(left = 9, top = 6, right = 9, bottom = 9),
+                    modifier = Modifier.padding(left = 9, top = 6, right = 9, bottom = 9),
                     spacing = 4,
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
@@ -588,7 +588,7 @@ internal fun createProgressScreenDefinition(
                 "Done",
                 width = 200,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .padding(bottom = 6)
                         .align(Alignment.BottomCenter)
                         .onActivate {},
@@ -614,7 +614,7 @@ internal fun UiScope.ExampleProgressGraph(
     background: ImageSource,
     obtained: ImageSource,
     unobtained: ImageSource,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Row(
@@ -624,13 +624,13 @@ internal fun UiScope.ExampleProgressGraph(
         verticalAlignment = VerticalAlignment.Center,
     ) {
         progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), "Generator")
-        Spacer(modifier = Modifier.Empty.size(32, 2).background(connectionColor))
+        Spacer(modifier = Modifier.size(32, 2).background(connectionColor))
         Column(
             spacing = 4,
             horizontalAlignment = HorizontalAlignment.Center,
         ) {
             progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), "Storage")
-            Spacer(modifier = Modifier.Empty.size(2, 12).background(connectionColor))
+            Spacer(modifier = Modifier.size(2, 12).background(connectionColor))
             progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), "Automation")
         }
     }
@@ -646,11 +646,11 @@ private fun UiScope.progressNode(
         spacing = 1,
     ) {
         Stack(
-            modifier = Modifier.Empty.size(26, 26),
+            modifier = Modifier.size(26, 26),
             contentAlignment = Alignment.Center,
         ) {
             Image(frame)
-            Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+            Spacer(modifier = Modifier.size(16, 16).background(color))
         }
         Text(label)
     }

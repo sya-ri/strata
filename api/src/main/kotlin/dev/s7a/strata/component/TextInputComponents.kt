@@ -24,7 +24,7 @@ public fun UiScope.TextField(
     appearance: TextInputAppearance,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, appearance, IntSize(200, 20), enabled, textStyle, modifier, key)
@@ -45,7 +45,7 @@ public fun UiScope.TextField(
     size: IntSize,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -67,7 +67,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, appearance, IntSize(200, 20), font, enabled, textStyle, modifier, key)
@@ -89,7 +89,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -113,7 +113,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -139,7 +139,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()

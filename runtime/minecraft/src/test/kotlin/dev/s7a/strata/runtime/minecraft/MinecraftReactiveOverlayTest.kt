@@ -30,10 +30,10 @@ internal class MinecraftReactiveOverlayTest {
         val color = ReactiveTestSource(ArgbColor(0xFFFF0000.toInt()))
         val definition =
             ScreenDefinition("Overlapping reactive siblings") {
-                Stack(Modifier.Empty.size(8, 8).background(ArgbColor(0xFF000000.toInt()))) {
-                    Observe(color) { current -> Spacer(Modifier.Empty.size(8, 8).background(current)) }
-                    Spacer(Modifier.Empty.size(4, 4).background(ArgbColor(0x80FFFFFF.toInt())), key = ElementKey("translucent"))
-                    Spacer(Modifier.Empty.size(2, 2).background(ArgbColor(0xFF00FF00.toInt())), key = ElementKey("opaque"))
+                Stack(Modifier.size(8, 8).background(ArgbColor(0xFF000000.toInt()))) {
+                    Observe(color) { current -> Spacer(Modifier.size(8, 8).background(current)) }
+                    Spacer(Modifier.size(4, 4).background(ArgbColor(0x80FFFFFF.toInt())), key = ElementKey("translucent"))
+                    Spacer(Modifier.size(2, 2).background(ArgbColor(0xFF00FF00.toInt())), key = ElementKey("opaque"))
                 }
             }
         createMinecraftUiHost(definition, MinecraftProfileFixture.create()).use { host ->

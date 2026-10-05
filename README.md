@@ -152,7 +152,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     UiDefinition("Confirm action") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .menuBackground()
                     .padding(12),
@@ -162,7 +162,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onActivate { onConfirm() },
+                modifier = Modifier.onActivate { onConfirm() },
             )
         }
     }.open()
@@ -203,6 +203,7 @@ The [Paper and Folia](docs/guides/paper.md) and [Velocity](docs/guides/velocity.
 ## Changelog
 
 See the [changelog](CHANGELOG.md) for release summaries, detailed changes, and upgrade notes.
+See the [deprecation list](DEPRECATION.md) for deprecated APIs, replacements, and scheduled removals.
 
 ## Documentation
 

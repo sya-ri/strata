@@ -95,7 +95,7 @@ internal class PaperScreenServiceTest {
                     fixture.player,
                     ScreenDefinition("First") {
                         Spacer(
-                            Modifier.Empty.onActivate {
+                            Modifier.onActivate {
                                 replacement = fixture.service.open(fixture.plugin, fixture.player, ScreenDefinition("Second") { Spacer() })
                                 assertEquals(RemoteSessionStatus.Opening, replacement.status)
                             },
@@ -148,7 +148,7 @@ internal class PaperScreenServiceTest {
                     fixture.plugin,
                     fixture.player,
                     ScreenDefinition("Container") {
-                        Spacer(Modifier.Empty.size(20, 20).onActivate { clicks++ })
+                        Spacer(Modifier.size(20, 20).onActivate { clicks++ })
                     },
                 )
             val snapshot = fixture.receive().filterIsInstance<RemoteMessage.Snapshot>().single()
@@ -214,7 +214,7 @@ internal class PaperScreenServiceTest {
                     fixture.player,
                     ScreenDefinition("Remote test") {
                         Spacer(
-                            Modifier.Empty
+                            Modifier
                                 .size(20, 20)
                                 .background(ArgbColor(clicks.value))
                                 .onActivate { clicks.value += 1 },
@@ -272,7 +272,7 @@ internal class PaperScreenServiceTest {
             val other = fixture.otherPlugin()
             val receivers = mutableListOf<UiSession>()
             val shared =
-                Modifier.Empty.onActivate {
+                Modifier.onActivate {
                     receivers += this
                     close()
                 }

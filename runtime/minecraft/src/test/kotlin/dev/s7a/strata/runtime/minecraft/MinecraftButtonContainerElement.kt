@@ -23,7 +23,7 @@ internal class MinecraftButtonContainerElement private constructor(
         identity = ElementIdentity.Positional,
         type = TYPE,
         children = children,
-        modifier = Modifier.Empty,
+        modifier = Modifier,
     ) {
     /**
      * Retained fixed-size parent that measures and overlaps all direct children.

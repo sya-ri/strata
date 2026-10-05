@@ -51,7 +51,7 @@ internal class FocusedInputModifierTest {
     fun initialTargetReceivesEveryTypedEventInInnerToOuterOrder() {
         val observed = ArrayList<Observation>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .onKeyEvent { event ->
                     observed += Observation.KeyEvery(event)
@@ -160,7 +160,7 @@ internal class FocusedInputModifierTest {
         val ownerTransitions = ArrayList<FocusEvent>()
         val targetTransitions = ArrayList<FocusEvent>()
         val modifier =
-            Modifier.Empty
+            Modifier
                 .size(10, 10)
                 .initialFocus()
                 .onFocusChanged({ value -> ownerTransitions.add(value) })
@@ -199,7 +199,7 @@ internal class FocusedInputModifierTest {
     @Test
     fun editableCapabilityChangesReplaceOnlyTheCurrentDetachedFocusInterval() {
         val transitions = ArrayList<FocusEvent>()
-        val modifier = Modifier.Empty.size(10, 10).initialFocus()
+        val modifier = Modifier.size(10, 10).initialFocus()
         val tree = UiTree()
 
         fun update(
@@ -249,7 +249,7 @@ internal class FocusedInputModifierTest {
         lateinit var retainedTree: UiTree
         retainedTree =
             tree(
-                Modifier.Empty
+                Modifier
                     .size(10, 10)
                     .initialFocus()
                     .onFocusChanged { event ->
@@ -290,7 +290,7 @@ internal class FocusedInputModifierTest {
     @Test
     fun replacedFocusTargetsAreForgottenWithoutCallingDisposedNodes() {
         val transitions = ArrayList<FocusEvent>()
-        val modifier = Modifier.Empty.size(10, 10).initialFocus()
+        val modifier = Modifier.size(10, 10).initialFocus()
         val tree = tree(modifier.then(FocusAcceptanceElement(true, transitions, editable = true)))
         val owner = checkNotNull(retainedFocusOwner(tree))
         val previousTarget = retainedFocusTargets(tree).first()
@@ -326,8 +326,8 @@ internal class FocusedInputModifierTest {
         duplicate.update(
             evaluateComponentTree {
                 Row {
-                    Spacer(modifier = Modifier.Empty.size(10, 10).initialFocus())
-                    Spacer(modifier = Modifier.Empty.size(10, 10).initialFocus())
+                    Spacer(modifier = Modifier.size(10, 10).initialFocus())
+                    Spacer(modifier = Modifier.size(10, 10).initialFocus())
                 }
             },
         )
@@ -339,7 +339,7 @@ internal class FocusedInputModifierTest {
         val primary = IllegalArgumentException("focused callback")
         val failing =
             tree(
-                Modifier.Empty
+                Modifier
                     .size(10, 10)
                     .initialFocus()
                     .onKeyPress { throw primary },
@@ -358,7 +358,7 @@ internal class FocusedInputModifierTest {
         val transitions = ArrayList<FocusEvent>()
         val tree =
             tree(
-                Modifier.Empty
+                Modifier
                     .size(10, 10)
                     .initialFocus()
                     .onFocusChanged({ value -> transitions.add(value) }),
@@ -387,7 +387,7 @@ internal class FocusedInputModifierTest {
             probe.root(
                 emptyList(),
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(10, 10)
                         .initialFocus()
                         .onFocusChanged({ value -> transitions.add(value) })
@@ -420,7 +420,7 @@ internal class FocusedInputModifierTest {
         transitions: MutableList<Transition>,
         keys: MutableList<Target>,
     ): Modifier =
-        Modifier.Empty
+        Modifier
             .size(10, 10)
             .onPress {}
             .onKeyPress {

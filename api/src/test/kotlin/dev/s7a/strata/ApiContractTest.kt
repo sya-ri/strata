@@ -206,7 +206,7 @@ internal class ApiContractTest {
             } as ComponentRuntime
         val failure =
             assertThrows(UnsupportedOperationException::class.java) {
-                runtime.textField(TextFieldState(""), IntSize(200, 20), true, TextStyle.TextField, ResourceId("example", "body"), Modifier.Empty, null)
+                runtime.textField(TextFieldState(""), IntSize(200, 20), true, TextStyle.TextField, ResourceId("example", "body"), Modifier, null)
             }
         assertEquals("This runtime does not support explicit font selection.", failure.message)
     }
@@ -232,17 +232,17 @@ internal class ApiContractTest {
             .filter { it.parameterTypes.firstOrNull() == TextAreaState::class.java && JavaModifier.isStatic(it.modifiers).not() }
             .forEach { method -> assertTrue(method.isDefault) }
         val text = UiText.Literal("A")
-        assertSame(element, runtime.text(text, TextLayout.SingleLine, TextStyle.Normal, Modifier.Empty, null))
+        assertSame(element, runtime.text(text, TextLayout.SingleLine, TextStyle.Normal, Modifier, null))
         assertThrows(UnsupportedOperationException::class.java) {
-            runtime.text(text, TextLayout.Multiline(), TextStyle.Normal, Modifier.Empty, null)
+            runtime.text(text, TextLayout.Multiline(), TextStyle.Normal, Modifier, null)
         }
         val state = TextAreaState()
         val viewport = TextAreaViewport.Lines(120, 3)
         assertThrows(UnsupportedOperationException::class.java) {
-            runtime.textArea(state, viewport, true, TextStyle.TextField, TextWrap.Word, 0, Modifier.Empty, null)
+            runtime.textArea(state, viewport, true, TextStyle.TextField, TextWrap.Word, 0, Modifier, null)
         }
         assertThrows(UnsupportedOperationException::class.java) {
-            runtime.textArea(state, viewport, true, TextStyle.TextField, ResourceId("example", "body"), TextWrap.Word, 0, Modifier.Empty, null)
+            runtime.textArea(state, viewport, true, TextStyle.TextField, ResourceId("example", "body"), TextWrap.Word, 0, Modifier, null)
         }
         assertEquals(1, legacyCalls)
         state.observe { }.close()
@@ -279,10 +279,10 @@ internal class ApiContractTest {
         assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { Text(inner, layout, font) })
         assertEquals(
             listOf(
-                listOf(text, TextLayout.SingleLine, TextStyle.Normal, Modifier.Empty, null),
-                listOf(text, layout, TextStyle.Normal, Modifier.Empty, null),
-                listOf(text.withFont(font), layout, TextStyle.Normal, Modifier.Empty, null),
-                listOf(inner.withFont(font), layout, TextStyle.Normal, Modifier.Empty, null),
+                listOf(text, TextLayout.SingleLine, TextStyle.Normal, Modifier, null),
+                listOf(text, layout, TextStyle.Normal, Modifier, null),
+                listOf(text.withFont(font), layout, TextStyle.Normal, Modifier, null),
+                listOf(inner.withFont(font), layout, TextStyle.Normal, Modifier, null),
             ),
             calls,
         )
@@ -301,8 +301,8 @@ internal class ApiContractTest {
         assertSame(element, ComponentRuntimeBridge.evaluate(runtime) { TextArea(state, viewport, font, wrap = TextWrap.None, lineSpacing = 1) })
         assertEquals(
             listOf(
-                listOf(state, viewport, false, TextStyle.TextField, TextWrap.Character, 2, Modifier.Empty, key),
-                listOf(state, viewport, true, TextStyle.TextField, font, TextWrap.None, 1, Modifier.Empty, null),
+                listOf(state, viewport, false, TextStyle.TextField, TextWrap.Character, 2, Modifier, key),
+                listOf(state, viewport, true, TextStyle.TextField, font, TextWrap.None, 1, Modifier, null),
             ),
             calls,
         )

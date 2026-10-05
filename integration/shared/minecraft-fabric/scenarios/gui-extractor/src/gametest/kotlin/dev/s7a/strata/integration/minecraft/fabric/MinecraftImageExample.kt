@@ -24,7 +24,7 @@ internal fun createImageShowcaseScreenDefinition(source: ImageSource): ScreenDef
     ScreenDefinition("Image showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,

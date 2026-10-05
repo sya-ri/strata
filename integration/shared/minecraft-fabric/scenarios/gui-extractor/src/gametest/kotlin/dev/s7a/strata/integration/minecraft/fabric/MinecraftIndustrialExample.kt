@@ -50,7 +50,7 @@ internal fun createIndustrialScreenDefinition(
     ScreenDefinition("Coal Generator") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
@@ -58,17 +58,17 @@ internal fun createIndustrialScreenDefinition(
         ) {
             Stack(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(176, 166)
                         .imageBackground(panel, ImageScale.Stretch),
             ) {
                 Column(
-                    modifier = Modifier.Empty.padding(left = 7, top = 5, right = 7, bottom = 7),
+                    modifier = Modifier.padding(left = 7, top = 5, right = 7, bottom = 7),
                     spacing = 5,
                 ) {
                     Text("Coal Generator")
                     Row(
-                        modifier = Modifier.Empty.size(162, 36),
+                        modifier = Modifier.size(162, 36),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = VerticalAlignment.Center,
                     ) {
@@ -79,10 +79,10 @@ internal fun createIndustrialScreenDefinition(
                         ) {
                             Text("32 E/t")
                             Stack(
-                                modifier = Modifier.Empty.size(54, 8).background(bufferTrackColor),
+                                modifier = Modifier.size(54, 8).background(bufferTrackColor),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
-                                Spacer(modifier = Modifier.Empty.size(41, 6).background(bufferFillColor))
+                                Spacer(modifier = Modifier.size(41, 6).background(bufferFillColor))
                             }
                         }
                         machineSlot("Charge", chargeBinding)
@@ -94,7 +94,7 @@ internal fun createIndustrialScreenDefinition(
                                 Slot(bind = playerInventory(9 + index))
                             }
                         }
-                        Grid(columns = 9, modifier = Modifier.Empty.padding(top = 4)) {
+                        Grid(columns = 9, modifier = Modifier.padding(top = 4)) {
                             repeat(9) { index ->
                                 Slot(bind = playerInventory(index))
                             }

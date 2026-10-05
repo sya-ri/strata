@@ -191,9 +191,9 @@ internal class ObserveRegionTest {
         val source = ObserveTestSource(1)
         session {
             Row {
-                Observe(source, modifier = Modifier.Empty.weight(1f)) {
+                Observe(source, modifier = Modifier.weight(1f)) {
                     Column {
-                        Spacer(modifier = Modifier.Empty.weight(1f))
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }

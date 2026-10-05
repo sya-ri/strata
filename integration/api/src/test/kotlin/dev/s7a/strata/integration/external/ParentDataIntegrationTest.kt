@@ -31,7 +31,7 @@ internal class ParentDataIntegrationTest {
         val child =
             ComponentParentDataElement(
                 parentDataProbe = parentProbe,
-                modifier = Modifier.Empty.then(ParentDataModifierElement(parentProbe, value = value)),
+                modifier = Modifier.then(ParentDataModifierElement(parentProbe, value = value)),
             )
         val description = ParentDataConsumerElement(parentProbe, children = listOf(child))
         val tree = UiTree()
@@ -67,7 +67,7 @@ internal class ParentDataIntegrationTest {
             treeWithChild(
                 parentProbe,
                 externalProbe,
-                Modifier.Empty.then(ParentDataModifierElement(parentProbe)),
+                Modifier.then(ParentDataModifierElement(parentProbe)),
                 parentDataKey = ParentDataModifierElement.OTHER_KEY,
             )
 
@@ -88,7 +88,7 @@ internal class ParentDataIntegrationTest {
         val externalProbe = ExternalProbe()
         val outer = ParentDataModifierElement(parentProbe, value = ParentDataValue(1), throwOnRead = true)
         val inner = ParentDataModifierElement(parentProbe, value = ParentDataValue(9))
-        val description = treeWithChild(parentProbe, externalProbe, Modifier.Empty.then(outer).then(inner))
+        val description = treeWithChild(parentProbe, externalProbe, Modifier.then(outer).then(inner))
         val tree = UiTree()
 
         tree.update(description)
@@ -118,7 +118,7 @@ internal class ParentDataIntegrationTest {
             treeWithChild(
                 parentProbe,
                 externalProbe,
-                Modifier.Empty
+                Modifier
                     .then(outer)
                     .then(ordinary)
                     .then(inner),
@@ -147,7 +147,7 @@ internal class ParentDataIntegrationTest {
                 probe = externalProbe,
                 key = ElementKey("grandchild"),
                 nodeId = ExternalNodeId.Child,
-                modifier = Modifier.Empty.then(ParentDataModifierElement(parentProbe, value = ParentDataValue(4))),
+                modifier = Modifier.then(ParentDataModifierElement(parentProbe, value = ParentDataValue(4))),
             )
         val child =
             ComponentParentDataElement(
@@ -159,7 +159,7 @@ internal class ParentDataIntegrationTest {
                 probe = parentProbe,
                 key = ElementKey("consumer"),
                 children = listOf(child),
-                modifier = Modifier.Empty.then(ParentDataModifierElement(parentProbe, value = ParentDataValue(8))),
+                modifier = Modifier.then(ParentDataModifierElement(parentProbe, value = ParentDataValue(8))),
             )
         val tree = UiTree()
 
@@ -182,7 +182,7 @@ internal class ParentDataIntegrationTest {
             treeWithChild(
                 probe,
                 externalProbe,
-                Modifier.Empty.then(ParentDataModifierElement(probe, value = ParentDataValue(5))),
+                Modifier.then(ParentDataModifierElement(probe, value = ParentDataValue(5))),
             )
         val tree = UiTree()
 
@@ -218,7 +218,7 @@ internal class ParentDataIntegrationTest {
     fun selectedProviderMeasureFailurePoisonsAndCleansExactlyOnce() {
         val probe = ParentDataProbe()
         val externalProbe = ExternalProbe()
-        val description = treeWithChild(probe, externalProbe, Modifier.Empty.then(ParentDataModifierElement(probe, throwOnRead = true)))
+        val description = treeWithChild(probe, externalProbe, Modifier.then(ParentDataModifierElement(probe, throwOnRead = true)))
         val tree = UiTree()
         val failure = probe.providerFailure
 
@@ -240,7 +240,7 @@ internal class ParentDataIntegrationTest {
     fun selectedProviderLayoutFailurePoisonsAndCleansExactlyOnce() {
         val probe = ParentDataProbe()
         val externalProbe = ExternalProbe()
-        val description = treeWithChild(probe, externalProbe, Modifier.Empty.then(ParentDataModifierElement(probe, throwOnLayoutOnly = true)))
+        val description = treeWithChild(probe, externalProbe, Modifier.then(ParentDataModifierElement(probe, throwOnLayoutOnly = true)))
         val tree = UiTree()
         val failure = probe.providerFailure
 
@@ -261,7 +261,7 @@ internal class ParentDataIntegrationTest {
     fun maliciousWrongErasedValuePoisonsAndCleansExactlyOnce() {
         val probe = ParentDataProbe()
         val externalProbe = ExternalProbe()
-        val description = treeWithChild(probe, externalProbe, Modifier.Empty.then(WrongParentDataModifierElement(probe)))
+        val description = treeWithChild(probe, externalProbe, Modifier.then(WrongParentDataModifierElement(probe)))
         val tree = UiTree()
 
         tree.update(description)
@@ -281,7 +281,7 @@ internal class ParentDataIntegrationTest {
         val probe = ParentDataProbe()
         val externalProbe = ExternalProbe()
         val first = ParentDataModifierElement(probe, value = ParentDataValue(1))
-        val description = treeWithChild(probe, externalProbe, Modifier.Empty.then(first))
+        val description = treeWithChild(probe, externalProbe, Modifier.then(first))
         val tree = UiTree()
 
         tree.update(description)
@@ -298,7 +298,7 @@ internal class ParentDataIntegrationTest {
         val changedKey = changed.copy(parentDataKey = ParentDataModifierElement.OTHER_KEY)
         assertEquals(DirtyMask.of(DirtyPhase.Measure), ParentDataModifierElement.TYPE.updateErased(changed, changedKey, contractNode))
 
-        tree.update(treeWithChild(probe, externalProbe, Modifier.Empty.then(changed)))
+        tree.update(treeWithChild(probe, externalProbe, Modifier.then(changed)))
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         assertEquals(listOf(ParentDataValue(2)), probe.consumerMeasureValues.takeLast(1))
@@ -309,7 +309,7 @@ internal class ParentDataIntegrationTest {
         assertTrue(initialCounts.paint < probe.consumerPaintCalls)
         assertTrue(initialCounts.semantics < probe.consumerSemanticsCalls)
 
-        tree.update(treeWithChild(probe, externalProbe, Modifier.Empty.then(changedKey)))
+        tree.update(treeWithChild(probe, externalProbe, Modifier.then(changedKey)))
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         assertEquals(listOf(null), probe.consumerMeasureValues.takeLast(1))
@@ -318,7 +318,7 @@ internal class ParentDataIntegrationTest {
         tree.semantics()
 
         val beforeEqual = Counts(probe)
-        tree.update(treeWithChild(probe, externalProbe, Modifier.Empty.then(changedKey)))
+        tree.update(treeWithChild(probe, externalProbe, Modifier.then(changedKey)))
         tree.measure(Constraints.fixed(10, 10))
         tree.layout()
         tree.paint()
@@ -394,7 +394,7 @@ internal class ParentDataIntegrationTest {
                     treeWithChild(
                         probe,
                         ExternalProbe(),
-                        Modifier.Empty.then(ParentDataModifierElement(probe)),
+                        Modifier.then(ParentDataModifierElement(probe)),
                     )
                 tree.update(description)
                 ownerReady.countDown()

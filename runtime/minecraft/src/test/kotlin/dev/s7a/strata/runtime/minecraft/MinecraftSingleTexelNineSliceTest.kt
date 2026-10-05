@@ -49,10 +49,10 @@ internal class MinecraftSingleTexelNineSliceTest {
         var presses = 0
         val definition =
             ScreenDefinition("Observed tiled background") {
-                ScrollArea(scroll, Modifier.Empty.size(60, 40)) {
+                ScrollArea(scroll, Modifier.size(60, 40)) {
                     Observe(source) { image ->
                         Stack(
-                            Modifier.Empty
+                            Modifier
                                 .size(60, 100)
                                 .imageBackground(ImageSource.Pixels(image), Insets.all(1))
                                 .semantics(Semantics(label = UiText.Literal("Retained action")))
@@ -193,12 +193,12 @@ internal class MinecraftSingleTexelNineSliceTest {
     ): MinecraftUiHost =
         createMinecraftUiHost(
             ScreenDefinition("Tiled pixels") {
-                Stack(Modifier.Empty.scaleToFit(design, allowUpscaling = true)) {
+                Stack(Modifier.scaleToFit(design, allowUpscaling = true)) {
                     if (oracle) {
                         Image(ImageSource.Pixels(source), size = design)
                     } else {
                         val border = if (source.size.width == 9) Insets.all(4) else Insets.all(1)
-                        Stack(Modifier.Empty.size(design.width, design.height).imageBackground(ImageSource.Pixels(source), border)) {}
+                        Stack(Modifier.size(design.width, design.height).imageBackground(ImageSource.Pixels(source), border)) {}
                     }
                 }
             },

@@ -18,6 +18,8 @@ Choose detail by the reader's task:
 
 Link the README's Changelog section to `CHANGELOG.md`, which summarizes each version and links to its detailed notes under `docs/releases`.
 Those detailed notes also serve as the standalone publication bodies consumed verbatim by release services.
+Maintain the root [deprecation list](../../DEPRECATION.md) whenever a public API is deprecated, replaced, removed, or assigned a removal version.
+Record the first released deprecation version, scheduled removal version, replacement, and migration example from source and release history.
 
 Lead with the answer or ordinary use; link to specialist detail instead of repeating it.
 A short declaration may need only one KDoc sentence.

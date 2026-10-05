@@ -33,7 +33,7 @@ internal class ScaleToFitModifierIntegrationTest {
     fun fixedContentConstraintsAndNaturalOuterSizeRemainIndependent() {
         val probe = ExternalProbe()
         val tree = UiTree()
-        tree.update(element(probe, Modifier.Empty.scaleToFit(IntSize(100, 50))))
+        tree.update(element(probe, Modifier.scaleToFit(IntSize(100, 50))))
 
         assertEquals(
             IntSize(100, 50),
@@ -51,7 +51,7 @@ internal class ScaleToFitModifierIntegrationTest {
     fun containAlignmentDefaultsToCenteredWithoutUpscalingAndSupportsExplicitEndAlignment() {
         val centeredProbe = ExternalProbe()
         val centeredTree = UiTree()
-        centeredTree.update(element(centeredProbe, Modifier.Empty.scaleToFit(IntSize(100, 100))))
+        centeredTree.update(element(centeredProbe, Modifier.scaleToFit(IntSize(100, 100))))
         centeredTree.measure(Constraints.fixed(300, 200))
         centeredTree.layout()
         assertEquals(IntRect(100, 50, 200, 150), centeredTree.semantics().single().bounds)
@@ -62,7 +62,7 @@ internal class ScaleToFitModifierIntegrationTest {
         endTree.update(
             element(
                 endProbe,
-                Modifier.Empty.scaleToFit(
+                Modifier.scaleToFit(
                     contentSize = IntSize(100, 100),
                     contentAlignment = Alignment.BottomEnd,
                 ),
@@ -81,7 +81,7 @@ internal class ScaleToFitModifierIntegrationTest {
         tree.update(
             element(
                 probe,
-                Modifier.Empty.scaleToFit(
+                Modifier.scaleToFit(
                     contentSize = IntSize(100, 100),
                     allowUpscaling = true,
                 ),
@@ -99,7 +99,7 @@ internal class ScaleToFitModifierIntegrationTest {
     fun zeroOuterAxisMeasuresButDoesNotPlaceTheContentSubtree() {
         val probe = ExternalProbe()
         val tree = UiTree()
-        tree.update(element(probe, Modifier.Empty.scaleToFit(IntSize(100, 50))))
+        tree.update(element(probe, Modifier.scaleToFit(IntSize(100, 50))))
 
         assertEquals(IntSize(0, 10), tree.measure(Constraints.fixed(0, 10)))
         tree.layout()
@@ -120,7 +120,7 @@ internal class ScaleToFitModifierIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         val key = ElementKey<String>("scale")
-        tree.update(element(probe, Modifier.Empty.scaleToFit(IntSize(100, 50)), key))
+        tree.update(element(probe, Modifier.scaleToFit(IntSize(100, 50)), key))
         tree.measure(Constraints.fixed(300, 200))
         tree.layout()
         val component = probe.componentNodes.getValue(ExternalNodeId.Root)
@@ -130,7 +130,7 @@ internal class ScaleToFitModifierIntegrationTest {
         tree.update(
             element(
                 probe,
-                Modifier.Empty.scaleToFit(IntSize(100, 50), contentAlignment = Alignment.TopStart),
+                Modifier.scaleToFit(IntSize(100, 50), contentAlignment = Alignment.TopStart),
                 key,
             ),
         )
@@ -144,7 +144,7 @@ internal class ScaleToFitModifierIntegrationTest {
         tree.update(
             element(
                 probe,
-                Modifier.Empty.scaleToFit(
+                Modifier.scaleToFit(
                     IntSize(100, 50),
                     contentAlignment = Alignment.TopStart,
                     allowUpscaling = true,
@@ -162,7 +162,7 @@ internal class ScaleToFitModifierIntegrationTest {
         tree.update(
             element(
                 probe,
-                Modifier.Empty.scaleToFit(
+                Modifier.scaleToFit(
                     IntSize(120, 60),
                     contentAlignment = Alignment.TopStart,
                     allowUpscaling = true,
@@ -186,7 +186,7 @@ internal class ScaleToFitModifierIntegrationTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .scaleToFit(IntSize(100, 100), allowUpscaling = true)
                             .onPress { _, position ->
                                 positions += position
@@ -219,7 +219,7 @@ internal class ScaleToFitModifierIntegrationTest {
             evaluateComponentTree {
                 Spacer(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .scaleToFit(IntSize(3, 3))
                             .onHover({ value -> hoverEvents.add(value) })
                             .onFocusChanged({ value -> focusEvents.add(value) }),

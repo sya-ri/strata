@@ -1541,18 +1541,26 @@ public final class dev/s7a/strata/modifier/ImageBackgroundModifiers {
 	public static final fun menuBackground (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
 }
 
-public final class dev/s7a/strata/modifier/Modifier {
+public abstract interface class dev/s7a/strata/modifier/Modifier {
 	public static final field Companion Ldev/s7a/strata/modifier/Modifier$Companion;
-	public final fun elements ()Ljava/util/List;
+	public abstract fun elements ()Ljava/util/List;
+	public fun then (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public fun then (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/modifier/Modifier;
+}
+
+public final class dev/s7a/strata/modifier/Modifier$Companion : dev/s7a/strata/modifier/Modifier {
+	public fun elements ()Ljava/util/List;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEmpty ()Ldev/s7a/strata/modifier/Modifier;
 	public fun hashCode ()I
-	public final fun then (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
-	public final fun then (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/modifier/Modifier;
+	public fun then (Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public fun then (Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/modifier/Modifier;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class dev/s7a/strata/modifier/Modifier$Companion {
-	public final fun getEmpty ()Ldev/s7a/strata/modifier/Modifier;
+public final class dev/s7a/strata/modifier/Modifier$DefaultImpls {
+	public static fun then (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/modifier/Modifier;)Ldev/s7a/strata/modifier/Modifier;
+	public static fun then (Ldev/s7a/strata/modifier/Modifier;Ldev/s7a/strata/modifier/ModifierElement;)Ldev/s7a/strata/modifier/Modifier;
 }
 
 public abstract interface class dev/s7a/strata/modifier/ModifierElement {

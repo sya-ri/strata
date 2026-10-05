@@ -41,7 +41,7 @@ internal class MinecraftTabTest {
                     "All",
                     selected = true,
                     width = 73,
-                    modifier = Modifier.Empty.onPress { presses += 1 },
+                    modifier = Modifier.onPress { presses += 1 },
                 )
             }
         host.attach()
@@ -95,7 +95,7 @@ internal class MinecraftTabTest {
                     width = 73,
                     indicator =
                         TabSelectionIndicator.Custom {
-                            Spacer(modifier = Modifier.Empty.size(9, 2).background(indicatorColor))
+                            Spacer(modifier = Modifier.size(9, 2).background(indicatorColor))
                         },
                 )
             }

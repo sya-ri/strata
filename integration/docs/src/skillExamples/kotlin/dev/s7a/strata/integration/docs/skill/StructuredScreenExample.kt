@@ -40,7 +40,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
     return UiDefinition("Storage") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 240)
                     .menuBackground()
                     .padding(12),
@@ -53,7 +53,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
             Row(spacing = 4) {
                 ScrollArea(
                     state = scroll,
-                    modifier = Modifier.Empty.size(260, 54),
+                    modifier = Modifier.size(260, 54),
                 ) {
                     Column(spacing = 3) {
                         Text("Oak chest")
@@ -63,7 +63,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 }
                 Scrollbar(
                     state = scroll,
-                    modifier = Modifier.Empty.height(54),
+                    modifier = Modifier.height(54),
                 )
             }
             VirtualList(
@@ -76,7 +76,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 canLoadLeading = true,
                 canLoadTrailing = true,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .onLeadingItemsRequested { request: ListLoadRequest ->
                             val loaded = List(request.suggestedCount) { "Leading ${nextLeadingKey++}" }
                             items.addAll(0, loaded)
@@ -93,12 +93,12 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
                 Button(
                     "Jump first",
                     width = 72,
-                    modifier = Modifier.Empty.onActivate { listState.jumpToIndex(0) },
+                    modifier = Modifier.onActivate { listState.jumpToIndex(0) },
                 )
                 Button(
                     "Jump oak",
                     width = 72,
-                    modifier = Modifier.Empty.onActivate { listState.jumpToKey("Oak chest") },
+                    modifier = Modifier.onActivate { listState.jumpToKey("Oak chest") },
                 )
             }
             Grid(columns = 9, horizontalSpacing = 0, verticalSpacing = 0) {
@@ -106,7 +106,7 @@ internal fun storageScreen(onDone: () -> Unit): UiDefinition {
             }
             Button(
                 "Done",
-                modifier = Modifier.Empty.onActivate { onDone() },
+                modifier = Modifier.onActivate { onDone() },
             )
         }
     }

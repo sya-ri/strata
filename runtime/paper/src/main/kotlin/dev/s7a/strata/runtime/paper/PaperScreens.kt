@@ -31,7 +31,7 @@ public object PaperScreens {
      * Unavailable clients and unsupported declarations return a terminal handle with a typed reason.
      * On Folia, create captured mutable state through [execute], or use the definition-factory overload.
      */
-    @Deprecated("Use UiDefinition.open(ownerPlugin, player).")
+    @Deprecated("Use UiDefinition.open(ownerPlugin, player). Scheduled for removal in 1.0.0.")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,
@@ -43,7 +43,7 @@ public object PaperScreens {
      * Call on the player's region (or Paper's primary thread), and construct mutable UI state inside [definition].
      * The factory runs synchronously once, before retained screen evaluation; handlers run on that player's region.
      */
-    @Deprecated("Use PaperUi.open(ownerPlugin, player) with a UiDefinition factory.")
+    @Deprecated("Use PaperUi.open(ownerPlugin, player) with a UiDefinition factory. Scheduled for removal in 1.0.0.")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,

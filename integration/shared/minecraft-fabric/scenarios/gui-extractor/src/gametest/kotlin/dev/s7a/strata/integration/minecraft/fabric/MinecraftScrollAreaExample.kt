@@ -22,9 +22,9 @@ internal fun createScrollAreaShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("ScrollArea showcase") {
         ScrollArea(
             state = state,
-            modifier = Modifier.Empty.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(120, 48).background(ArgbColor(0xFF000000.toInt())),
         ) {
-            Column(modifier = Modifier.Empty.size(120, 72), horizontalAlignment = HorizontalAlignment.Center) {
+            Column(modifier = Modifier.size(120, 72), horizontalAlignment = HorizontalAlignment.Center) {
                 repeat(4) { index -> Text("Entry ${index + 1}") }
             }
         }

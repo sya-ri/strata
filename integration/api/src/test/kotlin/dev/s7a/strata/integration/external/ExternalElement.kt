@@ -27,7 +27,7 @@ public class ExternalElement public constructor(
     private val label: UiText = UiText.Literal("external"),
     private val nodeId: ExternalNodeId = ExternalNodeId.Root,
     children: List<Element> = emptyList(),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
 ) : Element(
         identity = key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional,
         type = TYPE,

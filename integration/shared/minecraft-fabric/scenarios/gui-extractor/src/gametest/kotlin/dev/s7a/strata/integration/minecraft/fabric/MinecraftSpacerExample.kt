@@ -23,14 +23,14 @@ internal fun createSpacerShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Spacer showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = VerticalAlignment.Center,
         ) {
             Button("Left", width = 60)
-            Spacer(modifier = Modifier.Empty.size(16, 20))
+            Spacer(modifier = Modifier.size(16, 20))
             Button("Right", width = 60)
         }
     }

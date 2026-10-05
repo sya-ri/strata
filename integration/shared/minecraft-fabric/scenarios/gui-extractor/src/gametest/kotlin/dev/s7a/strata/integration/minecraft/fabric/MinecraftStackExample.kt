@@ -22,7 +22,7 @@ internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Stack showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
@@ -30,7 +30,7 @@ internal fun createStackShowcaseScreenDefinition(): ScreenDefinition =
             Button("Open", width = 56)
             Spacer(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(10, 10)
                         .background(ArgbColor(0xFFE53935.toInt()))
                         .align(Alignment.CenterEnd),

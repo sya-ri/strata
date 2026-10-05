@@ -55,21 +55,21 @@ public fun playerSearchScreen(
     return ScreenDefinition("Player search") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(200, 180)
                     .menuBackground()
                     .padding(4),
             spacing = 4,
         ) {
-            Text(elapsedLabel, layout = lineLayout, modifier = Modifier.Empty.size(192, 12))
+            Text(elapsedLabel, layout = lineLayout, modifier = Modifier.size(192, 12))
             TextField(state = query, size = IntSize(192, 20))
             Button(
                 label = searchLabel,
                 width = 192,
                 enabled = searchEnabled,
-                modifier = Modifier.Empty.onActivate(searchEnabled) { onSearch() },
+                modifier = Modifier.onActivate(searchEnabled) { onSearch() },
             )
-            Observe(searching, resultsEmpty, modifier = Modifier.Empty.size(192, 12)) { active, empty ->
+            Observe(searching, resultsEmpty, modifier = Modifier.size(192, 12)) { active, empty ->
                 Text(
                     text =
                         when {
@@ -90,7 +90,7 @@ public fun playerSearchScreen(
                 Text(
                     text = entry.name,
                     layout = lineLayout,
-                    modifier = Modifier.Empty.size(192, 12),
+                    modifier = Modifier.size(192, 12),
                 )
             }
         }

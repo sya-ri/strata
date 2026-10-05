@@ -24,7 +24,7 @@ internal fun createVirtualListShowcaseScreenDefinition(): ScreenDefinition {
     return ScreenDefinition("VirtualList showcase") {
         VirtualList(items, { item -> item }, state, IntSize(120, 48), rowHeight = 16) { item ->
             Stack(
-                modifier = Modifier.Empty.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
+                modifier = Modifier.size(120, 16).background(ArgbColor(0xFF202020.toInt())),
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(item)

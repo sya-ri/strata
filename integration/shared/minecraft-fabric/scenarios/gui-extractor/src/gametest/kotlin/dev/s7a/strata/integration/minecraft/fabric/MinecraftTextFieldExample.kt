@@ -28,27 +28,27 @@ import dev.s7a.strata.screen.ScreenDefinition
 internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
     val address = TextFieldState("play.example.net", maxLength = 128)
     return ScreenDefinition("Direct Connection") {
-        Stack(modifier = Modifier.Empty.size(320, 240).menuBackground()) {
+        Stack(modifier = Modifier.size(320, 240).menuBackground()) {
             Column(
-                modifier = Modifier.Empty.size(320, 212),
+                modifier = Modifier.size(320, 212),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = HorizontalAlignment.Center,
             ) {
                 Stack(
-                    modifier = Modifier.Empty.size(320, 29),
+                    modifier = Modifier.size(320, 29),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
                     Text("Direct Connection")
                 }
                 Column(
-                    modifier = Modifier.Empty.size(200, 112),
+                    modifier = Modifier.size(200, 112),
                     verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(spacing = 7) {
                         Text(
                             "Server Address",
                             style = TextStyle.Inactive,
-                            modifier = Modifier.Empty.padding(left = 1),
+                            modifier = Modifier.padding(left = 1),
                         )
                         TextField(address)
                     }
@@ -56,12 +56,12 @@ internal fun createDirectJoinScreenDefinition(): ScreenDefinition {
                         Button(
                             "Join Server",
                             width = 200,
-                            modifier = Modifier.Empty.onActivate {},
+                            modifier = Modifier.onActivate {},
                         )
                         Button(
                             "Cancel",
                             width = 200,
-                            modifier = Modifier.Empty.onActivate {},
+                            modifier = Modifier.onActivate {},
                         )
                     }
                 }

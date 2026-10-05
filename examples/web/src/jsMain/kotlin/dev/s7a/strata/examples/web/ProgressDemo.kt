@@ -17,7 +17,7 @@ internal fun progressDemo(): UiDefinition {
     val steps = mutableStateOf(0)
     return UiDefinition("Progress") {
         Column(spacing = 16) {
-            Text("Progress: ${steps.value * 10}%", modifier = Modifier.Empty.width(304))
+            Text("Progress: ${steps.value * 10}%", modifier = Modifier.width(304))
             ProgressBar(steps.value / 10.0, IntSize(304, 24))
             Row(spacing = 8) {
                 actionButton("Decrease", enabled = 0 < steps.value) { steps.value -= 1 }

@@ -41,28 +41,28 @@ internal class BuiltinModifierIntegrationTest {
     fun sizePoliciesClampRangesSupportUnboundedAxesAndPreserveSingleAxisBehavior() {
         assertEquals(
             IntSize(10, 12),
-            measure(Modifier.Empty.size(20, 30), Constraints(maxWidth = 10, maxHeight = 12)),
+            measure(Modifier.size(20, 30), Constraints(maxWidth = 10, maxHeight = 12)),
         )
         assertEquals(
             IntSize(8, 4),
             measure(
-                Modifier.Empty.sizeIn(minWidth = 8, minHeight = 0, maxWidth = Int.MAX_VALUE, maxHeight = 7),
+                Modifier.sizeIn(minWidth = 8, minHeight = 0, maxWidth = Int.MAX_VALUE, maxHeight = 7),
                 Constraints(minWidth = 5, maxWidth = 20, minHeight = 3, maxHeight = 10),
             ),
         )
         assertEquals(
             IntSize(10, 40),
             measure(
-                Modifier.Empty.sizeIn(minWidth = 0, minHeight = 50, maxWidth = 5, maxHeight = 60),
+                Modifier.sizeIn(minWidth = 0, minHeight = 50, maxWidth = 5, maxHeight = 60),
                 Constraints(minWidth = 10, maxWidth = 20, minHeight = 30, maxHeight = 40),
             ),
         )
-        assertEquals(IntSize(7, 4), measure(Modifier.Empty.width(7), Constraints(maxWidth = 10, maxHeight = 10)))
-        assertEquals(IntSize(4, 9), measure(Modifier.Empty.height(9), Constraints(maxWidth = 10, maxHeight = 10)))
+        assertEquals(IntSize(7, 4), measure(Modifier.width(7), Constraints(maxWidth = 10, maxHeight = 10)))
+        assertEquals(IntSize(4, 9), measure(Modifier.height(9), Constraints(maxWidth = 10, maxHeight = 10)))
         assertEquals(
             IntSize(8, 7),
             measure(
-                Modifier.Empty.widthIn(min = 6, max = 8),
+                Modifier.widthIn(min = 6, max = 8),
                 Constraints(maxWidth = 10),
                 width = 9,
                 height = 7,
@@ -71,7 +71,7 @@ internal class BuiltinModifierIntegrationTest {
         assertEquals(
             IntSize(6, 8),
             measure(
-                Modifier.Empty.heightIn(min = 6, max = 8),
+                Modifier.heightIn(min = 6, max = 8),
                 Constraints(maxHeight = 10),
                 width = 6,
                 height = 9,
@@ -83,24 +83,24 @@ internal class BuiltinModifierIntegrationTest {
     fun fillPoliciesPreserveUnboundedAxesAndResolveDisjointSingleAxisRanges() {
         assertEquals(
             IntSize(10, 12),
-            measure(Modifier.Empty.fillMaxSize(), Constraints(maxWidth = 10, maxHeight = 12)),
+            measure(Modifier.fillMaxSize(), Constraints(maxWidth = 10, maxHeight = 12)),
         )
         assertEquals(
             IntSize(4, 4),
-            measure(Modifier.Empty.fillMaxSize(), Constraints()),
+            measure(Modifier.fillMaxSize(), Constraints()),
         )
         assertEquals(
             IntSize(10, 4),
-            measure(Modifier.Empty.fillMaxWidth(), Constraints(maxWidth = 10)),
+            measure(Modifier.fillMaxWidth(), Constraints(maxWidth = 10)),
         )
         assertEquals(
             IntSize(4, 12),
-            measure(Modifier.Empty.fillMaxHeight(), Constraints(maxHeight = 12)),
+            measure(Modifier.fillMaxHeight(), Constraints(maxHeight = 12)),
         )
         assertEquals(
             IntSize(10, 7),
             measure(
-                Modifier.Empty.widthIn(min = 0, max = 5),
+                Modifier.widthIn(min = 0, max = 5),
                 Constraints(minWidth = 10, maxWidth = 20, maxHeight = 10),
                 width = 13,
                 height = 7,
@@ -109,7 +109,7 @@ internal class BuiltinModifierIntegrationTest {
         assertEquals(
             IntSize(6, 40),
             measure(
-                Modifier.Empty.heightIn(min = 50, max = 60),
+                Modifier.heightIn(min = 50, max = 60),
                 Constraints(minHeight = 30, maxHeight = 40, maxWidth = 10),
                 width = 6,
                 height = 13,
@@ -118,7 +118,7 @@ internal class BuiltinModifierIntegrationTest {
         assertEquals(
             IntSize(5, 6),
             measure(
-                Modifier.Empty.fillMaxSize(),
+                Modifier.fillMaxSize(),
                 Constraints(minWidth = 5, minHeight = 6),
             ),
         )
@@ -128,26 +128,26 @@ internal class BuiltinModifierIntegrationTest {
     fun paddingReducesConstraintsRestoresInsetsAndRespectsSourceOrder() {
         assertEquals(
             IntSize(2, 2),
-            measure(Modifier.Empty.size(2, 2).padding(1), Constraints(maxWidth = 10, maxHeight = 10)),
+            measure(Modifier.size(2, 2).padding(1), Constraints(maxWidth = 10, maxHeight = 10)),
         )
         assertEquals(
             IntSize(4, 4),
-            measure(Modifier.Empty.padding(1).size(2, 2), Constraints(maxWidth = 10, maxHeight = 10)),
+            measure(Modifier.padding(1).size(2, 2), Constraints(maxWidth = 10, maxHeight = 10)),
         )
         assertEquals(
             IntSize(2, 2),
-            measure(Modifier.Empty.padding(3), Constraints.fixed(2, 2)),
+            measure(Modifier.padding(3), Constraints.fixed(2, 2)),
         )
         assertEquals(
             IntSize(7, 11),
             measure(
-                Modifier.Empty.padding(left = 1, top = 3, right = 2, bottom = 4),
+                Modifier.padding(left = 1, top = 3, right = 2, bottom = 4),
                 Constraints(maxWidth = 10),
             ),
         )
         assertEquals(
             IntSize(8, 10),
-            measure(Modifier.Empty.padding(horizontal = 2, vertical = 3), Constraints(maxWidth = 20, maxHeight = 20)),
+            measure(Modifier.padding(horizontal = 2, vertical = 3), Constraints(maxWidth = 20, maxHeight = 20)),
         )
     }
 
@@ -156,7 +156,7 @@ internal class BuiltinModifierIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         val insets = Insets(left = 3, top = 4, right = 5, bottom = 6)
-        tree.update(element(probe = probe, modifier = Modifier.Empty.padding(insets)))
+        tree.update(element(probe = probe, modifier = Modifier.padding(insets)))
 
         tree.measure(Constraints.fixed(2, 2))
         tree.layout()
@@ -182,7 +182,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = outerBackgroundProbe,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .background(ArgbColor(0xFFFF0000.toInt()))
                         .padding(insets),
             ),
@@ -204,7 +204,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = innerBackgroundProbe,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .padding(insets)
                         .background(ArgbColor(0xFFFF0000.toInt())),
             ),
@@ -236,7 +236,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 label = UiText.Literal("root"),
-                modifier = Modifier.Empty.semantics(modifierSemantics),
+                modifier = Modifier.semantics(modifierSemantics),
                 children =
                     listOf(
                         element(
@@ -267,7 +267,7 @@ internal class BuiltinModifierIntegrationTest {
         tree.update(
             element(
                 probe = probe,
-                modifier = Modifier.Empty.background(ArgbColor(0xFFFF0000.toInt())),
+                modifier = Modifier.background(ArgbColor(0xFFFF0000.toInt())),
                 children =
                     listOf(
                         element(
@@ -276,7 +276,7 @@ internal class BuiltinModifierIntegrationTest {
                             width = 2,
                             height = 2,
                             nodeId = ExternalNodeId.Child,
-                            modifier = Modifier.Empty.background(ArgbColor(0xFF0000FF.toInt())),
+                            modifier = Modifier.background(ArgbColor(0xFF0000FF.toInt())),
                         ),
                     ),
             ),
@@ -306,7 +306,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 label = UiText.Literal("root"),
-                modifier = Modifier.Empty.semantics(rootModifier),
+                modifier = Modifier.semantics(rootModifier),
                 children =
                     listOf(
                         element(
@@ -315,7 +315,7 @@ internal class BuiltinModifierIntegrationTest {
                             width = 2,
                             nodeId = ExternalNodeId.Child,
                             label = UiText.Literal("child"),
-                            modifier = Modifier.Empty.semantics(childModifier),
+                            modifier = Modifier.semantics(childModifier),
                         ),
                     ),
             ),
@@ -348,7 +348,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 key = key,
-                modifier = Modifier.Empty.background(ArgbColor(0xFFFF0000.toInt())),
+                modifier = Modifier.background(ArgbColor(0xFFFF0000.toInt())),
             ),
         )
         tree.measure(Constraints(maxWidth = 10, maxHeight = 10))
@@ -364,7 +364,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 key = key,
-                modifier = Modifier.Empty.background(ArgbColor(0xFF0000FF.toInt())),
+                modifier = Modifier.background(ArgbColor(0xFF0000FF.toInt())),
             ),
         )
         val updatedPaint = tree.paint().first() as DrawCommand.FillRectangle
@@ -378,7 +378,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 key = key,
-                modifier = Modifier.Empty.background(ArgbColor(0xFF0000FF.toInt())),
+                modifier = Modifier.background(ArgbColor(0xFF0000FF.toInt())),
             ),
         )
         tree.paint()
@@ -398,7 +398,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 key = key,
-                modifier = Modifier.Empty.semantics(Semantics(label = UiText.Literal("first"))),
+                modifier = Modifier.semantics(Semantics(label = UiText.Literal("first"))),
             ),
         )
         tree.measure(Constraints(maxWidth = 10, maxHeight = 10))
@@ -414,7 +414,7 @@ internal class BuiltinModifierIntegrationTest {
             element(
                 probe = probe,
                 key = key,
-                modifier = Modifier.Empty.semantics(Semantics(label = UiText.Literal("second"))),
+                modifier = Modifier.semantics(Semantics(label = UiText.Literal("second"))),
             ),
         )
         val entries = tree.semantics()
@@ -430,12 +430,12 @@ internal class BuiltinModifierIntegrationTest {
         val probe = ExternalProbe()
         val tree = UiTree()
         val key = ElementKey("root")
-        tree.update(element(probe = probe, key = key, modifier = Modifier.Empty.size(4, 4)))
+        tree.update(element(probe = probe, key = key, modifier = Modifier.size(4, 4)))
         tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
         tree.layout()
         val firstMeasures = probe.componentNodes.getValue(ExternalNodeId.Root).measures
 
-        tree.update(element(probe = probe, key = key, modifier = Modifier.Empty.size(8, 8)))
+        tree.update(element(probe = probe, key = key, modifier = Modifier.size(8, 8)))
         tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
         val secondMeasures = probe.componentNodes.getValue(ExternalNodeId.Root).measures
         assertEquals(firstMeasures + 1, secondMeasures)
@@ -449,20 +449,20 @@ internal class BuiltinModifierIntegrationTest {
         val key = ElementKey("root")
         val initialInsets = Insets(left = 1, top = 2, right = 1, bottom = 2)
         val changedInsets = Insets(left = 3, top = 1, right = 2, bottom = 4)
-        tree.update(element(probe = probe, key = key, modifier = Modifier.Empty.padding(initialInsets)))
+        tree.update(element(probe = probe, key = key, modifier = Modifier.padding(initialInsets)))
         tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
         tree.layout()
         val initialNode = probe.componentNodes.getValue(ExternalNodeId.Root)
         val initialMeasures = initialNode.measures
 
-        tree.update(element(probe = probe, key = key, modifier = Modifier.Empty.padding(changedInsets)))
+        tree.update(element(probe = probe, key = key, modifier = Modifier.padding(changedInsets)))
         tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
         val changedMeasures = initialNode.measures
         assertSame(initialNode, probe.componentNodes.getValue(ExternalNodeId.Root))
         assertEquals(initialMeasures + 1, changedMeasures)
 
         tree.layout()
-        tree.update(element(probe = probe, key = key, modifier = Modifier.Empty.padding(changedInsets)))
+        tree.update(element(probe = probe, key = key, modifier = Modifier.padding(changedInsets)))
         tree.measure(Constraints(maxWidth = 20, maxHeight = 20))
         assertSame(initialNode, probe.componentNodes.getValue(ExternalNodeId.Root))
         assertEquals(changedMeasures, initialNode.measures)
@@ -474,7 +474,7 @@ internal class BuiltinModifierIntegrationTest {
         assertEquals(
             IntSize(5, 6),
             measure(
-                Modifier.Empty.size(2, 3),
+                Modifier.size(2, 3),
                 Constraints(minWidth = 5, maxWidth = 10, minHeight = 6, maxHeight = 10),
             ),
         )
@@ -501,7 +501,7 @@ internal class BuiltinModifierIntegrationTest {
     ) {
         val tree = UiTree()
         val probe = ExternalProbe()
-        tree.update(element(probe = probe, width = width, height = height, modifier = Modifier.Empty.padding(insets)))
+        tree.update(element(probe = probe, width = width, height = height, modifier = Modifier.padding(insets)))
         val node = probe.componentNodes.getValue(ExternalNodeId.Root)
 
         assertThrows(ArithmeticException::class.java) { tree.measure(Constraints()) }
@@ -530,7 +530,7 @@ internal class BuiltinModifierIntegrationTest {
         label: UiText = UiText.Literal("external"),
         nodeId: ExternalNodeId = ExternalNodeId.Root,
         children: List<Element> = emptyList(),
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
     ): ExternalElement =
         ExternalElement(
             probe = probe,

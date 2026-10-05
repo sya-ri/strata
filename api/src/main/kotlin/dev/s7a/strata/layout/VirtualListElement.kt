@@ -163,7 +163,7 @@ internal class VirtualListElement(
                         contentAlignment = Alignment.TopStart,
                         key = ElementKey(itemKey),
                         children = listOf(child),
-                        modifier = Modifier.Empty,
+                        modifier = Modifier,
                     )
                 }
             return cachedChildren

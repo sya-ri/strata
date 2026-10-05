@@ -210,7 +210,7 @@ internal class WeightedLayoutIntegrationTest {
                         width = 1,
                         height = 2,
                         nodeId = ExternalNodeId.Child,
-                        modifier = Modifier.Empty.weight(1f).weight(3f),
+                        modifier = Modifier.weight(1f).weight(3f),
                     ),
                 )
                 element(weightedElement(probe, ExternalNodeId.Modifier, 1f, 1, 2))
@@ -267,7 +267,7 @@ internal class WeightedLayoutIntegrationTest {
             width = width,
             height = height,
             nodeId = nodeId,
-            modifier = Modifier.Empty.weight(weight, fill),
+            modifier = Modifier.weight(weight, fill),
         )
 
     private fun ColumnScope.weightedElement(
@@ -283,7 +283,7 @@ internal class WeightedLayoutIntegrationTest {
             width = width,
             height = height,
             nodeId = nodeId,
-            modifier = Modifier.Empty.weight(weight, fill),
+            modifier = Modifier.weight(weight, fill),
         )
 
     private fun paintBounds(tree: UiTree): List<IntRect> = tree.paint().map { command -> (command as DrawCommand.FillRectangle).bounds }

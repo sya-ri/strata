@@ -1,7 +1,9 @@
 # Modifiers
 
 Modifiers add sizing, painting, semantics, and input behavior to a component.
-Build a chain from `Modifier.Empty`: the first modifier is outermost and affects the constraints or bounds seen by later ones.
+Build a chain from `Modifier`: the first modifier is outermost and affects the constraints or bounds seen by later ones.
+`Modifier` alone is the empty chain; use it as a default value or the empty branch of a conditional.
+Custom `Modifier` extension functions work from this same starting receiver.
 Changing the chain preserves the component's keyed identity and logical subtree.
 See the [component examples](../reference/components.md) and [exact API contracts](https://gh.s7a.dev/strata/).
 
@@ -22,7 +24,7 @@ It does not fill a loose parent by itself.
 To use the complete viewport, put `fillMaxSize()` first:
 
 ```kotlin
-val modifier = Modifier.Empty
+val modifier = Modifier
     .fillMaxSize()
     .scaleToFit(contentSize = IntSize(320, 180))
 ```

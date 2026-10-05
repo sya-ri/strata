@@ -50,7 +50,7 @@ internal class ExternalRuntimeUiSessionIntegrationTest {
                         materialized += item
                         Spacer(
                             modifier =
-                                Modifier.Empty
+                                Modifier
                                     .size(80, 10)
                                     .onActivate { activations += item },
                         )

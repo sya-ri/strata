@@ -19,7 +19,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
     UiDefinition("Confirm action") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .menuBackground()
                     .padding(12),
@@ -29,7 +29,7 @@ internal fun openConfirmationScreen(onConfirm: () -> Unit) {
             Text("Continue with this action?")
             Button(
                 "Yes",
-                modifier = Modifier.Empty.onActivate { onConfirm() },
+                modifier = Modifier.onActivate { onConfirm() },
             )
         }
     }.open()

@@ -33,7 +33,7 @@ import dev.s7a.strata.render.ArgbColor
 internal fun UiScope.EnergyGauge(
     stored: Int,
     capacity: Int,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     require(0 < capacity) { "Energy capacity must be positive." }
@@ -45,11 +45,11 @@ internal fun UiScope.EnergyGauge(
     ) {
         Text("$stored / $capacity E")
         Stack(
-            modifier = Modifier.Empty.size(80, 8).background(ArgbColor(0xFF1A2226.toInt())),
+            modifier = Modifier.size(80, 8).background(ArgbColor(0xFF1A2226.toInt())),
             contentAlignment = Alignment.CenterStart,
         ) {
             Spacer(
-                modifier = Modifier.Empty.size(fillWidth, 6).background(ArgbColor(0xFF20C7DF.toInt())),
+                modifier = Modifier.size(fillWidth, 6).background(ArgbColor(0xFF20C7DF.toInt())),
             )
         }
     }

@@ -35,7 +35,7 @@ internal fun UiScope.emitObservedComponent(
         ObserveElement(
             sources.toList(),
             ObserveContent(ComponentRuntimeBridge.currentOrNull()?.retainEvaluator(), content, requireSingleRoot = true),
-            Modifier.Empty,
+            Modifier,
             key,
             transparent = true,
         ),

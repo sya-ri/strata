@@ -159,7 +159,7 @@ internal class FocusTraversalTest {
             single.close()
         }
 
-        val empty = rowTree(Modifier.Empty.size(10, 10))
+        val empty = rowTree(Modifier.size(10, 10))
         try {
             assertEquals(InputResult.Ignored, empty.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
         } finally {
@@ -196,7 +196,7 @@ internal class FocusTraversalTest {
 
         try {
             update(target(Target.First, transitions).initialFocus())
-            update(Modifier.Empty.size(10, 10))
+            update(Modifier.size(10, 10))
             assertEquals(
                 InputResult.Consumed,
                 tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = reverse))),
@@ -231,7 +231,7 @@ internal class FocusTraversalTest {
         transitions: MutableList<Transition>,
         width: Int = 10,
     ): Modifier =
-        Modifier.Empty
+        Modifier
             .size(width, 10)
             .onFocusChanged { event -> transitions += Transition(target, event) }
 

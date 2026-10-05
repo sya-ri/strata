@@ -87,11 +87,11 @@ internal object MinecraftCanvasConsumptionGameTest {
             fixture.snapshotMode = MinecraftCanvasSnapshotMode.Matching
             val definition =
                 ScreenDefinition("Mixed Canvas queued-close acceptance") {
-                    Stack(Modifier.Empty.size(64, 48).background(ArgbColor(0xFF0000FF.toInt()))) {
+                    Stack(Modifier.size(64, 48).background(ArgbColor(0xFF0000FF.toInt()))) {
                         canvasTestClip(IntSize(32, 32)) {
                             Canvas(fixture.rendererSource, IntSize(32, 32))
                         }
-                        Spacer(Modifier.Empty.size(8, 8).background(ArgbColor(0xFFFF0000.toInt())))
+                        Spacer(Modifier.size(8, 8).background(ArgbColor(0xFFFF0000.toInt())))
                     }
                 }
             val owned = createMinecraftScreen(definition, profile, parent = null)
