@@ -80,7 +80,9 @@ tasks.register<JavaExec>("jmhHistorical") {
     mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalPerformanceEvidence")
     val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
     require(0 <= repetition)
+    val quick = providers.gradleProperty("strata.performance.quick").map(String::toBooleanStrict).getOrElse(false)
     val smoke = providers.gradleProperty("strata.performance.smoke").map(String::toBooleanStrict).getOrElse(false)
+    val short = quick || smoke
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
     val targeted = providers.gradleProperty("strata.performance.workloads").isPresent || providers.gradleProperty("strata.performance.parameters").isPresent
@@ -94,15 +96,16 @@ tasks.register<JavaExec>("jmhHistorical") {
     systemProperty("strata.performance.sampledRaster", sampledRaster)
     // Keep existing corpus fork arguments identical when the independent dense corpus is absent.
     if (denseSampledRaster) systemProperty("strata.performance.denseSampledRaster", true)
-    val suite = (if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    val suite = (if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (quick) "-quick" else "") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
     providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
-    val includes = if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    val quickSmoke = quick && targeted.not() && denseSampledRaster.not() && sampledRaster.not() && nonuniform.not()
+    val includes = if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke || quickSmoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (smoke) "0" else "3", "-w", "1s", "-i", if (smoke) "1" else "5", "-r", if (smoke) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
-    systemProperty("strata.performance.smoke", smoke)
+    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    systemProperty("strata.performance.smoke", smoke || quickSmoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {

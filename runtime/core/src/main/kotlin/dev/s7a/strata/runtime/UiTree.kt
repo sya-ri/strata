@@ -61,7 +61,7 @@ public class UiTree(
     internal var stateObservation: StateObservation? = null
     private val dirtyTracker = DirtyTracker(monitoring)
     private val registry = NodeOwnershipRegistry()
-    private val pipeline = Pipeline(ownerGuard, monitoring)
+    private val pipeline = Pipeline(ownerGuard, monitoring, dirtyTracker)
     private val observedSources = ObservedSourceRegistry(monitoring)
     private val lifecycle =
         LifecycleManager(registry, ownerGuard, dirtyTracker, monitoring, callbackSession) { entry ->

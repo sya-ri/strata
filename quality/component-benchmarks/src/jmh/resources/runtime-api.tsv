@@ -2955,6 +2955,7 @@ core	Core	dev.s7a.strata.runtime.DescriptionValidator#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.DirtyTracker#constructor:1:()V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#constructor:1:(Ldev/s7a/strata/runtime/RenderMonitoring;)V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:getRevision:()J
+core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:getStructureRevision:()J
 core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:record-AC5Qm9I:(Ldev/s7a/strata/runtime/RetainedEntry;I)V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#method:17:structural:(Ldev/s7a/strata/runtime/RetainedEntry;)V
 core	Core	dev.s7a.strata.runtime.DirtyTracker#type:17:java.lang.Object:
@@ -2977,6 +2978,12 @@ core	Core	dev.s7a.strata.runtime.FocusedInputPipeline#method:17:getTextInputFocu
 core	Core	dev.s7a.strata.runtime.FocusedInputPipeline#method:17:layoutCommitted:(Ldev/s7a/strata/runtime/RetainedNode;)V
 core	Core	dev.s7a.strata.runtime.FocusedInputPipeline#method:17:releaseRetainedReferences:()V
 core	Core	dev.s7a.strata.runtime.FocusedInputPipeline#type:17:java.lang.Object:
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#constructor:1:()V
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#method:17:advance:(Ldev/s7a/strata/runtime/RetainedNode;JLdev/s7a/strata/runtime/FrameTime;)V
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#method:17:capture:(Ldev/s7a/strata/runtime/RetainedNode;J)V
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#method:17:clear:()V
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#method:17:commit:(Ldev/s7a/strata/runtime/RetainedNode;J)V
+core	Core	dev.s7a.strata.runtime.FrameCallbackIndex#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.InputPipeline#constructor:1:(Ldev/s7a/strata/runtime/FocusedInputPipeline;)V
 core	Core	dev.s7a.strata.runtime.InputPipeline#method:17:cancelCapture:()V
 core	Core	dev.s7a.strata.runtime.InputPipeline#method:17:clearHover:(Ldev/s7a/strata/runtime/RetainedNode;)V
@@ -3100,7 +3107,7 @@ core	Core	dev.s7a.strata.runtime.PaintPipeline#constructor:1:(Ldev/s7a/strata/ru
 core	Core	dev.s7a.strata.runtime.PaintPipeline#method:17:paint:(Ldev/s7a/strata/runtime/RetainedEntry;)Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.PaintPipeline#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.PaintPipelineKt#type:17:java.lang.Object:
-core	Core	dev.s7a.strata.runtime.Pipeline#constructor:1:(Ldev/s7a/strata/runtime/OwnerGuard;Ldev/s7a/strata/runtime/RenderMonitoring;)V
+core	Core	dev.s7a.strata.runtime.Pipeline#constructor:1:(Ldev/s7a/strata/runtime/OwnerGuard;Ldev/s7a/strata/runtime/RenderMonitoring;Ldev/s7a/strata/runtime/DirtyTracker;)V
 core	Core	dev.s7a.strata.runtime.Pipeline#method:17:advanceFrame:(Ldev/s7a/strata/runtime/RetainedNode;Ldev/s7a/strata/runtime/FrameTime;)V
 core	Core	dev.s7a.strata.runtime.Pipeline#method:17:captureFrameState:(Ldev/s7a/strata/runtime/RetainedNode;)V
 core	Core	dev.s7a.strata.runtime.Pipeline#method:17:clearInputState:(Ldev/s7a/strata/runtime/RetainedNode;)V

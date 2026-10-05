@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceSelection
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFails
@@ -11,6 +12,46 @@ import kotlin.test.assertFails
  * These detached contract inputs contain no timings and do not constitute collected performance evidence.
  */
 internal class NativeComponentPerformanceEvidenceTest {
+    @Test
+    internal fun quickEvidenceHasItsOwnCountsScaleAndIdentity() {
+        val report = complete()
+        val selection = PerformanceSelection(report.getAsJsonArray("phases").map { it.asJsonObject.get("case").asString }.toSet(), "TextField")
+        report.addProperty("workload_id", "native-components-selected-presented-v1-quick")
+        report.addProperty("measurement_profile", "Quick")
+        report.addProperty("warmup", 3)
+        report.add("selected_cases", JsonArray().apply { add("TextField") })
+        report.add(
+            "phases",
+            JsonArray().apply {
+                report
+                    .getAsJsonArray("phases")
+                    .filter {
+                        val phase = it.asJsonObject
+                        phase.get("case").asString.contentEquals("TextField") && phase.get("gui_scale").asInt == 3
+                    }.forEach {
+                        val phase = it.deepCopy().asJsonObject
+                        phase.addProperty("samples", 10)
+                        phase.getAsJsonObject("frame_interval").addProperty("samples", 10)
+                        phase.getAsJsonObject("native_counter_delta").addProperty("renderExtractionCount", 10)
+                        add(phase)
+                    }
+            },
+        )
+        NativeComponentPerformanceEvidence.verify(report, selection, PerformanceProfile.Quick)
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection) }
+        val mutations: List<(JsonObject) -> Unit> =
+            listOf(
+                { it.addProperty("gui_scale", 1) },
+                { it.addProperty("samples", 60) },
+                { it.getAsJsonObject("frame_interval").addProperty("samples", 9) },
+            )
+        mutations.forEach { mutate ->
+            val changed = report.deepCopy()
+            mutate(changed.getAsJsonArray("phases")[0].asJsonObject)
+            assertFails { NativeComponentPerformanceEvidence.verify(changed, selection, PerformanceProfile.Quick) }
+        }
+    }
+
     @Test
     internal fun missingScaleCannotProduceACompleteMatrix() {
         val report = complete()

@@ -15,6 +15,12 @@ internal class DirtyTracker(
     private var currentRevision: Long = 0L
 
     /**
+     * Effective ancestry change token; ordinary phase invalidation preserves callback membership.
+     */
+    var structureRevision: Long = 0L
+        private set
+
+    /**
      * Whole-tree change token used to reject stale frame snapshots.
      *
      * The token changes whenever nonempty phase work or structural work is recorded.
@@ -58,6 +64,7 @@ internal class DirtyTracker(
      * @param retained the parent whose direct-child structure changed.
      */
     fun structural(retained: RetainedEntry) {
+        structureRevision += 1L
         monitoring.record(UiRenderMetric.StructureInvalidation, retained)
         advanceRevision()
         var current: RetainedEntry? = retained

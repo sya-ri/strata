@@ -964,6 +964,24 @@ private val ciMinecraftTargets = minecraftFabricTargets.filter { target -> targe
 private val requestedTaskNames = gradle.startParameter.taskNames
 private val normalizedRequestedTaskNames =
     requestedTaskNames.map { taskName -> taskName.takeIf { it.startsWith(':') } ?: ":$taskName" }
+private val quickMinecraftBenchmarkRequested = ":benchmarkMinecraftQuick" in normalizedRequestedTaskNames
+private val quickPerformance = providers.gradleProperty("strata.performance.quick").map(String::toBooleanStrict).getOrElse(quickMinecraftBenchmarkRequested)
+val benchmarkMinecraftQuick = tasks.register("benchmarkMinecraftQuick") {
+    group = "verification"
+    description = "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
+    if (quickMinecraftBenchmarkRequested) {
+        require(
+            normalizedRequestedTaskNames.none { taskName ->
+                taskName == ":check" || taskName.substringAfterLast(':') in minecraftClientTaskNames
+            },
+        ) { "Run quick performance collection separately from correctness clients" }
+        require(quickPerformance) { "benchmarkMinecraftQuick requires the quick profile" }
+        require(providers.gradleProperty("strata.performance.nativeOutput").isPresent) { "Set strata.performance.nativeOutput to a fresh directory" }
+        require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a quick run" }
+        val target = if (ciMinecraftVersions.isEmpty()) minecraftFabricTargets.last() else minecraftFabricTargets.single { it.version == ciMinecraftVersions.single() }
+        dependsOn("${target.integrationProjectPath}:runProductionClientGameTest")
+    }
+}
 private val selectsEveryMinecraftClient =
     requestedTaskNames.any { taskName -> taskName == "check" || taskName in minecraftClientTaskNames }
 private val selectsFontParityClients = requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') == "verifyOfflineFontParity" }
@@ -980,6 +998,7 @@ private val selectedMinecraftExecutionTargets =
             minecraftFabricTargets.filter { target ->
                 target in ciMinecraftTargets || (selectsFontParityClients && target.version in fontParityMinecraftVersions)
             }
+        quickMinecraftBenchmarkRequested -> listOf(minecraftFabricTargets.last())
         selectsEveryMinecraftClient -> minecraftFabricTargets
         else ->
             minecraftFabricTargets.filter { target ->
@@ -1511,6 +1530,8 @@ subprojects {
             }
             providers.gradleProperty("strata.performance.nativeOutput").orNull?.let { output ->
                 val nativeOutput = rootProject.file(output).absoluteFile
+                tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.quick", quickPerformance) }
+                tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }

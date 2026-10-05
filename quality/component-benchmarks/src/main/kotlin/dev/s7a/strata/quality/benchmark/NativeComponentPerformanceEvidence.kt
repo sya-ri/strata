@@ -8,6 +8,7 @@ import dev.s7a.strata.performance.JvmPerformanceMeter
 import dev.s7a.strata.performance.JvmPerformanceReports
 import dev.s7a.strata.performance.NativePerformanceEvidence
 import dev.s7a.strata.performance.PerformanceJson
+import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceReportContract
 import dev.s7a.strata.performance.PerformanceReportMetric
 import dev.s7a.strata.performance.PerformanceSelection
@@ -73,13 +74,14 @@ internal object NativeComponentPerformanceEvidence {
             }
 
     /**
-     * Processes three independent raw invocations into a new summary without replacing evidence.
+     * Processes the profile's independent raw invocations into a new summary without replacing evidence.
      */
     @JvmStatic
     fun main(args: Array<String>) {
         require(args.size == 1)
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
-        val selection = PerformanceSelection(cases, request.get("workloads")?.asString)
+        val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
+        val selection = PerformanceSelection(cases, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) cases.first() else null)
         val collectorType = JvmPerformanceMeter::class.java
         val collector =
             Path.of(
@@ -102,10 +104,10 @@ internal object NativeComponentPerformanceEvidence {
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
-                contract(selection),
+                contract(selection, profile),
                 metrics,
             ) { report ->
-                verify(report, selection)
+                verify(report, selection, profile)
                 arguments.add(
                     JsonObject().apply {
                         add(
@@ -136,11 +138,14 @@ internal object NativeComponentPerformanceEvidence {
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
     }
 
-    private fun contract(selection: PerformanceSelection): PerformanceReportContract =
+    private fun contract(
+        selection: PerformanceSelection,
+        profile: PerformanceProfile,
+    ): PerformanceReportContract =
         PerformanceReportContract(
-            if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1",
+            profile.workloadId(if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1"),
             listOf("case", "operation", "gui_scale"),
-            selection.ids.size * 4,
+            selection.ids.size * profile.viewports((1..4).toList()).size,
             setOf(
                 "minecraft_version",
                 "java",
@@ -162,8 +167,9 @@ internal object NativeComponentPerformanceEvidence {
                 "warmup",
                 "settle_frames",
                 "preparation_timeout_ms",
-            ),
+            ) + if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet(),
             setOf("samples", "framebuffer_width", "framebuffer_height"),
+            repetitions = profile.plan().repetitions,
         )
 
     /**
@@ -172,23 +178,27 @@ internal object NativeComponentPerformanceEvidence {
     internal fun verify(
         report: JsonObject,
         selection: PerformanceSelection = PerformanceSelection(cases),
+        profile: PerformanceProfile = PerformanceProfile.Standard,
     ) {
-        val expectedId = if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1"
+        val expectedId = profile.workloadId(if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1")
         require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
         report.getAsJsonArray("selected_cases")?.let { declared ->
             require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
         }
         require(report.get("status").asString.contentEquals("passed"))
+        if (profile == PerformanceProfile.Quick) require(report.get("measurement_profile").asString == profile.name)
         require(report.get("framebuffer_width").asInt == 1920 && report.get("framebuffer_height").asInt == 1080)
         require(report.get("vsync").asBoolean.not() && report.get("framerate_limit").asInt == 120)
-        require(report.get("warmup").asInt == 30 && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == 120_000L)
+        val plan = profile.plan()
+        val scales = profile.viewports((1..4).toList())
+        require(report.get("warmup").asInt == plan.warmup && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == plan.preparationTimeoutMillis)
         val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
-        require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> (1..4).map { name to it } }.toSet()) { "Changed native component matrix" }
-        require(phases.size == selection.ids.size * 4) { "Duplicate native component intervals" }
+        require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> scales.map { name to it } }.toSet()) { "Changed native component matrix" }
+        require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->
-            require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == 60)
-            require(phase.getAsJsonObject("frame_interval").get("samples").asInt == 60)
-            require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == 60)
+            require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == plan.samples)
+            require(phase.getAsJsonObject("frame_interval").get("samples").asInt == plan.samples)
+            require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
             require(
                 phase
                     .getAsJsonObject("diagnostics")
