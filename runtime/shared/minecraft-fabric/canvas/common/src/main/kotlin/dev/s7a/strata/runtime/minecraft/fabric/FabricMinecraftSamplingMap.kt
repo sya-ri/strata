@@ -74,7 +74,7 @@ internal class FabricMinecraftSamplingMap(
     ): Int {
         val first = ceil(destinationStart.toDouble() * scale - 0.5)
         val last = ceil(destinationEnd.toDouble() * scale - 0.5)
-        if (physical.toDouble() < first || last <= physical.toDouble()) return 0
+        if ((physical.toDouble() in first..<last).not()) return 0
         val center = (physical.toFloat() + 0.5f) / scale.toFloat()
         val relative = (center - destinationStart) / (destinationEnd - destinationStart)
         val sample = sourceStart * (1f - relative) + sourceEnd * relative

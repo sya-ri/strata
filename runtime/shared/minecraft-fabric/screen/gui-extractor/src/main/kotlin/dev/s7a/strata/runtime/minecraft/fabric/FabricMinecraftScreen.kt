@@ -718,6 +718,8 @@ public class FabricMinecraftScreen private constructor(
                     { portableRasterizationCount += 1L },
                     { textureUploadCount += 1L },
                     { sampling, retain ->
+                        // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
+                        @Suppress("RedundantRequireNotNullCall")
                         val source = checkNotNull(textureFor(sampling.command.image))
                         sampledQueued(sampling.command.image)
                         FabricMinecraftPortableTexture.create(sampling, source, retain).also {

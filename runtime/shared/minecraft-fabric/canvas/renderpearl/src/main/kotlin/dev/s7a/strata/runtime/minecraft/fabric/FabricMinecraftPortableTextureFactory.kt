@@ -166,7 +166,7 @@ private class FabricPortableNativeStorage : NativeGuiResource {
             encoder.createRenderPass({ "Strata exact sampled image" }, checkNotNull(textureView), Optional.empty()).use { pass ->
                 pass.setPipeline(RenderSystem.getCompiledPipeline(fabricMinecraftSamplingPipeline()))
                 pass.setUniform("InSampler", source.getTextureView(), source.getSampler())
-                pass.setUniform("IndexSampler", checkNotNull(indexView), checkNotNull(sampler))
+                pass.setUniform("IndexSampler", checkNotNull(indexView), sampler)
                 pass.draw(3, 1, 0, 0)
             }
         }
