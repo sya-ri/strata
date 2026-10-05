@@ -58,8 +58,8 @@ Install exactly one version-matched runtime as a separate client Fabric Mod toge
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.2.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.1")
+    compileOnly("dev.s7a.strata:strata-api:0.2.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -70,7 +70,7 @@ Declare it as a required dependency in the consuming Mod so `UiDefinition.open()
 ```json
 {
   "depends": {
-    "strata": ">=0.2.1"
+    "strata": ">=0.2.2"
   }
 }
 ```
@@ -83,8 +83,8 @@ The matching Fabric client Mod is required for every player using the UI.
 
 | Platform | Installed Strata plugin | Consumer dependency (`compileOnly`) |
 | --- | --- | --- |
-| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.1` |
-| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.1` |
+| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.2` |
+| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.2` |
 
 Add these repositories to either plugin's `build.gradle.kts`:
 
@@ -99,7 +99,7 @@ Paper / Folia dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-paper-api:0.2.1")
+    compileOnly("dev.s7a.strata:strata-paper-api:0.2.2")
     compileOnly("io.papermc.paper:paper-api:<paper-api-version>")
 }
 ```
@@ -108,7 +108,7 @@ Velocity dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-velocity-api:0.2.1")
+    compileOnly("dev.s7a.strata:strata-velocity-api:0.2.2")
     compileOnly("com.velocitypowered:velocity-api:<velocity-api-version>")
 }
 ```
@@ -193,12 +193,23 @@ See the [web build guide](docs/development/build.md#initial-web-documents) for t
 | `runtime/minecraft` | Host profile-backed components and resources in a common runtime. |
 | `runtime/minecraft-fonts-lwjgl` | Supply a CPU backend for offline resource-font rendering. |
 | `runtime/minecraft-fabric-<version>` | Run the interface as a client Fabric screen on one matching game version. |
+| `quality/performance-testkit` | Add shared performance collection and validated comparisons to library or application tests. |
 
 Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
 
 The [Paper and Folia](docs/guides/paper.md) and [Velocity](docs/guides/velocity.md) guides cover server-owned screens, HUDs, and their client requirements.
+
+## Performance testkit
+
+The optional [performance testkit](docs/development/performance-testkit.md) collects JVM/JMH timing, allocation and GC evidence, runtime work counts, and native presentation counters.
+It checks workload and loaded-binary identities and produces validated summaries and Before/After comparisons.
+Supply your real fixtures, actions, readiness conditions, and expected work; use Quick or selected investigations during iteration and standard conditions for acceptance.
+
+Add `dev.s7a.strata:strata-performance-testkit` to JVM test dependencies, or `dev.s7a.strata:strata-performance-testkit-multiplatform` for shared fixtures, and keep its release version aligned with Strata.
+JVM collection, validation, aggregation, and comparison run in Java.
+See the [testkit guide](docs/development/performance-testkit.md) for setup, collection, and evidence contracts.
 
 ## Changelog
 
