@@ -81,6 +81,10 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
             object : CanvasBinding {
                 override fun paint(scope: PaintScope) {
                     scope.fillRectangle(IntRect(0, 0, contentSize.width, contentSize.height), ArgbColor(0xFF000000.toInt()))
+                    scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(300f, 0f, 310f, 10f), alphaCutoff = 0f)
+                    scope.withClip(IntRect(0, 0, 8, 8)) {
+                        scope.sampledImage(sampled, FloatRect(0.5f, 0f, 5.5f, 4f), FloatRect(20f, 20f, 30f, 30f))
+                    }
                     scope.fillRectangle(IntRect(2, 2, 46, 30), ArgbColor(0xFFFF0000.toInt()))
                     scope.withClip(IntRect(5, 4, 43, 28)) {
                         scope.sampledImage(
@@ -117,6 +121,9 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         FloatRect(104f, 40f, 136f, 64f),
                         alphaCutoff = 0f,
                     )
+                    scope.fillRectangle(IntRect(180, 96, 220, 124), ArgbColor(0x408123EF))
+                    scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(-10f, 0f, -1f, 10f))
+                    scope.fillRectangle(IntRect(184, 100, 216, 120), ArgbColor(0x8067AD11.toInt()))
                 }
 
                 override fun close(): Unit = Unit

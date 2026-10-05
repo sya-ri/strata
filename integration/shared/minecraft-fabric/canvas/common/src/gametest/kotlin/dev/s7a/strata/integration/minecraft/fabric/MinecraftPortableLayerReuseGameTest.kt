@@ -3,17 +3,23 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.Canvas
+import dev.s7a.strata.component.CanvasBinding
+import dev.s7a.strata.component.CanvasSource
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
+import dev.s7a.strata.geometry.FloatRect
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
@@ -30,6 +36,7 @@ import javax.imageio.ImageIO
  *
  * An opaque changing region and a patterned translucent region use separate portable runs.
  * Texture identities and render counters prove reuse; literal screenshot texels independently verify updated and retained pixels.
+ * Replacing a fully clipped unsupported sampled image must prepare a new display list while preserving both visible textures with no rasterization or upload.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftPortableLayerReuseGameTest {
@@ -54,6 +61,7 @@ internal object MinecraftPortableLayerReuseGameTest {
         context.configureViewport(viewport, scale)
         val fixture = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
         val color = context.onClient { mutableStateOf(ArgbColor(0xFF2277DD.toInt())) }
+        val hidden = context.onClient { mutableStateOf(createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x80336699.toInt(), -1))) }
         val pattern = ImageSource.Pixels(createDrawImage(IntSize(2, 2), intArrayOf(0x80FF0000.toInt(), 0xFF00FF00.toInt(), 0xFF0000FF.toInt(), 0)))
         var screen: FabricMinecraftScreen? = null
         var failure: Throwable? = null
@@ -67,6 +75,7 @@ internal object MinecraftPortableLayerReuseGameTest {
                                     Spacer(Modifier.Empty.size(16, 16).background(color.value))
                                     Canvas(fixture.textureSource, IntSize(16, 16))
                                     Spacer(Modifier.Empty.size(16, 16).imageBackground(pattern, ImageScale.Stretch))
+                                    Canvas(invisibleSource(hidden.value), IntSize(16, 16))
                                 }
                             }
                         },
@@ -86,13 +95,10 @@ internal object MinecraftPortableLayerReuseGameTest {
             check(after.rasterizations == before.rasterizations + 1 && after.uploads == before.uploads + 1) {
                 "Partial replacement must rasterize and upload exactly one changed region: before=$before, after=$after"
             }
-            val path = context.takeScreenshot("strata-portable-layer-reuse-scale-$scale", viewport)
-            val image = checkNotNull(ImageIO.read(path.toFile()))
-            check(image.getRGB(scale, scale) == 0xFF2255AA.toInt()) { "The changed portable region retained stale pixels." }
-            check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
-            check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
-            check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
-            Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\nunchangedTextureIdentity=preserved\n")
+            verifyInvisibleImageUpdate(context, owned, after) {
+                hidden.value = createDrawImage(IntSize(2, 2), intArrayOf(0, -1, -1, 0x4088CC22))
+            }
+            verifyScreenshot(context, viewport, scale)
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -107,7 +113,51 @@ internal object MinecraftPortableLayerReuseGameTest {
         }
     }
 
+    private fun verifyInvisibleImageUpdate(
+        context: MinecraftCanvasTestContext,
+        screen: FabricMinecraftScreen,
+        before: Observation,
+        update: () -> Unit,
+    ) {
+        context.onClient { update() }
+        context.waitFor { observation(screen)?.let { before.preparations < it.preparations } == true }
+        val after = context.onClient { checkNotNull(observation(screen)) }
+        check(after.textures.size == before.textures.size && before.textures.indices.all { after.textures[it] === before.textures[it] }) {
+            "Changing a fully clipped sampled image replaced a visible texture."
+        }
+        check(after.rasterizations == before.rasterizations && after.uploads == before.uploads) {
+            "Invisible sampled inputs must not rasterize or upload: before=$before, after=$after"
+        }
+    }
+
+    private fun verifyScreenshot(
+        context: MinecraftCanvasTestContext,
+        viewport: IntSize,
+        scale: Int,
+    ) {
+        val path = context.takeScreenshot("strata-portable-layer-reuse-scale-$scale", viewport)
+        val image = checkNotNull(ImageIO.read(path.toFile()))
+        check(image.getRGB(scale, scale) == 0xFF2255AA.toInt()) { "The changed portable region retained stale pixels." }
+        check(image.getRGB(33 * scale, scale) == 0xFF800000.toInt()) { "The retained translucent pattern changed its blend against the lower background." }
+        check(image.getRGB(41 * scale, scale) == 0xFF00FF00.toInt()) { "The retained opaque pattern changed its texels." }
+        check(image.getRGB(41 * scale, 9 * scale) == 0xFF000000.toInt()) { "Transparent retained texels obscured the lower background." }
+        Files.writeString(path.resolveSibling("strata-portable-layer-reuse-scale-$scale.txt"), "guiScale=$scale\nportableLayers=2\nchangedRasterizations=1\nchangedUploads=1\ninvisibleImageRasterizations=0\ninvisibleImageUploads=0\nunchangedTextureIdentity=preserved\n")
+    }
+
     private fun resourcesReleased(): Boolean = NativeCanvasDevices.retainedTargetCount() == 0 && NativeCanvasDevices.retainedGuiResourceSetCount() == 0
+
+    private fun invisibleSource(image: DrawImage): CanvasSource =
+        CanvasSource {
+            object : CanvasBinding {
+                override fun paint(scope: PaintScope) {
+                    scope.withClip(IntRect(0, 0, 0, 0)) {
+                        scope.sampledImage(image, FloatRect(0.5f, 0f, 1.5f, 2f), FloatRect(0f, 0f, 16f, 16f), tint = ArgbColor(0x80FFFFFF.toInt()))
+                    }
+                }
+
+                override fun close(): Unit = Unit
+            }
+        }
 
     @Suppress("StringLiteralComparison") // Reflection selects a versioned adapter field by its JVM name, not a domain state.
     private fun observation(screen: FabricMinecraftScreen): Observation? {
@@ -120,6 +170,7 @@ internal object MinecraftPortableLayerReuseGameTest {
             read(owner, "portableRasterizationCount") as Long,
             read(owner, "textureUploadCount") as Long,
             read(checkNotNull((read(prepared, "images") as List<*>).first()), "scale") as Int,
+            read(owner, "framePreparationCount") as Long,
         )
     }
 
@@ -137,5 +188,6 @@ internal object MinecraftPortableLayerReuseGameTest {
         val rasterizations: Long,
         val uploads: Long,
         val scale: Int,
+        val preparations: Long,
     )
 }

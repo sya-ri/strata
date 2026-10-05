@@ -7,8 +7,10 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -19,6 +21,59 @@ import org.junit.jupiter.api.Test
 /** Verifies pure direct-image eligibility, barriers, clips, and tight fallback localization. */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
+    @Test
+    fun invisibleFallbackInputsAreOmittedWithoutMergingDirectImageBarriers() {
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
+        val first = DrawCommand.FillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))
+        val last = DrawCommand.FillRectangle(IntRect(2, 2, 4, 4), ArgbColor(0x80336699.toInt()))
+        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(20f, 1f, 24f, 5f), alphaCutoff = 0f)
+        val unsupported = direct.copy(tint = ArgbColor(0x80FFFFFF.toInt()))
+        val viewport = IntSize(10, 10)
+        val expected = partitionFabricMinecraftFrame(listOf(first, last), viewport).single() as FabricMinecraftFrameLayer.Portable
+        for (scale in 1..4) {
+            for (destination in listOf(FloatRect(-4f, 1f, 0f, 5f), FloatRect(10f, 1f, 14f, 5f), FloatRect(1f, -4f, 5f, 0f), FloatRect(1f, 10f, 5f, 14f))) {
+                for (sampled in listOf(unsupported.copy(destination = destination), direct.copy(source = FloatRect(0.5f, 0f, 1.5f, 2f), destination = destination))) {
+                    val commands = listOf(first, sampled, last)
+                    val actual = partitionFabricMinecraftFrame(commands, viewport, scale).single() as FabricMinecraftFrameLayer.Portable
+                    assertEquals(expected.bounds, actual.bounds)
+                    assertEquals(expected.commands, actual.commands)
+                    assertEquals(0, actual.ineligibleSampledImages)
+                    assertArrayEquals(rasterizeHeadless(listOf(first, last), viewport, scale).copyArgb(), rasterizeHeadless(commands, viewport, scale).copyArgb())
+                }
+                val separated = partitionFabricMinecraftFrame(listOf(first, direct.copy(destination = destination), last), viewport, scale)
+                assertEquals(2, separated.size)
+                assertEquals(IntRect(1, 1, 3, 3), (separated[0] as FabricMinecraftFrameLayer.Portable).bounds)
+                assertEquals(IntRect(2, 2, 4, 4), (separated[1] as FabricMinecraftFrameLayer.Portable).bounds)
+            }
+        }
+    }
+
+    @Test
+    fun clippedSampledImagesKeepNestedClipBalanceAndVisibleBarriers() {
+        val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
+        val direct = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(5f, 5f, 7f, 7f), alphaCutoff = 0f)
+        val first = DrawCommand.FillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))
+        val last = first.copy(color = ArgbColor(0x80336699.toInt()))
+        val clip = DrawCommand.PushClip(IntRect(0, 0, 4, 4))
+        val fractional = DrawCommand.PushFractionalClip(FloatRect(0.25f, 0.25f, 3.75f, 3.75f))
+        val prefixes = listOf(listOf(clip), listOf(clip, fractional))
+        for (scale in 1..4) {
+            for (prefix in prefixes) {
+                val suffix = List(prefix.size) { DrawCommand.PopClip }
+                val expected = partitionFabricMinecraftFrame(prefix + listOf(first, last) + suffix + direct, IntSize(10, 10), scale)
+                for (sampled in listOf(direct.copy(tint = ArgbColor(0x80FFFFFF.toInt())), direct.copy(source = FloatRect(0.5f, 0f, 1.5f, 2f)))) {
+                    val actual = partitionFabricMinecraftFrame(prefix + listOf(first, sampled, last) + suffix + direct, IntSize(10, 10), scale)
+                    assertEquals(2, actual.size)
+                    assertEquals((expected[0] as FabricMinecraftFrameLayer.Portable).commands, (actual[0] as FabricMinecraftFrameLayer.Portable).commands)
+                    assertEquals(direct, (actual[1] as FabricMinecraftFrameLayer.Sampled).command)
+                }
+                val separated = partitionFabricMinecraftFrame(prefix + listOf(first, direct, last) + suffix + direct, IntSize(10, 10), scale)
+                assertEquals(3, separated.size)
+                assertEquals(direct, (separated[2] as FabricMinecraftFrameLayer.Sampled).command)
+            }
+        }
+    }
+
     @Test
     fun distantFractionalEdgesAreBoundedBeforeIntegerEnvelopeConversion() {
         val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
