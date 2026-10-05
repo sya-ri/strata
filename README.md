@@ -193,12 +193,23 @@ See the [web build guide](docs/development/build.md#initial-web-documents) for t
 | `runtime/minecraft` | Host profile-backed components and resources in a common runtime. |
 | `runtime/minecraft-fonts-lwjgl` | Supply a CPU backend for offline resource-font rendering. |
 | `runtime/minecraft-fabric-<version>` | Run the interface as a client Fabric screen on one matching game version. |
+| `quality/performance-testkit` | Add shared performance collection and validated comparisons to library or application tests. |
 
 Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
 See [architecture](docs/development/architecture.md) for dependency boundaries.
 
 The [Paper and Folia](docs/guides/paper.md) and [Velocity](docs/guides/velocity.md) guides cover server-owned screens, HUDs, and their client requirements.
+
+## Performance testkit
+
+The optional [performance testkit](docs/development/performance-testkit.md) collects JVM/JMH timing, allocation and GC evidence, runtime work counts, and native presentation counters.
+It checks workload and loaded-binary identities and produces validated summaries and Before/After comparisons.
+Supply your real fixtures, actions, readiness conditions, and expected work; use Quick or selected investigations during iteration and standard conditions for acceptance.
+
+Add `dev.s7a.strata:strata-performance-testkit` to JVM test dependencies, or `dev.s7a.strata:strata-performance-testkit-multiplatform` for shared fixtures, and keep its release version aligned with Strata.
+JVM collection, validation, aggregation, and comparison run in Java.
+See the [testkit guide](docs/development/performance-testkit.md) for setup, collection, and evidence contracts.
 
 ## Changelog
 
