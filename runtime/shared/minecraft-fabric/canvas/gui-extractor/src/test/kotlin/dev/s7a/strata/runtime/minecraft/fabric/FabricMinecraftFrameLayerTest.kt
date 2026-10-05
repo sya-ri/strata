@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftFrameLayerTest {
     @Test
-    fun invisibleSampledImagesNeitherSplitPortableRunsNorChangeTheirPixelInputs() {
+    fun invisibleFallbackInputsAreOmittedWithoutMergingDirectImageBarriers() {
         val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0x804466AA.toInt(), -1))
         val first = DrawCommand.FillRectangle(IntRect(1, 1, 3, 3), ArgbColor(-1))
         val last = DrawCommand.FillRectangle(IntRect(2, 2, 4, 4), ArgbColor(0x80336699.toInt()))
@@ -32,7 +32,7 @@ internal class FabricMinecraftFrameLayerTest {
         val expected = partitionFabricMinecraftFrame(listOf(first, last), viewport).single() as FabricMinecraftFrameLayer.Portable
         for (scale in 1..4) {
             for (destination in listOf(FloatRect(-4f, 1f, 0f, 5f), FloatRect(10f, 1f, 14f, 5f), FloatRect(1f, -4f, 5f, 0f), FloatRect(1f, 10f, 5f, 14f))) {
-                for (sampled in listOf(direct, unsupported).map { it.copy(destination = destination) }) {
+                for (sampled in listOf(unsupported.copy(destination = destination), direct.copy(source = FloatRect(0.5f, 0f, 1.5f, 2f), destination = destination))) {
                     val commands = listOf(first, sampled, last)
                     val actual = partitionFabricMinecraftFrame(commands, viewport, scale).single() as FabricMinecraftFrameLayer.Portable
                     assertEquals(expected.bounds, actual.bounds)
@@ -40,6 +40,10 @@ internal class FabricMinecraftFrameLayerTest {
                     assertEquals(0, actual.ineligibleSampledImages)
                     assertArrayEquals(rasterizeHeadless(listOf(first, last), viewport, scale).copyArgb(), rasterizeHeadless(commands, viewport, scale).copyArgb())
                 }
+                val separated = partitionFabricMinecraftFrame(listOf(first, direct.copy(destination = destination), last), viewport, scale)
+                assertEquals(2, separated.size)
+                assertEquals(IntRect(1, 1, 3, 3), (separated[0] as FabricMinecraftFrameLayer.Portable).bounds)
+                assertEquals(IntRect(2, 2, 4, 4), (separated[1] as FabricMinecraftFrameLayer.Portable).bounds)
             }
         }
     }
@@ -57,12 +61,15 @@ internal class FabricMinecraftFrameLayerTest {
             for (prefix in prefixes) {
                 val suffix = List(prefix.size) { DrawCommand.PopClip }
                 val expected = partitionFabricMinecraftFrame(prefix + listOf(first, last) + suffix + direct, IntSize(10, 10), scale)
-                for (sampled in listOf(direct, direct.copy(tint = ArgbColor(0x80FFFFFF.toInt())))) {
+                for (sampled in listOf(direct.copy(tint = ArgbColor(0x80FFFFFF.toInt())), direct.copy(source = FloatRect(0.5f, 0f, 1.5f, 2f)))) {
                     val actual = partitionFabricMinecraftFrame(prefix + listOf(first, sampled, last) + suffix + direct, IntSize(10, 10), scale)
                     assertEquals(2, actual.size)
                     assertEquals((expected[0] as FabricMinecraftFrameLayer.Portable).commands, (actual[0] as FabricMinecraftFrameLayer.Portable).commands)
                     assertEquals(direct, (actual[1] as FabricMinecraftFrameLayer.Sampled).command)
                 }
+                val separated = partitionFabricMinecraftFrame(prefix + listOf(first, direct, last) + suffix + direct, IntSize(10, 10), scale)
+                assertEquals(3, separated.size)
+                assertEquals(direct, (separated[2] as FabricMinecraftFrameLayer.Sampled).command)
             }
         }
     }

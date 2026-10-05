@@ -122,7 +122,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         alphaCutoff = 0f,
                     )
                     scope.fillRectangle(IntRect(180, 96, 220, 124), ArgbColor(0x408123EF))
-                    scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(-10f, 0f, -1f, 10f), alphaCutoff = 0f)
+                    scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(-10f, 0f, -1f, 10f))
                     scope.fillRectangle(IntRect(184, 100, 216, 120), ArgbColor(0x8067AD11.toInt()))
                 }
 

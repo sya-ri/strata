@@ -81,7 +81,7 @@ internal inline fun submitFabricMinecraftFrameLayers(
  *
  * Direct eligibility is deliberately limited to ordinary orientation, opaque-white tint, zero alpha cutoff, and integer source texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
- * Sampled commands outside the viewport or intersected clip envelopes are omitted before creating a barrier or portable pixel input.
+ * Invisible unsupported sampled commands are omitted from portable pixel inputs; direct-image barriers retain their exact display-list positions.
  *
  * @param commands complete balanced display list.
  * @param viewport positive or empty logical viewport used only for visibility and bounded fallback allocation.
@@ -131,8 +131,6 @@ internal fun partitionFabricMinecraftFrame(
 
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
-                val visible = command.destination.enclosingFabricViewportBounds(visibleClip)
-                if (visible == null) return@forEach
                 val directClip =
                     if (isDirectFabricSampledImage(command, scale)) {
                         if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
@@ -149,6 +147,7 @@ internal fun partitionFabricMinecraftFrame(
                         layers.add(FabricMinecraftFrameLayer.Sampled(command, directClip.takeIf { activeClips.isNotEmpty() }, visible))
                     }
                 } else {
+                    val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEach
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible, activeClips, viewportBounds)
                     portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
