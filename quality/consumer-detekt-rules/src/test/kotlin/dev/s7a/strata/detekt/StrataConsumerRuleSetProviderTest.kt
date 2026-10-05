@@ -12,10 +12,23 @@ import java.util.ServiceLoader
  */
 internal class StrataConsumerRuleSetProviderTest {
     @Test
-    fun loadsOnlyTheConsumerProviderAndBothFactories() {
+    fun loadsOnlyTheConsumerProviderAndAuthoringFactories() {
         val provider = ServiceLoader.load(RuleSetProvider::class.java).filterIsInstance<StrataConsumerRuleSetProvider>().single()
         val rules = provider.instance()
         assertEquals(RuleSetId("strata-consumer"), rules.id)
-        assertEquals(setOf(RuleName("StateCreatedDuringComposition"), RuleName("UnusedComponentModifier")), rules.rules.keys)
+        assertEquals(
+            setOf(
+                "StateCreatedDuringComposition",
+                "UnusedComponentModifier",
+                "DiscardedModifier",
+                "MultipleModifierApplications",
+                "ParentDataOnWrongParent",
+                "StateMutationDuringComposition",
+                "SubscriptionDuringComposition",
+                "HostAccessDuringComposition",
+                "InvalidRootCount",
+            ).map(::RuleName).toSet(),
+            rules.rules.keys,
+        )
     }
 }

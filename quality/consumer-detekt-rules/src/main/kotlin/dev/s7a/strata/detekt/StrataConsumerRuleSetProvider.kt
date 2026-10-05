@@ -23,6 +23,13 @@ public class StrataConsumerRuleSetProvider : RuleSetProvider {
             mapOf(
                 RuleName("StateCreatedDuringComposition") to ::StateCreatedDuringComposition,
                 RuleName("UnusedComponentModifier") to ::UnusedComponentModifier,
+                RuleName("DiscardedModifier") to ::DiscardedModifier,
+                RuleName("MultipleModifierApplications") to ::MultipleModifierApplications,
+                RuleName("ParentDataOnWrongParent") to ::ParentDataOnWrongParent,
+                RuleName("StateMutationDuringComposition") to ::StateMutationDuringComposition,
+                RuleName("SubscriptionDuringComposition") to ::SubscriptionDuringComposition,
+                RuleName("HostAccessDuringComposition") to ::HostAccessDuringComposition,
+                RuleName("InvalidRootCount") to ::InvalidRootCount,
             ),
         )
 }

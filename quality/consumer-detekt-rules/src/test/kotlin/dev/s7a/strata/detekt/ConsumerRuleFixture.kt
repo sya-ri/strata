@@ -11,6 +11,26 @@ import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
  */
 internal object ConsumerRuleFixture {
     /**
+     * Analyzes consumer code against the compiled public API, rejecting invalid fixtures.
+     */
+    internal fun analyzePublic(
+        rule: Rule,
+        source: String,
+    ): List<Finding> {
+        val environment = createEnvironment()
+        return KotlinAnalysisApiEngine().use { engine ->
+            val file =
+                engine.compile(
+                    code = source,
+                    javaSourceRoots = environment.javaSourceRoots,
+                    jvmClasspathRoots = environment.jvmClasspathRoots,
+                    allowCompilationErrors = false,
+                )
+            rule.visitFile(file, LanguageVersionSettingsImpl.DEFAULT)
+        }
+    }
+
+    /**
      * Analyzes a real Kotlin file with distinct DSL, state, and modifier declarations.
      */
     internal fun analyze(

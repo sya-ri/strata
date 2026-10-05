@@ -44,5 +44,6 @@ These finite exercises cover selected components and modifiers; they do not esta
 
 The preserved failures reinforced three existing contracts: explicit list viewports and fixed control sizes must satisfy allocated constraints; a single-child Observe passes constraints to its child; profile-specific controls can impose additional geometry limits.
 `SkillViewportContractTest` and the API-only `ListViewportExample` provide deterministic checks for viewport allocation and the Minecraft control-width boundary.
-The opt-in [authoring checks](../guides/authoring-checks.md) separately test resolved retained-state creation and unused modifier parameters against the real public API.
+The opt-in [authoring checks](../guides/authoring-checks.md) separately test component-tree, modifier, retained-state, subscription, and integration-boundary contracts against the real public API.
+Positive fixtures include mutually exclusive roots, deferred events, immutable aliases, explicitly selected outer scopes, and separate future definitions; unsupported control flow and arbitrary helpers remain review responsibilities.
 Keep independent author runs out of CI; deterministic examples and rule regressions remain ordinary checks.

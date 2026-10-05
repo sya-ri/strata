@@ -5,7 +5,7 @@ import dev.detekt.api.Entity
 import dev.detekt.api.Finding
 import dev.detekt.api.RequiresAnalysisApi
 import dev.detekt.api.Rule
-import dev.s7a.strata.detekt.CompositionContext.isComposition
+import dev.s7a.strata.detekt.CompositionContext.isEvaluated
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.successfulCallOrNull
@@ -13,12 +13,10 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaConstructorSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtFunction
-import org.jetbrains.kotlin.psi.psiUtil.parents
 
 /**
- * Rejects known retained-state factories directly inside resolved Strata declaration functions.
- * It does not guess through ordinary lambdas, helper calls, unresolved calls, or arbitrary factories.
+ * Rejects known retained-state factories inside resolved Strata declarations and immediate library lambdas.
+ * It does not guess through deferred lambdas, helper calls, unresolved calls, or arbitrary factories.
  */
 internal class StateCreatedDuringComposition(
     config: Config,
@@ -32,10 +30,9 @@ internal class StateCreatedDuringComposition(
      */
     override fun visitCallExpression(expression: KtCallExpression) {
         super.visitCallExpression(expression)
-        val owner = expression.parents.filterIsInstance<KtFunction>().firstOrNull() ?: return
         val forbidden =
             analyze(expression) {
-                if (isComposition(owner).not()) return@analyze false
+                if (isEvaluated(expression).not()) return@analyze false
                 val call = expression.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>() ?: return@analyze false
                 when (val symbol = call.partiallyAppliedSymbol.signature.symbol) {
                     is KaConstructorSymbol -> (symbol.returnType as? KaClassType)?.classId?.asSingleFqName()?.asString() in STATE_TYPES

@@ -9,6 +9,25 @@ import org.junit.jupiter.api.Test
  */
 internal class StateCreatedDuringCompositionTest {
     @Test
+    fun followsImmediateCollectionLambdasButNotDeferredOrLazyCallbacks() {
+        val findings =
+            ConsumerRuleFixture.analyzePublic(
+                StateCreatedDuringComposition(Config.empty),
+                """
+                import dev.s7a.strata.component.UiScope
+                import dev.s7a.strata.component.ScrollState
+                fun UiScope.panel() {
+                    listOf(1).forEach { ScrollState() }
+                    run { ScrollState() }
+                    val deferred = { ScrollState() }
+                    val lazy = sequenceOf(1).map { ScrollState() }
+                }
+                """.trimIndent(),
+            )
+        assertEquals(2, findings.size)
+    }
+
+    @Test
     fun checksControlStatesBeyondTheOriginalScrollingAndEditingCases() {
         val findings =
             ConsumerRuleFixture.analyze(

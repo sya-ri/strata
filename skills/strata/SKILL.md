@@ -17,6 +17,7 @@ Check the project's selected Strata version and its public signatures before wri
 - Start with the standard component that owns the required behavior. Use `Row` for horizontal siblings, `Column` for vertical siblings, `FlowRow` for wrapping siblings, `Grid` for repeated cells, and `Stack` for intentional overlap. A `Stack` is not a generic wrapper.
 - Express sibling relationships with spacing, arrangement, alignment, and weight. Use padding for local insets, not copied coordinates or sibling positioning. Do not add a one-child layout when the child's modifier or the existing parent's alignment expresses the same result.
 - Put a container's paint on its layout with a background modifier; use `Image` for an image that is itself a child. Keep clipping, hit areas, and modifier ordering deliberate.
+- Modifier operations return an immutable chain. Pass, assign, or return the result; calling an operation without using its result changes nothing.
 - Use parent-data modifiers such as `weight` and `align` only for the direct child of the scope that consumes them. Do not move them into a helper with an unrelated receiver.
 - Put actions on modifiers. Prefer standard controls and their state/appearance APIs; retain a custom composition when a theme or input contract needs it. Supply semantics, focus, and keyboard activation as well as pointer behavior.
 - Default `Text` has natural single-line geometry. Use `TextLayout.Multiline()` when reserving a text rectangle, including a fixed-size `Observe` root.
@@ -32,6 +33,7 @@ Read [components](references/components.md) and [modifiers and layout](reference
 - A shared frame owns its geometry, decoration, and common slots. Receive variable content as `UiScope.() -> Unit` or an appropriate scoped lambda. Keep application selection in the router and each application's UI in that application.
 - Do not pass an application/page discriminator or the entire application client into a shared frame so it can implement several applications with branches. Loading, empty, error, and ready branches inside the application that owns those states are valid.
 - Let the caller supply a `modifier` with `Modifier.Empty` as the default when the component has a modifiable root. Apply it once to that root, preserving order; use separate internal modifiers for children. Do not ignore it or distribute it across several children. Pass stable root keys when identity must survive reconciliation.
+- Emit exactly one root in a `UiDefinition` and zero or one root in `Observe`. Use an intentional layout for sibling roots; layout content may emit multiple children.
 - Compose public primitives first. Use the `Element`/`Node` SPI only for retained measurement, drawing, input, semantics, or lifecycle behavior that composition cannot express. Do not reimplement standard editing or drawing merely to change its appearance.
 - Keep shared UI free of host opening and business-service access. Share a module when multiple consumers need the same component; an ordinary application-local composition needs no registration or new module.
 
@@ -43,6 +45,7 @@ See [custom components](references/custom-components.md) for compiled content-sl
 - Retain application `mutableStateOf`, editing, selection, cursor, scroll, and list-navigation state outside reevaluated content. Read `.value` during evaluation to track ordinary branches and loops; passing an editor state object alone does not subscribe its parent to every edit.
 - Pass supported external `StateSource` arguments directly. Retain `source.map { ... }` projections outside reevaluation; do not replace changing sources with nonreactive snapshot literals or recreate projections in callbacks.
 - Use a narrow `Observe` for external-source structural changes or unsupported layout/style inputs. Do not observe a whole screen for independent labels. Do not publish state, fetch resources, or perform I/O from declarative evaluation.
+- Use managed source bindings for UI observation. Acquire manual subscriptions in their owner outside reevaluation and close their handles at the end of that owner's lifetime.
 - Retain reusable images and appearance objects. Describe each cache's owner, key, invalidation, bound, and release path before adding it; caching a callback does not eliminate native composition work.
 - Keep keys, the owning session, input state, and scroll anchors stable through data updates. Do not reopen the screen or rebuild the host to refresh content.
 
