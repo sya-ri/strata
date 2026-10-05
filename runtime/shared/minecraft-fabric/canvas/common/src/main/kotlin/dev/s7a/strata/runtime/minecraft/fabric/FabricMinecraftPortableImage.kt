@@ -60,11 +60,15 @@ internal class FabricMinecraftPortableImage(
 
     /**
      * Compares pixel inputs before allocating a replacement portable generation; performs no device work or allocation.
+     * Exact GPU outputs may move when their bounded axis metadata proves identical source texels and coverage.
+     * CPU runs retain the original sampling origin because translated Float arithmetic is not generally equivalent.
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftPortableImage): Boolean {
+        val indices = sampling
+        if (indices != null) return size == other.size && scale == other.scale && other.sampling?.let(indices::equivalent) == true
         val sameGeometry = origin == other.origin && size == other.size && scale == other.scale
-        return sameGeometry && commands == other.commands && (sampling == null) == (other.sampling == null)
+        return sameGeometry && commands == other.commands && other.sampling == null
     }
 
     /**

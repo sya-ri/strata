@@ -51,6 +51,19 @@ internal class FabricMinecraftSamplingMap(
         indices = createDrawImage(IntSize(width, 3), values)
     }
 
+    /**
+     * Proves equal GPU output from the same immutable source and identical axis selections, independent of placement.
+     * Reads only bounded current-frame index metadata; no source pixels, hashing, history, or temporary array is needed.
+     */
+    @JvmSynthetic
+    internal fun equivalent(other: FabricMinecraftSamplingMap): Boolean {
+        if (physicalSize != other.physicalSize || command.image !== other.command.image) return false
+        if (command.tint != other.command.tint || command.alphaCutoff != other.command.alphaCutoff || command.orientation != other.command.orientation) return false
+        for (x in 0 until physicalSize.width) if (indices.argbAt(x, 0) != other.indices.argbAt(x, 0)) return false
+        for (y in 0 until physicalSize.height) if (indices.argbAt(y, 1) != other.indices.argbAt(y, 1)) return false
+        return true
+    }
+
     private fun axis(
         physical: Int,
         destinationStart: Float,

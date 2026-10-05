@@ -255,6 +255,8 @@ The generation reserves a conservative rectangle covering both allocations befor
 Both native texture/view pairs, any fullscreen vertex buffer, and partial initialization stay owned until the existing initialization and GUI-consumption fences complete and physical destruction is acknowledged.
 The source-image cache remains pinned through preparation and submission, and is marked queued before the offscreen pass reads its texture.
 Static frames reuse output and lookup storage; changed geometry may upload bounded axis metadata and resample on the GPU while preserving the immutable source-image upload.
+Moved exact outputs reuse native storage only when the same immutable source, physical extent, and every encoded axis selection and coverage value remain equal.
+This comparison reads bounded current-frame index metadata, never source pixels; translations with different original-coordinate Float sampling still invalidate the output.
 The loaded parity scene covers integer, quarter, eighth and decimal crops on both axes at GUI scales one through four, including exact texel boundaries and the original-coordinate translation regression.
 Fractional clips intersecting that subset are also submitted directly when their half-open physical pixel-center coverage can be expressed by an integer GUI scissor at the current final density.
 The presenter intersects the active clips, resolves each edge with `ceil(edge * density - 0.5)`, and admits the resulting range only when every physical edge is aligned to an integer GUI coordinate.
