@@ -297,7 +297,7 @@ See [text and editing](https://github.com/sya-ri/strata/blob/master/docs/guides/
 ## Optional CPU backend for offline tools
 
 Ordinary Fabric screens already receive the font backend; keep runtime imports out of UI definitions.
-Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.1` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
+Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.2` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries; incompatible native generations must run in separate processes.
 Each host owns and closes its backend and bounded caches; snapshots are immutable and shareable.
 Follow [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) for setup and limits, including [numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings).

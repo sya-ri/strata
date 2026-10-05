@@ -3,7 +3,7 @@
 The `quality:performance-testkit` module owns performance collection and evidence contracts shared by Strata and downstream applications.
 It is a test-only Maven publication in the Strata repository, with the same release version as the other modules.
 Its JVM coordinate is `dev.s7a.strata:strata-performance-testkit`; Kotlin Multiplatform consumers use `strata-performance-testkit-multiplatform`.
-The development branch can be published to an isolated local repository; the first official publication belongs to the next release, without replacing any existing release artifact.
+It is available starting with Strata 0.2.2; development candidates can be published to an isolated local repository without replacing any existing release artifact.
 
 Consumers supply their real components, stable input, actions, readiness predicates, and expected work.
 
