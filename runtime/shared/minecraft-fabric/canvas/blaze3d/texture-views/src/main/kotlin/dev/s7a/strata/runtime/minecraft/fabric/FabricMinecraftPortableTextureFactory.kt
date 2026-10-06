@@ -32,12 +32,6 @@ internal fun initializeFabricMinecraftSampledTexture(
 }
 
 /**
- * Reads the active device's RGBA source-texture bound after the caller verifies render-thread access.
- */
-@JvmSynthetic
-internal fun fabricMinecraftMaximumTextureSize(): Int = RenderSystem.getDevice().maxTextureSize
-
-/**
  * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
  * Texture-manager close is inert; only the owning generation calls [destroy].
  */

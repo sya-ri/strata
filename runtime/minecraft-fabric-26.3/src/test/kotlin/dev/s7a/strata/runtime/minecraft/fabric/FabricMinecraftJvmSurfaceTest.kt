@@ -266,6 +266,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftPortableNativeTexture",
                 "$packageName.FabricMinecraftPortableTextureStorage",
                 "$packageName.FabricMinecraftSampledTextureLimitsKt",
+                "$packageName.FabricMinecraftNativeTextureLimitsKt",
                 "$packageName.FabricMinecraftFrameLayer",
                 "$packageName.FabricMinecraftFrameLayer\$Portable",
                 "$packageName.FabricMinecraftFrameLayer\$Sampled",
