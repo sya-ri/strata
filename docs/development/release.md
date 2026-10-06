@@ -15,7 +15,8 @@ Dispatch `publish-release.yml` with `operation=release`, `tag=vX.Y.Z`, the full 
 Leave `prepared_run_id` empty only for the first preparation.
 The protected `release` environment controls signing and publication credentials.
 
-Preparation runs the full quality suite, Kover, and Qodana against the selected tag, builds and signs the artifacts, and checks a standalone Maven consumer.
+Preparation runs the full quality suite, Kover, and Qodana against the selected tag, builds and signs the artifacts, and checks standalone Maven fixtures.
+The authoring fixture loads `strata-detekt-rules` by its coordinate and verifies every [guide example](../guides/authoring-checks.md): corrected code has no findings, while incorrect code triggers exactly one finding per rule.
 Before browser verification, it installs Chromium, Firefox, WebKit, and their Linux system dependencies using the tagged product's pinned Playwright CLI.
 The controller selects Loom's remapped Fabric sources before signing and consumer verification when the tagged build also registers the unremapped development sources.
 It applies the tagged runtime's declared Loom plugin before the root build configures that publication, so Maven and Gradle sources metadata refer to the same remapped JAR.

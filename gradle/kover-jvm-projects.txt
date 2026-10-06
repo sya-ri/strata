@@ -7,7 +7,7 @@
 :integration:docs
 :integration:web
 :quality:detekt-rules
-:quality:consumer-detekt-rules
+:quality:strata-detekt-rules
 :quality:performance-testkit
 :runtime:core
 :runtime:remote

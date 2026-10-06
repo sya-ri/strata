@@ -1,22 +1,30 @@
 # Strata authoring checks
 
-The source-built `quality:consumer-detekt-rules` module provides opt-in Detekt rules for applications using Strata.
-It is separate from Strata's internal source-style profile and is not a published Maven artifact.
-Build its JAR with `./gradlew :quality:consumer-detekt-rules:build` and use the Detekt version selected by this checkout's version catalog.
-Compatibility with other Detekt versions must be verified before loading the plugin.
+The optional `strata-detekt-rules` plugin checks application code that uses Strata.
+It is published alongside Strata starting with 0.2.2 and uses the `strata-authoring` rule set, separate from the library's internal source-style rules.
 
-Add the resulting JAR to the consuming project's `detektPlugins` configuration:
+## Installation
+
+Apply Detekt to the application's JVM build, enable Maven Central, and add the plugin by its Maven coordinate:
 
 ```kotlin
+repositories {
+    mavenCentral()
+}
+
 dependencies {
-    detektPlugins(files("path/to/strata-consumer-detekt-rules.jar"))
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.2.2")
 }
 ```
+
+Use the Detekt version selected in Strata's [version catalog](../../gradle/libs.versions.toml).
+Compatibility with other Detekt versions must be verified before loading the plugin; the host supplies Detekt's analysis API.
+The plugin does not install a Strata runtime in the application.
 
 Enable the rules in the project's Detekt configuration:
 
 ```yaml
-strata-consumer:
+strata-authoring:
   StateCreatedDuringComposition:
     active: true
   UnusedComponentModifier:
@@ -37,125 +45,324 @@ strata-consumer:
     active: true
 ```
 
-All nine rules require type analysis with the selected `strata-api` and the application's dependencies on the analysis classpath.
-Use the JVM source-set task, such as `detektMain`, rather than treating an untyped syntax-only run as coverage.
+All nine rules require type analysis with `strata-api` and the application's dependencies on the analysis classpath.
+Use a JVM source-set task such as `detektMain`; an untyped syntax-only run does not verify these rules.
 Consult [Detekt's Gradle integration](https://detekt.dev/docs/gettingstarted/gradle) for custom source sets and [custom rule configuration](https://detekt.dev/docs/introduction/extensions) for plugin loading.
 
-| Rule | Skill contract and report | Deliberate limits |
-| --- | --- | --- |
-| `StateCreatedDuringComposition` | Retain editing, scrolling, selection, navigation state, `mutableStateOf`, and source `map` projections outside reevaluation. Reports resolved standard constructors and factories. | Follows declaration receivers and selected immediate standard-library lambdas, including collection `forEach`, `map`, and scope functions. Does not infer arbitrary helper execution or lazy sequence callbacks. Owner fields and deferred events are valid. |
-| `UnusedComponentModifier` | Preserve the caller's modifier. Reports a resolved `Modifier` parameter never read by a Strata declaration function. | A read alone does not establish correct root placement. Aliases and shadowed names are resolved. |
-| `DiscardedModifier` | Use immutable operation results. Reports a Modifier operation whose result is a discarded block statement. | Checks resolved Modifier receivers and return types. Returned factory values, assigned/passed chains, and intermediate results used by another operation are valid. |
-| `MultipleModifierApplications` | Apply a caller modifier at one component boundary. Reports forwarding the parameter or immutable local aliases to more than one Unit-returning `UiScope` declaration call on compatible syntactic paths. | Allows distinct `if`/`when` branches and separate `UiDefinition` trees. Does not prove arbitrary helper emission, mutable-alias flow, loop iteration counts, or that a single application is the outer root. |
-| `ParentDataOnWrongParent` | Put scoped parent data on a direct child of its consuming layout. Reports resolved weight, alignment, or tiled-image placement in a directly passed modifier under a known incompatible built-in parent. | Does not infer retained modifier aliases, custom forwarding, or explicitly selected outer receivers. Row and Column both consume weight; their alignment contracts differ. Manual Observe is a layout region, so its parent data belongs on the region itself. |
-| `StateMutationDuringComposition` | Change retained state in events or owner updates. Reports direct/compound assignments, increments/decrements of known public mutable state properties, and standard navigation/selection mutation calls during evaluation. | Does not infer arbitrary application publishers or indirect writes through helpers. Queries and deferred events are valid. |
-| `SubscriptionDuringComposition` | Own and close manual subscriptions outside reevaluation. Reports resolved `StateSource.subscribe`, including implementing receivers, and standard state observation methods during evaluation. | Managed component bindings and Observe are valid. Does not establish that an owner actually closes its handles. Internal observation APIs still require their explicit integration opt-in. |
-| `HostAccessDuringComposition` | Keep opening and concrete runtimes at integration/event boundaries. Reports resolved `UiDefinition.open` and calls declared in Strata's concrete runtime namespace during evaluation. | Does not infer arbitrary service calls or business responsibilities. Deferred events, definition construction, and public Element/Node composition remain valid. |
-| `InvalidRootCount` | Emit one definition root and at most one observed root. Reports an empty definition or multiple flat roots in a block consisting solely of known standard component calls. | Allows empty Observe and multiple layout children. Unknown helpers, declarations, and control flow are not counted; a clean report does not prove root cardinality. |
+## Rules at a glance
 
-## Modifier results and component boundaries
+| Rule | Problem detected |
+| --- | --- |
+| `StateCreatedDuringComposition` | Retained state or a source projection is recreated during declaration evaluation. |
+| `UnusedComponentModifier` | A component accepts the caller's modifier and never reads it. |
+| `DiscardedModifier` | An immutable modifier operation returns a chain that is discarded. |
+| `MultipleModifierApplications` | The caller's modifier is forwarded to several component boundaries on compatible paths. |
+| `ParentDataOnWrongParent` | Parent data is attached below a layout that does not consume it. |
+| `StateMutationDuringComposition` | A declaration changes retained state while evaluating the UI. |
+| `SubscriptionDuringComposition` | A declaration acquires a manual subscription during reevaluation. |
+| `HostAccessDuringComposition` | A declaration opens a UI or invokes a concrete runtime during evaluation. |
+| `InvalidRootCount` | A provable flat definition has no root or multiple roots; an observed region has multiple roots. |
 
-Discarding a chain has no effect:
+The examples below omit imports for readability.
+Their valid and invalid forms are compiled against the public API and checked with the plugin during publication verification.
+
+## StateCreatedDuringComposition
+
+A component declaration can run repeatedly when its inputs change.
+Creating editing, scrolling, selection, or navigation state inside that declaration loses the retained state and allocates a replacement on every evaluation.
+Creating `mutableStateOf` or a source `map` projection there has the same ownership problem.
+
+Avoid creating the scroll owner while declaring its contents:
+
+<!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.Panel(modifier: Modifier = Modifier.Empty) {
-    modifier.padding(8) // DiscardedModifier
+fun UiScope.ResettingScroll() {
+    ScrollArea(ScrollState()) { Text("Content") }
+}
+```
+
+Create the state before evaluation, retain it in the screen owner, and pass it into the component:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun UiScope.RetainedScroll(scroll: ScrollState) {
+    ScrollArea(scroll) { Text("Content") }
+}
+```
+
+The rule recognizes standard state constructors and factories through resolved symbols, including aliases.
+It follows selected immediate standard-library callbacks, such as collection `forEach`, `map`, and scope functions.
+Owner field initializers and deferred events are allowed.
+It does not infer arbitrary helper execution or lazy sequence callbacks, and it does not prove that the owner retains a state for the correct lifetime.
+
+## UnusedComponentModifier
+
+A reusable component's `modifier` parameter is the caller's control over its boundary: size, placement, decoration, input, and semantics.
+Ignoring that parameter silently removes the caller's requested behavior.
+
+This component accepts a modifier but never uses it:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun UiScope.IgnoringPanel(modifier: Modifier = Modifier.Empty) {
+    Column { Text("Title") }
+}
+```
+
+Forward it to the outer root:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun UiScope.ForwardingPanel(modifier: Modifier = Modifier.Empty) {
+    Column(modifier = modifier) { Text("Title") }
+}
+```
+
+The rule checks resolved `Modifier` parameters in Strata declaration functions and reports parameters that are never read.
+Aliases and shadowed names are resolved.
+A read alone does not prove correct placement: using the modifier only on an inner label can still require review.
+
+## DiscardedModifier
+
+Modifier operations return new immutable chains; they do not mutate the receiver.
+Discarding the result means the requested operation has no effect.
+
+The padding below never reaches the component:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun UiScope.UnpaddedPanel(modifier: Modifier = Modifier.Empty) {
+    modifier.padding(8)
+    Column(modifier = modifier) { Text("Title") }
+}
+```
+
+Use the returned chain:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun UiScope.PaddedPanel(modifier: Modifier = Modifier.Empty) {
+    Column(modifier = modifier.padding(8)) { Text("Title") }
+}
+```
+
+The rule reports resolved Modifier operations used as discarded block statements.
+Returned factory values, assigned or passed chains, and intermediate results used by another operation are allowed.
+Unrelated application methods with the same name are not treated as Modifier operations.
+
+## MultipleModifierApplications
+
+A caller's modifier describes one component boundary.
+Forwarding the same chain to both the root and a child can duplicate padding, input handlers, semantics, or parent data.
+
+Avoid applying the caller's modifier to two nodes:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun UiScope.RepeatedPanel(modifier: Modifier = Modifier.Empty) {
     Column(modifier = modifier) {
-        Text("Title", modifier = modifier) // MultipleModifierApplications
+        Text("Title", modifier = modifier)
     }
 }
 ```
 
-Use the resulting chain on one outer root and give children their own modifiers:
+Use it once on the root and give children independent modifiers:
+
+<!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.Panel(modifier: Modifier = Modifier.Empty) {
-    Column(modifier = modifier.padding(8)) {
+fun UiScope.SingleBoundaryPanel(modifier: Modifier = Modifier.Empty) {
+    Column(modifier = modifier) {
         Text("Title", modifier = Modifier.Empty.padding(2))
     }
 }
 ```
 
-An alternative root for loading or error is valid:
+The rule follows the parameter and immutable local aliases into Unit-returning `UiScope` declaration calls.
+Applications in mutually exclusive `if` or `when` branches are allowed, as are applications belonging to separate `UiDefinition` trees.
+It does not prove helper emission, mutable-alias flow, loop iteration counts, or that a single application is on the outer root.
+
+## ParentDataOnWrongParent
+
+Scoped modifiers describe data for the immediate layout parent.
+For example, Row and Column consume weight, but Stack does not.
+Capturing an outer Row scope can make a misplaced weight compile without making it affect the intended child.
+
+Here the weighted Text is a child of Stack:
+
+<!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.Status(ready: Boolean, modifier: Modifier = Modifier.Empty) {
-    if (ready) Text("Ready", modifier = modifier)
-    else Text("Loading", modifier = modifier)
-}
-```
-
-`UnusedComponentModifier` catches a parameter omitted entirely; `MultipleModifierApplications` catches reuse on compatible paths.
-Neither proves correct visual ordering or meaningful component responsibility.
-
-## Parent data follows the actual layout child
-
-Capturing an outer scope makes this compile, but Stack does not consume row weight:
-
-```kotlin
-Row {
-    val row = this
-    Stack {
-        Text("Misplaced", modifier = row.run { Modifier.Empty.weight(1f) })
+fun UiScope.MisplacedWeight() {
+    Row {
+        val row = this
+        Stack {
+            Text("Content", modifier = row.run { Modifier.Empty.weight(1f) })
+        }
     }
 }
 ```
 
-Apply weight to Stack, the Row's direct child:
+Attach the weight to Stack, the Row's direct child:
+
+<!-- checked-example: valid -->
 
 ```kotlin
-Row {
-    Stack(modifier = Modifier.Empty.weight(1f)) {
-        Text("Content")
+fun UiScope.DirectChildWeight() {
+    Row {
+        Stack(modifier = Modifier.Empty.weight(1f)) {
+            Text("Content")
+        }
     }
 }
 ```
 
-For manual Observe inside Row, apply weight to Observe rather than its inner Text.
-Direct supported source-bound Text inputs preserve their standard component parent-data contract.
+The rule checks weight, scoped alignment, and tiled-image placement in directly passed modifiers under known built-in parents.
+Row and Column both consume weight, while their alignment contracts differ.
+Manual Observe is a layout region: apply the Row's weight to Observe itself, rather than to the Text inside it.
+The rule does not infer retained modifier aliases, custom forwarding, or explicitly selected outer receivers.
 
-## State and subscription lifetime
+## StateMutationDuringComposition
 
-These statements run again when content is reevaluated:
+Declaration evaluation describes the UI for the current state.
+Changing that state during evaluation can schedule another update, reset user input, or make the result depend on evaluation order.
+
+Avoid resetting the state as part of the declaration:
+
+<!-- checked-example: invalid -->
 
 ```kotlin
-fun UiScope.Editor(source: StateSource<String>, state: MutableState<Int>) {
-    val scroll = ScrollState() // StateCreatedDuringComposition
-    state.value = 0 // StateMutationDuringComposition
-    source.subscribe { } // SubscriptionDuringComposition
+fun UiScope.ResettingCounter(state: MutableState<Int>) {
+    state.value = 0
+    Text("Counter")
 }
 ```
 
-Retain UI state in the owner, use a managed source input, and change state from an event:
+Perform the change in an event or in the owner outside evaluation:
+
+<!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.Editor(source: StateSource<String>, state: MutableState<Int>, scroll: ScrollState) {
-    ScrollArea(scroll) {
-        Text(source, modifier = Modifier.Empty.onPress { state.value += 1 })
+fun UiScope.CounterAction(state: MutableState<Int>) {
+    Text("Reset", modifier = Modifier.Empty.onPress { state.value = 0 })
+}
+```
+
+The rule recognizes direct and compound assignments, increments and decrements of known public mutable state properties, and standard selection or navigation mutation calls.
+Queries and deferred events are allowed.
+Immediate `run` or collection `forEach` does not move a write out of evaluation.
+The rule does not trace application-specific publishers or indirect helper writes.
+
+## SubscriptionDuringComposition
+
+A manual subscription owns a handle that must be retained and closed.
+Acquiring it during declaration evaluation can add another listener on each reevaluation and leave earlier listeners alive.
+
+Avoid subscribing in the declaration:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun UiScope.SubscribingLabel(source: StateSource<String>) {
+    source.subscribe { }
+    Text("Label")
+}
+```
+
+For a supported component, use its managed source input:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun UiScope.ManagedLabel(source: StateSource<String>) {
+    Text(source)
+}
+```
+
+The rule recognizes `StateSource.subscribe`, including calls through implementing receivers, and standard state observation methods during evaluation.
+Managed component bindings and Observe are allowed.
+When application-specific manual observation is necessary, the owner acquires the handle outside composition and closes it on replacement or disposal.
+The rule does not prove cleanup; internal observation APIs also retain their explicit integration opt-in requirements.
+
+## HostAccessDuringComposition
+
+Opening a UI and operating a concrete runtime belong at integration or event boundaries.
+Doing either while describing another UI introduces host effects that may repeat when that UI reevaluates.
+
+Avoid opening another definition during evaluation:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun UiScope.OpeningLabel(next: UiDefinition) {
+    next.open()
+    Text("Next")
+}
+```
+
+Open it from a deferred navigation event:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun UiScope.NavigationLabel(next: UiDefinition) {
+    Text("Next", modifier = Modifier.Empty.onPress { next.open() })
+}
+```
+
+The rule reports resolved `UiDefinition.open` calls and calls or constructors declared in Strata's concrete runtime namespace during evaluation.
+Definition construction, deferred events, and composition through the public Element/Node SPI are allowed.
+It does not infer arbitrary service calls or determine the application's business responsibility boundaries.
+
+## InvalidRootCount
+
+A UiDefinition needs exactly one root.
+Observe permits no root or one root; ordinary layout content permits several children.
+Sibling roots must be placed inside an intentional layout so the tree has an unambiguous boundary.
+
+This definition emits two roots:
+
+<!-- checked-example: invalid -->
+
+```kotlin
+fun siblingRoots() = UiDefinition {
+    Text("One")
+    Text("Two")
+}
+```
+
+Give the definition one layout root:
+
+<!-- checked-example: valid -->
+
+```kotlin
+fun groupedRoot() = UiDefinition {
+    Column {
+        Text("One")
+        Text("Two")
     }
 }
 ```
 
-The owner creates `scroll` and `state` before declaration evaluation.
-For application-specific manual observation, the owner also retains and closes the returned handle; acquisition outside composition alone does not prove cleanup.
-Immediate `run` or collection `forEach` does not move a write or allocation out of evaluation.
-A stored callback or a deferred action is a separate boundary; helper execution requires review.
-
-## Roots and host opening
-
-`UiDefinition { Text("One"); Text("Two") }` emits two roots; wrap those children in an intentional `Column`, `Row`, `Grid`, or `Stack`.
-An empty UiDefinition is invalid, while empty Observe content is supported.
-Ordinary layout content may contain several children.
-
-Open a definition from an integration boundary or a deferred navigation event.
-Calling `next.open()` directly in a declaration function is reported; `Modifier.Empty.onPress { next.open() }` is valid.
-Creating a future UiDefinition does not open it, and its modifier applications belong to a separate tree.
+The rule reports empty definitions and excessive roots only when the block consists entirely of known standard component calls.
+It leaves blocks containing unknown helpers, declarations, or control flow for review.
+A clean report therefore does not prove root cardinality in every possible component tree.
 
 ## Scope of the checks
 
 Names are resolved from the analysis classpath, so aliases work and unrelated application methods with the same spelling are not treated as Strata operations.
-The plugin uses known API contracts and deliberately leaves unproven cases for review rather than imposing application-name or page-discriminator heuristics.
+The plugin uses known API contracts and leaves unproven cases for review rather than imposing application-name or page-discriminator heuristics.
 
 These rules do not automatically judge application responsibility boundaries, meaningful reuse, or whether composition is sufficient for a custom primitive.
 Review the [Strata skill](../../skills/strata/SKILL.md) alongside the actual tree and verify state, input, semantics, scroll, and drawing behavior.
-Do not suppress an entire rule merely to permit one valid construction; first confirm the resolved call and execution boundary.
+Before suppressing a finding, confirm the resolved call and execution boundary; keep any necessary suppression local to the reviewed exception.
+
+Contributors can run `:quality:strata-detekt-rules:check` for rule tests and the bounded performance fixture, and `:verifyPublishedAuthoringChecks` to verify the Maven-published plugin against every example above.
+The performance fixture measures a warm, already-compiled rule pass through the shared testkit; it excludes compiler startup and file I/O, and it does not constitute a formal repeated regression comparison or impose an absolute timing threshold.

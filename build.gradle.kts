@@ -544,6 +544,7 @@ val releasePublicationProjectPaths =
     listOf(
         ":api",
         ":quality:performance-testkit",
+        ":quality:strata-detekt-rules",
         ":paper-api",
         ":velocity-api",
         ":runtime:core",
@@ -557,7 +558,11 @@ val releasePublicationProjectPaths =
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
 val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
-        if (projectPath == ":quality:performance-testkit") "$group:strata-performance-testkit" else "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
+        when (projectPath) {
+            ":quality:performance-testkit" -> "$group:strata-performance-testkit"
+            ":quality:strata-detekt-rules" -> "$group:strata-detekt-rules"
+            else -> "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
+        }
     }
 val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":quality:performance-testkit")
 val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
@@ -1966,11 +1971,22 @@ val publishToMavenLocal =
         dependsOn(releasePublicationProjectPaths.map { projectPath -> "$projectPath:publishToMavenLocal" })
     }
 
+val verifyPublishedAuthoringChecks =
+    tasks.register<GradleBuild>("verifyPublishedAuthoringChecks") {
+        group = "verification"
+        description = "Loads Maven-published authoring rules and analyzes the guide's valid and invalid examples."
+        dependsOn(":api:publishToMavenLocal", ":quality:strata-detekt-rules:publishToMavenLocal")
+        dir = layout.projectDirectory.dir("release/authoring-checks").asFile
+        tasks = listOf("clean", "check")
+        startParameter.projectProperties =
+            startParameter.projectProperties + mapOf("strataVersion" to project.version.toString())
+    }
+
 val verifyPublishedConsumer =
     tasks.register<GradleBuild>("verifyPublishedConsumer") {
         group = "verification"
         description = "Publishes every Maven artifact locally and checks a standalone coordinate-only consumer."
-        dependsOn(publishToMavenLocal, verifyMinecraftFabricTargetMatrix, verifyReleasePublicationMatrix)
+        dependsOn(publishToMavenLocal, verifyMinecraftFabricTargetMatrix, verifyReleasePublicationMatrix, verifyPublishedAuthoringChecks)
         dir = layout.projectDirectory.dir("release/consumer").asFile
         tasks = listOf("clean", "check")
         startParameter.projectProperties =

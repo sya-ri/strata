@@ -1,0 +1,19 @@
+strata-authoring:
+  StateCreatedDuringComposition:
+    active: true
+  UnusedComponentModifier:
+    active: true
+  DiscardedModifier:
+    active: true
+  MultipleModifierApplications:
+    active: true
+  ParentDataOnWrongParent:
+    active: true
+  StateMutationDuringComposition:
+    active: true
+  SubscriptionDuringComposition:
+    active: true
+  HostAccessDuringComposition:
+    active: true
+  InvalidRootCount:
+    active: true

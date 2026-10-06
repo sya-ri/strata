@@ -87,6 +87,9 @@ Controller-only changes use isolated publication fixtures and do not rebuild the
 Remapped Fabric publications remove the raw sources artifact from the Java component and retain the remapped artifact attached by Loom; the Maven publishing plugin must not attach a second raw sources JAR.
 The release inventory preserves every configured artifact suffix so its validator rejects classifier collisions and missing binary, sources or Javadoc artifacts before publication.
 Source archive verification also requires source files and rejects compiled classes.
+The published `quality:strata-detekt-rules` module uses the same signed binary, sources, Javadoc, license, metadata, and ABI checks as other JVM publications.
+Run `./gradlew verifyPublishedAuthoringChecks` to resolve the plugin through `detektPlugins` and compile and analyze the [authoring guide](../guides/authoring-checks.md) examples in a standalone build.
+This check is also part of the release's `verifyPublishedConsumer` gate.
 The [release procedure](release.md) defines external publication and credentials.
 
 Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.
