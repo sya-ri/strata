@@ -127,6 +127,35 @@ Use the same Strata release on both ends and select the Fabric runtime for the c
 
 $HOSTS
 
+## Detekt authoring checks
+
+For JVM projects using Detekt, install the optional authoring plugin from Maven Central through `detektPlugins`.
+Use the Detekt version selected in Strata's [version catalog](https://github.com/sya-ri/strata/blob/master/gradle/libs.versions.toml) and verify compatibility before loading it with another Detekt version.
+Keep the plugin version aligned with the Strata release whose authoring contracts you are checking.
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:$releaseVersion")
+}
+
+detekt {
+    config.setFrom(files("detekt.yml"))
+}
+
+tasks.named("check") {
+    dependsOn("detektMain")
+}
+```
+
+Merge the `strata-authoring` section from the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md#installation) into the project's `detekt.yml`, enabling the intended rules.
+Run `./gradlew detektMain` with `strata-api` and application dependencies on that source set's analysis classpath; use the corresponding type-aware task for other source sets.
+An untyped `detekt` run does not verify these rules.
+Review the guide's per-rule examples and detection limits alongside the actual component tree.
+
 ## Local Fabric installation
 
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.

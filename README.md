@@ -212,8 +212,20 @@ Add `dev.s7a.strata:strata-performance-testkit` to JVM test dependencies, or `de
 JVM collection, validation, aggregation, and comparison run in Java.
 See the [testkit guide](docs/development/performance-testkit.md) for setup, collection, and evidence contracts.
 
-For type-aware authoring checks, add `dev.s7a.strata:strata-detekt-rules:0.2.2` to `detektPlugins` and enable the `strata-authoring` rule set.
-The [authoring checks guide](docs/guides/authoring-checks.md) explains installation and each rule with incorrect and corrected examples.
+## Detekt authoring checks
+
+The optional plugin checks component boundaries, modifier use, retained state, and UI roots.
+Apply Detekt with the compatible version from [Strata's version catalog](gradle/libs.versions.toml), enable Maven Central, and add:
+
+```kotlin
+dependencies {
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.2.2")
+}
+```
+
+Enable the `strata-authoring` rules in the project's Detekt configuration and run `./gradlew detektMain` with `strata-api` on the application's analysis classpath.
+These rules need type analysis; an untyped `detekt` run does not verify them.
+The [authoring checks guide](docs/guides/authoring-checks.md#installation) provides the configuration, check-task wiring, and each rule's incorrect and corrected examples.
 
 ## Changelog
 

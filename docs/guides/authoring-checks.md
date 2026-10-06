@@ -21,7 +21,7 @@ Use the Detekt version selected in Strata's [version catalog](../../gradle/libs.
 Compatibility with other Detekt versions must be verified before loading the plugin; the host supplies Detekt's analysis API.
 The plugin does not install a Strata runtime in the application.
 
-Enable the rules in the project's Detekt configuration:
+Merge the following section into the project's `detekt.yml` to enable the rules:
 
 ```yaml
 strata-authoring:
@@ -47,6 +47,20 @@ strata-authoring:
 
 All nine rules require type analysis with `strata-api` and the application's dependencies on the analysis classpath.
 Use a JVM source-set task such as `detektMain`; an untyped syntax-only run does not verify these rules.
+Point Detekt at that configuration and include the type-aware task in the project's verification gate:
+
+```kotlin
+detekt {
+    config.setFrom(files("detekt.yml"))
+}
+
+tasks.named("check") {
+    dependsOn("detektMain")
+}
+```
+
+Run `./gradlew detektMain` directly during iteration, or `./gradlew check` for the configured gate.
+For a different source set or module, select its corresponding type-aware task.
 Consult [Detekt's Gradle integration](https://detekt.dev/docs/gettingstarted/gradle) for custom source sets and [custom rule configuration](https://detekt.dev/docs/introduction/extensions) for plugin loading.
 
 ## Rules at a glance

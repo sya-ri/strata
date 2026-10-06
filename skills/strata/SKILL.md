@@ -61,12 +61,15 @@ Report missing preview controls, assets, or native capabilities explicitly inste
 Static checks cover only their documented syntactic or resolved-symbol contracts.
 Responsibility boundaries, meaningful reuse, and suitability of a component still require reviewing real examples; do not ban every branch or every custom composition.
 See the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md) for the optional type-aware Detekt rules and their limits.
+When installing these checks in a JVM project, read [setup](references/setup.md#detekt-authoring-checks) for the Maven dependency, configuration, compatible Detekt version, and source-set verification task.
+Run the type-aware task for the changed source set, such as `detektMain`; a successful untyped run does not verify these rules.
 
 ## Read only for the current task
 
 | Task | Reference |
 | --- | --- |
 | Dependencies, Fabric/Paper/Velocity opening, Web or Headless setup | [setup](references/setup.md) |
+| Detekt authoring-rule installation and type-aware verification | [setup](references/setup.md#detekt-authoring-checks) |
 | Component choice and exact overload | [components](references/components.md) |
 | Modifier order, parent scopes, state/binding signatures | [modifiers and layout](references/modifiers-and-layout.md) |
 | Reactive screens, lists, resources, custom editor appearance | [patterns](references/patterns.md) |
