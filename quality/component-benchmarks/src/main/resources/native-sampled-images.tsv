@@ -16,3 +16,9 @@ SampledReplacementLarge
 SampledOrderedRowsSmall
 SampledOrderedRowsMedium
 SampledOrderedRowsLarge
+SampledScrolledRowsSmall
+SampledScrolledRowsMedium
+SampledScrolledRowsLarge
+SampledTiledTranslationSmall
+SampledTiledTranslationMedium
+SampledTiledTranslationLarge

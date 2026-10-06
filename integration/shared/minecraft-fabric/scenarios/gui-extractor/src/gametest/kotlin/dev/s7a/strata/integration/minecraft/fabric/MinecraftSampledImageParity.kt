@@ -140,7 +140,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                     SampledImageOrientation.entries.forEachIndexed { index, orientation ->
                         val x = 144 + index * 24
                         scope.withClip(IntRect(x, 74, x + 20, 94)) {
-                            scope.withClip(IntRect(x + 2, 76, x + 18, 92)) {
+                            scope.withClip(IntRect(x + 4, 76, x + 16, 92)) {
                                 scope.sampledImage(reflected, FloatRect(0.1f, 0.2f, 5.9f, 3.8f), FloatRect(x + 0.25f, 74.25f, x + 20.75f, 94.75f), orientation, alphaCutoff = 0f)
                             }
                         }

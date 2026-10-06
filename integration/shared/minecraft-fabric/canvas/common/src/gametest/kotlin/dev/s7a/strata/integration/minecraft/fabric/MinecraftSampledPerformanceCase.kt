@@ -26,6 +26,12 @@ internal enum class MinecraftSampledPerformanceCase(
     SampledOrderedRowsSmall(Mode.OrderedRows, 16),
     SampledOrderedRowsMedium(Mode.OrderedRows, 64),
     SampledOrderedRowsLarge(Mode.OrderedRows, 256),
+    SampledScrolledRowsSmall(Mode.ScrolledRows, 16),
+    SampledScrolledRowsMedium(Mode.ScrolledRows, 64),
+    SampledScrolledRowsLarge(Mode.ScrolledRows, 256),
+    SampledTiledTranslationSmall(Mode.TiledTranslation, 16),
+    SampledTiledTranslationMedium(Mode.TiledTranslation, 64),
+    SampledTiledTranslationLarge(Mode.TiledTranslation, 256),
     ;
 
     /**
@@ -38,5 +44,7 @@ internal enum class MinecraftSampledPerformanceCase(
         Clip,
         Replacement,
         OrderedRows,
+        ScrolledRows,
+        TiledTranslation,
     }
 }

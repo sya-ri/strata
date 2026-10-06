@@ -96,17 +96,39 @@ internal class MinecraftSampledPerformanceScene(
                 }
             }
 
-            MinecraftSampledPerformanceCase.Mode.OrderedRows -> {
-                repeat(if (revision % 2 == 0) 32 else 64) { index ->
-                    val x = index % 8 * size.width / 8
-                    val y = index / 8 * size.height / 8
-                    scope.fillRectangle(IntRect(x, y, minOf(size.width, x + size.width / 8), minOf(size.height, y + size.height / 8)), ArgbColor(0x807195B3.toInt()))
-                    scope.sampledImage(image, source, FloatRect(x + 0.125f, y + 0.25f, minOf(size.width.toFloat(), x + size.width / 7f), minOf(size.height.toFloat(), y + size.height / 7f)), ArgbColor(0xC0BFD7EF.toInt()), alphaCutoff = 0.1f)
+            MinecraftSampledPerformanceCase.Mode.OrderedRows, MinecraftSampledPerformanceCase.Mode.ScrolledRows -> {
+                paintRows(scope, revision)
+            }
+
+            MinecraftSampledPerformanceCase.Mode.TiledTranslation -> {
+                repeat(64) { index ->
+                    val x = 8 + index % 8 * 20 + revision % 8 * 0.25f
+                    val y = 8 + index / 8 * 20f
+                    scope.sampledImage(image, source, FloatRect(x, y, x + 16f, y + 16f), alphaCutoff = 0f)
                 }
             }
 
             else -> {
                 scope.sampledImage(image, source, destination, alphaCutoff = 0f)
+            }
+        }
+    }
+
+    private fun paintRows(
+        scope: PaintScope,
+        revision: Int,
+    ) {
+        val image = images.first()
+        val source = FloatRect(0.125f, 0.25f, image.size.width - 0.25f, image.size.height - 0.125f)
+        val scrolling = case.mode == MinecraftSampledPerformanceCase.Mode.ScrolledRows
+        scope.withClip(IntRect(4, 4, size.width - 4, size.height - 4)) {
+            repeat(if (scrolling || revision % 2 != 0) 64 else 32) { index ->
+                val x = index % 8 * size.width / 8
+                val y = index / 8 * size.height / 8 - if (scrolling) revision % 8 * 3 else 0
+                scope.fillRectangle(IntRect(x, y, x + size.width / 8, y + size.height / 8), ArgbColor(0x807195B3.toInt()))
+                val tint = if (index % 2 == 0) ArgbColor(0xC0BFD7EF.toInt()) else ArgbColor(0xFFFFFFFF.toInt())
+                val cutoff = if (index % 2 == 0) 0f else 0.1f
+                scope.sampledImage(image, source, FloatRect(x + 0.125f, y + 0.25f, x + size.width / 7f, y + size.height / 7f), tint, alphaCutoff = cutoff)
             }
         }
     }

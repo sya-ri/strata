@@ -83,7 +83,7 @@ internal object SampledImageRasterizer {
             if (rows?.prepare(pixels, y - origin.y, sourceY) == true) continue
             if (magnified) {
                 val start = (y - origin.y) * physicalSize.width + left - origin.x
-                val opaqueRow = paintMagnifiedRow(pixels, start, checkNotNull(sourceXs), sourceY, command.image, color, opaqueTint)
+                val opaqueRow = paintMagnifiedRow(pixels, start, sourceXs, sourceY, command.image, color, opaqueTint)
                 rows?.finish(opaqueRow)
             } else {
                 var opaqueRow = opaqueTint

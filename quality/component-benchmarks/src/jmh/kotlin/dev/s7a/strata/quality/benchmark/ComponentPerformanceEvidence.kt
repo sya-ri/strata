@@ -18,6 +18,10 @@ public object ComponentPerformanceEvidence {
     public fun main(args: Array<String>) {
         require(2 < args.size)
         RuntimeSurfaceInventoryEvidence.verify()
+        if (System.getProperty("strata.performance.portableText", "false").toBooleanStrict()) {
+            portableText(args)
+            return
+        }
         if (System.getProperty("strata.performance.exceptionalText", "false").toBooleanStrict()) {
             exceptionalText(args)
             return
@@ -57,6 +61,20 @@ public object ComponentPerformanceEvidence {
             inputs =
                 JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
                     mapOf("component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI()), "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI())),
+        )
+    }
+
+    private fun portableText(args: Array<String>) {
+        val benchmark = PortableTextBenchmark::class.java
+        val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
+        JmhPerformanceRunner.run(
+            args.drop(2).toTypedArray(),
+            listOf(benchmark),
+            mapOf("api" to "dev.s7a.strata.component.UiScope", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage", "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost", "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory"),
+            Path.of(args[0]),
+            args[1].toInt(),
+            JmhWorkloadInventory.capture(listOf(benchmark), setOf(mode.shortLabel())),
+            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture")))),
         )
     }
 

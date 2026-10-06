@@ -21,7 +21,7 @@ internal class MinecraftGpuPerformanceProbe(
             .toDouble()
             .also { require(it.isFinite() && 0.0 < it) }
     private val queries = device.createTimestampQueryPool(Math.multiplyExact(samples, 2))
-    private val meter = GpuPerformanceMeter(samples, period, "Host GUI consumption commands; excludes CPU preparation and uploads recorded before consumption.") { index -> queries.getValue(index).let { if (it.isPresent) it.asLong else null } }
+    private val meter = GpuPerformanceMeter(samples, period, "Host GUI consumption commands; excludes earlier sampled-target passes and uploads, CPU preparation and display presentation.") { index -> queries.getValue(index).let { if (it.isPresent) it.asLong else null } }
     private var recorded = 0
 
     override fun arm() {

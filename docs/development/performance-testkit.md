@@ -176,10 +176,11 @@ The JVM tests exercise these contracts against the actual packaged collector rat
 ## Independent sampled-image, GPU and cold-image evidence
 
 Set `strata.performance.sampledImages=true` together with a fresh `strata.performance.nativeOutput` to collect the independent sampled-image corpus.
-Its reviewed registry is `quality/component-benchmarks/src/main/resources/native-sampled-images.tsv`: stationary, translated, resized, clipped, replaced and ordered overlapping-row scenes, each with 16, 64 and 256 texel source extents.
+Its reviewed registry is `quality/component-benchmarks/src/main/resources/native-sampled-images.tsv`: stationary, translated, resized, clipped, replaced, ordered overlapping-row, scrolling-row and tiled-translation scenes, each with 16, 64 and 256 texel source extents.
 Standard collection retains 30 warm-up frames, 60 measured frames, three independent processes and GUI scales 1–4; quick collection retains its separate identity and counts.
 Replacement inputs are distinct immutable identities prepared before sampling; source construction and PNG persistence stay outside extraction.
-Ordered rows alternate between 32 and 64 overlapping tinted samples over changing destination coverage.
+Ordered rows alternate between 32 and 64 overlapping samples, splitting tint and alpha-cutoff fallbacks over changing destination coverage.
+Scrolling rows retain 64 ordered samples under a moving clipped layout; tiled translation moves 64 small 16-pixel logical outputs independently of source resolution.
 The canonical 108-phase component corpus and its default selection are unchanged.
 Supply `sampled_images: true` in the processor request for this corpus; explicit `workloads` selects only identifiers from its registry, and the processor rejects using these reports as canonical component acceptance.
 
@@ -192,7 +193,7 @@ Older measured runtimes expose unavailable payload values as null rather than ze
 GPU queries are opt-in through `strata.performance.gpuQueries=true`, recorded in the controlled report conditions.
 The compiled RenderPearl fixture records timestamp pairs immediately around the real native GUI consumer and uses the actual device's timestamp period to convert ticks to nanoseconds.
 `GpuPerformanceMeter` requires every requested pair to complete before publishing p50, p95 and p99 GPU distributions.
-The GPU scope includes all host commands between those timestamps; it excludes CPU preparation and uploads recorded before consumption.
+The GPU scope includes all host commands between those timestamps; it excludes CPU preparation, uploads and sampled-target passes recorded before GUI consumption.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.
@@ -203,6 +204,12 @@ Compare repetitions only with matching version, backend, driver/device descripti
 It measures opening a fresh input stream, PNG decoding and immutable pixel acquisition separately from deterministic PNG encoding at 64, 256 and 1024 texels per axis.
 The encoded input is resident before measurement, and PNG encoding returns fresh bytes without filesystem persistence; these boundaries do not claim an operating-system file-cache or network-cold workload.
 The historical, sampled-raster and native steady-presentation definitions and defaults remain unchanged.
+
+The independent `PortableTextBenchmark` corpus is selected with `strata.performance.portableText=true` on `:quality:component-benchmarks:jmhComponents`.
+Its twelve phases separate fresh host/layout/glyph extraction from CPU composition of prepared detached glyph commands over alternating opaque destinations.
+The existing multilingual bitmap source and original geometric TrueType fixture at 64 and 256 logical pixels run at densities one and four with fixed full-HD output.
+Font acquisition and snapshot decoding stay outside both operations; the extraction phase includes creation and terminal close of its fresh font owner, while composition owns a new raster each time.
+This corpus leaves the canonical component, font-provider and historical matrices unchanged and records the actual headless, font and shared runtime binaries plus the registered original font file.
 
 ## Host boundaries
 

@@ -46,12 +46,26 @@ internal class FabricMinecraftSamplingMap(
         indices =
             createDrawImage(IntSize(width, 3)) { coordinate, row ->
                 val value =
-                    when {
-                        row == 0 && coordinate < physicalSize.width -> axis(Math.addExact(left, coordinate), destination.left, destination.right, if (command.orientation.flipX) source.right else source.left, if (command.orientation.flipX) source.left else source.right, command.image.size.width)
-                        row == 1 && coordinate < physicalSize.height -> axis(Math.addExact(top, coordinate), destination.top, destination.bottom, if (command.orientation.flipY) source.bottom else source.top, if (command.orientation.flipY) source.top else source.bottom, command.image.size.height)
-                        row == 2 && coordinate == 0 -> physicalSize.width + 1
-                        row == 2 && coordinate == 1 -> physicalSize.height + 1
-                        else -> 0
+                    when (row) {
+                        0 -> {
+                            if (coordinate < physicalSize.width) axis(Math.addExact(left, coordinate), destination.left, destination.right, if (command.orientation.flipX) source.right else source.left, if (command.orientation.flipX) source.left else source.right, command.image.size.width) else 0
+                        }
+
+                        1 -> {
+                            if (coordinate < physicalSize.height) axis(Math.addExact(top, coordinate), destination.top, destination.bottom, if (command.orientation.flipY) source.bottom else source.top, if (command.orientation.flipY) source.top else source.bottom, command.image.size.height) else 0
+                        }
+
+                        2 -> {
+                            when (coordinate) {
+                                0 -> physicalSize.width + 1
+                                1 -> physicalSize.height + 1
+                                else -> 0
+                            }
+                        }
+
+                        else -> {
+                            0
+                        }
                     }
                 encode(value)
             }

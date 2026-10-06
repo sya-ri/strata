@@ -115,14 +115,17 @@ tasks.register<JavaExec>("jmhComponents") {
     val stress = providers.gradleProperty("strata.performance.stress").map(String::toBooleanStrict).getOrElse(false)
     val fonts = providers.gradleProperty("strata.performance.fonts").map(String::toBooleanStrict).getOrElse(false)
     val exceptionalText = providers.gradleProperty("strata.performance.exceptionalText").map(String::toBooleanStrict).getOrElse(false)
-    require(listOf(stress, fonts, exceptionalText).count { it } <= 1) { "Choose one independent corpus" }
-    val corpus = if (fonts) "fonts" else if (stress) "stress" else if (exceptionalText) "exceptional-text" else "components"
+    val portableText = providers.gradleProperty("strata.performance.portableText").map(String::toBooleanStrict).getOrElse(false)
+    require(listOf(stress, fonts, exceptionalText, portableText).count { it } <= 1) { "Choose one independent corpus" }
+    val corpus = if (portableText) "portable-text" else if (fonts) "fonts" else if (stress) "stress" else if (exceptionalText) "exceptional-text" else "components"
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
     require(fonts.not() || workloads == null) { "Workload selection supports the component, stress and exceptional-text corpora" }
+    require(portableText.not() || workloads == null) { "Portable text retains its complete independent matrix" }
     val suite = (if (quick) "$corpus-quick" else if (smoke) "$corpus-smoke" else corpus) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     workloads?.let { systemProperty("strata.performance.workloads", it) }
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else if (exceptionalText) "ExceptionalTextFieldBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    args(result.get().absolutePath, repetition.toString(), if (portableText) "PortableTextBenchmark.*" else if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else if (exceptionalText) "ExceptionalTextFieldBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    if (portableText) systemProperty("strata.performance.portableText", true)
     systemProperty("strata.performance.fonts", fonts)
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.stress", stress)
@@ -198,6 +201,21 @@ val verifyFontWork = tasks.register<JavaExec>("verifyFontWork") {
 }
 
 tasks.named("check") { dependsOn(verifyFontWork) }
+
+val verifyPortableTextWork = tasks.register<JavaExec>("verifyPortableTextWork") {
+    group = "verification"
+    description = "Checks detached Unicode and large custom-font glyph composition with changing destinations."
+    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+    dependsOn(generated, generator)
+    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    mainClass.set("dev.s7a.strata.quality.benchmark.PortableTextWorkEvidence")
+    javaLauncher.set(componentLauncher)
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
+}
+
+tasks.named("check") { dependsOn(verifyPortableTextWork) }
 
 tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
     group = "verification"

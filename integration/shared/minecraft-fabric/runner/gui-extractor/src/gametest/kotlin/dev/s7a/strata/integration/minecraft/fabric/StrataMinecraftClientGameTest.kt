@@ -308,8 +308,8 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
                     when (scale) {
-                        1 -> 22L
-                        else -> 20L
+                        1 -> 26L
+                        else -> 24L
                     }
                 require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
                     "Every eligible source must use its pinned GPU presentation at GUI$scale: $observed"
