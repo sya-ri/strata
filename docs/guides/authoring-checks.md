@@ -157,18 +157,24 @@ fun UiScope.UnpaddedPanel(modifier: Modifier = Modifier.Empty) {
 }
 ```
 
-Use the returned chain:
+Use the returned chain; conditional expressions can supply it too:
 
 <!-- checked-example: valid -->
 
 ```kotlin
-fun UiScope.PaddedPanel(modifier: Modifier = Modifier.Empty) {
-    Column(modifier = modifier.padding(8)) { Text("Title") }
+fun UiScope.ConditionalPanel(enabled: Boolean, modifier: Modifier = Modifier.Empty) {
+    val applied = if (enabled) {
+        modifier.padding(4)
+    } else {
+        modifier.padding(8)
+    }
+    Column(modifier = applied) { Text("Title") }
 }
 ```
 
-The rule reports resolved Modifier operations used as discarded block statements.
-Returned factory values, assigned or passed chains, and intermediate results used by another operation are allowed.
+The rule reports resolved Modifier operations whose results are unused according to Kotlin's expression analysis.
+Returned factory values, assigned or passed chains, used `if` / `when` / `try` branch results, and intermediate results used by another operation are allowed.
+Unused branches, nonterminal operations in a used block, `finally` results, and Unit callbacks are still checked, including branches without braces.
 Unrelated application methods with the same name are not treated as Modifier operations.
 
 ## MultipleModifierApplications
