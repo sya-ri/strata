@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
 /**
  * Owns staged device allocations while exposing an inert texture-manager view.
  * The generation fences initialization and GUI consumption before requesting destruction.
- * Native allocation and borrowed-field clearing remain in the exact adapter.
+ * The compatible texture/view fields are cleared only after every independent native close succeeds.
  */
 internal abstract class FabricMinecraftPortableTextureStorage : AbstractTexture() {
     /**
@@ -23,7 +23,8 @@ internal abstract class FabricMinecraftPortableTextureStorage : AbstractTexture(
     internal fun destroy() {
         RenderSystem.assertOnRenderThread()
         owned.close()
-        clearTexture()
+        textureView = null
+        texture = null
     }
 
     /**
@@ -35,12 +36,6 @@ internal abstract class FabricMinecraftPortableTextureStorage : AbstractTexture(
         RenderSystem.assertOnRenderThread()
         return owned.isDestroyed()
     }
-
-    /**
-     * Drops the adapter's borrowed native fields after fenced native close succeeds.
-     */
-    @JvmSynthetic
-    protected abstract fun clearTexture()
 
     @JvmSynthetic
     override fun close() = Unit

@@ -11,24 +11,10 @@ import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.FilterMode
 import com.mojang.blaze3d.textures.GpuTexture
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
 import java.util.Optional
-
-/**
- * Enables bounded index-texture sampling on this device-command adapter without reading source pixels.
- */
-@JvmSynthetic
-internal fun supportsFabricMinecraftExactSampling(): Boolean {
-    RenderSystem.assertOnRenderThread()
-    return 4_096 <=
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-}
 
 /**
  * Transfers an empty native owner before allocating the output and axis texture or recording their GPU work.
@@ -48,21 +34,14 @@ internal fun initializeFabricMinecraftSampledTexture(
 }
 
 /**
- * Checks whether one immutable image fits the active device's RGBA texture limit before direct-cache reservation.
- *
- * @param image candidate source borrowed on the render thread.
- * @return true when both source dimensions can be allocated as one RGBA texture.
+ * Reads the active device's RGBA source-texture bound after the caller verifies render-thread access.
  */
 @JvmSynthetic
-internal fun supportsFabricMinecraftSampledImage(image: DrawImage): Boolean {
-    RenderSystem.assertOnRenderThread()
-    val maximum =
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-    return image.size.width <= maximum && image.size.height <= maximum
-}
+internal fun fabricMinecraftMaximumTextureSize(): Int =
+    RenderSystem
+        .getDevice()
+        .deviceInfo.limits
+        .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
 
 /**
  * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
@@ -119,12 +98,6 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
             pass.bindTexture("IndexSampler", indexView, sampler)
             pass.draw(3, 1, 0, 0)
         }
-    }
-
-    @JvmSynthetic
-    override fun clearTexture() {
-        textureView = null
-        texture = null
     }
 }
 

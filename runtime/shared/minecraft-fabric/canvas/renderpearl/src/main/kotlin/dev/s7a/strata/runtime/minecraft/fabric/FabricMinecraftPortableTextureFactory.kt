@@ -10,7 +10,6 @@ import com.mojang.renderpearl.api.textures.FilterMode
 import com.mojang.renderpearl.api.textures.GpuTexture
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -19,19 +18,6 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.state.gui.BlitRenderState
 import net.minecraft.client.renderer.texture.AbstractTexture
 import org.joml.Matrix3x2f
-
-/**
- * Enables bounded index-texture sampling on this device-command adapter without reading source pixels.
- */
-@JvmSynthetic
-internal fun supportsFabricMinecraftExactSampling(): Boolean {
-    RenderSystem.assertOnRenderThread()
-    return 4_096 <=
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-}
 
 /**
  * Uploads only exact axis metadata for deferred GUI sampling, transferring ownership before allocation.
@@ -83,21 +69,14 @@ internal fun drawFabricMinecraftExactSampledImage(
 }
 
 /**
- * Checks whether one immutable image fits the active device's RGBA texture limit before direct-cache reservation.
- *
- * @param image candidate source borrowed on the render thread.
- * @return true when both source dimensions can be allocated as one RGBA texture.
+ * Reads the active device's RGBA source-texture bound after the caller verifies render-thread access.
  */
 @JvmSynthetic
-internal fun supportsFabricMinecraftSampledImage(image: DrawImage): Boolean {
-    RenderSystem.assertOnRenderThread()
-    val maximum =
-        RenderSystem
-            .getDevice()
-            .deviceInfo.limits
-            .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
-    return image.size.width <= maximum && image.size.height <= maximum
-}
+internal fun fabricMinecraftMaximumTextureSize(): Int =
+    RenderSystem
+        .getDevice()
+        .deviceInfo.limits
+        .maxTextureSizeForFormat(GpuFormat.RGBA8_UNORM)
 
 /**
  * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
@@ -119,12 +98,6 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
         sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
         textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
         device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
-    }
-
-    @JvmSynthetic
-    override fun clearTexture() {
-        textureView = null
-        texture = null
     }
 }
 
