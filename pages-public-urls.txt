@@ -37,6 +37,7 @@
 /demos/pages.txt
 /demos/progress/index.html
 /demos/styles.css
+/detekt-rules/index.html
 /index.html
 /older/0.1.0/index.html
 /older/0.1.1/index.html
@@ -48,7 +49,7 @@
 /older/0.2.0/index.html
 /older/0.2.1/index.html
 /paper-api/index.html
-/quality/performance-testkit/index.html
+/performance-testkit/index.html
 /runtime/core/index.html
 /runtime/headless/index.html
 /runtime/minecraft-fabric-1.20.1/index.html

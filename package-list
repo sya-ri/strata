@@ -20,6 +20,8 @@ dev.s7a.strata.spi
 dev.s7a.strata.state
 dev.s7a.strata.text
 dev.s7a.strata.ui
+module:detekt-rules
+dev.s7a.strata.detekt
 module:paper-api
 dev.s7a.strata.paper
 dev.s7a.strata.paper.event
