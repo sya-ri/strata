@@ -98,7 +98,7 @@ public fun UiScope.Checkbox(
  * @param T immutable option type.
  * @receiver active owner-thread screen scope.
  * @param state caller-owned finite option state.
- * @param width fixed logical button width.
+ * @param width fixed logical button width from 1 to 200 pixels in the Minecraft profile.
  * @param enabled whether input and enabled appearance are active.
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.
@@ -127,7 +127,7 @@ public fun <T : Any> UiScope.CycleButton(
  * @receiver active owner-thread screen scope.
  * @param label unresolved visible and semantic label.
  * @param state caller-owned numeric state.
- * @param width fixed logical track width.
+ * @param width fixed logical track width from 1 to 200 pixels in the Minecraft profile.
  * @param enabled whether input and enabled appearance are active.
  * @param modifier active layout, input, and typed action behavior.
  * @param key optional stable sibling identity.

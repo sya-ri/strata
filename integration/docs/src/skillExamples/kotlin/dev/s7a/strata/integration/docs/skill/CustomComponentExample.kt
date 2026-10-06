@@ -16,6 +16,42 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 
 /**
+ * Owns shared panel structure while its caller chooses the application content.
+ */
+internal fun UiScope.Panel(
+    title: String,
+    modifier: Modifier = Modifier.Empty,
+    key: ElementKey<*>? = null,
+    content: UiScope.() -> Unit,
+) {
+    Column(modifier = modifier, spacing = 3, key = key) {
+        Text(title)
+        content()
+    }
+}
+
+/**
+ * Composes one application into the shared panel without adding application dispatch to it.
+ */
+internal fun UiScope.PowerScreen(
+    stored: Int,
+    capacity: Int,
+) {
+    Panel("Power") {
+        EnergyGauge(stored, capacity)
+    }
+}
+
+/**
+ * Reuses the same panel for independent application content.
+ */
+internal fun UiScope.ConnectionScreen(connected: Boolean) {
+    Panel("Connection") {
+        Text(if (connected) "Connected" else "Disconnected")
+    }
+}
+
+/**
  * Emits an application-owned energy gauge by composing general Strata primitives.
  */
 internal fun UiScope.EnergyGauge(
@@ -25,7 +61,7 @@ internal fun UiScope.EnergyGauge(
     key: ElementKey<*>? = null,
 ) {
     require(0 < capacity) { "Energy capacity must be positive." }
-    val fillWidth = stored.coerceIn(0, capacity) * 76 / capacity
+    val fillWidth = (stored.coerceIn(0, capacity).toLong() * 76 / capacity).toInt()
     Column(
         modifier = modifier,
         spacing = 3,

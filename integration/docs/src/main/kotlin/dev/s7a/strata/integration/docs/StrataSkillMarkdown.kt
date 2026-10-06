@@ -22,6 +22,8 @@ Strata exposes ${signatures.size} focused standard components from `dev.s7a.stra
 Every Kotlin declaration below is paired with the compiled `strata-api` overload inventory; generation fails when source and binary identities diverge or an undocumented component enters the API.
 Use the [component showcase on GitHub]($COMPONENT_GUIDE_URL) for complete compiled examples and Minecraft-verified images.
 The catalog describes the shared API; host support differs, especially for the experimental browser runtime. Check [setup](setup.md) before selecting profile-dependent components.
+The Minecraft profile accepts `CycleButton` and `Slider` widths from 1 to 200 logical pixels; do not size either directly to an arbitrarily wide form.
+Explicit `size` and `viewportSize` arguments must satisfy the delivered constraints. Fill/weight modifiers change constraints rather than those arguments.
 
 ${signatures.entries.joinToString("\n\n") { (component, overloads) -> component(component, overloads) }}
 """,
@@ -125,6 +127,35 @@ Use the same Strata release on both ends and select the Fabric runtime for the c
 
 $HOSTS
 
+## Detekt authoring checks
+
+For JVM projects using Detekt, install the optional authoring plugin from Maven Central through `detektPlugins`.
+Use the Detekt version selected in Strata's [version catalog](https://github.com/sya-ri/strata/blob/master/gradle/libs.versions.toml) and verify compatibility before loading it with another Detekt version.
+Keep the plugin version aligned with the Strata release whose authoring contracts you are checking.
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:$releaseVersion")
+}
+
+detekt {
+    config.setFrom(files("detekt.yml"))
+}
+
+tasks.named("check") {
+    dependsOn("detektMain")
+}
+```
+
+Merge the `strata` section from the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md#installation) into the project's `detekt.yml`, enabling the intended rules.
+Run `./gradlew detektMain` with `strata-api` and application dependencies on that source set's analysis classpath; use the corresponding type-aware task for other source sets.
+An untyped `detekt` run does not verify these rules.
+Review the guide's per-rule examples and detection limits alongside the actual component tree.
+
 ## Local Fabric installation
 
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
@@ -221,6 +252,9 @@ ${StrataReactiveSkillMarkdown.patterns(reactiveExample)}
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
+- `VirtualList` and `SelectionList` have an explicit `viewportSize` that must fit the constraints delivered to the list. A parent weight or a `fillMax*` modifier changes those constraints, not the requested viewport. Compute the list rectangle from the same allocated geometry as its parent and scrollbar, or keep that rectangle fixed without a competing fill/weight chain. Verify both supported endpoint viewports with a real renderer; compilation does not prove constraint compatibility.
+- The same constraint check applies to controls with an explicit `size`, including `ProgressBar`. Use matching geometry rather than expecting a fill modifier to change that parameter.
+- A single-child `Observe` passes its constraints through. A fixed observation rectangle therefore needs a child with matching explicit geometry or a layout that reserves the rectangle while relaxing its child's constraints. For example, a fixed-size `Stack` can align a naturally sized loading indicator; a larger fixed `Observe` around the indicator alone cannot.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
@@ -258,6 +292,10 @@ Admit a component to Strata's standard built-ins only when all of these are true
 
 ## Compiled downstream composition
 
+The frame receives a content lambda and owns only its shared structure.
+Its caller owns screen selection and passes the appropriate application content; branches for loading, empty, error, and ready remain valid inside that application.
+Apply the caller's modifier once to the frame root; internal decoration uses its own modifiers.
+
 ```kotlin
 $customExample
 ```
@@ -267,7 +305,7 @@ Read the [Element SPI contract]($ELEMENT_SPI_GUIDE_URL) before implementing a re
 Keep shared implementations free of JVM-only APIs and verify the target host's rendering capabilities.
 Collection snapshots detach membership but retain element references; respect their read-only types rather than relying on mutation through a cast or Java collection methods throwing. See the [architecture contract](https://github.com/sya-ri/strata/blob/master/docs/development/architecture.md).
 
-$CUSTOM_EXTENSIONS
+Read [remote extensions](remote-extensions.md) only when sharing custom projections, codecs, or client implementations across a remote connection.
 """,
         )
 
@@ -275,55 +313,10 @@ $CUSTOM_EXTENSIONS
     private const val ELEMENT_SPI_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"
     private const val PAPER_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/paper.md"
     private const val VELOCITY_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/velocity.md"
-    private const val PROJECTION_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/declaration-projection.md"
     private const val REMOTE_PROTOCOL_URL = "https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md"
     private const val TEXT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/text.md"
     private const val FONT_GUIDE_URL = "https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md"
     private const val RELEASE_VERSION_PLACEHOLDER = "<generated-strata-release-version>"
-
-    private const val CUSTOM_EXTENSIONS: String =
-        """## Sharing custom components
-
-Start with a `UiScope` composition of existing primitives; being application-specific does not itself require a retained primitive, wire registration, or a client Mod.
-When several consumers need the component or a remote extension needs a shared contract, put that reusable code in a shared component module as the default.
-A JVM-only shared module is sufficient for Mod/Paper/Velocity reuse; add Kotlin Multiplatform JVM and JS targets when the same declarations need a Web preview.
-Keep host opening code, player/service access, client resources, and target-specific rendering in their consumers.
-Without cross-project reuse, an ordinary composition can remain in the application's existing module.
-
-For a remote primitive, share the type identifiers, immutable property/event types, and codecs where possible.
-If repository, release, or dependency constraints prevent a shared module, independent implementations are valid; the required agreement in the table below is sufficient for protocol interoperability.
-Do not turn source sharing, an identical artifact, or a common implementation class into an admission requirement.
-The following wire contracts must agree even when the endpoint implementations live in different projects:
-
-| Surface | Required agreement | Implementation ownership |
-| --- | --- | --- |
-| Component/modifier capability | Exact namespaced `ProjectionType` ID and schema version. | Register on both host and installed client before negotiation. |
-| Action identity | Exact action type ID and schema version used by the sender and `ProjectionAction` decoder. | `ProjectionScope.action` binds the host endpoint; a separate action-only registry entry is not required. |
-| Properties and events | Value kinds, record order, field meaning, optional values, and validation domains for matching encoders/decoders. | Prefer shared immutable types/codecs; server handlers and client factories may differ. |
-| Input policy | Declared event variants, key/button filters, propagation, and capture contracts. | Immediate behavior runs on the client; authenticated business handlers run on the host. |
-| Assets and native renderer references | Referenced resource IDs and required renderer schema capabilities. | Client installation supplies the actual assets/renderers. |
-
-Identical source, class names, module layouts, codec implementations, or business-handler code on both endpoints are not required.
-Local-only Element/Node extensions retain their registration-free contract.
-For Web/Headless previews, reuse the application's definition factory with deterministic sample data; do not maintain a second preview-only component tree.
-Target-specific component adapters may differ while preserving the property/action contract; report missing rendering or input capabilities.
-
-## Remote extensions
-
-Composition from supported standard components needs no new wire schema.
-For remote screens built only from those components and compositions, the client needs Strata and Fabric Language Kotlin, with no application-specific client Mod.
-A custom retained component or modifier used remotely must provide a typed declaration projection; a local `Node` implementation alone is insufficient.
-Read the [declaration projection SPI]($PROJECTION_GUIDE_URL) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
-Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.
-
-Choose a namespaced type ID and schema version, register it through `PaperUi.register` or `VelocityUi.register` before negotiation, and install matching decoders/factories in `FabricRemoteScreens.registry` before its first connection freezes registration.
-Changed wire schemas require a new version; existing connections must reconnect to negotiate newly registered types.
-Missing projections or client capabilities reject the whole screen explicitly.
-Follow the [extension and ownership contract]($REMOTE_PROTOCOL_URL#extensions-and-ownership) for `RemoteRegistry.element`, `modifier`, `statefulModifier`, and release of retained client resources.
-The [compiled external extension](https://github.com/sya-ri/strata/blob/master/examples/paper/src/main/kotlin/dev/s7a/strata/examples/paper/DemoRemoteExtensions.kt) demonstrates a custom primitive and active modifier; its [round-trip and rejection tests](https://github.com/sya-ri/strata/blob/master/examples/paper/src/test/kotlin/dev/s7a/strata/examples/paper/ExternalProjectionTest.kt) exercise the public contracts.
-
-Typed input subscriptions can run handlers on Paper or Velocity with declared local filters, propagation, and fixed-button capture.
-Event-dependent synchronous `InputResult` or capture decisions and native Canvas drawing need an installed client implementation; a server response cannot supply an immediate local result."""
 
     private const val HOSTS: String =
         """| Host | Public opening API | State and handler owner |
@@ -365,7 +358,7 @@ Backend switches retire the visible remote screen and renew negotiation before a
 
 Use `onActivate` for ordinary server actions and typed modifiers for subscribed input notifications; see [modifiers](modifiers-and-layout.md#selection-guide).
 Focus, hover, immediate propagation, capture, and IME composition remain client behavior.
-See the [remote protocol]($REMOTE_PROTOCOL_URL) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [custom components](custom-components.md#remote-extensions) when client code is required."""
+See the [remote protocol]($REMOTE_PROTOCOL_URL) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [remote extensions](remote-extensions.md#remote-extensions) when client code is required."""
 
     private const val BROWSER_SETUP: String =
         """## Preview the same screen with Web or Headless

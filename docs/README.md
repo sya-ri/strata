@@ -16,6 +16,7 @@ For published artifacts, use the documentation at the matching [release tag](htt
 | [Velocity screens](guides/velocity.md) | Own screens on a proxy, queue UI state changes, and coexist with Paper backends. |
 | [Layout](guides/layout.md) | Choose containers and control spacing, sizing, wrapping, and alignment. |
 | [Modifiers](guides/modifiers.md) | Add sizing, backgrounds, input, focus, and parent-scope behavior. |
+| [Authoring checks](guides/authoring-checks.md) | Install opt-in Detekt checks and understand each rule's examples and limits. |
 | [Text and editing](guides/text.md) | Display labels, edit single-line or multiline values, and select fonts. |
 | [Font resources](guides/fonts.md) | Load resource fonts for offline rendering and configure their public limits. |
 | [Canvas](guides/canvas.md) | Embed external CPU images or native drawing output. |

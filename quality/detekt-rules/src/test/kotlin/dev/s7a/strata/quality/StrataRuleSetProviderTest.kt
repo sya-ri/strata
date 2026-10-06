@@ -21,7 +21,7 @@ internal class StrataRuleSetProviderTest {
         val provider = providers.filterIsInstance<StrataRuleSetProvider>().single()
         val ruleSet = provider.instance()
 
-        assertEquals(RuleSetId("strata"), ruleSet.id)
+        assertEquals(RuleSetId("strata-internal"), ruleSet.id)
         assertEquals(
             setOf(
                 RuleName("NoNonNullAssertion"),

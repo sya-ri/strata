@@ -13,12 +13,12 @@ plugins {
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
 
 dependencies {
-    implementation(project(":quality:performance-testkit"))
+    implementation(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlin.test)
     testRuntimeOnly(libs.junit.platform.launcher)
     add("jmh", project(":api"))
-    add("jmh", project(":quality:performance-testkit"))
+    add("jmh", project(":performance-testkit"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:headless"))
     add("jmh", project(":runtime:minecraft"))

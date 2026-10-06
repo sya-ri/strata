@@ -54,12 +54,12 @@ internal class BrowserPerformanceOwnershipRuleTest {
 
     @Test
     fun policyCoversNewBrowserHelpersAndExcludesTheCollectorAndProductionRuntime() {
-        val config = Files.newBufferedReader(Path.of(checkNotNull(System.getProperty("strata.detekt.config")))).use { YamlConfig.load(it).subConfig("strata").subConfig("BrowserPerformanceOwnership") }
+        val config = Files.newBufferedReader(Path.of(checkNotNull(System.getProperty("strata.detekt.config")))).use { YamlConfig.load(it).subConfig("strata-internal").subConfig("BrowserPerformanceOwnership") }
         assertTrue(config.valueOrDefault("active", false))
         val filters = checkNotNull(PathFilters.of(config.valueOrDefault("includes", emptyList()), config.valueOrDefault("excludes", emptyList())))
         assertFalse(filters.isIgnored(Path.of("repository/integration/web/src/jsMain/kotlin/NewHelper.kt")))
         assertFalse(filters.isIgnored(Path.of("repository/integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/NewHelper.kt")))
-        assertTrue(filters.isIgnored(Path.of("repository/quality/performance-testkit/src/jsMain/kotlin/Meter.kt")))
+        assertTrue(filters.isIgnored(Path.of("repository/performance-testkit/src/jsMain/kotlin/Meter.kt")))
         assertTrue(filters.isIgnored(Path.of("repository/runtime/web/src/jsMain/kotlin/Animation.kt")))
     }
 }

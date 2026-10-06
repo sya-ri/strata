@@ -1,0 +1,6 @@
+public final class dev/s7a/strata/detekt/StrataRuleSetProvider : dev/detekt/api/RuleSetProvider {
+	public fun <init> ()V
+	public fun getRuleSetId ()Ldev/detekt/api/RuleSetId;
+	public fun instance ()Ldev/detekt/api/RuleSet;
+}
+

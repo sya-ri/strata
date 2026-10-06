@@ -1,6 +1,6 @@
 # Performance testkit
 
-The `quality:performance-testkit` module owns performance collection and evidence contracts shared by Strata and downstream applications.
+The `performance-testkit` module owns performance collection and evidence contracts shared by Strata and downstream applications.
 It is a test-only Maven publication in the Strata repository, with the same release version as the other modules.
 Its JVM coordinate is `dev.s7a.strata:strata-performance-testkit`; Kotlin Multiplatform consumers use `strata-performance-testkit-multiplatform`.
 It is available starting with Strata 0.2.2; development candidates can be published to an isolated local repository without replacing any existing release artifact.
@@ -55,7 +55,7 @@ This preserves the supplied archives; it does not claim a hash of a GPU driver o
 Collector, harness, fixture, external inputs, workload matrix and measurement conditions must match.
 Unavailable GC time and ratios against a zero baseline remain unavailable; absolute timings never determine success.
 
-The JVM-only `:quality:performance-testkit:processEvidence` task reads one UTF-8 JSON request via `-Pstrata.performance.request=<request-file>`.
+The JVM-only `:performance-testkit:processEvidence` task reads one UTF-8 JSON request via `-Pstrata.performance.request=<request-file>`.
 The request specifies `command` (`jmh-summary` or `jmh-comparison`), the actual `collector` JAR, a new `output` file, and either `runs` or `baseline`/`candidate` directory arrays.
 `repetitions` defaults to three independent invocations.
 The task runs `PerformanceEvidenceCli` from the packaged collector with its normal Kotlin/Gson runtime classpath and refuses to overwrite output.
@@ -259,8 +259,8 @@ Use the project's mise-selected Java and wrapper.
 Update API snapshots separately from the check that validates them; never make ABI checking depend on automatic snapshot updates.
 
 ```powershell
-mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy=in-process" "-Pstrata.webOnly=true" :quality:performance-testkit:formatKotlin :quality:performance-testkit:updateKotlinAbi
-mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy=in-process" "-Pstrata.webOnly=true" "-Dmaven.repo.local=<isolated-repository>" :quality:performance-testkit:check :quality:performance-testkit:publishToMavenLocal
+mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy=in-process" "-Pstrata.webOnly=true" :performance-testkit:formatKotlin :performance-testkit:updateKotlinAbi
+mise.exe exec -- ./gradlew.bat --no-daemon "-Pkotlin.compiler.execution.strategy=in-process" "-Pstrata.webOnly=true" "-Dmaven.repo.local=<isolated-repository>" :performance-testkit:check :performance-testkit:publishToMavenLocal
 ```
 
 Inspect the published POM and Gradle module metadata to ensure the kit does not pull another Strata runtime onto the measurement classpath.
@@ -286,7 +286,7 @@ Each engine starts and closes a separate browser process for every repetition; t
 The loaded browser version must remain identical across an engine's three invocations; a version change rejects the group and still closes the changed invocation.
 The driver rejects duplicate engine/scenario/phase registrations and conditions that disagree with the collector's default 30 warm-up operations and 60 samples.
 Fixture-returned data cannot replace the driver-owned invocation or host identity, and operation failure closes the current page and browser before rejecting the matrix.
-`:quality:performance-testkit:verifyBrowserPerformanceDriver` tests these orchestration and failure contracts with synthetic browser lifetimes and is part of the kit's `check`; it is not real browser performance evidence.
+`:performance-testkit:verifyBrowserPerformanceDriver` tests these orchestration and failure contracts with synthetic browser lifetimes and is part of the kit's `check`; it is not real browser performance evidence.
 The driver records the actual linked testkit JS artifact and driver hashes separately from the complete application-bundle hash, browser version, viewport, and workload conditions.
 The kit captures input hashes before collection and verifies them again before writing evidence; an operation failure or changed input cannot produce a successful report.
 It also hashes and rechecks separately supplied fixture-input files and compares the loaded browser inventory with the independently exported build inventory before sampling.

@@ -40,7 +40,7 @@ style:
   MaxLineLength:
     active: false
 
-strata:
+strata-internal:
   BrowserPerformanceOwnership:
     active: true
     includes:

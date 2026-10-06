@@ -37,7 +37,7 @@ def plan(paths, model=None, full=False):
             result["qodana"] |= path.endswith((".kt", ".kts"))
         elif path.startswith(("docs/", "skills/")) or path in ("README.md", "CHANGELOG.md"):
             result["docs"] = True
-        elif path.startswith(("api/", "runtime/", "integration/", "examples/", "paper-api/", "velocity-api/", "quality/")):
+        elif path.startswith(("api/", "runtime/", "integration/", "examples/", "paper-api/", "velocity-api/", "quality/", "detekt-rules/", "performance-testkit/")):
             result.update(common=True, web=True, all_minecraft=True, qodana=True, docs_full=True)
         elif path.startswith("build-logic/") or path in ("build.gradle.kts", "settings.gradle.kts", "gradle.properties") or path.startswith(("gradle/", "config/")):
             full = True

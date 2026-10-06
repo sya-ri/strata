@@ -10,7 +10,7 @@ dependencies {
     add("jmh", project(":api"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:remote"))
-    add("jmh", project(":quality:performance-testkit"))
+    add("jmh", project(":performance-testkit"))
 }
 jmh { jmhVersion.set(libs.versions.benchmark.harness) }
 
