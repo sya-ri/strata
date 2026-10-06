@@ -144,12 +144,12 @@ private data class MinecraftFabricTarget(
     enum class CanvasFamily(val testSource: String, vararg val sourceRoots: String) {
         OpenGlPlatformBuffers("opengl/common", "opengl/common", "opengl/platform-buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
         OpenGlBuffers("opengl/common", "opengl/common", "opengl/buffer-allocation", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dDirectTextures("blaze3d/direct-textures", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
-        Blaze3dTextureViews("blaze3d/texture-views", "blaze3d/common", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dSamplers("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
-        Blaze3dGuiExtractor("blaze3d/texture-views", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
-        Blaze3dBindGroups("blaze3d/bind-groups", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
-        RenderPearl("renderpearl", "renderpearl", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        Blaze3dDirectTextures("blaze3d/direct-textures", "portable-storage", "blaze3d/common", "blaze3d/direct-textures", "drawing/gui-graphics", "consumption/flush", "lifecycle/immediate-release"),
+        Blaze3dTextureViews("blaze3d/texture-views", "portable-storage", "blaze3d/common", "blaze3d/texture-views", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dSamplers("blaze3d/texture-views", "portable-storage", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-graphics", "consumption/buffer-source", "discard/gui-graphics", "lifecycle/immediate-release"),
+        Blaze3dGuiExtractor("blaze3d/texture-views", "portable-storage", "blaze3d/common", "blaze3d/samplers", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/buffer-source", "discard/gui-extractor", "lifecycle/immediate-release", "lifecycle/frame"),
+        Blaze3dBindGroups("blaze3d/bind-groups", "portable-storage", "blaze3d/common", "blaze3d/bind-groups", "blaze3d/sampler-textures", "drawing/gui-extractor", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
+        RenderPearl("renderpearl", "portable-storage", "renderpearl", "consumption/vertex-buffer", "discard/gui-extractor", "lifecycle/frame"),
     }
 
     /** Verified test-only native GUI constructor and traversal contracts, independent of the GPU driver family. */
@@ -748,7 +748,7 @@ val sharedSourceMarkdown = providers.provider {
             ),
             "GUI drawing" to listOf("FabricNativeCanvasDrawing"),
             "GUI consumption and discard" to listOf("FabricMinecraftCanvasGuiConsumption", "FabricMinecraftCanvasRenderStateAccess"),
-            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin"),
+            "Resource lifecycle" to listOf("FabricNativeCanvasDestructionFactory", "FabricMinecraftCanvasRenderFrameMixin", "FabricMinecraftPortableTextureOwnership"),
         ),
         "input" to linkedMapOf(
             "Inventory key and mouse bindings" to listOf("FabricMinecraftInventoryBridge", "FabricMinecraftKeyBindingBridge"),

@@ -104,32 +104,32 @@ Tracks `FabricMinecraftCanvasGuiConsumption`, `FabricMinecraftCanvasRenderStateA
 
 ### Resource lifecycle
 
-Tracks `FabricNativeCanvasDestructionFactory`, `FabricMinecraftCanvasRenderFrameMixin` in each runtime's configured main sources.
+Tracks `FabricNativeCanvasDestructionFactory`, `FabricMinecraftCanvasRenderFrameMixin`, `FabricMinecraftPortableTextureOwnership` in each runtime's configured main sources.
 
-| Minecraft | [`lifecycle/immediate-release`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/immediate-release) | [`lifecycle/frame`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/frame) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
-| --- | --- | --- | --- | --- |
-| 1.20 | ✓ |  |  |  |
-| 1.20.1 | ✓ |  |  |  |
-| 1.20.2 | ✓ |  |  |  |
-| 1.20.3 | ✓ |  |  |  |
-| 1.20.4 | ✓ |  |  |  |
-| 1.20.5 | ✓ |  |  |  |
-| 1.20.6 | ✓ |  |  |  |
-| 1.21 | ✓ |  |  |  |
-| 1.21.1 | ✓ |  |  |  |
-| 1.21.2 | ✓ |  |  |  |
-| 1.21.3 | ✓ |  |  |  |
-| 1.21.4 | ✓ |  |  |  |
-| 1.21.5 | ✓ |  |  |  |
-| 1.21.6 | ✓ |  |  |  |
-| 1.21.7 | ✓ |  |  |  |
-| 1.21.8 | ✓ |  |  |  |
-| 1.21.9 | ✓ |  |  |  |
-| 1.21.10 | ✓ |  |  |  |
-| 1.21.11 | ✓ |  |  |  |
-| 26.1 | ✓ | ✓ |  |  |
-| 26.2 |  | ✓ | ✓ |  |
-| 26.3 |  | ✓ |  | ✓ |
+| Minecraft | [`lifecycle/immediate-release`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/immediate-release) | [`portable-storage`](../../runtime/shared/minecraft-fabric/canvas/portable-storage) | [`lifecycle/frame`](../../runtime/shared/minecraft-fabric/canvas/lifecycle/frame) | [`blaze3d/bind-groups`](../../runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups) | [`renderpearl`](../../runtime/shared/minecraft-fabric/canvas/renderpearl) |
+| --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ |  |  |  |  |
+| 1.20.1 | ✓ |  |  |  |  |
+| 1.20.2 | ✓ |  |  |  |  |
+| 1.20.3 | ✓ |  |  |  |  |
+| 1.20.4 | ✓ |  |  |  |  |
+| 1.20.5 | ✓ |  |  |  |  |
+| 1.20.6 | ✓ |  |  |  |  |
+| 1.21 | ✓ |  |  |  |  |
+| 1.21.1 | ✓ |  |  |  |  |
+| 1.21.2 | ✓ |  |  |  |  |
+| 1.21.3 | ✓ |  |  |  |  |
+| 1.21.4 | ✓ |  |  |  |  |
+| 1.21.5 | ✓ | ✓ |  |  |  |
+| 1.21.6 | ✓ | ✓ |  |  |  |
+| 1.21.7 | ✓ | ✓ |  |  |  |
+| 1.21.8 | ✓ | ✓ |  |  |  |
+| 1.21.9 | ✓ | ✓ |  |  |  |
+| 1.21.10 | ✓ | ✓ |  |  |  |
+| 1.21.11 | ✓ | ✓ |  |  |  |
+| 26.1 | ✓ | ✓ | ✓ |  |  |
+| 26.2 |  | ✓ | ✓ | ✓ |  |
+| 26.3 |  | ✓ | ✓ |  | ✓ |
 
 
 ## hud

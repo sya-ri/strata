@@ -23,108 +23,6 @@ internal fun supportsFabricMinecraftSampledImage(image: DrawImage): Boolean {
 }
 
 /**
- * Transfers an empty GPU storage owner before allocating and uploading one immutable portable image.
- *
- * The caller owns [pixels] throughout and seals its GUI generation after this call, including failures.
- * [retain] receives a non-owning texture view and its sole native owner before any texture or view is allocated.
- * All work belongs to the render thread; failed initialization leaves every returned native allocation with the receiving generation.
- */
-@OptIn(InternalStrataRuntimeApi::class)
-@JvmSynthetic
-internal fun initializeFabricMinecraftPortableTexture(
-    pixels: NativeImage,
-    retain: (AbstractTexture, NativeGuiResource) -> Unit,
-) {
-    RenderSystem.assertOnRenderThread()
-    val storage = FabricPortableNativeStorage()
-    retain(storage.texture, storage)
-    storage.initialize(pixels)
-}
-
-/**
- * Separates borrowed texture-manager access from staged, generation-owned native storage.
- */
-@OptIn(InternalStrataRuntimeApi::class)
-private class FabricPortableNativeStorage : NativeGuiResource {
-    /**
-     * Borrows the empty or initialized texture view without transferring storage or allocating a texture.
-     */
-    @get:JvmSynthetic
-    internal val texture: AbstractTexture
-        field = Texture()
-
-    /**
-     * Initializes the retained owner on the render thread; failure preserves every partial allocation for fenced cleanup.
-     */
-    @JvmSynthetic
-    internal fun initialize(pixels: NativeImage) {
-        texture.initialize(pixels)
-    }
-
-    @JvmSynthetic
-    override fun close() {
-        texture.destroy()
-    }
-
-    @JvmSynthetic
-    override fun isDestroyed(): Boolean = texture.isDestroyed()
-
-    private class Texture : AbstractTexture() {
-        private var destruction: FabricNativeCanvasDestruction? = null
-        private var closeRequested = false
-
-        /**
-         * Allocates each native object into its owned field before the next operation can fail.
-         *
-         * The image is borrowed only for this render-thread upload; its outer resource owns its CPU lifetime.
-         * Device sampler caches remain external, and no partial allocation is eagerly destroyed.
-         */
-        @JvmSynthetic
-        internal fun initialize(pixels: NativeImage) {
-            RenderSystem.assertOnRenderThread()
-            val device = RenderSystem.getDevice()
-            val maximum = device.maxTextureSize
-            require(pixels.width <= maximum && pixels.height <= maximum) { "A portable GUI image exceeds the active device texture extent limit." }
-            texture = device.createTexture({ "Strata immutable portable layer" }, TextureFormat.RGBA8, pixels.width, pixels.height, 1)
-            setClamp(true)
-            setFilter(false, false)
-            device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
-        }
-
-        /**
-         * Requests independent native releases only after initialization and GUI-use fences complete.
-         *
-         * Successful release steps are not repeated after another step fails.
-         * Destruction probes retain the original allocated objects before their mutable fields are cleared.
-         */
-        @JvmSynthetic
-        internal fun destroy() {
-            RenderSystem.assertOnRenderThread()
-            if (closeRequested) return
-            if (destruction == null) destruction = trackPortableDestruction(listOfNotNull(texture))
-            texture?.close()
-            texture = null
-            closeRequested = true
-        }
-
-        /**
-         * Acknowledges all original native allocations without waiting, after every close request has succeeded.
-         *
-         * Unknown or incomplete physical destruction retains the generation's permit through the caller's polling policy.
-         */
-        @JvmSynthetic
-        internal fun isDestroyed(): Boolean {
-            RenderSystem.assertOnRenderThread()
-            check(closeRequested) { "Portable GUI destruction is queried only after successful close." }
-            return checkNotNull(destruction).isDestroyed()
-        }
-
-        @JvmSynthetic
-        override fun close() = Unit
-    }
-}
-
-/**
  * Preserves exact CPU region sampling on adapters without a generation-owned GPU lookup pass.
  */
 @JvmSynthetic
@@ -146,3 +44,62 @@ internal fun initializeFabricMinecraftSampledTexture(
     source: AbstractTexture,
     retain: (AbstractTexture, NativeGuiResource) -> Unit,
 ): Unit = error("This adapter uses exact CPU region sampling.")
+
+/**
+ * Owns exact-adapter allocations and preserves partial initialization until generation-fenced destruction.
+ * Texture-manager close is inert; only the owning generation calls [destroy].
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
+    private var destruction: FabricNativeCanvasDestruction? = null
+    private var closeRequested = false
+
+    /**
+     * Allocates each native object into its owned field before the next operation can fail.
+     *
+     * The image is borrowed only for this render-thread upload; its outer resource owns its CPU lifetime.
+     * Device sampler caches remain external, and no partial allocation is eagerly destroyed.
+     */
+    @JvmSynthetic
+    internal fun initialize(pixels: NativeImage) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        val maximum = device.maxTextureSize
+        require(pixels.width <= maximum && pixels.height <= maximum) { "A portable GUI image exceeds the active device texture extent limit." }
+        texture = device.createTexture({ "Strata immutable portable layer" }, TextureFormat.RGBA8, pixels.width, pixels.height, 1)
+        setClamp(true)
+        setFilter(false, false)
+        device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
+    }
+
+    /**
+     * Requests independent native releases only after initialization and GUI-use fences complete.
+     *
+     * Successful release steps are not repeated after another step fails.
+     * Destruction probes retain the original allocated objects before their mutable fields are cleared.
+     */
+    @JvmSynthetic
+    internal fun destroy() {
+        RenderSystem.assertOnRenderThread()
+        if (closeRequested) return
+        if (destruction == null) destruction = trackPortableDestruction(listOfNotNull(texture))
+        texture?.close()
+        texture = null
+        closeRequested = true
+    }
+
+    /**
+     * Acknowledges all original native allocations without waiting, after every close request has succeeded.
+     *
+     * Unknown or incomplete physical destruction retains the generation's permit through the caller's polling policy.
+     */
+    @JvmSynthetic
+    internal fun isDestroyed(): Boolean {
+        RenderSystem.assertOnRenderThread()
+        check(closeRequested) { "Portable GUI destruction is queried only after successful close." }
+        return checkNotNull(destruction).isDestroyed()
+    }
+
+    @JvmSynthetic
+    override fun close() = Unit
+}
