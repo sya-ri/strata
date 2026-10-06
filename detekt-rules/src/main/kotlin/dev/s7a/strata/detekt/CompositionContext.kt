@@ -54,8 +54,8 @@ internal object CompositionContext {
 
     private fun KaSession.isUiScope(type: KaType): Boolean {
         val classType = type as? KaClassType ?: return false
-        if (classType.classId == ClassId.topLevel(FqName("dev.s7a.strata.component.UiScope"))) return true
-        return classType.expandedSymbol?.superTypes?.any { isUiScope(it) } ?: false
+        return classType.classId == ClassId.topLevel(FqName("dev.s7a.strata.component.UiScope")) ||
+            (classType.expandedSymbol?.superTypes?.any { isUiScope(it) } ?: false)
     }
 
     private val SYNCHRONOUS_LAMBDAS =

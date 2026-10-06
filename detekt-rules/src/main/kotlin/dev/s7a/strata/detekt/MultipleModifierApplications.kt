@@ -87,10 +87,10 @@ internal class MultipleModifierApplications(
     ): Boolean {
         val leftPath = listOf(left) + left.parents.toList()
         val rightPath = listOf(right) + right.parents.toList()
-        if (leftPath.filterIsInstance<KtWhenEntry>().any { entry -> rightPath.filterIsInstance<KtWhenEntry>().any { it.parent == entry.parent && it != entry } }) return false
-        return leftPath.filterIsInstance<KtIfExpression>().none { branch ->
-            (leftPath.any { it == branch.then } && rightPath.any { it == branch.`else` }) ||
-                (leftPath.any { it == branch.`else` } && rightPath.any { it == branch.then })
-        }
+        return leftPath.filterIsInstance<KtWhenEntry>().none { entry -> rightPath.filterIsInstance<KtWhenEntry>().any { it.parent == entry.parent && it != entry } } &&
+            leftPath.filterIsInstance<KtIfExpression>().none { branch ->
+                (leftPath.any { it == branch.then } && rightPath.any { it == branch.`else` }) ||
+                    (leftPath.any { it == branch.`else` } && rightPath.any { it == branch.then })
+            }
     }
 }
