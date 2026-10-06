@@ -71,7 +71,7 @@ internal class FabricMinecraftSampledImageDevice(
         images: List<DrawImage>,
         hit: () -> Unit,
         miss: () -> Unit,
-        uploaded: () -> Unit,
+        uploaded: (DrawImage) -> Unit,
         evicted: () -> Unit,
     ): Borrow =
         operation {
@@ -264,7 +264,7 @@ internal class FabricMinecraftSampledImageDevice(
         owner: Owner,
         image: DrawImage,
         protected: Set<DrawImage>,
-        uploaded: () -> Unit,
+        uploaded: (DrawImage) -> Unit,
         evicted: () -> Unit,
     ) {
         val bytes = imageBytes(image)
@@ -277,7 +277,7 @@ internal class FabricMinecraftSampledImageDevice(
         if (DEVICE_BYTES < Math.addExact(retainedBytes, bytes) || DEVICE_ENTRIES <= entries.size) return
         val entry = allocate(image, bytes)
         addOwnerImage(owner, image, entry)
-        uploaded()
+        uploaded(image)
     }
 
     private fun allocate(

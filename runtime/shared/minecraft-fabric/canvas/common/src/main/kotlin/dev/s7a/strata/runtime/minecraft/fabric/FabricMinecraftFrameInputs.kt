@@ -1,7 +1,9 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.render.DrawCommand
 
 /**
  * Derived CPU inputs owned by one prepared display list and GUI scale, without native texture references.
@@ -21,13 +23,13 @@ internal class FabricMinecraftFrameInputs(
      */
     @get:JvmSynthetic
     internal val capacitySampledImages: Long =
-        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().fold(capacitySampledImages) { count, layer -> Math.addExact(count, layer.capacitySampledImages.toLong()) }
+        layers.fold(capacitySampledImages) { count, layer -> Math.addExact(count, if (layer is FabricMinecraftFrameLayer.Portable) layer.capacitySampledImages.toLong() else 0L) }
 
     /**
      * Source identities requested in display-list order, retaining no native storage.
      */
     @get:JvmSynthetic
-    internal val sampled: List<DrawImage> = layers.filterIsInstance<FabricMinecraftFrameLayer.Sampled>().map { it.command.image }
+    internal val sampled: List<DrawImage> = buildList { layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled) add(it.command.image) } }
 
     /**
      * Immutable localized raster descriptions prepared once for the current display list.
@@ -58,7 +60,24 @@ internal class FabricMinecraftFrameInputs(
      */
     @get:JvmSynthetic
     internal val ineligibleSampledImages: Long =
-        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, layer.ineligibleSampledImages.toLong()) }
+        layers.fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, if (layer is FabricMinecraftFrameLayer.Portable) layer.ineligibleSampledImages.toLong() else 0L) }
+
+    /**
+     * Number of visible portable sampled commands rejected first by non-identity tint.
+     */
+    @get:JvmSynthetic
+    internal val tintFallbackImages: Long = countSampled { it.tint != ArgbColor(-1) }
+
+    /**
+     * Number rejected by cutoff after identity tint; other causes remain explicitly unclassified.
+     */
+    @get:JvmSynthetic
+    internal val alphaCutoffFallbackImages: Long = countSampled { it.tint == ArgbColor(-1) && it.alphaCutoff != 0f }
+
+    private inline fun countSampled(predicate: (DrawCommand.SampledImage) -> Boolean): Long =
+        layers.sumOf { layer ->
+            if (layer is FabricMinecraftFrameLayer.Portable) layer.commands.count { it is DrawCommand.SampledImage && predicate(it) }.toLong() else 0L
+        }
 
     /**
      * Returns these inputs unchanged when every direct layer is available, or constructs this borrow's portable fallbacks.

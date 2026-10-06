@@ -25,6 +25,7 @@ internal class FabricMinecraftFramePresenter(
 ) {
     private val portableFrames = FabricMinecraftPortableFrames()
     private val sampledImages = FabricMinecraftSampledImageCache()
+    private val uploadWork = FabricMinecraftUploadWork()
     private var preparedCommands: List<DrawCommand>? = null
     private var preparedViewport: IntSize? = null
     private var preparedScale: Int? = null
@@ -150,15 +151,16 @@ internal class FabricMinecraftFramePresenter(
                 inputs,
                 { sampledImageDirectHitCount += 1L },
                 { sampledImageDirectMissCount += 1L },
-                { sampledImageUploadCount += 1L },
+                { sampledImageUploadCount += 1L; uploadWork.source(it) },
                 { sampledImageEvictionCount += 1L },
             ) { resolved, textureFor, sampledQueued ->
+                uploadWork.fallback(resolved)
                 sampledImageCapacityFallbackCount = Math.addExact(sampledImageCapacityFallbackCount, resolved.capacitySampledImages)
                 sampledImageIneligibleFallbackCount = Math.addExact(sampledImageIneligibleFallbackCount, resolved.ineligibleSampledImages)
                 portableFrames.present(
                     resolved.portable,
                     { portableRasterizationCount += 1L },
-                    { textureUploadCount += 1L },
+                    { textureUploadCount += 1L; uploadWork.portable(it) },
                     { sampling, retain ->
                         // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
                         @Suppress("RedundantRequireNotNullCall")

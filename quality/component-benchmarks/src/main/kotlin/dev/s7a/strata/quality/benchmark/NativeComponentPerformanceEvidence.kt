@@ -33,6 +33,7 @@ internal object NativeComponentPerformanceEvidence {
             .bufferedReader(Charsets.UTF_8)
             .use { it.readLines() }
             .toSet()
+    private val sampledCases = checkNotNull(javaClass.getResourceAsStream("/native-sampled-images.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }.toSet()
     private val outputArguments =
         setOf(
             "-Dstrata.performance.nativeOutput=",
@@ -54,7 +55,14 @@ internal object NativeComponentPerformanceEvidence {
             PerformanceReportMetric("draw_commands", listOf("draw_commands")),
             PerformanceReportMetric("retained_image_entries", listOf("native_retained", "sampledImageRetainedEntryCount")),
             PerformanceReportMetric("retained_image_bytes", listOf("native_retained", "sampledImageRetainedByteCount")),
+            PerformanceReportMetric("gui_gpu_p50_ns", listOf("native_gpu", "duration", "p50_ns")),
+            PerformanceReportMetric("gui_gpu_p95_ns", listOf("native_gpu", "duration", "p95_ns")),
+            PerformanceReportMetric("gui_gpu_p99_ns", listOf("native_gpu", "duration", "p99_ns")),
+            PerformanceReportMetric("gui_completion_observation_p95_ns", listOf("native_gpu", "operation_to_completion_observation", "p95_ns")),
         ) +
+            listOf("sourceUploadByteCount", "rasterUploadByteCount", "samplingUploadByteCount", "tintFallbackCount", "alphaCutoffFallbackCount", "otherIneligibleFallbackCount").map {
+                PerformanceReportMetric("${it}_per_sample", listOf("native_payload", it), listOf("samples"))
+            } +
             listOf(
                 "renderExtractionCount",
                 "hostFrameCount",
@@ -81,13 +89,9 @@ internal object NativeComponentPerformanceEvidence {
         require(args.size == 1)
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
-        val selection = PerformanceSelection(cases, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) cases.first() else null)
-        val collectorType = JvmPerformanceMeter::class.java
-        val collector =
-            Path.of(
-                collectorType.protectionDomain.codeSource.location
-                    .toURI(),
-            )
+        val sampledImages = request.get("sampled_images")?.asBoolean ?: false
+        val selection = selection(request, profile, sampledImages)
+        val collector = collectorArchive()
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
         val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
         val metadata = cpu.getAsJsonObject("strata")
@@ -104,10 +108,10 @@ internal object NativeComponentPerformanceEvidence {
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
-                contract(selection, profile),
+                contract(selection, profile, sampledImages),
                 metrics,
             ) { report ->
-                verify(report, selection, profile)
+                verify(report, selection, profile, sampledImages)
                 arguments.add(
                     JsonObject().apply {
                         add(
@@ -138,12 +142,30 @@ internal object NativeComponentPerformanceEvidence {
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
     }
 
+    private fun collectorArchive(): Path {
+        val type = JvmPerformanceMeter::class.java
+        return Path.of(
+            type.protectionDomain.codeSource.location
+                .toURI(),
+        )
+    }
+
+    private fun selection(
+        request: JsonObject,
+        profile: PerformanceProfile,
+        sampledImages: Boolean,
+    ): PerformanceSelection {
+        val corpus = if (sampledImages) sampledCases else cases
+        return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)
+    }
+
     private fun contract(
         selection: PerformanceSelection,
         profile: PerformanceProfile,
+        sampledImages: Boolean,
     ): PerformanceReportContract =
         PerformanceReportContract(
-            profile.workloadId(if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1"),
+            workloadId(selection, profile, sampledImages),
             listOf("case", "operation", "gui_scale"),
             selection.ids.size * profile.viewports((1..4).toList()).size,
             setOf(
@@ -163,6 +185,7 @@ internal object NativeComponentPerformanceEvidence {
                 "scope",
                 "native_backend",
                 "native_driver",
+                "native_gpu_requested",
                 "fixture_archive_sha256",
                 "warmup",
                 "settle_frames",
@@ -172,6 +195,15 @@ internal object NativeComponentPerformanceEvidence {
             repetitions = profile.plan().repetitions,
         )
 
+    private fun workloadId(
+        selection: PerformanceSelection,
+        profile: PerformanceProfile,
+        sampledImages: Boolean,
+    ): String {
+        val family = if (sampledImages) "native-sampled-images" else "native-components"
+        return profile.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1")
+    }
+
     /**
      * Requires the reviewed case/scale matrix, complete presentation boundaries and balanced native release.
      */
@@ -179,8 +211,9 @@ internal object NativeComponentPerformanceEvidence {
         report: JsonObject,
         selection: PerformanceSelection = PerformanceSelection(cases),
         profile: PerformanceProfile = PerformanceProfile.Standard,
+        sampledImages: Boolean = false,
     ) {
-        val expectedId = profile.workloadId(if (selection.narrowed) "native-components-selected-presented-v1" else "native-components-presented-v1")
+        val expectedId = workloadId(selection, profile, sampledImages)
         require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
         report.getAsJsonArray("selected_cases")?.let { declared ->
             require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
@@ -197,6 +230,7 @@ internal object NativeComponentPerformanceEvidence {
         require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->
             require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == plan.samples)
+            verifyGpu(phase, plan.samples)
             require(phase.getAsJsonObject("frame_interval").get("samples").asInt == plan.samples)
             require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
             require(
@@ -211,6 +245,24 @@ internal object NativeComponentPerformanceEvidence {
         listOf("leases", "renderers").forEach { kind ->
             require(0 <= release.get("${kind}_opened").asInt && release.get("${kind}_opened") == release.get("${kind}_closed"))
             if ("NativeCanvas" in selection.ids) require(0 < release.get("${kind}_opened").asInt) { "Incomplete native resource release" }
+        }
+    }
+
+    private fun verifyGpu(
+        phase: JsonObject,
+        samples: Int,
+    ) {
+        val gpu = phase.getAsJsonObject("native_gpu")
+        if (gpu.get("available").asBoolean) {
+            require(gpu.get("samples").asInt == samples)
+            val period = gpu.get("timestamp_period_ns").asDouble
+            require(period.isFinite() && 0.0 < period && gpu.get("scope").asString.isNotBlank())
+            listOf("duration", "operation_to_completion_observation").forEach { field ->
+                require(gpu.getAsJsonObject(field).get("samples").asInt == samples) { "Incomplete native GPU interval" }
+            }
+        } else {
+            require(gpu.get("reason").asString.isNotBlank())
+            require(gpu.get("duration").isJsonNull && gpu.get("operation_to_completion_observation").isJsonNull)
         }
     }
 }

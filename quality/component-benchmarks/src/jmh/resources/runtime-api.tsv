@@ -2288,6 +2288,7 @@ api	Api	dev.s7a.strata.render.DrawImage#method:1025:argbAt:(II)I
 api	Api	dev.s7a.strata.render.DrawImage#method:1025:copyArgb:()[I
 api	Api	dev.s7a.strata.render.DrawImage#method:1025:getSize:()Ldev/s7a/strata/geometry/IntSize;
 api	Api	dev.s7a.strata.render.DrawImage#type:1537::
+api	Api	dev.s7a.strata.render.DrawImages#method:25:createDrawImage:(Ldev/s7a/strata/geometry/IntSize;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/render/DrawImage;
 api	Api	dev.s7a.strata.render.DrawImages#method:25:createDrawImage:(Ldev/s7a/strata/geometry/IntSize;[I)Ldev/s7a/strata/render/DrawImage;
 api	Api	dev.s7a.strata.render.DrawImages#type:17:java.lang.Object:
 api	Api	dev.s7a.strata.render.PaintScope#method:1025:blitImage:(Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntRect;)V

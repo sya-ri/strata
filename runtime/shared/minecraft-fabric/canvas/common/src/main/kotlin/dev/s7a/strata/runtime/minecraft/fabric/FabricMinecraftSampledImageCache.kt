@@ -32,7 +32,7 @@ internal class FabricMinecraftSampledImageCache {
         inputs: FabricMinecraftFrameInputs,
         hit: () -> Unit,
         miss: () -> Unit,
-        uploaded: () -> Unit,
+        uploaded: (DrawImage) -> Unit,
         evicted: () -> Unit,
         submit: (resolved: FabricMinecraftFrameInputs, texture: (DrawImage) -> FabricMinecraftPortableTexture?, queued: (DrawImage) -> Unit) -> Unit,
     ) {

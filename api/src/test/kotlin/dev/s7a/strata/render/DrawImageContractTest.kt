@@ -22,6 +22,64 @@ import java.util.concurrent.Executors
  */
 internal class DrawImageContractTest {
     @Test
+    fun generatedPixelsAreOwnedValuesAndCallbacksAreSynchronousAndRowMajor() {
+        val visits = ArrayList<IntOffset>()
+        val generated =
+            createDrawImage(IntSize(3, 2)) { x, y ->
+                visits.add(IntOffset(x, y))
+                0x80000000.toInt() or (y * 3 + x)
+            }
+        val expected = IntArray(6) { 0x80000000.toInt() or it }
+        assertEquals((0 until 6).map { IntOffset(it % 3, it / 3) }, visits)
+        val copied = createDrawImage(IntSize(3, 2), expected)
+        assertEquals(copied, generated)
+        assertEquals(copied.hashCode(), generated.hashCode())
+        generated.copyArgb().fill(0)
+        assertArrayEquals(expected, generated.copyArgb())
+        assertEquals(6, visits.size)
+        var calls = 0
+        assertEquals(
+            emptyImage(IntSize(0, Int.MAX_VALUE)),
+            createDrawImage(IntSize(0, Int.MAX_VALUE)) { _, _ ->
+                calls++
+                0
+            },
+        )
+        assertEquals(
+            emptyImage(IntSize(0, 2)),
+            createDrawImage(IntSize(0, 2)) { _, _ ->
+                calls++
+                0
+            },
+        )
+        assertEquals(
+            emptyImage(IntSize(2, 0)),
+            createDrawImage(IntSize(2, 0)) { _, _ ->
+                calls++
+                0
+            },
+        )
+        assertThrows<ArithmeticException> {
+            createDrawImage(IntSize(Int.MAX_VALUE, 2)) { _, _ ->
+                calls++
+                0
+            }
+        }
+        assertEquals(0, calls)
+        val failure = IllegalStateException("pixel failure")
+        assertEquals(
+            failure,
+            assertThrows<IllegalStateException> {
+                createDrawImage(IntSize(3, 2)) { _, _ ->
+                    calls++
+                    throw failure
+                }
+            },
+        )
+        assertEquals(1, calls)
+    }
+
+    @Test
     fun olderPaintScopesRejectScopedClippingWithoutInvokingItsCallback() {
         val clipMethod = PaintScope::class.java.getDeclaredMethod("withClip", IntRect::class.java, Function0::class.java)
         assertTrue(clipMethod.isDefault)
@@ -216,12 +274,13 @@ internal class DrawImageContractTest {
             factory.declaredMethods.filter { method ->
                 Modifier.isPublic(method.modifiers) && method.isSynthetic.not()
             }
-        assertEquals(1, methods.size)
-        val method = methods.single()
-        assertEquals("createDrawImage", method.name)
-        assertTrue(Modifier.isStatic(method.modifiers))
-        assertEquals(DrawImage::class.java, method.returnType)
-        assertEquals(listOf(IntSize::class.java, IntArray::class.java), method.parameterTypes.toList())
+        assertEquals(2, methods.size)
+        methods.forEach { method ->
+            assertEquals("createDrawImage", method.name)
+            assertTrue(Modifier.isStatic(method.modifiers))
+            assertEquals(DrawImage::class.java, method.returnType)
+        }
+        assertEquals(setOf(listOf(IntSize::class.java, IntArray::class.java), listOf(IntSize::class.java, Function2::class.java)), methods.map { it.parameterTypes.toList() }.toSet())
     }
 
     private fun emptyImage(size: IntSize): DrawImage = createDrawImage(size, intArrayOf())

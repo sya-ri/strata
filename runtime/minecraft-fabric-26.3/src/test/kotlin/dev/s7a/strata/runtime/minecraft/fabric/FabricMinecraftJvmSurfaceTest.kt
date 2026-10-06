@@ -253,6 +253,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftImageUploadKt",
                 "$packageName.FabricMinecraftSourceSamplingKt",
                 "$packageName.FabricMinecraftSamplingMap",
+                "$packageName.FabricMinecraftUploadWork",
                 "$packageName.FabricMinecraftSamplingBudget",
                 "$packageName.FabricMinecraftNativeStorage",
                 "$packageName.FabricMinecraftSamplingShaders",

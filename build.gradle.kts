@@ -1533,6 +1533,16 @@ subprojects {
                 val nativeOutput = rootProject.file(output).absoluteFile
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.quick", quickPerformance) }
                 tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.quick=$quickPerformance") }
+                providers.gradleProperty("strata.performance.sampledImages").orNull?.let { selected ->
+                    val sampled = selected.toBooleanStrict()
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.sampledImages", sampled) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.sampledImages=$sampled") }
+                }
+                providers.gradleProperty("strata.performance.gpuQueries").orNull?.let { selected ->
+                    val enabled = selected.toBooleanStrict()
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
+                }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }

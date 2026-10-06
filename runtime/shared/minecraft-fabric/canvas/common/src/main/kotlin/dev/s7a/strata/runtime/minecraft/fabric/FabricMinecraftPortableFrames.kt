@@ -51,7 +51,7 @@ internal class FabricMinecraftPortableFrames {
     internal fun present(
         images: List<FabricMinecraftPortableImage>,
         rasterized: () -> Unit,
-        uploaded: () -> Unit,
+        uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
         submit: (List<FabricMinecraftPortableTexture>, () -> Unit) -> Unit,
     ) {
@@ -85,7 +85,7 @@ internal class FabricMinecraftPortableFrames {
     private fun prepare(
         images: List<FabricMinecraftPortableImage>,
         rasterized: () -> Unit,
-        uploaded: () -> Unit,
+        uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
     ): Prepared {
         val previous = current
@@ -105,7 +105,7 @@ internal class FabricMinecraftPortableFrames {
                     textures.add(previous.textures[source])
                 } else {
                     textures.add(prepareTexture(input, rasterPixels, rasterized, sampled) { resource -> resources.add(set, resource) })
-                    uploaded()
+                    uploaded(input)
                 }
             }
         } catch (caught: Throwable) {

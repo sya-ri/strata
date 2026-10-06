@@ -28,6 +28,31 @@ public fun createDrawImage(
     return DrawImageSnapshot(size, argb.copyOf())
 }
 
+/**
+ * Generates an immutable image directly into its privately owned storage.
+ *
+ * [pixelAt] is borrowed synchronously on the caller's thread, once per pixel in row-major order, and never retained.
+ * Empty images do not invoke it. A callback failure propagates without publishing a partial image.
+ * The returned value has the same equality and copy contract as the array overload.
+ *
+ * @param size the non-negative source extent whose checked area must fit in `Int`.
+ * @param pixelAt supplies straight, non-premultiplied `0xAARRGGBB` pixels at the given x and y coordinates.
+ * @return an immutable, thread-safe image owning the generated pixels.
+ * @throws ArithmeticException when the checked image area overflows `Int`, before invoking [pixelAt].
+ */
+public fun createDrawImage(
+    size: IntSize,
+    pixelAt: (x: Int, y: Int) -> Int,
+): DrawImage {
+    val area = (size.width.toLong() * size.height).toIntExact()
+    val pixels = IntArray(area)
+    if (area == 0) return DrawImageSnapshot(size, pixels)
+    for (y in 0 until size.height) {
+        for (x in 0 until size.width) pixels[y * size.width + x] = pixelAt(x, y)
+    }
+    return DrawImageSnapshot(size, pixels)
+}
+
 private class DrawImageSnapshot(
     override val size: IntSize,
     private val pixels: IntArray,
