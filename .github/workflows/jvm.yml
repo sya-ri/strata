@@ -163,8 +163,8 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check JVM modules and generate coverage once
-      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :quality:performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
-        :integration:api:check :quality:detekt-rules:check :quality:strata-detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
+      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
+        :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
     - name: Upload coverage reports

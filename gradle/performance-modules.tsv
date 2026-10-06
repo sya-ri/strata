@@ -1,8 +1,8 @@
 # Exact publication/physical-host/fixture/gate registrations. A registration is not completed formal evidence.
 :api	Jvm	quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt	:quality:component-benchmarks:verifyComponentRenderingWork
 :api	Web	integration/web/src/jsMain/kotlin/dev/s7a/strata/integration/web/WebComponentPerformanceContract.kt	:integration:web:verifyWeb
-:quality:performance-testkit	Collector	quality/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmPerformanceReportsTest.kt	:quality:performance-testkit:check
-:quality:strata-detekt-rules	Jvm	quality/strata-detekt-rules/src/test/kotlin/dev/s7a/strata/detekt/AuthoringPerformanceContractTest.kt	:quality:strata-detekt-rules:check
+:performance-testkit	Collector	performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmPerformanceReportsTest.kt	:performance-testkit:check
+:detekt-rules	Jvm	detekt-rules/src/test/kotlin/dev/s7a/strata/detekt/AuthoringPerformanceContractTest.kt	:detekt-rules:check
 :paper-api	Paper	integration/paper/src/main/kotlin/dev/s7a/strata/integration/paper/PaperPerformanceVerification.kt	:integration:paper:check
 :velocity-api	Velocity	integration/velocity/src/main/kotlin/dev/s7a/strata/integration/velocity/VelocityPerformanceVerification.kt	:integration:velocity:check
 :runtime:core	Jvm	quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt	:quality:component-benchmarks:verifyComponentRenderingWork

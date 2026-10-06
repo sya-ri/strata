@@ -15,7 +15,7 @@ internal class StrataRuleSetProviderTest {
     fun loadsOnlyTheAuthoringProviderAndFactories() {
         val provider = ServiceLoader.load(RuleSetProvider::class.java).filterIsInstance<StrataRuleSetProvider>().single()
         val rules = provider.instance()
-        assertEquals(RuleSetId("strata-authoring"), rules.id)
+        assertEquals(RuleSetId("strata"), rules.id)
         assertEquals(
             setOf(
                 "StateCreatedDuringComposition",

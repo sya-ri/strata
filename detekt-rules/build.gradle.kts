@@ -8,13 +8,9 @@ dependencies {
     testImplementation(libs.detekt.test)
     testImplementation(libs.detekt.test.utils)
     testImplementation(project(":api"))
-    testImplementation(project(":quality:performance-testkit"))
+    testImplementation(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.jar {
-    archiveBaseName.set("strata-detekt-rules")
 }
 
 publishing {

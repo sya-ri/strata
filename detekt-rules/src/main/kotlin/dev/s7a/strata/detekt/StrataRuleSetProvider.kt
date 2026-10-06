@@ -12,7 +12,7 @@ public class StrataRuleSetProvider : RuleSetProvider {
     /**
      * Identifies Strata authoring rules separately from Strata's internal quality profile.
      */
-    override val ruleSetId: RuleSetId = RuleSetId("strata-authoring")
+    override val ruleSetId: RuleSetId = RuleSetId("strata")
 
     /**
      * Creates factories whose type-aware checks use Detekt's analysis classpath.

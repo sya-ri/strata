@@ -44,7 +44,7 @@ internal class AuthoringPerformanceContractTest {
             val expected = factories.keys.associateWith { 1 }
             val sample =
                 JvmPerformanceRunner.measure(
-                    name = "strata-authoring-resolved-rule-pass",
+                    name = "strata-resolved-rule-pass",
                     plan = PerformancePlan(warmup = 1, samples = 3, repetitions = 1),
                     afterOperation = { _: Int, findings: Map<RuleName, Int> -> assertEquals(expected, findings) },
                 ) {

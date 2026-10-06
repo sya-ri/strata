@@ -543,8 +543,8 @@ private val minecraftTargetByProjectPath =
 val releasePublicationProjectPaths =
     listOf(
         ":api",
-        ":quality:performance-testkit",
-        ":quality:strata-detekt-rules",
+        ":performance-testkit",
+        ":detekt-rules",
         ":paper-api",
         ":velocity-api",
         ":runtime:core",
@@ -558,13 +558,9 @@ val releasePublicationProjectPaths =
     ) + minecraftFabricTargets.map(MinecraftFabricTarget::runtimeProjectPath)
 val releaseArtifactByProjectPath =
     releasePublicationProjectPaths.associateWith { projectPath ->
-        when (projectPath) {
-            ":quality:performance-testkit" -> "$group:strata-performance-testkit"
-            ":quality:strata-detekt-rules" -> "$group:strata-detekt-rules"
-            else -> "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
-        }
+        "$group:strata-${projectPath.removePrefix(":").replace(':', '-')}"
     }
-val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":quality:performance-testkit")
+val legacyJvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":performance-testkit")
 val multiplatformProjectPaths = legacyJvmMultiplatformProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 val publishableProjectPaths = releasePublicationProjectPaths.toSet()
 val verifyPublishedPerformanceInventory = tasks.register("verifyPublishedPerformanceInventory") {
@@ -1468,10 +1464,10 @@ subprojects {
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
             tasks.withType<LibraryClientProductionRunTask>().configureEach {
-                dependsOn(":quality:performance-testkit:jvmJar")
+                dependsOn(":performance-testkit:jvmJar")
                 verificationLibraries.from(
                     providers.provider {
-                        project(":quality:performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
+                        project(":performance-testkit").tasks.named<Jar>("jvmJar").get().archiveFile.get().asFile
                     },
                 )
             }
@@ -1486,7 +1482,7 @@ subprojects {
             }
             extensions.configure<SourceSetContainer> {
                 matching { it.name == "gametest" }.configureEach {
-                    dependencies.add(implementationConfigurationName, project(":quality:performance-testkit"))
+                    dependencies.add(implementationConfigurationName, project(":performance-testkit"))
                     java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
                     java.srcDir(remoteVerificationFamily.resolve("java"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
@@ -1975,7 +1971,7 @@ val verifyPublishedAuthoringChecks =
     tasks.register<GradleBuild>("verifyPublishedAuthoringChecks") {
         group = "verification"
         description = "Loads Maven-published authoring rules and analyzes the guide's valid and invalid examples."
-        dependsOn(":api:publishToMavenLocal", ":quality:strata-detekt-rules:publishToMavenLocal")
+        dependsOn(":api:publishToMavenLocal", ":detekt-rules:publishToMavenLocal")
         dir = layout.projectDirectory.dir("release/authoring-checks").asFile
         tasks = listOf("clean", "check")
         startParameter.projectProperties =

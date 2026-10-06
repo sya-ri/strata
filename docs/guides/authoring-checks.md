@@ -1,7 +1,8 @@
 # Strata authoring checks
 
 The optional `strata-detekt-rules` plugin checks application code that uses Strata.
-It is published alongside Strata starting with 0.2.2 and uses the `strata-authoring` rule set, separate from the library's internal source-style rules.
+It is published alongside Strata starting with 0.2.2 and uses the `strata` rule set.
+The library's unpublished source-style profile uses `strata-internal`.
 
 ## Installation
 
@@ -24,7 +25,7 @@ The plugin does not install a Strata runtime in the application.
 Merge the following section into the project's `detekt.yml` to enable the rules:
 
 ```yaml
-strata-authoring:
+strata:
   StateCreatedDuringComposition:
     active: true
   UnusedComponentModifier:
@@ -378,5 +379,5 @@ These rules do not automatically judge application responsibility boundaries, me
 Review the [Strata skill](../../skills/strata/SKILL.md) alongside the actual tree and verify state, input, semantics, scroll, and drawing behavior.
 Before suppressing a finding, confirm the resolved call and execution boundary; keep any necessary suppression local to the reviewed exception.
 
-Contributors can run `:quality:strata-detekt-rules:check` for rule tests and the bounded performance fixture, and `:verifyPublishedAuthoringChecks` to verify the Maven-published plugin against every example above.
+Contributors can run `:detekt-rules:check` for rule tests and the bounded performance fixture, and `:verifyPublishedAuthoringChecks` to verify the Maven-published plugin against every example above.
 The performance fixture measures a warm, already-compiled rule pass through the shared testkit; it excludes compiler startup and file I/O, and it does not constitute a formal repeated regression comparison or impose an absolute timing threshold.

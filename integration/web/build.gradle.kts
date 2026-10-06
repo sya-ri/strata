@@ -9,7 +9,7 @@ kotlin {
         commonMain.dependencies { implementation(project(":api")) }
         jsMain.dependencies {
             implementation(project(":runtime:web"))
-            implementation(project(":quality:performance-testkit"))
+            implementation(project(":performance-testkit"))
             implementation(libs.kotlinx.browser)
         }
         jsTest.dependencies { implementation(npm("playwright", libs.versions.playwright.get())) }
@@ -65,7 +65,7 @@ tasks.named<Test>("jvmTest") {
 val measureWebPerformance = tasks.register<Exec>("measureWebPerformance") {
     group = "verification"
     description = "Measures the real Web host through the shared testkit in three browser engines."
-    val collector = project(":quality:performance-testkit").tasks.named<Jar>("jsJar")
+    val collector = project(":performance-testkit").tasks.named<Jar>("jsJar")
     dependsOn(buildWeb, collector)
     outputs.upToDateWhen { false }
     commandLine("node", rootProject.file("tools/web/build.mjs"), "performance", layout.buildDirectory.get().asFile, collector.get().archiveFile.get().asFile)

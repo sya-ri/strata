@@ -10,9 +10,9 @@ import dev.detekt.api.RuleSetProvider
  */
 public class StrataRuleSetProvider : RuleSetProvider {
     /**
-     * Identifies the rule set in Detekt configuration and reports.
+     * Identifies the internal style profile separately from the published authoring rules.
      */
-    override val ruleSetId: RuleSetId = RuleSetId("strata")
+    override val ruleSetId: RuleSetId = RuleSetId("strata-internal")
 
     /**
      * Creates the immutable rule factory map used by each Detekt analysis.

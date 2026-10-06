@@ -193,8 +193,8 @@ See the [web build guide](docs/development/build.md#initial-web-documents) for t
 | `runtime/minecraft` | Host profile-backed components and resources in a common runtime. |
 | `runtime/minecraft-fonts-lwjgl` | Supply a CPU backend for offline resource-font rendering. |
 | `runtime/minecraft-fabric-<version>` | Run the interface as a client Fabric screen on one matching game version. |
-| `quality/performance-testkit` | Add shared performance collection and validated comparisons to library or application tests. |
-| `quality/strata-detekt-rules` | Check component boundaries, modifiers, retained state, and UI trees with an optional Detekt plugin. |
+| `performance-testkit` | Add shared performance collection and validated comparisons to library or application tests. |
+| `detekt-rules` | Check component boundaries, modifiers, retained state, and UI trees with an optional Detekt plugin. |
 
 Versioned Fabric Mods package their common runtime libraries.
 Integration modules contain verification and examples and are not published.
@@ -223,7 +223,7 @@ dependencies {
 }
 ```
 
-Enable the `strata-authoring` rules in the project's Detekt configuration and run `./gradlew detektMain` with `strata-api` on the application's analysis classpath.
+Enable the `strata` rules in the project's Detekt configuration and run `./gradlew detektMain` with `strata-api` on the application's analysis classpath.
 These rules need type analysis; an untyped `detekt` run does not verify them.
 The [authoring checks guide](docs/guides/authoring-checks.md#installation) provides the configuration, check-task wiring, and each rule's incorrect and corrected examples.
 

@@ -151,7 +151,7 @@ tasks.named("check") {
 }
 ```
 
-Merge the `strata-authoring` section from the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md#installation) into the project's `detekt.yml`, enabling the intended rules.
+Merge the `strata` section from the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md#installation) into the project's `detekt.yml`, enabling the intended rules.
 Run `./gradlew detektMain` with `strata-api` and application dependencies on that source set's analysis classpath; use the corresponding type-aware task for other source sets.
 An untyped `detekt` run does not verify these rules.
 Review the guide's per-rule examples and detection limits alongside the actual component tree.

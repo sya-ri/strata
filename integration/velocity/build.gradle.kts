@@ -5,11 +5,11 @@ group = "dev.s7a.strata.integration"
 dependencies {
     compileOnly(project(":runtime:velocity"))
     compileOnly(libs.velocity.api)
-    compileOnly(project(":quality:performance-testkit"))
-    runtimeOnly(project(":quality:performance-testkit"))
+    compileOnly(project(":performance-testkit"))
+    runtimeOnly(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.velocity.api)
-    testImplementation(project(":quality:performance-testkit"))
+    testImplementation(project(":performance-testkit"))
     testImplementation(libs.kotlin.test)
     testRuntimeOnly(libs.gson.minecraft)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -32,7 +32,7 @@ kotlin.sourceSets.named("test") { kotlin.srcDir(rootProject.file("integration/se
 extensions.configure<DetektExtension> { source.from(rootProject.file("integration/server-performance/src/main/kotlin")) }
 
 tasks.withType<Test>().configureEach {
-    val collector = project(":quality:performance-testkit").tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }
+    val collector = project(":performance-testkit").tasks.named<Jar>("jvmJar").flatMap { it.archiveFile }
     dependsOn(collector)
     inputs.file(collector)
     systemProperty("strata.test.performanceKit", collector.get().asFile.absolutePath)

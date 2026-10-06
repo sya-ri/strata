@@ -7,8 +7,8 @@
 :integration:docs
 :integration:web
 :quality:detekt-rules
-:quality:strata-detekt-rules
-:quality:performance-testkit
+:detekt-rules
+:performance-testkit
 :runtime:core
 :runtime:remote
 :runtime:paper

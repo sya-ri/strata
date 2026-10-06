@@ -32,7 +32,7 @@ Use ordinary arithmetic when validated input bounds guarantee representable resu
 | `runtime:minecraft-fonts-lwjgl` | Optional CPU font decoding, rasterization, and text ordering. | Uses common font contracts and target-matched native libraries. |
 | `runtime:minecraft-fabric-<version>` | Native screen, resource, input, and presentation adapters for one exact target. | Owns mapped Minecraft and Fabric dependencies. |
 | `integration:*` | External API, loaded-client, and documentation verification. | Not published. |
-| `quality:strata-detekt-rules` | Optional type-aware application authoring checks for components, modifiers, state, and UI roots. | Published build-tool plugin; Detekt API is compile-only, and Strata API/runtime modules are test dependencies only. |
+| `detekt-rules` | Optional type-aware application authoring checks for components, modifiers, state, and UI roots. | Published build-tool plugin; Detekt API is compile-only, and Strata API/runtime modules are test dependencies only. |
 | `examples:web` | Interactive browser demos and deterministic initial-document factories. | Uses public API and web runtime contracts; not published. |
 | `examples:paper` | Installable external example plugin and compiled server-owned screen factory. | Compiles against public Paper/Strata APIs and depends on the installed Strata plugin; not published. |
 | `examples:velocity` | Installable proxy example and compiled owner-thread screen factory. | Uses public Velocity/Strata APIs and the installed Strata plugin; not published. |
