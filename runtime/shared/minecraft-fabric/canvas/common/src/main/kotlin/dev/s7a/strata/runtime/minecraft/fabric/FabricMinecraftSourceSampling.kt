@@ -71,12 +71,13 @@ internal fun isDirectFabricSampledImage(
     fractionalSource: Boolean = false,
     exactSampling: Boolean = false,
 ): Boolean {
-    if (command.orientation != SampledImageOrientation.Normal || command.tint != ArgbColor(-1) || command.alphaCutoff != 0f) return false
+    if (command.tint != ArgbColor(-1) || command.alphaCutoff != 0f) return false
     val integerSource = command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel()
     if ((integerSource || fractionalSource || exactSampling).not()) return false
     val destination = command.destination
     val bounded = ceil(destination.right.toDouble()) - floor(destination.left.toDouble()) <= 4_096.0 / scale && ceil(destination.bottom.toDouble()) - floor(destination.top.toDouble()) <= 4_096.0 / scale
     if (exactSampling && bounded) return true
+    if (command.orientation != SampledImageOrientation.Normal) return false
     if (destination.hasFabricPhysicalCenterEdge(scale)) return false
     return hasStableFabricSourceSampling(command, scale, alignedEdges = integerSource.not())
 }

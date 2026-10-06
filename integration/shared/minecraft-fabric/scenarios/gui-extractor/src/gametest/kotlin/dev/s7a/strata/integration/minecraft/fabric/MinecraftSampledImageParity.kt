@@ -17,6 +17,7 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -66,6 +67,19 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                 0xFFFFFF00.toInt(),
                 0xFF00FFFF.toInt(),
             ),
+        )
+    val reflected =
+        createDrawImage(
+            IntSize(6, 4),
+            IntArray(24) { index ->
+                val alpha =
+                    when (index % 3) {
+                        0 -> 0
+                        1 -> 128
+                        else -> 255
+                    }
+                (alpha shl 24) or ((index * 73471) and 0xFFFFFF)
+            },
         )
     val blitted =
         createDrawImage(
@@ -123,6 +137,14 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         alphaCutoff = 0f,
                     )
                     scope.paintFractionalSourceSamples(sampled)
+                    SampledImageOrientation.entries.forEachIndexed { index, orientation ->
+                        val x = 144 + index * 24
+                        scope.withClip(IntRect(x, 74, x + 20, 94)) {
+                            scope.withClip(IntRect(x + 2, 76, x + 18, 92)) {
+                                scope.sampledImage(reflected, FloatRect(0.1f, 0.2f, 5.9f, 3.8f), FloatRect(x + 0.25f, 74.25f, x + 20.75f, 94.75f), orientation, alphaCutoff = 0f)
+                            }
+                        }
+                    }
                     scope.fillRectangle(IntRect(180, 96, 220, 124), ArgbColor(0x408123EF))
                     scope.sampledImage(sampled, FloatRect(0f, 0f, 6f, 4f), FloatRect(-10f, 0f, -1f, 10f))
                     scope.fillRectangle(IntRect(184, 100, 216, 120), ArgbColor(0x8067AD11.toInt()))

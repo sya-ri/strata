@@ -115,6 +115,9 @@ The native cache key is the physical device generation and `DrawImage` referenti
 Source and destination rectangles, clip, GUI scale, overlay state, and frame revision are deliberately excluded.
 Pan and zoom may issue new destination geometry without another pixel copy or upload, player-marker movement cannot invalidate tile textures, and one replacement image uploads only that identity.
 Unsupported commands retain their exact semantics through a tightly bounded portable fallback layer.
+Exact axis-lookup adapters also admit horizontal, vertical and combined reflection with opaque-white tint and zero cutoff.
+They reverse source endpoints before the original Float interpolation and encode the selected texels without changing source storage or native blending.
+Non-identity tint and cutoff retain ordered CPU composition; the [performance evidence contract](performance-testkit.md#independent-sampled-image-gpu-and-cold-image-evidence) distinguishes their fallback cost from capacity and other unsupported causes.
 Sampled fallback runs retain their original absolute Float source-mapping coordinates while writing only the visible physical region.
 Moving a sampled run cannot reuse pixels calculated at another absolute origin solely because its translated geometry appears equal.
 

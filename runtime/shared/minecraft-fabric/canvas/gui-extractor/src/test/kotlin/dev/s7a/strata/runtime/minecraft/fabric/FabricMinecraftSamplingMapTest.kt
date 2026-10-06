@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -21,6 +22,30 @@ import org.junit.jupiter.api.Test
  * Checks the uploaded integer lookup against the independent headless rasterizer at translated texel boundaries.
  */
 internal class FabricMinecraftSamplingMapTest {
+    @Test
+    fun mirroredFractionalSelectionsMatchTheOracleWithoutAdmittingTintOrCutoff() {
+        val image = createDrawImage(IntSize(6, 4), IntArray(24) { 0xFF000000.toInt() or (it * 1237) })
+        val bounds = IntRect(179, 69, 186, 77)
+        for (scale in 1..4) {
+            for (orientation in SampledImageOrientation.entries) {
+                val command = DrawCommand.SampledImage(image, FloatRect(0.1f, 0.4f, 5.7f, 3.6f), FloatRect(180.25f, 70.25f, 184.75f, 75.75f), orientation = orientation, alphaCutoff = 0f)
+                assertTrue(isDirectFabricSampledImage(command, scale, exactSampling = true))
+                assertFalse(isDirectFabricSampledImage(command.copy(alphaCutoff = 0.1f), scale, exactSampling = true))
+                val map = FabricMinecraftSamplingMap(command, bounds, scale)
+                val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
+                for (y in 0 until map.physicalSize.height) {
+                    for (x in 0 until map.physicalSize.width) {
+                        val sx = decode(map.indices.argbAt(x, 0)) - 1
+                        val sy = decode(map.indices.argbAt(y, 1)) - 1
+                        if (0 <= sx && 0 <= sy) pixels[y * map.physicalSize.width + x] = image.argbAt(sx, sy)
+                    }
+                }
+                assertArrayEquals(rasterizeHeadlessRegion(listOf(command), bounds, scale).copyArgb(), pixels, "GUI$scale $orientation")
+                if (orientation != SampledImageOrientation.Normal) assertFalse(isDirectFabricSampledImage(command, scale, fractionalSource = true))
+            }
+        }
+    }
+
     @Test
     fun translatedOutputsReuseOnlyWhenEveryEncodedTexelAndCoverageRemainEqual() {
         val image = createDrawImage(IntSize(6, 4), IntArray(24) { 0xFF000000.toInt() or (it * 1237) })
