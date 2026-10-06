@@ -1,0 +1,838 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>dev.s7a.strata.performance</title>
+<link href="../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;dev.s7a.strata.performance/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.2"><span class="versions-dropdown-button-text">0.2.2</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../performance-testkit/dev.s7a.strata.performance/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.2"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.2</span></a><a href="../../../../not-found-version.html?v=0.2.1" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.1</span></a><a href="../../../../not-found-version.html?v=0.2.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../not-found-version.html?v=0.1.6" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../not-found-version.html?v=0.1.5" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../not-found-version.html?v=0.1.4" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../not-found-version.html?v=0.1.3" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../not-found-version.html?v=0.1.2" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../not-found-version.html?v=0.1.1" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector common-like" data-active="" aria-pressed="true" data-filter=":performance-testkit/commonMain">common</button>
+                <button class="platform-tag platform-selector js-like" data-active="" aria-pressed="true" data-filter=":performance-testkit/jsMain">js</button>
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":performance-testkit/jvmMain">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":performance-testkit/commonMain" data-filter=":performance-testkit/commonMain">
+                                <span class="checkbox--icon"></span>
+                                common
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option js-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":performance-testkit/jsMain" data-filter=":performance-testkit/jsMain">
+                                <span class="checkbox--icon"></span>
+                                js
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":performance-testkit/jvmMain" data-filter=":performance-testkit/jvmMain">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="performance-testkit::dev.s7a.strata.performance////PointingToDeclaration//-1246009544">
+  <div class="breadcrumbs"><a href="../index.html">performance-testkit</a><span class="delimiter">/</span><span class="current">dev.s7a.strata.performance</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="1559116827%2FClasslikes%2F314635670" anchor-label="ArtifactIdentity" id="1559116827%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-artifact-identity/index.html"><span>Artifact</span><wbr><span><span>Identity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1559116827%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-artifact-identity/index.html">ArtifactIdentity</a></div><div class="brief "><p class="paragraph">Hashes actual loaded code and resources independently of file naming and advertised versions.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-547168165%2FClasslikes%2F-195874558" anchor-label="BrowserPerformanceJson" id="-547168165%2FClasslikes%2F-195874558" data-filterable-set=":performance-testkit/jsMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-browser-performance-json/index.html"><span>Browser</span><wbr><span>Performance</span><wbr><span><span>Json</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-547168165%2FClasslikes%2F-195874558"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain" data-active="" data-toggle=":performance-testkit/jsMain">js</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jsMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-browser-performance-json/index.html">BrowserPerformanceJson</a></div><div class="brief "><p class="paragraph">Browser evidence encoding with explicit units and bounded safe integer conversion.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1982670582%2FClasslikes%2F-195874558" anchor-label="BrowserPerformanceMeter" id="1982670582%2FClasslikes%2F-195874558" data-filterable-set=":performance-testkit/jsMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-browser-performance-meter/index.html"><span>Browser</span><wbr><span>Performance</span><wbr><span><span>Meter</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1982670582%2FClasslikes%2F-195874558"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain" data-active="" data-toggle=":performance-testkit/jsMain">js</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jsMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-browser-performance-meter/index.html">BrowserPerformanceMeter</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">plan<span class="token operator">: </span><a href="../../performance-testkit/dev.s7a.strata.performance/-performance-plan/index.html">PerformancePlan</a><span class="token operator"> = </span>PerformancePlan()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Browser-native clock and animation-frame execution, independent of an application's renderer. Action-to-next-frame latency is not GPU completion time or JavaScript CPU time. Closing cancels pending callbacks, releases application closures, and rejects an incomplete run.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1956177575%2FClasslikes%2F-195874558" anchor-label="BrowserPerformanceSample" id="-1956177575%2FClasslikes%2F-195874558" data-filterable-set=":performance-testkit/jsMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-browser-performance-sample/index.html"><span>Browser</span><wbr><span>Performance</span><wbr><span><span>Sample</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1956177575%2FClasslikes%2F-195874558"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jsMain" data-filterable-set=":performance-testkit/jsMain" data-active="" data-toggle=":performance-testkit/jsMain">js</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jsMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-browser-performance-sample/index.html">BrowserPerformanceSample</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>operation<span class="token operator">: </span><a href="../../performance-testkit/dev.s7a.strata.performance/-performance-distribution/index.html">PerformanceDistribution</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>animationFrame<span class="token operator">: </span><a href="../../performance-testkit/dev.s7a.strata.performance/-performance-distribution/index.html">PerformanceDistribution</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Complete synchronous action wall time and separate action-to-animation-frame latency. Neither distribution represents browser CPU accounting or GPU completion.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1261215158%2FClasslikes%2F314635670" anchor-label="CompilerApiInventory" id="-1261215158%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-compiler-api-inventory/index.html"><span>Compiler</span><wbr><span>Api</span><wbr><span><span>Inventory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1261215158%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-compiler-api-inventory/index.html">CompilerApiInventory</a></div><div class="brief "><p class="paragraph">Adapter for the compiler ABI dumps already verified by each published project's checkKotlinAbi task. Keeps exact overloads and owners; source visibility differs from the separate loaded-JVM bytecode inventory. This adapter performs no performance collection or member-execution inference.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-214018713%2FClasslikes%2F314635670" anchor-label="JmhForkProfiler" id="-214018713%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jmh-fork-profiler/index.html"><span>Jmh</span><wbr><span>Fork</span><wbr><span><span>Profiler</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-214018713%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jmh-fork-profiler/index.html">JmhForkProfiler</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">options<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span> : <span data-unresolved-link="org.openjdk.jmh.profile/InternalProfiler///PointingToDeclaration/">InternalProfiler</span></div><div class="brief "><p class="paragraph">Standard JMH internal profiler that certifies the actual loaded fork before warm-up or measurement. JMH constructs this capability in the fork; it owns no clock, sampling loop or application operation. A missing or failed profiler cannot produce the required per-iteration provenance result.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="888354473%2FClasslikes%2F314635670" anchor-label="JmhPerformanceEvidence" id="888354473%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jmh-performance-evidence/index.html"><span>Jmh</span><wbr><span>Performance</span><wbr><span><span>Evidence</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="888354473%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jmh-performance-evidence/index.html">JmhPerformanceEvidence</a></div><div class="brief "><p class="paragraph">JVM-only evidence validation, aggregation and comparison over standard JMH output. JMH owns collection; this API consumes preserved receipts and never times an operation itself.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1441113168%2FClasslikes%2F314635670" anchor-label="JmhPerformanceRunner" id="-1441113168%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jmh-performance-runner/index.html"><span>Jmh</span><wbr><span>Performance</span><wbr><span><span>Runner</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1441113168%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jmh-performance-runner/index.html">JmhPerformanceRunner</a></div><div class="brief "><p class="paragraph">Provenance adapter around standard JMH; JMH owns forks, warm-up, clocks, samples, profilers and result serialization. Consumers provide their benchmark classes, target representatives and standard CLI options, rather than another engine. JMH is a consumer-supplied dependency; this test-only adapter does not add it to the kit's runtime POM.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1325841621%2FClasslikes%2F314635670" anchor-label="JmhWorkloadInventory" id="-1325841621%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jmh-workload-inventory/index.html"><span>Jmh</span><wbr><span>Workload</span><wbr><span><span>Inventory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1325841621%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jmh-workload-inventory/index.html">JmhWorkloadInventory</a></div><div class="brief "><p class="paragraph">Exact expected matrices from JMH's generated benchmark registry, without another annotation or timing engine. Consumers register fixture classes, explicit standard modes and optional subsets of compiled parameter values.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-464716780%2FClasslikes%2F314635670" anchor-label="JvmApiInventory" id="-464716780%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-api-inventory/index.html"><span>Jvm</span><wbr><span>Api</span><wbr><span><span>Inventory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-464716780%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jvm-api-inventory/index.html">JvmApiInventory</a></div><div class="brief "><p class="paragraph">Discovers the JVM-visible public/protected binary surface from the artifacts actually loaded by a host. Includes Kotlin declarations exposed publicly in bytecode; source-level visibility is not inferred. Discovery does not initialize classes and rejects shadowed resources, origins, or unresolved linkage.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1085604411%2FClasslikes%2F314635670" anchor-label="JvmPerformanceEvidence" id="-1085604411%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-evidence/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Evidence</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1085604411%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jvm-performance-evidence/index.html">JvmPerformanceEvidence</a></div><div class="brief "><p class="paragraph">Shared JVM validation and aggregation for detached collector-bound evidence. Consumers provide workload-specific conditions; they do not implement another comparison engine.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2084976333%2FClasslikes%2F314635670" anchor-label="JvmPerformanceInputs" id="-2084976333%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-inputs/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Inputs</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2084976333%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jvm-performance-inputs/index.html">JvmPerformanceInputs</a></div><div class="brief "><p class="paragraph">Reads caller-declared external fixture files from a UTF-8 standard JDK properties manifest. Gradle can register resolved control libraries and native archives without adding consumer hashing logic.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1383134365%2FClasslikes%2F314635670" anchor-label="JvmPerformanceMeter" id="1383134365%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-meter/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Meter</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1383134365%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jvm-performance-meter/index.html">JvmPerformanceMeter</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">capacity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Owner-thread JDK timing, allocation, heap-boundary, and process-GC collector. Setup, assertions, and evidence serialization belong outside sample boundaries. Unsupported metrics remain null and failed samples cannot publish successful evidence.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1543271911%2FClasslikes%2F314635670" anchor-label="JvmPerformanceReports" id="1543271911%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-reports/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Reports</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1543271911%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jvm-performance-reports/index.html">JvmPerformanceReports</a></div><div class="brief "><p class="paragraph">Shared processing of fixed CPU and native phase reports from immutable raw evidence. Consumers register conditions, metrics and untimed work assertions, never their own aggregation engine.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-21939764%2FClasslikes%2F314635670" anchor-label="JvmPerformanceRunner" id="-21939764%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-runner/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Runner</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-21939764%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-jvm-performance-runner/index.html">JvmPerformanceRunner</a></div><div class="brief "><p class="paragraph">Shared synchronous execution; consumers describe operations rather than implementing sample loops.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-511225467%2FClasslikes%2F314635670" anchor-label="JvmPerformanceSchedule" id="-511225467%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-schedule/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Schedule</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-511225467%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jvm-performance-schedule/index.html">JvmPerformanceSchedule</a><span class="token operator">&lt;</span><a href="-jvm-performance-schedule/index.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">plan<span class="token operator">: </span><a href="-performance-plan/index.html">PerformancePlan</a><span class="token operator"> = </span>PerformancePlan()<span class="token punctuation">, </span></span><span class="parameter ">diagnosticsOwner<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">beforeSample<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}<span class="token punctuation">, </span></span><span class="parameter ">afterOperation<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span><a href="-jvm-performance-schedule/index.html">T</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{ _, _ -&gt; }<span class="token punctuation">, </span></span><span class="parameter ">operation<span class="token operator">: </span><span class="token punctuation">(</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="-jvm-performance-schedule/index.html">T</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Collects one synchronous operation per application-owned scheduling opportunity. The host supplies ticks or callbacks; warm-up counts, sample boundaries and incomplete evidence belong to the kit. Construct, advance, complete and close on the same physical owner thread. An operation must release its own temporary resources, including when warm-up fails. Closing releases callbacks and collector storage, without closing the application fixture.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1218490267%2FClasslikes%2F314635670" anchor-label="JvmPerformanceSequence" id="1218490267%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jvm-performance-sequence/index.html"><span>Jvm</span><wbr><span>Performance</span><wbr><span><span>Sequence</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1218490267%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jvm-performance-sequence/index.html">JvmPerformanceSequence</a> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Kit-owned sample boundaries for interleaved historical workloads with untimed per-sample setup. Consumers choose which operation to time; they cannot publish an incomplete or failed sequence.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="617431237%2FClasslikes%2F314635670" anchor-label="LoadedArtifactMetadata" id="617431237%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-loaded-artifact-metadata/index.html"><span>Loaded</span><wbr><span>Artifact</span><wbr><span><span>Metadata</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="617431237%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-loaded-artifact-metadata/index.html">LoadedArtifactMetadata</a></div><div class="brief "><p class="paragraph">Bounded provenance from the actual loaded classes, without substituting standalone distribution JARs. Missing locations remain explicit failures rather than inferred hashes.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-346701679%2FClasslikes%2F314635670" anchor-label="MinecraftPerformanceMeter" id="-346701679%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-minecraft-performance-meter/index.html"><span>Minecraft</span><wbr><span>Performance</span><wbr><span><span>Meter</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-346701679%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-minecraft-performance-meter/index.html">MinecraftPerformanceMeter</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">screen<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token punctuation">, </span></span><span class="parameter ">refresh<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Actual Fabric extraction/render adapter, confined to the measured screen's client thread. Event callbacks and native counters belong to the kit; consumers supply only state changes. GPU completion, model mutation, readiness, and evidence storage are outside extraction samples. Complete operation frames include diagnostic instrumentation and frame pacing, rather than uninstrumented application latency.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1862070215%2FClasslikes%2F314635670" anchor-label="NativePerformanceEvidence" id="1862070215%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-native-performance-evidence/index.html"><span>Native</span><wbr><span>Performance</span><wbr><span><span>Evidence</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1862070215%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-native-performance-evidence/index.html">NativePerformanceEvidence</a></div><div class="brief "><p class="paragraph">Verifies actual CPU and native loaded class bytes without trusting archive names or versions. The consumer supplies its expected module inventory; the kit owns file and class-tree verification.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1550228123%2FClasslikes%2F314635670" anchor-label="NativePerformanceFixture" id="1550228123%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-native-performance-fixture/index.html"><span>Native</span><wbr><span>Performance</span><wbr><span><span>Fixture</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1550228123%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-native-performance-fixture/index.html">NativePerformanceFixture</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>ready<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span>{ true }<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>captureAfterWarmup<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>settleFrames<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">0</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>beforeSamples<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>afterSamples<span class="token operator">: </span><span class="token punctuation">(</span><span data-unresolved-link="com.google.gson/JsonObject///PointingToDeclaration/">JsonObject</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>validateFrame<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Application data and evidence hooks outside native extraction samples. The kit owns invocation order, settling, deadlines, counters, and callback cleanup. Hooks execute on the screen's owner thread and failures invalidate the whole interval.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-80685725%2FClasslikes%2F314635670" anchor-label="NativePresentationCounters" id="-80685725%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-native-presentation-counters/index.html"><span>Native</span><wbr><span>Presentation</span><wbr><span><span>Counters</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-80685725%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-native-presentation-counters/index.html">NativePresentationCounters</a></div><div class="brief "><p class="paragraph">Actual native work and retained payload; missing adapter metrics cannot become zero work.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1216046111%2FClasslikes%2F-1384162976" anchor-label="PerformanceCoverage" id="1216046111%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-coverage/index.html"><span>Performance</span><wbr><span><span>Coverage</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1216046111%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-coverage/index.html">PerformanceCoverage</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">inventory<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="-performance-host/index.html">PerformanceHost</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">scenarios<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="-performance-scenario/index.html">PerformanceScenario</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">requiredPhases<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="-performance-phase/index.html">PerformancePhase</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token operator"> = </span>inventory.keys.associateWith { setOf(PerformancePhase.Idle) }</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Coverage gate and selection over the complete current feature inventory.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-594813521%2FClasslikes%2F314635670" anchor-label="PerformanceDeadline" id="-594813521%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-deadline/index.html"><span>Performance</span><wbr><span><span>Deadline</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-594813521%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-deadline/index.html">PerformanceDeadline</a></div><div class="brief "><p class="paragraph">Monotonic preparation/execution budget, independent of timed sample distributions. Child sections retain an earlier enclosing deadline, including one that has already expired.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="503175171%2FClasslikes%2F-1384162976" anchor-label="PerformanceDistribution" id="503175171%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-distribution/index.html"><span>Performance</span><wbr><span><span>Distribution</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="503175171%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-performance-distribution/index.html">PerformanceDistribution</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>samples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>total<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>p50<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>p95<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>p99<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maximum<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Detached nearest-rank statistics for one complete interval; values are nanoseconds.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="692602512%2FClasslikes%2F-1384162976" anchor-label="PerformanceEvidence" id="692602512%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-evidence/index.html"><span>Performance</span><wbr><span><span>Evidence</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="692602512%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-evidence/index.html">PerformanceEvidence</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>scenario<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>host<span class="token operator">: </span><a href="-performance-host/index.html">PerformanceHost</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>phase<span class="token operator">: </span><a href="-performance-phase/index.html">PerformancePhase</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>repetition<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>inputIdentity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>kitIdentity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>targetIdentity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">conditions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">metrics<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">?</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Immutable comparison contract; unavailable measurements remain null, never successful zero work.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2051232654%2FClasslikes%2F314635670" anchor-label="PerformanceEvidenceCli" id="-2051232654%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-evidence-cli/index.html"><span>Performance</span><wbr><span>Evidence</span><wbr><span><span>Cli</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2051232654%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-performance-evidence-cli/index.html">PerformanceEvidenceCli</a></div><div class="brief "><p class="paragraph">Java-only entry point for collector-bound evidence requests supplied by consumers or Gradle tasks. The sole argument is a UTF-8 JSON request file; JMH and the existing kit own the measurement engine. Validation failures propagate to a nonzero process exit and cannot create a successful output.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1453520735%2FClasslikes%2F-1384162976" anchor-label="PerformanceHost" id="1453520735%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-host/index.html"><span>Performance</span><wbr><span><span>Host</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1453520735%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-performance-host/index.html">PerformanceHost</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-performance-host/index.html">PerformanceHost</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Execution boundaries whose measurements are never interchangeable.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1006340159%2FClasslikes%2F-1384162976" anchor-label="PerformanceInventory" id="1006340159%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-inventory/index.html"><span>Performance</span><wbr><span><span>Inventory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1006340159%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-inventory/index.html">PerformanceInventory</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">surfaces<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">assignments<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">sourceOwners<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Exact discovered API/module surface assignments and repository-relative impact ownership. Discovery belongs to the host adapter; assignments must explicitly name every discovered symbol. Adding an API member or module cannot inherit coverage through a package wildcard.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2083170335%2FClasslikes%2F314635670" anchor-label="PerformanceJson" id="2083170335%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-json/index.html"><span>Performance</span><wbr><span><span>Json</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2083170335%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-performance-json/index.html">PerformanceJson</a></div><div class="brief "><p class="paragraph">Detached JVM report serialization, shared by every consumer and host adapter.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="456535552%2FClasslikes%2F-1384162976" anchor-label="PerformancePhase" id="456535552%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-phase/index.html"><span>Performance</span><wbr><span><span>Phase</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="456535552%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-performance-phase/index.html">PerformancePhase</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-performance-phase/index.html">PerformancePhase</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Named operation boundaries; readiness and evidence storage are outside steady measurements.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1142692610%2FClasslikes%2F-1384162976" anchor-label="PerformancePlan" id="-1142692610%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-plan/index.html"><span>Performance</span><wbr><span><span>Plan</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1142692610%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-performance-plan/index.html">PerformancePlan</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>warmup<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">30</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>samples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">60</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>repetitions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">3</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>preparationTimeoutMillis<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Reproducible execution counts, independent of application data and host implementation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1699678994%2FClasslikes%2F-1384162976" anchor-label="PerformanceProfile" id="1699678994%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-profile/index.html"><span>Performance</span><wbr><span><span>Profile</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1699678994%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">enum </span><a href="-performance-profile/index.html">PerformanceProfile</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-enum/index.html">Enum</a><span class="token operator">&lt;</span><a href="-performance-profile/index.html">PerformanceProfile</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Shared diagnostic presets without another measurement engine. Quick results have separate workload identities and cannot satisfy a standard evidence contract. Consumers register their actual ordered viewport matrix and retain explicit workload selections.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1575777505%2FClasslikes%2F314635670" anchor-label="PerformanceReportContract" id="1575777505%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-report-contract/index.html"><span>Performance</span><wbr><span>Report</span><wbr><span><span>Contract</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1575777505%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-performance-report-contract/index.html">PerformanceReportContract</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>workloadId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>phaseKeys<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>phaseCount<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>reportConditions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>phaseConditions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>variantReportFields<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptySet()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>variantPhaseFields<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptySet()<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>repetitions<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">3</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>schemaVersion<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">1</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Consumer-declared registration for a fixed report workload, independent of collection and comparison. Variant report fields may change between runtime candidates, but must remain identical within a side. Phase conditions must include sample counts and every fixture invariant required by that workload.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="491869827%2FClasslikes%2F314635670" anchor-label="PerformanceReportMetric" id="491869827%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-report-metric/index.html"><span>Performance</span><wbr><span>Report</span><wbr><span><span>Metric</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="491869827%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-performance-report-metric/index.html">PerformanceReportMetric</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>path<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>divisorPath<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>scale<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator"> = </span><span class="token constant">1.0</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Explicit metric projection from an existing report, with optional per-sample normalization. Unavailable measurements remain unavailable; scale converts declared units without another timer.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="358350877%2FClasslikes%2F314635670" anchor-label="PerformanceSample" id="358350877%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-sample/index.html"><span>Performance</span><wbr><span><span>Sample</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="358350877%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-performance-sample/index.html">PerformanceSample</a><span class="token operator">&lt;</span><a href="-performance-sample/index.html">T</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>evidence<span class="token operator">: </span><span data-unresolved-link="com.google.gson/JsonObject///PointingToDeclaration/">JsonObject</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>value<span class="token operator">: </span><a href="-performance-sample/index.html">T</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">One complete measured interval and its last application-owned result, without frame history.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="721654647%2FClasslikes%2F-1384162976" anchor-label="PerformanceScenario" id="721654647%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-scenario/index.html"><span>Performance</span><wbr><span><span>Scenario</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="721654647%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-scenario/index.html">PerformanceScenario</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>id<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">features<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">hosts<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="-performance-host/index.html">PerformanceHost</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">phases<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="-performance-phase/index.html">PerformancePhase</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>inputIdentity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Declarative coverage identity; executable application operations remain owned by the consumer.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1948632591%2FClasslikes%2F-1384162976" anchor-label="PerformanceSelection" id="1948632591%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-performance-selection/index.html"><span>Performance</span><wbr><span><span>Selection</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1948632591%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-performance-selection/index.html">PerformanceSelection</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">available<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">requested<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Validated workload selection shared by CPU and loaded-host adapters. Omitted selection retains the full registered matrix; explicit IDs cannot silently select nothing. Adapters must still verify their complete registration before constructing a selection.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1803124782%2FClasslikes%2F314635670" anchor-label="RuntimeWorkAccumulator" id="1803124782%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-runtime-work-accumulator/index.html"><span>Runtime</span><wbr><span>Work</span><wbr><span><span>Accumulator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1803124782%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-runtime-work-accumulator/index.html">RuntimeWorkAccumulator</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">owner<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Bounded aggregation of complete per-sample runtime diagnostics on the application's owner thread. Retired node identities are discarded after each snapshot, outside the measured operation. A single overflowing sample still fails; global counts never stand in for truncated node evidence.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="581000026%2FClasslikes%2F314635670" anchor-label="RuntimeWorkMonitor" id="581000026%2FClasslikes%2F314635670" data-filterable-set=":performance-testkit/jvmMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-runtime-work-monitor/index.html"><span>Runtime</span><wbr><span>Work</span><wbr><span><span>Monitor</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="581000026%2FClasslikes%2F314635670"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":performance-testkit/jvmMain" data-filterable-set=":performance-testkit/jvmMain" data-active="" data-toggle=":performance-testkit/jvmMain">jvm</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/jvmMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-runtime-work-monitor/index.html">RuntimeWorkMonitor</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">owner<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token punctuation">, </span></span><span class="parameter ">checkpointSamples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">maxNodeRecords<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><div class="brief "><p class="paragraph">Owner-thread monitor over the actual measured Strata instance, with no runtime-version substitution.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="534026764%2FClasslikes%2F-1384162976" anchor-label="WorkCounter" id="534026764%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-work-counter/index.html"><span>Work</span><wbr><span><span>Counter</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="534026764%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-work-counter/index.html">WorkCounter</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">names<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Bounded owner-thread application invocation counters with caller-defined stable names. Only counters are retained; snapshots and serialization belong outside sample boundaries. Overflow fails the invoking operation instead of wrapping into apparently valid work.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="90281548%2FClasslikes%2F-1384162976" anchor-label="WorkExpectation" id="90281548%2FClasslikes%2F-1384162976" data-filterable-set=":performance-testkit/commonMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":performance-testkit/commonMain" data-filterable-set=":performance-testkit/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-work-expectation/index.html"><span>Work</span><wbr><span><span>Expectation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="90281548%2FClasslikes%2F-1384162976"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":performance-testkit/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-work-expectation/index.html">WorkExpectation</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">exact<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptyMap()<span class="token punctuation">, </span></span><span class="parameter ">maximum<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptyMap()<span class="token punctuation">, </span></span><span class="parameter ">minimum<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-map/index.html">Map</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">&gt;</span><span class="token operator"> = </span>emptyMap()</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Deterministic work and retention assertions, independent of elapsed time.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

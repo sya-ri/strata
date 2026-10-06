@@ -1,0 +1,613 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>MinecraftUiProfileBuilder</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.2"><span class="versions-dropdown-button-text">0.2.2</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../../runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.2"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.2</span></a><a href="../../../../../0.2.1/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.1</span></a><a href="../../../../../0.2.0/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../../0.1.6/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../../0.1.5/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../0.1.4/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../0.1.3/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../0.1.2/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../0.1.1/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../0.1.0/runtime/minecraft/dev.s7a.strata.runtime.minecraft/-minecraft-ui-profile-builder/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:minecraft/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:minecraft/main" data-filter=":runtime:minecraft/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="minecraft::dev.s7a.strata.runtime.minecraft/MinecraftUiProfileBuilder///PointingToDeclaration//618123257">
+  <div class="breadcrumbs"><a href="../../index.html">minecraft</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.minecraft</a><span class="delimiter">/</span><span class="current">MinecraftUiProfileBuilder</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Minecraft</span><wbr><span>Ui</span><wbr><span>Profile</span><wbr><span><span>Builder</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">interface </span><a href="index.html">MinecraftUiProfileBuilder</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.2.2/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftUiProfileBuilder.kt#L19">source</a>)</span></span></div><p class="paragraph">Callback-lifetime builder for one complete Minecraft UI profile.</p><p class="paragraph">The builder is confined to its creator thread and rejects use after the profile callback returns. Menu, container, Slot, Scroll, TextField, and Button declarations retain immutable image references, while glyph declarations synchronously copy a binary mask into nine derived immutable layers and retain no mask reference. Every method rejects duplicate slots.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-1867159574%2FFunctions%2F618123257" anchor-label="buttonDisabled" id="-1867159574%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="button-disabled.html"><span>button</span><wbr><span><span>Disabled</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1867159574%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="button-disabled.html"><span class="token function">buttonDisabled</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the disabled 200 by 20 Button sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1842858375%2FFunctions%2F618123257" anchor-label="buttonHighlighted" id="1842858375%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="button-highlighted.html"><span>button</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1842858375%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="button-highlighted.html"><span class="token function">buttonHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the highlighted 200 by 20 Button sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1725436011%2FFunctions%2F618123257" anchor-label="buttonNormal" id="-1725436011%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="button-normal.html"><span>button</span><wbr><span><span>Normal</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1725436011%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="button-normal.html"><span class="token function">buttonNormal</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the normal 200 by 20 Button sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="592330205%2FFunctions%2F618123257" anchor-label="checkbox" id="592330205%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="checkbox.html"><span><span>checkbox</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="592330205%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="checkbox.html"><span class="token function">checkbox</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 20 by 20 unselected Checkbox sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1232233940%2FFunctions%2F618123257" anchor-label="checkboxHighlighted" id="1232233940%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="checkbox-highlighted.html"><span>checkbox</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1232233940%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="checkbox-highlighted.html"><span class="token function">checkboxHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 20 by 20 hovered unselected Checkbox sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="220203416%2FFunctions%2F618123257" anchor-label="checkboxSelected" id="220203416%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="checkbox-selected.html"><span>checkbox</span><wbr><span><span>Selected</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="220203416%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="checkbox-selected.html"><span class="token function">checkboxSelected</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 20 by 20 selected Checkbox sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1072138041%2FFunctions%2F618123257" anchor-label="checkboxSelectedHighlighted" id="1072138041%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="checkbox-selected-highlighted.html"><span>checkbox</span><wbr><span>Selected</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1072138041%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="checkbox-selected-highlighted.html"><span class="token function">checkboxSelectedHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 20 by 20 hovered selected Checkbox sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1982008531%2FFunctions%2F618123257" anchor-label="containerBackground" id="1982008531%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="container-background.html"><span>container</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1982008531%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="container-background.html"><span class="token function">containerBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 256 by 256 generic-container texture used by the active vanilla chest screens.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-506650449%2FFunctions%2F618123257" anchor-label="fonts" id="-506650449%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="fonts.html"><span><span>fonts</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-506650449%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="fonts.html"><span class="token function">fonts</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">snapshot<span class="token operator">: </span><a href="../../dev.s7a.strata.runtime.minecraft.font/-minecraft-font-snapshot/index.html">MinecraftFontSnapshot</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies immutable resource-pack font definitions and files instead of the compatibility ASCII mask declarations. The snapshot can be shared between profiles and hosts and owns no native state. A host using this profile must supply its independently owned font backend through the font-aware host factory.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-523422077%2FFunctions%2F618123257" anchor-label="horizontalProgressBar" id="-523422077%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="horizontal-progress-bar.html"><span>horizontal</span><wbr><span>Progress</span><wbr><span><span>Bar</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-523422077%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="horizontal-progress-bar.html"><span class="token function">horizontalProgressBar</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">background<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">fill<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies one fixed-source horizontal progress-bar background and fill pair.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-596949576%2FFunctions%2F618123257" anchor-label="legacyTooltip" id="-596949576%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="legacy-tooltip.html"><span>legacy</span><wbr><span><span>Tooltip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-596949576%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="legacy-tooltip.html"><span class="token function">legacyTooltip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">backgroundColor<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token punctuation">, </span></span><span class="parameter ">borderTop<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a><span class="token punctuation">, </span></span><span class="parameter ">borderBottom<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-argb-color/index.html">ArgbColor</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the code-defined tooltip colors used by Minecraft releases before tooltip sprites existed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1605446%2FFunctions%2F618123257" anchor-label="listBackground" id="1605446%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-background.html"><span>list</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1605446%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="list-background.html"><span class="token function">listBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 16 by 16 menu-list background texture.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="34817104%2FFunctions%2F618123257" anchor-label="listFooterSeparator" id="34817104%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-footer-separator.html"><span>list</span><wbr><span>Footer</span><wbr><span><span>Separator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="34817104%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="list-footer-separator.html"><span class="token function">listFooterSeparator</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 32 by 2 menu-list footer separator texture.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1773058658%2FFunctions%2F618123257" anchor-label="listHeaderSeparator" id="-1773058658%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-header-separator.html"><span>list</span><wbr><span>Header</span><wbr><span><span>Separator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1773058658%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="list-header-separator.html"><span class="token function">listHeaderSeparator</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 32 by 2 menu-list header separator texture.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="346949453%2FFunctions%2F618123257" anchor-label="loadingIndicator" id="346949453%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="loading-indicator.html"><span>loading</span><wbr><span><span>Indicator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="346949453%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="loading-indicator.html"><span class="token function">loadingIndicator</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 5 by 6 three-frame friends loading sprite sheet.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1095643079%2FFunctions%2F618123257" anchor-label="menuBackground" id="1095643079%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="menu-background.html"><span>menu</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1095643079%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="menu-background.html"><span class="token function">menuBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the profile's exact 16 by 16 Minecraft menu texture.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-275520911%2FFunctions%2F618123257" anchor-label="printableAsciiGlyph" id="-275520911%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="printable-ascii-glyph.html"><span>printable</span><wbr><span>Ascii</span><wbr><span><span>Glyph</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-275520911%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="printable-ascii-glyph.html"><span class="token function">printableAsciiGlyph</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">codePoint<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">mask<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies one exact 8 by 8 transparent-white or opaque-white printable-ASCII glyph mask.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-559390986%2FFunctions%2F618123257" anchor-label="progressBarBorder" id="-559390986%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="progress-bar-border.html"><span>progress</span><wbr><span>Bar</span><wbr><span><span>Border</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-559390986%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="progress-bar-border.html"><span class="token function">progressBarBorder</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 12 by 12 bundle progress-bar border sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-872235507%2FFunctions%2F618123257" anchor-label="progressBarFill" id="-872235507%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="progress-bar-fill.html"><span>progress</span><wbr><span>Bar</span><wbr><span><span>Fill</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-872235507%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="progress-bar-fill.html"><span class="token function">progressBarFill</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 6 by 6 bundle progress-bar fill sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1803004135%2FFunctions%2F618123257" anchor-label="progressBarFull" id="-1803004135%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="progress-bar-full.html"><span>progress</span><wbr><span>Bar</span><wbr><span><span>Full</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1803004135%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="progress-bar-full.html"><span class="token function">progressBarFull</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 6 by 6 completed bundle progress-bar fill sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1335146184%2FFunctions%2F618123257" anchor-label="scrollbarBackground" id="-1335146184%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="scrollbar-background.html"><span>scrollbar</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1335146184%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="scrollbar-background.html"><span class="token function">scrollbarBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 6 by 32 tiled nine-slice scrollbar-track sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1121776170%2FFunctions%2F618123257" anchor-label="scrollbarThumb" id="1121776170%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="scrollbar-thumb.html"><span>scrollbar</span><wbr><span><span>Thumb</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1121776170%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="scrollbar-thumb.html"><span class="token function">scrollbarThumb</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 6 by 32 tiled nine-slice scrollbar-thumb sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1889212586%2FFunctions%2F618123257" anchor-label="slider" id="1889212586%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slider.html"><span><span>slider</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1889212586%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider.html"><span class="token function">slider</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 normal Slider track sprite with a one-pixel tiled horizontal border.</p></div><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider.html"><span class="token function">slider</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 normal Slider track sprite and its horizontal sampling policy.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-358176509%2FFunctions%2F618123257" anchor-label="sliderHandle" id="-358176509%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slider-handle.html"><span>slider</span><wbr><span><span>Handle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-358176509%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider-handle.html"><span class="token function">sliderHandle</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 8 by 20 normal Slider handle sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1603774190%2FFunctions%2F618123257" anchor-label="sliderHandleHighlighted" id="1603774190%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slider-handle-highlighted.html"><span>slider</span><wbr><span>Handle</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1603774190%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider-handle-highlighted.html"><span class="token function">sliderHandleHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 8 by 20 highlighted Slider handle sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1594808030%2FFunctions%2F618123257" anchor-label="sliderHighlighted" id="-1594808030%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slider-highlighted.html"><span>slider</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1594808030%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider-highlighted.html"><span class="token function">sliderHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 highlighted Slider track sprite with a one-pixel tiled horizontal border.</p></div><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slider-highlighted.html"><span class="token function">sliderHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a><span class="token punctuation">, </span></span><span class="parameter ">border<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">centerMode<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.component/-nine-slice-center-mode/index.html">NineSliceCenterMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 highlighted Slider track sprite and its horizontal sampling policy.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1975803361%2FFunctions%2F618123257" anchor-label="slotHighlightBack" id="1975803361%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slot-highlight-back.html"><span>slot</span><wbr><span>Highlight</span><wbr><span><span>Back</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1975803361%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slot-highlight-back.html"><span class="token function">slotHighlightBack</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 24 by 24 back layer painted behind a highlighted container Slot.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1500841933%2FFunctions%2F618123257" anchor-label="slotHighlightFront" id="1500841933%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="slot-highlight-front.html"><span>slot</span><wbr><span>Highlight</span><wbr><span><span>Front</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1500841933%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="slot-highlight-front.html"><span class="token function">slotHighlightFront</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 24 by 24 front layer painted over a highlighted container Slot.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1884442912%2FFunctions%2F618123257" anchor-label="textFieldHighlighted" id="-1884442912%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="text-field-highlighted.html"><span>text</span><wbr><span>Field</span><wbr><span><span>Highlighted</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1884442912%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="text-field-highlighted.html"><span class="token function">textFieldHighlighted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 focused TextField sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2004369112%2FFunctions%2F618123257" anchor-label="textFieldNormal" id="2004369112%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="text-field-normal.html"><span>text</span><wbr><span>Field</span><wbr><span><span>Normal</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2004369112%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="text-field-normal.html"><span class="token function">textFieldNormal</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 200 by 20 unfocused TextField sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1225248021%2FFunctions%2F618123257" anchor-label="tooltipBackground" id="1225248021%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tooltip-background.html"><span>tooltip</span><wbr><span><span>Background</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1225248021%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="tooltip-background.html"><span class="token function">tooltipBackground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 100 by 100 tooltip background sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-817234236%2FFunctions%2F618123257" anchor-label="tooltipFrame" id="-817234236%2FFunctions%2F618123257" data-filterable-set=":runtime:minecraft/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:minecraft/main" data-filterable-set=":runtime:minecraft/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tooltip-frame.html"><span>tooltip</span><wbr><span><span>Frame</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-817234236%2FFunctions%2F618123257"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:minecraft/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="tooltip-frame.html"><span class="token function">tooltipFrame</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">image<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.render/-draw-image/index.html">DrawImage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Supplies the exact 100 by 100 tooltip frame sprite.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

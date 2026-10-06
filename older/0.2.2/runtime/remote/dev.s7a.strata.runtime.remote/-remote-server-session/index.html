@@ -1,0 +1,336 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>RemoteServerSession</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../../index.html" tabindex="1">
+                    Strata
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;dev.s7a.strata.runtime.remote/-remote-server-session/index.html&quot;}"><div class="dropdown versions-dropdown" data-role="dropdown">
+  <div class="button button_dropdown versions-dropdown-button" role="combobox" data-role="dropdown-toggle" aria-controls="versions-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Select version" tabindex="0" title="0.2.2"><span class="versions-dropdown-button-text">0.2.2</span></div>
+  <div class="dropdown--list dropdown--list_positioned_left versions-dropdown-data" role="listbox" data-role="dropdown-listbox" aria-label="Versions" id="versions-listbox">
+    <div class="dropdown--header" data-remove-style="true" style="display: none"><span>Select version</span><button class="button" data-role="dropdown-toggle" aria-label="Close versions selection"><i class="ui-kit-icon ui-kit-icon_cross"></i></button></div>
+<a href="../../../../../../runtime/remote/dev.s7a.strata.runtime.remote/-remote-server-session/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="dev"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">dev</span></a><a href="index.html" class="dropdown--option dropdown--option_active dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.2"><span class="dropdown--option-icon dropdown--option-icon_selected"></span><span class="dropdown--option-text">0.2.2</span></a><a href="../../../../../0.2.1/runtime/remote/dev.s7a.strata.runtime.remote/-remote-server-session/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.1</span></a><a href="../../../../../0.2.0/runtime/remote/dev.s7a.strata.runtime.remote/-remote-server-session/index.html" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.2.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.2.0</span></a><a href="../../../../../../not-found-version.html?v=0.1.6" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.6"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.6</span></a><a href="../../../../../../not-found-version.html?v=0.1.5" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.5"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.5</span></a><a href="../../../../../../not-found-version.html?v=0.1.4" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.4"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.4</span></a><a href="../../../../../../not-found-version.html?v=0.1.3" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.3"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.3</span></a><a href="../../../../../../not-found-version.html?v=0.1.2" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.2"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.2</span></a><a href="../../../../../../not-found-version.html?v=0.1.1" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.1"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.1</span></a><a href="../../../../../../not-found-version.html?v=0.1.0" class="dropdown--option dropdown--option-link" style="display: block; padding: 5px; color: #fff" data-remove-style="true" role="option" title="0.1.0"><span class="dropdown--option-icon"></span><span class="dropdown--option-text">0.1.0</span></a></div>
+  <div class="dropdown--overlay"></div>
+</div>
+</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":runtime:remote/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":runtime:remote/main" data-filter=":runtime:remote/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    Strata
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="remote::dev.s7a.strata.runtime.remote/RemoteServerSession///PointingToDeclaration//1145674984">
+  <div class="breadcrumbs"><a href="../../index.html">remote</a><span class="delimiter">/</span><a href="../index.html">dev.s7a.strata.runtime.remote</a><span class="delimiter">/</span><span class="current">RemoteServerSession</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Remote</span><wbr><span>Server</span><wbr><span><span>Session</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">RemoteServerSession</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">title<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">, </span></span><span class="parameter ">supportedTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="../-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="../-remote-message/index.html">RemoteMessage</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">pausesGame<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">eventSession<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">controller<span class="token operator">: </span><a href="../../../../runtime/core/dev.s7a.strata.runtime.spi/-runtime-ui-controller/index.html">RuntimeUiController</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">settings<span class="token operator">: </span><a href="../-remote-ui-settings/index.html">RemoteUiSettings</a><span class="token operator"> = </span>RemoteUiSettings()<span class="token punctuation">, </span></span><span class="parameter ">content<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../../../../api/dev.s7a.strata.element/-element/index.html">Element</a></span></span><span class="token punctuation">)</span> : <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/sya-ri/strata/tree/v0.2.2/runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteServerSession.kt#L31">source</a>)</span></span></div><p class="paragraph">One authoritative screen bound by its transport owner to one authenticated connection. All calls run under the construction execution owner; source callbacks remain owned by the shared core session. Only the current tree and current action table are retained, and terminal cleanup releases both.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="tableheader">Constructors</h2>
+        <div class="table"><a data-name="-1869383280%2FConstructors%2F1145674984" anchor-label="RemoteServerSession" id="-1869383280%2FConstructors%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-togglable="CONSTRUCTOR" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-remote-server-session.html"><span>Remote</span><wbr><span>Server</span><wbr><span><span>Session</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1869383280%2FConstructors%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">identity<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">title<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.projection/-projection-value/index.html">ProjectionValue</a><span class="token punctuation">, </span></span><span class="parameter ">supportedTypes<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">limits<span class="token operator">: </span><a href="../-remote-limits/index.html">RemoteLimits</a><span class="token operator"> = </span>RemoteLimits()<span class="token punctuation">, </span></span><span class="parameter ">send<span class="token operator">: </span><span class="token punctuation">(</span><a href="../-remote-message/index.html">RemoteMessage</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token punctuation">, </span></span><span class="parameter ">pausesGame<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">eventSession<span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">controller<span class="token operator">: </span><a href="../../../../runtime/core/dev.s7a.strata.runtime.spi/-runtime-ui-controller/index.html">RuntimeUiController</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">settings<span class="token operator">: </span><a href="../-remote-ui-settings/index.html">RemoteUiSettings</a><span class="token operator"> = </span>RemoteUiSettings()<span class="token punctuation">, </span></span><span class="parameter ">content<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="../../../../api/dev.s7a.strata.element/-element/index.html">Element</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="154723635%2FProperties%2F1145674984" anchor-label="appliedRevision" id="154723635%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="applied-revision.html"><span>applied</span><wbr><span><span>Revision</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="154723635%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="applied-revision.html">appliedRevision</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">Largest revision the authenticated client has confirmed installing, or zero before its first confirmation. A confirmation does not establish that native rendering or human observation has occurred.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-805229935%2FProperties%2F1145674984" anchor-label="identity" id="-805229935%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="identity.html"><span><span>identity</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-805229935%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="identity.html">identity</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="906301598%2FProperties%2F1145674984" anchor-label="nodeCount" id="906301598%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="node-count.html"><span>node</span><wbr><span><span>Count</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="906301598%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="node-count.html">nodeCount</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Current retained node count for the owning connection's aggregate budget.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-508626351%2FProperties%2F1145674984" anchor-label="requiredTypes" id="-508626351%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="required-types.html"><span>required</span><wbr><span><span>Types</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-508626351%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="required-types.html">requiredTypes</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-set/index.html">Set</a><span class="token operator">&lt;</span><a href="../../../../api/dev.s7a.strata.projection/-projection-type/index.html">ProjectionType</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Exact component, modifier, and nested behavior schemas required by the currently committed screen. The transport owner can withdraw extension ownership and close affected screens before unloading its plugin.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1856710051%2FProperties%2F1145674984" anchor-label="status" id="-1856710051%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="status.html"><span><span>status</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1856710051%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">var </span><a href="status.html">status</a><span class="token operator">: </span><a href="../-remote-session-status/index.html">RemoteSessionStatus</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1918022391%2FProperties%2F1145674984" anchor-label="uiSession" id="-1918022391%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="ui-session.html"><span>ui</span><wbr><span><span>Session</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1918022391%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="ui-session.html">uiSession</a><span class="token operator">: </span><a href="../../../../api/dev.s7a.strata.ui/-ui-session/index.html">UiSession</a></div><div class="brief "><p class="paragraph">Receiver for authenticated events; a transport owner may supply its public facade.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="341831929%2FProperties%2F1145674984" anchor-label="usesNativeSlots" id="341831929%2FProperties%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="uses-native-slots.html"><span>uses</span><wbr><span>Native</span><wbr><span><span>Slots</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="341831929%2FProperties%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">val </span><a href="uses-native-slots.html">usesNativeSlots</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Whether current declarations depend on the native container generation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-530313294%2FFunctions%2F1145674984" anchor-label="applyControl" id="-530313294%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="apply-control.html"><span>apply</span><wbr><span><span>Control</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-530313294%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="apply-control.html"><span class="token function">applyControl</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">request<span class="token operator">: </span><a href="../../../../runtime/core/dev.s7a.strata.runtime.spi/-runtime-ui-control/index.html">RuntimeUiControl</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Receives a request sequenced by the transport's owning public session.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-922027179%2FFunctions%2F1145674984" anchor-label="close" id="-922027179%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="close.html"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-922027179%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><br><div class="symbol monospace"><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">reason<span class="token operator">: </span><a href="../-remote-failure/index.html">RemoteFailure</a><span class="token punctuation">, </span></span><span class="parameter ">notifyPeer<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Ends ownership and optionally notifies the peer; notification failure cannot skip cleanup.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-149842346%2FFunctions%2F1145674984" anchor-label="receive" id="-149842346%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="receive.html"><span><span>receive</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-149842346%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="receive.html"><span class="token function">receive</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="../-remote-message/index.html">RemoteMessage</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Accepts a typed action or declaration acknowledgement from this session's authenticated connection. Future or cross-session acknowledgements fail the session; duplicates and older confirmations are harmless.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="receive.html"><span class="token function">receive</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><a href="../-remote-message/-action/index.html">RemoteMessage.Action</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Validates an ordered peer action before invoking it through the core input boundary. Duplicate or retired endpoints never execute callbacks; their sequences are still acknowledged.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1152046734%2FFunctions%2F1145674984" anchor-label="resynchronize" id="1152046734%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="resynchronize.html"><span><span>resynchronize</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1152046734%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="resynchronize.html"><span class="token function">resynchronize</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sends the last committed complete snapshot without replaying any operations.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-503420014%2FFunctions%2F1145674984" anchor-label="tick" id="-503420014%2FFunctions%2F1145674984" data-filterable-set=":runtime:remote/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":runtime:remote/main" data-filterable-set=":runtime:remote/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="tick.html"><span><span>tick</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-503420014%2FFunctions%2F1145674984"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":runtime:remote/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="tick.html"><span class="token function">tick</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Attaches once, commits the declaration cutoff, and sends an initial snapshot or changed records.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
