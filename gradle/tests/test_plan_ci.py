@@ -61,6 +61,14 @@ class PlanCiTest(unittest.TestCase):
         result = planner.plan(["runtime/web/src/Web.kt", "tools/web/package.json"])
         self.assertTrue(result["qodana"])
 
+    def test_public_modules_keep_the_same_checks_after_moving_to_the_root(self):
+        for module in ("detekt-rules", "performance-testkit"):
+            with self.subTest(module=module):
+                result = planner.plan([f"{module}/src/main/kotlin/Changed.kt"])
+                self.assertEqual(planner.plan(["quality/checks/src/main/kotlin/Changed.kt"]), result)
+                self.assertTrue(result["common"] and result["web"] and result["all_minecraft"] and result["qodana"])
+                self.assertFalse(result["workflow"])
+
 
 if __name__ == "__main__":
     unittest.main()

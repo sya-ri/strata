@@ -50,7 +50,7 @@ internal class PerformanceOwnershipConfigTest {
         assertFalse(filters.isIgnored(Path.of("repository/quality/new-feature/src/jmh/kotlin/NewWorkload.kt")))
         assertFalse(filters.isIgnored(Path.of("repository/integration/paper/src/main/kotlin/Helper.kt")))
         assertFalse(filters.isIgnored(Path.of("repository/integration/velocity/src/main/kotlin/Helper.kt")))
-        assertTrue(filters.isIgnored(Path.of("repository/quality/performance-testkit/src/jvmMain/kotlin/Meter.kt")))
+        assertTrue(filters.isIgnored(Path.of("repository/performance-testkit/src/jvmMain/kotlin/Meter.kt")))
         KotlinAnalysisApiEngine().use { engine ->
             val source =
                 engine.compile(

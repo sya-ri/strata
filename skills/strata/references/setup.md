@@ -14,6 +14,35 @@ Use the same Strata release on both ends and select the Fabric runtime for the c
 | Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 
 
+## Detekt authoring checks
+
+For JVM projects using Detekt, install the optional authoring plugin from Maven Central through `detektPlugins`.
+Use the Detekt version selected in Strata's [version catalog](https://github.com/sya-ri/strata/blob/master/gradle/libs.versions.toml) and verify compatibility before loading it with another Detekt version.
+Keep the plugin version aligned with the Strata release whose authoring contracts you are checking.
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.2.2")
+}
+
+detekt {
+    config.setFrom(files("detekt.yml"))
+}
+
+tasks.named("check") {
+    dependsOn("detektMain")
+}
+```
+
+Merge the `strata` section from the [authoring checks guide](https://github.com/sya-ri/strata/blob/master/docs/guides/authoring-checks.md#installation) into the project's `detekt.yml`, enabling the intended rules.
+Run `./gradlew detektMain` with `strata-api` and application dependencies on that source set's analysis classpath; use the corresponding type-aware task for other source sets.
+An untyped `detekt` run does not verify these rules.
+Review the guide's per-rule examples and detection limits alongside the actual component tree.
+
 ## Local Fabric installation
 
 Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
@@ -21,8 +50,8 @@ Use the component catalog for available primitives and the guides for compositio
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.2.1")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.1")
+    compileOnly("dev.s7a.strata:strata-api:0.2.2")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.2")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
 }
 ```
@@ -32,7 +61,7 @@ Declare the runtime as a required Mod dependency so a production instance cannot
 ```json
 {
   "depends": {
-    "strata": ">=0.2.1"
+    "strata": ">=0.2.2"
   }
 }
 ```
@@ -90,7 +119,7 @@ See [Authoring patterns](patterns.md) for state, input, and resource ownership.
 ## Paper, Folia, and Velocity installation
 
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
-Consumer plugins compile against `dev.s7a.strata:strata-paper-api:0.2.1` or `dev.s7a.strata:strata-velocity-api:0.2.1` and the host API with `compileOnly` dependencies.
+Consumer plugins compile against `dev.s7a.strata:strata-paper-api:0.2.2` or `dev.s7a.strata:strata-velocity-api:0.2.2` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
 Players still install their matching Fabric runtime and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
@@ -118,7 +147,7 @@ Backend switches retire the visible remote screen and renew negotiation before a
 
 Use `onActivate` for ordinary server actions and typed modifiers for subscribed input notifications; see [modifiers](modifiers-and-layout.md#selection-guide).
 Focus, hover, immediate propagation, capture, and IME composition remain client behavior.
-See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [custom components](custom-components.md#remote-extensions) when client code is required.
+See the [remote protocol](https://github.com/sya-ri/strata/blob/master/docs/reference/remote-protocol.md) for editing acknowledgements, explicit replacements, bounds, and terminal reasons, and [remote extensions](remote-extensions.md#remote-extensions) when client code is required.
 
 ## Preview the same screen with Web or Headless
 
@@ -130,9 +159,9 @@ Do not create a second browser-only layout, silently remove unsupported controls
 
 Use a multi-project build with one shared screen project, a JVM consumer, and a JS preview consumer.
 The screen project uses Kotlin Multiplatform with JVM and JS targets and keeps its state, callbacks, and definition factories in `commonMain`.
-For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.2.1")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
+For published dependencies, use `api("dev.s7a.strata:strata-api-multiplatform:0.2.2")` there; `strata-api` is the preserved JVM-only publication and cannot resolve JS variants.
 The JVM project depends on that screen project and supplies the Mod, Paper, or Velocity opening boundary and business actions.
-The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.2.1`, supplying deterministic preview data, action implementations, and browser mounting.
+The JS project depends on the same screen project and `dev.s7a.strata:strata-runtime-web:0.2.2`, supplying deterministic preview data, action implementations, and browser mounting.
 Both consumers call the same definition factory; platform services stay behind shared callbacks or interfaces.
 Include the application's shared JVM classes in the deployable plugin/Mod artifact or provide them through its explicitly supported runtime dependency mechanism; a compile-time project dependency alone does not package them.
 Keep Strata and its Kotlin runtime supplied by the installed Strata runtime instead of shading a second copy into Paper or Velocity consumers.

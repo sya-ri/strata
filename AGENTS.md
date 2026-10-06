@@ -45,6 +45,8 @@ Read the linked contract only when the change touches that area; [architecture](
 - Keep at most one named top-level type per source file.
   A file containing only extensions may group functions for one domain and receiver.
   All documentation and code text is English.
+- Describe consumer evidence through general UI or runtime behavior in PR descriptions, issues, and release notes.
+  Refer to "a consuming project" when context is needed; do not identify the consuming project or its domain-specific code.
 - Do not hard-wrap prose at a fixed column.
   Break documentation lines only at semantic boundaries, normally one sentence per line.
 - Verify dependency, plugin, and external-tool versions against their current primary documentation before adding or updating them.

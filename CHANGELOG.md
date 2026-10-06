@@ -3,6 +3,12 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## 0.2.2 - 2026-10-06
+
+Shared performance testkit, lower retained-frame and text-editing costs, bounded repeated-pattern templates, faster CPU composition, and exact GPU sampled-image presentation on supported adapters. Existing screen and communication contracts remain unchanged; the release notes compare measured results with public 0.2.1 and track remaining performance work.
+
+[Detailed changes and upgrade notes](docs/releases/v0.2.2.md)
+
 ## 0.2.1 - 2026-10-01
 
 Lower drawing and CPU raster costs for tiled nine-slice images with one-texel source axes and opaque fills or sampled images. Patterned tiles, clipping, transparency, input, and public APIs retain their existing behavior.

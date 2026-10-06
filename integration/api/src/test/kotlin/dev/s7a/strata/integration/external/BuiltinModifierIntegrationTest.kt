@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.integration.consumer.createApiOnlyModifier
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.fillMaxHeight
@@ -37,6 +38,16 @@ import org.junit.jupiter.api.Test
  * Verifies built-in modifiers through an external element implemented against the public API.
  */
 internal class BuiltinModifierIntegrationTest {
+    @Test
+    fun apiOnlyConditionalModifierAppliesCustomPaddingAndPreservesTheEmptyValue() {
+        val constraints = Constraints(maxWidth = 200, maxHeight = 100)
+
+        assertEquals(IntSize(106, 46), measure(createApiOnlyModifier(enabled = true), constraints))
+        val empty = createApiOnlyModifier(enabled = false)
+        assertSame(Modifier, empty)
+        assertEquals(IntSize(4, 4), measure(empty, constraints))
+    }
+
     @Test
     fun sizePoliciesClampRangesSupportUnboundedAxesAndPreserveSingleAxisBehavior() {
         assertEquals(

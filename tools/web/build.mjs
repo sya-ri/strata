@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectBrowserPerformance } from '../../quality/performance-testkit/src/jsMain/resources/browser-performance.mjs';
+import { collectBrowserPerformance } from '../../performance-testkit/src/jsMain/resources/browser-performance.mjs';
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(resolve(repository, 'build/js/package.json'));

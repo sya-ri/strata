@@ -30,6 +30,9 @@ internal object StrataSkillValidator {
                 "references/modifiers-and-layout.md",
                 "references/patterns.md",
                 "references/custom-components.md",
+                "references/remote-extensions.md",
+                "references/inventory-style.md",
+                "references/retained-components.md",
             )
         val actual =
             Files.walk(skillRoot).use { stream ->

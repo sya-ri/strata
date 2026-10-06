@@ -270,6 +270,9 @@ Diagnostics belong in the runtime test harness, outside application UI source.
 - Place `ScrollArea` and `Scrollbar` separately and link them with one `ScrollState`. A viewport may omit its scrollbar or place it away from the content.
 - Use `TextAreaState` for multiline editing and link an optional `Scrollbar` to `state.scrollState`. Creating immutable descriptions does not attach the state, and descriptions may be reused after detachment; simultaneous attachment with the same caller-owned state throws `IllegalStateException`.
 - Use the dynamic `VirtualList(itemCount = { ... })` overload for a loadable indexed source. Complete each prepend, append, or same-count row mutation inside its leading or trailing request handler, then call owner-thread `VirtualListState.refresh()` so the list resamples the count, rebuilds visible rows, and preserves its stable-key anchor when possible. The `Int` and `List` overloads are immutable snapshots. Use the same state for index or stable-key jumps.
+- `VirtualList` and `SelectionList` have an explicit `viewportSize` that must fit the constraints delivered to the list. A parent weight or a `fillMax*` modifier changes those constraints, not the requested viewport. Compute the list rectangle from the same allocated geometry as its parent and scrollbar, or keep that rectangle fixed without a competing fill/weight chain. Verify both supported endpoint viewports with a real renderer; compilation does not prove constraint compatibility.
+- The same constraint check applies to controls with an explicit `size`, including `ProgressBar`. Use matching geometry rather than expecting a fill modifier to change that parameter.
+- A single-child `Observe` passes its constraints through. A fixed observation rectangle therefore needs a child with matching explicit geometry or a layout that reserves the rectangle while relaxing its child's constraints. For example, a fixed-size `Stack` can align a naturally sized loading indicator; a larger fixed `Observe` around the indicator alone cannot.
 - Use `ImageSource.Resource(ResourceId(...))` and image backgrounds for resource-pack-replaceable Mod assets.
 - Use `TiledImageSource` for a large logical raster whose tiles load or change independently, keep navigation in `PanZoomState`, compose `panZoom(state)` for direct input, and place fixed-size markers through `TiledImageScope.atContentPosition`; pass a `StateSource<DoubleOffset>` when marker positions change independently.
 - Use `PlayerSkinSource` for profile-driven heads rather than pre-rendering a skin outside the component.
@@ -297,7 +300,7 @@ See [text and editing](https://github.com/sya-ri/strata/blob/master/docs/guides/
 ## Optional CPU backend for offline tools
 
 Ordinary Fabric screens already receive the font backend; keep runtime imports out of UI definitions.
-Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.1` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
+Offline hosts may use `dev.s7a.strata:strata-runtime-minecraft-fonts-lwjgl:0.2.2` with caller-supplied resources, exact target compatibility, matching libraries, and native classifiers.
 The backend does not bundle LWJGL, ICU, Gson, or native binaries; incompatible native generations must run in separate processes.
 Each host owns and closes its backend and bounded caches; snapshots are immutable and shareable.
 Follow [Font resources](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md) for setup and limits, including [numeric provider settings](https://github.com/sya-ri/strata/blob/master/docs/guides/fonts.md#numeric-provider-settings).

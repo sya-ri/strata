@@ -41,6 +41,7 @@ internal class StrataSkillPipelineTest {
                 "skills/strata/references/modifiers-and-layout.md",
                 "skills/strata/references/patterns.md",
                 "skills/strata/references/custom-components.md",
+                "skills/strata/references/remote-extensions.md",
             ),
             first.keys,
         )
@@ -66,13 +67,17 @@ internal class StrataSkillPipelineTest {
         assertModifierReferences(modifiers)
         assertTiledImageReferences(modifiers)
         assertOwnerAwareStateSignatures(modifiers)
+        assertPatternReferences(patterns)
+        assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"))
+        assertDocumentationLinks(first)
+    }
+
+    private fun assertPatternReferences(patterns: String) {
         assertTrue(patterns.contains("itemCount = { items.size }"))
         assertTrue(patterns.contains("request.suggestedCount"))
         assertTrue(patterns.contains("listState.refresh()"))
         assertTrue(patterns.contains("listState.jumpToKey"))
         assertTrue(patterns.contains("The `Int` and `List` overloads are immutable snapshots."))
-        assertTrue(customComponents.contains("https://github.com/sya-ri/strata/blob/master/docs/reference/element-spi.md"))
-        assertDocumentationLinks(first)
     }
 
     @Test
