@@ -35,7 +35,7 @@ internal class GridLayoutIntegrationTest {
                         ExternalElement(
                             width = 2,
                             height = 1,
-                            modifier = Modifier.Empty.align(Alignment.TopStart),
+                            modifier = Modifier.align(Alignment.TopStart),
                         ),
                     )
                     element(ExternalElement(width = 4, height = 3))

@@ -22,7 +22,7 @@ internal fun createColumnShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Column showcase") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(120, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,

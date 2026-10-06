@@ -483,6 +483,22 @@ abstract interface dev.s7a.strata.layout/ParentDataScope { // dev.s7a.strata.lay
     abstract fun <#A1: kotlin/Any> childParentData(kotlin/Int, dev.s7a.strata.layout/ParentDataKey<#A1>): #A1? // dev.s7a.strata.layout/ParentDataScope.childParentData|childParentData(kotlin.Int;dev.s7a.strata.layout.ParentDataKey<0:0>){0§<kotlin.Any>}[0]
 }
 
+abstract interface dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier|null[0]
+    abstract fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.elements|elements(){}[0]
+    open fun then(dev.s7a.strata.modifier/Modifier): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.Modifier){}[0]
+    open fun then(dev.s7a.strata.modifier/ModifierElement): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.ModifierElement){}[0]
+
+    final object Companion : dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier.Companion|null[0]
+        final val Empty // dev.s7a.strata.modifier/Modifier.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+
+        final fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.Companion.elements|elements(){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.modifier/Modifier.Companion.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // dev.s7a.strata.modifier/Modifier.Companion.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // dev.s7a.strata.modifier/Modifier.Companion.toString|toString(){}[0]
+    }
+}
+
 abstract interface dev.s7a.strata.modifier/ModifierElement { // dev.s7a.strata.modifier/ModifierElement|null[0]
     abstract val type // dev.s7a.strata.modifier/ModifierElement.type|{}type[0]
         abstract fun <get-type>(): dev.s7a.strata.modifier/ModifierNodeType<*, *> // dev.s7a.strata.modifier/ModifierElement.type.<get-type>|<get-type>(){}[0]
@@ -2336,20 +2352,6 @@ final class dev.s7a.strata.input/KeyboardModifiers { // dev.s7a.strata.input/Key
     final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.input/KeyboardModifiers.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // dev.s7a.strata.input/KeyboardModifiers.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // dev.s7a.strata.input/KeyboardModifiers.toString|toString(){}[0]
-}
-
-final class dev.s7a.strata.modifier/Modifier { // dev.s7a.strata.modifier/Modifier|null[0]
-    final fun elements(): kotlin.collections/List<dev.s7a.strata.modifier/ModifierElement> // dev.s7a.strata.modifier/Modifier.elements|elements(){}[0]
-    final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.modifier/Modifier.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // dev.s7a.strata.modifier/Modifier.hashCode|hashCode(){}[0]
-    final fun then(dev.s7a.strata.modifier/Modifier): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.Modifier){}[0]
-    final fun then(dev.s7a.strata.modifier/ModifierElement): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.then|then(dev.s7a.strata.modifier.ModifierElement){}[0]
-    final fun toString(): kotlin/String // dev.s7a.strata.modifier/Modifier.toString|toString(){}[0]
-
-    final object Companion { // dev.s7a.strata.modifier/Modifier.Companion|null[0]
-        final val Empty // dev.s7a.strata.modifier/Modifier.Companion.Empty|{}Empty[0]
-            final fun <get-Empty>(): dev.s7a.strata.modifier/Modifier // dev.s7a.strata.modifier/Modifier.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
-    }
 }
 
 final class dev.s7a.strata.node/ChildTransform { // dev.s7a.strata.node/ChildTransform|null[0]

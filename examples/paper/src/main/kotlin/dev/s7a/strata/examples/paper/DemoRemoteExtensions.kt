@@ -49,14 +49,14 @@ public object DemoRemoteExtensions {
      */
     public fun marker(
         color: ArgbColor,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         key: ElementKey<*>? = null,
     ): Element = Marker(color, modifier, key)
 
     /**
      * Creates a custom active modifier whose local press policy is installed separately on each client.
      */
-    public fun activation(callback: () -> Unit): Modifier = Modifier.Empty.then(Activation(callback))
+    public fun activation(callback: () -> Unit): Modifier = Modifier.then(Activation(callback))
 
     /**
      * Installs trusted decoders and factories; this function has no dependency on Paper classes.
@@ -73,7 +73,7 @@ public object DemoRemoteExtensions {
         registry.modifier(activationType, { value ->
             requireNotNull(value as? ProjectionValue.Integer).value.also { require(0 < it) }
         }) { endpoint, actions ->
-            Modifier.Empty.onPress { actions.send(endpoint, activationType, ProjectionValue.Absent) }
+            Modifier.onPress { actions.send(endpoint, activationType, ProjectionValue.Absent) }
         }
     }
 

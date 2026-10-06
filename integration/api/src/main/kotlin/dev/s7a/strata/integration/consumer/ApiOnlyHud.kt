@@ -30,10 +30,10 @@ public fun createApiOnlyHud(): UiDefinition {
     ) {
         Column {
             Text("Count: ${count.value}")
-            Button("Increment", modifier = Modifier.Empty.onActivate { count.value += 1 })
-            Button("Screen", modifier = Modifier.Empty.onActivate { switch(UiPresentation.Screen) })
-            Button("HUD", modifier = Modifier.Empty.onActivate { switch(UiPresentation.Hud) })
-            Button("Close", modifier = Modifier.Empty.onActivate { close() })
+            Button("Increment", modifier = Modifier.onActivate { count.value += 1 })
+            Button("Screen", modifier = Modifier.onActivate { switch(UiPresentation.Screen) })
+            Button("HUD", modifier = Modifier.onActivate { switch(UiPresentation.Hud) })
+            Button("Close", modifier = Modifier.onActivate { close() })
         }
     }
 }

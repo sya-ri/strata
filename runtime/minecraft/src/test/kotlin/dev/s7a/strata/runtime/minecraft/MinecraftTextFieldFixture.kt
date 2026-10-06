@@ -34,7 +34,7 @@ internal object MinecraftTextFieldFixture {
      */
     fun host(
         state: TextFieldState,
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         size: IntSize = fieldSize,
         textStyle: TextStyle = TextStyle.TextField,
     ): MinecraftUiHost =

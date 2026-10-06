@@ -57,7 +57,7 @@ internal class MultipleModifierApplicationsTest {
                 }
                 fun UiScope.correct(modifier: Modifier) {
                     Column(modifier = modifier.padding(2)) {
-                        Text("one", modifier = Modifier.Empty.padding(1))
+                        Text("one", modifier = Modifier.padding(1))
                         Text("two")
                     }
                 }

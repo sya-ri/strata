@@ -86,7 +86,7 @@ internal object MinecraftCanvasGenerationGameTest {
 
     private fun definition(fixture: MinecraftCanvasGenerationFixture): ScreenDefinition =
         ScreenDefinition("Native Canvas changing-generation acceptance") {
-            Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
+            Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
                 Row(spacing = 8) {
                     Canvas(fixture.textureSource, canvasSize)
                     Canvas(fixture.rendererSource, canvasSize)

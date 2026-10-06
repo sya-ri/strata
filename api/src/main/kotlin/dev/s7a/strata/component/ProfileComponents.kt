@@ -33,7 +33,7 @@ import kotlin.jvm.JvmName
 public fun UiScope.ProgressBar(
     progress: Double,
     size: IntSize = IntSize(100, 12),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -54,7 +54,7 @@ public fun UiScope.ProgressBar(
 @OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.LoadingIndicator(
     size: IntSize = IntSize(10, 4),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -80,7 +80,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -110,7 +110,7 @@ public fun <T : Any> UiScope.CycleButton(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
 ) {
@@ -138,7 +138,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -153,7 +153,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(UiText.Literal(label), state, width, enabled, modifier, key)
@@ -167,7 +167,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(UiText.Literal(label), state, width, enabled, modifier, key)
@@ -191,7 +191,7 @@ public fun UiScope.Checkbox(
 public fun UiScope.Image(
     source: ImageSource,
     size: IntSize? = null,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -215,7 +215,7 @@ public fun UiScope.Image(
     source: ImageSource,
     sourceRegion: IntRect,
     size: IntSize = IntSize(sourceRegion.width, sourceRegion.height),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -244,7 +244,7 @@ public fun UiScope.PlayerHead(
     source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer,
     scale: PlayerHeadScale,
     showHat: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     loadingContent: (UiScope.() -> Unit)? = null,
     failureContent: (UiScope.() -> Unit)? = null,
@@ -271,13 +271,13 @@ public fun UiScope.PlayerHead(
  * @throws IllegalStateException when no runtime screen evaluation is active.
  */
 @Deprecated(
-    message = "Use the PlayerHeadScale overload for pixel-perfect integer scaling. Arbitrary sizes remain supported here and use bilinear interpolation when size is not divisible by eight.",
+    message = "Use the PlayerHeadScale overload for pixel-perfect integer scaling. Arbitrary sizes remain supported here and use bilinear interpolation when size is not divisible by eight. Scheduled for removal in 1.0.0.",
 )
 public fun UiScope.PlayerHead(
     source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer,
     size: Int = 24,
     showHat: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     loadingContent: (UiScope.() -> Unit)? = null,
     failureContent: (UiScope.() -> Unit)? = null,
@@ -323,7 +323,7 @@ private fun UiScope.emitPlayerHead(
 public fun UiScope.Slot(
     bind: SlotBinding? = null,
     highlightable: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -348,7 +348,7 @@ public fun UiScope.Slot(
 public fun UiScope.Text(
     text: UiText,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(text, TextLayout.SingleLine, style, modifier, key)
@@ -368,7 +368,7 @@ public fun UiScope.Text(
 public fun UiScope.Text(
     text: String,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(UiText.Literal(text), style, modifier, key)
@@ -393,7 +393,7 @@ public fun UiScope.Text(
     text: UiText,
     font: ResourceId,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(text.withFont(font), style, modifier, key)
@@ -415,7 +415,7 @@ public fun UiScope.Text(
     text: String,
     font: ResourceId,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(UiText.Literal(text), font, style, modifier, key)
@@ -442,7 +442,7 @@ public fun UiScope.Text(
     text: UiText,
     layout: TextLayout,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -456,7 +456,7 @@ public fun UiScope.Text(
     text: String,
     layout: TextLayout,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(UiText.Literal(text), layout, style, modifier, key)
@@ -484,7 +484,7 @@ public fun UiScope.Text(
     layout: TextLayout,
     font: ResourceId,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(text.withFont(font), layout, style, modifier, key)
@@ -498,7 +498,7 @@ public fun UiScope.Text(
     layout: TextLayout,
     font: ResourceId,
     style: TextStyle = TextStyle.Normal,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Text(UiText.Literal(text), layout, font, style, modifier, key)
@@ -523,7 +523,7 @@ public fun UiScope.TextField(
     state: TextFieldState,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, IntSize(200, 20), enabled, textStyle, modifier, key)
@@ -548,7 +548,7 @@ public fun UiScope.TextField(
     size: IntSize,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -572,7 +572,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(state, IntSize(200, 20), font, enabled, textStyle, modifier, key)
@@ -602,7 +602,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: Boolean = true,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -640,7 +640,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -679,7 +679,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -707,7 +707,7 @@ public fun UiScope.Button(
     label: UiText,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -732,7 +732,7 @@ public fun UiScope.Button(
     label: String,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(UiText.Literal(label), width, enabled, modifier, key)
@@ -762,7 +762,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()
@@ -784,7 +784,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(UiText.Literal(label), selected, width, enabled, indicator, modifier, key)
@@ -804,7 +804,7 @@ public fun UiScope.Tab(
 @OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.ScrollArea(
     state: ScrollState,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     scrollRate: Int = 9,
     content: UiScope.() -> Unit,
@@ -830,7 +830,7 @@ public fun UiScope.ScrollArea(
 @OptIn(InternalStrataRuntimeApi::class)
 public fun UiScope.Scrollbar(
     state: ScrollState,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     checkUsable()

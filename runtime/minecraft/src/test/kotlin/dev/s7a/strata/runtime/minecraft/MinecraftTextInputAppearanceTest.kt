@@ -48,7 +48,7 @@ internal class MinecraftTextInputAppearanceTest {
                 val area = TextAreaState("A\nB")
                 val definition =
                     ScreenDefinition("default compatibility") {
-                        val focus = Modifier.Empty.initialFocus()
+                        val focus = Modifier.initialFocus()
                         when {
                             multiline && explicit -> TextArea(area, TextInputAppearance.Default, TextAreaViewport.Size(size), modifier = focus)
                             multiline -> TextArea(area, TextAreaViewport.Size(size), modifier = focus)
@@ -73,7 +73,7 @@ internal class MinecraftTextInputAppearanceTest {
         val background = ArgbColor(0xFFB7CDE3.toInt())
         createMinecraftUiHost(
             ScreenDefinition("transparent frame") {
-                TextField(TextFieldState(), transparent, size, modifier = Modifier.Empty.background(background))
+                TextField(TextFieldState(), transparent, size, modifier = Modifier.background(background))
             },
             MinecraftProfileFixture.create(),
         ).use { host ->
@@ -113,9 +113,9 @@ internal class MinecraftTextInputAppearanceTest {
             ScreenDefinition("appearance") {
                 Observe(style) { current ->
                     if (multiline) {
-                        TextArea(area, current, TextAreaViewport.Size(size), enabled = enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = key)
+                        TextArea(area, current, TextAreaViewport.Size(size), enabled = enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.initialFocus(), key = key)
                     } else {
-                        TextField(field, current, size, enabled = enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = key)
+                        TextField(field, current, size, enabled = enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.initialFocus(), key = key)
                     }
                 }
             }

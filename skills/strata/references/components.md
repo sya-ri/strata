@@ -21,7 +21,7 @@ Row places an ordered sibling sequence on one horizontal main axis, with typed a
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#row)
 
 ```kotlin
-fun UiScope.Row(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: RowScope.() -> Unit)
+fun UiScope.Row(modifier: Modifier = Modifier, key: ElementKey<*>? = null, spacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: RowScope.() -> Unit)
 ```
 
 <a id="flow-row"></a>
@@ -36,7 +36,7 @@ FlowRow wraps an ordered sibling sequence at the available width and arranges ea
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#flow-row)
 
 ```kotlin
-fun UiScope.FlowRow(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: FlowRowScope.() -> Unit)
+fun UiScope.FlowRow(modifier: Modifier = Modifier, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, horizontalArrangement: Arrangement = Arrangement.Start, verticalAlignment: VerticalAlignment = VerticalAlignment.Top, content: FlowRowScope.() -> Unit)
 ```
 
 <a id="column"></a>
@@ -51,7 +51,7 @@ Column places an ordered sibling sequence on one vertical main axis, with typed 
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#column)
 
 ```kotlin
-fun UiScope.Column(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, spacing: Int = 0, verticalArrangement: Arrangement = Arrangement.Start, horizontalAlignment: HorizontalAlignment = HorizontalAlignment.Start, content: ColumnScope.() -> Unit)
+fun UiScope.Column(modifier: Modifier = Modifier, key: ElementKey<*>? = null, spacing: Int = 0, verticalArrangement: Arrangement = Arrangement.Start, horizontalAlignment: HorizontalAlignment = HorizontalAlignment.Start, content: ColumnScope.() -> Unit)
 ```
 
 <a id="stack"></a>
@@ -66,7 +66,7 @@ Stack is the explicit overlay primitive: children share one content rectangle, r
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#stack)
 
 ```kotlin
-fun UiScope.Stack(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, contentAlignment: Alignment = Alignment.TopStart, content: StackScope.() -> Unit)
+fun UiScope.Stack(modifier: Modifier = Modifier, key: ElementKey<*>? = null, contentAlignment: Alignment = Alignment.TopStart, content: StackScope.() -> Unit)
 ```
 
 <a id="grid"></a>
@@ -81,7 +81,7 @@ Grid assigns children row-major to a fixed column count, measures each column an
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#grid)
 
 ```kotlin
-fun UiScope.Grid(columns: Int, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, contentAlignment: Alignment = Alignment.TopStart, content: GridScope.() -> Unit)
+fun UiScope.Grid(columns: Int, modifier: Modifier = Modifier, key: ElementKey<*>? = null, horizontalSpacing: Int = 0, verticalSpacing: Int = 0, contentAlignment: Alignment = Alignment.TopStart, content: GridScope.() -> Unit)
 ```
 
 <a id="spacer"></a>
@@ -96,7 +96,7 @@ Spacer is an empty measurable primitive for genuine visual separators, connector
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#spacer)
 
 ```kotlin
-fun UiScope.Spacer(modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Spacer(modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="observe"></a>
@@ -111,28 +111,28 @@ Observe recomputes one region from up to 22 typed StateSource values, for condit
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#observe)
 
 ```kotlin
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, state22: StateSource<V22>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8) -> Unit)
-fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7) -> Unit)
-fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6) -> Unit)
-fun <V1, V2, V3, V4, V5> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5) -> Unit)
-fun <V1, V2, V3, V4> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4) -> Unit)
-fun <V1, V2, V3> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3) -> Unit)
-fun <V1, V2> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1, V2) -> Unit)
-fun <V1> UiScope.Observe(state1: StateSource<V1>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(V1) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, state22: StateSource<V22>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, state21: StateSource<V21>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, state20: StateSource<V20>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, state19: StateSource<V19>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, state18: StateSource<V18>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, state17: StateSource<V17>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, state16: StateSource<V16>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, state15: StateSource<V15>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, state14: StateSource<V14>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, state13: StateSource<V13>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, state12: StateSource<V12>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, state11: StateSource<V11>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9, V10> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, state10: StateSource<V10>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9, V10) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8, V9> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, state9: StateSource<V9>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8, V9) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7, V8> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, state8: StateSource<V8>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7, V8) -> Unit)
+fun <V1, V2, V3, V4, V5, V6, V7> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, state7: StateSource<V7>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6, V7) -> Unit)
+fun <V1, V2, V3, V4, V5, V6> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, state6: StateSource<V6>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5, V6) -> Unit)
+fun <V1, V2, V3, V4, V5> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, state5: StateSource<V5>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4, V5) -> Unit)
+fun <V1, V2, V3, V4> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, state4: StateSource<V4>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3, V4) -> Unit)
+fun <V1, V2, V3> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, state3: StateSource<V3>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2, V3) -> Unit)
+fun <V1, V2> UiScope.Observe(state1: StateSource<V1>, state2: StateSource<V2>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1, V2) -> Unit)
+fun <V1> UiScope.Observe(state1: StateSource<V1>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(V1) -> Unit)
 ```
 
 <a id="text"></a>
@@ -147,18 +147,18 @@ Text renders Unicode literals and composed text from the selected resource pack.
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text)
 
 ```kotlin
-fun UiScope.Text(text: StateSource<String>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: StateSource<String>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: StateSource<UiText>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: StateSource<UiText>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: String, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: String, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: String, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: String, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: UiText, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: UiText, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: UiText, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<String>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<String>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<UiText>, font: ResourceId, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: StateSource<UiText>, layout: TextLayout = TextLayout.SingleLine, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: String, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, layout: TextLayout, font: ResourceId, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, layout: TextLayout, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Text(text: UiText, style: TextStyle = TextStyle.Normal, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="text-field"></a>
@@ -173,22 +173,22 @@ TextField uses the 200 by 20 Minecraft EditBox sprites with Unicode scalar editi
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-field)
 
 ```kotlin
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, appearance: TextInputAppearance, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextField(state: TextFieldState, size: IntSize, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="text-area"></a>
@@ -203,14 +203,14 @@ TextArea supports note editing and message drafts with multiline scalar navigati
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#text-area)
 
 ```kotlin
-fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, appearance: TextInputAppearance, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: Boolean = true, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.TextArea(state: TextAreaState, viewport: TextAreaViewport, font: ResourceId, enabled: StateSource<Boolean>, textStyle: TextStyle = TextStyle.TextField, wrap: TextWrap = TextWrap.Word, lineSpacing: Int = 0, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="button"></a>
@@ -225,14 +225,14 @@ Button renders a label and enabled state. It owns no implicit focus or activatio
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#button)
 
 ```kotlin
-fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: String, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: String, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: UiText, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Button(label: UiText, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<String>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: StateSource<UiText>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: String, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: String, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: UiText, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Button(label: UiText, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="checkbox"></a>
@@ -247,14 +247,14 @@ Checkbox reproduces the verified 20-pixel Minecraft checkbox surface, label spac
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#checkbox)
 
 ```kotlin
-fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<String>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: StateSource<UiText>, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: String, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Checkbox(label: UiText, state: CheckboxState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="cycle-button"></a>
@@ -269,10 +269,10 @@ CycleButton reuses the verified button surface for a finite generic option seque
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#cycle-button)
 
 ```kotlin
-fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
-fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
-fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
-fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) })
+fun <T : Any> UiScope.CycleButton(state: CycleButtonState<T>, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, label: StateSource<(T) -> UiText>)
 ```
 
 <a id="slider"></a>
@@ -287,14 +287,14 @@ Slider reproduces Minecraft's profile-backed track and handle while normalizing 
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#slider)
 
 ```kotlin
-fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<String>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: StateSource<UiText>, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: String, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Slider(label: UiText, state: SliderState, width: Int = 150, enabled: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="tab"></a>
@@ -309,22 +309,22 @@ Tab combines the verified button surface with external selection semantics and a
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#tab)
 
 ```kotlin
-fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<String>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: StateSource<UiText>, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: String, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: Boolean, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: Boolean = true, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Tab(label: UiText, selected: StateSource<Boolean>, width: Int = 150, enabled: StateSource<Boolean>, indicator: TabSelectionIndicator = TabSelectionIndicator.Underline, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="scroll-area"></a>
@@ -339,7 +339,7 @@ ScrollArea reproduces the verified Minecraft menu-list background, clipping, sep
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#scroll-area)
 
 ```kotlin
-fun UiScope.ScrollArea(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, scrollRate: Int = 9, content: UiScope.() -> Unit)
+fun UiScope.ScrollArea(state: ScrollState, modifier: Modifier = Modifier, key: ElementKey<*>? = null, scrollRate: Int = 9, content: UiScope.() -> Unit)
 ```
 
 <a id="scrollbar"></a>
@@ -354,7 +354,7 @@ Scrollbar reproduces the verified tiled track and proportional thumb while remai
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#scrollbar)
 
 ```kotlin
-fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Scrollbar(state: ScrollState, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="virtual-list"></a>
@@ -369,22 +369,22 @@ VirtualList retains only visible fixed-height rows plus bounded overscan, suppor
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#virtual-list)
 
 ```kotlin
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: () -> Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: ((K) -> Int?)? = null, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(itemCount: Int, itemAt: (Int) -> T, keyAt: (Int) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, indexOfKey: (K) -> Int? = { target -> (0 until itemCount).firstOrNull { index -> keyAt(index) == target } }, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: List<T>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.VirtualList(items: StateSource<List<T>>, keyOf: (T) -> K, state: VirtualListState<K>, viewportSize: IntSize, rowHeight: Int, scrollRate: Int = 10, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 ```
 
 <a id="selection-list"></a>
@@ -399,14 +399,14 @@ SelectionList adds caller-owned selection and typed change actions to virtual ro
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#selection-list)
 
 ```kotlin
-fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
-fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: List<T>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: Boolean = false, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: Boolean = false, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
+fun <T : Any, K : Any> UiScope.SelectionList(items: StateSource<List<T>>, keyOf: (T) -> K, state: SelectionListState<K>, viewportSize: IntSize, rowHeight: Int, canLoadLeading: StateSource<Boolean>, canLoadTrailing: StateSource<Boolean>, scrollRate: Int = 10, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: UiScope.(T) -> Unit)
 ```
 
 <a id="image"></a>
@@ -421,10 +421,10 @@ Image maps one immutable resource-pack image to an exact logical size with deter
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#image)
 
 ```kotlin
-fun UiScope.Image(source: ImageSource, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Image(source: StateSource<ImageSource>, size: IntSize? = null, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Image(source: StateSource<ImageSource>, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Image(source: ImageSource, size: IntSize? = null, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Image(source: ImageSource, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Image(source: StateSource<ImageSource>, size: IntSize? = null, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Image(source: StateSource<ImageSource>, sourceRegion: IntRect, size: IntSize = IntSize(sourceRegion.width, sourceRegion.height), modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="canvas"></a>
@@ -439,8 +439,8 @@ Canvas displays external CPU frames or native drawing in an input-passive rectan
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#canvas)
 
 ```kotlin
-fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.Canvas(source: StateSource<CanvasSource>, size: IntSize, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.Canvas(source: CanvasSource, size: IntSize, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.Canvas(source: StateSource<CanvasSource>, size: IntSize, modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="tiled-image"></a>
@@ -455,8 +455,8 @@ TiledImage displays maps, scans, or schematics from independently revisioned imm
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#tiled-image)
 
 ```kotlin
-fun UiScope.TiledImage(source: StateSource<TiledImageSource>, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
-fun UiScope.TiledImage(source: TiledImageSource, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
+fun UiScope.TiledImage(source: StateSource<TiledImageSource>, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
+fun UiScope.TiledImage(source: TiledImageSource, state: PanZoomState, size: IntSize, fit: PanZoomFit = PanZoomFit.Contain, cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: TiledImageScope.() -> Unit = {})
 ```
 
 <a id="slot"></a>
@@ -471,10 +471,10 @@ Slot reproduces the native 18 by 18 hit region and 24 by 24 back-item-front high
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#slot)
 
 ```kotlin
-fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
-fun UiScope.Slot(bind: SlotBinding? = null, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
-fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
-fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: SlotBinding? = null, highlightable: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: SlotBinding? = null, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
+fun UiScope.Slot(bind: StateSource<SlotBinding?>, highlightable: StateSource<Boolean>, modifier: Modifier = Modifier, key: ElementKey<*>? = null, content: (UiScope.() -> Unit)? = null)
 ```
 
 <a id="player-head"></a>
@@ -489,9 +489,9 @@ PlayerHead provides face-then-hat rendering from a skin. Prefer `PlayerHeadScale
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#player-head)
 
 ```kotlin
-fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
-fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, size: Int = 24, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
-fun UiScope.PlayerHead(source: StateSource<PlayerSkinSource>, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
+fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
+fun UiScope.PlayerHead(source: PlayerSkinSource = PlayerSkinSource.CurrentPlayer, size: Int = 24, showHat: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
+fun UiScope.PlayerHead(source: StateSource<PlayerSkinSource>, scale: PlayerHeadScale, showHat: Boolean = true, modifier: Modifier = Modifier, key: ElementKey<*>? = null, loadingContent: (UiScope.() -> Unit)? = null, failureContent: (UiScope.() -> Unit)? = null)
 ```
 
 <a id="loading-indicator"></a>
@@ -506,7 +506,7 @@ LoadingIndicator displays the profile's discrete loading animation using host fr
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#loading-indicator)
 
 ```kotlin
-fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.LoadingIndicator(size: IntSize = IntSize(10, 4), modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```
 
 <a id="progress-bar"></a>
@@ -521,6 +521,6 @@ ProgressBar uses the reusable bundle progress border, partial fill, and complete
 - [Showcase image and compiled example](https://github.com/sya-ri/strata/blob/master/docs/reference/components.md#progress-bar)
 
 ```kotlin
-fun UiScope.ProgressBar(progress: Double, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
-fun UiScope.ProgressBar(progress: StateSource<Double>, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier.Empty, key: ElementKey<*>? = null)
+fun UiScope.ProgressBar(progress: Double, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier, key: ElementKey<*>? = null)
+fun UiScope.ProgressBar(progress: StateSource<Double>, size: IntSize = IntSize(100, 12), modifier: Modifier = Modifier, key: ElementKey<*>? = null)
 ```

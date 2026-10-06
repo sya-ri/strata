@@ -176,13 +176,13 @@ internal object MinecraftFontParityFixture {
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Independent font parity") {
-            Stack(modifier = Modifier.Empty.fillMaxSize().background(ArgbColor(background))) {
+            Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(background))) {
                 rows.forEach { row ->
                     Text(
                         row.text,
                         row.font,
                         row.style,
-                        modifier = Modifier.Empty.padding(left = LEFT, top = row.top),
+                        modifier = Modifier.padding(left = LEFT, top = row.top),
                     )
                 }
             }

@@ -51,16 +51,16 @@ internal fun createProgressScreenDefinition(
     ScreenDefinition("Power milestones") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(320, 180)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .menuBackground(),
             contentAlignment = Alignment.Center,
         ) {
-            Stack(modifier = Modifier.Empty.size(252, 140)) {
+            Stack(modifier = Modifier.size(252, 140)) {
                 Image(window, sourceRegion = IntRect(0, 0, 252, 140))
                 Column(
-                    modifier = Modifier.Empty.padding(left = 9, top = 6, right = 9, bottom = 9),
+                    modifier = Modifier.padding(left = 9, top = 6, right = 9, bottom = 9),
                     spacing = 4,
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
@@ -72,7 +72,7 @@ internal fun createProgressScreenDefinition(
                 "Done",
                 width = 200,
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .padding(bottom = 6)
                         .align(Alignment.BottomCenter)
                         .onActivate {},
@@ -98,7 +98,7 @@ internal fun UiScope.ExampleProgressGraph(
     background: ImageSource,
     obtained: ImageSource,
     unobtained: ImageSource,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Row(
@@ -108,13 +108,13 @@ internal fun UiScope.ExampleProgressGraph(
         verticalAlignment = VerticalAlignment.Center,
     ) {
         progressNode(obtained, ArgbColor(0xFF22D3EE.toInt()), "Generator")
-        Spacer(modifier = Modifier.Empty.size(32, 2).background(connectionColor))
+        Spacer(modifier = Modifier.size(32, 2).background(connectionColor))
         Column(
             spacing = 4,
             horizontalAlignment = HorizontalAlignment.Center,
         ) {
             progressNode(obtained, ArgbColor(0xFFFBBF24.toInt()), "Storage")
-            Spacer(modifier = Modifier.Empty.size(2, 12).background(connectionColor))
+            Spacer(modifier = Modifier.size(2, 12).background(connectionColor))
             progressNode(unobtained, ArgbColor(0xFFA78BFA.toInt()), "Automation")
         }
     }
@@ -130,11 +130,11 @@ private fun UiScope.progressNode(
         spacing = 1,
     ) {
         Stack(
-            modifier = Modifier.Empty.size(26, 26),
+            modifier = Modifier.size(26, 26),
             contentAlignment = Alignment.Center,
         ) {
             Image(frame)
-            Spacer(modifier = Modifier.Empty.size(16, 16).background(color))
+            Spacer(modifier = Modifier.size(16, 16).background(color))
         }
         Text(label)
     }

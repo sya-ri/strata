@@ -23,7 +23,7 @@ internal object MinecraftNumericFontAperture {
     /**
      * Creates an active layout modifier for one immutable numeric row.
      */
-    fun modifier(row: MinecraftNumericFontFixture.Row): Modifier = Modifier.Empty.then(Description(IntOffset(row.left, row.top)))
+    fun modifier(row: MinecraftNumericFontFixture.Row): Modifier = Modifier.then(Description(IntOffset(row.left, row.top)))
 
     private data class Description(
         val origin: IntOffset,

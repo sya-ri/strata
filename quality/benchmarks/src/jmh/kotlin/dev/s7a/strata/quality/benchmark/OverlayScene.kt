@@ -35,10 +35,10 @@ internal class OverlayScene(
     private val session =
         createRuntimeUiSession {
             evaluateComponentTree {
-                Stack(Modifier.Empty.size(size.width, size.height)) {
-                    Observe(source) { color -> Spacer(Modifier.Empty.size(size.width, size.height).background(color)) }
+                Stack(Modifier.size(size.width, size.height)) {
+                    Observe(source) { color -> Spacer(Modifier.size(size.width, size.height).background(color)) }
                     repeat(layers) { index ->
-                        Spacer(Modifier.Empty.size(size.width, size.height).background(ArgbColor(0x10FFFFFF)), key = ElementKey(index))
+                        Spacer(Modifier.size(size.width, size.height).background(ArgbColor(0x10FFFFFF)), key = ElementKey(index))
                     }
                 }
             }

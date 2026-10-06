@@ -102,7 +102,7 @@ internal class TiledImageContractTest {
 
         assertThrows(IllegalStateException::class.java) {
             with(escaped) {
-                Modifier.Empty.atContentPosition(DoubleOffset.Zero)
+                Modifier.atContentPosition(DoubleOffset.Zero)
             }
         }
     }

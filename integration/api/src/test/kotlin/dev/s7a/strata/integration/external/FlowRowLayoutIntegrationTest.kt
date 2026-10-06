@@ -75,7 +75,7 @@ internal class FlowRowLayoutIntegrationTest {
         )
         tree.close()
 
-        val filled = wrappedTree(modifier = Modifier.Empty.fillMaxWidth(), arrangement = Arrangement.End)
+        val filled = wrappedTree(modifier = Modifier.fillMaxWidth(), arrangement = Arrangement.End)
         assertEquals(IntSize(9, 9), filled.measure(Constraints(maxWidth = 9)))
         filled.layout()
         assertEquals(
@@ -159,7 +159,7 @@ internal class FlowRowLayoutIntegrationTest {
 
     @Test
     fun containerPaddingReducesWrapWidthAndTranslatesEveryLine() {
-        val tree = wrappedTree(modifier = Modifier.Empty.padding(horizontal = 2, vertical = 3))
+        val tree = wrappedTree(modifier = Modifier.padding(horizontal = 2, vertical = 3))
 
         assertEquals(IntSize(12, 15), tree.measure(Constraints(maxWidth = 12)))
         tree.layout()
@@ -222,7 +222,7 @@ internal class FlowRowLayoutIntegrationTest {
     }
 
     private fun wrappedTree(
-        modifier: Modifier = Modifier.Empty,
+        modifier: Modifier = Modifier,
         arrangement: Arrangement = Arrangement.Start,
     ): UiTree =
         UiTree().also { tree ->

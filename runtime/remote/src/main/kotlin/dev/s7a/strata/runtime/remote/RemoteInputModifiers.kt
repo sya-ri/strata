@@ -20,13 +20,13 @@ internal object RemoteInputModifiers {
      * Registers built-in focus targets and event notifications before negotiation.
      */
     fun register(registry: RemoteRegistry) {
-        registry.modifier(BuiltinProjection.Focusable.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier.Empty.focusable() }
-        registry.modifier(BuiltinProjection.InitialFocus.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier.Empty.initialFocus() }
+        registry.modifier(BuiltinProjection.Focusable.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier.focusable() }
+        registry.modifier(BuiltinProjection.InitialFocus.type, { ProjectionFields(it).finish() }) { _, _ -> Modifier.initialFocus() }
         registry.modifier(BuiltinProjection.Hover.type, ::endpoint) { endpoint, actions ->
-            Modifier.Empty.onHover { event -> actions.send(endpoint, BuiltinProjection.Hover.type, ProjectionValue.Flag(event == PointerHoverEvent.Enter)) }
+            Modifier.onHover { event -> actions.send(endpoint, BuiltinProjection.Hover.type, ProjectionValue.Flag(event == PointerHoverEvent.Enter)) }
         }
         registry.modifier(BuiltinProjection.FocusChanged.type, ::endpoint) { endpoint, actions ->
-            Modifier.Empty.onFocusChanged { event -> actions.send(endpoint, BuiltinProjection.FocusChanged.type, ProjectionValue.Flag(event == FocusEvent.Gained)) }
+            Modifier.onFocusChanged { event -> actions.send(endpoint, BuiltinProjection.FocusChanged.type, ProjectionValue.Flag(event == FocusEvent.Gained)) }
         }
     }
 

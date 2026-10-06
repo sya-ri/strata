@@ -124,7 +124,7 @@ internal object TextInputAppearanceScenario {
         field: TextFieldState,
         area: TextAreaState,
     ) {
-        Column(modifier = Modifier.Empty.size(160, 64).background(ArgbColor(0xFF000000.toInt())), spacing = 4) {
+        Column(modifier = Modifier.size(160, 64).background(ArgbColor(0xFF000000.toInt())), spacing = 4) {
             TextField(field, appearance, IntSize(160, 20), textStyle = TextStyle.ContainerLabel, key = fieldKey)
             TextArea(area, appearance, TextAreaViewport.Size(IntSize(160, 40)), textStyle = TextStyle.ContainerLabel, key = areaKey)
         }

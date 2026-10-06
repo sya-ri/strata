@@ -39,7 +39,7 @@ internal class SkillViewportContractTest {
         val definition =
             UiDefinition("Mismatched progress") {
                 Column {
-                    ProgressBar(0.5, size = IntSize(140, 8), modifier = Modifier.Empty.fillMaxWidth())
+                    ProgressBar(0.5, size = IntSize(140, 8), modifier = Modifier.fillMaxWidth())
                 }
             }
         createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
@@ -86,7 +86,7 @@ internal class SkillViewportContractTest {
                     state = state,
                     viewportSize = IntSize(130, 180),
                     rowHeight = 28,
-                    modifier = Modifier.Empty.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                 ) { Text(it) }
             }
         createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->

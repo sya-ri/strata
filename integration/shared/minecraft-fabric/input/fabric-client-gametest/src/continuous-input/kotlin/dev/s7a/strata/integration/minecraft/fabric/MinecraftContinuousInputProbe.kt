@@ -42,10 +42,10 @@ internal class MinecraftContinuousInputProbe {
         requireOwner()
         return ScreenDefinition("Continuous native input") {
             Stack {
-                ScrollArea(state, modifier = Modifier.Empty.size(100, 50)) {
+                ScrollArea(state, modifier = Modifier.size(100, 50)) {
                     Spacer(
                         modifier =
-                            Modifier.Empty
+                            Modifier
                                 .size(80, 180)
                                 .background(ArgbColor(0xFFABCDEF.toInt()))
                                 .onPointerEvent { event, local -> observe(event, local) },

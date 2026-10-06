@@ -43,7 +43,7 @@ internal class MinecraftCanvasLifecycleScene(
      */
     internal fun definition(): ScreenDefinition =
         ScreenDefinition("Native Canvas lifetime acceptance") {
-            Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
+            Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
                 VirtualList(
                     itemCount = { if (entry == null) 0 else 1 },
                     itemAt = { checkNotNull(entry) },

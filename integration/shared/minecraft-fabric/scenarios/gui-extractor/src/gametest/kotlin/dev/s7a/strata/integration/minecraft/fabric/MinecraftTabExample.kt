@@ -24,7 +24,7 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Tab showcase") {
         Row(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             spacing = 1,
@@ -36,13 +36,13 @@ internal fun createTabShowcaseScreenDefinition(): ScreenDefinition =
                 selected = true,
                 width = 73,
                 indicator = TabSelectionIndicator.Underline,
-                modifier = Modifier.Empty.onActivate {},
+                modifier = Modifier.onActivate {},
             )
             Tab(
                 "Hidden",
                 selected = false,
                 width = 73,
-                modifier = Modifier.Empty.onActivate {},
+                modifier = Modifier.onActivate {},
             )
         }
     }

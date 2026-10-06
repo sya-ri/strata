@@ -40,13 +40,13 @@ internal fun createTextAreaShowcaseScreenDefinition(): ScreenDefinition {
         )
     return ScreenDefinition("TextArea showcase") {
         Row(
-            modifier = Modifier.Empty.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(226, 80).background(ArgbColor(0xFF000000.toInt())),
             spacing = 4,
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = VerticalAlignment.Center,
         ) {
             TextArea(state, viewport = TextAreaViewport.Size(size))
-            Scrollbar(state.scrollState, modifier = Modifier.Empty.size(6, size.height))
+            Scrollbar(state.scrollState, modifier = Modifier.size(6, size.height))
         }
     }
 }

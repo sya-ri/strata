@@ -145,13 +145,13 @@ internal class HeadlessTiledImageTest {
                     cachePolicy = TiledImageCachePolicy(maxEntries = 2, maxBytes = 8L, overscanTiles = 0),
                 ) {
                     Spacer(
-                        Modifier.Empty
+                        Modifier
                             .size(1, 1)
                             .background(ArgbColor(0xFFFF0000.toInt()))
                             .atContentPosition(DoubleOffset(1.0, 0.5)),
                     )
                     Spacer(
-                        Modifier.Empty
+                        Modifier
                             .size(1, 1)
                             .background(ArgbColor(0xFF00FF00.toInt()))
                             .atContentPosition(DoubleOffset(bounds.right.toDouble() - 1.0, 0.5)),

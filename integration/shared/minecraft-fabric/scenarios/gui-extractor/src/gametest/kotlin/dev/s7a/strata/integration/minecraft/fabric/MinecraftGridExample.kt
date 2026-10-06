@@ -21,7 +21,7 @@ internal fun createGridShowcaseScreenDefinition(): ScreenDefinition =
         Grid(
             columns = 3,
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(64, 64)
                     .background(ArgbColor(0xFF000000.toInt())),
             horizontalSpacing = 2,

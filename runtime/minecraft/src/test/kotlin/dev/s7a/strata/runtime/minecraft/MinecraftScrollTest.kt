@@ -43,10 +43,10 @@ internal class MinecraftScrollTest {
             val host =
                 createMinecraftUiHost(
                     ScreenDefinition("continuous scroll") {
-                        ScrollArea(state, modifier = Modifier.Empty.size(100, 50)) {
+                        ScrollArea(state, modifier = Modifier.size(100, 50)) {
                             Spacer(
                                 modifier =
-                                    Modifier.Empty.size(80, 180).background(contentColor).onPointerEvent { event, local ->
+                                    Modifier.size(80, 180).background(contentColor).onPointerEvent { event, local ->
                                         if (event is PointerEvent.Scroll) {
                                             InputResult.Ignored
                                         } else {
@@ -158,10 +158,10 @@ internal class MinecraftScrollTest {
             createMinecraftUiHost(
                 ScreenDefinition("scroll") {
                     Row(spacing = 8) {
-                        ScrollArea(state, modifier = Modifier.Empty.size(100, 40)) {
-                            Spacer(modifier = Modifier.Empty.size(80, 20).background(contentColor))
+                        ScrollArea(state, modifier = Modifier.size(100, 40)) {
+                            Spacer(modifier = Modifier.size(80, 20).background(contentColor))
                         }
-                        Scrollbar(state, modifier = Modifier.Empty.size(6, 40))
+                        Scrollbar(state, modifier = Modifier.size(6, 40))
                     }
                 },
                 assets.profile(),
@@ -181,11 +181,11 @@ internal class MinecraftScrollTest {
         createMinecraftUiHost(
             ScreenDefinition("scroll") {
                 Row(spacing = 8) {
-                    ScrollArea(state, modifier = Modifier.Empty.size(300, 94)) {
-                        Spacer(modifier = Modifier.Empty.size(270, 180).background(contentColor))
+                    ScrollArea(state, modifier = Modifier.size(300, 94)) {
+                        Spacer(modifier = Modifier.size(270, 180).background(contentColor))
                     }
                     if (includeScrollbar) {
-                        Scrollbar(state, modifier = Modifier.Empty.size(6, 94))
+                        Scrollbar(state, modifier = Modifier.size(6, 94))
                     }
                 }
             },

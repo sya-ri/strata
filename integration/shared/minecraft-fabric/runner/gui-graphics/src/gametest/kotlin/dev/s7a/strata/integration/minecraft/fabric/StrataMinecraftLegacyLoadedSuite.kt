@@ -224,7 +224,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                             Column {
                                 Button(
                                     "Replacement",
-                                    modifier = Modifier.Empty.initialFocus().onActivate { replacementActivations.incrementAndGet() },
+                                    modifier = Modifier.initialFocus().onActivate { replacementActivations.incrementAndGet() },
                                 )
                             }
                         },
@@ -239,7 +239,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                                     Button(
                                         "First",
                                         modifier =
-                                            Modifier.Empty.onActivate {
+                                            Modifier.onActivate {
                                                 if (firstActivations.incrementAndGet() == 2) {
                                                     Minecraft.getInstance().setScreen(replacement)
                                                 }
@@ -247,7 +247,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                                     )
                                     Button(
                                         "Second",
-                                        modifier = Modifier.Empty.onActivate { secondActivations.incrementAndGet() },
+                                        modifier = Modifier.onActivate { secondActivations.incrementAndGet() },
                                     )
                                 }
                             },
@@ -726,7 +726,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         ScreenDefinition("Minecraft ${minecraftVersion()} public API") {
             Stack(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(viewport.width, viewport.height)
                         .background(ArgbColor(opaqueBlack))
                         .menuBackground(),
@@ -737,7 +737,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
                     horizontalAlignment = HorizontalAlignment.Center,
                 ) {
                     Text("Minecraft ${minecraftVersion()}")
-                    Button("Loaded public API", modifier = Modifier.Empty.onPress { pressed.set(true) })
+                    Button("Loaded public API", modifier = Modifier.onPress { pressed.set(true) })
                 }
             }
         }
@@ -746,7 +746,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         ScreenDefinition("Minecraft ${minecraftVersion()} inventory binding") {
             Stack(
                 modifier =
-                    Modifier.Empty
+                    Modifier
                         .size(viewport.width, viewport.height)
                         .background(ArgbColor(opaqueBlack))
                         .menuBackground(),

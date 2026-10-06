@@ -104,7 +104,7 @@ internal class FoliaScreenServiceTest {
                         state = counter
                         UiDefinition("Migrating") {
                             counter.value
-                            Spacer(Modifier.Empty.onActivate { counter.value += 1 })
+                            Spacer(Modifier.onActivate { counter.value += 1 })
                         }
                     }
                 }
@@ -299,7 +299,7 @@ internal class FoliaScreenServiceTest {
 
             fun open(action: () -> Unit): RemoteScreenSession =
                 region {
-                    host.open(plugin, player) { UiDefinition("Folia") { Spacer(Modifier.Empty.onActivate { action() }) } }
+                    host.open(plugin, player) { UiDefinition("Folia") { Spacer(Modifier.onActivate { action() }) } }
                 }
 
             fun tick() {

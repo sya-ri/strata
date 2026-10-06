@@ -194,7 +194,7 @@ internal class MinecraftPointerButtonUpdateTest {
             literal,
             150,
             enabled,
-            Modifier.Empty,
+            Modifier,
             null,
         )
     }

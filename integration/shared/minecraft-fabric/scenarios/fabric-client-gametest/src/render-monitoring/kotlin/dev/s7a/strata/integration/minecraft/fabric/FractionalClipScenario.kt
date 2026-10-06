@@ -30,11 +30,11 @@ internal object FractionalClipScenario {
             val state = VirtualListState<Int>()
             driver.open(
                 ScreenDefinition("Fractional list clipping") {
-                    Stack(Modifier.Empty.size(64, 64).background(ArgbColor(-1))) {
-                        Column(Modifier.Empty.size(48, 48).scaleToFit(IntSize(64, 64))) {
-                            Spacer(Modifier.Empty.size(64, 5))
+                    Stack(Modifier.size(64, 64).background(ArgbColor(-1))) {
+                        Column(Modifier.size(48, 48).scaleToFit(IntSize(64, 64))) {
+                            Spacer(Modifier.size(64, 5))
                             VirtualList(itemCount = 1, itemAt = { it }, keyAt = { it }, state = state, viewportSize = IntSize(64, 10), rowHeight = 20) {
-                                Spacer(Modifier.Empty.size(64, 20).background(GREEN))
+                                Spacer(Modifier.size(64, 20).background(GREEN))
                             }
                         }
                     }
@@ -58,10 +58,10 @@ internal object FractionalClipScenario {
         }
         driver.assertPixels(
             ScreenDefinition("Exact viewport coverage") {
-                Stack(Modifier.Empty.size(64, 64).background(ArgbColor(-1))) {
+                Stack(Modifier.size(64, 64).background(ArgbColor(-1))) {
                     Column {
-                        Spacer(Modifier.Empty.size(48, 4))
-                        Spacer(Modifier.Empty.size(48, 7).background(GREEN))
+                        Spacer(Modifier.size(48, 4))
+                        Spacer(Modifier.size(48, 7).background(GREEN))
                     }
                 }
             },

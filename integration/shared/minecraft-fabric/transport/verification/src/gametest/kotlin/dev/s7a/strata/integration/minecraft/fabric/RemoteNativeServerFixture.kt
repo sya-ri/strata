@@ -155,13 +155,13 @@ public object RemoteNativeServerFixture {
             screen =
                 RemoteServerSession(1, RemoteTextCodec.encode(UiText.Literal("Strata native protocol verification")), capabilities.types, capabilities.limits, connection::send) {
                     runtime.evaluate {
-                        Column(Modifier.Empty.background(ArgbColor(if (activated.value) -16776961 else -14671840))) {
+                        Column(Modifier.background(ArgbColor(if (activated.value) -16776961 else -14671840))) {
                             TextField(field, IntSize(160, 20))
                             Button(
                                 "Confirm",
                                 160,
                                 modifier =
-                                    Modifier.Empty.onActivate {
+                                    Modifier.onActivate {
                                         check(field.value.contentEquals("native-日本語"))
                                         activated.value = true
                                         accepted = true

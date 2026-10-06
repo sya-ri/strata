@@ -50,7 +50,7 @@ internal class HostAccessDuringCompositionTest {
                 import dev.s7a.strata.ui.UiDefinition
                 fun integrate(next: UiDefinition) { next.open() }
                 fun UiScope.valid(next: UiDefinition) {
-                    Text("navigate", modifier = Modifier.Empty.onPress { next.open() })
+                    Text("navigate", modifier = Modifier.onPress { next.open() })
                     val definition = UiDefinition { Text("future root") }
                 }
                 class Other { fun open() {} }

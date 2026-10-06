@@ -29,7 +29,7 @@ internal class ExternalModifierIntegrationTest {
     fun externalModifierUsesDefaultMeasureLayoutAndOwnsAllDeclaredPhases() {
         val probe = ExternalProbe()
         val modifier = ExternalModifierElement(probe)
-        val root = ExternalElement(probe = probe, modifier = Modifier.Empty.then(modifier))
+        val root = ExternalElement(probe = probe, modifier = Modifier.then(modifier))
         val tree = UiTree()
 
         tree.update(root)
@@ -69,7 +69,7 @@ internal class ExternalModifierIntegrationTest {
             ExternalElement(
                 probe = probe,
                 color = ArgbColor(0xFF0000FF.toInt()),
-                modifier = Modifier.Empty.then(modifier.copy(color = ArgbColor(0xFFFFFF00.toInt()))),
+                modifier = Modifier.then(modifier.copy(color = ArgbColor(0xFFFFFF00.toInt()))),
             )
         tree.update(updated)
         assertSame(oldNode, probe.modifierNode)
@@ -80,7 +80,7 @@ internal class ExternalModifierIntegrationTest {
         assertEquals(ArgbColor(0xFF0000FF.toInt()), (updatedPaint[1] as DrawCommand.FillRectangle).color)
         assertTrue(probe.lifecycle.none { event -> event is ExternalLifecycleEvent.Detach })
 
-        tree.update(ExternalElement(probe = probe, modifier = Modifier.Empty))
+        tree.update(ExternalElement(probe = probe, modifier = Modifier))
         assertEquals(
             listOf(
                 ExternalLifecycleEvent.Attach(ExternalNodeId.Modifier),
@@ -160,7 +160,7 @@ internal class ExternalModifierIntegrationTest {
             probe = probe,
             key = ElementKey("child"),
             nodeId = ExternalNodeId.Child,
-            modifier = Modifier.Empty.then(modifier),
+            modifier = Modifier.then(modifier),
         )
 
     private fun rootWithChild(
@@ -189,7 +189,7 @@ internal class ExternalModifierIntegrationTest {
                 probe = probe,
                 key = ElementKey("root"),
                 children = listOf(child),
-                modifier = Modifier.Empty.then(ExternalModifierElement(probe)),
+                modifier = Modifier.then(ExternalModifierElement(probe)),
             )
         val tree = UiTree()
         tree.update(root)

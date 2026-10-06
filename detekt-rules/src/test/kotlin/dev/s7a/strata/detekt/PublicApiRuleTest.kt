@@ -33,7 +33,7 @@ internal class PublicApiRuleTest {
                         import dev.s7a.strata.state.mutableStateOf
                         import dev.s7a.strata.state.map
                         import dev.s7a.strata.state.StateSource
-                        fun UiScope.content(source: StateSource<Int>, modifier: Modifier = Modifier.Empty) {
+                        fun UiScope.content(source: StateSource<Int>, modifier: Modifier = Modifier) {
                             ScrollState()
                             TextFieldState()
                             TextAreaState()

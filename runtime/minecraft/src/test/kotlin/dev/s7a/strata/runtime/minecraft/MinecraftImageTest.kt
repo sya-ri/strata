@@ -107,7 +107,7 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Shared resource image") {
-                    Stack(modifier = Modifier.Empty.imageBackground(firstSource, ImageScale.Stretch)) {
+                    Stack(modifier = Modifier.imageBackground(firstSource, ImageScale.Stretch)) {
                         Image(equalSource, IntSize(2, 2))
                         Image(firstSource, IntSize(2, 2))
                     }
@@ -145,7 +145,7 @@ internal class MinecraftImageTest {
                     val runtime = ComponentRuntimeBridge.current()
                     evaluator = runtime.retainEvaluator()
                     resourceImages = captureResourceImages(runtime)
-                    Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Resource(firstId))) {
+                    Stack(modifier = Modifier.imageBackground(ImageSource.Resource(firstId))) {
                         VirtualList(listOf(0, 1), { item -> item }, state, IntSize(2, 4), rowHeight = 2) {
                             Image(ImageSource.Resource(equalId), IntSize(2, 2))
                         }
@@ -222,7 +222,7 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Pixel images") {
-                    Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source))) {
+                    Stack(modifier = Modifier.imageBackground(ImageSource.Pixels(source))) {
                         Image(ImageSource.Pixels(source), IntSize(2, 2))
                     }
                 },
@@ -255,7 +255,7 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Retry resource image") {
-                    observed = runCatching { Modifier.Empty.imageBackground(source) }.exceptionOrNull()
+                    observed = runCatching { Modifier.imageBackground(source) }.exceptionOrNull()
                     Image(source, IntSize(2, 2))
                 },
                 MinecraftProfileFixture.create(),
@@ -282,12 +282,12 @@ internal class MinecraftImageTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("Owner-thread resource image") {
-                    val background = Modifier.Empty.imageBackground(source)
+                    val background = Modifier.imageBackground(source)
                     val runtime = ComponentRuntimeBridge.current()
                     val task =
                         FutureTask<Throwable?> {
                             runCatching {
-                                runtime.image(source, null, null, Modifier.Empty, null)
+                                runtime.image(source, null, null, Modifier, null)
                             }.exceptionOrNull()
                         }
                     val runner = Thread(task)
@@ -545,7 +545,7 @@ internal class MinecraftImageTest {
     ): MinecraftUiHost =
         createMinecraftUiHost(
             ScreenDefinition("Background") {
-                Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source), scale)) {}
+                Stack(modifier = Modifier.imageBackground(ImageSource.Pixels(source), scale)) {}
             },
             MinecraftProfileFixture.create(),
         )
@@ -557,7 +557,7 @@ internal class MinecraftImageTest {
     ): MinecraftUiHost =
         createMinecraftUiHost(
             ScreenDefinition("Nine slice") {
-                Stack(modifier = Modifier.Empty.imageBackground(ImageSource.Pixels(source), border, centerMode)) {}
+                Stack(modifier = Modifier.imageBackground(ImageSource.Pixels(source), border, centerMode)) {}
             },
             MinecraftProfileFixture.create(),
         )

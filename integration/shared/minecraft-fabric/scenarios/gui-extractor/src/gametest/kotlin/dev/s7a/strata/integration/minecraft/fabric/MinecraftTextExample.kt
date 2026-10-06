@@ -26,7 +26,7 @@ internal fun createTextShowcaseScreenDefinition(): ScreenDefinition =
     ScreenDefinition("Text showcase") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(192, 88)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),

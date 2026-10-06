@@ -73,7 +73,7 @@ internal class ModifierTestFixture {
      * @param elements the modifier descriptions from outermost to innermost.
      * @return the resulting immutable chain.
      */
-    internal fun chain(vararg elements: TestModifierElement): Modifier = elements.fold(Modifier.Empty) { current, element -> current.then(element) }
+    internal fun chain(vararg elements: TestModifierElement): Modifier = elements.fold<TestModifierElement, Modifier>(Modifier) { current, element -> current.then(element) }
 
     /**
      * Builds the expected full-tree lifecycle order for the focused two-level fixture.

@@ -30,17 +30,17 @@ internal fun multilineTextScreen(
 ): UiDefinition =
     UiDefinition("Multiline text") {
         Column(spacing = 6) {
-            Text(UiText.Literal("日本語\n한국어 🙂"), TextLayout.Multiline(), modifier = Modifier.Empty.width(240))
+            Text(UiText.Literal("日本語\n한국어 🙂"), TextLayout.Multiline(), modifier = Modifier.width(240))
             Text("Message composition", TextLayout.SingleLine, font)
             Row(spacing = 4) {
                 TextArea(message, TextAreaViewport.Lines(width = 240, lines = 4), font)
-                Scrollbar(message.scrollState, modifier = Modifier.Empty.height(44))
+                Scrollbar(message.scrollState, modifier = Modifier.height(44))
             }
             Text(UiText.Literal("Notes\nメモ"), TextLayout.Multiline(maxLines = 2, overflow = TextOverflow.Ellipsis), font)
             Text("Independent scrolling", TextLayout.SingleLine)
             Row(spacing = 4) {
                 TextArea(notes, TextAreaViewport.Size(IntSize(240, 96)), wrap = TextWrap.None, lineSpacing = 1)
-                Scrollbar(notes.scrollState, modifier = Modifier.Empty.height(96))
+                Scrollbar(notes.scrollState, modifier = Modifier.height(96))
             }
         }
     }

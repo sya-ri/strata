@@ -29,7 +29,7 @@ internal fun createObserveShowcaseScreenDefinition(): ScreenDefinition {
         Observe(
             status,
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(160, 48)
                     .background(ArgbColor(0xFF000000.toInt()))
                     .padding(8),

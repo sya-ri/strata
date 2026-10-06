@@ -49,6 +49,7 @@ ${signatures.entries.joinToString("\n\n") { (component, overloads) -> component(
 # Modifiers and layout scopes
 
 Modifiers are active retained behavior, not a passive settings bag.
+The `Modifier` companion object is the empty chain and the starting receiver for built-in and custom modifier extensions.
 Order matters: layout and input elements wrap the behavior that follows them in the chain.
 The ${inventory.modifiers.values.sum()} compiled overloads below form ${inventory.modifiers.size} top-level extension groups.
 
@@ -413,7 +414,7 @@ Report missing profile assets and unsupported capabilities instead of substituti
         Use an earlier, outer `fillMaxSize()` when the design surface should fit the complete viewport because modifier descriptions remain outermost-first:
 
         ```kotlin
-        val modifier = Modifier.Empty
+        val modifier = Modifier
             .fillMaxSize()
             .scaleToFit(contentSize = IntSize(320, 180))
         ```

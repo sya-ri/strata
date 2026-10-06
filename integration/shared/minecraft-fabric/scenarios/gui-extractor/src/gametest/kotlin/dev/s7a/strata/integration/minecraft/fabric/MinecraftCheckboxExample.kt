@@ -20,7 +20,7 @@ internal fun createCheckboxShowcaseScreenDefinition(): ScreenDefinition {
     val state = CheckboxState(initialChecked = true)
     return ScreenDefinition("Checkbox showcase") {
         Stack(
-            modifier = Modifier.Empty.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
+            modifier = Modifier.size(166, 36).background(ArgbColor(0xFF000000.toInt())),
             contentAlignment = Alignment.Center,
         ) {
             Checkbox("Allow invites", state)

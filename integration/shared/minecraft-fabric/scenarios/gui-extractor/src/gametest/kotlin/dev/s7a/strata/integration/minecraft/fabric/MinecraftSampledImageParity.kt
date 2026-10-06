@@ -134,7 +134,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
     return ScreenDefinition("Sampled image pixel parity") {
         Stack(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(viewport.width, viewport.height)
                     .scaleToFit(contentSize, allowUpscaling = true),
         ) {

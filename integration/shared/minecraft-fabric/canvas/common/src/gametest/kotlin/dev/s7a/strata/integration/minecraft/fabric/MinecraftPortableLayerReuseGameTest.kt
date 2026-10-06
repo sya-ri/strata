@@ -71,15 +71,15 @@ internal object MinecraftPortableLayerReuseGameTest {
                 context.onClient {
                     createMinecraftScreen(
                         ScreenDefinition("Portable layer reuse acceptance") {
-                            Stack(Modifier.Empty.background(ArgbColor(0xFF000000.toInt()))) {
+                            Stack(Modifier.background(ArgbColor(0xFF000000.toInt()))) {
                                 Row {
                                     if (prepend.value) {
-                                        Spacer(Modifier.Empty.size(8, 16).background(ArgbColor(0xFFAA5522.toInt())))
+                                        Spacer(Modifier.size(8, 16).background(ArgbColor(0xFFAA5522.toInt())))
                                         Canvas(fixture.textureSource, IntSize(16, 16))
                                     }
-                                    Spacer(Modifier.Empty.size(16, 16).background(color.value))
+                                    Spacer(Modifier.size(16, 16).background(color.value))
                                     Canvas(fixture.textureSource, IntSize(16, 16))
-                                    Spacer(Modifier.Empty.size(16, 16).imageBackground(pattern, ImageScale.Stretch))
+                                    Spacer(Modifier.size(16, 16).imageBackground(pattern, ImageScale.Stretch))
                                     Canvas(invisibleSource(hidden.value), IntSize(16, 16))
                                 }
                             }

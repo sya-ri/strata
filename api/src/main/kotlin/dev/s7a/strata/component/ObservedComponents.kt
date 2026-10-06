@@ -24,7 +24,7 @@ import kotlin.jvm.JvmName
 public fun UiScope.ProgressBar(
     progress: StateSource<Double>,
     size: IntSize = IntSize(100, 12),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(progress), key) { values ->
@@ -50,7 +50,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -78,7 +78,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -106,7 +106,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -133,7 +133,7 @@ public fun <T : Any> UiScope.CycleButton(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
 ) {
@@ -161,7 +161,7 @@ public fun <T : Any> UiScope.CycleButton(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: StateSource<(T) -> UiText>,
 ) {
@@ -189,7 +189,7 @@ public fun <T : Any> UiScope.CycleButton(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: StateSource<(T) -> UiText>,
 ) {
@@ -218,7 +218,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -246,7 +246,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -274,7 +274,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -302,7 +302,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -330,7 +330,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -358,7 +358,7 @@ public fun UiScope.Slider(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -386,7 +386,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -414,7 +414,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -442,7 +442,7 @@ public fun UiScope.Checkbox(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -468,7 +468,7 @@ public fun UiScope.Checkbox(
 public fun UiScope.Image(
     source: StateSource<ImageSource>,
     size: IntSize? = null,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(source), key) { values ->
@@ -493,7 +493,7 @@ public fun UiScope.Image(
     source: StateSource<ImageSource>,
     sourceRegion: IntRect,
     size: IntSize = IntSize(sourceRegion.width, sourceRegion.height),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(source), key) { values ->
@@ -519,7 +519,7 @@ public fun UiScope.PlayerHead(
     source: StateSource<PlayerSkinSource>,
     scale: PlayerHeadScale,
     showHat: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     loadingContent: (UiScope.() -> Unit)? = null,
     failureContent: (UiScope.() -> Unit)? = null,
@@ -548,7 +548,7 @@ public fun UiScope.PlayerHead(
 public fun UiScope.Slot(
     bind: StateSource<SlotBinding?>,
     highlightable: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -574,7 +574,7 @@ public fun UiScope.Slot(
 public fun UiScope.Slot(
     bind: SlotBinding? = null,
     highlightable: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -600,7 +600,7 @@ public fun UiScope.Slot(
 public fun UiScope.Slot(
     bind: StateSource<SlotBinding?>,
     highlightable: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -627,7 +627,7 @@ public fun UiScope.TextField(
     state: TextFieldState,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -654,7 +654,7 @@ public fun UiScope.TextField(
     size: IntSize,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -682,7 +682,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -711,7 +711,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -742,7 +742,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -775,7 +775,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -805,7 +805,7 @@ public fun UiScope.Button(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -831,7 +831,7 @@ public fun UiScope.Button(
     label: UiText,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -857,7 +857,7 @@ public fun UiScope.Button(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -883,7 +883,7 @@ public fun UiScope.Button(
     label: StateSource<String>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -909,7 +909,7 @@ public fun UiScope.Button(
     label: String,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -935,7 +935,7 @@ public fun UiScope.Button(
     label: StateSource<String>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -963,7 +963,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -993,7 +993,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(selected), key) { values ->
@@ -1023,7 +1023,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, selected), key) { values ->
@@ -1053,7 +1053,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1083,7 +1083,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -1113,7 +1113,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(selected, enabled), key) { values ->
@@ -1143,7 +1143,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, selected, enabled), key) { values ->
@@ -1173,7 +1173,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label), key) { values ->
@@ -1203,7 +1203,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(selected), key) { values ->
@@ -1233,7 +1233,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, selected), key) { values ->
@@ -1263,7 +1263,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1293,7 +1293,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, enabled), key) { values ->
@@ -1323,7 +1323,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(selected, enabled), key) { values ->
@@ -1353,7 +1353,7 @@ public fun UiScope.Tab(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(label, selected, enabled), key) { values ->
@@ -1382,7 +1382,7 @@ public fun UiScope.TextField(
     appearance: TextInputAppearance,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1411,7 +1411,7 @@ public fun UiScope.TextField(
     size: IntSize,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1441,7 +1441,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1472,7 +1472,7 @@ public fun UiScope.TextField(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1505,7 +1505,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1540,7 +1540,7 @@ public fun UiScope.TextArea(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(enabled), key) { values ->
@@ -1570,7 +1570,7 @@ public fun UiScope.TextArea(
 public fun UiScope.Canvas(
     source: StateSource<CanvasSource>,
     size: IntSize,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     emitObservedComponent(listOf(source), key) { values ->
@@ -1597,7 +1597,7 @@ public fun UiScope.TiledImage(
     size: IntSize,
     fit: PanZoomFit = PanZoomFit.Contain,
     cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: TiledImageScope.() -> Unit = {},
 ) {
@@ -1634,7 +1634,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1676,7 +1676,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1718,7 +1718,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1760,7 +1760,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1802,7 +1802,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1844,7 +1844,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1884,7 +1884,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1922,7 +1922,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1960,7 +1960,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1998,7 +1998,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2036,7 +2036,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2074,7 +2074,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2112,7 +2112,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2150,7 +2150,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2188,7 +2188,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2226,7 +2226,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2264,7 +2264,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2302,7 +2302,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2340,7 +2340,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -2378,7 +2378,7 @@ public fun <T : Any, K : Any> UiScope.SelectionList(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {

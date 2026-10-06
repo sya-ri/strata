@@ -129,7 +129,7 @@ internal object DocumentationLinkChecker {
         }
     }
 
-    private val ROOT_DOCUMENTS = listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md")
+    private val ROOT_DOCUMENTS = listOf("README.md", "AGENTS.md", "CONTRIBUTING.md", "CHANGELOG.md", "DEPRECATION.md")
     private val CURRENT_GITHUB_PATH = Regex("/sya-ri/strata/(?:blob|tree)/master(?:/(.*))?")
     private const val GITHUB_HOST = "github.com"
 }

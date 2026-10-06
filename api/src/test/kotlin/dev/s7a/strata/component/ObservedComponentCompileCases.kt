@@ -15,7 +15,7 @@ import dev.s7a.strata.text.UiText
 private fun UiScope.compileProgressBar4c303dc4114b_1(
     progress: StateSource<Double>,
     size: IntSize = IntSize(100, 12),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     ProgressBar(
@@ -31,7 +31,7 @@ private fun UiScope.compileCheckbox3bddea62a5dc_1(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -49,7 +49,7 @@ private fun UiScope.compileCheckbox3bddea62a5dc_2(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -67,7 +67,7 @@ private fun UiScope.compileCheckbox3bddea62a5dc_3(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -84,7 +84,7 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_1(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: (T) -> UiText = { value -> UiText.Literal(state.formatKnownMember(value)) },
 ) {
@@ -102,7 +102,7 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_2(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: StateSource<(T) -> UiText>,
 ) {
@@ -120,7 +120,7 @@ private fun <T : Any> UiScope.compileCycleButton454065400fd3_3(
     state: CycleButtonState<T>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     label: StateSource<(T) -> UiText>,
 ) {
@@ -139,7 +139,7 @@ private fun UiScope.compileSliderf08abfd13498_1(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -157,7 +157,7 @@ private fun UiScope.compileSliderf08abfd13498_2(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -175,7 +175,7 @@ private fun UiScope.compileSliderf08abfd13498_3(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -193,7 +193,7 @@ private fun UiScope.compileSlidercccdb0fa60d4_1(
     state: SliderState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -211,7 +211,7 @@ private fun UiScope.compileSlidercccdb0fa60d4_2(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -229,7 +229,7 @@ private fun UiScope.compileSlidercccdb0fa60d4_3(
     state: SliderState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Slider(
@@ -247,7 +247,7 @@ private fun UiScope.compileCheckbox1d460d77bb71_1(
     state: CheckboxState,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -265,7 +265,7 @@ private fun UiScope.compileCheckbox1d460d77bb71_2(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -283,7 +283,7 @@ private fun UiScope.compileCheckbox1d460d77bb71_3(
     state: CheckboxState,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Checkbox(
@@ -299,7 +299,7 @@ private fun UiScope.compileCheckbox1d460d77bb71_3(
 private fun UiScope.compileImage386405e1017f_1(
     source: StateSource<ImageSource>,
     size: IntSize? = null,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Image(
@@ -314,7 +314,7 @@ private fun UiScope.compileImage6751db0e9723_1(
     source: StateSource<ImageSource>,
     sourceRegion: IntRect,
     size: IntSize = IntSize(sourceRegion.width, sourceRegion.height),
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Image(
@@ -330,7 +330,7 @@ private fun UiScope.compilePlayerHead339c1e7d20b9_1(
     source: StateSource<PlayerSkinSource>,
     scale: PlayerHeadScale,
     showHat: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     loadingContent: (UiScope.() -> Unit)? = null,
     failureContent: (UiScope.() -> Unit)? = null,
@@ -349,7 +349,7 @@ private fun UiScope.compilePlayerHead339c1e7d20b9_1(
 private fun UiScope.compileSlota3c7818cbdc8_1(
     bind: StateSource<SlotBinding?>,
     highlightable: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -365,7 +365,7 @@ private fun UiScope.compileSlota3c7818cbdc8_1(
 private fun UiScope.compileSlota3c7818cbdc8_2(
     bind: SlotBinding? = null,
     highlightable: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -381,7 +381,7 @@ private fun UiScope.compileSlota3c7818cbdc8_2(
 private fun UiScope.compileSlota3c7818cbdc8_3(
     bind: StateSource<SlotBinding?>,
     highlightable: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: (UiScope.() -> Unit)? = null,
 ) {
@@ -398,7 +398,7 @@ private fun UiScope.compileTextFieldbdacf61484d9_1(
     state: TextFieldState,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -415,7 +415,7 @@ private fun UiScope.compileTextField06eec201bfdd_1(
     size: IntSize,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -433,7 +433,7 @@ private fun UiScope.compileTextFieldac020717728e_1(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -452,7 +452,7 @@ private fun UiScope.compileTextField0f2e4a0352af_1(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -473,7 +473,7 @@ private fun UiScope.compileTextAreac0abf0512fec_1(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextArea(
@@ -496,7 +496,7 @@ private fun UiScope.compileTextAreac701b9e2eaf6_1(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextArea(
@@ -516,7 +516,7 @@ private fun UiScope.compileButtoncffa97b99dc2_1(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -532,7 +532,7 @@ private fun UiScope.compileButtoncffa97b99dc2_2(
     label: UiText,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -548,7 +548,7 @@ private fun UiScope.compileButtoncffa97b99dc2_3(
     label: StateSource<UiText>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -564,7 +564,7 @@ private fun UiScope.compileButton6e1d7e05cd68_1(
     label: StateSource<String>,
     width: Int = 150,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -580,7 +580,7 @@ private fun UiScope.compileButton6e1d7e05cd68_2(
     label: String,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -596,7 +596,7 @@ private fun UiScope.compileButton6e1d7e05cd68_3(
     label: StateSource<String>,
     width: Int = 150,
     enabled: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Button(
@@ -614,7 +614,7 @@ private fun UiScope.compileTab58ed18680f25_1(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -634,7 +634,7 @@ private fun UiScope.compileTab58ed18680f25_2(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -654,7 +654,7 @@ private fun UiScope.compileTab58ed18680f25_3(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -674,7 +674,7 @@ private fun UiScope.compileTab58ed18680f25_4(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -694,7 +694,7 @@ private fun UiScope.compileTab58ed18680f25_5(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -714,7 +714,7 @@ private fun UiScope.compileTab58ed18680f25_6(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -734,7 +734,7 @@ private fun UiScope.compileTab58ed18680f25_7(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -754,7 +754,7 @@ private fun UiScope.compileTab06dab4066e27_1(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -774,7 +774,7 @@ private fun UiScope.compileTab06dab4066e27_2(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -794,7 +794,7 @@ private fun UiScope.compileTab06dab4066e27_3(
     width: Int = 150,
     enabled: Boolean = true,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -814,7 +814,7 @@ private fun UiScope.compileTab06dab4066e27_4(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -834,7 +834,7 @@ private fun UiScope.compileTab06dab4066e27_5(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -854,7 +854,7 @@ private fun UiScope.compileTab06dab4066e27_6(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -874,7 +874,7 @@ private fun UiScope.compileTab06dab4066e27_7(
     width: Int = 150,
     enabled: StateSource<Boolean>,
     indicator: TabSelectionIndicator = TabSelectionIndicator.Underline,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Tab(
@@ -893,7 +893,7 @@ private fun UiScope.compileTextField8ebce6a07628_1(
     appearance: TextInputAppearance,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -912,7 +912,7 @@ private fun UiScope.compileTextField68d5823f42d7_1(
     size: IntSize,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -932,7 +932,7 @@ private fun UiScope.compileTextField715dafc3f527_1(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -953,7 +953,7 @@ private fun UiScope.compileTextFieldfd7b3be167e7_1(
     font: ResourceId,
     enabled: StateSource<Boolean>,
     textStyle: TextStyle = TextStyle.TextField,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextField(
@@ -976,7 +976,7 @@ private fun UiScope.compileTextArea80c0b5b4cb37_1(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextArea(
@@ -1001,7 +1001,7 @@ private fun UiScope.compileTextArea4da1faac4769_1(
     textStyle: TextStyle = TextStyle.TextField,
     wrap: TextWrap = TextWrap.Word,
     lineSpacing: Int = 0,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     TextArea(
@@ -1021,7 +1021,7 @@ private fun UiScope.compileTextArea4da1faac4769_1(
 private fun UiScope.compileCanvas7047d39d3483_1(
     source: StateSource<CanvasSource>,
     size: IntSize,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
 ) {
     Canvas(
@@ -1038,7 +1038,7 @@ private fun UiScope.compileTiledImage06558dbd1f3e_1(
     size: IntSize,
     fit: PanZoomFit = PanZoomFit.Contain,
     cachePolicy: TiledImageCachePolicy = TiledImageCachePolicy.Default,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: TiledImageScope.() -> Unit = {},
 ) {
@@ -1065,7 +1065,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_1(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1097,7 +1097,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_2(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1129,7 +1129,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList7e3481099f80_3(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1161,7 +1161,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_1(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1193,7 +1193,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_2(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1225,7 +1225,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList4013cecb450b_3(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1255,7 +1255,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_1(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1283,7 +1283,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_2(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1311,7 +1311,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_3(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1339,7 +1339,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_4(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1367,7 +1367,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_5(
     scrollRate: Int = 10,
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1395,7 +1395,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_6(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1423,7 +1423,7 @@ private fun <T : Any, K : Any> UiScope.compileVirtualList91e435daa5f9_7(
     scrollRate: Int = 10,
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1451,7 +1451,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_1(
     canLoadLeading: Boolean = false,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1479,7 +1479,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_2(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1507,7 +1507,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_3(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: Boolean = false,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1535,7 +1535,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_4(
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1563,7 +1563,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_5(
     canLoadLeading: Boolean = false,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1591,7 +1591,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_6(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {
@@ -1619,7 +1619,7 @@ private fun <T : Any, K : Any> UiScope.compileSelectionList685be857e721_7(
     canLoadLeading: StateSource<Boolean>,
     canLoadTrailing: StateSource<Boolean>,
     scrollRate: Int = 10,
-    modifier: Modifier = Modifier.Empty,
+    modifier: Modifier = Modifier,
     key: ElementKey<*>? = null,
     content: UiScope.(T) -> Unit,
 ) {

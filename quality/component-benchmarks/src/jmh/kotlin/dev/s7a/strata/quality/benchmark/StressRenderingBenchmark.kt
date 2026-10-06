@@ -284,12 +284,12 @@ public open class StressRenderingBenchmark {
                             }
 
                             StressWorkload.FanOut128, StressWorkload.FanOut4096 -> {
-                                repeat(if (workload == StressWorkload.FanOut4096) 4096 else 128) { Observe(source) { value -> Spacer(Modifier.Empty.size(1 + value % 2, 1)) } }
+                                repeat(if (workload == StressWorkload.FanOut4096) 4096 else 128) { Observe(source) { value -> Spacer(Modifier.size(1 + value % 2, 1)) } }
                             }
 
                             StressWorkload.NineSlice1, StressWorkload.NineSlice2, StressWorkload.NineSlice4 -> {
                                 Observe(source) { value ->
-                                    Spacer(Modifier.Empty.size(319 + value % 2, 239).imageBackground(ImageSource.Pixels(images.first()), Insets.all(1), NineSliceCenterMode.Tiled))
+                                    Spacer(Modifier.size(319 + value % 2, 239).imageBackground(ImageSource.Pixels(images.first()), Insets.all(1), NineSliceCenterMode.Tiled))
                                 }
                             }
                         }

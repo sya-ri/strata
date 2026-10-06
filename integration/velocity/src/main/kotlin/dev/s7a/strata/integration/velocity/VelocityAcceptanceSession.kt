@@ -118,13 +118,13 @@ internal class VelocityAcceptanceSession(
     ): UiDefinition {
         checkOwner()
         return UiDefinition(title) {
-            Column(Modifier.Empty.padding(8), spacing = 4) {
+            Column(Modifier.padding(8), spacing = 4) {
                 TextField(field, IntSize(160, 20))
                 Button(
                     "Apply",
                     160,
                     modifier =
-                        Modifier.Empty.onActivate {
+                        Modifier.onActivate {
                             checkOwner()
                             action()
                         },

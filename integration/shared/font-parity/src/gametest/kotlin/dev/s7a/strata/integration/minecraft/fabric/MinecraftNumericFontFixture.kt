@@ -94,7 +94,7 @@ internal object MinecraftNumericFontFixture {
      */
     fun definition(): ScreenDefinition =
         ScreenDefinition("Independent numeric font parity") {
-            Stack(modifier = Modifier.Empty.fillMaxSize().background(ArgbColor(MinecraftFontParityFixture.background))) {
+            Stack(modifier = Modifier.fillMaxSize().background(ArgbColor(MinecraftFontParityFixture.background))) {
                 rows.forEach { row -> Text(row.text(), row.style, modifier = MinecraftNumericFontAperture.modifier(row)) }
             }
         }

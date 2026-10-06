@@ -26,7 +26,7 @@ public fun createApiOnlyDynamicVirtualListDefinition(
 ): UiDefinition =
     UiDefinition("API-only dynamic virtual list") {
         val loadModifier =
-            Modifier.Empty
+            Modifier
                 .onLeadingItemsRequested { request ->
                     val first = items.firstOrNull() ?: 0
                     val start = Math.subtractExact(first, request.suggestedCount)

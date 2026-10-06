@@ -17,7 +17,7 @@ internal fun keyedListDemo(): UiDefinition {
     var nextItem = 4
     return UiDefinition("Keyed list") {
         Column(spacing = 12) {
-            Text("Items: ${items.value.size} / 5", modifier = Modifier.Empty.width(304))
+            Text("Items: ${items.value.size} / 5", modifier = Modifier.width(304))
             Row(spacing = 8) {
                 actionButton("Add", enabled = items.value.size < 5) {
                     items.value = items.value + nextItem
@@ -30,10 +30,10 @@ internal fun keyedListDemo(): UiDefinition {
                 }
             }
             Column(spacing = 8) {
-                if (items.value.isEmpty()) Text("No items. Add one to begin.", modifier = Modifier.Empty.width(304))
+                if (items.value.isEmpty()) Text("No items. Add one to begin.", modifier = Modifier.width(304))
                 items.value.forEach { item ->
                     Row(key = ElementKey(item), spacing = 16) {
-                        Text("Item $item", modifier = Modifier.Empty.width(80))
+                        Text("Item $item", modifier = Modifier.width(80))
                         actionButton("Remove $item", width = 112) { items.value = items.value.filterNot { it == item } }
                     }
                 }

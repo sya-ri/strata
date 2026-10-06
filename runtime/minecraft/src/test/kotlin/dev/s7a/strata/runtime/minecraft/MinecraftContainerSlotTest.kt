@@ -48,7 +48,7 @@ internal class MinecraftContainerSlotTest {
             val texture = image(IntSize(256, 256), 0xFF202020.toInt())
             val host =
                 host(MinecraftProfileFixture.create(containerBackground = texture)) {
-                    evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(rows)) {} }
+                    evaluateComponentTree { Stack(modifier = Modifier.containerBackground(rows)) {} }
                 }
             val expectedHeight = Math.addExact(114, Math.multiplyExact(rows, 18))
             host.attach()
@@ -69,11 +69,11 @@ internal class MinecraftContainerSlotTest {
     @Test
     fun containerRowsAndExactConstraintsAreValidated() {
         listOf(0, 7).forEach { rows ->
-            val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(rows)) {} } }
+            val host = host { evaluateComponentTree { Stack(modifier = Modifier.containerBackground(rows)) {} } }
             assertThrows(IllegalArgumentException::class.java) { host.attach() }
             host.close()
         }
-        val host = host { evaluateComponentTree { Stack(modifier = Modifier.Empty.containerBackground(3)) {} } }
+        val host = host { evaluateComponentTree { Stack(modifier = Modifier.containerBackground(3)) {} } }
         host.attach()
         assertThrows(IllegalArgumentException::class.java) { host.frame(IntSize(175, 168)) }
         host.close()
@@ -128,7 +128,7 @@ internal class MinecraftContainerSlotTest {
             host(MinecraftProfileFixture.create(slotHighlightBack = back, slotHighlightFront = front)) {
                 evaluateComponentTree {
                     Slot {
-                        Spacer(Modifier.Empty.size(16, 16).background(itemColor))
+                        Spacer(Modifier.size(16, 16).background(itemColor))
                     }
                 }
             }

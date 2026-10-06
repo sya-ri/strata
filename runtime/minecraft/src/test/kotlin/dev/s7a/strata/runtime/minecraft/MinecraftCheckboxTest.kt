@@ -36,7 +36,7 @@ internal class MinecraftCheckboxTest {
                         label = "Enabled",
                         state = state,
                         width = 80,
-                        modifier = Modifier.Empty.onCheckedChange({ value -> observed.add(value) }),
+                        modifier = Modifier.onCheckedChange({ value -> observed.add(value) }),
                     )
                 },
                 profile,

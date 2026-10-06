@@ -26,7 +26,7 @@ internal class RemoteAppliedRevisionTest {
         val outgoing = ArrayDeque<RemoteMessage>()
         val confirmations = ArrayDeque<RemoteMessage>()
         RemoteServerSession(1, ProjectionValue.Absent, registry.types, send = outgoing::add) {
-            evaluateComponentTree { Spacer(Modifier.Empty.background(state.value)) }
+            evaluateComponentTree { Spacer(Modifier.background(state.value)) }
         }.use { server ->
             server.tick()
             RemoteClientSession(outgoing.removeFirst() as RemoteMessage.Snapshot, registry, send = { confirmations.add(codec.decode(codec.encode(it))) }).use { client ->

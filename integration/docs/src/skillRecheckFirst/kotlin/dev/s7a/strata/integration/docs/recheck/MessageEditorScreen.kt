@@ -57,21 +57,21 @@ public fun messageEditorScreen(
     return ScreenDefinition("Message editor") {
         Column(
             modifier =
-                Modifier.Empty
+                Modifier
                     .size(200, 180)
                     .menuBackground()
                     .padding(4),
             spacing = 4,
         ) {
-            Text(clockLabel, layout = lineLayout, modifier = Modifier.Empty.size(192, 12))
+            Text(clockLabel, layout = lineLayout, modifier = Modifier.size(192, 12))
             TextArea(state = draft, viewport = TextAreaViewport.Size(IntSize(192, 44)))
             Button(
                 label = sendLabel,
                 width = 192,
                 enabled = sendEnabled,
-                modifier = Modifier.Empty.onActivate(sendEnabled) { send() },
+                modifier = Modifier.onActivate(sendEnabled) { send() },
             )
-            Text(loadingLabel, layout = lineLayout, modifier = Modifier.Empty.size(192, 12))
+            Text(loadingLabel, layout = lineLayout, modifier = Modifier.size(192, 12))
             VirtualList(
                 items = history,
                 keyOf = { entry -> entry.id },
@@ -82,7 +82,7 @@ public fun messageEditorScreen(
                 Text(
                     text = "${entry.id}: ${entry.text}",
                     layout = lineLayout,
-                    modifier = Modifier.Empty.size(192, 12),
+                    modifier = Modifier.size(192, 12),
                 )
             }
         }

@@ -29,7 +29,7 @@ internal class ActivationModifierTest {
     @Test
     fun primaryPointerAndFocusedEnterSpacePressesShareOneAction() {
         var activations = 0
-        val tree = tree(Modifier.Empty.size(10, 10).onActivate { activations += 1 })
+        val tree = tree(Modifier.size(10, 10).onActivate { activations += 1 })
         try {
             assertEquals(
                 InputResult.Ignored,
@@ -60,7 +60,7 @@ internal class ActivationModifierTest {
     @Test
     fun disabledActivationReturnsTheReceiverAndAddsNoInputBehavior() {
         var activations = 0
-        val base = Modifier.Empty.size(10, 10)
+        val base = Modifier.size(10, 10)
         val disabled = base.onActivate(enabled = false) { activations += 1 }
         assertSame(base, disabled)
         assertEquals(base.elements(), disabled.elements())
@@ -95,7 +95,7 @@ internal class ActivationModifierTest {
         fun update(value: String) {
             tree.update(
                 evaluateComponentTree {
-                    Spacer(modifier = Modifier.Empty.size(10, 10).onActivate { observed += value })
+                    Spacer(modifier = Modifier.size(10, 10).onActivate { observed += value })
                 },
             )
             tree.measure(Constraints.fixed(10, 10))
@@ -122,7 +122,7 @@ internal class ActivationModifierTest {
     @Test
     fun activationFailurePreservesIdentityAndPoisonsTheTree() {
         val primary = IllegalArgumentException("activation")
-        val tree = tree(Modifier.Empty.size(10, 10).onActivate { throw primary })
+        val tree = tree(Modifier.size(10, 10).onActivate { throw primary })
         assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
 
         val thrown =

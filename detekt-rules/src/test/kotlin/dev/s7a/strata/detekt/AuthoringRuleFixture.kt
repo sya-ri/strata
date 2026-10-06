@@ -70,8 +70,8 @@ internal object AuthoringRuleFixture {
     """
     private const val MODIFIERS = """
         package dev.s7a.strata.modifier
-        class Modifier {
-            companion object { val Empty = Modifier() }
+        interface Modifier {
+            companion object : Modifier
         }
     """
     private const val STATE = """

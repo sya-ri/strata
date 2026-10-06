@@ -25,11 +25,11 @@ internal class ReactiveScenario {
      */
     fun definition(): UiDefinition =
         UiDefinition("Reactive runtime parity") {
-            Column(modifier = Modifier.Empty.padding(16), spacing = 8) {
+            Column(modifier = Modifier.padding(16), spacing = 8) {
                 Text("Strata runtime parity")
-                Button("Advance", modifier = Modifier.Empty.onActivate { advance() })
-                Button("Toggle", modifier = Modifier.Empty.onActivate { toggle() })
-                Button("Reorder", modifier = Modifier.Empty.onActivate { reorder() })
+                Button("Advance", modifier = Modifier.onActivate { advance() })
+                Button("Toggle", modifier = Modifier.onActivate { toggle() })
+                Button("Reorder", modifier = Modifier.onActivate { reorder() })
                 Button("Unavailable", enabled = false)
                 ProgressBar(if (advanced.value) 0.75 else 0.25, IntSize(150, 12))
                 if (shown.value) {

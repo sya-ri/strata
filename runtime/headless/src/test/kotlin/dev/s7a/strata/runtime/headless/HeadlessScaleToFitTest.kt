@@ -31,14 +31,14 @@ internal class HeadlessScaleToFitTest {
             evaluateComponentTree {
                 Row(
                     modifier =
-                        Modifier.Empty
+                        Modifier
                             .fillMaxSize()
                             .scaleToFit(IntSize(4, 2), allowUpscaling = true),
                 ) {
-                    Spacer(modifier = Modifier.Empty.size(1, 2).background(red))
+                    Spacer(modifier = Modifier.size(1, 2).background(red))
                     Column {
-                        Spacer(modifier = Modifier.Empty.size(3, 1).background(green))
-                        Spacer(modifier = Modifier.Empty.size(3, 1).background(blue))
+                        Spacer(modifier = Modifier.size(3, 1).background(green))
+                        Spacer(modifier = Modifier.size(3, 1).background(blue))
                     }
                 }
             }

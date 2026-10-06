@@ -33,8 +33,8 @@ internal class MinecraftTooltipTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("tooltip") {
-                    Stack(modifier = Modifier.Empty.size(40, 30)) {
-                        Text("A", modifier = Modifier.Empty.tooltip("Tip", delayMillis = 500L))
+                    Stack(modifier = Modifier.size(40, 30)) {
+                        Text("A", modifier = Modifier.tooltip("Tip", delayMillis = 500L))
                     }
                 },
                 MinecraftProfileFixture.create(tooltipBackground = background, tooltipFrame = frame),
@@ -64,8 +64,8 @@ internal class MinecraftTooltipTest {
         val host =
             createMinecraftUiHost(
                 ScreenDefinition("legacy-tooltip") {
-                    Stack(modifier = Modifier.Empty.size(40, 30)) {
-                        Text("A", modifier = Modifier.Empty.tooltip("Tip", delayMillis = 0L))
+                    Stack(modifier = Modifier.size(40, 30)) {
+                        Text("A", modifier = Modifier.tooltip("Tip", delayMillis = 0L))
                     }
                 },
                 MinecraftProfileFixture.create(legacyTooltipColors = Triple(background, borderTop, borderBottom)),
