@@ -183,6 +183,16 @@ Failure and close paths must clear cached references so a session cannot keep a 
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.
 Loading indicators and delayed tooltips additionally verify that timestamps inside one discrete animation or delay cell reuse the complete snapshot and that crossing the boundary creates exactly one fresh snapshot.
 
+### Current-entry transformed paint
+
+Each retained entry keeps one current snapshot of its transformed local paint, child clip, local overlays and root-coordinate overlays.
+The key is the identity of all three immutable local command lists, the accumulated local-to-tree transform and the measured size.
+Local paint invalidation, changed geometry or newly collected root overlays replaces that entry's snapshot.
+Child membership and ancestor clipping remain in the live ordered traversal, so reordering, removal and changed parent clips do not reuse a historical subtree.
+The snapshot contains only this entry's current commands and shares their immutable image values; it retains no entry or past revision.
+The tree's execution owner confines access, transient detachment preserves retained state, and terminal cleanup clears the snapshot before that entry's input or lifecycle callbacks, including failure cleanup.
+Tests prove unchanged-command identity, local and geometry invalidation, clip and overlay ordering, viewport changes and cleanup through a failing callback.
+
 ### Bounded raster texture cache
 
 Exact GPU axis metadata is generated directly into the immutable image's private storage through the synchronous pixel-generator overload of `createDrawImage`.

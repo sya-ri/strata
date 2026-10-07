@@ -58,6 +58,9 @@ internal class PaintOrderPipelineTest {
                     before.map { command -> if (command == childCommand) fill(childCommand.bounds, BACKGROUND) else command },
                     after,
                 )
+                before.zip(after).forEach { (previous, current) ->
+                    if (previous != childCommand) assertSame(previous, current)
+                }
                 assertEquals(2, element.content.node.paintCalls)
                 assertEquals(1, element.node.paintCalls)
                 assertEquals(1, element.node.overlayCalls)
