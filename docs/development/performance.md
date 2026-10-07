@@ -200,7 +200,7 @@ The subtree key includes current local paint and geometry, the root viewport and
 Paint invalidation marks aggregate ancestry without calling clean ancestors' paint callbacks, and structural changes clear ancestor concatenations before removed entries are released.
 Changed paths rebuild current child order and clipping, so reordering, removal and changed parent clips cannot reuse historical membership.
 Published frames receive a fresh read-only outer list when rebuilt and share detached immutable contents, preserving both frame identity and prior-frame pixels.
-The snapshot contains only this entry's current commands and shares their immutable image values; it retains no entry or past revision.
+Both snapshots contain only current immutable command values and share their immutable images; they retain no entry or past revision.
 The tree's execution owner confines access, transient detachment preserves retained state, and terminal entry cleanup clears the snapshot before that entry's cleanup hook or lifecycle callbacks, including failure cleanup.
 Tests prove unchanged-command identity, local and geometry invalidation, clip and overlay ordering, viewport changes and cleanup through a failing callback.
 Concatenation tests also cover deep indexed reads and allocation-bounded iteration, pending invalidation from paint, unchanged branch identity, previously published frames and removal before lifecycle callbacks.
@@ -221,6 +221,7 @@ The internal region rasterizer allocates only the tight visible run extent while
 CPU fallback runs exceeding 262,144 physical pixels are split into disjoint logical tiles targeting 256 physical pixels per edge.
 Tile edges grow until each run has at most 64 tiles; smaller runs retain their single tight image.
 Each tile retains original commands and sampling coordinates, with balanced clips emitted only for intersecting primitives, and replays complete ordered composition within its region.
+Disjoint tiles from one original run share an ordering identity and one native ordering group; boundaries remain between original runs, direct images and platform payloads.
 The existing generation key and resource sharing reuse unchanged tiles, including after a small primitive moves or disappears; changed tiles start from transparent black so erased pixels cannot persist.
 Unavailable direct images use the same bounded tiling, and fallback-reason counters count original command occurrences once rather than duplicated tile coverage.
 The screen owns only the current tile descriptions and generation, and unchanged frames still skip partitioning, rasterization and uploads.

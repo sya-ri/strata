@@ -4,10 +4,12 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -17,7 +19,37 @@ import org.junit.jupiter.api.Test
 /**
  * Verifies exact disjoint fallback pixels, per-command accounting and bounded changed-region reuse.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftPortableTilesTest {
+    @Test
+    fun disjointTilesShareBoundariesOnlyWithinTheirOriginalRun() {
+        val bounds = IntRect(0, 0, 600, 450)
+        val background = DrawCommand.FillRectangle(bounds, ArgbColor(0x80456789.toInt()))
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val sampled = FabricMinecraftFrameLayer.Sampled(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(1f, 1f, 4f, 4f), alphaCutoff = 0f), null, IntRect(1, 1, 4, 4))
+        val platform = FabricMinecraftFrameLayer.Platform(DrawCommand.Platform(object : PlatformDrawCommand {}, bounds), null)
+        for (scale in 1..4) {
+            val first = tileFabricMinecraftPortable(listOf(background), bounds, scale)
+            val second = tileFabricMinecraftPortable(listOf(background), bounds, scale)
+            assertTrue(1 < first.size)
+            for (index in first.indices) {
+                for (other in index + 1 until first.size) {
+                    val left = first[index].bounds
+                    val right = first[other].bounds
+                    assertTrue(left.right <= right.left || right.right <= left.left || left.bottom <= right.top || right.bottom <= left.top)
+                }
+            }
+            val boundary = Any()
+            val events = ArrayList<Any>()
+            val layers = first + listOf(sampled, platform) + second
+            submitFabricMinecraftFrameLayers(layers, { events.add(boundary) }) { events.add(it) }
+            assertEquals(first + listOf(boundary, sampled, boundary, platform, boundary) + second, events)
+            events.clear()
+            submitFabricMinecraftFrameLayers(first + second, { events.add(boundary) }) { events.add(it) }
+            assertEquals(first + listOf(boundary) + second, events)
+        }
+    }
+
     @Test
     fun fractionalClipsTintCutoffAndOverlappingAlphaMatchOneFullRasterAtEveryDensity() {
         val viewport = IntSize(600, 450)

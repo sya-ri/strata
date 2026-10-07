@@ -20,6 +20,7 @@ import kotlin.math.floor
 internal sealed interface FabricMinecraftFrameLayer {
     /**
      * A tight CPU-rasterized fallback run; sampled runs preserve absolute coordinates for exact Float arithmetic.
+     * Disjoint tiles from one original run share an opaque ordering identity, owned only by the current frame descriptions.
      */
     class Portable(
         @get:JvmSynthetic
@@ -36,6 +37,8 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val tintFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) },
         @get:JvmSynthetic
         internal val alphaCutoffFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f },
+        @get:JvmSynthetic
+        internal val orderingGroup: Any? = null,
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -64,7 +67,8 @@ internal sealed interface FabricMinecraftFrameLayer {
 }
 
 /**
- * Submits resolved frame layers in display-list order with one native ordering boundary between every adjacent pair.
+ * Submits resolved frame layers in display-list order with native boundaries between original runs and image or platform barriers.
+ * Adjacent disjoint tiles sharing one original portable run's identity need no additional ordering boundary.
  *
  * Empty and singleton lists create no boundary. The callbacks are borrowed synchronously, invoked on the caller's thread, and never retained.
  * An exception from either callback is propagated unchanged, and no later callback is invoked.
@@ -79,9 +83,12 @@ internal inline fun submitFabricMinecraftFrameLayers(
     advance: () -> Unit,
     submit: (FabricMinecraftFrameLayer) -> Unit,
 ) {
+    var previousGroup: Any? = null
     layers.forEachIndexed { index, layer ->
-        if (0 < index) advance()
+        val group = (layer as? FabricMinecraftFrameLayer.Portable)?.orderingGroup
+        if (0 < index && (group == null || group !== previousGroup)) advance()
         submit(layer)
+        previousGroup = group
     }
 }
 

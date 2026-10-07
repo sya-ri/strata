@@ -36,6 +36,7 @@ internal fun tileFabricMinecraftPortable(
         return listOf(FabricMinecraftFrameLayer.Portable(detached, bounds, ineligibleSampledImages, absolute, capacitySampledImages))
     }
     var extent = maxOf(1, 256 / scale)
+    val orderingGroup = Any()
 
     fun count(): Long = ((bounds.width.toLong() + extent - 1) / extent) * ((bounds.height.toLong() + extent - 1) / extent)
     while (64L < count()) extent = Math.multiplyExact(extent, 2)
@@ -62,6 +63,7 @@ internal fun tileFabricMinecraftPortable(
                         capacityCount,
                         tintCount,
                         cutoffCount,
+                        orderingGroup,
                     ),
                 )
                 ineligibleCount = 0
