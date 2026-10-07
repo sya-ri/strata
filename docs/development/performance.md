@@ -197,7 +197,7 @@ The key is the identity of all three immutable local command lists, the accumula
 Local paint invalidation, changed geometry or newly collected root overlays replaces that entry's snapshot.
 Child membership and ancestor clipping remain in the live ordered traversal, so reordering, removal and changed parent clips do not reuse a historical subtree.
 The snapshot contains only this entry's current commands and shares their immutable image values; it retains no entry or past revision.
-The tree's execution owner confines access, transient detachment preserves retained state, and terminal cleanup clears the snapshot before that entry's input or lifecycle callbacks, including failure cleanup.
+The tree's execution owner confines access, transient detachment preserves retained state, and terminal entry cleanup clears the snapshot before that entry's cleanup hook or lifecycle callbacks, including failure cleanup.
 Tests prove unchanged-command identity, local and geometry invalidation, clip and overlay ordering, viewport changes and cleanup through a failing callback.
 
 ### Bounded raster texture cache
