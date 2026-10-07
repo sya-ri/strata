@@ -38,6 +38,8 @@ uint add32(uint a, uint b) {
 }
 uint multiply32(uint a, uint b) {
     if (a == 0u || b == 0u) return 0u;
+    if (a == 0x3f800000u) return b;
+    if (b == 0x3f800000u) return a;
     uint m = (a & 0x7fffffu) | 0x800000u;
     uint n = (b & 0x7fffffu) | 0x800000u;
     uint m0 = m & 4095u;
@@ -59,6 +61,8 @@ uint multiply32(uint a, uint b) {
 }
 uint divide32(uint a, uint b) {
     if (a == 0u) return 0u;
+    // Opaque destinations produce exactly 1.0 alpha; division then preserves every input bit.
+    if (b == 0x3f800000u) return a;
     uint numerator = (a & 0x7fffffu) | 0x800000u;
     uint denominator = (b & 0x7fffffu) | 0x800000u;
     int exponent = int(a >> 23) - int(b >> 23) + 127;

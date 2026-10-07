@@ -42,7 +42,7 @@ private val compositionPipeline: RenderPipeline =
     RenderPipeline
         .builder()
         .withLocation(minecraftResourceLocation("strata", "pipeline/portable_composition"))
-        .withVertexShader(minecraftResourceLocation("strata", "core/canvas"))
+        .withVertexShader(minecraftResourceLocation("strata", "core/portable_composition"))
         .withFragmentShader(minecraftResourceLocation("strata", "core/portable_composition"))
         .withBindGroupLayout(
             BindGroupLayout

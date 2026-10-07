@@ -12,6 +12,7 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
+import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -64,8 +65,22 @@ internal fun createMinecraftCompositionParityScene(
         }
     val background = source(false)
     val overlay = source(true)
+    // An independently eligible native image keeps the fixed GUI backdrop outside the tested transparent portable tiles.
+    // Minecraft's underlying panorama/world can advance between screenshots on legacy screen adapters.
+    val backdrop = createDrawImage(IntSize(1, 1)) { _, _ -> 0xFF102030.toInt() }
+    val boundary =
+        CanvasSource {
+            object : CanvasBinding {
+                override fun paint(scope: PaintScope) {
+                    scope.sampledImage(backdrop, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = 0f)
+                }
+
+                override fun close(): Unit = Unit
+            }
+        }
     return ScreenDefinition("Ordered transparent composition parity") {
-        Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height)) {
+        Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF102030.toInt()))) {
+            Canvas(boundary, IntSize(1, 1))
             Canvas(background, viewport)
             Text("Overlapping glyphs 0123456789", modifier = Modifier.Empty.padding(16))
             Canvas(overlay, viewport)
