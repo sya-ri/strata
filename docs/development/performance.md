@@ -163,7 +163,8 @@ The tables belong to one invocation, retain no source or destination image, pres
 Whole one-texel images and smaller spans keep their existing paths.
 A zero-alpha tint preserves the destination without traversing its covered pixels.
 Scalar sampling skips destination reads and writes for a source pixel with zero alpha, preserving even hidden RGB in transparent destinations.
-Ordered translucent channel composition omits division only when its computed output alpha is exactly one; other alpha values use the original quotient and rounding.
+A white source pixel over an opaque destination matching the tint's RGB preserves that destination for every source and tint alpha, so this exact no-op skips channel composition.
+An independent ordered Float reference verifies all byte-channel, source-alpha and tint-alpha combinations for this admission; other pixels retain the original arithmetic and rounding.
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 

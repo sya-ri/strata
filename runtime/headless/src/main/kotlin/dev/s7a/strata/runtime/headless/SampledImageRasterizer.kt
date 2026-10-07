@@ -282,6 +282,7 @@ internal object SampledImageRasterizer {
             val sourceAlphaByte = source ushr 24
             if (sourceAlphaByte == 0 || alpha == 0f) return destination
             if (sourceAlphaByte == 255 && alpha == 1f) return opaque(source)
+            if ((source and 0xFFFFFF) == 0xFFFFFF && destination == (tint or 0xFF000000.toInt())) return destination
             if (source == previousSource && destination == previousDestination) return previousResult
             return translucent(source, destination)
         }
@@ -390,19 +391,12 @@ internal object SampledImageRasterizer {
                     8 -> green
                     else -> blue
                 }
-            val numerator = normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight
-            val result = quantizeComposition(numerator, outputAlpha)
+            val result = quantize((normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
             if (row != null) row[index] = result
             return result
         }
 
         private fun normalized(channel: Int): Float = (channel and 0xFF).toFloat() / 255f
-
-        // Division by exactly one cannot change the original ordered Float numerator.
-        private fun quantizeComposition(
-            numerator: Float,
-            alpha: Float,
-        ): Int = quantize(if (alpha == 1f) numerator else numerator / alpha)
 
         private fun quantize(channel: Float): Int = (channel * 255f).roundToInt().coerceIn(0, 255)
     }

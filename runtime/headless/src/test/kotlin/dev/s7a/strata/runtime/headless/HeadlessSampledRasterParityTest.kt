@@ -18,6 +18,25 @@ import kotlin.math.roundToInt
  */
 internal class HeadlessSampledRasterParityTest {
     @Test
+    fun whiteSourceOverOpaqueTintPreservesEveryChannelAndBothAlphaValues() {
+        val size = IntSize(1, 256)
+        val image = createDrawImage(size, IntArray(256) { alpha -> (alpha shl 24) or 0xFFFFFF })
+        val bounds = FloatRect(0f, 0f, 1f, 256f)
+        val clip = IntRect(0, 0, 1, 256)
+        for (alpha in 0..255) {
+            for (channel in 0..255) {
+                val tint = (alpha shl 24) or (channel shl 16) or ((channel * 37 and 255) shl 8) or (channel * 73 and 255)
+                val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
+                val background = IntArray(256) { tint or 0xFF000000.toInt() }
+                assertArrayEquals(background, reference(background, size, 1, command, clip))
+                val actual = background.copyOf()
+                SampledImageRasterizer.paint(actual, size, 1, command, clip)
+                assertArrayEquals(background, actual)
+            }
+        }
+    }
+
+    @Test
     fun everyAlphaPairPreservesOrderedFloatComposition() {
         val size = IntSize(256, 256)
         val source = IntArray(size.width * size.height) { index -> ((index / 256) shl 24) or (index * 73471 and 0xFFFFFF) }
