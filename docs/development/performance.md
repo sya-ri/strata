@@ -161,11 +161,18 @@ Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primit
 The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
 The tables belong to one invocation, retain no source or destination image, preserve the original multiplication/division/rounding order, and expire before return.
 Whole one-texel images and smaller spans keep their existing paths.
+Large nonconstant sampled spans additionally reuse unquantized source-color products independently of destination pixels.
+One owner-thread raster scratch keys these products by the complete ARGB tint and promotes accesses in a four-entry LRU.
+Each tint admits at most sixteen source-alpha rows; all primitive storage remains below 256 KiB, and excess alpha rows use the original scalar multiplication.
+The products preserve each original Float multiplication and contain no intermediate byte quantization; cutoff, coverage and destination blending still execute for every applicable command.
+Ordinary headless rasterization owns scratch for one call, while Fabric shares it across changed CPU tiles in one frame preparation.
+Both paths release every table on return or failure, retaining no image, command, destination or frame history.
 A zero-alpha tint preserves the destination without traversing its covered pixels.
 Scalar sampling skips destination reads and writes for a source pixel with zero alpha, preserving even hidden RGB in transparent destinations.
 A white source pixel over an opaque destination matching the tint's RGB preserves that destination for every source and tint alpha, so this exact no-op skips channel composition.
 An independent ordered Float reference verifies all byte-channel, source-alpha and tint-alpha combinations for this admission; other pixels retain the original arithmetic and rounding.
-These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
+Command-local mappings and destination-result tables expire after the command; frame scratch expires after preparation.
+Neither retains images or frame history or changes native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 
 `DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.

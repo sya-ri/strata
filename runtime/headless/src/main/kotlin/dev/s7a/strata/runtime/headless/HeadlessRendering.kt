@@ -79,6 +79,25 @@ public fun rasterizeHeadlessInto(
 }
 
 /**
+ * Borrows owner-thread source-color scratch across regions in one synchronous frame preparation.
+ * The caller closes [scratch] after the final region or failure; this call retains no borrowed storage.
+ * Preflight and exact pixel semantics follow [rasterizeHeadlessInto].
+ */
+@InternalStrataRuntimeApi
+@JvmSynthetic
+public fun rasterizeHeadlessInto(
+    commands: List<DrawCommand>,
+    bounds: IntRect,
+    scale: Int,
+    pixels: IntArray,
+    scratch: HeadlessRasterScratch,
+) {
+    scratch.requireOpen()
+    require(0 <= bounds.left && 0 <= bounds.top) { "Raster region origin must be nonnegative." }
+    HeadlessImplementation.rasterizeInto(commands, bounds.size, scale, IntOffset(bounds.left, bounds.top), pixels, scratch)
+}
+
+/**
  * Synchronously renders an element description through the retained core and rasterizes its paint output.
  *
  * Viewport and physical-size validation occurs before the description is validated or any node lifecycle hook runs.
@@ -112,11 +131,12 @@ private object HeadlessImplementation {
         scale: Int,
         origin: IntOffset,
         pixels: IntArray,
+        scratch: HeadlessRasterScratch? = null,
     ) {
         val dimensions = checkedDimensions(viewport, scale, origin)
         require(dimensions.area <= pixels.size) { "Borrowed raster storage must cover the physical region." }
         val snapshot = snapshotCommands(commands)
-        paintSnapshot(dimensions, snapshot, pixels)
+        paintSnapshot(dimensions, snapshot, pixels, scratch)
     }
 
     fun rasterize(
@@ -190,11 +210,24 @@ private object HeadlessImplementation {
         return snapshot
     }
 
-    @Suppress("CyclomaticComplexMethod") // Explicit command ordering includes materialization before each non-uniform primitive.
     private fun paintSnapshot(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
         borrowed: IntArray? = null,
+        scratch: HeadlessRasterScratch? = null,
+    ): IntArray =
+        if (scratch == null) {
+            HeadlessRasterScratch().use { paintCommands(dimensions, commands, borrowed, it) }
+        } else {
+            paintCommands(dimensions, commands, borrowed, scratch)
+        }
+
+    @Suppress("CyclomaticComplexMethod") // Explicit command ordering includes materialization before each non-uniform primitive.
+    private fun paintCommands(
+        dimensions: PhysicalDimensions,
+        commands: List<DrawCommand>,
+        borrowed: IntArray?,
+        scratch: HeadlessRasterScratch,
     ): IntArray {
         val initialPixels = if (borrowed == null) initialImagePixels(commands.firstOrNull(), dimensions) else null
         val pixels = borrowed ?: initialPixels ?: IntArray(dimensions.area)
@@ -232,7 +265,7 @@ private object HeadlessImplementation {
                 is DrawCommand.SampledImage -> {
                     if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
                     uniform = false
-                    paintSampled(pixels, dimensions, command, clips.lastOrNull() ?: physicalViewport)
+                    paintSampled(pixels, dimensions, command, clips.lastOrNull() ?: physicalViewport, scratch)
                 }
 
                 is DrawCommand.BlitImagePixels -> {
@@ -370,8 +403,9 @@ private object HeadlessImplementation {
         dimensions: PhysicalDimensions,
         command: DrawCommand.SampledImage,
         clip: IntRect,
+        scratch: HeadlessRasterScratch,
     ) {
-        SampledImageRasterizer.paint(pixels, dimensions.physicalSize, dimensions.scale, command, clip, dimensions.physicalOrigin)
+        SampledImageRasterizer.paint(pixels, dimensions.physicalSize, dimensions.scale, command, clip, dimensions.physicalOrigin, scratch)
     }
 
     /**

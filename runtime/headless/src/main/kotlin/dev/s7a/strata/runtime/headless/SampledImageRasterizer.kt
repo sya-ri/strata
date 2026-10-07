@@ -5,6 +5,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Arrays
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -16,6 +17,7 @@ import kotlin.math.roundToInt
  * The object retains no images or raster state and may be called concurrently with independent destination arrays.
  * The caller exclusively owns the mutable destination for the duration of [paint].
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal object SampledImageRasterizer {
     /**
      * Paints one validated command using final-density pixel centers and continuous tint multiplication.
@@ -37,6 +39,7 @@ internal object SampledImageRasterizer {
         command: DrawCommand.SampledImage,
         clip: IntRect,
         origin: IntOffset = IntOffset.Zero,
+        scratch: HeadlessRasterScratch? = null,
     ) {
         val destination = command.destination
         val left = maxOf(firstPixel(destination.left, scale), clip.left)
@@ -48,7 +51,9 @@ internal object SampledImageRasterizer {
 
         val mapColumns = 4 <= bottom - top && 4096L <= (right - left).toLong() * (bottom - top)
         val constantImage = command.image.size.width == 1 && command.image.size.height == 1
-        val color = SampledColor(command.tint.value, command.alphaCutoff, mapColumns && constantImage.not())
+        val tables = mapColumns && constantImage.not()
+        val weights = if (tables) scratch?.weights(command.tint.value) else null
+        val color = SampledColor(command.tint.value, command.alphaCutoff, tables, weights)
         if (constantImage) {
             color.paintConstant(pixels, physicalSize.width, left - origin.x, top - origin.y, right - origin.x, bottom - origin.y, command.image.argbAt(0, 0))
             return
@@ -222,6 +227,7 @@ internal object SampledImageRasterizer {
         private val tint: Int,
         private val cutoff: Float,
         private val useChannelTables: Boolean,
+        private val weights: SampledSourceWeights?,
     ) {
         private val identityTint = tint == 0xFFFFFFFF.toInt()
         private val alpha = normalized(tint ushr 24)
@@ -250,7 +256,7 @@ internal object SampledImageRasterizer {
             bottom: Int,
             source: Int,
         ) {
-            val sourceAlpha = normalized(source ushr 24) * alpha
+            val sourceAlpha = weights?.alpha(source ushr 24) ?: (normalized(source ushr 24) * alpha)
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return
             if (sourceAlpha == 1f) {
                 val result = blend(source, 0)
@@ -292,9 +298,10 @@ internal object SampledImageRasterizer {
             source: Int,
             destination: Int,
         ): Int {
-            val sourceAlpha = normalized(source ushr 24) * alpha
+            val sourceAlpha = weights?.alpha(source ushr 24) ?: (normalized(source ushr 24) * alpha)
             if (sourceAlpha < cutoff || sourceAlpha == 0f) return destination
-            val destinationWeight = normalized(destination ushr 24) * (1f - sourceAlpha)
+            val inverse = weights?.inverse(source ushr 24) ?: (1f - sourceAlpha)
+            val destinationWeight = normalized(destination ushr 24) * inverse
             val outputAlpha = sourceAlpha + destinationWeight
             val alphaByte = quantize(outputAlpha)
             if (alphaByte == 0) return remember(source, destination, 0)
@@ -385,15 +392,25 @@ internal object SampledImageRasterizer {
             val index = (2 - shift / 8) * 256 + (source ushr shift and 255)
             val cached = row?.get(index)
             if (cached != null && 0 <= cached) return cached
+            val contribution = contribution(source, shift, sourceAlpha)
+            val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
+            if (row != null) row[index] = result
+            return result
+        }
+
+        private fun contribution(
+            source: Int,
+            shift: Int,
+            sourceAlpha: Float,
+        ): Float {
+            weights?.let { return it.channel(source ushr 24, source ushr shift and 255, shift) }
             val channelTint =
                 when (shift) {
                     16 -> red
                     8 -> green
                     else -> blue
                 }
-            val result = quantize((normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
-            if (row != null) row[index] = result
-            return result
+            return normalized(source ushr shift) * channelTint * sourceAlpha
         }
 
         private fun normalized(channel: Int): Float = (channel and 0xFF).toFloat() / 255f

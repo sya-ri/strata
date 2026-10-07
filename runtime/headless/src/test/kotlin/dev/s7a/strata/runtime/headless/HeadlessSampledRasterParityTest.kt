@@ -7,6 +7,7 @@ import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.floor
@@ -16,6 +17,7 @@ import kotlin.math.roundToInt
  * Compares constant-image and mapped-row sampling with independent per-pixel coverage and composition.
  * The reference never calls the optimized painter or shares its row mapping and constant-color shortcuts.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class HeadlessSampledRasterParityTest {
     @Test
     fun whiteSourceOverOpaqueTintPreservesEveryChannelAndBothAlphaValues() {
@@ -48,7 +50,13 @@ internal class HeadlessSampledRasterParityTest {
             val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
             val actual = background.copyOf()
             SampledImageRasterizer.paint(actual, size, 1, command, clip)
-            assertArrayEquals(reference(background, size, 1, command, clip), actual)
+            val expected = reference(background, size, 1, command, clip)
+            assertArrayEquals(expected, actual)
+            HeadlessRasterScratch().use { scratch ->
+                val reused = background.copyOf()
+                SampledImageRasterizer.paint(reused, size, 1, command, clip, scratch = scratch)
+                assertArrayEquals(expected, reused)
+            }
         }
         assertArrayEquals(source, image.copyArgb())
     }

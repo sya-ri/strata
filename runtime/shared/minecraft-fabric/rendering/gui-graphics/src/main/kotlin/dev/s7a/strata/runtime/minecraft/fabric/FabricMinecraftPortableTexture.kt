@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -55,10 +56,11 @@ internal class FabricMinecraftPortableTexture private constructor(
     internal fun initialize(
         input: FabricMinecraftPortableImage,
         argb: IntArray,
+        scratch: HeadlessRasterScratch? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        input.rasterizeInto(argb)
+        input.rasterizeInto(argb, scratch)
         val size = input.physicalSize
         val native = NativeImage(size.width, size.height, false)
         pixels = native
@@ -211,6 +213,7 @@ internal class FabricMinecraftPortableTexture private constructor(
          *
          * @param input immutable original-coordinate layer whose exact pixels are copied into owned native storage.
          * @param argb frame-local scratch storage borrowed only through synchronous rasterization and copy.
+         * @param scratch optional owner-thread source products shared only within this frame preparation.
          * @param retain reserved generation receiver, invoked once before allocation; the receiver must seal its generation even if this method throws.
          * @return an initialized immutable upload owned exclusively by the receiving generation.
          * @throws Throwable when ownership transfer or initialization fails; every resource allocated after transfer remains with that generation.
@@ -219,13 +222,14 @@ internal class FabricMinecraftPortableTexture private constructor(
         internal fun create(
             input: FabricMinecraftPortableImage,
             argb: IntArray,
+            scratch: HeadlessRasterScratch? = null,
             retain: (NativeGuiResource) -> Unit,
         ): FabricMinecraftPortableTexture {
             RenderSystem.assertOnRenderThread()
             val location = minecraftResourceLocation("strata", "runtime/portable/${sequence.getAndIncrement().toULong()}")
             val owner = FabricMinecraftPortableTexture(location)
             retain(owner)
-            owner.initialize(input, argb)
+            owner.initialize(input, argb, scratch)
             return owner
         }
 

@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceOwnerId
@@ -98,14 +99,16 @@ internal class FabricMinecraftPortableFrames {
         var failure: Throwable? = null
         try {
             val rasterPixels = allocateRasterPixels(images, matches)
-            images.forEachIndexed { index, input ->
-                val source = matches?.get(index) ?: -1
-                if (previous != null && 0 <= source) {
-                    resources.reuse(set, previous.set, source)
-                    textures.add(previous.textures[source])
-                } else {
-                    textures.add(prepareTexture(input, rasterPixels, rasterized, sampled) { resource -> resources.add(set, resource) })
-                    uploaded(input)
+            HeadlessRasterScratch().use { scratch ->
+                images.forEachIndexed { index, input ->
+                    val source = matchedSource(matches, index)
+                    if (previous != null && 0 <= source) {
+                        resources.reuse(set, previous.set, source)
+                        textures.add(previous.textures[source])
+                    } else {
+                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled) { resource -> resources.add(set, resource) })
+                        uploaded(input)
+                    }
                 }
             }
         } catch (caught: Throwable) {
@@ -132,13 +135,18 @@ internal class FabricMinecraftPortableFrames {
         return prepared
     }
 
+    private fun matchedSource(
+        matches: IntArray?,
+        index: Int,
+    ): Int = matches?.get(index) ?: -1
+
     private fun allocateRasterPixels(
         images: List<FabricMinecraftPortableImage>,
         matches: IntArray?,
     ): IntArray? {
         var area = 0
         images.forEachIndexed { index, input ->
-            if (input.sampling == null && (matches?.get(index) ?: -1) < 0) {
+            if (input.sampling == null && matchedSource(matches, index) < 0) {
                 area = maxOf(area, Math.multiplyExact(input.physicalSize.width, input.physicalSize.height))
             }
         }
@@ -148,6 +156,7 @@ internal class FabricMinecraftPortableFrames {
     private fun prepareTexture(
         input: FabricMinecraftPortableImage,
         pixels: IntArray?,
+        scratch: HeadlessRasterScratch?,
         rasterized: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
         retain: (NativeGuiResource) -> Unit,
@@ -155,7 +164,7 @@ internal class FabricMinecraftPortableFrames {
         val sampling = input.sampling
         if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
         rasterized()
-        return FabricMinecraftPortableTexture.create(input, checkNotNull(pixels), retain)
+        return FabricMinecraftPortableTexture.create(input, checkNotNull(pixels), scratch, retain)
     }
 
     private fun reuseCurrent(images: List<FabricMinecraftPortableImage>): Prepared? {

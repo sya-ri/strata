@@ -12,11 +12,17 @@ public abstract interface class dev/s7a/strata/runtime/headless/HeadlessImage {
 	public abstract fun getSize ()Ldev/s7a/strata/geometry/IntSize;
 }
 
+public final class dev/s7a/strata/runtime/headless/HeadlessRasterScratch : java/lang/AutoCloseable {
+	public fun <init> ()V
+	public fun close ()V
+}
+
 public final class dev/s7a/strata/runtime/headless/HeadlessRendering {
 	public static final fun rasterizeHeadless (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 	public static final fun rasterizeHeadless (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 	public static synthetic fun rasterizeHeadless$default (Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;IILjava/lang/Object;)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 	public static final synthetic fun rasterizeHeadlessInto (Ljava/util/List;Ldev/s7a/strata/geometry/IntRect;I[I)V
+	public static final synthetic fun rasterizeHeadlessInto (Ljava/util/List;Ldev/s7a/strata/geometry/IntRect;I[ILdev/s7a/strata/runtime/headless/HeadlessRasterScratch;)V
 	public static final synthetic fun rasterizeHeadlessRegion (Ljava/util/List;Ldev/s7a/strata/geometry/IntRect;I)Ldev/s7a/strata/runtime/headless/HeadlessImage;
 	public static final fun renderHeadless (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
 	public static final fun renderHeadless (Ldev/s7a/strata/element/Element;Ldev/s7a/strata/geometry/IntSize;I)Ldev/s7a/strata/runtime/headless/HeadlessFrame;
