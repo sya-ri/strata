@@ -25,7 +25,7 @@ internal class FabricMinecraftSamplingBudget {
         val width = Math.multiplyExact(bounds.width, scale)
         val height = Math.multiplyExact(bounds.height, scale)
         val output = Math.multiplyExact(width.toLong(), height.toLong())
-        val lookup = Math.multiplyExact(maxOf(2, width, height).toLong(), 3L)
+        val lookup = Math.multiplyExact(maxOf(3, width, height).toLong(), 3L)
         val required = Math.multiplyExact(Math.addExact(output, lookup), 4L)
         if (256 <= images || 64L * 1_024 * 1_024 - bytes < required) return false
         images += 1

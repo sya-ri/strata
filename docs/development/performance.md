@@ -286,6 +286,10 @@ Its packaged access widener exposes only the active extractor queue, scissor sta
 The CPU constructs only two axis-index rows and one output-extent row, using the same original-coordinate Float operation order and half-open physical coverage as Headless.
 Each little-endian RGBA integer encodes a source index plus one, with zero for an uncovered physical pixel; the shader decodes it and uses `texelFetch` without normalized source interpolation or GPU source-coordinate arithmetic.
 The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
+Its third row also carries an opaque RGB channel mask and the first source alpha byte admitted by the CPU oracle's Float cutoff comparison.
+Exact lookup presentation admits arbitrary cutoffs and opaque tints whose RGB channels are each zero or 255; the shader decodes integer source alpha and either preserves or zeroes each color channel.
+Intermediate tint channels and alpha modulation retain CPU composition because rounding a tinted source before destination blending can change exact output pixels.
+Lookup width is at least three texels, and both frame admission and lifetime reservations include that minimum.
 Offscreen passes write straight RGBA without blending, while direct GUI lookup applies the same ordered source-over composition as ordinary portable images.
 Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for commands outside their proven native quad subset.
 

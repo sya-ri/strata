@@ -61,13 +61,13 @@ internal class FabricMinecraftFrameInputs(
         layers.fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, if (layer is FabricMinecraftFrameLayer.Portable) layer.ineligibleSampledImages.toLong() else 0L) }
 
     /**
-     * Number of visible portable sampled commands rejected first by non-identity tint.
+     * Number of visible portable sampled commands rejected first by unsupported tint composition.
      */
     @get:JvmSynthetic
     internal val tintFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.tintFallbackImages.toLong() else 0L }
 
     /**
-     * Number rejected by cutoff after identity tint; other causes remain explicitly unclassified.
+     * Number rejected by unsupported cutoff after identity tint; other causes remain explicitly unclassified.
      */
     @get:JvmSynthetic
     internal val alphaCutoffFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.alphaCutoffFallbackImages.toLong() else 0L }

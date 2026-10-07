@@ -186,7 +186,8 @@ Supply `sampled_images: true` in the processor request for this corpus; explicit
 
 Native payload counters distinguish successful source-image, CPU-raster and sampling-metadata uploads in RGBA8 bytes.
 GPU-generated output and texture reuse add no CPU-upload payload.
-Fallback counters distinguish non-identity tint, cutoff after identity tint, and other ineligible causes; capacity remains a separate existing counter.
+Fallback counters distinguish unsupported tint composition, unsupported cutoff after identity tint, and other ineligible causes; capacity remains a separate existing counter.
+Classification uses the compiled adapter's admitted effects before recording a reason, so an exact channel mask or cutoff rejected by clipping or capacity is not labeled unsupported tint or cutoff.
 The other category includes unsupported mapping, clips and adapter/source limits and does not infer a more specific reason.
 Older measured runtimes expose unavailable payload values as null rather than zero.
 

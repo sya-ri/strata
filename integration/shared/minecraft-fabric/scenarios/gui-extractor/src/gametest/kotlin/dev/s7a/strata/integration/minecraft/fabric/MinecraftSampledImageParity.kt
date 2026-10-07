@@ -137,6 +137,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         alphaCutoff = 0f,
                     )
                     scope.paintFractionalSourceSamples(sampled)
+                    scope.paintExactSampledEffects(reflected)
                     SampledImageOrientation.entries.forEachIndexed { index, orientation ->
                         val x = 144 + index * 24
                         scope.withClip(IntRect(x, 74, x + 20, 94)) {
@@ -161,6 +162,32 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                     .scaleToFit(contentSize, allowUpscaling = true),
         ) {
             Canvas(source, contentSize)
+        }
+    }
+}
+
+// Binary RGB masks need no continuous tint quantization; cutoff neighbors must retain CPU Float decisions.
+private fun PaintScope.paintExactSampledEffects(image: DrawImage) {
+    val boundary = 128f / 255f
+    val cutoffs = listOf(0f, Math.nextDown(boundary), boundary, Math.nextUp(boundary), 1f)
+    cutoffs.forEachIndexed { row, cutoff ->
+        repeat(8) { mask ->
+            val x = 8 + mask * 16
+            val y = 80 + row * 12
+            val rgb = (if (mask and 1 == 0) 0 else 0xFF0000) or (if (mask and 2 == 0) 0 else 0xFF00) or (if (mask and 4 == 0) 0 else 0xFF)
+            fillRectangle(IntRect(x, y, x + 12, y + 8), ArgbColor(0xFF7195B3.toInt()))
+            withClip(IntRect(x, y, x + 12, y + 8)) {
+                withClip(IntRect(x + 4, y, x + 12, y + 8)) {
+                    sampledImage(
+                        image,
+                        FloatRect(0.1f, 0.4f, 5.7f, 3.6f),
+                        FloatRect(x + 0.25f, y + 0.125f, x + 13.75f, y + 9.875f),
+                        orientation = SampledImageOrientation.entries[mask % SampledImageOrientation.entries.size],
+                        tint = ArgbColor(0xFF000000.toInt() or rgb),
+                        alphaCutoff = cutoff,
+                    )
+                }
+            }
         }
     }
 }

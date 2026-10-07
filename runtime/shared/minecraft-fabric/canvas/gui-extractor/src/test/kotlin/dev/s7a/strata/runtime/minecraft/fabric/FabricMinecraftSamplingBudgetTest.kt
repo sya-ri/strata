@@ -5,6 +5,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -38,5 +39,31 @@ internal class FabricMinecraftSamplingBudgetTest {
         val resolved = inputs.resolve({ false }) { true }
         assertEquals(257L, resolved.capacitySampledImages)
         assertEquals(0L, resolved.ineligibleSampledImages)
+    }
+
+    @Test
+    fun supportedEffectsCountCapacityAndUnsupportedClippingWithoutFalseTintOrCutoffReasons() {
+        val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f)
+        for (tint in listOf(command.tint, ArgbColor(-1))) {
+            val selected = command.copy(tint = tint)
+            val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(List(257) { selected }, IntSize(1, 1), exactSampling = true), 1)
+            assertEquals(256, inputs.sampled.size)
+            assertEquals(1L, inputs.capacitySampledImages)
+            assertEquals(0L, inputs.ineligibleSampledImages)
+            assertEquals(0L, inputs.tintFallbackImages)
+            assertEquals(0L, inputs.alphaCutoffFallbackImages)
+            val resolved = inputs.resolve({ false }) { true }
+            assertEquals(257L, resolved.capacitySampledImages)
+            assertEquals(0L, resolved.tintFallbackImages)
+            assertEquals(0L, resolved.alphaCutoffFallbackImages)
+        }
+        val large = command.copy(destination = FloatRect(0f, 0f, 600f, 450f))
+        val clips = listOf(DrawCommand.PushFractionalClip(FloatRect(0.5f, 0.5f, 599.5f, 449.5f)), large, DrawCommand.PopClip)
+        val clipped = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(clips, IntSize(600, 450), scale = 2, exactSampling = true), 2)
+        assertEquals(1L, clipped.ineligibleSampledImages)
+        assertEquals(0L, clipped.capacitySampledImages)
+        assertEquals(0L, clipped.tintFallbackImages)
+        assertEquals(0L, clipped.alphaCutoffFallbackImages)
     }
 }

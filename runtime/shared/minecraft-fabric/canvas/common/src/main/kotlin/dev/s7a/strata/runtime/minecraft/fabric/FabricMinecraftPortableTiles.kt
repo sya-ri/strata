@@ -4,7 +4,6 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -18,12 +17,15 @@ import kotlin.math.floor
  * These render-thread descriptions contain no pixels or native resources and live only with the current prepared frame.
  */
 @JvmSynthetic
+@Suppress("LongParameterList") // Admission reasons belong to original occurrences, not duplicated tile commands.
 internal fun tileFabricMinecraftPortable(
     commands: List<DrawCommand>,
     bounds: IntRect,
     scale: Int,
     ineligibleSampledImages: Int = 0,
     capacitySampledImages: Int = 0,
+    tintFallbackImages: Int = 0,
+    alphaCutoffFallbackImages: Int = 0,
 ): List<FabricMinecraftFrameLayer.Portable> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val width = Math.multiplyExact(bounds.width, scale)
@@ -33,7 +35,7 @@ internal fun tileFabricMinecraftPortable(
     if (width.toLong() * height <= 262_144L) {
         val absolute = commands.any { it is DrawCommand.SampledImage }
         val detached = if (absolute) commands.toList() else localizeFabricPortable(commands, bounds)
-        return listOf(FabricMinecraftFrameLayer.Portable(detached, bounds, ineligibleSampledImages, absolute, capacitySampledImages))
+        return listOf(FabricMinecraftFrameLayer.Portable(detached, bounds, ineligibleSampledImages, absolute, capacitySampledImages, tintFallbackImages, alphaCutoffFallbackImages))
     }
     var extent = maxOf(1, 256 / scale)
     val orderingGroup = Any()
@@ -42,8 +44,8 @@ internal fun tileFabricMinecraftPortable(
     while (64L < count()) extent = Math.multiplyExact(extent, 2)
     var ineligibleCount = ineligibleSampledImages
     var capacityCount = capacitySampledImages
-    var tintCount = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) }
-    var cutoffCount = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f }
+    var tintCount = tintFallbackImages
+    var cutoffCount = alphaCutoffFallbackImages
     val result = ArrayList<FabricMinecraftFrameLayer.Portable>()
     var top = bounds.top
     while (top < bounds.bottom) {

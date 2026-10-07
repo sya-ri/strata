@@ -28,7 +28,15 @@ internal object FabricMinecraftSamplingShaders {
             if (any(lessThan(source, ivec2(0)))) {
                 fragColor = vec4(0.0);
             } else {
-                fragColor = texelFetch(InSampler, source, 0);
+                vec4 color = texelFetch(InSampler, source, 0);
+                int effects = indexAt(ivec2(2, 2));
+                int alpha = int(floor(color.a * 255.0 + 0.5));
+                if (alpha < (effects >> 3)) {
+                    fragColor = vec4(0.0);
+                } else {
+                    color.rgb *= vec3(float(effects & 1), float((effects >> 1) & 1), float((effects >> 2) & 1));
+                    fragColor = color;
+                }
             }
         }
         """.trimIndent()

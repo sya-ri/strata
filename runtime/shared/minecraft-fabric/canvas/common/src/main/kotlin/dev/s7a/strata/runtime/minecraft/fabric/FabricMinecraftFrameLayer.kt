@@ -34,9 +34,9 @@ internal sealed interface FabricMinecraftFrameLayer {
         @get:JvmSynthetic
         internal val capacitySampledImages: Int = 0,
         @get:JvmSynthetic
-        internal val tintFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) },
+        internal val tintFallbackImages: Int = 0,
         @get:JvmSynthetic
-        internal val alphaCutoffFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f },
+        internal val alphaCutoffFallbackImages: Int = 0,
         @get:JvmSynthetic
         internal val orderingGroup: Any? = null,
     ) : FabricMinecraftFrameLayer
@@ -124,19 +124,23 @@ internal fun partitionFabricMinecraftFrame(
     var portableBounds: IntRect? = null
     var portableIneligibleSampledImages = 0
     var portableCapacitySampledImages = 0
+    var portableTintFallbackImages = 0
+    var portableAlphaCutoffFallbackImages = 0
     val samplingBudget = FabricMinecraftSamplingBudget()
 
     fun flushPortable() {
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages))
+            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages, portableTintFallbackImages, portableAlphaCutoffFallbackImages))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
         portableBounds = null
         portableIneligibleSampledImages = 0
         portableCapacitySampledImages = 0
+        portableTintFallbackImages = 0
+        portableAlphaCutoffFallbackImages = 0
     }
 
     commands.forEach { command ->
@@ -181,6 +185,11 @@ internal fun partitionFabricMinecraftFrame(
                         portableCapacitySampledImages = Math.incrementExact(portableCapacitySampledImages)
                     } else {
                         portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
+                    }
+                    when {
+                        capacity -> Unit
+                        command.tint != ArgbColor(-1) && (exactSampling.not() || command.tint.hasExactFabricSamplingTint().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
+                        command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && exactSampling.not() -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
                     }
                 }
             }
