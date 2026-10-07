@@ -145,6 +145,9 @@ This path does not round a translucent tint before blending or assume that a one
 For spans covering at least 4,096 physical pixels and four rows, nearest source X coordinates are calculated once in an invocation-local Int array bounded by the clipped physical width.
 Each entry uses the original pixel-center Float expressions; there is no incremental coordinate recurrence or accumulated rounding error.
 Smaller spans keep direct sampling, and source Y remains independently calculated for every row.
+When that mapped span magnifies a source axis by at least four, consecutive columns selecting the same texel borrow one source value.
+Fully opaque source/tint spans overwrite their destination in one array fill; translucent spans retain each actual destination's exact Float composition.
+The grouping uses the existing column array and adds no scratch storage or retained mapping.
 An opaque sampled source with an opaque RGB tint computes its exact normalized channel products without reading destination channels.
 Within each command, scalar values remember the previous source ARGB, destination ARGB and exact result.
 An opaque tint result depends only on source; a translucent result additionally requires complete destination equality, including RGB in transparent pixels.
@@ -181,6 +184,12 @@ The time-aware clean path must preserve the same complete frame snapshot when no
 Loading indicators and delayed tooltips additionally verify that timestamps inside one discrete animation or delay cell reuse the complete snapshot and that crossing the boundary creates exactly one fresh snapshot.
 
 ### Bounded raster texture cache
+
+Exact GPU axis metadata is generated directly into the immutable image's private storage through the synchronous pixel-generator overload of `createDrawImage`.
+The generator is never retained, and the array-based public factory retains its defensive-copy contract.
+Each current-frame lookup remains bounded to 4,096 by three texels; source identity, output extent, tint/cutoff and every encoded axis selection determine reuse.
+Mirrored source endpoints use the same original Float equations as the independent CPU oracle, and identical encoded selections may reuse output regardless of the orientation label.
+No previous-frame CPU map, source pixels or new cache is retained.
 
 The Fabric presenter reuses the complete partitioned frame when the read-only draw-command list has referential identity, the logical viewport is equal, and the actual GUI scale is unchanged.
 When a mixed portable-and-platform display list changes, each matched portable texture is reused when its immutable commands, logical extent, sampling origin, and GUI scale are equal; platform layers are still extracted natively every time.

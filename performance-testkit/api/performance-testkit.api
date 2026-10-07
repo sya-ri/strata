@@ -13,6 +13,15 @@ public final class dev/s7a/strata/performance/CompilerApiInventory {
 	public final fun capture (Ljava/util/Map;)Ljava/util/Map;
 }
 
+public final class dev/s7a/strata/performance/GpuPerformanceMeter : java/lang/AutoCloseable {
+	public fun <init> (IDLjava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun begin ()V
+	public fun close ()V
+	public final fun getCompleted ()Z
+	public final fun recorded ()V
+	public final fun result ()Lcom/google/gson/JsonObject;
+}
+
 public final class dev/s7a/strata/performance/JmhForkProfiler : org/openjdk/jmh/profile/InternalProfiler {
 	public fun <init> (Ljava/lang/String;)V
 	public fun afterIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/results/IterationResult;)Ljava/util/Collection;

@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import java.util.Arrays
 import kotlin.math.ceil
@@ -28,7 +29,7 @@ internal object SampledImageRasterizer {
      * The caller guarantees that clip coordinates relative to [origin] fit in [physicalSize].
      * Clipping preserves the source mapping from the original destination and the method retains no arguments.
      */
-    @Suppress("CyclomaticComplexMethod") // Keep exact scalar reuse inside the pixel traversal without per-texel dispatch.
+    @Suppress("CyclomaticComplexMethod", "LongMethod") // Keep exact scalar and span reuse in one ordered traversal without per-texel dispatch.
     fun paint(
         pixels: IntArray,
         physicalSize: IntSize,
@@ -66,6 +67,7 @@ internal object SampledImageRasterizer {
         val rows =
             if (mapColumns && command.source.height * 2 <= bottom - top) RowReuse(physicalSize.width, left - origin.x, right - origin.x) else null
         val opaqueTint = command.tint.value ushr 24 == 255
+        val magnified = sourceXs != null && command.source.width * 4 <= right - left
         // Transparent black over transparent black is already a valid zero result for any tint or cutoff.
         for (y in top until bottom) {
             val sourceY =
@@ -79,25 +81,63 @@ internal object SampledImageRasterizer {
                     command.image.size.height,
                 )
             if (rows?.prepare(pixels, y - origin.y, sourceY) == true) continue
-            var opaqueRow = opaqueTint
-            var index = (y - origin.y) * physicalSize.width + left - origin.x
-            for (x in left until right) {
-                val sourceX =
-                    sourceXs?.get(x - left) ?: sampleX(x, scale, command)
-                val source = command.image.argbAt(sourceX, sourceY)
-                if (rows != null && source ushr 24 != 255) opaqueRow = false
-                val destinationColor = pixels[index]
-                // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
-                if (source != previousSource || destinationColor != previousDestination) {
-                    previousSource = source
-                    previousDestination = destinationColor
-                    previousResult = color.blend(source, destinationColor)
+            if (magnified) {
+                val start = (y - origin.y) * physicalSize.width + left - origin.x
+                val opaqueRow = paintMagnifiedRow(pixels, start, sourceXs, sourceY, command.image, color, opaqueTint)
+                rows?.finish(opaqueRow)
+            } else {
+                var opaqueRow = opaqueTint
+                var index = (y - origin.y) * physicalSize.width + left - origin.x
+                for (x in left until right) {
+                    val sourceX =
+                        sourceXs?.get(x - left) ?: sampleX(x, scale, command)
+                    val source = command.image.argbAt(sourceX, sourceY)
+                    if (rows != null && source ushr 24 != 255) opaqueRow = false
+                    val destinationColor = pixels[index]
+                    // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
+                    if (source != previousSource || destinationColor != previousDestination) {
+                        previousSource = source
+                        previousDestination = destinationColor
+                        previousResult = color.blend(source, destinationColor)
+                    }
+                    pixels[index] = previousResult
+                    index += 1
                 }
-                pixels[index] = previousResult
-                index += 1
+                rows?.finish(opaqueRow)
             }
-            rows?.finish(opaqueRow)
         }
+    }
+
+    // Consecutive output columns with one selected texel borrow one source value.
+    // Opaque source-over is destination-independent; translucent spans still blend each actual destination.
+    @Suppress("LongParameterList")
+    private fun paintMagnifiedRow(
+        pixels: IntArray,
+        start: Int,
+        columns: IntArray,
+        sourceY: Int,
+        image: DrawImage,
+        color: SampledColor,
+        opaqueTint: Boolean,
+    ): Boolean {
+        var offset = 0
+        var opaqueRow = opaqueTint
+        while (offset < columns.size) {
+            val sourceX = columns[offset]
+            var end = offset + 1
+            while (end < columns.size && columns[end] == sourceX) end += 1
+            val source = image.argbAt(sourceX, sourceY)
+            if (opaqueTint && source ushr 24 == 255) {
+                pixels.fill(color.blend(source, 0), start + offset, start + end)
+            } else {
+                opaqueRow = false
+                if (source ushr 24 != 0) {
+                    for (index in start + offset until start + end) pixels[index] = color.blend(source, pixels[index])
+                }
+            }
+            offset = end
+        }
+        return opaqueRow
     }
 
     private fun sampleX(

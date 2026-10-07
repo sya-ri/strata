@@ -2091,6 +2091,7 @@ public abstract interface class dev/s7a/strata/render/DrawImage {
 }
 
 public final class dev/s7a/strata/render/DrawImages {
+	public static final fun createDrawImage (Ldev/s7a/strata/geometry/IntSize;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/render/DrawImage;
 	public static final fun createDrawImage (Ldev/s7a/strata/geometry/IntSize;[I)Ldev/s7a/strata/render/DrawImage;
 }
 

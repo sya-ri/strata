@@ -39,16 +39,36 @@ internal class FabricMinecraftSamplingMap(
     init {
         require(physicalSize.width in 1..4_096 && physicalSize.height in 1..4_096) { "Exact sampled GPU axes must fit the bounded lookup." }
         val width = maxOf(2, physicalSize.width, physicalSize.height)
-        val values = IntArray(Math.multiplyExact(width, 3))
-        for (x in 0 until physicalSize.width) {
-            values[x] = encode(axis(Math.addExact(Math.multiplyExact(bounds.left, scale), x), command.destination.left, command.destination.right, command.source.left, command.source.right, command.image.size.width))
-        }
-        for (y in 0 until physicalSize.height) {
-            values[width + y] = encode(axis(Math.addExact(Math.multiplyExact(bounds.top, scale), y), command.destination.top, command.destination.bottom, command.source.top, command.source.bottom, command.image.size.height))
-        }
-        values[width * 2] = encode(physicalSize.width + 1)
-        values[width * 2 + 1] = encode(physicalSize.height + 1)
-        indices = createDrawImage(IntSize(width, 3), values)
+        val left = Math.multiplyExact(bounds.left, scale)
+        val top = Math.multiplyExact(bounds.top, scale)
+        val source = command.source
+        val destination = command.destination
+        indices =
+            createDrawImage(IntSize(width, 3)) { coordinate, row ->
+                val value =
+                    when (row) {
+                        0 -> {
+                            if (coordinate < physicalSize.width) axis(Math.addExact(left, coordinate), destination.left, destination.right, if (command.orientation.flipX) source.right else source.left, if (command.orientation.flipX) source.left else source.right, command.image.size.width) else 0
+                        }
+
+                        1 -> {
+                            if (coordinate < physicalSize.height) axis(Math.addExact(top, coordinate), destination.top, destination.bottom, if (command.orientation.flipY) source.bottom else source.top, if (command.orientation.flipY) source.top else source.bottom, command.image.size.height) else 0
+                        }
+
+                        2 -> {
+                            when (coordinate) {
+                                0 -> physicalSize.width + 1
+                                1 -> physicalSize.height + 1
+                                else -> 0
+                            }
+                        }
+
+                        else -> {
+                            0
+                        }
+                    }
+                encode(value)
+            }
     }
 
     /**
@@ -58,7 +78,7 @@ internal class FabricMinecraftSamplingMap(
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftSamplingMap): Boolean {
         if (physicalSize != other.physicalSize || command.image !== other.command.image) return false
-        if (command.tint != other.command.tint || command.alphaCutoff != other.command.alphaCutoff || command.orientation != other.command.orientation) return false
+        if (command.tint != other.command.tint || command.alphaCutoff != other.command.alphaCutoff) return false
         for (x in 0 until physicalSize.width) if (indices.argbAt(x, 0) != other.indices.argbAt(x, 0)) return false
         for (y in 0 until physicalSize.height) if (indices.argbAt(y, 1) != other.indices.argbAt(y, 1)) return false
         return true
