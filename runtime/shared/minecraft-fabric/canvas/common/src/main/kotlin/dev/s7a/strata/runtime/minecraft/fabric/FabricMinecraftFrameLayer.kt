@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -31,6 +32,10 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val absoluteCoordinates: Boolean = false,
         @get:JvmSynthetic
         internal val capacitySampledImages: Int = 0,
+        @get:JvmSynthetic
+        internal val tintFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) },
+        @get:JvmSynthetic
+        internal val alphaCutoffFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f },
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -118,9 +123,7 @@ internal fun partitionFabricMinecraftFrame(
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            val absolute = portable.any { it is DrawCommand.SampledImage }
-            val commands = if (absolute) portable.toList() else localizeFabricPortable(portable, bounds)
-            layers.add(FabricMinecraftFrameLayer.Portable(commands, bounds, portableIneligibleSampledImages, absolute, portableCapacitySampledImages))
+            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
@@ -319,9 +322,13 @@ private fun includeFabricVisibleBounds(
     )
 }
 
+/**
+ * Localizes integer-only portable runs while preserving their ordered clips and image mapping.
+ */
+@JvmSynthetic
 // Every portable command variant has an explicit coordinate conversion; splitting the visitor obscures clip balance.
 @Suppress("CyclomaticComplexMethod")
-private fun localizeFabricPortable(
+internal fun localizeFabricPortable(
     commands: List<DrawCommand>,
     bounds: IntRect,
 ): List<DrawCommand> {

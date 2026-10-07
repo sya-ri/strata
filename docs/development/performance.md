@@ -195,10 +195,15 @@ This reuses the existing current geometry without retaining another key or previ
 Each retained entry keeps one current snapshot of its transformed local paint, child clip, local overlays and root-coordinate overlays.
 The key is the identity of all three immutable local command lists, the accumulated local-to-tree transform and the measured size.
 Local paint invalidation, changed geometry or newly collected root overlays replaces that entry's snapshot.
-Child membership and ancestor clipping remain in the live ordered traversal, so reordering, removal and changed parent clips do not reuse a historical subtree.
+Each entry also keeps one immutable concatenation of its current ordered child snapshots, separately collecting post-child root overlays.
+The subtree key includes current local paint and geometry, the root viewport and propagated paint invalidation; clean branches retain their concatenations without walking descendants or copying their commands.
+Paint invalidation marks aggregate ancestry without calling clean ancestors' paint callbacks, and structural changes clear ancestor concatenations before removed entries are released.
+Changed paths rebuild current child order and clipping, so reordering, removal and changed parent clips cannot reuse historical membership.
+Published frames receive a fresh read-only outer list when rebuilt and share detached immutable contents, preserving both frame identity and prior-frame pixels.
 The snapshot contains only this entry's current commands and shares their immutable image values; it retains no entry or past revision.
 The tree's execution owner confines access, transient detachment preserves retained state, and terminal entry cleanup clears the snapshot before that entry's cleanup hook or lifecycle callbacks, including failure cleanup.
 Tests prove unchanged-command identity, local and geometry invalidation, clip and overlay ordering, viewport changes and cleanup through a failing callback.
+Concatenation tests also cover deep indexed reads and allocation-bounded iteration, pending invalidation from paint, unchanged branch identity, previously published frames and removal before lifecycle callbacks.
 
 ### Bounded raster texture cache
 
@@ -213,6 +218,12 @@ When a mixed portable-and-platform display list changes, each matched portable t
 Integer-only runs use localized commands and omit placement from this derived-pixel key.
 Runs containing sampled images preserve their original absolute commands and raster origin, because translating Float pixel-center arithmetic can select a different texel, particularly at non-power-of-two GUI densities.
 The internal region rasterizer allocates only the tight visible run extent while evaluating the original global pixel centers and destinations; no full-viewport scratch image or extra cache is introduced.
+CPU fallback runs exceeding 262,144 physical pixels are split into disjoint logical tiles targeting 256 physical pixels per edge.
+Tile edges grow until each run has at most 64 tiles; smaller runs retain their single tight image.
+Each tile retains original commands and sampling coordinates, with balanced clips emitted only for intersecting primitives, and replays complete ordered composition within its region.
+The existing generation key and resource sharing reuse unchanged tiles, including after a small primitive moves or disappears; changed tiles start from transparent black so erased pixels cannot persist.
+Unavailable direct images use the same bounded tiling, and fallback-reason counters count original command occurrences once rather than duplicated tile coverage.
+The screen owns only the current tile descriptions and generation, and unchanged frames still skip partitioning, rasterization and uploads.
 A changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.

@@ -15,6 +15,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
+import dev.s7a.strata.modifier.fillMaxSize
 import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
@@ -37,17 +38,85 @@ import javax.imageio.ImageIO
  * An opaque changing region and a patterned translucent region use separate portable runs.
  * Texture identities and render counters prove reuse; literal screenshot texels independently verify updated and retained pixels.
  * Replacing a fully clipped unsupported sampled image must prepare a new display list while preserving both visible textures with no rasterization or upload.
+ * A full-viewport background additionally proves one-tile replacement, bounded upload bytes and native pixels after a small edit.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftPortableLayerReuseGameTest {
     /**
-     * Executes four loaded scenes and waits for physical resource retirement after each screen closes.
+     * Executes both scenes at four GUI scales and waits for physical resource retirement after each screen closes.
      */
     internal fun run(
         context: MinecraftCanvasTestContext,
         profile: MinecraftUiProfile,
     ) {
-        for (scale in 1..4) verify(context, profile, scale)
+        for (scale in 1..4) {
+            verify(context, profile, scale)
+            verifyTiles(context, profile, scale)
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught") // Cleanup preserves native, assertion, and screenshot failures.
+    private fun verifyTiles(
+        context: MinecraftCanvasTestContext,
+        profile: MinecraftUiProfile,
+        scale: Int,
+    ) {
+        context.waitFor { resourcesReleased() }
+        context.configureViewport(IntSize(1920, 1080), scale)
+        val color = context.onClient { mutableStateOf(ArgbColor(0xFF2277DD.toInt())) }
+        var screen: FabricMinecraftScreen? = null
+        var failure: Throwable? = null
+        try {
+            val owned =
+                context.onClient {
+                    createMinecraftScreen(
+                        ScreenDefinition("Portable tile reuse acceptance") {
+                            Stack(Modifier.Empty.fillMaxSize().background(ArgbColor(0xFF123456.toInt()))) {
+                                Spacer(Modifier.Empty.size(16, 16).background(color.value))
+                            }
+                        },
+                        profile,
+                        parent = null,
+                    )
+                }
+            screen = owned
+            context.onClient { context.setScreen(owned) }
+            context.waitFor { observation(owned)?.textures?.size?.let { 1 < it } == true }
+            val before = context.onClient { checkNotNull(observation(owned)) }
+            check(before.textures.size <= 64 && before.scale == scale) { "Full-viewport fallback must use bounded tiles at the requested GUI scale." }
+            context.onClient { color.value = ArgbColor(0xFF2255AA.toInt()) }
+            context.waitFor { observation(owned)?.textures?.firstOrNull() !== before.textures.first() }
+            val after = context.onClient { checkNotNull(observation(owned)) }
+            check(
+                after.textures.size == before.textures.size &&
+                    after.textures
+                        .drop(1)
+                        .zip(before.textures.drop(1))
+                        .all { (a, b) -> a === b },
+            ) {
+                "A small edit replaced unchanged full-viewport tiles: before=$before, after=$after"
+            }
+            check(after.rasterizations == before.rasterizations + 1 && after.uploads == before.uploads + 1) {
+                "A small edit must rasterize and upload exactly one tile: before=$before, after=$after"
+            }
+            val changedBytes = after.rasterBytes - before.rasterBytes
+            check(0L < changedBytes && changedBytes <= 262_144L) { "A small edit uploaded more than one bounded tile: $changedBytes bytes" }
+            context.verifyTileScreenshot(scale)
+            val clean = context.onClient { checkNotNull(observation(owned)) }
+            check(clean.rasterizations == after.rasterizations && clean.uploads == after.uploads && clean.rasterBytes == after.rasterBytes) {
+                "Unchanged presented frames repeated portable work: after=$after, clean=$clean"
+            }
+        } catch (caught: Throwable) {
+            failure = caught
+            throw caught
+        } finally {
+            runCanvasTestCleanup(
+                failure,
+                { context.onClient { context.setScreen(null) } },
+                { context.onClient { screen?.close() ?: Unit } },
+                { context.waitFor { resourcesReleased() } },
+            )
+        }
     }
 
     @Suppress("TooGenericExceptionCaught") // Cleanup preserves native, assertion, and screenshot failures.
@@ -209,6 +278,7 @@ internal object MinecraftPortableLayerReuseGameTest {
             read(owner, "textureUploadCount") as Long,
             read(checkNotNull((read(prepared, "images") as List<*>).first()), "scale") as Int,
             read(owner, "framePreparationCount") as Long,
+            read(checkNotNull(read(owner, "uploadWork")), "rasterUploadByteCount") as Long,
         )
     }
 
@@ -227,5 +297,16 @@ internal object MinecraftPortableLayerReuseGameTest {
         val uploads: Long,
         val scale: Int,
         val preparations: Long,
+        val rasterBytes: Long,
     )
+}
+
+private fun MinecraftCanvasTestContext.verifyTileScreenshot(scale: Int) {
+    val path = outputDirectory.resolve("portable-tile-reuse-scale-$scale.png")
+    Files.deleteIfExists(path)
+    screenshot(path)
+    val image = checkNotNull(ImageIO.read(path.toFile()))
+    check(image.width == 1920 && image.height == 1080) { "Portable tile screenshot extent changed." }
+    check(image.getRGB(8 * scale, 8 * scale) == 0xFF2255AA.toInt()) { "Changed tile pixels were not presented." }
+    check(image.getRGB(600, 300) == 0xFF123456.toInt()) { "An unchanged tile lost its background pixels." }
 }
