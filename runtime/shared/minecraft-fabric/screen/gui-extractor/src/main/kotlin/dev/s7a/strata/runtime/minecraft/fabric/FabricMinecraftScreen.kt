@@ -741,6 +741,8 @@ public class FabricMinecraftScreen private constructor(
                         val sources =
                             composition.sources.map { image ->
                                 image?.let {
+                                    // Resolution proves availability, but the borrowed lookup still has a nullable return type.
+                                    @Suppress("RedundantRequireNotNullCall")
                                     val source = checkNotNull(textureFor(it)) { "Resolved composition must retain every source texture." }
                                     sampledQueued(it)
                                     source.texture

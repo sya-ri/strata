@@ -90,9 +90,9 @@ internal class FabricMinecraftCompositionMapTest {
     @Test
     fun changedImageIdentityAndUnavailableSourcesCannotReuseGpuPixels() {
         val size = IntSize(64, 64)
-        val image = createDrawImage(IntSize(1, 1), intArrayOf(0x8088AACC.toInt()))
-        val replacement = createDrawImage(image.size, intArrayOf(0x8088AACC.toInt()))
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 64f, 64f), ArgbColor(0x80BFD7EF.toInt()), alphaCutoff = 0f)
+        val image = createDrawImage(IntSize(128, 128)) { _, _ -> 0x8088AACC.toInt() }
+        val replacement = createDrawImage(image.size) { _, _ -> 0x8088AACC.toInt() }
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 128f, 128f), FloatRect(0f, 0f, 64f, 64f), ArgbColor(0x80BFD7EF.toInt()), alphaCutoff = 0f)
         val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command), size), 1, compositionEnabled = true)
         assertNotNull(inputs.portable.single().composition)
         assertEquals(listOf(image), inputs.sampled)
@@ -114,6 +114,37 @@ internal class FabricMinecraftCompositionMapTest {
         val changed = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command.copy(image = replacement)), size), 1, compositionEnabled = true)
         assertFalse(inputs.portable.single().equivalent(changed.portable.single()))
         assertTrue(inputs.portable.single().equivalent(inputs.portable.single()))
+    }
+
+    @Test
+    fun smallSourceCropsKeepWholeTilesOnCpuWithoutMetadataOrSourcePins() {
+        val size = IntSize(64, 64)
+        for (extent in listOf(16, 64, 127, 128, 256)) {
+            val image = createDrawImage(IntSize(extent, extent)) { x, y -> 0x8088AACC.toInt() xor (x * 1337 + y * 7919) }
+            for (crop in listOf(16f, extent.toFloat())) {
+                val commands = listOf(DrawCommand.FillRectangle(IntRect(0, 0, 64, 64), ArgbColor(0x40213759)), DrawCommand.SampledImage(image, FloatRect(0.125f, 0.375f, crop - 0.125f, crop - 0.375f), FloatRect(0f, 0f, 64f, 64f), ArgbColor(0x80BFD7EF.toInt()), alphaCutoff = 0.1f))
+                val layers = partitionFabricMinecraftFrame(commands, size)
+                val inputs = FabricMinecraftFrameInputs(layers, 1, compositionEnabled = true)
+                val cpu = FabricMinecraftFrameInputs(layers, 1)
+                if (128f <= crop) {
+                    assertNotNull(inputs.portable.single().composition)
+                    assertEquals(listOf(image), inputs.sampled)
+                } else {
+                    assertNull(inputs.portable.single().composition)
+                    assertTrue(inputs.sampled.isEmpty())
+                }
+                assertArrayEquals(
+                    cpu.portable
+                        .single()
+                        .rasterize()
+                        .copyArgb(),
+                    inputs.portable
+                        .single()
+                        .rasterize()
+                        .copyArgb(),
+                )
+            }
+        }
     }
 
     private fun compare(

@@ -315,6 +315,8 @@ Normalization, tint prefixes, source alpha and inverse alpha arrive as the exact
 Original-coordinate x/y index rows, coverage and typed command controls preserve reversed axes, fractional crops and nested clips without translating their Float operands.
 
 Ordered admission requires at least 4,096 physical pixels, output and metadata axes supported by the device, output axes at most 4,096, and at most 1,024 composition passes across the complete prepared frame.
+Production admission additionally requires a sampled crop covering at least 16,384 source texels, using rounded-up crop extents bounded by the immutable source dimensions.
+Smaller source footprints keep the existing CPU span reuse, which avoids offscreen pass overhead for repeated source pixels; this check precedes metadata allocation and does not restrict the exact composition arithmetic.
 It shares the existing 256-output and 64 MiB frame ledger with individual exact outputs, including both destinations, all CPU/staging/GPU metadata payload copies and conservative fixed and per-pass metadata overhead.
 Small, unsupported, over-budget or unavailable-source tiles retain their whole existing CPU command sequence.
 Current-frame metadata and source identities are the complete reuse key; a source replacement or any changed axis, coverage, tint, cutoff or pass order invalidates the output.

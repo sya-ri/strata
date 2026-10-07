@@ -35,7 +35,7 @@ internal class FabricMinecraftFrameInputs(
             when (it) {
                 is FabricMinecraftFrameLayer.Portable -> {
                     val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
-                    val composition = if (compositionEnabled) FabricMinecraftCompositionMap.create(it.commands, it.bounds.size, scale, origin, budget) else null
+                    val composition = if (compositionEnabled && FabricMinecraftCompositionMap.shouldCompose(it.commands)) FabricMinecraftCompositionMap.create(it.commands, it.bounds.size, scale, origin, budget) else null
                     FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin, composition = composition)
                 }
 

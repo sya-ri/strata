@@ -71,6 +71,24 @@ internal class FabricMinecraftCompositionMap private constructor(
      */
     internal companion object {
         /**
+         * Keeps inexpensive repeated-source CPU spans out of production offscreen composition.
+         * A sampled crop must cover at least 16,384 source texels before any tile metadata is allocated.
+         * This performance admission reads only immutable extents; the exact composer supports smaller sources too.
+         */
+        @JvmSynthetic
+        internal fun shouldCompose(commands: List<DrawCommand>): Boolean =
+            commands.any { command ->
+                if (command is DrawCommand.SampledImage) {
+                    val imageSize = command.image.size
+                    val width = ceil(command.source.width.toDouble()).coerceIn(0.0, imageSize.width.toDouble()).toLong()
+                    val height = ceil(command.source.height.toDouble()).coerceIn(0.0, imageSize.height.toDouble()).toLong()
+                    16384L <= width * height
+                } else {
+                    false
+                }
+            }
+
+        /**
          * Returns null for a small, unsupported or exhausted whole tile, leaving its existing CPU path intact.
          */
         @JvmSynthetic

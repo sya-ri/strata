@@ -9,7 +9,6 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
-import java.util.OptionalInt
 
 /**
  * Admits bounded ordered composition only when every supported metadata and destination axis fits the native device.

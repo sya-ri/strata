@@ -31,7 +31,7 @@ internal fun createMinecraftCompositionParityScene(
     viewport: IntSize,
     revision: Int = 0,
 ): ScreenDefinition {
-    val image = createDrawImage(IntSize(16, 16)) { x, y -> ((x * 16 + y) shl 24) or (((x * 73471 + y * 1337) xor revision) and 0xFFFFFF) }
+    val image = createDrawImage(IntSize(128, 128)) { x, y -> (((x * 16 + y) and 255) shl 24) or (((x * 73471 + y * 1337) xor revision) and 0xFFFFFF) }
 
     fun source(overlay: Boolean): CanvasSource =
         CanvasSource {
@@ -53,7 +53,7 @@ internal fun createMinecraftCompositionParityScene(
                                         2 -> 0xFE37659B.toInt()
                                         else -> -1
                                     }
-                                scope.sampledImage(image, FloatRect(0.125f, 0.375f, 15.875f, 15.625f), FloatRect(x + 0.25f, y + 0.125f, x + 83.75f, y + 72.875f), SampledImageOrientation.entries[index % 4], ArgbColor(tint), if (index % 3 == 0) 0f else 0.1f)
+                                scope.sampledImage(image, FloatRect(0.125f, 0.375f, 127.875f, 127.625f), FloatRect(x + 0.25f, y + 0.125f, x + 83.75f, y + 72.875f), SampledImageOrientation.entries[index % 4], ArgbColor(tint), if (index % 3 == 0) 0f else 0.1f)
                             }
                             scope.blitImage(image, IntRect(1, 2, 15, 14), IntRect(12, 144, 211, 179))
                         }
