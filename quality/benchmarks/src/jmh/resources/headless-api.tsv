@@ -33,4 +33,5 @@ dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:alpha:(I)F
 dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:channel:(III)F
 dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:getRetainedBytes:()I
 dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:inverse:(I)F
+dev.s7a.strata.runtime.headless.SampledSourceWeights#method:17:row:(I)[F
 dev.s7a.strata.runtime.headless.SampledSourceWeights#type:17:java.lang.Object:

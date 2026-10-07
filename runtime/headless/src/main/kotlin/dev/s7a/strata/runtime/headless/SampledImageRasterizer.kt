@@ -314,9 +314,10 @@ internal object SampledImageRasterizer {
                     paletteDestinationKnown = true
                 }
             }
-            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha)
-            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha)
-            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha)
+            val sourceRow = weights?.row(source ushr 24)
+            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
+            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
+            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
             return remember(source, destination, (alphaByte shl 24) or (outputRed shl 16) or (outputGreen shl 8) or outputBlue)
         }
 
@@ -361,6 +362,7 @@ internal object SampledImageRasterizer {
             return result
         }
 
+        @Suppress("LongParameterList") // The borrowed source row is selected once for all three ordered channel calculations.
         private fun channel(
             source: Int,
             destination: Int,
@@ -368,6 +370,7 @@ internal object SampledImageRasterizer {
             sourceAlpha: Float,
             destinationWeight: Float,
             outputAlpha: Float,
+            sourceRow: FloatArray?,
         ): Int {
             // A table belongs to this command and one complete destination ARGB. Any unequal destination
             // permanently drops these rows, so heterogeneous output never requires clearing a large table per pixel.
@@ -392,7 +395,7 @@ internal object SampledImageRasterizer {
             val index = (2 - shift / 8) * 256 + (source ushr shift and 255)
             val cached = row?.get(index)
             if (cached != null && 0 <= cached) return cached
-            val contribution = contribution(source, shift, sourceAlpha)
+            val contribution = contribution(source, shift, sourceAlpha, sourceRow)
             val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
             if (row != null) row[index] = result
             return result
@@ -402,8 +405,9 @@ internal object SampledImageRasterizer {
             source: Int,
             shift: Int,
             sourceAlpha: Float,
+            sourceRow: FloatArray?,
         ): Float {
-            weights?.let { return it.channel(source ushr 24, source ushr shift and 255, shift) }
+            sourceRow?.let { return it[(2 - shift / 8) * 256 + (source ushr shift and 255)] }
             val channelTint =
                 when (shift) {
                     16 -> red

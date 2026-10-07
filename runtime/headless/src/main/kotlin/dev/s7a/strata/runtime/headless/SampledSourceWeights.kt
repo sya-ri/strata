@@ -39,17 +39,21 @@ internal class SampledSourceWeights(
         shift: Int,
     ): Float {
         val index = (2 - shift / 8) * 256 + sourceChannel
-        val row =
-            rows[sourceAlpha] ?: if (rowCount < 16) {
-                FloatArray(768) { tinted[it] * this.sourceAlpha[sourceAlpha] }.also {
-                    rows[sourceAlpha] = it
-                    rowCount += 1
-                }
-            } else {
-                null
-            }
-        return row?.get(index) ?: tinted[index] * this.sourceAlpha[sourceAlpha]
+        return row(sourceAlpha)?.get(index) ?: tinted[index] * this.sourceAlpha[sourceAlpha]
     }
+
+    /**
+     * Borrows an admitted alpha row once before composing all three channels; excess rows stay scalar.
+     */
+    fun row(sourceAlpha: Int): FloatArray? =
+        rows[sourceAlpha] ?: if (rowCount < 16) {
+            FloatArray(768) { tinted[it] * this.sourceAlpha[sourceAlpha] }.also {
+                rows[sourceAlpha] = it
+                rowCount += 1
+            }
+        } else {
+            null
+        }
 
     /**
      * Primitive arrays occupy at most 54,272 bytes per tint, excluding the fixed reference array.
