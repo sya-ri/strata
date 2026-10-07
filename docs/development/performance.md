@@ -162,6 +162,8 @@ The common fixed-alpha image requires only one row, and alternating uncommon alp
 The tables belong to one invocation, retain no source or destination image, preserve the original multiplication/division/rounding order, and expire before return.
 Whole one-texel images and smaller spans keep their existing paths.
 A zero-alpha tint preserves the destination without traversing its covered pixels.
+Scalar sampling skips destination reads and writes for a source pixel with zero alpha, preserving even hidden RGB in transparent destinations.
+Ordered translucent channel composition omits division only when its computed output alpha is exactly one; other alpha values use the original quotient and rounding.
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 

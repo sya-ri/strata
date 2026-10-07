@@ -93,6 +93,10 @@ internal object SampledImageRasterizer {
                         sourceXs?.get(x - left) ?: sampleX(x, scale, command)
                     val source = command.image.argbAt(sourceX, sourceY)
                     if (rows != null && source ushr 24 != 255) opaqueRow = false
+                    if (source ushr 24 == 0) {
+                        index += 1
+                        continue
+                    }
                     val destinationColor = pixels[index]
                     // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
                     if (source != previousSource || destinationColor != previousDestination) {
@@ -386,12 +390,19 @@ internal object SampledImageRasterizer {
                     8 -> green
                     else -> blue
                 }
-            val result = quantize((normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
+            val numerator = normalized(source ushr shift) * channelTint * sourceAlpha + normalized(destination ushr shift) * destinationWeight
+            val result = quantizeComposition(numerator, outputAlpha)
             if (row != null) row[index] = result
             return result
         }
 
         private fun normalized(channel: Int): Float = (channel and 0xFF).toFloat() / 255f
+
+        // Division by exactly one cannot change the original ordered Float numerator.
+        private fun quantizeComposition(
+            numerator: Float,
+            alpha: Float,
+        ): Int = quantize(if (alpha == 1f) numerator else numerator / alpha)
 
         private fun quantize(channel: Float): Int = (channel * 255f).roundToInt().coerceIn(0, 255)
     }
