@@ -435,17 +435,21 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTargetDestruction.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-views/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDriver.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureFactory.kt
+      - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDrawing.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDestructionFactory.kt
       - runtime/shared/minecraft-fabric/canvas/renderpearl/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricNativeCanvasDrawing.kt
@@ -477,6 +481,10 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingBudget.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingShaders.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableNativeStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureOwnership.kt
+      - runtime/shared/minecraft-fabric/canvas/sampled-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTextureStorage.kt
+      - runtime/shared/minecraft-fabric/canvas/sampled-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledTextureLimits.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageCache.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevice.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSampledImageDevices.kt
