@@ -4,11 +4,16 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.DoubleOffset
+import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.layout.LayoutScope
+import dev.s7a.strata.node.ChildTransform
+import dev.s7a.strata.node.ChildTransformNode
 import dev.s7a.strata.node.ClipChildrenNode
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.OverlayPaintNode
@@ -30,6 +35,43 @@ import org.junit.jupiter.api.Test
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedPaintCommandsTest {
+    @Test
+    fun paintOnlyLayoutReusesGeometryButAncestorTransformsAndMeasuredSizesStillPropagate() {
+        val root = entry()
+        val child = entry()
+        val descendant = entry()
+        for ((parent, nested) in listOf(root to child, child to descendant)) {
+            parent.children.add(nested)
+            nested.parent = parent
+            parent.measuredChildren = setOf(0)
+            parent.placements[0] = IntOffset.Zero
+        }
+        for (retained in listOf(root, child, descendant)) {
+            retained.laidOut = true
+            retained.dirty = DirtyMask.None
+        }
+        val pipeline = Pipeline(OwnerGuard())
+        pipeline.layout(root)
+        val bounds = descendant.bounds
+        val transform = descendant.localToTree
+        descendant.dirty += DirtyMask.of(DirtyPhase.Paint)
+        pipeline.layout(root)
+        assertSame(bounds, descendant.bounds)
+        assertSame(transform, descendant.localToTree)
+
+        (root.node as PaintProbe).transform = ChildTransform(0.5, DoubleOffset(3.25, 2.5))
+        root.dirty += DirtyMask.of(DirtyPhase.Layout)
+        pipeline.layout(root)
+        assertEquals(IntRect(3, 2, 6, 5), descendant.bounds)
+        assertEquals(TreeTransform(0.5, DoubleOffset(3.25, 2.5)), descendant.localToTree)
+
+        child.measuredSize = IntSize(8, 6)
+        child.dirty += DirtyMask.of(DirtyPhase.Layout)
+        pipeline.layout(root)
+        assertEquals(IntRect(3, 2, 8, 6), child.bounds)
+        assertEquals(IntRect(3, 2, 6, 5), descendant.bounds)
+    }
+
     @Test
     fun cleanEntriesReuseTheirCommandsWhileEveryLocalInputReplacesOnlyCurrentState() {
         val root = entry()
@@ -131,6 +173,8 @@ internal class RetainedPaintCommandsTest {
      */
     private class PaintProbe :
         Node(),
+        LayoutNode,
+        ChildTransformNode,
         PaintNode,
         ClipChildrenNode,
         OverlayPaintNode,
@@ -139,6 +183,13 @@ internal class RetainedPaintCommandsTest {
         var color: ArgbColor = ArgbColor(0xFF234567.toInt())
         var paintCalls: Int = 0
         var onDispose: () -> Unit = {}
+        var transform: ChildTransform = ChildTransform.Identity
+
+        override fun layout(scope: LayoutScope) {
+            for (index in 0 until scope.childCount) scope.placeChild(index, IntOffset.Zero)
+        }
+
+        override fun childTransform(index: Int): ChildTransform = transform
 
         override fun paint(scope: PaintScope) {
             paintCalls += 1

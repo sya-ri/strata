@@ -185,6 +185,10 @@ Loading indicators and delayed tooltips additionally verify that timestamps insi
 
 ### Current-entry transformed paint
 
+Paint-only layout traversal preserves each placed child's current world transform and bounds while its layout and its parent's placement and transform remain unchanged.
+Child layout dirtiness forces geometry updates after measurement, and changed accumulated transforms propagate to descendants even when their layout callbacks stay clean.
+This reuses the existing current geometry without retaining another key or previous revision.
+
 Each retained entry keeps one current snapshot of its transformed local paint, child clip, local overlays and root-coordinate overlays.
 The key is the identity of all three immutable local command lists, the accumulated local-to-tree transform and the measured size.
 Local paint invalidation, changed geometry or newly collected root overlays replaces that entry's snapshot.
