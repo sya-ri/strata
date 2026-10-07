@@ -48,18 +48,19 @@ internal class PaintPipeline(
         retained.paintSubtreeDirty = false
         updateLocalCommands(retained, viewport)
         val commands = transformedCommands(retained)
-        val parts = arrayListOf(commands.beforeChildren)
+        val parts = ArrayList<List<DrawCommand>>(retained.effectiveChildCount + 2)
+        parts.add(commands.beforeChildren)
         val rootOverlays = ArrayList<List<DrawCommand>>()
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 val snapshot = paintNode(child, viewport)
                 parts.add(snapshot.commands)
-                rootOverlays.add(snapshot.rootOverlays)
+                if (snapshot.rootOverlays.isNotEmpty()) rootOverlays.add(snapshot.rootOverlays)
             }
         }
         parts.add(commands.afterChildren)
-        rootOverlays.add(commands.rootOverlays)
+        if (commands.rootOverlays.isNotEmpty()) rootOverlays.add(commands.rootOverlays)
         return RetainedPaintSnapshot(commands, viewport, RetainedDrawCommands(parts), RetainedDrawCommands(rootOverlays)).also { retained.paintSnapshot = it }
     }
 

@@ -12,7 +12,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal class RetainedDrawCommands(
     parts: List<List<DrawCommand>>,
 ) : AbstractList<DrawCommand>() {
-    private val parts = parts.filter { it.isNotEmpty() }
+    private val parts = parts.filterTo(ArrayList(parts.size)) { it.isNotEmpty() }
     private val ends = IntArray(this.parts.size)
 
     init {
