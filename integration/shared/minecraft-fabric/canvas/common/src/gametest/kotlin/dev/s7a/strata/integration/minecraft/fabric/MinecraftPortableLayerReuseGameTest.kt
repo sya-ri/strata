@@ -101,7 +101,7 @@ internal object MinecraftPortableLayerReuseGameTest {
             }
             val changedBytes = after.rasterBytes - before.rasterBytes
             check(0L < changedBytes && changedBytes <= 262_144L) { "A small edit uploaded more than one bounded tile: $changedBytes bytes" }
-            context.verifyTileScreenshot(scale)
+            context.verifyTileScreenshot(scale, changedBytes, after.textures.size)
             val clean = context.onClient { checkNotNull(observation(owned)) }
             check(clean.rasterizations == after.rasterizations && clean.uploads == after.uploads && clean.rasterBytes == after.rasterBytes) {
                 "Unchanged presented frames repeated portable work: after=$after, clean=$clean"
@@ -301,12 +301,15 @@ internal object MinecraftPortableLayerReuseGameTest {
     )
 }
 
-private fun MinecraftCanvasTestContext.verifyTileScreenshot(scale: Int) {
-    val path = outputDirectory.resolve("portable-tile-reuse-scale-$scale.png")
-    Files.deleteIfExists(path)
-    screenshot(path)
+private fun MinecraftCanvasTestContext.verifyTileScreenshot(
+    scale: Int,
+    changedBytes: Long,
+    tiles: Int,
+) {
+    val path = takeScreenshot("strata-portable-tile-reuse-scale-$scale", IntSize(1920, 1080))
     val image = checkNotNull(ImageIO.read(path.toFile()))
     check(image.width == 1920 && image.height == 1080) { "Portable tile screenshot extent changed." }
     check(image.getRGB(8 * scale, 8 * scale) == 0xFF2255AA.toInt()) { "Changed tile pixels were not presented." }
     check(image.getRGB(600, 300) == 0xFF123456.toInt()) { "An unchanged tile lost its background pixels." }
+    Files.writeString(path.resolveSibling("strata-portable-tile-reuse-scale-$scale.txt"), "guiScale=$scale\nportableTiles=$tiles\nchangedRasterizations=1\nchangedUploads=1\nchangedUploadBytes=$changedBytes\nunchangedTextureIdentity=preserved\n")
 }
