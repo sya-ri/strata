@@ -39,7 +39,7 @@ internal class SampledSourceWeights(
         shift: Int,
     ): Float {
         val index = (2 - shift / 8) * 256 + sourceChannel
-        return row(sourceAlpha)?.get(index) ?: tinted[index] * this.sourceAlpha[sourceAlpha]
+        return row(sourceAlpha)?.get(index) ?: (tinted[index] * this.sourceAlpha[sourceAlpha])
     }
 
     /**
