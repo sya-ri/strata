@@ -77,12 +77,13 @@ exclude:
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftProgressParity.kt
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
       - integration/shared/minecraft-fabric/runner/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftClientGameTest.kt
-  # These geometry checks keep overflow-explicit comparisons instead of relying on range construction.
+  # Bounds and geometry checks keep explicit comparisons instead of relying on range construction.
   - name: ConvertTwoComparisonsToRangeCheck
     paths:
       - api/src/main/kotlin/dev/s7a/strata/geometry/Constraints.kt
       - api/src/main/kotlin/dev/s7a/strata/geometry/IntRect.kt
       - api/src/main/kotlin/dev/s7a/strata/input/TextInputEvent.kt
+      - runtime/core/src/main/kotlin/dev/s7a/strata/runtime/RetainedDrawCommands.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftProfileImplementation.kt
       - runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftScrollElement.kt
   # Named domain records keep source and destination axes explicit; positional destructuring would obscure the scroll and glyph arithmetic.
@@ -476,6 +477,7 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFrameInputs.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftUploadWork.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableReuse.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableTiles.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftImageUpload.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSourceSampling.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingMap.kt
