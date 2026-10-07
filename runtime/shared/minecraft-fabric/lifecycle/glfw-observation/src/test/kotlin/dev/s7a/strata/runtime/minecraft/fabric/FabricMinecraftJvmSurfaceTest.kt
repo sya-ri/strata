@@ -255,6 +255,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftSamplingMap",
                 "$packageName.FabricMinecraftUploadWork",
                 "$packageName.FabricMinecraftSamplingBudget",
+                "$packageName.FabricMinecraftSamplingComposition",
                 "$packageName.FabricMinecraftNativeStorage",
                 "$packageName.FabricMinecraftSamplingShaders",
                 "$packageName.FabricMinecraftPortableReuseKt",

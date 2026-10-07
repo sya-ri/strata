@@ -260,7 +260,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     check(minecraft.window.guiScaledWidth == viewport.width && minecraft.window.guiScaledHeight == viewport.height)
                 },
             )
-            runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize)
+            SampledParityScene.entries.forEach { scene -> runSampledImagePixelParityAtScale(context, profile, output, scale, physicalSize, scene) }
         }
         resizeMinecraftTestWindow(context, IntSize(viewport.width, viewport.height))
         context.runOnClient(
@@ -278,21 +278,22 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         output: Path,
         scale: Int,
         physicalSize: IntSize,
+        scene: SampledParityScene,
     ) {
         closeFabricScreen(context)
         val headless =
             context.computeOnClient(
                 FailableFunction<Minecraft, HeadlessImage, RuntimeException> {
-                    renderHeadless(profile, createSampledImageParityScreenDefinition(viewport), viewport, scale = scale)
+                    renderHeadless(profile, scene.definition(viewport), viewport, scale = scale)
                 },
             )
-        Files.write(output.resolve("strata-sampled-image-scale-$scale-headless.png"), headless.encodePng())
+        Files.write(output.resolve("${scene.slug}-scale-$scale-headless.png"), headless.encodePng())
 
         val presentation =
             runCatching {
                 context.setScreen {
                     createMinecraftScreen(
-                        createSampledImageParityScreenDefinition(viewport),
+                        scene.definition(viewport),
                         profile,
                         parent = null,
                     )
@@ -304,12 +305,12 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     },
                 )
                 val observed = renderWork(context)
-                requireSampledImageParityWork(observed)
+                requireSampledImageParityWork(observed, scene)
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
-                    when (scale) {
-                        1 -> 26L
-                        else -> 24L
+                    when (scene) {
+                        SampledParityScene.Effects -> 40L
+                        SampledParityScene.Ordered -> if (scale == 1) 26L else 24L
                     }
                 require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
                     "Every eligible source must use its pinned GPU presentation at GUI$scale: $observed"
@@ -317,7 +318,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 val fabricPath =
                     context.takeScreenshot(
                         TestScreenshotOptions
-                            .of("strata-sampled-image-scale-$scale-fabric")
+                            .of("${scene.slug}-scale-$scale-fabric")
                             .disableCounterPrefix()
                             .withSize(physicalSize.width, physicalSize.height)
                             .withDestinationDir(output),
@@ -963,7 +964,10 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         }
     }
 
-    private fun requireSampledImageParityWork(observed: RenderWork) {
+    private fun requireSampledImageParityWork(
+        observed: RenderWork,
+        scene: SampledParityScene,
+    ) {
         require(0L < observed.rasterizations) { "Sampled-image parity must rasterize portable layers: $observed" }
         require(0L < observed.textureUploads) { "Sampled-image parity must upload portable layers: $observed" }
         require(0L < observed.sampledImageDirectHits) { "Sampled-image parity must reuse a direct texture: $observed" }
@@ -971,8 +975,18 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
         require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
         require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
-        require(0L < observed.sampledImageIneligibleFallbacks) {
-            "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
+        when (scene) {
+            SampledParityScene.Ordered -> {
+                require(0L < observed.sampledImageIneligibleFallbacks) {
+                    "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
+                }
+            }
+
+            SampledParityScene.Effects -> {
+                require(observed.sampledImageIneligibleFallbacks == 0L) {
+                    "Independent sampled effects must not fall back to CPU composition: $observed"
+                }
+            }
         }
         require(observed.sampledImageCapacityFallbacks == 0L) { "Sampled-image parity must fit the direct cache: $observed" }
         require(0L < observed.sampledImageRetainedEntries) { "Sampled-image parity must retain its direct texture: $observed" }
@@ -2140,6 +2154,14 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         ;
 
         val physicalSize: IntSize = IntSize(Math.multiplyExact(viewport.width, scale), Math.multiplyExact(viewport.height, scale))
+    }
+
+    private enum class SampledParityScene(
+        val slug: String,
+        val definition: (IntSize) -> ScreenDefinition,
+    ) {
+        Ordered("strata-sampled-image", ::createSampledImageParityScreenDefinition),
+        Effects("strata-sampled-image-effects", ::createSampledImageEffectsParityScreenDefinition),
     }
 
     private enum class ParityScreen(

@@ -288,6 +288,9 @@ Each little-endian RGBA integer encodes a source index plus one, with zero for a
 The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
 Its third row also carries an opaque RGB channel mask and the first source alpha byte admitted by the CPU oracle's Float cutoff comparison.
 Exact lookup presentation admits arbitrary cutoffs and opaque tints whose RGB channels are each zero or 255; the shader decodes integer source alpha and either preserves or zeroes each color channel.
+Newly accelerated effects additionally require independent composition: opaque fills may provide backgrounds or replace pixels, while overlap with any other image, translucent fill or platform primitive retains the original CPU run.
+A preparation-local proof checks at most 8,192 command occurrences per frame, ignores clips and barriers conservatively, distinguishes repeated command identities, and falls back when exhausted.
+This preserves rounding across overlapping glyph shadows and foregrounds instead of splitting one exact CPU composition into independently quantized native layers.
 Intermediate tint channels and alpha modulation retain CPU composition because rounding a tinted source before destination blending can change exact output pixels.
 Lookup width is at least three texels, and both frame admission and lifetime reservations include that minimum.
 Offscreen passes write straight RGBA without blending, while direct GUI lookup applies the same ordered source-over composition as ordinary portable images.

@@ -127,6 +127,7 @@ internal fun partitionFabricMinecraftFrame(
     var portableTintFallbackImages = 0
     var portableAlphaCutoffFallbackImages = 0
     val samplingBudget = FabricMinecraftSamplingBudget()
+    val samplingComposition = FabricMinecraftSamplingComposition(commands)
 
     fun flushPortable() {
         val bounds = portableBounds
@@ -143,16 +144,16 @@ internal fun partitionFabricMinecraftFrame(
         portableAlphaCutoffFallbackImages = 0
     }
 
-    commands.forEach { command ->
+    commands.forEachIndexed { occurrence, command ->
         when (command) {
             is DrawCommand.FillRectangle -> {
-                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.BlitImage -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
@@ -160,8 +161,11 @@ internal fun partitionFabricMinecraftFrame(
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
                 val ordinary = isDirectFabricSampledImage(command, scale, fractionalSource)
+                val extendedEffects = command.tint != ArgbColor(-1) || command.alphaCutoff != 0f
+                val supported = isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)
+                val independent = supported && (extendedEffects.not() || samplingComposition.admits(occurrence, command))
                 var directClip =
-                    if (isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)) {
+                    if (independent) {
                         if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
                             visibleClip
                         } else {
@@ -178,7 +182,7 @@ internal fun partitionFabricMinecraftFrame(
                         layers.add(sampledFabricLayer(command, directClip.takeIf { activeClips.isNotEmpty() }, visible, scale, fractionalSource))
                     }
                 } else {
-                    val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEach
+                    val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEachIndexed
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible)
                     if (capacity) {
@@ -195,7 +199,7 @@ internal fun partitionFabricMinecraftFrame(
             }
 
             is DrawCommand.BlitImagePixels -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }

@@ -68,19 +68,7 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                 0xFF00FFFF.toInt(),
             ),
         )
-    val reflected =
-        createDrawImage(
-            IntSize(6, 4),
-            IntArray(24) { index ->
-                val alpha =
-                    when (index % 3) {
-                        0 -> 0
-                        1 -> 128
-                        else -> 255
-                    }
-                (alpha shl 24) or ((index * 73471) and 0xFFFFFF)
-            },
-        )
+    val reflected = createReflectedSampledParityImage()
     val blitted =
         createDrawImage(
             IntSize(2, 2),
@@ -137,7 +125,6 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
                         alphaCutoff = 0f,
                     )
                     scope.paintFractionalSourceSamples(sampled)
-                    scope.paintExactSampledEffects(reflected)
                     SampledImageOrientation.entries.forEachIndexed { index, orientation ->
                         val x = 144 + index * 24
                         scope.withClip(IntRect(x, 74, x + 20, 94)) {
@@ -166,18 +153,39 @@ internal fun createSampledImageParityScreenDefinition(viewport: IntSize): Screen
     }
 }
 
+/**
+ * Builds independent opaque-mask and cutoff cases over a logical opaque background, without a scale-to-fit transform.
+ * All forty effects must retain native presentation at each GUI density; the ordered fractional scene is verified separately.
+ * The one-shot definition and its input-passive binding own only immutable fixture pixels and no external resource.
+ */
+internal fun createSampledImageEffectsParityScreenDefinition(viewport: IntSize): ScreenDefinition {
+    require(viewport == IntSize(320, 180)) { "Sampled effects parity requires the 320 by 180 viewport." }
+    val image = createReflectedSampledParityImage()
+    val source =
+        CanvasSource {
+            object : CanvasBinding {
+                override fun paint(scope: PaintScope) {
+                    scope.fillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(0xFF7195B3.toInt()))
+                    scope.paintExactSampledEffects(image)
+                }
+
+                override fun close(): Unit = Unit
+            }
+        }
+    return ScreenDefinition("Sampled image effects parity") { Canvas(source, viewport) }
+}
+
 // Binary RGB masks need no continuous tint quantization; cutoff neighbors must retain CPU Float decisions.
 private fun PaintScope.paintExactSampledEffects(image: DrawImage) {
     val boundary = 128f / 255f
     val cutoffs = listOf(0f, Math.nextDown(boundary), boundary, Math.nextUp(boundary), 1f)
-    cutoffs.forEachIndexed { row, cutoff ->
-        repeat(8) { mask ->
-            val x = 8 + mask * 16
-            val y = 80 + row * 12
-            val rgb = (if (mask and 1 == 0) 0 else 0xFF0000) or (if (mask and 2 == 0) 0 else 0xFF00) or (if (mask and 4 == 0) 0 else 0xFF)
-            fillRectangle(IntRect(x, y, x + 12, y + 8), ArgbColor(0xFF7195B3.toInt()))
-            withClip(IntRect(x, y, x + 12, y + 8)) {
-                withClip(IntRect(x + 4, y, x + 12, y + 8)) {
+    withClip(IntRect(8, 80, 136, 136)) {
+        withClip(IntRect(12, 80, 136, 136)) {
+            cutoffs.forEachIndexed { row, cutoff ->
+                repeat(8) { mask ->
+                    val x = 8 + mask * 16
+                    val y = 80 + row * 12
+                    val rgb = (if (mask and 1 == 0) 0 else 0xFF0000) or (if (mask and 2 == 0) 0 else 0xFF00) or (if (mask and 4 == 0) 0 else 0xFF)
                     sampledImage(
                         image,
                         FloatRect(0.1f, 0.4f, 5.7f, 3.6f),
@@ -191,6 +199,20 @@ private fun PaintScope.paintExactSampledEffects(image: DrawImage) {
         }
     }
 }
+
+private fun createReflectedSampledParityImage(): DrawImage =
+    createDrawImage(
+        IntSize(6, 4),
+        IntArray(24) { index ->
+            val alpha =
+                when (index % 3) {
+                    0 -> 0
+                    1 -> 128
+                    else -> 255
+                }
+            (alpha shl 24) or ((index * 73471) and 0xFFFFFF)
+        },
+    )
 
 // Narrow, asymmetric and decimal crops exercise source-texel boundaries after native normalized UV interpolation.
 private fun PaintScope.paintFractionalSourceSamples(image: DrawImage) {

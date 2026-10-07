@@ -47,14 +47,16 @@ internal class FabricMinecraftSamplingBudgetTest {
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f)
         for (tint in listOf(command.tint, ArgbColor(-1))) {
             val selected = command.copy(tint = tint)
-            val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(List(257) { selected }, IntSize(1, 1), exactSampling = true), 1)
-            assertEquals(256, inputs.sampled.size)
+            val oversized = selected.copy(destination = FloatRect(0f, 0f, 4096f, 4096f))
+            val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(oversized), IntSize(4096, 4096), exactSampling = true), 1)
+            assertEquals(0, inputs.sampled.size)
             assertEquals(1L, inputs.capacitySampledImages)
             assertEquals(0L, inputs.ineligibleSampledImages)
             assertEquals(0L, inputs.tintFallbackImages)
             assertEquals(0L, inputs.alphaCutoffFallbackImages)
-            val resolved = inputs.resolve({ false }) { true }
-            assertEquals(257L, resolved.capacitySampledImages)
+            val admitted = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(selected), IntSize(1, 1), exactSampling = true), 1)
+            val resolved = admitted.resolve({ false }) { true }
+            assertEquals(1L, resolved.capacitySampledImages)
             assertEquals(0L, resolved.tintFallbackImages)
             assertEquals(0L, resolved.alphaCutoffFallbackImages)
         }
