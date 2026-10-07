@@ -258,6 +258,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftNativeStorage",
                 "$packageName.FabricMinecraftSamplingShaders",
                 "$packageName.FabricMinecraftPortableReuseKt",
+                "$packageName.FabricMinecraftPortableTilesKt",
                 "$packageName.FabricMinecraftFrameInputs",
                 "$packageName.FabricMinecraftPortableTexture",
                 "$packageName.FabricMinecraftPortableTexture\$Companion",

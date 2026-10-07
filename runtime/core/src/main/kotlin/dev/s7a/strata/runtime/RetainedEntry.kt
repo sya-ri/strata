@@ -132,6 +132,16 @@ internal sealed class RetainedEntry(
     var transformedPaint: RetainedPaintCommands? = null
 
     /**
+     * Current shared subtree output; bounded by current child membership and cleared before cleanup callbacks.
+     */
+    var paintSnapshot: RetainedPaintSnapshot? = null
+
+    /**
+     * Whether this entry or a descendant has pending paint work; propagation does not dirty local callbacks.
+     */
+    var paintSubtreeDirty: Boolean = true
+
+    /**
      * Anchor bounds used to produce [rootOverlayCommands].
      */
     var rootOverlayAnchor: IntRect? = null

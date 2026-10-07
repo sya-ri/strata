@@ -87,6 +87,7 @@ internal class RetainedPaintCommandsTest {
         assertSame(initial, child.transformedPaint)
 
         child.localToTree = TreeTransform(1.0, DoubleOffset(3.0, 2.0))
+        root.paintSubtreeDirty = true
         pipeline.paint(root)
         val translated = requireNotNull(child.transformedPaint)
         assertNotSame(initial, translated)
@@ -94,6 +95,7 @@ internal class RetainedPaintCommandsTest {
         assertSame(rootCommands, root.transformedPaint)
 
         child.localToTree = TreeTransform(0.5, DoubleOffset(3.25, 2.5))
+        root.paintSubtreeDirty = true
         pipeline.paint(root)
         val fractional = requireNotNull(child.transformedPaint)
         assertNotSame(translated, fractional)
@@ -102,6 +104,7 @@ internal class RetainedPaintCommandsTest {
 
         child.localToTree = TreeTransform.Identity
         child.measuredSize = IntSize(8, 6)
+        root.paintSubtreeDirty = true
         pipeline.paint(root)
         val resized = requireNotNull(child.transformedPaint)
         assertNotSame(fractional, resized)
@@ -110,6 +113,7 @@ internal class RetainedPaintCommandsTest {
         val childNode = child.node as PaintProbe
         childNode.color = ArgbColor(0xFF7195B3.toInt())
         child.dirty += DirtyMask.of(DirtyPhase.Paint)
+        root.paintSubtreeDirty = true
         pipeline.paint(root)
         val repainted = requireNotNull(child.transformedPaint)
         assertNotSame(resized, repainted)
@@ -126,6 +130,107 @@ internal class RetainedPaintCommandsTest {
     }
 
     @Test
+    fun changedGrandchildSharesTheOtherBranchAndPreservesPreviouslyPublishedCommands() {
+        val root = entry()
+        val branch = entry()
+        val leaf = entry()
+        val sibling = entry()
+        root.children.addAll(listOf(branch, sibling))
+        branch.parent = root
+        sibling.parent = root
+        branch.children.add(leaf)
+        leaf.parent = branch
+        val probe = leaf.node as PaintProbe
+        probe.color = ArgbColor(0xFF112233.toInt())
+        val pipeline = PaintPipeline(OwnerGuard())
+        val before = pipeline.paint(root)
+        val detached = before.toList()
+        val unchanged = requireNotNull(sibling.paintSnapshot)
+        val previousBranch = requireNotNull(branch.paintSnapshot)
+        val oldColor = probe.color
+        probe.color = ArgbColor(0xFF778899.toInt())
+        DirtyTracker().record(leaf, DirtyMask.of(DirtyPhase.Paint))
+        val after = pipeline.paint(root)
+        assertSame(unchanged, sibling.paintSnapshot)
+        assertNotSame(previousBranch, branch.paintSnapshot)
+        assertEquals(detached, before)
+        assertEquals(
+            detached.map { if (it is DrawCommand.FillRectangle && it.color == oldColor) it.copy(color = probe.color) else it },
+            after,
+        )
+        assertEquals(2, probe.paintCalls)
+        assertEquals(1, (sibling.node as PaintProbe).paintCalls)
+    }
+
+    @Test
+    fun reorderingAndUnplacingCachedChildrenRefreshBothOrdinaryAndRootOverlayOrder() {
+        val root = entry()
+        val first = entry()
+        val second = entry()
+        val firstColor = ArgbColor(0xFF112233.toInt())
+        val secondColor = ArgbColor(0xFF445566.toInt())
+        (first.node as PaintProbe).color = firstColor
+        (second.node as PaintProbe).color = secondColor
+        root.children.addAll(listOf(first, second))
+        first.parent = root
+        second.parent = root
+        val tracker = DirtyTracker()
+        val pipeline = PaintPipeline(OwnerGuard())
+        val published = pipeline.paint(root)
+        val originalFirst = first.paintSnapshot
+        root.children.reverse()
+        tracker.structural(root)
+        val reordered = pipeline.paint(root)
+        assertSame(originalFirst, first.paintSnapshot)
+        assertEquals(firstColor, (published[2] as DrawCommand.FillRectangle).color)
+        assertEquals(secondColor, (reordered[2] as DrawCommand.FillRectangle).color)
+        assertEquals(firstColor, (reordered[6] as DrawCommand.FillRectangle).color)
+        assertEquals(listOf(secondColor, firstColor, (root.node as PaintProbe).color), reordered.takeLast(3).map { (it as DrawCommand.FillRectangle).color })
+        first.placed = false
+        tracker.record(root, DirtyMask.of(DirtyPhase.Layout))
+        val unplaced = pipeline.paint(root)
+        assertEquals(10, unplaced.size)
+        assertEquals(listOf(secondColor, root.node.color), unplaced.takeLast(2).map { (it as DrawCommand.FillRectangle).color })
+        assertEquals(15, published.size)
+        assertEquals(1, first.node.paintCalls)
+    }
+
+    @Test
+    fun invalidationFromPaintRemainsPendingAndRemovalDropsAncestorSnapshotsBeforeDispose() {
+        val root = entry()
+        val child = entry()
+        root.children.add(child)
+        child.parent = root
+        val owner = OwnerGuard()
+        val tracker = DirtyTracker()
+        val lifecycle = LifecycleManager(NodeOwnershipRegistry(), owner, tracker) {}
+        for (retained in listOf(root, child)) {
+            lifecycle.bind(retained)
+            lifecycle.attachCurrent(retained)
+        }
+        val probe = child.node as PaintProbe
+        probe.onPaint = {
+            if (probe.paintCalls == 1) tracker.record(child, DirtyMask.of(DirtyPhase.Paint))
+        }
+        val pipeline = PaintPipeline(owner)
+        val published = pipeline.paint(root)
+        val detached = published.toList()
+        pipeline.paint(root)
+        assertEquals(2, probe.paintCalls)
+        probe.onDispose = {
+            assertNull(root.paintSnapshot)
+            assertNull(child.paintSnapshot)
+        }
+        assertNull(lifecycle.cleanup(child))
+        root.children.clear()
+        tracker.structural(root)
+        val afterRemoval = pipeline.paint(root)
+        assertEquals(5, afterRemoval.size)
+        assertEquals(detached, published)
+        assertNull(lifecycle.cleanup(root))
+    }
+
+    @Test
     fun terminalCleanupDropsTransformedCommandsBeforeFailingLifecycleCallbacks() {
         val retained = entry()
         val owner = OwnerGuard()
@@ -133,11 +238,13 @@ internal class RetainedPaintCommandsTest {
         val node = retained.node as PaintProbe
         node.onDispose = {
             assertNull(retained.transformedPaint)
+            assertNull(retained.paintSnapshot)
             throw primary
         }
         val lifecycle =
             LifecycleManager(NodeOwnershipRegistry(), owner, DirtyTracker()) {
                 assertNull(it.transformedPaint)
+                assertNull(it.paintSnapshot)
             }
         lifecycle.bind(retained)
         lifecycle.attachCurrent(retained)
@@ -183,6 +290,7 @@ internal class RetainedPaintCommandsTest {
         var color: ArgbColor = ArgbColor(0xFF234567.toInt())
         var paintCalls: Int = 0
         var onDispose: () -> Unit = {}
+        var onPaint: () -> Unit = {}
         var transform: ChildTransform = ChildTransform.Identity
 
         override fun layout(scope: LayoutScope) {
@@ -193,6 +301,7 @@ internal class RetainedPaintCommandsTest {
 
         override fun paint(scope: PaintScope) {
             paintCalls += 1
+            onPaint()
             scope.fillRectangle(IntRect(0, 0, 4, 4), color)
         }
 

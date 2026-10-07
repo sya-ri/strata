@@ -112,18 +112,27 @@ internal class LifecycleManager(
     /**
      * Rejects invalidation from every subtree entry before terminal input cancellation or lifecycle cleanup begins.
      *
-     * This owner-confined operation invokes no callbacks, releases no resources, and is safe to repeat before [cleanup].
+     * This owner-confined operation clears shared paint snapshots without invoking callbacks and is safe to repeat before [cleanup].
      *
      * @param retained subtree whose node ownership is entering cleanup.
      */
     fun prepareCleanup(retained: RetainedNode) {
-        retained.cleanupStarted = true
+        markCleanupStarted(retained)
         retained.modifiers.forEach(::markCleanupStarted)
         retained.children.forEach(::prepareCleanup)
     }
 
-    private fun markCleanupStarted(retained: RetainedModifier) {
+    private fun markCleanupStarted(retained: RetainedEntry) {
         retained.cleanupStarted = true
+        retained.paintSnapshot = null
+        retained.paintSubtreeDirty = true
+        var ancestor = retained.parent
+        while (ancestor != null) {
+            if (ancestor.paintSnapshot == null && ancestor.paintSubtreeDirty) break
+            ancestor.paintSnapshot = null
+            ancestor.paintSubtreeDirty = true
+            ancestor = ancestor.parent
+        }
     }
 
     private fun cleanupNode(
@@ -147,6 +156,7 @@ internal class LifecycleManager(
         failures: FailureAccumulator,
     ) {
         retained.transformedPaint = null
+        retained.paintSnapshot = null
         failures.capture { beforeEntryCleanup(retained) }
         val lifecycle = retained.node as? LifecycleNode
         if (lifecycle != null && retained.attachAttempted && retained.detachAttempted.not()) {

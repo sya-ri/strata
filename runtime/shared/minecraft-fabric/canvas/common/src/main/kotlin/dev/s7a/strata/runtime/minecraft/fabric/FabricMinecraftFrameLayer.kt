@@ -6,6 +6,7 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -19,6 +20,7 @@ import kotlin.math.floor
 internal sealed interface FabricMinecraftFrameLayer {
     /**
      * A tight CPU-rasterized fallback run; sampled runs preserve absolute coordinates for exact Float arithmetic.
+     * Disjoint tiles from one original run share an opaque ordering identity, owned only by the current frame descriptions.
      */
     class Portable(
         @get:JvmSynthetic
@@ -31,6 +33,12 @@ internal sealed interface FabricMinecraftFrameLayer {
         internal val absoluteCoordinates: Boolean = false,
         @get:JvmSynthetic
         internal val capacitySampledImages: Int = 0,
+        @get:JvmSynthetic
+        internal val tintFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) },
+        @get:JvmSynthetic
+        internal val alphaCutoffFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f },
+        @get:JvmSynthetic
+        internal val orderingGroup: Any? = null,
     ) : FabricMinecraftFrameLayer
 
     /**
@@ -59,7 +67,8 @@ internal sealed interface FabricMinecraftFrameLayer {
 }
 
 /**
- * Submits resolved frame layers in display-list order with one native ordering boundary between every adjacent pair.
+ * Submits resolved frame layers in display-list order with native boundaries between original runs and image or platform barriers.
+ * Adjacent disjoint tiles sharing one original portable run's identity need no additional ordering boundary.
  *
  * Empty and singleton lists create no boundary. The callbacks are borrowed synchronously, invoked on the caller's thread, and never retained.
  * An exception from either callback is propagated unchanged, and no later callback is invoked.
@@ -74,9 +83,12 @@ internal inline fun submitFabricMinecraftFrameLayers(
     advance: () -> Unit,
     submit: (FabricMinecraftFrameLayer) -> Unit,
 ) {
+    var previousGroup: Any? = null
     layers.forEachIndexed { index, layer ->
-        if (0 < index) advance()
+        val group = (layer as? FabricMinecraftFrameLayer.Portable)?.orderingGroup
+        if (0 < index && (group == null || group !== previousGroup)) advance()
         submit(layer)
+        previousGroup = group
     }
 }
 
@@ -118,9 +130,7 @@ internal fun partitionFabricMinecraftFrame(
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            val absolute = portable.any { it is DrawCommand.SampledImage }
-            val commands = if (absolute) portable.toList() else localizeFabricPortable(portable, bounds)
-            layers.add(FabricMinecraftFrameLayer.Portable(commands, bounds, portableIneligibleSampledImages, absolute, portableCapacitySampledImages))
+            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
@@ -319,9 +329,13 @@ private fun includeFabricVisibleBounds(
     )
 }
 
+/**
+ * Localizes integer-only portable runs while preserving their ordered clips and image mapping.
+ */
+@JvmSynthetic
 // Every portable command variant has an explicit coordinate conversion; splitting the visitor obscures clip balance.
 @Suppress("CyclomaticComplexMethod")
-private fun localizeFabricPortable(
+internal fun localizeFabricPortable(
     commands: List<DrawCommand>,
     bounds: IntRect,
 ): List<DrawCommand> {

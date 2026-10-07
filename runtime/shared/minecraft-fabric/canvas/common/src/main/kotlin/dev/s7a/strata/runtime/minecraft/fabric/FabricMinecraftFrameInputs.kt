@@ -1,9 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
-import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.runtime.render.DrawCommand
 
 /**
  * Derived CPU inputs owned by one prepared display list and GUI scale, without native texture references.
@@ -66,18 +64,13 @@ internal class FabricMinecraftFrameInputs(
      * Number of visible portable sampled commands rejected first by non-identity tint.
      */
     @get:JvmSynthetic
-    internal val tintFallbackImages: Long = countSampled { it.tint != ArgbColor(-1) }
+    internal val tintFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.tintFallbackImages.toLong() else 0L }
 
     /**
      * Number rejected by cutoff after identity tint; other causes remain explicitly unclassified.
      */
     @get:JvmSynthetic
-    internal val alphaCutoffFallbackImages: Long = countSampled { it.tint == ArgbColor(-1) && it.alphaCutoff != 0f }
-
-    private inline fun countSampled(predicate: (DrawCommand.SampledImage) -> Boolean): Long =
-        layers.sumOf { layer ->
-            if (layer is FabricMinecraftFrameLayer.Portable) layer.commands.count { it is DrawCommand.SampledImage && predicate(it) }.toLong() else 0L
-        }
+    internal val alphaCutoffFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.alphaCutoffFallbackImages.toLong() else 0L }
 
     /**
      * Returns these inputs unchanged when every direct layer is available, or constructs this borrow's portable fallbacks.
@@ -95,8 +88,15 @@ internal class FabricMinecraftFrameInputs(
         layers.forEachIndexed { index, layer ->
             if (layer is FabricMinecraftFrameLayer.Sampled && available(layer.command.image).not()) {
                 if (supported(layer.command.image)) capacity += 1L else ineligible += 1L
-                val resolved = replacements ?: layers.toMutableList().also { replacements = it }
-                resolved[index] = portableFabricSampledFallback(layer)
+                val resolved =
+                    replacements ?: ArrayList<FabricMinecraftFrameLayer>().also {
+                        it.addAll(layers.subList(0, index))
+                        replacements = it
+                    }
+                val fallback = portableFabricSampledFallback(layer)
+                resolved.addAll(tileFabricMinecraftPortable(fallback.commands, fallback.bounds, scale))
+            } else {
+                replacements?.add(layer)
             }
         }
         return replacements?.let { FabricMinecraftFrameInputs(it, scale, capacity, ineligible) } ?: this

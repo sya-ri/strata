@@ -47,6 +47,13 @@ internal class DirtyTracker(
         }
         val expanded = expand(mask)
         retained.dirty += expanded
+        if (DirtyPhase.Paint in expanded) {
+            var current: RetainedEntry? = retained
+            while (current != null) {
+                current.paintSubtreeDirty = true
+                current = current.parent
+            }
+        }
         if (DirtyPhase.Measure in mask) {
             val ancestorMask = DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             var ancestor = retained.parent
@@ -70,6 +77,8 @@ internal class DirtyTracker(
         var current: RetainedEntry? = retained
         while (current != null) {
             current.dirty += DirtyMask.All
+            current.paintSubtreeDirty = true
+            current.paintSnapshot = null
             current = current.parent
         }
     }

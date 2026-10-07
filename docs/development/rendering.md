@@ -18,6 +18,7 @@ Measure, layout, paint, input, and semantics enforce their phase preconditions.
 A clean equal-constraint measurement can reuse its cached size.
 Clean layout can reuse placements.
 Clean paint reuses complete local display lists through the current accumulated transform.
+Clean paint branches share immutable subtree command concatenations; propagated paint and structural invalidation refresh their current ordered membership without changing clean local callbacks.
 Clean semantics reuses complete local payloads and combines them with current outward-projected bounds.
 Invalidation inside a callback remains pending because the current dirty bit is cleared before the callback runs.
 Capability and scope failures after pipeline work begins poison the tree only when their exceptions escape the active callback.
