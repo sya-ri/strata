@@ -30,7 +30,10 @@ internal class FabricMinecraftUploadWork {
     @JvmSynthetic
     internal fun portable(image: FabricMinecraftPortableImage) {
         val sampling = image.sampling
-        if (sampling == null) {
+        val composition = image.composition
+        if (composition != null) {
+            samplingUploadByteCount = Math.addExact(samplingUploadByteCount, composition.uploadBytes)
+        } else if (sampling == null) {
             rasterUploadByteCount = Math.addExact(rasterUploadByteCount, bytes(image.physicalSize))
         } else {
             samplingUploadByteCount = Math.addExact(samplingUploadByteCount, bytes(sampling.indices.size))

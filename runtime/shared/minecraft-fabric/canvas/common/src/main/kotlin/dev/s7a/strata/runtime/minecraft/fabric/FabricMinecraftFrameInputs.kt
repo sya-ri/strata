@@ -15,30 +15,28 @@ internal class FabricMinecraftFrameInputs(
     private val scale: Int,
     capacitySampledImages: Long = 0L,
     unavailableIneligibleImages: Long = 0L,
+    private val compositionEnabled: Boolean = false,
+    preparedPortable: List<FabricMinecraftPortableImage>? = null,
 ) {
-    /**
-     * Counts exact-output budget exhaustion and unavailable supported source identities in this native borrow.
-     */
-    @get:JvmSynthetic
-    internal val capacitySampledImages: Long =
-        layers.fold(capacitySampledImages) { count, layer -> Math.addExact(count, if (layer is FabricMinecraftFrameLayer.Portable) layer.capacitySampledImages.toLong() else 0L) }
-
-    /**
-     * Source identities requested in display-list order, retaining no native storage.
-     */
-    @get:JvmSynthetic
-    internal val sampled: List<DrawImage> = buildList { layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled) add(it.command.image) } }
+    private val borrowedCapacity = capacitySampledImages
+    private val borrowedIneligible = unavailableIneligibleImages
 
     /**
      * Immutable localized raster descriptions prepared once for the current display list.
      */
     @get:JvmSynthetic
     internal val portable: List<FabricMinecraftPortableImage> =
-        layers.mapNotNull {
+        preparedPortable ?: preparePortable()
+
+    private fun preparePortable(): List<FabricMinecraftPortableImage> {
+        val budget = FabricMinecraftSamplingBudget()
+        layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled && it.sampling != null) check(budget.admit(it.command.destination, it.visibleBounds, scale)) }
+        return layers.mapNotNull {
             when (it) {
                 is FabricMinecraftFrameLayer.Portable -> {
                     val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
-                    FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin)
+                    val composition = if (compositionEnabled) FabricMinecraftCompositionMap.create(it.commands, it.bounds.size, scale, origin, budget) else null
+                    FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin, composition = composition)
                 }
 
                 is FabricMinecraftFrameLayer.Sampled -> {
@@ -52,25 +50,68 @@ internal class FabricMinecraftFrameInputs(
                 }
             }
         }
+    }
+
+    private val cpuLayers: List<FabricMinecraftFrameLayer.Portable> =
+        buildList {
+            var index = 0
+            layers.forEach { layer ->
+                when (layer) {
+                    is FabricMinecraftFrameLayer.Portable -> if (portable[index++].composition == null) add(layer)
+                    is FabricMinecraftFrameLayer.Sampled -> if (layer.sampling != null) index += 1
+                    is FabricMinecraftFrameLayer.Platform -> Unit
+                }
+            }
+        }
+
+    /**
+     * Counts exact-output budget exhaustion and unavailable supported source identities in this native borrow.
+     */
+    @get:JvmSynthetic
+    internal val capacitySampledImages: Long = cpuLayers.fold(capacitySampledImages) { count, layer -> Math.addExact(count, layer.capacitySampledImages.toLong()) }
+
+    /**
+     * Source identities requested for direct drawing and complete ordered composition, retaining no native storage.
+     */
+    @get:JvmSynthetic
+    internal val sampled: List<DrawImage> =
+        buildList {
+            var index = 0
+            layers.forEach { layer ->
+                when (layer) {
+                    is FabricMinecraftFrameLayer.Portable -> {
+                        portable[index++].composition?.sources?.forEach { if (it != null) add(it) }
+                    }
+
+                    is FabricMinecraftFrameLayer.Sampled -> {
+                        add(layer.command.image)
+                        if (layer.sampling != null) index += 1
+                    }
+
+                    is FabricMinecraftFrameLayer.Platform -> {
+                    }
+                }
+            }
+        }
 
     /**
      * Number of unsupported sampled commands in portable runs, including unavailable direct layers in this borrow.
      */
     @get:JvmSynthetic
     internal val ineligibleSampledImages: Long =
-        layers.fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, if (layer is FabricMinecraftFrameLayer.Portable) layer.ineligibleSampledImages.toLong() else 0L) }
+        cpuLayers.fold(unavailableIneligibleImages) { count, layer -> Math.addExact(count, layer.ineligibleSampledImages.toLong()) }
 
     /**
      * Number of visible portable sampled commands rejected first by unsupported tint composition.
      */
     @get:JvmSynthetic
-    internal val tintFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.tintFallbackImages.toLong() else 0L }
+    internal val tintFallbackImages: Long = cpuLayers.sumOf { it.tintFallbackImages.toLong() }
 
     /**
      * Number rejected by unsupported cutoff after identity tint; other causes remain explicitly unclassified.
      */
     @get:JvmSynthetic
-    internal val alphaCutoffFallbackImages: Long = layers.sumOf { if (it is FabricMinecraftFrameLayer.Portable) it.alphaCutoffFallbackImages.toLong() else 0L }
+    internal val alphaCutoffFallbackImages: Long = cpuLayers.sumOf { it.alphaCutoffFallbackImages.toLong() }
 
     /**
      * Returns these inputs unchanged when every direct layer is available, or constructs this borrow's portable fallbacks.
@@ -99,6 +140,21 @@ internal class FabricMinecraftFrameInputs(
                 replacements?.add(layer)
             }
         }
-        return replacements?.let { FabricMinecraftFrameInputs(it, scale, capacity, ineligible) } ?: this
+        val direct = replacements?.let { FabricMinecraftFrameInputs(it, scale, capacity, ineligible, compositionEnabled) } ?: this
+        return direct.resolveCompositions(available)
+    }
+
+    private fun resolveCompositions(available: (DrawImage) -> Boolean): FabricMinecraftFrameInputs {
+        if (portable.none { input -> input.composition?.sources?.any { it != null && available(it).not() } == true }) return this
+        val resolved =
+            portable.map { input ->
+                val composition = input.composition
+                if (composition != null && composition.sources.any { it != null && available(it).not() }) {
+                    FabricMinecraftPortableImage(input.commands, input.size, scale, input.origin, input.sampling)
+                } else {
+                    input
+                }
+            }
+        return FabricMinecraftFrameInputs(layers, scale, borrowedCapacity, borrowedIneligible, compositionEnabled, resolved)
     }
 }

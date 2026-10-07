@@ -1002,10 +1002,13 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val screen = activeFabricScreen(minecraft)
         val fields = FabricMinecraftScreen::class.java.declaredFields.associateBy { field -> field.name }
 
-        fun counter(name: String): Long {
-            val field = fields[name] ?: error("Fabric performance counter is missing: $name")
+        fun counter(
+            name: String,
+            owner: Any = screen,
+        ): Long {
+            val field = if (owner === screen) fields[name] ?: error("Fabric performance counter is missing: $name") else owner.javaClass.getDeclaredField(name)
             check(field.trySetAccessible()) { "Fabric performance counter is inaccessible: $name" }
-            return field.getLong(screen)
+            return field.getLong(owner)
         }
 
         val inventoryField = fields["inventory"] ?: error("The Fabric performance screen has no inventory bridge.")
@@ -1022,6 +1025,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
             framePreparations = counter("framePreparationCount"),
             rasterizations = counter("portableRasterizationCount"),
             textureUploads = counter("textureUploadCount"),
+            samplingBytes = counter("samplingUploadByteCount", MinecraftCompositionParityInputs.member(screen, "uploadWork")),
             sampledImageDirectHits = counter("sampledImageDirectHitCount"),
             sampledImageDirectMisses = counter("sampledImageDirectMissCount"),
             sampledImageUploads = counter("sampledImageUploadCount"),
@@ -1096,6 +1100,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         val framePreparations: Long,
         val rasterizations: Long,
         val textureUploads: Long,
+        val samplingBytes: Long,
         val sampledImageDirectHits: Long,
         val sampledImageDirectMisses: Long,
         val sampledImageUploads: Long,
@@ -1782,7 +1787,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
 
                     override fun work(): ReactiveNativeWork {
                         val counters = readRenderWork(Minecraft.getInstance())
-                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads)
+                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads, counters.samplingBytes)
                     }
 
                     override fun assertPixels(

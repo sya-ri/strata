@@ -299,13 +299,33 @@ Newly accelerated effects additionally require independent composition: opaque f
 Any potentially translucent image, fill, blit or platform primitive retains CPU composition even outside the admitted image's bounds, because a new native barrier can split and change the rounding of those other commands' portable run.
 A preparation-local proof checks at most 8,192 command occurrences per frame, ignores clips and barriers conservatively, distinguishes repeated command identities, and falls back when exhausted.
 This preserves rounding across overlapping glyph shadows and foregrounds instead of splitting one exact CPU composition into independently quantized native layers.
-Intermediate cutoffs, tint channels and alpha modulation retain CPU composition because native translucent source-over rounding can differ even for independent images, and rounding a tinted source before destination blending can change exact output pixels.
+Intermediate cutoffs, tint channels and alpha modulation never introduce an individual native-image boundary, because native translucent source-over rounding can differ even for independent images, and rounding a tinted source before destination blending can change exact output pixels.
 Lookup width is at least three texels, and both frame admission and lifetime reservations include that minimum.
 Offscreen passes write straight RGBA without blending, while direct GUI lookup applies the same ordered source-over composition as ordinary portable images.
-Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for commands outside their proven native quad subset.
+Legacy OpenGL and direct-texture adapters retain exact CPU region sampling for individual commands outside their proven native quad subset; complete portable tiles may use the ordered composition path below.
+
+Portable tiles containing sampled images can instead compose their complete original command sequence on the GPU, including transparent destinations, overlapping translucent images and integer glyph blits.
+This admission preserves every existing tile and native boundary rather than separating those translucent commands into new GUI layers.
+Two generation-owned RGBA8 destinations alternate after every visible drawing command; each pass quantizes its result to bytes and copies preceding pixels outside exact physical coverage.
+Fill and integer-image passes use the existing bounded integer source-over equations.
+Sampled-image passes emulate binary32 addition, multiplication, division and ties-to-even rounding with GLSL 32-bit unsigned integers, then retain the existing positive half-up byte conversion.
+Multiplication uses twelve-bit limbs whose intermediate products fit below 2^25; division doubles a remainder below 2^24 and derives each quotient bit sequentially.
+The smallest nonzero presentation product is `(1 / 255)^4`, so this nonnegative finite domain needs neither subnormals nor signed, infinite or NaN arithmetic.
+Normalization, tint prefixes, source alpha and inverse alpha arrive as the exact CPU Float bit patterns rather than GPU floating-point calculations.
+Original-coordinate x/y index rows, coverage and typed command controls preserve reversed axes, fractional crops and nested clips without translating their Float operands.
+
+Ordered admission requires at least 4,096 physical pixels, output and metadata axes supported by the device, output axes at most 4,096, and at most 1,024 composition passes across the complete prepared frame.
+It shares the existing 256-output and 64 MiB frame ledger with individual exact outputs, including both destinations, all CPU/staging/GPU metadata payload copies and conservative fixed and per-pass metadata overhead.
+Small, unsupported, over-budget or unavailable-source tiles retain their whole existing CPU command sequence.
+Current-frame metadata and source identities are the complete reuse key; a source replacement or any changed axis, coverage, tint, cutoff or pass order invalidates the output.
+The existing source-image borrow pins every requested image before preparation and marks it queued before any pass can read it.
+All partial allocations, reload retirement, GUI-consumption fences, screen detachment and physical destruction remain with the existing source and portable-generation owners.
+Legacy OpenGL additionally saves and restores all four touched texture units and optional sampler bindings, draw state and pixel-store parameters; its one fixed composition program belongs to the device until terminal completion.
+Native acceptance compares the production integer arithmetic with independent CPU Float bit patterns, actual transparent tile bytes with the CPU rasterizer, and complete overlapping image/glyph GUI frames with the same commands prepared through CPU fallback.
+Repeated performance comparisons use one frozen fixture on both revisions and retain GUI-only GPU timestamps separately from timestamps covering preparation, uploads, offscreen composition and GUI consumption.
 
 Exact GPU output and its axis texture, or the direct GUI index texture alone, belong to the existing current portable generation, with no additional history, identity lookup, or cache.
-One prepared frame admits at most 256 exact outputs and 64 MiB of output-plus-lookup RGBA storage before deriving metadata or allocating native resources; exhaustion selects exact CPU fallback and is counted as capacity fallback.
+One prepared frame admits at most 256 exact outputs, 1,024 passes and 64 MiB of output and metadata storage before deriving metadata or allocating native resources; individual lookup exhaustion selects exact CPU fallback and is counted as capacity fallback.
 Their key includes commands, original sampling origin, logical extent, GUI density, and presentation mode.
 The generation reserves a conservative rectangle covering both allocations before acquiring either; direct GUI lookup keeps this upper bound even though it allocates only metadata.
 Unchanged entries use the same prefix/suffix sharing rules as ordinary portable uploads.
@@ -423,7 +443,7 @@ After submitted work completes, terminal cleanup requests all retirements, drain
 Repeated failed shutdown cannot report success.
 Once terminal shutdown starts, ordinary polling performs no further native work, including when device completion failed and old fences later signal.
 Those failed terminal resources remain quarantined until external device teardown rather than being released by a late frame callback.
-The fixed orientation-specific sampling programs are device-owned, keyed only by native API family and row orientation, bounded to two variants, and released only after terminal GPU completion.
+The fixed sampling programs are device-owned, keyed only by native API family and row orientation, bounded to two orientation variants plus one ordered-composition variant, and released only after terminal GPU completion.
 
 Deterministic protocol tests independently control capture and GUI fences and cover long unsignalled histories, resize, source replacement, reattachment, shared sources, cancellation, partial producer/GUI/cleanup failures, partial allocation rollback, the three/64 limits, rapid key churn, and retained old frames.
 Loaded native tests must separately inspect known GPU texels and a custom offscreen renderer before comparing the same-generation Headless capture; agreement between two snapshots alone is not native parity evidence.

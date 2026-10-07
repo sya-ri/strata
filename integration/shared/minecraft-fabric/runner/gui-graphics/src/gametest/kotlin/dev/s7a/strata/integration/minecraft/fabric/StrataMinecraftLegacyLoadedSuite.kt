@@ -189,7 +189,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
                     override fun work(): ReactiveNativeWork {
                         val counters = readRenderWork(Minecraft.getInstance())
-                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads)
+                        return ReactiveNativeWork(counters.hostFrames, counters.framePreparations, counters.rasterizations, counters.textureUploads, counters.samplingBytes)
                     }
 
                     override fun assertPixels(
@@ -675,11 +675,14 @@ internal class StrataMinecraftLegacyLoadedSuite {
         val screen = activeFabricScreen(minecraft)
         val presentation = fabricPresentation(screen)
 
-        fun counter(name: String): Long {
-            val fields = presentation.javaClass.declaredFields.associateBy { field -> field.name }
+        fun counter(
+            name: String,
+            owner: Any = presentation,
+        ): Long {
+            val fields = owner.javaClass.declaredFields.associateBy { field -> field.name }
             val field = fields[name] ?: error("Fabric render counter field is missing: $name")
             check(field.trySetAccessible()) { "Fabric render counter field is inaccessible: $name" }
-            return field.getLong(presentation)
+            return field.getLong(owner)
         }
 
         return RenderWork(
@@ -688,6 +691,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
             framePreparations = counter("framePreparationCount"),
             rasterizations = counter("portableRasterizationCount"),
             textureUploads = counter("textureUploadCount"),
+            samplingBytes = counter("samplingUploadByteCount", MinecraftCompositionParityInputs.member(presentation, "uploadWork")),
         )
     }
 
@@ -762,6 +766,7 @@ internal class StrataMinecraftLegacyLoadedSuite {
         val framePreparations: Long,
         val rasterizations: Long,
         val textureUploads: Long,
+        val samplingBytes: Long,
     )
 
     private data class NativePresentation(

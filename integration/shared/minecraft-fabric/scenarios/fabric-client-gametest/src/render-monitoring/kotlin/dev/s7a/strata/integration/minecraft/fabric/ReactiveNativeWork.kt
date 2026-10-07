@@ -8,4 +8,5 @@ internal data class ReactiveNativeWork(
     val preparations: Long,
     val rasterizations: Long,
     val uploads: Long,
+    val samplingBytes: Long,
 )

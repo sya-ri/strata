@@ -145,7 +145,7 @@ internal class FabricMinecraftFramePresenter(
                 checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale)
+                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale, compositionEnabled = supportsFabricMinecraftOrderedComposition())
             }
         try {
             sampledImages.present(
@@ -168,6 +168,19 @@ internal class FabricMinecraftFramePresenter(
                         val source = checkNotNull(textureFor(sampling.command.image))
                         sampledQueued(sampling.command.image)
                         FabricMinecraftPortableTexture.create(sampling, source, retain).also { sampledImageDrawCount += 1L }
+                    },
+                    { composition, retain ->
+                        val sources =
+                            composition.sources.map { image ->
+                                image?.let {
+                                    val source = checkNotNull(textureFor(it)) { "Resolved composition must retain every source texture." }
+                                    sampledQueued(it)
+                                    source.texture
+                                }
+                            }
+                        FabricMinecraftPortableTexture.create(composition, sources, retain).also {
+                            sampledImageDrawCount = Math.addExact(sampledImageDrawCount, composition.sources.count { it != null }.toLong())
+                        }
                     },
                 ) { textures, portableQueued ->
                     var textureIndex = 0

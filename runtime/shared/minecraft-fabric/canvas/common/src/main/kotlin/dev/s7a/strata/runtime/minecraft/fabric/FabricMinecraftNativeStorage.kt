@@ -4,7 +4,7 @@ import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Owns at most five native allocations: two texture/view pairs and an optional fullscreen vertex buffer.
+ * Owns at most nine native allocations: four texture/view pairs and an optional fullscreen vertex buffer.
  * Render-thread callers transfer this empty owner before allocation and fence initialization and use before closing it.
  * Successful closes are never repeated, every independent close is attempted, and original objects survive until destruction acknowledgement.
  * The synchronous destruction factory stays with this owner and must not release objects or retain a screen.
@@ -14,7 +14,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal class FabricMinecraftNativeStorage(
     private val destructionFactory: (List<AutoCloseable>) -> FabricNativeCanvasDestruction = ::trackPortableDestruction,
 ) : NativeGuiResource {
-    private val resources = arrayOfNulls<AutoCloseable>(5)
+    private val resources = arrayOfNulls<AutoCloseable>(9)
     private val closed = BooleanArray(resources.size)
     private var count = 0
     private var destruction: FabricNativeCanvasDestruction? = null

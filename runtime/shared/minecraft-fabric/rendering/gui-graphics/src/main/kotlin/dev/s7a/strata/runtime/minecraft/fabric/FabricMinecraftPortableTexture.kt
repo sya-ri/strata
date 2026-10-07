@@ -25,6 +25,7 @@ internal class FabricMinecraftPortableTexture private constructor(
     internal val location: MinecraftResourceLocation,
 ) : NativeGuiResource {
     private var pixels: NativeImage? = null
+    private var factorPixels: NativeImage? = null
     private var borrowed: AbstractTexture? = null
     private var storage: NativeGuiResource? = null
     private var registrationAttempted = false
@@ -124,6 +125,30 @@ internal class FabricMinecraftPortableTexture private constructor(
     }
 
     /**
+     * Uploads bounded command metadata and composes a complete tile against synchronously borrowed, pinned sources.
+     * The receiving generation owns both staging images and every partial native allocation before another allocation begins.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        composition: FabricMinecraftCompositionMap,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val indices = composition.indices
+        val native = NativeImage(indices.size.width, indices.size.height, false)
+        pixels = native
+        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        val factors = composition.factors
+        val factorNative = NativeImage(factors.size.width, factors.size.height, false)
+        factorPixels = factorNative
+        uploadFabricMinecraftArgbPixels(factorNative, factors.size, factors::argbAt)
+        initializeFabricMinecraftCompositionTexture(native, factorNative, composition.physicalSize, sources, ::retainStorage)
+        registrationAttempted = true
+        Minecraft.getInstance().textureManager.register(location, texture)
+    }
+
+    /**
      * Releases the CPU upload buffer after the device initialization fence completes while retaining immutable GPU storage.
      *
      * A failed close leaves the buffer owned for a later terminal retry.
@@ -131,9 +156,16 @@ internal class FabricMinecraftPortableTexture private constructor(
     @JvmSynthetic
     internal fun releaseUploadPixels() {
         RenderSystem.assertOnRenderThread()
-        val retained = pixels ?: return
-        retained.close()
-        pixels = null
+        FabricMinecraftFailures.runWithCleanup(
+            {
+                pixels?.close()
+                pixels = null
+            },
+            {
+                factorPixels?.close()
+                factorPixels = null
+            },
+        )
     }
 
     @JvmSynthetic
@@ -159,8 +191,7 @@ internal class FabricMinecraftPortableTexture private constructor(
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
         }
         try {
-            pixels?.close()
-            pixels = null
+            releaseUploadPixels()
         } catch (caught: Throwable) {
             val primary = failure
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
@@ -183,6 +214,23 @@ internal class FabricMinecraftPortableTexture private constructor(
      * This factory retains only a process-local identifier counter; every texture and pixel buffer belongs to its returned or partially initialized owner.
      */
     internal companion object {
+        /**
+         * Transfers an empty owner before uploading metadata or recording the tile's ordered GPU passes.
+         * Sources are borrowed only during initialization and remain pinned by the caller through GUI consumption.
+         */
+        @JvmSynthetic
+        internal fun create(
+            composition: FabricMinecraftCompositionMap,
+            sources: List<AbstractTexture?>,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            val location = minecraftResourceLocation("strata", "runtime/composed/${sequence.getAndIncrement().toULong()}")
+            val owner = FabricMinecraftPortableTexture(location)
+            retain(owner)
+            owner.initialize(composition, sources)
+            return owner
+        }
+
         /**
          * Transfers an empty registered-output owner before recording work against the caller's pinned source.
          * The receiving generation must seal initialization and retain both borrows through their completion fences.

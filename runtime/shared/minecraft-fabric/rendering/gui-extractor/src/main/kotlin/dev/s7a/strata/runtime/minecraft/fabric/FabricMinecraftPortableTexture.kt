@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
 @Suppress("TooGenericExceptionCaught")
 internal class FabricMinecraftPortableTexture private constructor() : NativeGuiResource {
     private var pixels: NativeImage? = null
+    private var factorPixels: NativeImage? = null
     private var borrowed: AbstractTexture? = null
     private var storage: NativeGuiResource? = null
     private var nativeClosed = false
@@ -124,6 +125,28 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     }
 
     /**
+     * Uploads bounded command metadata and composes a complete tile against synchronously borrowed, pinned sources.
+     * The receiving generation owns both staging images and every partial native allocation before another allocation begins.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        composition: FabricMinecraftCompositionMap,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val indices = composition.indices
+        val native = NativeImage(indices.size.width, indices.size.height, false)
+        pixels = native
+        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        val factors = composition.factors
+        val factorNative = NativeImage(factors.size.width, factors.size.height, false)
+        factorPixels = factorNative
+        uploadFabricMinecraftArgbPixels(factorNative, factors.size, factors::argbAt)
+        initializeFabricMinecraftCompositionTexture(native, factorNative, composition.physicalSize, sources, ::retainStorage)
+    }
+
+    /**
      * Releases the CPU upload buffer after the device initialization fence completes while retaining immutable GPU storage.
      *
      * A failed close leaves the buffer owned for a later terminal retry.
@@ -131,9 +154,16 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     @JvmSynthetic
     internal fun releaseUploadPixels() {
         RenderSystem.assertOnRenderThread()
-        val retained = pixels ?: return
-        retained.close()
-        pixels = null
+        FabricMinecraftFailures.runWithCleanup(
+            {
+                pixels?.close()
+                pixels = null
+            },
+            {
+                factorPixels?.close()
+                factorPixels = null
+            },
+        )
     }
 
     @JvmSynthetic
@@ -150,8 +180,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
             failure = caught
         }
         try {
-            pixels?.close()
-            pixels = null
+            releaseUploadPixels()
         } catch (caught: Throwable) {
             val primary = failure
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
@@ -172,6 +201,22 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
      * Creates immutable portable uploads under an existing GUI-generation lifetime reservation without retaining a cache.
      */
     internal companion object {
+        /**
+         * Transfers an empty owner before uploading metadata or recording the tile's ordered GPU passes.
+         * Sources are borrowed only during initialization and remain pinned by the caller through GUI consumption.
+         */
+        @JvmSynthetic
+        internal fun create(
+            composition: FabricMinecraftCompositionMap,
+            sources: List<AbstractTexture?>,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            val owner = FabricMinecraftPortableTexture()
+            retain(owner)
+            owner.initialize(composition, sources)
+            return owner
+        }
+
         /**
          * Transfers an empty output owner before allocating an axis lookup or recording GPU sampling work.
          * The caller marks the pinned source as queued before invoking this factory and seals output initialization on failure.

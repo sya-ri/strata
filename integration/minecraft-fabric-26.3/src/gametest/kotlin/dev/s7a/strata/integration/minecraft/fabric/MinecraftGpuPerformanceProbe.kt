@@ -21,18 +21,24 @@ internal class MinecraftGpuPerformanceProbe(
             .toDouble()
             .also { require(it.isFinite() && 0.0 < it) }
     private val queries = device.createTimestampQueryPool(Math.multiplyExact(samples, 2))
+    private val presentationQueries = device.createTimestampQueryPool(Math.multiplyExact(samples, 2))
     private val meter = GpuPerformanceMeter(samples, period, "Host GUI consumption commands; excludes earlier sampled-target passes and uploads, CPU preparation and display presentation.") { index -> queries.getValue(index).let { if (it.isPresent) it.asLong else null } }
+    private val presentationMeter = GpuPerformanceMeter(samples, period, "Frame preparation through host GUI consumption; includes source and metadata uploads and ordered offscreen composition, excludes display presentation.") { index -> presentationQueries.getValue(index).let { if (it.isPresent) it.asLong else null } }
     private var recorded = 0
 
     override fun arm() {
         RenderSystem.assertOnRenderThread()
         meter.begin()
+        presentationMeter.begin()
         val index = recorded
+        device.createCommandEncoder().writeTimestamp(presentationQueries, index * 2)
         MinecraftCanvasConsumerTestHooks.arm(
             { device.createCommandEncoder().writeTimestamp(queries, index * 2) },
             {
                 device.createCommandEncoder().writeTimestamp(queries, index * 2 + 1)
+                device.createCommandEncoder().writeTimestamp(presentationQueries, index * 2 + 1)
                 meter.recorded()
+                presentationMeter.recorded()
                 recorded += 1
             },
         )
@@ -41,24 +47,26 @@ internal class MinecraftGpuPerformanceProbe(
     override val completed: Boolean
         get() {
             RenderSystem.assertOnRenderThread()
-            return meter.completed
+            return meter.completed && presentationMeter.completed
         }
 
     override fun append(report: JsonObject) {
         RenderSystem.assertOnRenderThread()
         report.add("native_gpu", meter.result())
+        report.add("presentation_gpu", presentationMeter.result())
     }
 
     override fun close() {
         RenderSystem.assertOnRenderThread()
         MinecraftCanvasConsumerTestHooks.reset()
         meter.close()
+        presentationMeter.close()
         // Partial or interrupted query recording still belongs to this diagnostic owner until submitted work completes.
         val encoder = device.createCommandEncoder()
         encoder.createFence().use { fence ->
             encoder.submit()
             check(fence.awaitCompletion(Long.MAX_VALUE)) { "GPU performance query cleanup did not complete." }
         }
-        queries.close()
+        runCanvasTestCleanup(null, queries::close, presentationQueries::close)
     }
 }

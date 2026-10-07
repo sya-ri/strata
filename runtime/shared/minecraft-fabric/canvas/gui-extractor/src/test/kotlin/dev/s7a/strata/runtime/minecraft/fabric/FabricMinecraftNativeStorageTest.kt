@@ -15,6 +15,30 @@ import org.junit.jupiter.api.Test
  */
 internal class FabricMinecraftNativeStorageTest {
     @Test
+    fun everyCompositionAllocationFailureLeavesAllEarlierObjectsOwnedUntilAcknowledgement() {
+        for (failed in 0..8) {
+            val calls = IntArray(failed)
+            var acknowledged = false
+            val storage =
+                FabricMinecraftNativeStorage { objects ->
+                    assertEquals(failed, objects.size)
+                    assertTrue(calls.all { it == 0 })
+                    FabricNativeCanvasDestruction { acknowledged }
+                }
+            repeat(failed) { index -> storage.allocate { AutoCloseable { calls[index] += 1 } } }
+            val failure = IllegalStateException("composition allocation $failed failed")
+            assertSame(failure, assertThrows(IllegalStateException::class.java) { storage.allocate<AutoCloseable> { throw failure } })
+            storage.close()
+            assertTrue(calls.all { it == 1 })
+            assertFalse(storage.isDestroyed())
+            acknowledged = true
+            assertTrue(storage.isDestroyed())
+            storage.close()
+            assertTrue(calls.all { it == 1 })
+        }
+    }
+
+    @Test
     fun partialInitializationRetainsItsSuccessfulAllocationUntilPhysicalAcknowledgement() {
         var acknowledged = false
         var closes = 0
@@ -65,7 +89,7 @@ internal class FabricMinecraftNativeStorageTest {
     @Test
     fun capacityAndFailedDestructionProbeStopAcquisitionBeforeCallingTheAllocator() {
         val storage = FabricMinecraftNativeStorage { error("probe failed") }
-        repeat(5) { storage.allocate { AutoCloseable {} } }
+        repeat(9) { storage.allocate { AutoCloseable {} } }
         var called = false
         assertThrows(IllegalStateException::class.java) {
             storage.allocate {

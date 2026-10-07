@@ -1,10 +1,12 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.systems.RenderSystem
+import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
+import org.lwjgl.opengl.GL33
 
 /**
  * Saves the OpenGL bindings and fixed state touched by Canvas allocation, clearing, or sampling.
@@ -17,11 +19,13 @@ import org.lwjgl.opengl.GL30
  * @param discardedFramebuffer framebuffer being destroyed within this scope, or a negative value when none is retired.
  * @param discardedColor color texture being destroyed within this scope, or a negative value when none is retired.
  * @param discardedDepth depth texture being destroyed within this scope, or a negative value when none is retired.
+ * @param textureUnits consecutive units borrowed from unit zero; ordered composition touches exactly four.
  */
 internal class FabricNativeCanvasGlState(
     discardedFramebuffer: Int = -1,
     discardedColor: Int = -1,
     discardedDepth: Int = -1,
+    textureUnits: Int = 1,
 ) : AutoCloseable {
     private val drawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING).let { if (it == discardedFramebuffer) 0 else it }
     private val readFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING).let { if (it == discardedFramebuffer) 0 else it }
@@ -34,11 +38,18 @@ internal class FabricNativeCanvasGlState(
     private val program = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM)
     private val vertexArray = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING)
     private val activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE)
-    private val texture = textureBinding().let { if (it == discardedColor || it == discardedDepth) 0 else it }
+    private val textures = IntArray(textureUnits.also { require(it in 1..4) }) { unit -> textureBinding(unit).let { if (it == discardedColor || it == discardedDepth) 0 else it } }
+    private val samplerObjects = GL.getCapabilities().let { it.OpenGL33 || it.GL_ARB_sampler_objects }
+    private val samplers = IntArray(textureUnits) { unit -> if (samplerObjects) samplerBinding(unit) else 0 }
     private val blend = GL11.glIsEnabled(GL11.GL_BLEND)
     private val depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST)
     private val cull = GL11.glIsEnabled(GL11.GL_CULL_FACE)
     private val scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST)
+    private val dither = GL11.glIsEnabled(GL11.GL_DITHER)
+    private val unpackAlignment = GL11.glGetInteger(GL11.GL_UNPACK_ALIGNMENT)
+    private val unpackRowLength = GL11.glGetInteger(GL11.GL_UNPACK_ROW_LENGTH)
+    private val unpackSkipPixels = GL11.glGetInteger(GL11.GL_UNPACK_SKIP_PIXELS)
+    private val unpackSkipRows = GL11.glGetInteger(GL11.GL_UNPACK_SKIP_ROWS)
 
     @JvmSynthetic
     override fun close() {
@@ -53,26 +64,43 @@ internal class FabricNativeCanvasGlState(
         GL11.glClearDepth(clearDepth)
         GL20.glUseProgram(program)
         GL30.glBindVertexArray(vertexArray)
-        GL13.glActiveTexture(GL13.GL_TEXTURE0)
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0)
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture)
-        RenderSystem.bindTexture(texture)
+        textures.forEachIndexed { unit, texture ->
+            GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit)
+            RenderSystem.activeTexture(GL13.GL_TEXTURE0 + unit)
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture)
+            RenderSystem.bindTexture(texture)
+            if (samplerObjects) GL33.glBindSampler(unit, samplers[unit])
+        }
         GL13.glActiveTexture(activeTexture)
         RenderSystem.activeTexture(activeTexture)
         restoreCapability(GL11.GL_BLEND, blend)
         restoreCapability(GL11.GL_DEPTH_TEST, depth)
         restoreCapability(GL11.GL_CULL_FACE, cull)
         restoreCapability(GL11.GL_SCISSOR_TEST, scissor)
+        restoreCapability(GL11.GL_DITHER, dither)
+        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, unpackAlignment)
+        GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, unpackRowLength)
+        GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, unpackSkipPixels)
+        GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, unpackSkipRows)
         if (blend) RenderSystem.enableBlend() else RenderSystem.disableBlend()
         if (depth) RenderSystem.enableDepthTest() else RenderSystem.disableDepthTest()
         if (cull) RenderSystem.enableCull() else RenderSystem.disableCull()
         if (scissor) RenderSystem.enableScissor(scissorBox[0], scissorBox[1], scissorBox[2], scissorBox[3]) else RenderSystem.disableScissor()
     }
 
-    private fun textureBinding(): Int {
-        GL13.glActiveTexture(GL13.GL_TEXTURE0)
+    private fun textureBinding(unit: Int): Int {
+        GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit)
         return try {
             GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)
+        } finally {
+            GL13.glActiveTexture(activeTexture)
+        }
+    }
+
+    private fun samplerBinding(unit: Int): Int {
+        GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit)
+        return try {
+            GL11.glGetInteger(GL33.GL_SAMPLER_BINDING)
         } finally {
             GL13.glActiveTexture(activeTexture)
         }
