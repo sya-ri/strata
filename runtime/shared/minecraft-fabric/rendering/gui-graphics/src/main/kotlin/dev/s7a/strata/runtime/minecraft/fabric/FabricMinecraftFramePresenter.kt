@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
@@ -151,10 +152,7 @@ internal class FabricMinecraftFramePresenter(
                 inputs,
                 { sampledImageDirectHitCount += 1L },
                 { sampledImageDirectMissCount += 1L },
-                {
-                    sampledImageUploadCount += 1L
-                    uploadWork.source(it)
-                },
+                ::recordSourceUpload,
                 { sampledImageEvictionCount += 1L },
             ) { resolved, textureFor, sampledQueued ->
                 uploadWork.fallback(resolved)
@@ -163,10 +161,7 @@ internal class FabricMinecraftFramePresenter(
                 portableFrames.present(
                     resolved.portable,
                     { portableRasterizationCount += 1L },
-                    {
-                        textureUploadCount += 1L
-                        uploadWork.portable(it)
-                    },
+                    ::recordPortableUpload,
                     { sampling, retain ->
                         // The borrow callback is nullable; resolution proves availability but does not change its Kotlin type.
                         @Suppress("RedundantRequireNotNullCall")
@@ -245,6 +240,16 @@ internal class FabricMinecraftFramePresenter(
         pointerPosition = null
         pointerFrameCommands = null
         FabricMinecraftFailures.runWithCleanup(portableFrames::release, sampledImages::release)
+    }
+
+    private fun recordSourceUpload(image: DrawImage) {
+        sampledImageUploadCount += 1L
+        uploadWork.source(image)
+    }
+
+    private fun recordPortableUpload(image: FabricMinecraftPortableImage) {
+        textureUploadCount += 1L
+        uploadWork.portable(image)
     }
 
     private fun presentSampledLayer(
