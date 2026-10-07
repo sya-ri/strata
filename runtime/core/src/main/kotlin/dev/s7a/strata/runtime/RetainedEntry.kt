@@ -126,6 +126,12 @@ internal sealed class RetainedEntry(
     var rootOverlayCommands: List<LocalDrawCommand>? = null
 
     /**
+     * Current transformed local paint and overlays; keyed and bounded by [RetainedPaintCommands].
+     * Transient attachment preserves this immutable state; terminal entry cleanup clears it before callbacks.
+     */
+    var transformedPaint: RetainedPaintCommands? = null
+
+    /**
      * Anchor bounds used to produce [rootOverlayCommands].
      */
     var rootOverlayAnchor: IntRect? = null

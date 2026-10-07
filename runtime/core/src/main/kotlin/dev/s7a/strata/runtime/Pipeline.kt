@@ -68,11 +68,12 @@ internal class Pipeline(
      */
     fun layout(root: RetainedNode) {
         val effective = root.effectiveRoot
+        val transformChanged = effective.localToTree != TreeTransform.Identity
         effective.transformFromParent = ChildTransform.Identity
         effective.localToTree = TreeTransform.Identity
         effective.bounds = effective.localToTree.enclosing(effective.measuredSize)
         effective.placed = true
-        layoutEntry(effective)
+        layoutEntry(effective, transformChanged)
         inputPipeline.layoutCommitted(root)
         focusedInputPipeline.layoutCommitted(root)
     }
@@ -331,7 +332,10 @@ internal class Pipeline(
         return retained.measuredSize
     }
 
-    private fun layoutEntry(retained: RetainedEntry) {
+    private fun layoutEntry(
+        retained: RetainedEntry,
+        transformChanged: Boolean,
+    ) {
         val mustLayout = retained.laidOut.not() || DirtyPhase.Layout in retained.dirty
         if (mustLayout) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Layout)
@@ -410,12 +414,27 @@ internal class Pipeline(
                     } else {
                         child.transformFromParent
                     }
-                child.localToTree = retained.localToTree.descend(offset, childTransform)
-                child.bounds = child.localToTree.enclosing(child.measuredSize)
+                val childTransformChanged = updateChildGeometry(retained, child, offset, childTransform, mustLayout || transformChanged)
                 child.placed = true
-                layoutEntry(child)
+                layoutEntry(child, childTransformChanged)
             }
         }
+    }
+
+    private fun updateChildGeometry(
+        parent: RetainedEntry,
+        child: RetainedEntry,
+        offset: IntOffset,
+        transform: ChildTransform,
+        parentChanged: Boolean,
+    ): Boolean {
+        // Paint-only traversal preserves current geometry; layout dirtiness also covers measured-size changes.
+        val childNeedsLayout = child.laidOut.not() || DirtyPhase.Layout in child.dirty
+        if (parentChanged.not() && child.placed && childNeedsLayout.not()) return false
+        val previous = child.localToTree
+        child.localToTree = parent.localToTree.descend(offset, transform)
+        child.bounds = child.localToTree.enclosing(child.measuredSize)
+        return child.localToTree != previous
     }
 
     private fun <D : Any> resolveParentData(

@@ -93,6 +93,10 @@ internal object SampledImageRasterizer {
                         sourceXs?.get(x - left) ?: sampleX(x, scale, command)
                     val source = command.image.argbAt(sourceX, sourceY)
                     if (rows != null && source ushr 24 != 255) opaqueRow = false
+                    if (source ushr 24 == 0) {
+                        index += 1
+                        continue
+                    }
                     val destinationColor = pixels[index]
                     // Keep repeated texels in the traversal; table construction and Float composition stay off this path.
                     if (source != previousSource || destinationColor != previousDestination) {
@@ -278,6 +282,7 @@ internal object SampledImageRasterizer {
             val sourceAlphaByte = source ushr 24
             if (sourceAlphaByte == 0 || alpha == 0f) return destination
             if (sourceAlphaByte == 255 && alpha == 1f) return opaque(source)
+            if ((source and 0xFFFFFF) == 0xFFFFFF && destination == (tint or 0xFF000000.toInt())) return destination
             if (source == previousSource && destination == previousDestination) return previousResult
             return translucent(source, destination)
         }

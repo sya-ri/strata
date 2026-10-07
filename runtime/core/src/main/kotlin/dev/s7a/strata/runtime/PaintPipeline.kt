@@ -49,22 +49,38 @@ internal class PaintPipeline(
         rootOverlays: MutableList<DrawCommand>,
     ) {
         updateLocalCommands(retained, viewport)
-        appendTransformed(retained.localCommands.orEmpty(), retained, output)
-        val clipsChildren = retained.node is ClipChildrenNode
-        if (clipsChildren) {
-            output.add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
-        }
+        val commands = transformedCommands(retained)
+        output.addAll(commands.beforeChildren)
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 paintNode(child, viewport, output, rootOverlays)
             }
         }
-        if (clipsChildren) {
-            output.add(DrawCommand.PopClip)
-        }
-        appendTransformed(retained.localOverlayCommands.orEmpty(), retained, output)
-        appendUntranslated(retained.rootOverlayCommands.orEmpty(), rootOverlays)
+        output.addAll(commands.afterChildren)
+        rootOverlays.addAll(commands.rootOverlays)
+    }
+
+    private fun transformedCommands(retained: RetainedEntry): RetainedPaintCommands {
+        retained.transformedPaint?.let { if (it.matches(retained)) return it }
+        val clipsChildren = retained.node is ClipChildrenNode
+        val commands =
+            RetainedPaintCommands(
+                retained,
+                buildList {
+                    appendTransformed(retained.localCommands.orEmpty(), retained, this)
+                    if (clipsChildren) {
+                        add(transformClip(IntRect(0, 0, retained.measuredSize.width, retained.measuredSize.height), retained.localToTree))
+                    }
+                },
+                buildList {
+                    if (clipsChildren) add(DrawCommand.PopClip)
+                    appendTransformed(retained.localOverlayCommands.orEmpty(), retained, this)
+                },
+                buildList { retained.rootOverlayCommands.orEmpty().forEach { add(translate(it, 0, 0)) } },
+            )
+        retained.transformedPaint = commands
+        return commands
     }
 
     private fun updateLocalCommands(
@@ -136,13 +152,6 @@ internal class PaintPipeline(
                 transform(command, retained.localToTree)?.let(output::add)
             }
         }
-    }
-
-    private fun appendUntranslated(
-        commands: List<LocalDrawCommand>,
-        output: MutableList<DrawCommand>,
-    ) {
-        commands.forEach { command -> output.add(translate(command, 0, 0)) }
     }
 
     private fun transform(

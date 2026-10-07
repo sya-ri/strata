@@ -3222,6 +3222,7 @@ core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:getRootOverlayAnchor:()
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:getRootOverlayCommands:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:getRootOverlayViewport:()Ldev/s7a/strata/geometry/IntSize;
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:getTransformFromParent:()Ldev/s7a/strata/node/ChildTransform;
+core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:getTransformedPaint:()Ldev/s7a/strata/runtime/RetainedPaintCommands;
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setAttachAttempted:(Z)V
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setBindingRelease:(Lkotlin/jvm/functions/Function0;)V
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setBounds:(Ldev/s7a/strata/geometry/IntRect;)V
@@ -3246,6 +3247,7 @@ core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setRootOverlayAnchor:(L
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setRootOverlayCommands:(Ljava/util/List;)V
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setRootOverlayViewport:(Ldev/s7a/strata/geometry/IntSize;)V
 core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setTransformFromParent:(Ldev/s7a/strata/node/ChildTransform;)V
+core	Core	dev.s7a.strata.runtime.RetainedEntry#method:17:setTransformedPaint:(Ldev/s7a/strata/runtime/RetainedPaintCommands;)V
 core	Core	dev.s7a.strata.runtime.RetainedEntry#type:1025:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.RetainedModifier#constructor:1:(Ldev/s7a/strata/modifier/ModifierElement;Ldev/s7a/strata/node/ModifierNode;)V
 core	Core	dev.s7a.strata.runtime.RetainedModifier#method:17:getElement:()Ldev/s7a/strata/modifier/ModifierElement;
@@ -3271,6 +3273,12 @@ core	Core	dev.s7a.strata.runtime.RetainedNode#method:17:setLogicalParent:(Ldev/s
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:1:effectiveChildAt:(I)Ldev/s7a/strata/runtime/RetainedEntry;
 core	Core	dev.s7a.strata.runtime.RetainedNode#method:1:getEffectiveChildCount:()I
 core	Core	dev.s7a.strata.runtime.RetainedNode#type:17:dev.s7a.strata.runtime.RetainedEntry:
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#constructor:1:(Ldev/s7a/strata/runtime/RetainedEntry;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:getAfterChildren:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:getBeforeChildren:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:getRootOverlays:()Ljava/util/List;
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:matches:(Ldev/s7a/strata/runtime/RetainedEntry;)Z
+core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.ScopeGuard#constructor:1:(Ldev/s7a/strata/runtime/OwnerGuard;)V
 core	Core	dev.s7a.strata.runtime.ScopeGuard#method:17:check:()V
 core	Core	dev.s7a.strata.runtime.ScopeGuard#method:17:close:()V

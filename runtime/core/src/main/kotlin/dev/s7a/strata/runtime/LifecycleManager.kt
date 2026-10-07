@@ -146,6 +146,7 @@ internal class LifecycleManager(
         retained: RetainedEntry,
         failures: FailureAccumulator,
     ) {
+        retained.transformedPaint = null
         failures.capture { beforeEntryCleanup(retained) }
         val lifecycle = retained.node as? LifecycleNode
         if (lifecycle != null && retained.attachAttempted && retained.detachAttempted.not()) {

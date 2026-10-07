@@ -162,6 +162,9 @@ The common fixed-alpha image requires only one row, and alternating uncommon alp
 The tables belong to one invocation, retain no source or destination image, preserve the original multiplication/division/rounding order, and expire before return.
 Whole one-texel images and smaller spans keep their existing paths.
 A zero-alpha tint preserves the destination without traversing its covered pixels.
+Scalar sampling skips destination reads and writes for a source pixel with zero alpha, preserving even hidden RGB in transparent destinations.
+A white source pixel over an opaque destination matching the tint's RGB preserves that destination for every source and tint alpha, so this exact no-op skips channel composition.
+An independent ordered Float reference verifies all byte-channel, source-alpha and tint-alpha combinations for this admission; other pixels retain the original arithmetic and rounding.
 These changes retain no images, frame history or mapping after the command and do not change native sampling eligibility or raster/upload counts.
 Independent per-pixel regression covers both paths, nonuniform destination alpha, fractional and reduced extents, negative coordinates, flips, density, clips, tint and discard boundaries.
 
@@ -182,6 +185,20 @@ A content rebuild, changed constraints, retained invalidation, or invalidation r
 Failure and close paths must clear cached references so a session cannot keep a released tree or content graph alive.
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.
 Loading indicators and delayed tooltips additionally verify that timestamps inside one discrete animation or delay cell reuse the complete snapshot and that crossing the boundary creates exactly one fresh snapshot.
+
+### Current-entry transformed paint
+
+Paint-only layout traversal preserves each placed child's current world transform and bounds while its layout and its parent's placement and transform remain unchanged.
+Child layout dirtiness forces geometry updates after measurement, and changed accumulated transforms propagate to descendants even when their layout callbacks stay clean.
+This reuses the existing current geometry without retaining another key or previous revision.
+
+Each retained entry keeps one current snapshot of its transformed local paint, child clip, local overlays and root-coordinate overlays.
+The key is the identity of all three immutable local command lists, the accumulated local-to-tree transform and the measured size.
+Local paint invalidation, changed geometry or newly collected root overlays replaces that entry's snapshot.
+Child membership and ancestor clipping remain in the live ordered traversal, so reordering, removal and changed parent clips do not reuse a historical subtree.
+The snapshot contains only this entry's current commands and shares their immutable image values; it retains no entry or past revision.
+The tree's execution owner confines access, transient detachment preserves retained state, and terminal entry cleanup clears the snapshot before that entry's cleanup hook or lifecycle callbacks, including failure cleanup.
+Tests prove unchanged-command identity, local and geometry invalidation, clip and overlay ordering, viewport changes and cleanup through a failing callback.
 
 ### Bounded raster texture cache
 

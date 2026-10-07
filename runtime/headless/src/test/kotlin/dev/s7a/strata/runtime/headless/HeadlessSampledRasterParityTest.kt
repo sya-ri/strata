@@ -18,6 +18,42 @@ import kotlin.math.roundToInt
  */
 internal class HeadlessSampledRasterParityTest {
     @Test
+    fun whiteSourceOverOpaqueTintPreservesEveryChannelAndBothAlphaValues() {
+        val size = IntSize(1, 256)
+        val image = createDrawImage(size, IntArray(256) { alpha -> (alpha shl 24) or 0xFFFFFF })
+        val bounds = FloatRect(0f, 0f, 1f, 256f)
+        val clip = IntRect(0, 0, 1, 256)
+        for (alpha in 0..255) {
+            for (channel in 0..255) {
+                val tint = (alpha shl 24) or (channel shl 16) or ((channel * 37 and 255) shl 8) or (channel * 73 and 255)
+                val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
+                val background = IntArray(256) { tint or 0xFF000000.toInt() }
+                assertArrayEquals(background, reference(background, size, 1, command, clip))
+                val actual = background.copyOf()
+                SampledImageRasterizer.paint(actual, size, 1, command, clip)
+                assertArrayEquals(background, actual)
+            }
+        }
+    }
+
+    @Test
+    fun everyAlphaPairPreservesOrderedFloatComposition() {
+        val size = IntSize(256, 256)
+        val source = IntArray(size.width * size.height) { index -> ((index / 256) shl 24) or (index * 73471 and 0xFFFFFF) }
+        val background = IntArray(source.size) { index -> ((index % 256) shl 24) or (index * 1973 and 0xFFFFFF) }
+        val image = createDrawImage(size, source)
+        val bounds = FloatRect(0f, 0f, 256f, 256f)
+        val clip = IntRect(0, 0, 256, 256)
+        for (tint in listOf(-1, 0xFD7195B3.toInt(), 0x80A4C6E8.toInt(), 0x01020406)) {
+            val command = DrawCommand.SampledImage(image, bounds, bounds, ArgbColor(tint), 0f)
+            val actual = background.copyOf()
+            SampledImageRasterizer.paint(actual, size, 1, command, clip)
+            assertArrayEquals(reference(background, size, 1, command, clip), actual)
+        }
+        assertArrayEquals(source, image.copyArgb())
+    }
+
+    @Test
     @Suppress("NestedBlockDepth", "CyclomaticComplexMethod") // Keep the finite geometry/color matrix in one parity assertion.
     fun fractionalSamplingPreservesEveryCoveredPixel() {
         val viewport = IntSize(48, 24)
