@@ -31,7 +31,8 @@ internal class FabricMinecraftSamplingMapTest {
             for (orientation in SampledImageOrientation.entries) {
                 val command = DrawCommand.SampledImage(image, FloatRect(0.1f, 0.4f, 5.7f, 3.6f), FloatRect(180.25f, 70.25f, 184.75f, 75.75f), orientation = orientation, alphaCutoff = 0f)
                 assertTrue(isDirectFabricSampledImage(command, scale, exactSampling = true))
-                assertTrue(isDirectFabricSampledImage(command.copy(alphaCutoff = 0.1f), scale, exactSampling = true))
+                assertFalse(isDirectFabricSampledImage(command.copy(alphaCutoff = 0.1f), scale, exactSampling = true))
+                assertTrue(isDirectFabricSampledImage(command.copy(alphaCutoff = 1f), scale, exactSampling = true))
                 val map = FabricMinecraftSamplingMap(command, bounds, scale)
                 val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
                 for (y in 0 until map.physicalSize.height) {
@@ -48,53 +49,59 @@ internal class FabricMinecraftSamplingMapTest {
     }
 
     @Test
-    fun cutoffMetadataPreservesEveryFloatBoundaryAndMaskAcrossSourceAndDestinationAlpha() {
+    fun opaqueCutoffPreservesEveryMaskAcrossSourceAndDestinationAlpha() {
         val image = createDrawImage(IntSize(256, 256)) { x, y -> (x shl 24) or ((x * 73471 + y * 1337) and 0xFFFFFF) }
         val destination = createDrawImage(image.size) { x, y -> (y shl 24) or ((y * 7919 + x * 1337) and 0xFFFFFF) }
         val bounds = IntRect(0, 0, 256, 256)
         val background = DrawCommand.BlitImage(destination, bounds, bounds)
         for (mask in 0..7) {
             val rgb = (if (mask and 1 == 0) 0 else 0xFF0000) or (if (mask and 2 == 0) 0 else 0xFF00) or (if (mask and 4 == 0) 0 else 0xFF)
-            for (cutoff in listOf(0f, Math.nextDown(128f / 255f), 128f / 255f, Math.nextUp(128f / 255f), 1f)) {
-                val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 256f, 256f), FloatRect(0f, 0f, 256f, 256f), ArgbColor(0xFF000000.toInt() or rgb), alphaCutoff = cutoff)
-                val map = FabricMinecraftSamplingMap(command, bounds, 1)
-                val effects = decode(map.indices.argbAt(2, 2))
-                assertEquals(mask, effects and 7)
-                val shaderSource =
-                    createDrawImage(image.size) { x, y ->
-                        val source = image.argbAt(x, y)
-                        if (source ushr 24 < effects ushr 3) 0 else source and (0xFF000000.toInt() or rgb)
-                    }
-                val shaderCommand = command.copy(image = shaderSource, tint = ArgbColor(-1), alphaCutoff = 0f)
-                val expected = rasterizeHeadlessRegion(listOf(background, command), bounds, 1)
-                val actual = rasterizeHeadlessRegion(listOf(background, shaderCommand), bounds, 1)
-                assertArrayEquals(expected.copyArgb(), actual.copyArgb(), "mask=$mask cutoff=$cutoff")
-            }
+            val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 256f, 256f), FloatRect(0f, 0f, 256f, 256f), ArgbColor(0xFF000000.toInt() or rgb), alphaCutoff = 1f)
+            val map = FabricMinecraftSamplingMap(command, bounds, 1)
+            val effects = decode(map.indices.argbAt(2, 2))
+            assertEquals(mask, effects and 7)
+            assertEquals(255, effects ushr 3)
+            val shaderSource =
+                createDrawImage(image.size) { x, y ->
+                    val source = image.argbAt(x, y)
+                    if (source ushr 24 < effects ushr 3) 0 else source and (0xFF000000.toInt() or rgb)
+                }
+            val shaderCommand = command.copy(image = shaderSource, tint = ArgbColor(-1), alphaCutoff = 0f)
+            val expected = rasterizeHeadlessRegion(listOf(background, command), bounds, 1)
+            val actual = rasterizeHeadlessRegion(listOf(background, shaderCommand), bounds, 1)
+            assertArrayEquals(expected.copyArgb(), actual.copyArgb(), "mask=$mask")
         }
-        // The threshold comes from Float normalization, including adjacent representable cutoff values for every byte.
-        for (alpha in 0..255) {
-            val normalized = alpha.toFloat() / 255f
-            for (cutoff in listOf(Math.nextDown(normalized).coerceAtLeast(0f), normalized, Math.nextUp(normalized).coerceAtMost(1f))) {
-                val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 256f, 256f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = cutoff)
-                val map = FabricMinecraftSamplingMap(command, IntRect(0, 0, 1, 1), 1)
-                assertEquals(IntSize(3, 3), map.indices.size)
-                val threshold = decode(map.indices.argbAt(2, 2)) ushr 3
-                for (sourceAlpha in 0..255) assertEquals(cutoff <= sourceAlpha.toFloat() / 255f, threshold <= sourceAlpha)
-                val input = FabricMinecraftPortableImage(listOf(command), IntSize(1, 1), 1, sampling = map)
-                assertEquals(IntSize(3, 4), input.reservationSize)
-            }
+    }
+
+    @Test
+    fun onlyIdentityAndOpaqueCutoffsHaveExactMetadata() {
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        for (cutoff in listOf(0f, 1f)) {
+            val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = cutoff)
+            val map = FabricMinecraftSamplingMap(command, IntRect(0, 0, 1, 1), 1)
+            assertEquals(IntSize(3, 3), map.indices.size)
+            val threshold = decode(map.indices.argbAt(2, 2)) ushr 3
+            for (sourceAlpha in 0..255) assertEquals(cutoff <= sourceAlpha.toFloat() / 255f, threshold <= sourceAlpha)
+            val input = FabricMinecraftPortableImage(listOf(command), IntSize(1, 1), 1, sampling = map)
+            assertEquals(IntSize(3, 4), input.reservationSize)
         }
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 1f, 1f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = 0f)
+        for (cutoff in listOf(0.1f, 0.5f, Math.nextDown(1f))) {
+            assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command.copy(alphaCutoff = cutoff), IntRect(0, 0, 1, 1), 1) }
+        }
+        assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(0xFF00FF00.toInt())), IntRect(0, 0, 1, 1), 1) }
     }
 
     @Test
     fun effectChangesInvalidateCurrentGenerationWhileEquivalentMovedMasksReuse() {
         val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 4f, 4f), ArgbColor(0xFF00FF00.toInt()), alphaCutoff = 0.5f)
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 4f, 4f), ArgbColor(0xFF00FF00.toInt()), alphaCutoff = 1f)
         val first = FabricMinecraftSamplingMap(command, IntRect(0, 0, 4, 4), 1)
         val moved = command.copy(destination = FloatRect(10f, 10f, 14f, 14f))
         assertTrue(first.equivalent(FabricMinecraftSamplingMap(moved, IntRect(10, 10, 14, 14), 1)))
         assertFalse(first.equivalent(FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(-1)), first.bounds, 1)))
-        assertFalse(first.equivalent(FabricMinecraftSamplingMap(command.copy(alphaCutoff = 0.6f), first.bounds, 1)))
+        val white = FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(-1)), first.bounds, 1)
+        assertFalse(white.equivalent(FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(-1), alphaCutoff = 0f), first.bounds, 1)))
         assertThrows(IllegalArgumentException::class.java) { FabricMinecraftSamplingMap(command.copy(tint = ArgbColor(0xFF123456.toInt())), first.bounds, 1) }
     }
 

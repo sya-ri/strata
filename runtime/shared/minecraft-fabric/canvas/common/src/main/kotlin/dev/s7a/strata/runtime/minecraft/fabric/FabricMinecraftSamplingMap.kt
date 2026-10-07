@@ -38,14 +38,13 @@ internal class FabricMinecraftSamplingMap(
 
     init {
         require(physicalSize.width in 1..4_096 && physicalSize.height in 1..4_096) { "Exact sampled GPU axes must fit the bounded lookup." }
-        require(command.tint.hasExactFabricSamplingTint()) { "Exact sampled GPU tint must be an opaque channel mask." }
+        require(command.hasExactFabricSamplingEffects()) { "Exact sampled GPU effects must preserve identity sampling or select only opaque channel-masked texels." }
         val width = maxOf(3, physicalSize.width, physicalSize.height)
         val left = Math.multiplyExact(bounds.left, scale)
         val top = Math.multiplyExact(bounds.top, scale)
         val source = command.source
         val destination = command.destination
-        // Compare on the CPU with the oracle's Float normalization; shaders compare decoded integer bytes only.
-        val minimumAlpha = (0..255).first { command.alphaCutoff <= it.toFloat() / 255f }
+        val minimumAlpha = if (command.alphaCutoff == 1f) 255 else 0
         val mask = (command.tint.value ushr 16 and 1) or ((command.tint.value ushr 8 and 1) shl 1) or ((command.tint.value and 1) shl 2)
         val effects = (minimumAlpha shl 3) or mask
         indices =

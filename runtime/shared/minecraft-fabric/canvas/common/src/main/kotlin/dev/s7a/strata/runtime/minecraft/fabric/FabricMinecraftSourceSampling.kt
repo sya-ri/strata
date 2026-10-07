@@ -61,7 +61,7 @@ private fun stableFractionalSourceAxis(
  * @param command immutable sampled command whose constructor already validates source containment.
  * @param scale positive physical density used to reject ambiguous native quad-edge ownership at pixel centers.
  * @param fractionalSource whether the adapter submits floating source UVs without converting source extents to integers.
- * @param exactSampling whether the adapter supports bounded exact axis lookup, opaque RGB masks and CPU-decided cutoffs.
+ * @param exactSampling whether the adapter supports bounded exact axis lookup and opaque-texel RGB masks.
  * @return true when native nearest sampling can preserve its source and compositing contract.
  */
 @JvmSynthetic
@@ -71,13 +71,20 @@ internal fun isDirectFabricSampledImage(
     fractionalSource: Boolean = false,
     exactSampling: Boolean = false,
 ): Boolean {
-    if (exactSampling && command.tint.hasExactFabricSamplingTint()) {
+    if (exactSampling && command.hasExactFabricSamplingEffects()) {
         val destination = command.destination
         val bounded = ceil(destination.right.toDouble()) - floor(destination.left.toDouble()) <= 4_096.0 / scale && ceil(destination.bottom.toDouble()) - floor(destination.top.toDouble()) <= 4_096.0 / scale
         if (bounded) return true
     }
     return isOrdinaryFabricSampledImage(command, scale, fractionalSource || exactSampling)
 }
+
+/**
+ * Preserves the existing untinted path and admits new channel masks only when the cutoff discards every translucent texel.
+ * Native source-over rounding can differ from CPU Float composition even for independent translucent images.
+ */
+@JvmSynthetic
+internal fun DrawCommand.SampledImage.hasExactFabricSamplingEffects(): Boolean = (tint == ArgbColor(-1) && alphaCutoff == 0f) || (alphaCutoff == 1f && tint.hasExactFabricSamplingTint())
 
 private fun isOrdinaryFabricSampledImage(
     command: DrawCommand.SampledImage,

@@ -192,8 +192,8 @@ internal fun partitionFabricMinecraftFrame(
                     }
                     when {
                         capacity -> Unit
-                        command.tint != ArgbColor(-1) && (exactSampling.not() || command.tint.hasExactFabricSamplingTint().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
-                        command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && exactSampling.not() -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
+                        command.tint != ArgbColor(-1) && (exactSampling.not() || command.hasExactFabricSamplingEffects().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
+                        command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && (exactSampling.not() || command.alphaCutoff != 1f) -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
                     }
                 }
             }

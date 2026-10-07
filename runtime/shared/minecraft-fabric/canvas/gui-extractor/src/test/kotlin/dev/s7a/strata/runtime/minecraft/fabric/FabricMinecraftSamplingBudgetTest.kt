@@ -44,7 +44,7 @@ internal class FabricMinecraftSamplingBudgetTest {
     @Test
     fun supportedEffectsCountCapacityAndUnsupportedClippingWithoutFalseTintOrCutoffReasons() {
         val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
-        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f)
+        val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 1f)
         for (tint in listOf(command.tint, ArgbColor(-1))) {
             val selected = command.copy(tint = tint)
             val oversized = selected.copy(destination = FloatRect(0f, 0f, 4096f, 4096f))
@@ -67,5 +67,18 @@ internal class FabricMinecraftSamplingBudgetTest {
         assertEquals(0L, clipped.capacitySampledImages)
         assertEquals(0L, clipped.tintFallbackImages)
         assertEquals(0L, clipped.alphaCutoffFallbackImages)
+    }
+
+    @Test
+    fun translucentEffectsRetainTheCpuPathAndTheirUnsupportedReason() {
+        val image = createDrawImage(IntSize(2, 2), IntArray(4) { 0x807195B3.toInt() })
+        for (tint in listOf(ArgbColor(-1), ArgbColor(0xFF00FFFF.toInt()))) {
+            val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), tint, alphaCutoff = 0.1f)
+            val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(listOf(command), IntSize(1, 1), exactSampling = true), 1)
+            assertTrue(inputs.sampled.isEmpty())
+            assertEquals(1L, inputs.ineligibleSampledImages)
+            assertEquals(if (tint == ArgbColor(-1)) 0L else 1L, inputs.tintFallbackImages)
+            assertEquals(if (tint == ArgbColor(-1)) 1L else 0L, inputs.alphaCutoffFallbackImages)
+        }
     }
 }

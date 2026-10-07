@@ -46,8 +46,11 @@ internal class FabricMinecraftSourceSamplingTest {
     fun exactLookupAdmitsBoundarySamplesButKeepsUnsupportedCompositingAndAxesInFallback() {
         for (scale in 1..4) assertTrue(isDirectFabricSampledImage(crop, scale, exactSampling = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0x80FFFFFF.toInt())), exactSampling = true))
-        assertTrue(isDirectFabricSampledImage(crop.copy(alphaCutoff = 0.5f), exactSampling = true))
-        assertTrue(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(alphaCutoff = 0.5f), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 0.5f), exactSampling = true))
+        assertTrue(isDirectFabricSampledImage(crop.copy(alphaCutoff = 1f), exactSampling = true))
+        assertTrue(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 1f), exactSampling = true))
+        assertFalse(isDirectFabricSampledImage(crop.copy(alphaCutoff = Math.nextDown(1f)), exactSampling = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF7FFFFF.toInt())), exactSampling = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(tint = ArgbColor(0xFF00FFFF.toInt())), fractionalSource = true))
         assertFalse(isDirectFabricSampledImage(crop.copy(destination = FloatRect(0f, 0f, 4097f, 5f)), exactSampling = true))

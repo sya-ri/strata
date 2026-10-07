@@ -309,7 +309,7 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                 // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
                 val expectedDirect =
                     when (scene) {
-                        SampledParityScene.Effects -> 40L
+                        SampledParityScene.Effects -> 8L
                         SampledParityScene.Ordered -> if (scale == 1) 26L else 24L
                     }
                 require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
