@@ -8,6 +8,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PlatformDrawCommand
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.runtime.headless.rasterizeHeadlessRegion
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -46,11 +47,32 @@ internal class FabricMinecraftSamplingCompositionTest {
     }
 
     @Test
+    fun distantTranslucentCompositionCannotBeSplitByANewNativeBarrier() {
+        val background = DrawCommand.FillRectangle(IntRect(0, 0, 8, 8), ArgbColor(0xFF7195B3.toInt()))
+        val distant = sample.copy(destination = FloatRect(10f, 10f, 14f, 14f))
+        val first = DrawCommand.FillRectangle(IntRect(1, 1, 5, 5), ArgbColor(0x80472853.toInt()))
+        val second = first.copy(color = ArgbColor(0x80007BBC.toInt()))
+        val bounds = IntRect(0, 0, 16, 16)
+        val original = rasterizeHeadlessRegion(listOf(background, distant, first, second), bounds, 1)
+        val isolated = rasterizeHeadlessRegion(listOf(first, second), first.bounds, 1)
+        val image = createDrawImage(isolated.size, isolated.copyArgb())
+        val split = DrawCommand.BlitImage(image, IntRect(0, 0, 4, 4), first.bounds)
+        val separated = rasterizeHeadlessRegion(listOf(background, distant, split), bounds, 1)
+        assertEquals(0xFF2E6DA0.toInt(), original.argbAt(2, 2))
+        assertEquals(0xFF2E6C9F.toInt(), separated.argbAt(2, 2))
+        for (commands in listOf(listOf(background, distant, first, second), listOf(background, first, distant, second))) {
+            val layers = partitionFabricMinecraftFrame(commands, IntSize(16, 16), exactSampling = true)
+            assertTrue(layers.all { it is FabricMinecraftFrameLayer.Portable })
+            assertEquals(commands, (layers.single() as FabricMinecraftFrameLayer.Portable).commands)
+        }
+    }
+
+    @Test
     fun clipsAndNativeBarriersDoNotHideOverlappingComposition() {
         val platform = DrawCommand.Platform(TestPlatform, IntRect(2, 2, 6, 6))
         assertFalse(FabricMinecraftSamplingComposition(listOf(sample, platform)).admits(0, sample))
         val touching = platform.copy(bounds = IntRect(5, 1, 7, 5))
-        assertTrue(FabricMinecraftSamplingComposition(listOf(sample, touching)).admits(0, sample))
+        assertFalse(FabricMinecraftSamplingComposition(listOf(sample, touching)).admits(0, sample))
         val commands =
             listOf(
                 DrawCommand.PushClip(IntRect(0, 0, 4, 4)),

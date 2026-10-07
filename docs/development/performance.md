@@ -288,7 +288,8 @@ Each little-endian RGBA integer encodes a source index plus one, with zero for a
 The index texture is at most 4,096 by three texels, including padding, and no source pixels are read while deriving it.
 Its third row also carries an opaque RGB channel mask and an integer source-alpha threshold.
 New effects require a cutoff of one and opaque tints whose RGB channels are each zero or 255; the shader discards every non-opaque source texel and either preserves or zeroes each remaining color channel.
-Newly accelerated effects additionally require independent composition: opaque fills may provide backgrounds or replace pixels, while overlap with any other image, translucent fill or platform primitive retains the original CPU run.
+Newly accelerated effects additionally require independent composition: opaque fills may provide backgrounds or replace pixels, and other exact opaque masks must be disjoint.
+Any potentially translucent image, fill, blit or platform primitive retains CPU composition even outside the admitted image's bounds, because a new native barrier can split and change the rounding of those other commands' portable run.
 A preparation-local proof checks at most 8,192 command occurrences per frame, ignores clips and barriers conservatively, distinguishes repeated command identities, and falls back when exhausted.
 This preserves rounding across overlapping glyph shadows and foregrounds instead of splitting one exact CPU composition into independently quantized native layers.
 Intermediate cutoffs, tint channels and alpha modulation retain CPU composition because native translucent source-over rounding can differ even for independent images, and rounding a tinted source before destination blending can change exact output pixels.

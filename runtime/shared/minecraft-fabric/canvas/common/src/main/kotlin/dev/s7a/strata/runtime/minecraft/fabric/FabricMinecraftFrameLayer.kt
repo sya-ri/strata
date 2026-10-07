@@ -95,7 +95,8 @@ internal inline fun submitFabricMinecraftFrameLayers(
 /**
  * Partitions one committed frame into tight portable runs, independently cacheable sampled images, and platform barriers.
  *
- * Direct eligibility requires opaque-white tint and zero alpha cutoff; exact lookup adapters also preserve mirrored orientations.
+ * Ordinary direct eligibility requires opaque-white tint and zero alpha cutoff.
+ * Exact lookup adapters also preserve mirrored orientations and independent opaque-texel channel masks.
  * Adapters with floating UV submission may admit fractional source edges; other adapters require integer texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
  * Invisible portable primitives are omitted from pixel inputs; direct-image barriers retain their exact display-list positions.
