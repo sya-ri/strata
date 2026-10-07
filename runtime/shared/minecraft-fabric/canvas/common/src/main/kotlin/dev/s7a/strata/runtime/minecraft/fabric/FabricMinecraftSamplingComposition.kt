@@ -31,9 +31,8 @@ internal class FabricMinecraftSamplingComposition(
             if (remaining == 0) return false
             remaining -= 1
             if (index == occurrence) continue
-            val other = commands[index]
             val changesComposition =
-                when (other) {
+                when (val other = commands[index]) {
                     is DrawCommand.FillRectangle -> {
                         other.color.value ushr 24 != 255
                     }
