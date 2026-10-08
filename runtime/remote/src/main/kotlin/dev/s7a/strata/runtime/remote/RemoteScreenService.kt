@@ -242,17 +242,19 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         if (peer.inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
         for (index in 0 until 64) {
             val bytes = peer.inbox.poll() ?: break
-            when (val packet = RemotePacket.decode(bytes)) {
-                RemotePacket.Discovery -> {
-                    if (peer.discovered.not()) {
-                        peer.discovered = true
-                        peer.connection.start()
+            RemotePacketAdmission.decode(bytes).use { packet ->
+                when (packet.kind) {
+                    RemotePacketAdmission.Kind.Discovery -> {
+                        if (peer.discovered.not()) {
+                            peer.discovered = true
+                            peer.connection.start()
+                        }
                     }
-                }
 
-                is RemotePacket.Frame -> {
-                    if (packet.address == peer.address && peer.discovered) {
-                        peer.stream.offer(packet, now)
+                    RemotePacketAdmission.Kind.Frame -> {
+                        if (packet.address == peer.address && peer.discovered) {
+                            peer.stream.offer(packet, now)
+                        }
                     }
                 }
             }
