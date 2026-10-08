@@ -100,30 +100,33 @@ internal class FabricMinecraftSamplingComposition(
         for (index in commands.indices) {
             if (spend().not()) return false
             classificationVisits += 1
-            when (val other = commands[index]) {
-                is DrawCommand.FillRectangle -> {
-                    if (other.color.value ushr 24 != 255) return false
-                }
-
-                is DrawCommand.SampledImage -> {
-                    if (other.tint.value ushr 24 == 0) continue
-                    if (other.alphaCutoff != 1f || other.hasExactFabricSamplingEffects().not()) return false
-                    prepared.add(Mask(index, other.destination))
-                }
-
-                is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> {
-                    return false
-                }
-
-                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
-                    continue
-                }
-            }
+            if (appendSupported(index, commands[index], prepared).not()) return false
         }
         masks = prepared
         state = State.Ready
         return true
     }
+
+    private fun appendSupported(
+        index: Int,
+        command: DrawCommand,
+        prepared: MutableList<Mask>,
+    ): Boolean =
+        when (command) {
+            is DrawCommand.FillRectangle -> command.color.value ushr 24 == 255
+            is DrawCommand.SampledImage -> {
+                if (command.tint.value ushr 24 == 0) {
+                    true
+                } else if (command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) {
+                    false
+                } else {
+                    prepared.add(Mask(index, command.destination))
+                }
+            }
+
+            is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> false
+            is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> true
+        }
 
     private fun spend(): Boolean {
         if (remaining == 0) return false
