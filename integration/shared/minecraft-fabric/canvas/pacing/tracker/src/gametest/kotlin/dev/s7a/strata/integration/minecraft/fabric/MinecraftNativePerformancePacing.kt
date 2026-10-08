@@ -6,7 +6,10 @@ import net.minecraft.client.Minecraft
 /**
  * Captures the exact supported native inactivity option without mutating the client.
  */
-internal fun Minecraft.captureNativeInactivity(lease: MinecraftNativePerformanceOptionLease, requested: MinecraftNativePerformancePacing.Inactivity) {
+internal fun Minecraft.captureNativeInactivity(
+    lease: MinecraftNativePerformanceOptionLease,
+    requested: MinecraftNativePerformancePacing.Inactivity,
+) {
     check(isSameThread)
     val borrowed =
         when (requested) {

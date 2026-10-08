@@ -9,7 +9,10 @@ import org.lwjgl.glfw.GLFW
  * Captures no unavailable option; legacy native selectors retain their original policy and owner.
  */
 @Suppress("UNUSED_PARAMETER") // This compiled family has no inactivity setting to borrow.
-internal fun Minecraft.captureNativeInactivity(lease: MinecraftNativePerformanceOptionLease, requested: MinecraftNativePerformancePacing.Inactivity) {
+internal fun Minecraft.captureNativeInactivity(
+    lease: MinecraftNativePerformanceOptionLease,
+    requested: MinecraftNativePerformancePacing.Inactivity,
+) {
     check(isSameThread)
     require(requested == MinecraftNativePerformancePacing.Inactivity.MINIMIZED) { "This native target has no AFK option to reproduce." }
 }
