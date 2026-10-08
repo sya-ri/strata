@@ -165,7 +165,7 @@ internal class Pipeline(
      * @param root the installed logical root.
      * @return entries in effective parent-before-child order.
      */
-    fun semantics(root: RetainedNode): List<SemanticsEntry> = semanticsPipeline.semantics(root.effectiveRoot)
+    fun semantics(root: RetainedNode): List<SemanticsEntry> = if (root.hasSemantics) semanticsPipeline.semantics(root.effectiveRoot) else emptyList()
 
     /**
      * Captures pending external observations for every effective entry without committing any observation.

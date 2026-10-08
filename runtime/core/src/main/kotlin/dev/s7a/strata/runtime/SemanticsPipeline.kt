@@ -29,15 +29,13 @@ internal class SemanticsPipeline(
         retained: RetainedEntry,
         output: MutableList<SemanticsEntry>,
     ) {
-        if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
+        val semanticsCapability = retained.node as? SemanticsNode
+        if (semanticsCapability != null && (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null)) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
             val collector = SemanticsCollector(ownerGuard)
             try {
-                val semanticsCapability = retained.node as? SemanticsNode
-                if (semanticsCapability != null) {
-                    monitoring.record(UiRenderMetric.Semantics, retained)
-                    semanticsCapability.semantics(collector)
-                }
+                monitoring.record(UiRenderMetric.Semantics, retained)
+                semanticsCapability.semantics(collector)
                 retained.localSemantics = collector.snapshot()
             } finally {
                 collector.close()
@@ -46,10 +44,16 @@ internal class SemanticsPipeline(
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
         }
-        for (index in 0 until retained.effectiveChildCount) {
-            val child = retained.effectiveChildAt(index)
-            if (child.placed) {
-                semanticsNode(child, output)
+        if (retained is RetainedNode) {
+            val children = retained.semanticsChildren
+            for (index in children.indices) {
+                val child = children[index].effectiveRoot
+                if (child.placed) semanticsNode(child, output)
+            }
+        } else {
+            for (index in 0 until retained.effectiveChildCount) {
+                val child = retained.effectiveChildAt(index)
+                if (child.placed) semanticsNode(child, output)
             }
         }
     }

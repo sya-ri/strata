@@ -242,12 +242,14 @@ internal class FocusedInputPipeline {
     }
 
     private fun logicalOwners(root: RetainedNode): List<RetainedNode> {
+        if (root.hasFocusTargets.not()) return emptyList()
         val output = ArrayList<RetainedNode>()
 
         fun visit(current: RetainedNode) {
             if (current.effectiveRoot.placed) {
-                output += current
-                current.children.forEach(::visit)
+                if (current.ownsFocusTargets) output += current
+                val children = current.focusChildren
+                for (index in children.indices) visit(children[index])
             }
         }
         visit(root)
