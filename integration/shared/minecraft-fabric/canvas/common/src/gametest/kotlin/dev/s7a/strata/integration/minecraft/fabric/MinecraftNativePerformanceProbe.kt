@@ -63,8 +63,14 @@ internal class MinecraftNativePerformanceProbe(
                 phases.add(measureNativeCanvas(scale))
             }
             MinecraftSampledPerformanceCase.entries.filter { it.name in selection.ids }.forEach { case ->
-                val scene = context.onClient { MinecraftSampledPerformanceScene(case, IntSize(viewport.width / scale, viewport.height / scale), plan.warmup + plan.samples) }
-                phases.add(measure(scale, case.name, update = { scene.update() }, definition = scene::definition))
+                val size = IntSize(viewport.width / scale, viewport.height / scale)
+                if (case.clipPattern == null) {
+                    val scene = context.onClient { MinecraftSampledPerformanceScene(case, size, plan.warmup + plan.samples) }
+                    phases.add(measure(scale, case.name, update = { scene.update() }, definition = scene::definition))
+                } else {
+                    val scene = context.onClient { MinecraftFrameClipPerformanceScene(case, size, canvas.textureSource) }
+                    phases.add(measure(scale, case.name, update = { scene.update() }, definition = scene::definition))
+                }
             }
             context.waitFor(2400) { canvas.leasesOpened == canvas.leasesClosed && canvas.renderersOpened == canvas.renderersClosed }
         }
@@ -143,10 +149,11 @@ internal class MinecraftNativePerformanceProbe(
                         "api" to "dev.s7a.strata.render.DrawImage",
                         "core" to "dev.s7a.strata.runtime.UiSession",
                         "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
+                        "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                         "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
                         "fabric" to FabricMinecraftScreen::class.java.name,
                     ),
-                    setOf("api", "core", "minecraft", "fonts"),
+                    setOf("api", "core", "minecraft", "headless", "fonts"),
                 ).also(LoadedArtifactMetadata::verifyComplete)
         }
 

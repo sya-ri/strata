@@ -22,3 +22,17 @@ SampledScrolledRowsLarge
 SampledTiledTranslationSmall
 SampledTiledTranslationMedium
 SampledTiledTranslationLarge
+FrameClipInteger0
+FrameClipInteger1
+FrameClipInteger4
+FrameClipInteger32
+FrameClipInteger128
+FrameClipFractional4
+FrameClipFractional32
+FrameClipFractional128
+FrameClipMixed4
+FrameClipMixed32
+FrameClipMixed128
+FrameClipFewMixed32
+FrameClipSmallInteger32
+FrameClipCleanMixed32
