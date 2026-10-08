@@ -13,6 +13,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -134,7 +135,9 @@ public open class ChildLayoutBenchmark {
         /**
          * Requires exact participation and clean-frame reuse for every scene outside timed invocations.
          */
+        @JvmStatic
         public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")).size == 4)
             for (workload in Workload.entries) {
                 val scene = Scene()
                 scene.workload = workload

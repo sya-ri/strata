@@ -84,7 +84,7 @@ Cleanup clears every marker and offset before input or lifecycle callbacks, incl
 Common JVM and JavaScript tests cover duplicate operations, unmeasured reads and placement, sparse child changes, layout-only updates, keyed reordering and replacement, effective modifier-parent changes, current paint/input/semantics geometry, and cleanup after disposal failure.
 These markers track existing phase participation; they do not skip required measure or layout callbacks or retain historical child lists.
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
-Its `jmhHistorical -Pstrata.performance.childLayout=true` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
+Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
 ### Current-tree frame callbacks
 
@@ -204,7 +204,7 @@ Independent per-pixel regression covers both paths, nonuniform destination alpha
 
 `DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.
 Compiled JMH include filters must select exactly the registered method names before forks start; a similarly named supplemental benchmark cannot extend an existing corpus implicitly.
-Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.denseSampledRaster=true` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
+Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
 
@@ -219,6 +219,14 @@ A content rebuild, changed constraints, retained invalidation, or invalidation r
 Failure and close paths must clear cached references so a session cannot keep a released tree or content graph alive.
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.
 Loading indicators and delayed tooltips additionally verify that timestamps inside one discrete animation or delay cell reuse the complete snapshot and that crossing the boundary creates exactly one fresh snapshot.
+
+### Owned semantics frame handoff
+
+The retained semantics pipeline completes an immutable, detached list before publishing a rebuilt frame.
+The session transfers that list directly through an internal ownership path; the general frame factory still snapshots caller-owned collections.
+The transferred list contains only detached semantics entries and retains no builder, node, callback, tree or prior-frame history.
+Order, transformed bounds and immutable values remain identical, and clean frames keep their existing complete-snapshot reuse.
+The separate `SemanticsFrameBenchmark` uses one retained node at 0/1/128/1,000/10,000 semantics entries, separating paint-only rebuilds, localized/complete semantic changes, geometry changes and clean-frame controls without attributing tree reconciliation or native rendering to the copy removal.
 
 ### Current-entry transformed paint
 

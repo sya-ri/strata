@@ -7,6 +7,7 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.ModifierElement
 import dev.s7a.strata.modifier.padding
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
@@ -144,7 +145,9 @@ public open class ModifierCompositionBenchmark {
         /**
          * Checks every declared chain size without collecting timings.
          */
+        @JvmStatic
         public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(ModifierCompositionBenchmark::class.java), setOf("avgt")).size == 25)
             for (length in listOf(0, 1, 8, 32, 128)) {
                 val inputs = Inputs()
                 inputs.length = length
