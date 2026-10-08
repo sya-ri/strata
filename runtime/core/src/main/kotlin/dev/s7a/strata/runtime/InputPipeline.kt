@@ -15,11 +15,21 @@ import dev.s7a.strata.node.PointerInputNode
  * The enclosing tree serializes every operation on its owner thread.
  * Capture holds only its retained entry and starting button until release, cancellation, or terminal cleanup.
  * Callback failures propagate unchanged after the capture reference has been cleared when appropriate.
+ * A private capability index is keyed by logical root identity and the latest completed layout revision.
+ * It retains current pointer/hover entries and required clip ancestry only, bounded by the placed effective tree.
+ * Every layout commit and entry cleanup drops the index before callbacks; terminal capture cancellation also clears it.
+ * Paint/source invalidation cannot mutate committed membership or geometry before the next layout boundary.
+ * Index eviction and capture notification stay with this single tree-owned pointer lifetime.
  */
+@Suppress("TooManyFunctions")
 internal class InputPipeline(
     private val focusedInputPipeline: FocusedInputPipeline,
 ) {
     private var capture: Capture? = null
+    private var layoutRevision = 0L
+    private var indexedRevision = 0L
+    private var indexedRoot: RetainedNode? = null
+    private var pointerEntries: List<PointerEntry> = emptyList()
 
     /**
      * Dispatches [event] deepest and topmost first.
@@ -33,14 +43,22 @@ internal class InputPipeline(
         event: PointerEvent,
     ): InputResult {
         when (event) {
-            is PointerEvent.Move -> updateHover(root.effectiveRoot, event.position)
+            is PointerEvent.Move -> {
+                prepare(root)
+                updateHover(event.position)
+            }
 
-            is PointerEvent.Drag -> updateHover(root.effectiveRoot, event.position)
+            is PointerEvent.Drag -> {
+                prepare(root)
+                updateHover(event.position)
+            }
 
             is PointerEvent.Press,
             is PointerEvent.Release,
             is PointerEvent.Scroll,
-            -> Unit
+            -> {
+                Unit
+            }
         }
         if (event is PointerEvent.Press && event.button === PointerButton.Primary) {
             focusedInputPipeline.acquireFromPointer(root, event.position)
@@ -52,7 +70,12 @@ internal class InputPipeline(
             input.onPointerEvent(eventFor(captured.owner, event), localPosition(captured.owner, event))
             return InputResult.Consumed
         }
-        return dispatchNode(root.effectiveRoot, event, ancestorAllowsHit = true)
+        prepare(root)
+        for (entry in pointerEntries) {
+            val result = dispatchEntry(entry, event, ancestorAllowsHit = true)
+            if (result === InputResult.Consumed) return result
+        }
+        return InputResult.Ignored
     }
 
     /**
@@ -62,6 +85,8 @@ internal class InputPipeline(
      * @throws Throwable when the cancelled owner rejects its notification; capture is already cleared.
      */
     fun layoutCommitted(root: RetainedNode) {
+        clearIndex()
+        layoutRevision += 1L
         val captured = capture ?: return
         if (containsPlaced(root.effectiveRoot, captured.owner).not()) cancelCapture()
     }
@@ -73,17 +98,20 @@ internal class InputPipeline(
      * @throws Throwable when cancellation fails; the caller must continue remaining lifecycle cleanup.
      */
     fun entryWillCleanup(entry: RetainedEntry) {
+        clearIndex()
         if (capture?.owner === entry) cancelCapture()
     }
 
     /**
      * Clears the retained capture reference before notifying its previous owner once.
      *
-     * This owner-thread operation is a no-op without capture and does not dispose or otherwise retain the node.
+     * This owner-thread operation evicts derived pointer membership even without capture and does not dispose a node.
+     * Terminal tree release uses this same path, so every indexed root and entry is dropped before cancellation callbacks.
      *
      * @throws Throwable when the captured owner's cancellation callback fails.
      */
     fun cancelCapture() {
+        clearIndex()
         val captured = capture ?: return
         capture = null
         (captured.owner.node as PointerCaptureNode).onPointerCaptureCancelled(captured.button)
@@ -103,11 +131,19 @@ internal class InputPipeline(
         failures.throwIfPresent()
     }
 
-    private fun updateHover(
-        root: RetainedEntry,
+    private fun updateHover(position: IntOffset) {
+        for (entry in pointerEntries) visitEntryHover(entry, position, ancestorAllowsHit = true)
+    }
+
+    private fun visitEntryHover(
+        entry: PointerEntry,
         position: IntOffset,
+        ancestorAllowsHit: Boolean,
     ) {
-        visitHover(root, ancestorAllowsHit = true) { retained -> retained.contains(position) }
+        val retained = entry.owner
+        val descendantsAllowHit = ancestorAllowsHit && ((retained.node is ClipChildrenNode).not() || retained.contains(position))
+        for (child in entry.children) visitEntryHover(child, position, descendantsAllowHit)
+        (retained.node as? PointerHoverNode)?.onPointerHover(ancestorAllowsHit && retained.contains(position))
     }
 
     private fun visitHover(
@@ -137,23 +173,19 @@ internal class InputPipeline(
         }
     }
 
-    private fun dispatchNode(
-        retained: RetainedEntry,
+    private fun dispatchEntry(
+        entry: PointerEntry,
         event: PointerEvent,
         ancestorAllowsHit: Boolean,
     ): InputResult {
+        val retained = entry.owner
         val descendantsAllowHit =
             ancestorAllowsHit &&
                 ((retained.node is ClipChildrenNode).not() || retained.contains(event.position))
         if (descendantsAllowHit) {
-            for (index in (0 until retained.effectiveChildCount).reversed()) {
-                val child = retained.effectiveChildAt(index)
-                if (child.placed) {
-                    val result = dispatchNode(child, event, ancestorAllowsHit = true)
-                    if (result === InputResult.Consumed) {
-                        return result
-                    }
-                }
+            for (child in entry.children) {
+                val result = dispatchEntry(child, event, ancestorAllowsHit = true)
+                if (result === InputResult.Consumed) return result
             }
         }
         val input = retained.node as? PointerInputNode
@@ -179,13 +211,55 @@ internal class InputPipeline(
         retained: RetainedEntry,
         owner: RetainedEntry,
     ): Boolean {
-        if (retained.placed.not()) return false
-        if (retained === owner) return true
-        for (index in 0 until retained.effectiveChildCount) {
-            if (containsPlaced(retained.effectiveChildAt(index), owner)) return true
+        var current: RetainedEntry? = owner
+        while (current != null) {
+            if (current.placed.not()) return false
+            if (current === retained) return true
+            current = current.parent
         }
         return false
     }
+
+    private fun prepare(root: RetainedNode) {
+        if (indexedRoot === root && indexedRevision == layoutRevision) return
+        clearIndex()
+        val entries = ArrayList<PointerEntry>()
+        collect(root.effectiveRoot, entries)
+        pointerEntries = entries
+        indexedRoot = root
+        indexedRevision = layoutRevision
+    }
+
+    private fun collect(
+        retained: RetainedEntry,
+        entries: MutableList<PointerEntry>,
+    ) {
+        if (retained.placed.not()) return
+        val start = entries.size
+        for (index in (0 until retained.effectiveChildCount).reversed()) collect(retained.effectiveChildAt(index), entries)
+        val capable = retained.node is PointerInputNode || retained.node is PointerHoverNode
+        if (capable || retained.node is ClipChildrenNode && start < entries.size) {
+            val descendants = entries.subList(start, entries.size)
+            val children = if (descendants.isEmpty()) emptyList() else ArrayList(descendants)
+            descendants.clear()
+            entries.add(PointerEntry(retained, children))
+        }
+    }
+
+    private fun clearIndex() {
+        indexedRoot = null
+        pointerEntries = emptyList()
+    }
+
+    /**
+     * One current capable entry or relevant ancestor clip; inert unclipped ancestry is flattened.
+     * Children preserve reverse sibling/deepest callback order and contain only the current committed placed tree.
+     * This private immutable descriptor retains no copied geometry or authoritative source state.
+     */
+    private class PointerEntry(
+        val owner: RetainedEntry,
+        val children: List<PointerEntry>,
+    )
 
     private data class Capture(
         val owner: RetainedEntry,

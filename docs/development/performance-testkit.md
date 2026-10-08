@@ -585,3 +585,29 @@ Record exact source/archive/loaded identities and preserve the untimed work tran
 Use three independent Standard repetitions per side, including the complete 31-case matrix, controls and regressions, with the same viewport, densities, JMH warmup/sample settings and exclusive host conditions.
 Every restoring cycle includes restoration in both CPU operation time and normalized allocation.
 The isolated JVM corpus measures no native uploads, GPU time, event latency or FPS; those values remain inapplicable.
+
+## Pointer-capability input corpus
+
+`PointerCapabilityBenchmark` adds 46 generated cases through the existing historical shared-kit entry point and generic `verifyWork()` discovery.
+The fixed typed matrix contains broad trees with 1, 128 and 10,000 entries and none/sparse/dense participation; deep trees with 32 or 128 entries; ordinary move, drag, scroll and complete press/release cycles; topmost and last consumption; overflow across unclipped parents; nested clip rejection; uniform public scale-to-fit transforms; and a complete press/outside-drag/outside-release capture cycle.
+Sparse broad trees have one participant per hundred entries, while sparse deep trees keep only the deepest participant.
+
+Dirty controls include explicit layout invalidation/input/frame and one input invalidating layout followed by a second input/frame.
+Both expose complete geometry synchronization and index rebuilding in the same CPU/allocation boundary.
+Paint-only controls include presentation invalidation/input/frame; detach controls include detach/attach/frame/input; clean controls include one unchanged frame.
+Initial controls include fresh fixture nodes and descriptions, attach, first frame, first pointer input and close against prebuilt immutable topology/events/participant extrema.
+All phase/callback counters, trace construction, independent scans, exact pixels and generated metadata verification run outside timing; ordinary operations use prebuilt input objects and no invocation-level setup.
+Initial CPU and allocation include fixture construction and terminal lifecycle, so they are not isolated index-build or single-event latency scores.
+
+An independent original recursive dispatcher uses immutable source topology and scalar coordinate arithmetic, without reading candidate retained entries, hit-test helpers or transform snapshots.
+The untimed gate compares complete callback/hover/capture order, local coordinates, transformed drag deltas and consumption for every generated row.
+High-rate move/drag scenes verify 100 opportunities each, while controls verify complete restoring cycles.
+It verifies clean frame identity, declared measure/layout/paint/semantics work, literal root geometry and semantics, ordered frame preservation, full headless pixels at densities one through three and exact terminal disposal.
+The current geometry-validity walk remains shared baseline work; a reduced private descriptor count is not a measured event-visit or latency percentage.
+
+For a pair, freeze one compiled candidate fixture and all generated JMH classes/resources, collector, harness, file-backed reviewed API controls and external inputs.
+Keep API and headless/control archives identical and vary only the actual core runtime archive.
+Preserve the exact baseline/candidate source refs, archive digests, actual parent/fork loaded class-tree identities and all six independent Standard raw receipts.
+Keep all 46 CPU and normalized-allocation rows, cold/dense/dirty/clean controls, callback/phase evidence and regressions; never substitute a selected faster subset or a Quick run.
+Preparation and collection use fully qualified tasks with quoted `-Pstrata.jvmOnly=true`; final shared/browser/all-platform checks remain complete.
+This native-free logical corpus provides no native input delivery/latency, source/raster/metadata/output uploads, GPU time or FPS evidence; those metrics are inapplicable.
