@@ -1,3 +1,5 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.component.ImageSource
@@ -7,6 +9,7 @@ import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.ByteBuffer
 
 /**
@@ -75,7 +78,7 @@ public class RemoteImageCodec(
                 ProjectionValue.Integer(Kind.Pixels.ordinal.toLong()),
                 ProjectionValue.Integer(image.size.width.toLong()),
                 ProjectionValue.Integer(image.size.height.toLong()),
-                ProjectionValue.Bytes(bytes.array()),
+                ProjectionValue.Bytes.fromOwned(bytes.array()),
             ),
         )
     }

@@ -315,8 +315,8 @@ public class RemoteComponentRuntime : ComponentRuntime {
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element =
-        RemoteProfileElement(RemoteProfileComponent.Image, modifier, key) { _ ->
-            record(encode(source), optional(sourceRegion, ::encode), optional(size, ::encode))
+        RemoteProfileElement(RemoteProfileComponent.Image, modifier, key) { scope ->
+            record(encode(source, scope), optional(sourceRegion, ::encode), optional(size, ::encode))
         }
 
     override fun playerHead(
@@ -328,22 +328,22 @@ public class RemoteComponentRuntime : ComponentRuntime {
         modifier: Modifier,
         key: ElementKey<*>?,
     ): Element =
-        RemoteProfileElement(RemoteProfileComponent.PlayerHead, modifier, key, children = listOfNotNull(loading, failure)) { _ ->
-            record(encode(source), encode(size), encode(showHat), encode(loading != null), encode(failure != null))
+        RemoteProfileElement(RemoteProfileComponent.PlayerHead, modifier, key, children = listOfNotNull(loading, failure)) { scope ->
+            record(encode(source, scope), encode(size), encode(showHat), encode(loading != null), encode(failure != null))
         }
 
     override fun imageBackground(
         modifier: Modifier,
         source: ImageSource,
         scale: ImageScale,
-    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.ImageBackground, record(encode(source), encode(scale))))
+    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.ImageBackground) { scope -> record(encode(source, scope), encode(scale)) })
 
     override fun imageBackground(
         modifier: Modifier,
         source: ImageSource,
         border: Insets,
         centerMode: NineSliceCenterMode,
-    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.NineSliceBackground, record(encode(source), encode(border), encode(centerMode))))
+    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.NineSliceBackground) { scope -> record(encode(source, scope), encode(border), encode(centerMode)) })
 
     override fun containerBackground(
         modifier: Modifier,
