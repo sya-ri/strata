@@ -77,7 +77,7 @@ Public caller-owned lists are not admitted, and the runtime continues to borrow 
 This removes one redundant membership snapshot; individual appends still perform quadratic aggregate concatenation work and introduce no retained cache.
 
 Common JVM/JavaScript tests verify intermediate-chain reuse, self-concatenation, repeated identities, equality/hash/text values and empty shortcuts.
-The separate `jmhHistorical -Pstrata.performance.modifierComposition=true` corpus covers lengths 0, 1, 8, 32 and 128 for individual appends, prepared-half concatenation, self-concatenation and extending an intermediate chain.
+The separate `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=ModifierCompositionBenchmark -Pstrata.performance.suite=modifier-composition` corpus covers lengths 0, 1, 8, 32 and 128 for individual appends, prepared-half concatenation, self-concatenation and extending an intermediate chain.
 It also measures an actual 128-child declaration rebuild separately from construction-only operations; no retained frame, rasterization, upload or GPU consumption occurs inside these boundaries.
 It uses the existing receipt collector, runtime manifest replacement and standard sampling settings without changing the historical corpus.
 
