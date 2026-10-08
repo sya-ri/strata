@@ -42,8 +42,9 @@ public object ComponentPerformanceEvidence {
             (includes + args.drop(3) + listOf("-p", "component=$parameters")).toTypedArray(),
             listOf(ComponentRenderingBenchmark::class.java),
             mapOf(
-                "api" to "dev.s7a.strata.component.UiScope",
-                "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
+                "api" to "dev.s7a.strata.render.DrawImage",
+                "core" to "dev.s7a.strata.runtime.UiSession",
+                "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                 "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
                 "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
             ),
@@ -81,8 +82,8 @@ public object ComponentPerformanceEvidence {
             (includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }).toTypedArray(),
             fixtures,
             mapOf(
-                "api" to "dev.s7a.strata.component.UiScope",
-                "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
+                "api" to "dev.s7a.strata.render.DrawImage",
+                "core" to "dev.s7a.strata.runtime.UiSession",
                 "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                 "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
                 "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",

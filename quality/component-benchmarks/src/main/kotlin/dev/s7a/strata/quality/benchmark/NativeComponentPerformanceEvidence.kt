@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.JvmPerformanceEvidence
@@ -25,6 +26,7 @@ internal object NativeComponentPerformanceEvidence {
         setOf(
             "dev.s7a.strata.render.DrawImage",
             "dev.s7a.strata.runtime.UiSession",
+            "dev.s7a.strata.runtime.headless.HeadlessImage",
             "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
             "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
         )
@@ -81,6 +83,13 @@ internal object NativeComponentPerformanceEvidence {
                 PerformanceReportMetric("${it}_per_sample", listOf("diagnostics", "counts", it), listOf("samples"))
             }
 
+    private val presentationMetrics =
+        listOf(
+            PerformanceReportMetric("presentation_gpu_p50_ns", listOf("presentation_gpu", "duration", "p50_ns")),
+            PerformanceReportMetric("presentation_gpu_p95_ns", listOf("presentation_gpu", "duration", "p95_ns")),
+            PerformanceReportMetric("presentation_gpu_p99_ns", listOf("presentation_gpu", "duration", "p99_ns")),
+        )
+
     /**
      * Processes the profile's independent raw invocations into a new summary without replacing evidence.
      */
@@ -104,12 +113,13 @@ internal object NativeComponentPerformanceEvidence {
         val binaries = JsonArray()
         val paths = request.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
         val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
+        val presentationPresent = presentationGpuMetricsPresent(paths.map(JvmPerformanceEvidence::readReport))
         val summary =
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
                 contract(selection, profile, sampledImages),
-                metrics,
+                metrics + if (presentationPresent) presentationMetrics else emptyList(),
             ) { report ->
                 verify(report, selection, profile, sampledImages)
                 arguments.add(
@@ -137,9 +147,32 @@ internal object NativeComponentPerformanceEvidence {
                     require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
                 }
             }
+        if (presentationPresent.not()) {
+            summary.getAsJsonArray("phases").forEach { row ->
+                val values = row.asJsonObject.getAsJsonObject("metrics")
+                presentationMetrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
+            }
+            summary.add(
+                "presentation_gpu",
+                JsonObject().apply {
+                    addProperty("available", false)
+                    addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
+                },
+            )
+        }
         summary.add("binary_receipts", binaries)
         summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    /**
+     * Registers full presentation metrics only when every raw phase exposes their optional ancestor.
+     * Legacy adapters may omit it only while GUI queries are unavailable; mixed matrices are rejected.
+     */
+    internal fun presentationGpuMetricsPresent(reports: List<JsonObject>): Boolean {
+        val present = reports.flatMap { report -> report.getAsJsonArray("phases").map { it.asJsonObject.has("presentation_gpu") } }
+        require(present.isNotEmpty() && present.distinct().size == 1) { "Inconsistent full presentation GPU metric availability" }
+        return present.first()
     }
 
     private fun collectorArchive(): Path {
@@ -253,12 +286,29 @@ internal object NativeComponentPerformanceEvidence {
         samples: Int,
     ) {
         val gpu = phase.getAsJsonObject("native_gpu")
+        verifyGpuResult(gpu, samples)
+        val presentation = phase.get("presentation_gpu")?.takeUnless { it.isJsonNull }?.asJsonObject
+        if (gpu.get("available").asBoolean) {
+            require(presentation != null && presentation.get("available").asBoolean) { "Available GUI queries require complete full presentation GPU pairs" }
+            require(presentation.get("scope") != gpu.get("scope")) { "Full presentation GPU scope cannot be the GUI-only scope" }
+        }
+        presentation?.let {
+            require(it.get("available") == gpu.get("available")) { "Inconsistent GPU scope availability" }
+            verifyGpuResult(it, samples)
+        }
+    }
+
+    private fun verifyGpuResult(
+        gpu: JsonObject,
+        samples: Int,
+    ) {
         if (gpu.get("available").asBoolean) {
             require(gpu.get("samples").asInt == samples)
             val period = gpu.get("timestamp_period_ns").asDouble
             require(period.isFinite() && 0.0 < period && gpu.get("scope").asString.isNotBlank())
             listOf("duration", "operation_to_completion_observation").forEach { field ->
-                require(gpu.getAsJsonObject(field).get("samples").asInt == samples) { "Incomplete native GPU interval" }
+                val distribution = gpu.getAsJsonObject(field)
+                require(distribution != null && distribution.get("samples")?.asInt == samples) { "Incomplete native GPU interval" }
             }
         } else {
             require(gpu.get("reason").asString.isNotBlank())

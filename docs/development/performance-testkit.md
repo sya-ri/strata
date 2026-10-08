@@ -147,7 +147,7 @@ The request supplies `collector` (the processor's actual loaded testkit JAR), `r
 For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
 Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
 That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
-The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
+The adapter selects the five shared API/core/headless/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
 Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
@@ -216,9 +216,14 @@ The other category includes unsupported mapping, clips and adapter/source limits
 Older measured runtimes expose unavailable payload values as null rather than zero.
 
 GPU queries are opt-in through `strata.performance.gpuQueries=true`, recorded in the controlled report conditions.
-The compiled RenderPearl fixture records timestamp pairs immediately around the real native GUI consumer and uses the actual device's timestamp period to convert ticks to nanoseconds.
-`GpuPerformanceMeter` requires every requested pair to complete before publishing p50, p95 and p99 GPU distributions.
-The GPU scope includes all host commands between those timestamps; it excludes CPU preparation, uploads and sampled-target passes recorded before GUI consumption.
+The compiled RenderPearl fixture records two timestamp pairs and uses the actual device's timestamp period to convert ticks to nanoseconds.
+The GUI-only pair surrounds the real native GUI consumer and excludes uploads and sampled-target passes recorded before GUI consumption.
+The full presentation pair starts before owner-thread frame preparation and ends after GUI consumption, covering intervening source/metadata uploads and ordered offscreen composition.
+Its GPU duration does not measure CPU preparation time; the timestamps bound commands on the native device timeline.
+`GpuPerformanceMeter` requires every requested pair to complete before publishing separate p50, p95 and p99 GPU distributions.
+The native processor requires both complete scopes when GUI queries are available and rejects using the GUI-only scope as full presentation evidence.
+Older unsupported adapters may omit the full-scope ancestor while their GUI queries are explicitly unavailable; the adapter registers no missing-path projection and preserves full GPU metrics as null with a reason.
+Mixed ancestor availability across one raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.
