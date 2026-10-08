@@ -81,14 +81,15 @@ internal class WebDomUpdateTest {
             val initial = Snapshot(visuals = listOf(text(1).copy(bounds = bounds), decoration))
             Fixture(initial, theme).use { fixture ->
                 val nodes = fixture.elements()
-                val changes = listOf(
-                    initial.copy(size = IntSize(280, 140)),
-                    initial.copy(visuals = initial.visuals.map { it.copy(bounds = IntRect(9, 11, 89, 31)) }),
-                    initial.copy(visuals = initial.visuals.map { it.copy(clip = IntRect(10, 12, 50, 16)) }),
-                    initial.copy(visuals = listOf(text(1).copy(presentation = text(1).presentation?.copy(style = TextStyle.Inactive)), decoration.copy(background = ArgbColor(-1)))),
-                    initial.copy(visuals = listOf(text(1).copy(presentation = text(1).presentation?.copy(style = TextStyle.ContainerLabel)), decoration)),
-                    initial,
-                )
+                val changes =
+                    listOf(
+                        initial.copy(size = IntSize(280, 140)),
+                        initial.copy(visuals = initial.visuals.map { it.copy(bounds = IntRect(9, 11, 89, 31)) }),
+                        initial.copy(visuals = initial.visuals.map { it.copy(clip = IntRect(10, 12, 50, 16)) }),
+                        initial.copy(visuals = listOf(text(1).copy(presentation = text(1).presentation?.copy(style = TextStyle.Inactive)), decoration.copy(background = ArgbColor(-1)))),
+                        initial.copy(visuals = listOf(text(1).copy(presentation = text(1).presentation?.copy(style = TextStyle.ContainerLabel)), decoration)),
+                        initial,
+                    )
                 for (changed in changes) {
                     fixture.render(changed)
                     assertSame(nodes.first(), fixture.elements().first())

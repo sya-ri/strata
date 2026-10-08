@@ -272,7 +272,7 @@ internal object WebDomUpdateCheck {
                         val modifier = Modifier.Empty.size(if (current.wide) 120 else 100, 20)
                         val key = ElementKey(identity)
                         when (Kind.entries[identity % Kind.entries.size]) {
-                            Kind.Button -> Button(label, enabled = current.enabled, modifier = modifier.onActivate { activations += 1 }, key = key)
+                            Kind.Button -> Button(label, enabled = current.enabled, modifier = modifier.onActivate(enabled = current.enabled) { activations += 1 }, key = key)
                             Kind.Progress -> ProgressBar(if (changed) 0.75 else 0.25, IntSize(100, 20), modifier = modifier, key = key)
                             Kind.Text -> Text(label, style = if (changed) TextStyle.Inactive else TextStyle.Normal, modifier = modifier, key = key)
                         }
