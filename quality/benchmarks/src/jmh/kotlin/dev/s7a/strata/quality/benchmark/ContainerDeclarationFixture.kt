@@ -327,8 +327,7 @@ internal class ContainerDeclarationFixture(
         fun at(
             x: Int,
             y: Int,
-        ): List<PlacedLeaf> =
-            leaves.map { it.copy(bounds = IntRect(it.bounds.left + x, it.bounds.top + y, it.bounds.right + x, it.bounds.bottom + y)) }
+        ): List<PlacedLeaf> = leaves.map { it.copy(bounds = IntRect(it.bounds.left + x, it.bounds.top + y, it.bounds.right + x, it.bounds.bottom + y)) }
 
         companion object {
             fun leaf(ordinal: Int): Layout = Layout(IntSize(1, 1), listOf(PlacedLeaf(ordinal, IntRect(0, 0, 1, 1))))
