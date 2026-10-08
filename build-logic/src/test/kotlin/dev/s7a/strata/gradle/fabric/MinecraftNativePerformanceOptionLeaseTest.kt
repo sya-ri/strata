@@ -277,7 +277,9 @@ internal class MinecraftNativePerformanceOptionLeaseTest {
     /**
      * Owns only the fresh JDK-compiled helper loader and unwraps reflection failures to their actual fixture cause.
      */
-    private class CompiledLease(private val loader: URLClassLoader) : AutoCloseable {
+    private class CompiledLease(
+        private val loader: URLClassLoader,
+    ) : AutoCloseable {
         private val type = loader.loadClass("dev.s7a.strata.integration.minecraft.fabric.MinecraftNativePerformanceOptionLease")
         private val constructor = type.getDeclaredConstructor(Runnable::class.java).apply { isAccessible = true }
         private val capture = type.getDeclaredMethod("capture", Supplier::class.java, Consumer::class.java, Any::class.java).apply { isAccessible = true }
@@ -292,7 +294,12 @@ internal class MinecraftNativePerformanceOptionLeaseTest {
         /**
          * Passes typed callbacks to the actual generic capture method.
          */
-        fun <T> capture(lease: Any, read: () -> T, write: (T) -> Unit, borrowed: T) {
+        fun <T> capture(
+            lease: Any,
+            read: () -> T,
+            write: (T) -> Unit,
+            borrowed: T,
+        ) {
             invoke { capture.invoke(lease, Supplier { read() }, Consumer<T> { write(it) }, borrowed) }
         }
 

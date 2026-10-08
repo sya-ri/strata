@@ -101,15 +101,10 @@ internal object NativeComponentPerformanceEvidence {
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
         val selection = selection(request, profile, sampledImages)
-        val collector = collectorArchive()
+        val collector = collectorArchive
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
         val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
-        val metadata = cpuRuntimeMetadata(cpu)
-        val selected = JsonArray()
-        metadata.getAsJsonArray("modules").forEach { entry ->
-            if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
-        }
-        val provenance = JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
+        val provenance = nativeCpuProvenance(cpu)
         val arguments = mutableListOf<JsonObject>()
         val binaries = JsonArray()
         val paths = request.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
@@ -150,22 +145,43 @@ internal object NativeComponentPerformanceEvidence {
                     require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
                 }
             }
-        if (presentationPresent.not()) {
-            summary.getAsJsonArray("phases").forEach { row ->
-                val values = row.asJsonObject.getAsJsonObject("metrics")
-                presentationMetrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
-            }
-            summary.add(
-                "presentation_gpu",
-                JsonObject().apply {
-                    addProperty("available", false)
-                    addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
-                },
-            )
-        }
+        recordPresentationAvailability(summary, presentationPresent)
         summary.add("binary_receipts", binaries)
         summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    /**
+     * Projects the five measured runtime representatives from the validated CPU receipt without modifying it.
+     */
+    private fun nativeCpuProvenance(cpu: JsonObject): JsonObject {
+        val metadata = cpuRuntimeMetadata(cpu)
+        val selected = JsonArray()
+        metadata.getAsJsonArray("modules").forEach { entry ->
+            if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
+        }
+        return JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
+    }
+
+    /**
+     * Records explicit unavailable values for the legacy matrix after raw GPU availability has been validated.
+     */
+    private fun recordPresentationAvailability(
+        summary: JsonObject,
+        presentationPresent: Boolean,
+    ) {
+        if (presentationPresent) return
+        summary.getAsJsonArray("phases").forEach { row ->
+            val values = row.asJsonObject.getAsJsonObject("metrics")
+            presentationMetrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
+        }
+        summary.add(
+            "presentation_gpu",
+            JsonObject().apply {
+                addProperty("available", false)
+                addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
+            },
+        )
     }
 
     /**
@@ -202,13 +218,17 @@ internal object NativeComponentPerformanceEvidence {
         return present.first()
     }
 
-    private fun collectorArchive(): Path {
-        val type = JvmPerformanceMeter::class.java
-        return Path.of(
-            type.protectionDomain.codeSource.location
-                .toURI(),
-        )
-    }
+    /**
+     * Resolves the actual loaded collector when the request reaches archive admission.
+     */
+    private val collectorArchive: Path
+        get() {
+            val type = JvmPerformanceMeter::class.java
+            return Path.of(
+                type.protectionDomain.codeSource.location
+                    .toURI(),
+            )
+        }
 
     private fun selection(
         request: JsonObject,
@@ -279,12 +299,7 @@ internal object NativeComponentPerformanceEvidence {
         val scales = profile.viewports((1..4).toList())
         require(report.get("warmup").asInt == plan.warmup && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == plan.preparationTimeoutMillis)
         val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
-        when (epoch) {
-            NativePresentationEpoch.Paced -> NativePacingEvidence.verify(report)
-            NativePresentationEpoch.Legacy -> require(report.has("inactivity_mode").not() && report.has("borrowed_options_restored").not() && phases.none { it.has("pacing") }) {
-                "Live pacing evidence requires the paced native fixture epoch"
-            }
-        }
+        epoch.verifyPacing(report, phases)
         require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> scales.map { name to it } }.toSet()) { "Changed native component matrix" }
         require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->

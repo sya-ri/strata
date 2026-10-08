@@ -1,12 +1,15 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonObject
 import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceSelection
 
 /**
  * Native fixture identities keep historical frames separate from live pacing and restoration evidence.
  */
-internal enum class NativePresentationEpoch(private val suffix: String) {
+internal enum class NativePresentationEpoch(
+    private val suffix: String,
+) {
     Legacy("presented-v1"),
     Paced("paced-presented-v2"),
     ;
@@ -24,6 +27,29 @@ internal enum class NativePresentationEpoch(private val suffix: String) {
         return profile.workloadId("$family$selected-$suffix")
     }
 
+    /**
+     * Applies the epoch's live observation contract without admitting new fields into historical receipts.
+     */
+    internal fun verifyPacing(
+        report: JsonObject,
+        phases: List<JsonObject>,
+    ) {
+        when (this) {
+            Paced -> {
+                NativePacingEvidence.verify(report)
+            }
+
+            Legacy -> {
+                require(report.has("inactivity_mode").not() && report.has("borrowed_options_restored").not() && phases.none { it.has("pacing") }) {
+                    "Live pacing evidence requires the paced native fixture epoch"
+                }
+            }
+        }
+    }
+
+    /**
+     * Decodes external native fixture identities before a repetition group's contract is selected.
+     */
     internal companion object {
         /**
          * Requires one epoch across every actual raw invocation before selecting a summary contract.

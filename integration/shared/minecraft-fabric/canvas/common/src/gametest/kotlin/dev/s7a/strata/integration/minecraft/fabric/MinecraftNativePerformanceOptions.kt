@@ -53,7 +53,7 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
      */
     internal fun pacingReady(): Boolean {
         check(client.isSameThread)
-        val pacing = observePacing()
+        val pacing = pacingObservation
         pacing.validate(inactivity)
         if (pacing.ready().not()) return false
         expectedPacing = pacing
@@ -65,7 +65,7 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
      */
     internal fun beforeSamples() {
         check(client.isSameThread)
-        val pacing = observePacing()
+        val pacing = pacingObservation
         pacing.validate(inactivity)
         if (inactivity == MinecraftNativePerformancePacing.Inactivity.MINIMIZED) pacing.verifyStable(checkNotNull(expectedPacing))
         pacingBoundaries.add(pacing)
@@ -108,7 +108,8 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
         }
     }
 
-    private fun observePacing(): MinecraftNativePerformancePacing = client.nativePerformancePacing().also { lastPacing = it }
+    private val pacingObservation: MinecraftNativePerformancePacing
+        get() = client.nativePerformancePacing().also { lastPacing = it }
 
     private fun boundaryJson(pacing: MinecraftNativePerformancePacing): JsonObject =
         JsonObject().apply {
@@ -136,7 +137,7 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
                 .get()
                 .not() && client.options.framerateLimit().get() == 120,
         )
-        val pacing = observePacing()
+        val pacing = pacingObservation
         pacing.validate(inactivity)
         if (inactivity == MinecraftNativePerformancePacing.Inactivity.MINIMIZED) expectedPacing?.let(pacing::verifyStable)
         if (observingPacing) {

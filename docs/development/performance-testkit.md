@@ -167,7 +167,9 @@ Its controlled conditions differ from the formal default, so it cannot supply a 
 Live pacing and restoration receipts use the `*-paced-presented-v2` native fixture identity; selected and quick profiles retain their distinct suffixes and original counts.
 Historical `*-presented-v1` receipts keep their original contract and cannot be mixed with the new epoch in a repetition group.
 Recollect both sides using the same frozen fixture archive; the processor requires the requested inactivity mode, complete pacing boundaries, restoration success and identical phase pacing observations within each group.
-The ordinary Canvas acceptance path remains unchanged when the property is absent.
+Without the property, ordinary Canvas acceptance checks the compiled pacing family, nonmutating capture, owner rejection and restoration after partial native application, viewport validation, PNG storage and native producer failures.
+Targets with compiled GPU query support also reject incomplete query publication and restore borrowed settings after query cleanup.
+These correctness checks collect no performance samples.
 Each invocation keeps a separate client directory beneath its integration project's `build/run/native-performance/`, preserving the actual processed-mod code sources needed for later archive/class-tree verification and satisfying the existing client-run containment contract.
 Do not delete these client directories before processing or replace their origins with standalone Maven files.
 For legacy production clients, window validation resolves intermediary client/window owners and descriptors through the actual Fabric mapping resolver; development-only class names are not assumed in a remapped client.

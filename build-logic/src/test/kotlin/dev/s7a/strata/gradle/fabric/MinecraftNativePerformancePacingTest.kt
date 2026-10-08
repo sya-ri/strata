@@ -80,14 +80,15 @@ internal class MinecraftNativePerformancePacingTest {
     fun formalStabilityIncludesReasonCapsWindowOptionAndObservationSource() {
         fixture().use { fixture ->
             val initial = fixture.snapshot()
-            val changed = listOf(
-                fixture.snapshot(Inactivity.AFK),
-                fixture.snapshot(reason = Reason.OUT_OF_LEVEL_MENU),
-                fixture.snapshot(selected = 60, applied = 60),
-                fixture.snapshot(applied = 60),
-                fixture.snapshot(source = AppliedLimitSource.DIRECT_SELECTOR),
-                fixture.snapshot(iconified = true),
-            )
+            val changed =
+                listOf(
+                    fixture.snapshot(Inactivity.AFK),
+                    fixture.snapshot(reason = Reason.OUT_OF_LEVEL_MENU),
+                    fixture.snapshot(selected = 60, applied = 60),
+                    fixture.snapshot(applied = 60),
+                    fixture.snapshot(source = AppliedLimitSource.DIRECT_SELECTOR),
+                    fixture.snapshot(iconified = true),
+                )
             changed.forEach { snapshot ->
                 assertThrows(IllegalStateException::class.java) { fixture.verifyStable(snapshot, initial) }
             }
@@ -141,7 +142,9 @@ internal class MinecraftNativePerformancePacingTest {
     /**
      * Owns the actual fixture class loader and unwraps its reflection failures without replacing their cause.
      */
-    private class CompiledPacing(private val loader: URLClassLoader) : AutoCloseable {
+    private class CompiledPacing(
+        private val loader: URLClassLoader,
+    ) : AutoCloseable {
         private val type = loader.loadClass("dev.s7a.strata.integration.minecraft.fabric.MinecraftNativePerformancePacing")
         private val inactivity = type.declaredClasses.single { it.simpleName.contentEquals("Inactivity") }
         private val reason = type.declaredClasses.single { it.simpleName.contentEquals("Reason") }
@@ -167,7 +170,10 @@ internal class MinecraftNativePerformancePacingTest {
         /**
          * Applies the actual safety and option guard.
          */
-        fun validate(snapshot: Any, mode: Inactivity = Inactivity.MINIMIZED) {
+        fun validate(
+            snapshot: Any,
+            mode: Inactivity = Inactivity.MINIMIZED,
+        ) {
             invoke { validate.invoke(snapshot, enumValue(inactivity, mode)) }
         }
 
@@ -179,7 +185,10 @@ internal class MinecraftNativePerformancePacingTest {
         /**
          * Exercises the actual equality-based formal interval guard.
          */
-        fun verifyStable(snapshot: Any, expected: Any) {
+        fun verifyStable(
+            snapshot: Any,
+            expected: Any,
+        ) {
             invoke { stable.invoke(snapshot, expected) }
         }
 
@@ -188,7 +197,10 @@ internal class MinecraftNativePerformancePacingTest {
          */
         fun decode(value: String?): String = invoke { (decode.invoke(null, value) as Enum<*>).name }
 
-        private fun enumValue(type: Class<*>, value: Enum<*>): Any = type.enumConstants.single { (it as Enum<*>).name.contentEquals(value.name) }
+        private fun enumValue(
+            type: Class<*>,
+            value: Enum<*>,
+        ): Any = type.enumConstants.single { (it as Enum<*>).name.contentEquals(value.name) }
 
         private fun <T> invoke(action: () -> T): T =
             try {

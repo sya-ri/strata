@@ -58,7 +58,11 @@ internal object NativePacingEvidence {
         report.getAsJsonArray("phases").forEach { verifyPhase(it.asJsonObject, requested, configuredLimit) }
     }
 
-    private fun verifyPhase(phase: JsonObject, requested: Inactivity, configuredLimit: Int) {
+    private fun verifyPhase(
+        phase: JsonObject,
+        requested: Inactivity,
+        configuredLimit: Int,
+    ) {
         val pacing = requireNotNull(phase.getAsJsonObject("pacing")) { "Missing live native pacing observations" }
         require(pacing.get("scope").asString.isNotBlank()) { "Missing native pacing observation scope" }
         val samples = integer(phase, "samples")
@@ -72,7 +76,12 @@ internal object NativePacingEvidence {
         observations.forEach { verifyBoundary(it, initial, requested, configuredLimit) }
     }
 
-    private fun verifyBoundary(observation: Boundary, initial: Boundary, requested: Inactivity, configuredLimit: Int) {
+    private fun verifyBoundary(
+        observation: Boundary,
+        initial: Boundary,
+        requested: Inactivity,
+        configuredLimit: Int,
+    ) {
         require(observation.inactivity == initial.inactivity && observation.appliedLimitSource == initial.appliedLimitSource && (observation.reason == Reason.UNAVAILABLE) == (initial.reason == Reason.UNAVAILABLE)) {
             "Native pacing observation capabilities changed during a phase"
         }
@@ -113,7 +122,10 @@ internal object NativePacingEvidence {
     /**
      * Rejects missing, nonnumeric or fractional limits instead of silently rounding a serialized condition.
      */
-    private fun integer(value: JsonObject, field: String): Int {
+    private fun integer(
+        value: JsonObject,
+        field: String,
+    ): Int {
         val element = requireNotNull(value.get(field)) { "Missing native pacing field: $field" }
         require(element.isJsonPrimitive && element.asJsonPrimitive.isNumber) { "Invalid numeric native pacing field: $field" }
         return element.asBigDecimal.intValueExact()
@@ -122,7 +134,10 @@ internal object NativePacingEvidence {
     /**
      * A malformed or absent boolean cannot certify a successful cleanup or safe native window.
      */
-    private fun boolean(value: JsonObject, field: String): Boolean {
+    private fun boolean(
+        value: JsonObject,
+        field: String,
+    ): Boolean {
         val element = requireNotNull(value.get(field)) { "Missing native pacing field: $field" }
         require(element.isJsonPrimitive && element.asJsonPrimitive.isBoolean) { "Invalid boolean native pacing field: $field" }
         return element.asBoolean
@@ -131,7 +146,10 @@ internal object NativePacingEvidence {
     /**
      * Rejects unknown external values before applying any domain rules.
      */
-    private inline fun <reified T : Enum<T>> enumValue(value: JsonObject, field: String): T {
+    private inline fun <reified T : Enum<T>> enumValue(
+        value: JsonObject,
+        field: String,
+    ): T {
         val element = requireNotNull(value.get(field)) { "Missing native pacing field: $field" }
         require(element.isJsonPrimitive && element.asJsonPrimitive.isString) { "Invalid native pacing enum: $field" }
         return requireNotNull(enumValues<T>().singleOrNull { it.name.contentEquals(element.asString) }) { "Unknown native pacing enum: $field" }
