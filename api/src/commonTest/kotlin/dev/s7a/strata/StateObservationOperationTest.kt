@@ -58,10 +58,11 @@ internal class StateObservationOperationTest {
     fun throwingValidationKeepsTheValueAndFinallyReleasesEveryGuard() {
         val calls = ArrayList<Int>()
         val failure = IllegalStateException("Outer phase rejected the write")
-        val outer = StateObservation({}, {}, {}, {
-            calls.add(0)
-            throw failure
-        })
+        val outer =
+            StateObservation({}, {}, {}, {
+                calls.add(0)
+                throw failure
+            })
         val inner = StateObservation({}, {}, {}, { calls.add(1) })
         val state = mutableStateOf(0)
         try {
@@ -118,12 +119,13 @@ internal class StateObservationOperationTest {
     @Test
     fun deeplyNestedGuardsValidateIterativelyAndCanBeReusedAfterRelease() {
         var expected = 0
-        val observations = List(4_096) { index ->
-            StateObservation({}, {}, {}, {
-                assertEquals(index, expected)
-                expected += 1
-            })
-        }
+        val observations =
+            List(4_096) { index ->
+                StateObservation({}, {}, {}, {
+                    assertEquals(index, expected)
+                    expected += 1
+                })
+            }
         val state = mutableStateOf(0)
         try {
             repeat(2) { revision ->
@@ -150,10 +152,11 @@ internal class StateObservationOperationTest {
         outerOwner.run {
             val identity = RuntimeExecutionOwner.current()
             var validations = 0
-            val outer = StateObservation({}, {}, {}, {
-                validations += 1
-                check(RuntimeExecutionOwner.current() == identity)
-            })
+            val outer =
+                StateObservation({}, {}, {}, {
+                    validations += 1
+                    check(RuntimeExecutionOwner.current() == identity)
+                })
             val outerState = mutableStateOf(0)
             outer.enterOperation()
             try {
