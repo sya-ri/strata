@@ -54,7 +54,11 @@ internal class NativeCpuProvenanceTest {
             assertFails { NativeComponentPerformanceEvidence.cpuRuntimeMetadata(cpu) }
         }
         val unresolved = valid.deepCopy()
-        unresolved.getAsJsonObject("runtime_metadata").getAsJsonArray("modules")[0].asJsonObject.addProperty("status", "unresolved")
+        unresolved
+            .getAsJsonObject("runtime_metadata")
+            .getAsJsonArray("modules")[0]
+            .asJsonObject
+            .addProperty("status", "unresolved")
         assertFails { NativeComponentPerformanceEvidence.cpuRuntimeMetadata(unresolved) }
     }
 
@@ -67,7 +71,12 @@ internal class NativeCpuProvenanceTest {
             assertEquals(1, verify(metadata, valid))
             listOf("codeSource", "classResource", "classTree").forEach { location ->
                 val changed = valid.deepCopy()
-                changed.getAsJsonObject(field).getAsJsonArray("modules")[0].asJsonObject.getAsJsonObject(location).addProperty("sha256", "0".repeat(64))
+                changed
+                    .getAsJsonObject(field)
+                    .getAsJsonArray("modules")[0]
+                    .asJsonObject
+                    .getAsJsonObject(location)
+                    .addProperty("sha256", "0".repeat(64))
                 assertFails { verify(metadata, changed) }
             }
         }
