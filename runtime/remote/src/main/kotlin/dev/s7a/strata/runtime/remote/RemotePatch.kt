@@ -1,5 +1,8 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.util.Collections
 
 /**
@@ -27,14 +30,7 @@ public class RemotePatch(
     public fun apply(
         previous: RemoteTree,
         limits: RemoteLimits = RemoteLimits(),
-    ): RemoteTree {
-        require(changed.size <= limits.treeNodes && removed.size <= limits.treeNodes) { "Remote patch exceeds its limit." }
-        require(removed.all(previous.nodes::containsKey)) { "Remote patch removes an unknown node." }
-        val candidate = previous.nodes.toMutableMap()
-        removed.forEach(candidate::remove)
-        changed.forEach { candidate[it.declaration.identity] = it }
-        return RemoteTree(root, candidate.values, limits)
-    }
+    ): RemoteTree = RemoteTree.applyOwnedPatch(previous, this, limits)
 
     /**
      * Factories for detached tree differences.
