@@ -14,11 +14,11 @@ import java.nio.file.Path
 import java.util.UUID
 
 /**
- * Measures owner CPU and allocation for the same 45 registered-state operations used by JMH.
+ * Measures owner CPU and allocation for the same 64 byte-codec and control operations used by JMH.
  * The shared collector owns clocks and sampling; fixtures, provenance and serialization stay outside sample boundaries.
  * Each invocation uses one fresh process and validates its exact JMH receipt and immutable source/archive plan before collection.
  */
-public object RemoteClientStatesCpuEvidence {
+public object RemoteBytesCpuEvidence {
     /**
      * Accepts a fresh report path, repetition 0 through 2, paired JMH receipt path and frozen source/archive plan path.
      * The source plan must already be an immutable external input archived by that JMH receipt.
@@ -29,22 +29,20 @@ public object RemoteClientStatesCpuEvidence {
         require(args.size == 4)
         val repetition = args[1].toInt()
         require(repetition in 0..2)
-        RemoteClientStatesBenchmark.verifyWork()
+        RemoteBytesBenchmark.verifyWork()
         val targets = mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteTree")
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
-        val fixtures = listOf(RemoteClientStatesBenchmark::class.java, RemoteClientStatesCpuEvidence::class.java)
+        val fixtures = listOf(RemoteBytesBenchmark::class.java, RemoteBytesOperation::class.java, RemoteBytesCpuEvidence::class.java)
         val identity = ArtifactIdentity.applicationTrees(fixtures)
         val inputFiles = externalInputs()
         val inputs = inputFiles.mapValues { ArtifactIdentity.file(it.value) }
-        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, identity, inputFiles, RemoteClientStatesBenchmark::class.java)
+        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, identity, inputFiles, RemoteBytesBenchmark::class.java)
         val plan = PerformancePlan(warmup = 100, samples = 200)
         val phases = JsonArray()
-        for (entries in listOf(100, 1_000, 8_192)) {
-            for (membership in RemoteClientStatesBenchmark.Membership.entries) {
-                for (operation in Operation.entries) {
-                    phases.add(measure(entries, membership, operation, plan))
-                }
+        for (corpus in RemoteBytesBenchmark.Corpus.entries) {
+            for (operation in RemoteBytesOperation.entries) {
+                phases.add(measure(corpus, operation, plan))
             }
         }
         check(LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys) == runtime)
@@ -55,7 +53,7 @@ public object RemoteClientStatesCpuEvidence {
             Path.of(args[0]),
             JsonObject().apply {
                 addProperty("schema_version", 1)
-                addProperty("workload_id", "current-client-editable-states-v1")
+                addProperty("workload_id", "remote-bytes-codec-v1")
                 addProperty("status", "passed")
                 addProperty("run_id", UUID.randomUUID().toString())
                 addProperty("repetition", repetition)
@@ -66,8 +64,8 @@ public object RemoteClientStatesCpuEvidence {
                 add("environment", pair.report.get("environment").deepCopy())
                 add("jvm_arguments", pair.report.get("cpu_jvm_arguments").deepCopy())
                 add("phases", phases)
-                addProperty("native_uploads", "N/A: native-free client state operations")
-                addProperty("gpu_time", "N/A: native-free client state operations")
+                addProperty("native_uploads", "N/A: native-free byte codec operations")
+                addProperty("gpu_time", "N/A: native-free byte codec operations")
                 addProperty("fps", "N/A: no frame-rate claim")
             },
         )
@@ -81,42 +79,21 @@ public object RemoteClientStatesCpuEvidence {
     }
 
     private fun measure(
-        entries: Int,
-        membership: RemoteClientStatesBenchmark.Membership,
-        operation: Operation,
+        corpus: RemoteBytesBenchmark.Corpus,
+        operation: RemoteBytesOperation,
         plan: PerformancePlan,
     ): JsonObject {
-        val batch = maxOf(1, 10_000 / entries)
-        return RemoteClientStatesBenchmark.Scene().use { scene ->
-            scene.entries = entries
-            scene.membership = membership
-            scene.setUp()
-            val sample = JvmPerformanceRunner.measure("$entries/$membership/$operation", plan) {
-                var result = 0L
-                repeat(batch) { result = operation.run(scene) }
-                result
-            }
-            sample.evidence.apply {
-                addProperty("entries", entries)
-                addProperty("membership", membership.name)
-                addProperty("operation", operation.name)
-                addProperty("operations_per_sample", batch)
-                addProperty("warmup", plan.warmup)
-                addProperty("measured_operations", plan.samples.toLong() * batch)
-                addProperty("processed_operations", (plan.warmup + plan.samples).toLong() * batch)
-                addProperty("last_result", sample.value)
-            }
+        val scene = RemoteBytesBenchmark.Scene()
+        scene.corpus = corpus
+        scene.setup()
+        val sample = JvmPerformanceRunner.measure("$corpus/$operation", plan) { operation.run(scene) }
+        return sample.evidence.apply {
+            addProperty("corpus", corpus.name)
+            addProperty("operation", operation.name)
+            addProperty("operations_per_sample", 1)
+            addProperty("warmup", plan.warmup)
+            addProperty("measured_operations", plan.samples)
+            addProperty("processed_operations", plan.warmup + plan.samples)
         }
-    }
-
-    /**
-     * Executable operations corresponding exactly to the compiled JMH methods.
-     */
-    private enum class Operation(val run: (RemoteClientStatesBenchmark.Scene) -> Long) {
-        Idle(RemoteClientStatesBenchmark.Scene::idle),
-        Edits(RemoteClientStatesBenchmark.Scene::edit),
-        PreAction(RemoteClientStatesBenchmark.Scene::action),
-        Incoming({ it.update(false) }),
-        Churn({ it.update(true) }),
     }
 }

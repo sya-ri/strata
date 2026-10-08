@@ -17,13 +17,14 @@ import org.openjdk.jmh.runner.Runner
  * Input, result, collector and source-plan bytes are checked before and after CPU collection; no timing lives here.
  * Source plans contain both revisions and archive inventories so the same external file can be frozen for both sides.
  */
-internal class RemoteClientStatesCpuPair(
+internal class RemoteCpuPair(
     receiptPath: Path,
     sourcePath: Path,
     repetition: Int,
     runtime: JsonObject,
     fixtureIdentity: Map<String, String>,
     inputs: Map<String, Path>,
+    fixtureClass: Class<*>,
 ) {
     private val receiptFile = receiptPath.toAbsolutePath().normalize()
     private val sourceFile = sourcePath.toAbsolutePath().normalize()
@@ -50,10 +51,10 @@ internal class RemoteClientStatesCpuPair(
         require(receipt.get("results_sha256").asString == hashes.getValue(resultFile))
         require(receipt.get("harness_sha256").asString == hashes.getValue(harnessFile) && hashes.getValue(harnessFile) == ArtifactIdentity.fullCodeSource(Runner::class.java))
         verifyArchives(receipt, runtime, inputs)
-        val fixture = RemoteClientStatesBenchmark::class.java.name
+        val fixture = fixtureClass.name
         require(receipt.getAsJsonObject("fixture_identity").get(fixture).asString == fixtureIdentity.getValue(fixture))
         receipt.getAsJsonObject("environment").entrySet().forEach { (key, value) -> require(environment.get(key) == value) }
-        val expected = JmhWorkloadInventory.capture(listOf(RemoteClientStatesBenchmark::class.java), setOf("avgt"))
+        val expected = JmhWorkloadInventory.capture(listOf(fixtureClass), setOf("avgt"))
         require(receipt.getAsJsonArray("registered_workloads").map { it.asString }.toSet() == expected)
         val rows =
             Files.newBufferedReader(resultFile, Charsets.UTF_8)

@@ -11,6 +11,10 @@ An `Element` or `ModifierElement` can provide a `DeclarationProjection<P>` with 
 Both endpoints must agree on that exact pair; changing a record or event schema requires a new version.
 `ProjectionValue` permits absent values, booleans, integers, finite reals, text, defensive byte snapshots, and ordered sequences.
 Application models, functions, class names, native handles, and executable code are not wire values.
+`ProjectionValue.Bytes` snapshots ordinary constructor inputs and returns a detached mutable array from `toByteArray`.
+The `InternalStrataRuntimeApi` bridge permits copying into caller-owned output storage and transferring a fresh, complete, exact payload array.
+A transferring runtime must validate the payload first, relinquish every mutable alias before publication, and never transfer pooled, shared, or oversized backing storage.
+These operations expose no mutable view or retained callback; independent readers share only the immutable value.
 
 An attachment-owned resource can instead implement `DeclarationProjectionNode` on its component or modifier node.
 The runtime reads the retained projection after the shared source cutoff, giving it precedence over the immutable description's projection.
