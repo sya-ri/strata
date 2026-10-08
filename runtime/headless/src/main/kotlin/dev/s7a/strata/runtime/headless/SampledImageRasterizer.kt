@@ -396,8 +396,10 @@ internal object SampledImageRasterizer {
                     }
                 }
             val index = (2 - shift / 8) * 256 + (source ushr shift and 255)
-            val cached = row?.get(index)
-            if (cached != null && 0 <= cached) return cached
+            if (row != null) {
+                val cached = row[index]
+                if (0 <= cached) return cached
+            }
             val contribution = contribution(source, shift, sourceAlpha, sourceRow)
             val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
             if (row != null) row[index] = result
