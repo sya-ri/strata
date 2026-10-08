@@ -134,15 +134,31 @@ internal class PortableContainerBuilderTest {
         content: UiScope.(Modifier) -> Unit,
     ) {
         when (kind) {
-            Kind.Row -> Row(spacing = 1) { content(Modifier.Empty) }
-            Kind.FlowRow -> FlowRow(horizontalSpacing = 1) { content(Modifier.Empty) }
-            Kind.Column -> Column(spacing = 1) { content(Modifier.Empty) }
-            Kind.Stack -> Stack { content(Modifier.Empty) }
-            Kind.Grid -> Grid(columns = 2) { content(Modifier.Empty) }
-            Kind.TiledImage ->
+            Kind.Row -> {
+                Row(spacing = 1) { content(Modifier.Empty) }
+            }
+
+            Kind.FlowRow -> {
+                FlowRow(horizontalSpacing = 1) { content(Modifier.Empty) }
+            }
+
+            Kind.Column -> {
+                Column(spacing = 1) { content(Modifier.Empty) }
+            }
+
+            Kind.Stack -> {
+                Stack { content(Modifier.Empty) }
+            }
+
+            Kind.Grid -> {
+                Grid(columns = 2) { content(Modifier.Empty) }
+            }
+
+            Kind.TiledImage -> {
                 TiledImage(source, state, IntSize(8, 8)) {
                     content(Modifier.Empty.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
                 }
+            }
         }
     }
 

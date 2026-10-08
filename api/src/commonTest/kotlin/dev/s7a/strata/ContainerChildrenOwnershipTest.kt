@@ -108,7 +108,17 @@ internal class ContainerChildrenOwnershipTest {
         assertSame(last, root.children[2])
         assertSame(intermediate, root.children[1].children[0])
         assertEquals(listOf(first), checkNotNull(intermediate).children)
-        assertSame(last, root.children[1].children[1].children.single().children.single().children.single())
+        assertSame(
+            last,
+            root.children[1]
+                .children[1]
+                .children
+                .single()
+                .children
+                .single()
+                .children
+                .single(),
+        )
     }
 
     @Test
@@ -195,7 +205,10 @@ internal class ContainerChildrenOwnershipTest {
         }
     }
 
-    private fun UiScope.container(kind: Kind, content: UiScope.() -> Unit) {
+    private fun UiScope.container(
+        kind: Kind,
+        content: UiScope.() -> Unit,
+    ) {
         when (kind) {
             Kind.Row -> Row { content() }
             Kind.FlowRow -> FlowRow { content() }
@@ -211,8 +224,7 @@ internal class ContainerChildrenOwnershipTest {
             override val bounds: LongRect get() = readBounds()
             override val levels: List<TiledImageLevel> = listOf(TiledImageLevel(IntSize(8, 8), 1L))
 
-            override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> =
-                error("Declaration construction must not request tiles.")
+            override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> = error("Declaration construction must not request tiles.")
         }
 
     private fun fromVararg(vararg children: Element): Element = ExternalElement(children.asList())
@@ -229,7 +241,9 @@ internal class ContainerChildrenOwnershipTest {
     /**
      * Downstream-style declaration using only the public defensive constructor.
      */
-    private class ExternalElement(children: List<Element> = emptyList()) : Element(ElementIdentity.Positional, TYPE, children) {
+    private class ExternalElement(
+        children: List<Element> = emptyList(),
+    ) : Element(ElementIdentity.Positional, TYPE, children) {
         companion object {
             val TYPE: ElementType<ExternalElement, Node> =
                 ElementType(
