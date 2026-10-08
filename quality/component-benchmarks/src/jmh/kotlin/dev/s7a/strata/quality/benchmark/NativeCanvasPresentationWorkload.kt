@@ -45,6 +45,9 @@ internal class NativeCanvasPresentationWorkload(
     private val commands: List<DrawCommand>
     private val publicationCommands: List<DrawCommand>
     private val publicationReceipts: List<NativeCanvasSnapshot>
+    private val publicationDeviceId: Long
+    private val publicationBatchId: Long
+    private val tokenAttachment = NativeCanvasToken::class.java.getDeclaredField("attachmentId").apply { check(trySetAccessible()) }
     private var phase = 0
     private val presentationConstructor =
         MethodHandles.publicLookup().findConstructor(
@@ -59,8 +62,8 @@ internal class NativeCanvasPresentationWorkload(
 
     init {
         val requests =
-            List(canvasCount) {
-                val source = device.source({ Producer(size).also(producers::add) })
+            List(canvasCount) { index ->
+                val source = device.source({ Producer(size, index).also(producers::add) })
                 val tree = UiTree().also(trees::add)
                 tree.update(evaluateComponentTree { Canvas(source, size) })
                 tree.measure(Constraints.fixed(size.width, size.height))
@@ -82,6 +85,8 @@ internal class NativeCanvasPresentationWorkload(
         producers.forEach { it.available = initiallyUnavailable.not() }
         val primed = device.prepare(commands, FrameTime(1L), 1)
         publicationCommands = primed.drawCommands.toList()
+        publicationDeviceId = NativeCanvasPresentation::class.java.getDeclaredField("deviceId").apply { check(trySetAccessible()) }.getLong(primed)
+        publicationBatchId = NativeCanvasPresentation::class.java.getDeclaredField("batchId").apply { check(trySetAccessible()) }.getLong(primed)
         publicationReceipts =
             if (initiallyUnavailable) {
                 emptyList()
@@ -97,8 +102,7 @@ internal class NativeCanvasPresentationWorkload(
     /**
      * Publishes fixed completed membership through the actual constructor, including identical handle dispatch on both sides.
      */
-    fun publish(): NativeCanvasPresentation =
-        presentationConstructor.invoke(1L, 1L, publicationCommands, publicationReceipts, initiallyUnavailable) as NativeCanvasPresentation
+    fun publish(): NativeCanvasPresentation = presentationConstructor.invoke(publicationDeviceId, publicationBatchId, publicationCommands, publicationReceipts, initiallyUnavailable) as NativeCanvasPresentation
 
     /**
      * Prepares one admitted native batch and cancels it before another operation can replace live generations.
@@ -129,7 +133,7 @@ internal class NativeCanvasPresentationWorkload(
         if (initiallyUnavailable) {
             check(runCatching { old.capture() }.exceptionOrNull() is IllegalStateException)
         } else {
-            verifyPixels(old.capture(), if (canvasCount == 0) null else 0xFF336699.toInt())
+            verifyCapture(old, imagePhase = 0)
         }
         val oldCommands = old.drawCommands.toList()
         val oldPixels = if (initiallyUnavailable) null else rasterizeHeadless(old.capture(), size).copyArgb()
@@ -160,11 +164,26 @@ internal class NativeCanvasPresentationWorkload(
             check(runCatching { checkNotNull(next).capture() }.exceptionOrNull() is IllegalStateException)
         } else {
             val current = checkNotNull(next)
-            verifyPixels(current.capture(), if (changed && index % 2 == 0) 0xFF884422.toInt() else 0xFF336699.toInt())
+            verifyCapture(current, imagePhase = if (changed && index % 2 == 0) 1 else 0)
             val oldTokens = publicationCommands.filterIsInstance<DrawCommand.Platform>().map { it.command }
             val newTokens = current.drawCommands.filterIsInstance<DrawCommand.Platform>().map { it.command }
-            check(oldTokens.zip(newTokens).all { (oldToken, newToken) -> (oldToken === newToken) == changed.not() })
+            check(
+                oldTokens.zip(newTokens).all { (oldToken, newToken) ->
+                    tokenAttachment.getLong(oldToken) == tokenAttachment.getLong(newToken) && (oldToken === newToken) == changed.not()
+                },
+            )
         }
+    }
+
+    private fun verifyCapture(
+        presentation: NativeCanvasPresentation,
+        imagePhase: Int,
+    ) {
+        val captured = presentation.capture()
+        val images = captured.filterIsInstance<DrawCommand.BlitImagePixels>()
+        check(images.size == canvasCount)
+        images.forEachIndexed { index, command -> check(command.image === producers[index].images[imagePhase]) }
+        verifyPixels(captured, producers.lastOrNull()?.images?.get(imagePhase)?.argbAt(0, 0))
     }
 
     private fun verifyPixels(
@@ -220,8 +239,9 @@ internal class NativeCanvasPresentationWorkload(
      */
     private class Producer(
         size: IntSize,
+        index: Int,
     ) : NativeCanvasProducer {
-        private val images = listOf(0xFF336699.toInt(), 0xFF884422.toInt()).map { color -> createDrawImage(size, IntArray(size.width * size.height) { color }) }
+        val images = listOf(0xFF336600.toInt() or index, 0xFF884400.toInt() or index).map { color -> createDrawImage(size, IntArray(size.width * size.height) { color }) }
         var phase = 0
         var available = true
         var closed = false
