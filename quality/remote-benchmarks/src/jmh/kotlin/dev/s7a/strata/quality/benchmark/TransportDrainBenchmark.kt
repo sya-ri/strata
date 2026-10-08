@@ -38,27 +38,27 @@ public open class TransportDrainBenchmark {
         @JvmField
         @Param("Idle", "One", "Sparse", "Seven", "Eight", "SixtyThree", "ExactLimit", "LimitPlusOne", "SequenceGap", "BusyProducer")
         public var workload: String = "Idle"
-        private lateinit var fleet: TransportDrainFleet
+        private lateinit var transport: TransportDrainFleet
 
         /**
          * Performs real discovery and negotiation outside measurement.
          */
         @Setup(Level.Trial)
         public fun setup() {
-            fleet = TransportDrainFleet(peers, TransportDrainWorkload.valueOf(workload))
+            transport = TransportDrainFleet(peers, TransportDrainWorkload.valueOf(workload))
         }
 
         /**
          * Runs one cycle without retaining earlier outputs.
          */
-        public fun cycle(): Long = fleet.cycle()
+        public fun cycle(): Long = transport.cycle()
 
         /**
          * Releases service peers, connections and the independent producer.
          */
         @TearDown(Level.Trial)
         public fun close() {
-            fleet.close()
+            transport.close()
         }
     }
 

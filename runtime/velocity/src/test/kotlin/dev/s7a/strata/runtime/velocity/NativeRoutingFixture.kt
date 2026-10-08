@@ -167,50 +167,53 @@ internal class NativeRoutingFixture(
      */
     fun verifyCallback(): Map<String, Long> {
         check(results.size == events.size)
-        val skipped = workload in setOf(NativeRoutingWorkload.WrongChannel, NativeRoutingWorkload.AlreadyHandled, NativeRoutingWorkload.AbsentService)
-        val invalid = workload in setOf(NativeRoutingWorkload.Malformed, NativeRoutingWorkload.UnknownKind, NativeRoutingWorkload.UnknownEndpoint)
-        val discovery = workload == NativeRoutingWorkload.Discovery
-        val unknown = workload == NativeRoutingWorkload.UnknownSender
+        val validSource = skipsRouting().not() && invalidPacket().not() && workload != NativeRoutingWorkload.UnknownSender
+        val expectsTask = validSource && workload == NativeRoutingWorkload.Discovery && direction != NativeRoutingDirection.BackendClient
         events.forEachIndexed { index, event ->
             check(event.result.isAllowed == (workload == NativeRoutingWorkload.WrongChannel))
-            check((results[index] != null) == (skipped.not() && invalid.not() && discovery && unknown.not() && direction != NativeRoutingDirection.BackendClient))
+            check((results[index] != null) == expectsTask)
         }
-        var forwarded = 0L
-        var forwardedBytes = 0L
-        var inboxFrames = 0L
-        var inboxBytes = 0L
-        onOwner {
-            actors.forEachIndexed { index, actor ->
-                val proxy = direction == NativeRoutingDirection.ClientProxy || workload == NativeRoutingWorkload.ProxyImpersonation
-                val client = direction == NativeRoutingDirection.BackendClient
-                val retired = workload in setOf(NativeRoutingWorkload.StaleBackend, NativeRoutingWorkload.AbsentBackend)
-                val accepted = skipped.not() && invalid.not() && discovery.not() && unknown.not()
-                val sendsClient = accepted && client && proxy.not() && retired.not()
-                val sendsBackend = accepted && client.not() && proxy.not() && workload != NativeRoutingWorkload.AbsentBackend
-                val expectedClient = if (sendsClient) packets[index] else emptyList()
-                val expectedBackend = if (sendsBackend) packets[index] else emptyList()
-                verifyOutput(actor.clientWrites, expectedClient)
-                verifyOutput(actor.backendWrites, expectedBackend)
-                check(actor.backendDestinations.size == expectedBackend.size)
-                actor.backendDestinations.forEach { check(it === actor.current.get()) }
-                forwarded += expectedClient.size + expectedBackend.size
-                forwardedBytes += (expectedClient + expectedBackend).sumOf { it.size.toLong() }
-                val inbox = field(peers[index].javaClass, "inbox").get(peers[index]) as RemoteFrameInbox
-                val stored = field(inbox.javaClass, "frames").get(inbox) as Collection<*>
-                val enqueued = accepted && client.not() && proxy
-                check(stored.size == if (enqueued) packets[index].size else 0)
-                check(inbox.failed == (skipped.not() && invalid && unknown.not() && client.not()))
-                stored.zip(packets[index]).forEach { (value, bytes) ->
-                    val snapshot = value as ByteArray
-                    check(snapshot !== bytes)
-                    check(snapshot.contentEquals(bytes))
-                    inboxFrames++
-                    inboxBytes += snapshot.size
-                }
-            }
-        }
-        return mapOf("callback_packets" to events.size.toLong(), "forwarded_packets" to forwarded, "forwarded_bytes" to forwardedBytes, "owner_inbox_packets" to inboxFrames, "owner_inbox_snapshot_bytes" to inboxBytes)
+        val observations = onOwner { actors.mapIndexed(::verifyActor) }
+        val fields = listOf("forwarded_packets", "forwarded_bytes", "owner_inbox_packets", "owner_inbox_snapshot_bytes")
+        return mapOf("callback_packets" to events.size.toLong()) + fields.associateWith { key -> observations.sumOf { it.getValue(key) } }
     }
+
+    private fun verifyActor(index: Int, actor: NativeRoutingPlayer): Map<String, Long> {
+        val proxy = direction == NativeRoutingDirection.ClientProxy || workload == NativeRoutingWorkload.ProxyImpersonation
+        val client = direction == NativeRoutingDirection.BackendClient
+        val retired = workload in setOf(NativeRoutingWorkload.StaleBackend, NativeRoutingWorkload.AbsentBackend)
+        val validSource = skipsRouting().not() && invalidPacket().not() && workload != NativeRoutingWorkload.UnknownSender
+        val accepted = validSource && workload != NativeRoutingWorkload.Discovery
+        val currentClient = client && retired.not()
+        val backendRoute = client.not() && proxy.not() && workload != NativeRoutingWorkload.AbsentBackend
+        val expectedClient = if (accepted && currentClient && proxy.not()) packets[index] else emptyList()
+        val expectedBackend = if (accepted && backendRoute) packets[index] else emptyList()
+        verifyOutput(actor.clientWrites, expectedClient)
+        verifyOutput(actor.backendWrites, expectedBackend)
+        check(actor.backendDestinations.size == expectedBackend.size)
+        actor.backendDestinations.forEach { check(it === actor.current.get()) }
+        val inbox = field(peers[index].javaClass, "inbox").get(peers[index]) as RemoteFrameInbox
+        val stored = field(inbox.javaClass, "frames").get(inbox) as Collection<*>
+        val enqueued = accepted && client.not() && proxy
+        check(stored.size == if (enqueued) packets[index].size else 0)
+        val processedPlayer = client.not() && workload != NativeRoutingWorkload.UnknownSender && skipsRouting().not()
+        check(inbox.failed == (processedPlayer && invalidPacket()))
+        val snapshots = stored.map { it as ByteArray }
+        snapshots.zip(packets[index]).forEach { (snapshot, bytes) ->
+            check(snapshot !== bytes)
+            check(snapshot.contentEquals(bytes))
+        }
+        return mapOf(
+            "forwarded_packets" to (expectedClient.size + expectedBackend.size).toLong(),
+            "forwarded_bytes" to (expectedClient + expectedBackend).sumOf { it.size.toLong() },
+            "owner_inbox_packets" to snapshots.size.toLong(),
+            "owner_inbox_snapshot_bytes" to snapshots.sumOf { it.size.toLong() },
+        )
+    }
+
+    private fun skipsRouting(): Boolean = workload in setOf(NativeRoutingWorkload.WrongChannel, NativeRoutingWorkload.AlreadyHandled, NativeRoutingWorkload.AbsentService)
+
+    private fun invalidPacket(): Boolean = workload in setOf(NativeRoutingWorkload.Malformed, NativeRoutingWorkload.UnknownKind, NativeRoutingWorkload.UnknownEndpoint)
 
     /**
      * Completes owned work after callback assertions, then releases per-invocation events, peers and outputs.

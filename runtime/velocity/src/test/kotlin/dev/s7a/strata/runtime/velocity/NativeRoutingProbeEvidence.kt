@@ -32,7 +32,7 @@ internal object NativeRoutingProbeEvidence {
      * Accepts one fresh report; launches the exact frozen fixture/runtime classpath with the existing JDK opens.
      */
     @JvmStatic
-    @Suppress("LongMethod", "CyclomaticComplexMethod") // Keeps debugger setup, explicit interval transitions and teardown in one untimed transaction.
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth") // Keeps debugger setup, explicit interval transitions and teardown in one untimed transaction.
     fun main(args: Array<String>) {
         require(args.size == 1)
         val destination = Path.of(args[0]).toAbsolutePath().normalize()

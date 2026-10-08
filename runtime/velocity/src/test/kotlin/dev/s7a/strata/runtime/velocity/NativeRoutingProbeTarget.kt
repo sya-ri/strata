@@ -24,35 +24,7 @@ internal object NativeRoutingProbeTarget {
             NativeRoutingWorkload.entries.forEach { workload ->
                 NativeRoutingDirection.entries.forEach { direction ->
                     NativeRoutingPhase.entries.filter { it != NativeRoutingPhase.OwnerProcessing || direction == NativeRoutingDirection.ClientProxy }.forEach { phase ->
-                        NativeRoutingFixture(players, workload, direction).use { fixture ->
-                            fixture.prepare()
-                            val work = fixture.inputCounts().toMutableMap()
-                            if (phase == NativeRoutingPhase.OwnerProcessing) {
-                                fixture.callback()
-                                work.putAll(fixture.verifyCallback())
-                            }
-                            val operation = {
-                                begin(players, workload.name, direction.name, phase.name)
-                                val value = when (phase) {
-                                    NativeRoutingPhase.Callback -> fixture.callback()
-                                    NativeRoutingPhase.PublicDecode -> fixture.decodePublic()
-                                    NativeRoutingPhase.OwnerProcessing -> fixture.processOwner()
-                                }
-                                end(if (phase == NativeRoutingPhase.Callback) fixture.snapshotArrays() else emptyArray())
-                                value
-                            }
-                            val value = if (phase == NativeRoutingPhase.OwnerProcessing) fixture.onOwner(operation) else operation()
-                            if (phase == NativeRoutingPhase.Callback) work.putAll(fixture.verifyCallback())
-                            rows.add(JsonObject().apply {
-                                addProperty("players", players)
-                                addProperty("workload", workload.name)
-                                addProperty("direction", direction.name)
-                                addProperty("phase", phase.name)
-                                addProperty("operation_result", value)
-                                add("work", Gson().toJsonTree(work))
-                            })
-                            fixture.finish()
-                        }
+                        rows.add(collect(players, workload, direction, phase))
                     }
                 }
             }
@@ -64,6 +36,38 @@ internal object NativeRoutingProbeTarget {
             add("rows", rows)
         })
     }
+
+    private fun collect(players: Int, workload: NativeRoutingWorkload, direction: NativeRoutingDirection, phase: NativeRoutingPhase): JsonObject =
+        NativeRoutingFixture(players, workload, direction).use { fixture ->
+            fixture.prepare()
+            val work = fixture.inputCounts().toMutableMap()
+            if (phase == NativeRoutingPhase.OwnerProcessing) {
+                fixture.callback()
+                work.putAll(fixture.verifyCallback())
+            }
+            val operation = {
+                begin(players, workload.name, direction.name, phase.name)
+                val value = when (phase) {
+                    NativeRoutingPhase.Callback -> fixture.callback()
+                    NativeRoutingPhase.PublicDecode -> fixture.decodePublic()
+                    NativeRoutingPhase.OwnerProcessing -> fixture.processOwner()
+                }
+                end(if (phase == NativeRoutingPhase.Callback) fixture.snapshotArrays() else emptyArray())
+                value
+            }
+            val value = if (phase == NativeRoutingPhase.OwnerProcessing) fixture.onOwner(operation) else operation()
+            if (phase == NativeRoutingPhase.Callback) work.putAll(fixture.verifyCallback())
+            val row = JsonObject().apply {
+                addProperty("players", players)
+                addProperty("workload", workload.name)
+                addProperty("direction", direction.name)
+                addProperty("phase", phase.name)
+                addProperty("operation_result", value)
+                add("work", Gson().toJsonTree(work))
+            }
+            fixture.finish()
+            row
+        }
 
     /**
      * Marker arguments identify one actual callback, public decoding or UI-owner interval to the external debugger.

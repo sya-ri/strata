@@ -30,7 +30,7 @@ public object TransportDrainProbeEvidence {
      * Accepts a fresh report, source archive root, peer count and workload on the same frozen measurement classpath.
      */
     @JvmStatic
-    @Suppress("LongMethod", "CyclomaticComplexMethod") // Keeps debugger setup, interval boundaries and teardown in one untimed transaction.
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth") // Keeps debugger setup, interval boundaries and teardown in one untimed transaction.
     public fun main(args: Array<String>) {
         require(args.size == 4)
         val sites =

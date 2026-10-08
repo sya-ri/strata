@@ -54,7 +54,9 @@ public class OutgoingFragmentFixture(
         require(owners in 1..8)
     }
 
-    /** Builds independent current owners and actual negotiated connections before a selected CPU interval. */
+    /**
+     * Builds independent current owners and actual negotiated connections before a selected CPU interval.
+     */
     public fun prepare(selected: OutgoingFragmentPhase) {
         check(active.isEmpty())
         require(selected != OutgoingFragmentPhase.ServerCycle || route == OutgoingFragmentRoute.Production)
@@ -63,7 +65,9 @@ public class OutgoingFragmentFixture(
         if (phase == OutgoingFragmentPhase.Flush) active.forEach { it.owner.run { it.produce() } }
     }
 
-    /** Runs only the selected actual queue/control, flush or complete production interval. */
+    /**
+     * Runs only the selected actual queue/control, flush or complete production interval.
+     */
     public fun transfer(): Int {
         check(active.size == owners)
         active.forEach { holder ->
@@ -81,7 +85,9 @@ public class OutgoingFragmentFixture(
         return active.sumOf { it.output.size }
     }
 
-    /** Checks every complete native/inner byte, sequence and retained callback array, then releases all current state. */
+    /**
+     * Checks every complete native/inner byte, sequence and retained callback array, then releases all current state.
+     */
     public fun verifyAndClose() {
         try {
             active.forEach { holder ->
@@ -147,7 +153,9 @@ public class OutgoingFragmentFixture(
         name: String,
     ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
 
-    /** Current invocation state; no probe arrays or historical outputs survive close. */
+    /**
+     * Current invocation state; no probe arrays or historical outputs survive close.
+     */
     private inner class Owner(
         selected: OutgoingFragmentPhase,
         private val probe: Boolean,

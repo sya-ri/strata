@@ -1,6 +1,8 @@
 package dev.s7a.strata.quality.benchmark
 
-/** Frozen logical sizes and queue controls; boundary sizes include the unchanged message codec bytes. */
+/**
+ * Frozen logical sizes and queue controls; boundary sizes include the unchanged message codec bytes.
+ */
 public enum class OutgoingFragmentWorkload {
     Hello,
     Control,
