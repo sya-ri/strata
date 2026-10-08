@@ -17,6 +17,10 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Only visible rows plus one overscan row on each edge are constructed and retained.
  * [state] supports index and key jumps and exposes its [ScrollState] for a separately placed optional Scrollbar.
  * Data access and row construction are owner-thread operations performed immediately before a dirty measure pass.
+ * Overlapping rows may reuse their declaration when their absolute index, item identity, stable key and list definition are unchanged.
+ * Direct mutable-state reads in [content] require fresh row construction when the window changes; use Observe for independently observed row regions.
+ * Keep row models immutable and call [VirtualListState.refresh] after changing other captured presentation inputs.
+ * Row callbacks describe UI and must not rely on an invocation for every scroll step.
  *
  * @param T immutable row model type.
  * @param K stable row key type.
@@ -79,6 +83,7 @@ public fun <T : Any, K : Any> UiScope.VirtualList(
  * Refresh reconstructs the materialized rows even when the count is unchanged and preserves the last visible stable key and its intra-row offset when that key remains.
  * A refresh requested before attachment is retained until a list attaches.
  * Only visible rows plus one overscan row on each edge are constructed and retained.
+ * Moving-window reuse follows the finite indexed overload's contract; refresh always reconstructs the entire current window.
  *
  * @param T row model type owned by the caller.
  * @param K stable row key type.
@@ -192,6 +197,7 @@ private fun validateVirtualListItemCount(itemCount: Int): Int {
 
 /**
  * Emits a fixed-row virtual viewport backed by an immutable in-memory list.
+ * Row construction and moving-window reuse follow the finite indexed overload's contract.
  *
  * @param T immutable row model type.
  * @param K stable row key type.
