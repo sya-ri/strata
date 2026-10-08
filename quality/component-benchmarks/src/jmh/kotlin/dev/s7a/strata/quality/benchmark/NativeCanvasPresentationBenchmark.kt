@@ -28,7 +28,7 @@ public open class NativeCanvasPresentationBenchmark {
 
     /**
      * Prepares and cancels a real batch, including mapping, validation, captures and nonblocking lifetime cleanup.
-     * Canvas-free inputs retain Fabric's request-admission bypass and return the original commands directly.
+     * Canvas-free controls mirror Fabric's admission bypass; they return the original commands without executing the versioned presenter.
      */
     @Benchmark
     public fun prepareBatch(state: Scene): List<DrawCommand> = state.prepare()
