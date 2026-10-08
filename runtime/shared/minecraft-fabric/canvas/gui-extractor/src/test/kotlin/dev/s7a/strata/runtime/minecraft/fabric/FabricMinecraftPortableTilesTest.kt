@@ -15,12 +15,75 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * Verifies exact disjoint fallback pixels, per-command accounting and bounded changed-region reuse.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftPortableTilesTest {
+    @Test
+    fun largeRunsReadEachOccurrenceOnceAndPreservePerTileClipSelection() {
+        val bounds = IntRect(-1024, -1024, 1024, 1024)
+        val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0x80ABCDEF.toInt(), 0x40123456, 0))
+        val commands =
+            buildList {
+                add(DrawCommand.FillRectangle(bounds, ArgbColor(0x80456789.toInt())))
+                add(DrawCommand.PushClip(IntRect(-900, -950, 900, 950)))
+                add(DrawCommand.PushFractionalClip(FloatRect(-768.25f, -768.625f, 768.125f, 768.875f)))
+                for (top in -1024 until 1024 step 256) {
+                    for (left in -1024 until 1024 step 256) {
+                        add(DrawCommand.PushClip(IntRect(left, top, left + 257, top + 257)))
+                        add(DrawCommand.FillRectangle(IntRect(left + 255, top + 255, left + 257, top + 257), ArgbColor(-1)))
+                        add(DrawCommand.SampledImage(image, FloatRect(0.125f, 0.25f, 1.875f, 1.75f), FloatRect(left + 255.25f, top + 255.75f, left + 257.125f, top + 258.625f), orientation = SampledImageOrientation.FlipHorizontal))
+                        add(DrawCommand.BlitImage(image, IntRect(0, 0, 2, 2), IntRect(left, top, left + 2, top + 2)))
+                        add(DrawCommand.BlitImagePixels(image, IntRect(0, 0, 2, 2), IntRect(left + 2, top + 2, left + 4, top + 4)))
+                        add(DrawCommand.PopClip)
+                    }
+                }
+                add(DrawCommand.PushClip(IntRect(256, 256, 256, 257)))
+                add(DrawCommand.FillRectangle(bounds, ArgbColor(-1)))
+                add(DrawCommand.PopClip)
+                add(DrawCommand.PushFractionalClip(FloatRect(2048.25f, 2048.25f, 2048.75f, 2048.75f)))
+                add(DrawCommand.FillRectangle(bounds, ArgbColor(-1)))
+                add(DrawCommand.PopClip)
+                add(DrawCommand.PopClip)
+                add(DrawCommand.PopClip)
+                add(DrawCommand.FillRectangle(IntRect(-1025, -1025, -1024, -1024), ArgbColor(-1)))
+                add(DrawCommand.FillRectangle(IntRect(1024, 1024, 1025, 1025), ArgbColor(-1)))
+                add(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(-768.5f, -768.5f, -767.5f, -767.5f)))
+            }
+        for (scale in 1..4) {
+            var reads = 0
+            val observed =
+                object : AbstractList<DrawCommand>() {
+                    override val size: Int get() = commands.size
+
+                    override fun get(index: Int): DrawCommand {
+                        reads++
+                        return commands[index]
+                    }
+                }
+            val actual = tileFabricMinecraftPortable(observed, bounds, scale, 7, 3, 2, 1)
+            assertEquals(commands.size, reads)
+            assertTrue(1 < actual.size && actual.size <= 64)
+            if (scale == 1) assertEquals(64, actual.size)
+            assertEquals(bounds.width.toLong() * bounds.height, actual.sumOf { it.bounds.width.toLong() * it.bounds.height })
+            assertEquals(7, actual.sumOf { it.ineligibleSampledImages })
+            assertEquals(3, actual.sumOf { it.capacitySampledImages })
+            assertEquals(2, actual.sumOf { it.tintFallbackImages })
+            assertEquals(1, actual.sumOf { it.alphaCutoffFallbackImages })
+            for (tile in actual) assertEquals(referenceTileCommands(commands, tile.bounds), tile.commands, "GUI$scale ${tile.bounds}")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            tileFabricMinecraftPortable(listOf(DrawCommand.PopClip), bounds, 1)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            tileFabricMinecraftPortable(listOf(DrawCommand.PushClip(bounds)), bounds, 1)
+        }
+    }
+
     @Test
     fun disjointTilesShareBoundariesOnlyWithinTheirOriginalRun() {
         val bounds = IntRect(0, 0, 600, 450)
@@ -144,6 +207,76 @@ internal class FabricMinecraftPortableTilesTest {
         viewport: IntSize,
         scale: Int,
     ): FabricMinecraftFrameInputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale), scale)
+
+    // Preserve the independent per-tile interpreter as the command-order oracle for the one-pass distributor.
+    private fun referenceTileCommands(
+        commands: List<DrawCommand>,
+        tile: IntRect,
+    ): List<DrawCommand> {
+        val selected = ArrayList<DrawCommand>()
+        val clips = ArrayList<DrawCommand>()
+        val coverage = arrayListOf(tile)
+        var emittedDepth = 0
+        for (command in commands) {
+            when (command) {
+                is DrawCommand.PushClip -> {
+                    clips.add(command)
+                    coverage.add(referenceIntersection(coverage.last(), command.bounds))
+                }
+
+                is DrawCommand.PushFractionalClip -> {
+                    clips.add(command)
+                    coverage.add(referenceEnclosure(command.bounds, coverage.last()))
+                }
+
+                DrawCommand.PopClip -> {
+                    if (emittedDepth == clips.size) {
+                        selected.add(command)
+                        emittedDepth--
+                    }
+                    clips.removeAt(clips.lastIndex)
+                    coverage.removeAt(coverage.lastIndex)
+                }
+
+                else -> {
+                    val clip = coverage.last()
+                    val visible =
+                        when (command) {
+                            is DrawCommand.FillRectangle -> referenceIntersection(command.bounds, clip)
+                            is DrawCommand.BlitImage -> referenceIntersection(command.destination, clip)
+                            is DrawCommand.BlitImagePixels -> referenceIntersection(command.destination, clip)
+                            is DrawCommand.SampledImage -> referenceEnclosure(command.destination, clip)
+                            else -> error("Unexpected nonportable command.")
+                        }
+                    if (0 < visible.width && 0 < visible.height) {
+                        while (emittedDepth < clips.size) selected.add(clips[emittedDepth++])
+                        selected.add(command)
+                    }
+                }
+            }
+        }
+        return selected
+    }
+
+    private fun referenceIntersection(
+        first: IntRect,
+        second: IntRect,
+    ): IntRect {
+        val left = maxOf(first.left, second.left)
+        val top = maxOf(first.top, second.top)
+        return IntRect(left, top, maxOf(left, minOf(first.right, second.right)), maxOf(top, minOf(first.bottom, second.bottom)))
+    }
+
+    private fun referenceEnclosure(
+        bounds: FloatRect,
+        clip: IntRect,
+    ): IntRect {
+        val left = floor(bounds.left.toDouble().coerceIn(clip.left.toDouble(), clip.right.toDouble())).toInt()
+        val top = floor(bounds.top.toDouble().coerceIn(clip.top.toDouble(), clip.bottom.toDouble())).toInt()
+        val right = ceil(bounds.right.toDouble().coerceIn(left.toDouble(), clip.right.toDouble())).toInt()
+        val bottom = ceil(bounds.bottom.toDouble().coerceIn(top.toDouble(), clip.bottom.toDouble())).toInt()
+        return IntRect(left, top, right, bottom)
+    }
 
     private fun assemble(
         inputs: FabricMinecraftFrameInputs,

@@ -60,6 +60,43 @@ val historicalGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeG
 val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir })
 val historicalLauncher = tasks.named<JMHTask>("jmh").flatMap { it.javaLauncher }
 
+tasks.register<JavaExec>("jmhPortableTiles") {
+    group = "verification"
+    description = "Measures independent portable partitioning from an explicit Fabric runtime archive with shared-kit provenance."
+    dependsOn(historicalGenerated, historicalGenerator)
+    classpath = historicalClasspath
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(libs.versions.java.minecraft.get().toInt())) })
+    mainClass.set("dev.s7a.strata.quality.benchmark.PortableTilePerformanceEvidence")
+    val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
+    require(0 <= repetition)
+    val controls = providers.gradleProperty("strata.performance.portableTileControls").map(String::toBooleanStrict).getOrElse(false)
+    systemProperty("strata.performance.portableTileControls", controls)
+    val suite = if (controls) "portable-tile-controls" else "portable-tiles"
+    val output = providers.gradleProperty("strata.performance.portableTileOutput")
+        .map { rootProject.file(it).resolve("run-$repetition") }
+        .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    val benchmark = if (controls) "PortableTileControlBenchmark.partition" else "PortableTileBenchmark.partition"
+    args(output.get().absolutePath, repetition.toString(), benchmark, "-bm", "avgt", "-wi", "3", "-w", "1s", "-i", "5", "-r", "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    doFirst {
+        val runtime = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.portableTileRuntime").orNull) { "Supply strata.performance.portableTileRuntime with the actual Fabric runtime JAR." }).canonicalFile
+        require(runtime.isFile && runtime.extension == "jar") { "Portable tile collection requires an actual runtime JAR." }
+        classpath += files(runtime)
+        val entries = Properties()
+        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
+            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
+            if (module != null) {
+                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
+                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
+            }
+        }
+        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
+        val manifest = layout.buildDirectory.file("performance/portable-tile-inputs.properties").get().asFile
+        manifest.parentFile.mkdirs()
+        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
+        systemProperty("strata.performance.inputs", manifest.absolutePath)
+    }
+}
+
 val verifyHistoricalWorkloads by tasks.registering(JavaExec::class) {
     group = "verification"
     description = "Checks the complete generated historical JMH matrix with the shared inventory gate."
