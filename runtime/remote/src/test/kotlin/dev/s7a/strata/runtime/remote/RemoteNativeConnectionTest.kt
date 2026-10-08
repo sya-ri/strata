@@ -114,7 +114,7 @@ internal class RemoteNativeConnectionTest {
     fun semanticByteAndEntryAdmissionMatchesLegacyAndFailuresReleaseAllNativeReferences() {
         listOf(
             RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 256, collectionEntries = 8, treeNodes = 1),
-            RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 1024, collectionEntries = 1, treeNodes = 1),
+            RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 1024, collectionEntries = 2, treeNodes = 1),
         ).forEach { limits ->
             val old = mutableListOf<ByteArray>()
             val next = mutableListOf<ByteArray>()
