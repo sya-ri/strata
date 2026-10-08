@@ -142,10 +142,16 @@ internal class WebDomPerformanceFixture private constructor(
     ) {
         val modifier = if (mode == Mode.Bounds && changed) Modifier.Empty.size(120, 24) else Modifier.Empty.size(100, 20)
         val key = ElementKey(identity)
+        val changedLabel =
+            when (mode) {
+                Mode.Full -> changed
+                Mode.Localized -> changed && identity == 0
+                else -> false
+            }
         when (mode) {
             Mode.Button -> Button("Item $identity", enabled = (identity == 0 && changed).not(), modifier = modifier, key = key)
             Mode.Progress -> ProgressBar(if (identity == 0 && changed) 0.75 else 0.25, IntSize(100, 20), modifier = modifier, key = key)
-            else -> Text(if (changed && (mode == Mode.Full || (mode == Mode.Localized && identity == 0))) "Changed $identity" else "Item $identity", modifier = modifier, key = key)
+            else -> Text(if (changedLabel) "Changed $identity" else "Item $identity", modifier = modifier, key = key)
         }
     }
 
