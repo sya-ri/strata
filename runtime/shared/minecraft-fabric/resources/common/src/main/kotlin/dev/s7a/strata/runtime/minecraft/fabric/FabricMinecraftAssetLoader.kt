@@ -55,7 +55,6 @@ internal fun createPlayerSkinSnapshot(image: NativeImage): DrawImage {
 
 private val playerSkinSize = IntSize(64, 64)
 
-
 private val currentImageDecode = FabricMinecraftImageDecodeCache(::decodeFabricMinecraftUiImage)
 
 private fun decodeFabricMinecraftUiImage(stream: InputStream): FabricMinecraftImageDecodeCache.Decoded =

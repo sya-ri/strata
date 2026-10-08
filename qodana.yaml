@@ -20,6 +20,8 @@ profile:
     # These compatibility files are linked or selected by every version owner in which they exist, so one IDEA index cannot retain each owner-specific call graph.
     - inspection: UnusedSymbol
       ignore:
+        # AssetLoader and ProfileLifecycle call every operation of this cache in the linked version owners.
+        - "runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftImageDecodeCache.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/font/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftFontCapabilities.kt"
         - "runtime/minecraft-fabric-[0-9]*/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"
         - "runtime/shared/minecraft-fabric/rendering/render-pipeline/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftDynamicTextureFactory.kt"

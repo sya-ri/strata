@@ -167,7 +167,7 @@ internal class FabricMinecraftImageDecodeCache(
         val terminal: Boolean = false,
     )
 
-    private data class Prepared(
+    private class Prepared(
         val decoded: Decoded,
         val encoded: ByteArray?,
     )
@@ -179,7 +179,7 @@ internal class FabricMinecraftImageDecodeCache(
     }
 
     private companion object {
-        const val maxEncodedBytes = 8 * 1024 * 1024
-        const val maxRetainedBytes = 16L * 1024 * 1024
+        val maxEncodedBytes = 8 * 1024 * 1024
+        val maxRetainedBytes = 16L * 1024 * 1024
     }
 }
