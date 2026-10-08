@@ -195,16 +195,18 @@ internal class FocusedInputPipeline {
     ): InputResult {
         val owners = logicalOwners(root)
         val currentIndex = owners.indexOfFirst { owner -> owner === focusedOwner }
-        val traversal =
-            when {
-                currentIndex < 0 && reverse -> owners.asReversed()
-                currentIndex < 0 -> owners
-                reverse -> owners.subList(0, currentIndex).asReversed() + owners.subList(currentIndex, owners.size).asReversed()
-                else -> owners.subList(currentIndex + 1, owners.size) + owners.subList(0, currentIndex + 1)
+        var index = if (reverse) currentIndex - 1 else currentIndex + 1
+        repeat(owners.size) {
+            if (index < 0) index = owners.lastIndex
+            if (owners.size <= index) index = 0
+            val owner = owners[index]
+            if (isTraversalCandidate(root, owner)) {
+                setFocusedOwner(owner)
+                return InputResult.Consumed
             }
-        val next = traversal.firstOrNull { owner -> isTraversalCandidate(root, owner) } ?: return InputResult.Ignored
-        setFocusedOwner(next)
-        return InputResult.Consumed
+            index += if (reverse) -1 else 1
+        }
+        return InputResult.Ignored
     }
 
     private fun isTraversalCandidate(
@@ -285,7 +287,12 @@ internal class FocusedInputPipeline {
         return null
     }
 
-    private fun focusedNodes(owner: RetainedNode): List<Node> = focusedEntries(owner).map(RetainedEntry::node)
+    private fun focusedNodes(owner: RetainedNode): List<Node> =
+        ArrayList<Node>(owner.modifiers.size + 1).apply {
+            // Freeze node identities before any callback; only the redundant retained-entry snapshot is removed.
+            for (index in owner.modifiers.lastIndex downTo 0) add(owner.modifiers[index].node)
+            add(owner.node)
+        }
 
     private fun focusedEntries(owner: RetainedNode): List<RetainedEntry> =
         buildList {
