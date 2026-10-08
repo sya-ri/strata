@@ -11,6 +11,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 
 /**
@@ -19,6 +20,7 @@ import dev.s7a.strata.ui.UiDefinition
  * Original fractional sample operands and reversed axes are emitted through the public PaintScope without metadata substitution.
  * The collector drops this fixture after closing its screen; no native handle or previous runtime input is stored here.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class MinecraftCompositionMetadataScene(
     private val case: MinecraftCompositionMetadataCorpus.Case,
     private val viewport: IntSize,
