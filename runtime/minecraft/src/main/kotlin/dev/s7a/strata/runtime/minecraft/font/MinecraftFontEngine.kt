@@ -547,6 +547,7 @@ public class MinecraftFontEngine
             key: RasterKey,
             value: RasterValue,
         ) {
+            if (closed) return
             val size = value.bytes()
             if (cacheEntries == 0 || cacheBytes < size) return
             rasters.remove(key)?.let { previous ->
@@ -569,6 +570,7 @@ public class MinecraftFontEngine
             misses: List<RasterKey>,
             epoch: Any,
         ) {
+            if (closed) return
             val units = 1 + misses.size
             if (resolutionLimit < units || epoch !== rasterEpoch) return
             // A backend may admit this same key while reentering the outer glyph walk.
