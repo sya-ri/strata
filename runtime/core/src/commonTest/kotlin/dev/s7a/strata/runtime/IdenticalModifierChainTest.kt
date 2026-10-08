@@ -108,13 +108,18 @@ internal class IdenticalModifierChainTest {
         val validator = DescriptionValidator()
         val first = TestProbe.ProbeId("first")
         val second = TestProbe.ProbeId("second")
-        fun description(reverse: Boolean, parentModifiers: Modifier) =
+
+        fun description(
+            reverse: Boolean,
+            parentModifiers: Modifier,
+        ) =
             components.root(
                 (if (reverse) listOf(second, first) else listOf(first, second)).map { id ->
                     components.element(id, key = id, modifier = modifiers)
                 },
                 parentModifiers,
             )
+
         var root = reconciler.reconcileRoot(null, description(false, Modifier.Empty))
         reconciler.markInstalled(root)
         lifecycle.attachPending(root)
