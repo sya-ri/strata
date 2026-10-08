@@ -66,21 +66,23 @@ internal class NativeCanvasLookupWorkload(
         )
 
     init {
-        val requests = List(targets) { index ->
-            val source = device.source({ Producer(index).also(producers::add) })
-            val tree = UiTree().also(trees::add)
-            tree.update(evaluateComponentTree { Canvas(source, size) })
-            tree.measure(Constraints.fixed(size.width, size.height))
-            tree.layout()
-            tree.paint().single() as DrawCommand.Platform
-        }
-        commands = buildList {
-            add(DrawCommand.PushClip(IntRect(0, 0, 16, 2)))
-            repeat(portable) { add(DrawCommand.FillRectangle(IntRect(0, 0, 16, 2), ArgbColor(0xFF102030.toInt()))) }
-            repeat(occurrences) { index -> add(requests[index % targets].copy(bounds = IntRect(index % 8, 0, index % 8 + 2, 2))) }
-            add(DrawCommand.PopClip)
-            add(DrawCommand.FillRectangle(IntRect(0, 1, 1, 2), ArgbColor(0xFF00FF00.toInt())))
-        }
+        val requests =
+            List(targets) { index ->
+                val source = device.source({ Producer(index).also(producers::add) })
+                val tree = UiTree().also(trees::add)
+                tree.update(evaluateComponentTree { Canvas(source, size) })
+                tree.measure(Constraints.fixed(size.width, size.height))
+                tree.layout()
+                tree.paint().single() as DrawCommand.Platform
+            }
+        commands =
+            buildList {
+                add(DrawCommand.PushClip(IntRect(0, 0, 16, 2)))
+                repeat(portable) { add(DrawCommand.FillRectangle(IntRect(0, 0, 16, 2), ArgbColor(0xFF102030.toInt()))) }
+                repeat(occurrences) { index -> add(requests[index % targets].copy(bounds = IntRect(index % 8, 0, index % 8 + 2, 2))) }
+                add(DrawCommand.PopClip)
+                add(DrawCommand.FillRectangle(IntRect(0, 1, 1, 2), ArgbColor(0xFF00FF00.toInt())))
+            }
         initial = device.prepare(commands, FrameTime(1L), 1)
         tokens = initial.drawCommands.filterIsInstance<DrawCommand.Platform>().map { it.command as NativeCanvasToken }
         captured = initial.capture()
@@ -189,7 +191,10 @@ internal class NativeCanvasLookupWorkload(
         val created = ArrayList<NativeCanvasTarget>()
         var liveTargets = 0
 
-        override fun createTarget(physicalSize: IntSize, depth: Boolean): NativeCanvasTarget {
+        override fun createTarget(
+            physicalSize: IntSize,
+            depth: Boolean,
+        ): NativeCanvasTarget {
             check(depth.not())
             liveTargets += 1
             return object : NativeCanvasTarget {
@@ -222,7 +227,11 @@ internal class NativeCanvasLookupWorkload(
             if (available.not()) return null
             val image = images[phase]
             return object : NativeCanvasCapture {
-                override fun render(target: NativeCanvasTarget, logicalSize: IntSize, frameTime: FrameTime): DrawImage {
+                override fun render(
+                    target: NativeCanvasTarget,
+                    logicalSize: IntSize,
+                    frameTime: FrameTime,
+                ): DrawImage {
                     check(target.size == image.size && logicalSize == image.size)
                     return image
                 }

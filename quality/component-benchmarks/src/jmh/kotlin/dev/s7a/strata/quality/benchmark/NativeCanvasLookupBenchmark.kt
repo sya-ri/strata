@@ -18,11 +18,17 @@ import org.openjdk.jmh.infra.Blackhole
 public open class NativeCanvasLookupBenchmark {
     /** Borrows every queued target through the actual device's owner/thread/batch checks. */
     @Benchmark
-    public fun target(state: Scene, sink: Blackhole): Unit = state.fixture.resolveTargets(sink)
+    public fun target(
+        state: Scene,
+        sink: Blackhole,
+    ): Unit = state.fixture.resolveTargets(sink)
 
     /** Includes preparation/index construction, queueing, all target borrows, consumption and nonblocking cleanup. */
     @Benchmark
-    public fun protocol(state: Scene, sink: Blackhole): Unit = state.fixture.protocol(sink)
+    public fun protocol(
+        state: Scene,
+        sink: Blackhole,
+    ): Unit = state.fixture.protocol(sink)
 
     /** Captures a detached presentation repeatedly without invoking any live native owner. */
     @Benchmark
@@ -41,7 +47,10 @@ public open class NativeCanvasLookupBenchmark {
     public fun captureAndRasterize(state: Scene): HeadlessImage = state.fixture.captureAndRasterize()
 
     /** Exact current target membership and repeated command occurrences, independent of surrounding portable commands. */
-    public enum class Placement(public val targets: Int, public val occurrences: Int) {
+    public enum class Placement(
+        public val targets: Int,
+        public val occurrences: Int,
+    ) {
         None(0, 0),
         One(1, 1),
         OneRepeated64(1, 64),

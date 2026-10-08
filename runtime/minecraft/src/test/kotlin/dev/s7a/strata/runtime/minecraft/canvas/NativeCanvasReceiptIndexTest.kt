@@ -93,19 +93,20 @@ internal class NativeCanvasReceiptIndexTest {
         val push = DrawCommand.PushClip(IntRect(0, 0, 1, 1))
         val commands = listOf(push, DrawCommand.Platform(first, IntRect(0, 0, 1, 1)), DrawCommand.PopClip)
         val presentation = NativeCanvasPresentation(1L, 1L, commands, listOf(NativeCanvasSnapshot(second, other), NativeCanvasSnapshot(first, image)))
-        val tasks = List(8) {
-            FutureTask {
-                var result = emptyList<DrawCommand>()
-                repeat(64) {
-                    result = presentation.capture()
-                    assertSame(push, result.first())
-                    assertSame(DrawCommand.PopClip, result.last())
-                    assertSame(image, (result[1] as DrawCommand.BlitImagePixels).image)
-                    assertArrayEquals(pixels, rasterizeHeadless(result, IntSize(1, 1), 2).copyArgb())
-                }
-                result
-            }.also { Thread(it).start() }
-        }
+        val tasks =
+            List(8) {
+                FutureTask {
+                    var result = emptyList<DrawCommand>()
+                    repeat(64) {
+                        result = presentation.capture()
+                        assertSame(push, result.first())
+                        assertSame(DrawCommand.PopClip, result.last())
+                        assertSame(image, (result[1] as DrawCommand.BlitImagePixels).image)
+                        assertArrayEquals(pixels, rasterizeHeadless(result, IntSize(1, 1), 2).copyArgb())
+                    }
+                    result
+                }.also { Thread(it).start() }
+            }
         tasks.forEach { assertEquals(3, it.get(30L, TimeUnit.SECONDS).size) }
         assertEquals(commands, presentation.drawCommands)
     }
