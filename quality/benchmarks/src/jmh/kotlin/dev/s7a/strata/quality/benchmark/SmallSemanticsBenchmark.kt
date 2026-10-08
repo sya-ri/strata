@@ -147,16 +147,18 @@ public open class SmallSemanticsBenchmark {
         @Setup(Level.Trial)
         public fun setUp() {
             arrangement = mutableStateOf(Arrangement.Normal)
-            specifications = List(workload.count) { index ->
-                val cardinality = workload.cardinality ?: Cardinality.entries[index % Cardinality.entries.size]
-                Specification(index, cardinality, values(index, cardinality.emissions, false), values(index, cardinality.emissions, true))
-            }
+            specifications =
+                List(workload.count) { index ->
+                    val cardinality = workload.cardinality ?: Cardinality.entries[index % Cardinality.entries.size]
+                    Specification(index, cardinality, values(index, cardinality.emissions, false), values(index, cardinality.emissions, true))
+                }
             rootDeclarations = Arrangement.entries.associateWith { order -> declaration(ordered(order)) }
             if (workload.mode != Mode.Initial) {
-                session = newSession().also {
-                    it.attach()
-                    it.frame(normalConstraints)
-                }
+                session =
+                    newSession().also {
+                        it.attach()
+                        it.frame(normalConstraints)
+                    }
             }
         }
 
@@ -167,17 +169,35 @@ public open class SmallSemanticsBenchmark {
             if (workload.mode == Mode.Initial) return initialFrame()
             alternate = alternate.not()
             when (workload.mode) {
-                Mode.Refresh -> nodes.forEach { it.invalidatePhase(DirtyPhase.Semantics) }
-                Mode.Paint -> nodes.first().invalidatePhase(DirtyPhase.Paint)
+                Mode.Refresh -> {
+                    nodes.forEach { it.invalidatePhase(DirtyPhase.Semantics) }
+                }
+
+                Mode.Paint -> {
+                    nodes.first().invalidatePhase(DirtyPhase.Paint)
+                }
+
                 Mode.Local -> {
                     val node = nodes.first { it.specification.cardinality == Cardinality.One }
                     node.values = if (alternate) node.specification.changed else node.specification.original
                     node.invalidatePhase(DirtyPhase.Semantics)
                 }
-                Mode.Geometry -> currentConstraints = if (alternate) wideConstraints else normalConstraints
-                Mode.Reorder -> arrangement.value = if (alternate) Arrangement.Reverse else Arrangement.Normal
-                Mode.Remove -> arrangement.value = if (alternate) Arrangement.Trimmed else Arrangement.Normal
-                Mode.Initial, Mode.Clean -> Unit
+
+                Mode.Geometry -> {
+                    currentConstraints = if (alternate) wideConstraints else normalConstraints
+                }
+
+                Mode.Reorder -> {
+                    arrangement.value = if (alternate) Arrangement.Reverse else Arrangement.Normal
+                }
+
+                Mode.Remove -> {
+                    arrangement.value = if (alternate) Arrangement.Trimmed else Arrangement.Normal
+                }
+
+                Mode.Initial, Mode.Clean -> {
+                    Unit
+                }
             }
             return checkNotNull(session).frame(currentConstraints)
         }
@@ -223,13 +243,14 @@ public open class SmallSemanticsBenchmark {
         }
 
         private fun verifyFrame(frame: RuntimeUiFrame) {
-            val expected = ordered(arrangement.value).flatMap { specification ->
-                if (workload.mode == Mode.Local && alternate && specification.cardinality == Cardinality.One && specification.id == firstSingleton()) {
-                    specification.changed
-                } else {
-                    specification.original
+            val expected =
+                ordered(arrangement.value).flatMap { specification ->
+                    if (workload.mode == Mode.Local && alternate && specification.cardinality == Cardinality.One && specification.id == firstSingleton()) {
+                        specification.changed
+                    } else {
+                        specification.original
+                    }
                 }
-            }
             check(frame.semantics.map { it.semantics } == expected)
             val width = if (currentConstraints === wideConstraints) 17 else 16
             check(frame.size == IntSize(width, 16))
