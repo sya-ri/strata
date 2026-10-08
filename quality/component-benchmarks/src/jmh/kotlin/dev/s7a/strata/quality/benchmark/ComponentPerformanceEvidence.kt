@@ -60,7 +60,7 @@ public object ComponentPerformanceEvidence {
         require(System.getProperty("strata.performance.smoke", "false").toBooleanStrict().not()) { "Smoke and explicit fixture selection are separate scopes" }
         val registered = JmhFixtureSelection.select(listOf(ComponentRenderingBenchmark::class.java))
         val methods = JmhFixtureSelection.methods(registered)
-        val fixtures = registered.filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name } }
+        val fixtures = registered.filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
         val includes = methods.map { "^${Regex.escape(it)}$" }
         val parameters = JmhFixtureSelection.parameters()
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
