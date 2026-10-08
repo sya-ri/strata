@@ -44,7 +44,7 @@ import java.util.function.IntUnaryOperator
 /**
  * One actual retained editor with fixed synthetic resources, current-layout oracles and bounded face ownership.
  * The constructor establishes an arbitrary canonical column through the caller state before first layout.
- * Navigation preparation uses the opposite public key; composition preparation uses public Home and preedit.
+ * Navigation cycles restore through the opposite public key; composition cycles restore through public Home and preedit.
  * No reflection, font creation, frame production or oracle scan occurs in [input].
  */
 // Why: this single current editor owns preparation, independent input/control oracles and terminal release together.
@@ -70,7 +70,7 @@ internal class TextAreaInputFixture(
     private val opposite = KeyboardEvent.Press(opposite(operation), 0)
     private val home = KeyboardEvent.Press(KeyCode.Home, 0, KeyboardModifiers(control = true))
     private val composition = TextInputEvent.Preedit("🙂B", 2, listOf("🙂", "B"), 0)
-    private var press: PointerEvent.Press
+    private val press: PointerEvent.Press
     private val committedControl: RuntimeUiFrame
 
     init {
@@ -87,7 +87,7 @@ internal class TextAreaInputFixture(
     }
 
     /**
-     * Restores the fixed input opportunity and settles geometry outside the measured session call.
+     * Restores the fixed public input opportunity and settles geometry; measured cycles include this work.
      */
     internal fun prepareInput() {
         if (composed) {
@@ -98,7 +98,15 @@ internal class TextAreaInputFixture(
             host.dispatchKeyboard(opposite)
         }
         frame()
-        if (composed) press = pointer()
+    }
+
+    /**
+     * Measures the complete public opportunity cycle, including preparation allocation and preedit layout replacement.
+     * No per-invocation timestamp, reflective access or independent oracle participates in this operation.
+     */
+    internal fun inputCycle(): InputResult {
+        prepareInput()
+        return input()
     }
 
     /**

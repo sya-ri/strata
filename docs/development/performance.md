@@ -675,7 +675,8 @@ Composition mapping still uses the composed layout before cancellation and prese
 Independent runtime tests compare the search with complete ordered scans, actual release-selected rounded Float prefixes and exact headless cursor/glyph images.
 Existing editor navigation, viewport, composition and replacement tests remain required controls for preferred columns, hard breaks, soft wraps, pan, scroll and ownership.
 
-The separate `TextAreaInputBenchmark` corpus keeps real input dispatch apart from isolated lookup, complete initial host/layout ownership and clean frames.
+The separate `TextAreaInputBenchmark` corpus keeps actual public input cycles apart from isolated lookup, complete initial host/layout ownership and clean frames.
+The cycle includes its public opportunity restoration and frame settlement in both CPU and allocation; composed cycles include layout replacement and do not claim isolated event latency.
 Its bounded coordinate-read diagnostic executes the same inlined search outside measurement; ordinary input carries no counter or callback.
 At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B.
 The constructor's admission scan remains part of the separately measured initial-layout cost.

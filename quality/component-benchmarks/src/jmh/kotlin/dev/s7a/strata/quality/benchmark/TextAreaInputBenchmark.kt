@@ -14,13 +14,13 @@ import org.openjdk.jmh.annotations.TearDown
 import java.util.function.IntUnaryOperator
 
 /**
- * Measures actual retained TextArea input, complete initial-layout ownership, clean frames and isolated logical lookup separately.
+ * Measures actual retained TextArea input cycles, complete initial-layout ownership, clean frames and isolated logical lookup separately.
  * Immutable synthetic glyph metrics and resources are prepared outside timing; the shared kit owns forks and allocation collection.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public open class TextAreaInputBenchmark {
     /**
-     * Delivers one prebuilt primary press or navigation key through a clean committed session.
+     * Includes public opportunity restoration and one prebuilt target input, so CPU and allocation share the same cycle boundary.
      */
     @Benchmark
     public fun input(scene: InputScene): InputResult = scene.input()
@@ -117,7 +117,7 @@ public open class TextAreaInputBenchmark {
     }
 
     /**
-     * Actual public input owner; every invocation starts with settled geometry and unchanged cached line data.
+     * Actual public input owner; each measured cycle restores its opportunity through public input and frame settlement.
      */
     @State(Scope.Thread)
     public open class InputScene {
@@ -140,15 +140,9 @@ public open class TextAreaInputBenchmark {
         }
 
         /**
-         * Restores navigation's source line or composition through public input, then settles a frame outside timing.
+         * Includes fixed preparation and target dispatch without per-invocation setup timestamps or hidden profiler allocation.
          */
-        @Setup(Level.Invocation)
-        public fun prepare(): Unit = fixture.prepareInput()
-
-        /**
-         * Delivers only the declared input boundary.
-         */
-        public fun input(): InputResult = fixture.input()
+        public fun input(): InputResult = fixture.inputCycle()
 
         /**
          * Closes the host and requires zero face/backend ownership and a released state observer.
