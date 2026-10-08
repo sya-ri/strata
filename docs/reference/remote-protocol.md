@@ -111,7 +111,13 @@ Preparation prunes omitted entries; supplied release callbacks run on retirement
 Creation and update callbacks cannot reenter preparation, retirement cannot admit entries, and edit polling cannot start another preparation phase.
 Closing from any callback is irreversible; a fresh factory result returned after close is released without admission.
 The client session also retains decoded factory captures for the current tree only.
-Their keys are retained component/modifier identity, exact schema, and immutable wire properties; changed properties or retired identities replace them, and terminal close clears the tree.
+Their keys include the same frozen registry, retained component/modifier identity, exact schema and immutable wire properties; changed properties or retired identities replace them, and terminal close clears the tree.
+Current decoded component wrappers and their ordered modifier factory lists are shared only when those complete keys and modifier order match.
+Changed modifier chains use an invocation-owned identity index, preserving order and decoding replaced identities or properties without searching the previous chain for every modifier.
+These entries contain trusted factory captures and detached properties, never an Element, retained Node, state-store value or authoritative server model.
+Every preparation cutoff still visits all declarations in each ordered phase and accounts for its complete work and reconstruction deadline.
+The registry-owned default empty callback alone skips preparation-context creation; a caller callback always runs, including when its previous properties are unchanged.
+Owner/reference state preparation and pruning remain outside declaration evaluation and precede installing the fully validated current source.
 This derived presentation cache preserves Canvas source identity across unrelated updates without caching authoritative server models or input values.
 
 Registrations are optional for local-only components and modifiers.

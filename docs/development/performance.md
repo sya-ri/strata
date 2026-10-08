@@ -679,6 +679,12 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Client preparation ownership
+
+The [remote extension ownership contract](../reference/remote-protocol.md#extensions-and-ownership) defines same-registry factory keys, ordered current wrapper reuse, state preparation and terminal release.
+Client factory reuse leaves complete untrusted topology/type/value validation and all phase work/deadline visits in the operation denominator.
+Only the registry-owned pure default omits callback contexts; all application callbacks and source pruning remain observable on unchanged records.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
