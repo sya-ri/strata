@@ -253,7 +253,6 @@ val verifyPublishedHostInventory = tasks.register<JavaExec>("verifyPublishedHost
     args(rootProject.projectDir.absolutePath)
 }
 tasks.named("check") { dependsOn(verifyPublishedHostInventory) }
-tasks.named("jmhComponents") { dependsOn(verifyPublishedHostInventory) }
 
 tasks.register<JavaExec>("processNativeComponentEvidence") {
     group = "verification"
