@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -15,6 +16,7 @@ import org.openjdk.jmh.annotations.TearDown
  * Fonts, profile assets, values, keys, sizes and input events are prepared before collection.
  * Every score includes its complete public state/input/frame opportunity with one fixed current owner.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public open class TextLineLayoutBenchmark {
     /**
      * Replaces a retained node, edits content or reflows width while keeping the primed font owner.
