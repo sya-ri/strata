@@ -3,11 +3,15 @@ import dev.s7a.strata.performance.JmhPerformanceRunner;
 import dev.s7a.strata.performance.JmhWorkloadInventory;
 import dev.s7a.strata.performance.JvmPerformanceInputs;
 import dev.s7a.strata.quality.benchmark.PlayerHeadLayerBenchmark;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -20,7 +24,7 @@ public final class CollectPlayerHeads {
     }
 
     /** Accepts fresh output, repetition and unchanged standard JMH options; it creates no timing loop. */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length < 3) throw new IllegalArgumentException("Output, repetition and JMH options are required.");
         List<Class<?>> fixtures = List.of(PlayerHeadLayerBenchmark.class);
         List<String> includes = JmhFixtureSelection.INSTANCE.includes(fixtures);
@@ -28,6 +32,12 @@ public final class CollectPlayerHeads {
         var expected = JmhWorkloadInventory.INSTANCE.capture(fixtures, Set.of(mode), Map.of(), includes);
         if (expected.size() != 220) throw new IllegalStateException("The fixed complete PlayerHead matrix changed.");
         JmhFixtureSelection.INSTANCE.verifyIncludes(expected, includes);
+        Path probe = Path.of(System.getProperty("strata.performance.readProbe"));
+        try (var resource = Objects.requireNonNull(PlayerHeadLayerBenchmark.class.getResourceAsStream("/PlayerHeadReadProbe.java"))) {
+            if (Arrays.equals(Files.readAllBytes(probe), resource.readAllBytes()) == false) {
+                throw new IllegalStateException("The admitted source-read probe differs from the frozen classpath resource.");
+            }
+        }
         PlayerHeadLayerBenchmark.verifyWork();
         var arguments = new ArrayList<String>(includes);
         arguments.addAll(List.of(args).subList(2, args.length));
@@ -38,6 +48,7 @@ public final class CollectPlayerHeads {
         targets.put("minecraft", "dev.s7a.strata.runtime.minecraft.MinecraftUiHost");
         targets.put("fonts", "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory");
         var inputs = new LinkedHashMap<>(JvmPerformanceInputs.INSTANCE.read(Path.of(System.getProperty("strata.performance.inputs"))));
+        inputs.put("fixed-read-probe", probe);
         inputs.put("fixed-source-entry", Path.of(System.getProperty("strata.performance.sourceEntry")));
         inputs.put("fixed-source-pins", Path.of(System.getProperty("strata.performance.sourcePins")));
         JmhPerformanceRunner.INSTANCE.run(arguments.toArray(String[]::new), fixtures, targets,
