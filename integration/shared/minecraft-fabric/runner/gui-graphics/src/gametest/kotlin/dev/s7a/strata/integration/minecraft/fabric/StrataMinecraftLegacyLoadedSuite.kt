@@ -510,7 +510,8 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
     private fun nativeTextureSizes(screen: FabricMinecraftScreen): List<IntSize> =
         nativePresentation(screen).textures.map { texture ->
-            val pixels = retainedPresentation(texture, "pixels") as? NativeImage ?: error("A displayed Fabric texture has no owned native pixels.")
+            val upload = checkNotNull(retainedPresentation(texture, "uploadPixels")) { "A displayed Fabric texture has no staging owner." }
+            val pixels = retainedPresentation(upload, "indices") as? NativeImage ?: error("A displayed Fabric texture has no owned native pixels.")
             IntSize(pixels.width, pixels.height)
         }
 
@@ -570,7 +571,10 @@ internal class StrataMinecraftLegacyLoadedSuite {
     ) {
         presentation.textures.forEach { texture ->
             require(texture.isDestroyed()) { "A detached Fabric screen retained native texture storage after physical retirement." }
-            require(retainedPresentation(texture, "pixels") == null) { "A physically retired Fabric texture retained native upload pixels." }
+            val upload = checkNotNull(retainedPresentation(texture, "uploadPixels")) { "A retired Fabric texture has no staging owner." }
+            require(retainedPresentation(upload, "indices") == null && retainedPresentation(upload, "factors") == null) {
+                "A physically retired Fabric texture retained image or composition staging pixels."
+            }
         }
         val textureManager = minecraft.textureManager
         val registry =
