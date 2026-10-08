@@ -161,7 +161,7 @@ public object FabricRemoteScreens {
                             check(endpoint.connection === native) { "Native connection changed." }
                             FabricRemoteTransport.send(endpoint, frame)
                         }
-                    val transport = RemoteConnection(registry.types, RemotePacket.limits, stream::send)
+                    val transport = RemoteConnection.native(registry.types, RemotePacket.limits, stream)
                     Peer(address, stream, transport, logger) {
                         peers.values.filter { it.address != address }.forEach { it.closeForeground() }
                     }.also { peers[address.endpoint] = it }

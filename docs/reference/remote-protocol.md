@@ -77,6 +77,16 @@ After both owner checks pass, the stream consumes the handle before validation a
 Routing that does not select a handle closes it on the decoding owner; consumed or closed handles retain neither the packet nor the owner identity.
 Immutable kind/address metadata remains readable, while reuse and consumption or release from another owner fail explicitly.
 Queue byte/entry admission, duplicate and incarnation rules, gap deadlines, ordered delivery and terminal cleanup remain shared with the public copying overload.
+The common server and shared Fabric connection owners use the opt-in `RemoteConnection.native` factory for outgoing fragments.
+Its private framing group allocates the final envelope array, reserving the native header before the unchanged inner header and payload.
+The packet stream removes that exclusive array, assigns the next outer sequence and fills the header only during actual bounded flush.
+Discarding unsent groups consumes no outer sequences; cancellation reads the inner identity after the reservation and receives its outer sequence when flushed.
+Completed callback arrays are detached and may be retained indefinitely; no array is pooled, reused, or mutated after delivery.
+Public framing and connection callbacks retain their inner-only layout, and public packet encoding still copies arbitrary caller storage.
+Pending byte/entry admission charges exactly the original inner fragment sizes, without charging native headers or reducing negotiated chunks.
+Additional reserved array payload is checked as 26 times the current queued fragment count and is bounded by the existing entry admission.
+Array headers/alignment and group/owner metadata are separate allocation costs; reserved payload alone is not a total-heap estimate.
+Flush, discard, terminal close and guarded failure release unsent groups; the connection releases its transport and native-stream references while the adapter separately closes its packet stream.
 The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.
 Limits include frame/message bytes, aggregate values, structural depth, declaration count, queued bytes, fragment assembly time, and reconstruction time.

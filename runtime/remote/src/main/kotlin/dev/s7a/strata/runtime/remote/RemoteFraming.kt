@@ -1,5 +1,8 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.ByteBuffer
 
 /**
@@ -42,6 +45,20 @@ public class RemoteFraming(
             send(frame.array())
             offset += count
         }
+    }
+
+    /**
+     * Constructs private final-envelope fragments without an intermediate inner-fragment array.
+     * Keeps logical identities and negotiated chunk sizes identical to public send; admission still charges inner bytes only.
+     */
+    internal fun nativeTransfer(
+        bytes: ByteArray,
+        admit: (Int) -> Unit,
+    ): RemoteNativeTransfer {
+        check(closed.not()) { "Remote framing is closed." }
+        require(bytes.isNotEmpty() && bytes.size <= limits.messageBytes) { "Invalid logical message length." }
+        check(nextOutgoing < Long.MAX_VALUE) { "Remote transport identity space is exhausted." }
+        return RemoteNativeTransfer.create(bytes, nextOutgoing++, limits, admit)
     }
 
     /**

@@ -45,7 +45,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             disconnect(player)
             val address = RemoteAddress(endpoint)
             val stream = RemotePacketStream(address) { bytes -> send(player, bytes) }
-            val connection = RemoteConnection(types + extensions.keys, RemotePacket.limits, stream::send)
+            val connection = RemoteConnection.native(types + extensions.keys, RemotePacket.limits, stream)
             peers[player] = Peer(address, stream, connection) { event -> emit(player, event) }
         }
     }

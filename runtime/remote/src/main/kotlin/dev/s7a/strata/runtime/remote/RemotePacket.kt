@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.remote
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.nio.ByteBuffer
 import java.util.UUID
 
@@ -32,6 +33,26 @@ public sealed interface RemotePacket {
         private const val HEADER_BYTES: Int = 26
         private val nativeLimit = RemoteLimits().frameBytes
 
+        /** Reserved storage for the opt-in private outgoing path; excluded from negotiated inner bytes. */
+        @InternalStrataRuntimeApi
+        internal val envelopeBytes: Int get() = HEADER_BYTES
+
+        /**
+         * Completes a privately allocated final envelope immediately before actual native delivery.
+         * Public encode continues allocating detached storage; this bridge accepts only runtime-private transfer output.
+         */
+        @InternalStrataRuntimeApi
+        internal fun completeNative(
+            address: RemoteAddress,
+            sequence: Long,
+            bytes: ByteArray,
+        ): ByteArray {
+            require(bytes.size in (HEADER_BYTES + 17)..nativeLimit) { "Invalid routed fragment length." }
+            require(0 < sequence) { "Invalid routed fragment sequence." }
+            writeHeader(ByteBuffer.wrap(bytes), address, sequence)
+            return bytes
+        }
+
         /**
          * Fragment limits leaving room for the native-channel envelope.
          */
@@ -49,15 +70,7 @@ public sealed interface RemotePacket {
                 is Frame -> {
                     require(packet.bytes.size in 17..limits.frameBytes) { "Invalid routed fragment length." }
                     require(0 < packet.sequence) { "Invalid routed fragment sequence." }
-                    ByteBuffer
-                        .allocate(HEADER_BYTES + packet.bytes.size)
-                        .put(Kind.Frame.ordinal.toByte())
-                        .put(
-                            packet.address.endpoint.ordinal
-                                .toByte(),
-                        ).putLong(packet.address.incarnation.mostSignificantBits)
-                        .putLong(packet.address.incarnation.leastSignificantBits)
-                        .putLong(packet.sequence)
+                    writeHeader(ByteBuffer.allocate(HEADER_BYTES + packet.bytes.size), packet.address, packet.sequence)
                         .put(packet.bytes)
                         .array()
                 }
@@ -86,6 +99,17 @@ public sealed interface RemotePacket {
                 }
             }
         }
+
+        private fun writeHeader(
+            buffer: ByteBuffer,
+            address: RemoteAddress,
+            sequence: Long,
+        ): ByteBuffer =
+            buffer.put(Kind.Frame.ordinal.toByte())
+                .put(address.endpoint.ordinal.toByte())
+                .putLong(address.incarnation.mostSignificantBits)
+                .putLong(address.incarnation.leastSignificantBits)
+                .putLong(sequence)
 
         private enum class Kind { Discovery, Frame }
     }

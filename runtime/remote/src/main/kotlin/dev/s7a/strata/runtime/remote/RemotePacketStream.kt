@@ -36,6 +36,24 @@ public class RemotePacketStream(
         checkNotNull(outgoing) { "Remote packet stream is closed." }(RemotePacket.encode(RemotePacket.Frame(address, nextOutgoing++, bytes)))
     }
 
+    /** Requires the constructing execution owner before a private native connection can bind this stream. */
+    internal fun checkExecutionOwner() {
+        checkOwner()
+    }
+
+    /**
+     * Takes one exclusive envelope-sized fragment and assigns its outer sequence only at actual delivery.
+     * A taken array leaves runtime storage before validation or callback failure, and is never modified after publication.
+     */
+    internal fun sendNative(transfer: RemoteNativeTransfer) {
+        checkOwner()
+        val bytes = transfer.takeFirst()
+        require(bytes.size - RemotePacket.envelopeBytes in 17..RemotePacket.limits.frameBytes) { "Invalid routed fragment length." }
+        check(nextOutgoing < Long.MAX_VALUE) { "Remote packet identity space is exhausted." }
+        val transport = checkNotNull(outgoing) { "Remote packet stream is closed." }
+        transport(RemotePacket.completeNative(address, nextOutgoing++, bytes))
+    }
+
     /**
      * Tightens admission after negotiation, rejecting already queued work that exceeds the negotiated bounds.
      */

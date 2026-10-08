@@ -495,6 +495,22 @@ Capture each inventory from its actual compiled archive with `captureRemoteInven
 Freeze one compiled fixture and shared collector after source/work preflight, and preserve exact source, archive and input hashes for three independent Standard invocations per side and per measured mode.
 The incoming comparison baseline must already include the bounded-drain change on both sides so its saving is not counted again.
 
+Select `OutgoingFragmentBenchmark` with the same generic benchmark/fixture-input contract for private outgoing envelope work.
+Its 84 JMH cases cover 1/8 independent owners, fourteen logical/control workloads, actual native connection output beside ordinary public inner-only callbacks, and actual common-service construction/ticks.
+Hello, control and action sources include exact single/multiple-fragment boundaries, 1 MiB, the message limit, small negotiated fragments, immediate/delayed multiple sessions, unsent/started cancellation, and entry/byte capacity rejection.
+Every JMH invocation includes independent current-owner setup, negotiation, production operations, independent literal envelope/framing byte checks and release; source creation is outside timing.
+`OutgoingFragmentCpuEvidence` uses the shared 100-warm-up/200-sample meter for 196 Queue, Flush, Cycle and ServerCycle cases.
+Queue includes the workload's declared immediate-send/cancellation/capacity controls; Flush measures only the remaining bounded output after those controls are prepared; Cycle includes both, and ServerCycle invokes the actual common peer tick.
+Keep these CPU scopes distinct from JMH's complete lifecycle scope.
+Untimed probes observe actual queued arrays, complete delivered arrays, identity-based native copy work, discarded queued payload and peak reserved headroom.
+They do not observe unpublished partial construction after capacity failure; that overhead remains in the measured total allocation and cannot be inferred from queued payload counts.
+The unchanged logical message codec array, its payload copy into framing storage, final native envelopes, native/network copies and incoming assembly remain outside the removed intermediate-array claim.
+`OutgoingFragmentCpuComparison` registers every control/regression row with the shared three-baseline/three-candidate processor and actual runtime/compiler/fixture/input provenance.
+Use one frozen compiled fixture/generated JMH/collector/control-library set, declare both compiler inventories as immutable inputs, and select the actual loaded inventory on each runtime.
+The outgoing baseline must contain the accepted incoming and bounded-drain changes on both sides; preserve their separate source and raw evidence rather than reattributing them.
+Fully qualified JVM fixture preparation and collection can use the scoped model with quoted PowerShell `'-Pstrata.jvmOnly=true'`; exact inventory, ABI and final quality/acceptance retain the complete build model.
+All supported Fabric targets and applicable real native/host parity remain acceptance requirements; native uploads/GPU/FPS are unavailable for this JVM-only transport corpus.
+
 The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
 The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.
 

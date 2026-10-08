@@ -20,6 +20,7 @@ public class RemoteConnection(
     private val owner = RuntimeExecutionOwner.current()
     private val supported = types.toSet()
     private var outgoing: ((ByteArray) -> Unit)? = send
+    private var nativeStream: RemotePacketStream? = null
     private var framing = RemoteFraming(RemotePacket.limits)
     private var codec = RemoteMessageCodec(RemoteLimits(reconstructionMillis = limits.reconstructionMillis))
     private var greeted = false
@@ -105,12 +106,12 @@ public class RemoteConnection(
             guarded {
                 for (index in 0 until maxFrames) {
                     val transfer = pending.firstOrNull() ?: break
-                    val frame = transfer.frames.removeFirst()
+                    val bytes = transfer.firstBytes
                     transfer.started = true
-                    if (transfer.frames.isEmpty()) pending.removeFirst()
-                    queuedBytes -= frame.size
+                    if (transfer.frameCount == 1) pending.removeFirst()
+                    queuedBytes -= bytes
                     queuedFrames--
-                    transport(frame)
+                    transfer.sendNext(transport, nativeStream)
                 }
             }
         } finally {
@@ -131,22 +132,23 @@ public class RemoteConnection(
                 retained.addLast(transfer)
             } else {
                 if (transfer.started) {
-                    val cancellation = framing.cancel(transfer.frames.first())
-                    retained.addLast(Transfer(null, ArrayDeque(listOf(cancellation))))
+                    retained.addLast(transfer.cancellation(framing))
                 }
-                transfer.frames.clear()
+                transfer.clear()
             }
         }
         pending.clear()
         pending.addAll(retained)
-        queuedFrames = pending.sumOf { it.frames.size }
-        queuedBytes = pending.sumOf { transfer -> transfer.frames.sumOf { it.size } }
+        queuedFrames = pending.sumOf { it.frameCount }
+        queuedBytes = pending.sumOf { it.queuedBytes }
     }
 
     override fun close() {
         checkOwner()
         outgoing = null
         capabilities = null
+        nativeStream = null
+        pending.forEach(Transfer::clear)
         pending.clear()
         queuedBytes = 0
         queuedFrames = 0
@@ -171,26 +173,111 @@ public class RemoteConnection(
         check(sending.not()) { "Remote transport writes cannot reenter." }
         check(outgoing != null) { "Remote connection is closed." }
         val activeLimits = capabilities?.limits ?: limits
-        val frames = ArrayDeque<ByteArray>()
-        framing.send(codec.encode(message)) { frame ->
-            if (activeLimits.pendingBytes - queuedBytes < frame.size || activeLimits.collectionEntries <= queuedFrames) {
-                throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote send queue is full.")
+        val encoded = codec.encode(message)
+        if (nativeStream == null) {
+            val frames = ArrayDeque<ByteArray>()
+            framing.send(encoded) { frame ->
+                admit(frame.size, activeLimits)
+                frames.addLast(frame)
             }
-            frames.addLast(frame)
-            queuedBytes += frame.size
-            queuedFrames++
+            pending.addLast(Transfer.Public(message.session, frames))
+        } else {
+            val frames = framing.nativeTransfer(encoded) { bytes -> admit(bytes, activeLimits) }
+            pending.addLast(Transfer.Native(message.session, frames))
         }
-        pending.addLast(Transfer(message.session, frames))
     }
 
     /**
-     * One logical ordered message whose terminal owner can release its remaining encoded frames.
+     * Charges the existing inner-fragment byte/entry budgets before publishing a new transfer.
+     * Native physical headroom is bounded separately and never tightens ordinary pending admission.
      */
-    private class Transfer(
+    private fun admit(
+        bytes: Int,
+        activeLimits: RemoteLimits,
+    ) {
+        if (activeLimits.pendingBytes - queuedBytes < bytes || activeLimits.collectionEntries <= queuedFrames) {
+            throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote send queue is full.")
+        }
+        queuedBytes += bytes
+        queuedFrames++
+    }
+
+    /**
+     * Current native headroom only, bounded by the admitted fragment count and released on every terminal path.
+     */
+    internal val retainedNativeHeadroom: Long
+        get() {
+            checkOwner()
+            return if (nativeStream == null) 0 else Math.multiplyExact(RemotePacket.envelopeBytes.toLong(), queuedFrames.toLong())
+        }
+
+    /**
+     * One logical ordered message retaining either ordinary public callback frames or private final envelopes.
+     * The connection removes completed groups and debits counters before calling either native/public writer.
+     */
+    private sealed class Transfer(
         val session: Long?,
-        val frames: ArrayDeque<ByteArray>,
-        var started: Boolean = false,
-    )
+    ) {
+        var started: Boolean = false
+        abstract val firstBytes: Int
+        abstract val frameCount: Int
+        abstract val queuedBytes: Int
+
+        abstract fun sendNext(
+            send: (ByteArray) -> Unit,
+            stream: RemotePacketStream?,
+        )
+
+        abstract fun cancellation(framing: RemoteFraming): Transfer
+
+        abstract fun clear()
+
+        /** Ordinary callback storage, retaining the original inner-only layout and array ownership. */
+        class Public(
+            session: Long?,
+            private val frames: ArrayDeque<ByteArray>,
+        ) : Transfer(session) {
+            override val firstBytes: Int get() = frames.first().size
+            override val frameCount: Int get() = frames.size
+            override val queuedBytes: Int get() = frames.sumOf { it.size }
+
+            override fun sendNext(
+                send: (ByteArray) -> Unit,
+                stream: RemotePacketStream?,
+            ) {
+                send(frames.removeFirst())
+            }
+
+            override fun cancellation(framing: RemoteFraming): Transfer = Public(null, ArrayDeque(listOf(framing.cancel(frames.first()))))
+
+            override fun clear() {
+                frames.clear()
+            }
+        }
+
+        /** Exclusive final-envelope group; header completion and outer sequence assignment happen only during sendNext. */
+        class Native(
+            session: Long?,
+            private val frames: RemoteNativeTransfer,
+        ) : Transfer(session) {
+            override val firstBytes: Int get() = frames.firstBytes
+            override val frameCount: Int get() = frames.frameCount
+            override val queuedBytes: Int get() = frames.queuedBytes
+
+            override fun sendNext(
+                send: (ByteArray) -> Unit,
+                stream: RemotePacketStream?,
+            ) {
+                checkNotNull(stream).sendNative(frames)
+            }
+
+            override fun cancellation(framing: RemoteFraming): Transfer = Native(null, frames.cancellation())
+
+            override fun clear() {
+                frames.close()
+            }
+        }
+    }
 
     private inline fun <T> guarded(block: () -> T): T =
         runCatching(block).getOrElse { failure ->
@@ -206,6 +293,21 @@ public class RemoteConnection(
      * Stable channel and wire-version identifiers shared by platform adapters.
      */
     public companion object {
+        /**
+         * Constructs the opt-in private native envelope path under the packet stream's execution owner.
+         * Public constructors still deliver detached inner fragments; callers separately own and close [stream].
+         * Fresh final-envelope storage is allocated at framing and completed once at actual bounded flush.
+         */
+        @InternalStrataRuntimeApi
+        public fun native(
+            types: Set<ProjectionType>,
+            limits: RemoteLimits = RemotePacket.limits,
+            stream: RemotePacketStream,
+        ): RemoteConnection {
+            stream.checkExecutionOwner()
+            return RemoteConnection(types, limits, stream::send).also { it.nativeStream = stream }
+        }
+
         public const val PROTOCOL_VERSION: Int = 1
         public const val CHANNEL: String = "strata:ui"
     }
