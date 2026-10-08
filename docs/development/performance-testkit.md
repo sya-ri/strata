@@ -84,6 +84,14 @@ Use standard three one-second warmups, five one-second measurements, one indepen
 Its signalled native-free resource fixture measures the actual device CPU path and normalized allocation; it reports no native pixels, real source uploads or GPU interval.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
+This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules without versioned Fabric projects or Web applications.
+It accepts `formatKotlin` (including the native font backend), JVM tests and archives, ABI checks, `jmhClasses`, `jmhRunBytecodeGenerator`, `jmhCompileGeneratedClasses`, `jmhHistorical`, `jmhComponents`, `jmhRemote` and `processEvidence`.
+Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
+The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and fail at settings when combined with the flag.
+Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
+Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
+
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
 JDK Properties requires escaped colons in these project-path keys and escaped backslashes in Windows paths.
@@ -119,6 +127,8 @@ The root `verifyPublishedPerformanceInventory` gate compares [reviewed module/ho
 Adding or removing a published project without updating its exact registration fails `check`; duplicate hosts, missing fixture source files and missing verification tasks also fail.
 This entry-point registration check is paired with `:quality:component-benchmarks:verifyPublishedHostInventory`.
 The member gate first requires every published project's actual `checkKotlinAbi` task, then uses `CompilerApiInventory` and `PerformanceInventory` to reject new, removed or unassigned compiler declarations for each reviewed physical host.
+Both gates remain mandatory in ordinary complete-model `check` before review; isolated collection does not rerun publication-wide acceptance.
+Run `:quality:component-benchmarks:check` without a scoped flag on the revision being reviewed, in addition to the full verification boundary described in [build and verification](build.md).
 `:quality:component-benchmarks:capturePublishedHostInventory` stages prospective assignments for review without changing the checked-in registry.
 Compiler source visibility is distinct from the separate loaded-JVM inventories; those origin checks remain required.
 Registration is not completed measurement evidence or proof that every member executed.
