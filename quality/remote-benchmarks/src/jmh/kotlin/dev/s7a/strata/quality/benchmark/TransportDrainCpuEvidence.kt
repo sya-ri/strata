@@ -72,11 +72,12 @@ public object TransportDrainCpuEvidence {
     private fun collect(peers: Int, workload: TransportDrainWorkload, plan: PerformancePlan): JsonObject {
         val batch = maxOf(1, 1000 / (peers * maxOf(1, workload.frames)))
         return TransportDrainFleet(peers, workload).use { fleet ->
-            val sample = JvmPerformanceRunner.measure("$peers/$workload", plan, afterOperation = { _, _ -> fleet.verifyDrained() }) {
-                var delivered = 0L
-                repeat(batch) { delivered = fleet.cycle() }
-                delivered
-            }
+            val sample =
+                JvmPerformanceRunner.measure("$peers/$workload", plan, afterOperation = { _, _ -> fleet.verifyDrained() }) {
+                    var delivered = 0L
+                    repeat(batch) { delivered = fleet.cycle() }
+                    delivered
+                }
             sample.evidence.apply {
                 addProperty("peers", peers)
                 addProperty("workload", workload.name)
