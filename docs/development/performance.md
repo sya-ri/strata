@@ -55,10 +55,14 @@ Admission fixes the value and adds editable membership once; preparation updates
 Distinct keys referencing one value remain distinct entries, and every current editable entry is polled even without a dirty notification.
 The index is execution-owner confined, bounded by the current store and negotiated collection limit, and contains no authoritative value snapshots.
 Retirement removes both references before invoking the entry's release callback; terminal or failed-session cleanup clears the complete index before attempting all releases.
+Close is an irreversible admission cutoff, including inside factory, update, retirement and polling callbacks.
+Entry preparation rejects callback reentry before mutation, retirement has no admission window, and a fresh factory result returned after close is released instead of retained.
 
 The native-free client-state corpus measures idle flush, local edits, pre-action flush, incoming replacements and complete address churn separately at 100, 1,000 and 8,192 current entries with none, ten or all entries editable.
 Its untimed independent map wrapper counts actual entry traversal and checks ordered edits, recursive allocation, replacement and cleanup; timed scenes use ordinary production maps.
 Shared-kit owner CPU intervals supplement JMH elapsed time and normalized allocation, with native upload and GPU scopes unavailable in this corpus.
+Each CPU report validates and hashes its exact paired JMH receipt/results, actual runtime archives, fixture tree, collector, full workload controls and actual JVM/OS/argument metadata before and after collection.
+An immutable external source plan binds both exact revisions to their archive inventories and the frozen fixture revision/tree; it is archived as the same fixture input on both sides.
 
 ### Repeated sampled rows
 

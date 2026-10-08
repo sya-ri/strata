@@ -84,22 +84,27 @@ internal class RemoteClientStatesTest {
         val trace = mutableListOf<Long>()
         val failure = IllegalStateException("send failed")
         RemoteClientStates(RemoteLimits()).use { states ->
-            val editable = RemoteEditableValue { actions ->
-                polls++
-                actions.send(1, TYPE, ProjectionValue.Absent)
-            }
+            val editable =
+                RemoteEditableValue { actions ->
+                    polls++
+                    actions.send(1, TYPE, ProjectionValue.Absent)
+                }
             states.update { states.prepare(1, EDITABLE, { editable }, {}) }
-            val actions = RemoteClientActions { _, _, _ ->
-                states.flushEdits(NO_ACTIONS)
-                trace.add(++sequence)
-                sequence
-            }
+            val actions =
+                RemoteClientActions { _, _, _ ->
+                    states.flushEdits(NO_ACTIONS)
+                    trace.add(++sequence)
+                    sequence
+                }
             states.flushEdits(actions)
             assertEquals(1, polls)
             assertEquals(listOf(1L), trace)
-            assertSame(failure, assertThrows(IllegalStateException::class.java) {
-                states.flushEdits(RemoteClientActions { _, _, _ -> throw failure })
-            })
+            assertSame(
+                failure,
+                assertThrows(IllegalStateException::class.java) {
+                    states.flushEdits(RemoteClientActions { _, _, _ -> throw failure })
+                },
+            )
             states.flushEdits(actions)
             assertEquals(3, polls)
             assertEquals(listOf(1L, 2L), trace)
@@ -198,11 +203,18 @@ internal class RemoteClientStatesTest {
         }
     }
 
-    private fun entries(states: RemoteClientStates): Map<*, *> =
-        RemoteClientStates::class.java.getDeclaredField("values").apply { isAccessible = true }.get(states) as Map<*, *>
+    private fun entries(states: RemoteClientStates): Map<*, *> = RemoteClientStates::class.java
+        .getDeclaredField("values")
+        .apply { isAccessible = true }
+        .get(states) as Map<*, *>
 
-    private fun membership(states: RemoteClientStates): List<*> =
-        (RemoteClientStates::class.java.getDeclaredField("editable").apply { isAccessible = true }.get(states) as Map<*, *>).values.toList()
+    private fun membership(states: RemoteClientStates): List<*> {
+        val field =
+            RemoteClientStates::class.java
+                .getDeclaredField("editable")
+                .apply { isAccessible = true }
+        return (field.get(states) as Map<*, *>).values.toList()
+    }
 
     private companion object {
         val TYPE = ProjectionType(ResourceId("test", "editable"))

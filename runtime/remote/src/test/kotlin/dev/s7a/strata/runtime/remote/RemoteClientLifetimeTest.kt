@@ -72,14 +72,42 @@ internal class RemoteClientLifetimeTest {
         val first = tree(listOf(node(1, 1, listOf(2)), node(2, 2)))
         val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, first), registry, send = outgoing::add)
         val next = tree(listOf(node(1, 1, listOf(3)), node(3, 3)))
-        assertSame(failure, assertThrows(IllegalStateException::class.java) {
-            client.receive(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next)))
-        })
+        assertSame(
+            failure,
+            assertThrows(IllegalStateException::class.java) {
+                client.receive(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next)))
+            },
+        )
         assertEquals(listOf(2L, 1L, 3L), released)
         assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)
         assertEquals(RemoteFailure.InvalidMessage, outgoing.filterIsInstance<RemoteMessage.Close>().single().reason)
         client.close()
         assertEquals(3, released.size)
+    }
+
+    @Test
+    fun closingTheStoreFromAnUpdateCallbackClosesTheSessionAndCannotPublishTheNextRevision() {
+        val released = mutableListOf<Long>()
+        val outgoing = mutableListOf<RemoteMessage>()
+        val registry = RemoteRegistry()
+        val key = RemoteStateKey(Owned::class)
+        registry.element(TYPE, { requireNotNull(it as? ProjectionValue.Integer).value }, { value, context ->
+            context.states.prepare(context.identity, key, { Owned(context.identity) }, {
+                if (value == 2L) context.states.close()
+            }, { released.add(it.identity) })
+        }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
+        val first = tree(listOf(node(1, 1)))
+        val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, first), registry, send = outgoing::add)
+        val next = tree(listOf(node(1, 2)))
+        assertThrows(IllegalStateException::class.java) {
+            client.receive(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next)))
+        }
+        assertEquals(listOf(1L), released)
+        assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)
+        assertEquals(listOf(RemoteMessage.Applied(1, 1)), outgoing.filterIsInstance<RemoteMessage.Applied>())
+        assertEquals(RemoteFailure.InvalidMessage, outgoing.filterIsInstance<RemoteMessage.Close>().single().reason)
+        client.close()
+        assertEquals(1, released.size)
     }
 
     private fun node(

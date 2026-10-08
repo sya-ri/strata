@@ -95,6 +95,8 @@ Its declaration projection supplies detached properties and typed `ProjectionAct
 `RemoteRegistry.element`, `modifier`, and `statefulModifier` register trusted decoders and client factories; custom semantics roles register an explicit role projection type.
 Client preparation owns derived values in `RemoteClientStates`, keyed by remote identity plus a trusted `RemoteStateKey`.
 Preparation prunes omitted entries; supplied release callbacks run on retirement and terminal cleanup, including partial preparation failures.
+Creation and update callbacks cannot reenter preparation, retirement cannot admit entries, and edit polling cannot start another preparation phase.
+Closing from any callback is irreversible; a fresh factory result returned after close is released without admission.
 The client session also retains decoded factory captures for the current tree only.
 Their keys are retained component/modifier identity, exact schema, and immutable wire properties; changed properties or retired identities replace them, and terminal close clears the tree.
 This derived presentation cache preserves Canvas source identity across unrelated updates without caching authoritative server models or input values.
