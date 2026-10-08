@@ -71,6 +71,7 @@ public open class MutableStateRoutingBenchmark {
         Coalesced,
         Cycles,
         ColdAdmission,
+        FirstAdmission,
         SparseRemoval,
         Replacement,
         LastCloseReuse,
@@ -162,6 +163,20 @@ public open class MutableStateRoutingBenchmark {
         CleanFrame1(Kind.CleanFrame, 1, 1),
         CleanFrame128(Kind.CleanFrame, 128, 1),
         CleanFrame4096(Kind.CleanFrame, 4096, 1),
+        FrameEqual128Owners4(Kind.FrameEqual, 128, 4),
+        FrameUnequal128Owners4(Kind.FrameUnequal, 128, 4),
+        FrameEqual4096Owners4(Kind.FrameEqual, 4096, 4),
+        FrameUnequal4096Owners4(Kind.FrameUnequal, 4096, 4),
+        FrameEqual128Owners128(Kind.FrameEqual, 128, 128),
+        FrameUnequal128Owners128(Kind.FrameUnequal, 128, 128),
+        FrameAlias0(Kind.FrameAlias, 0, 0),
+        FrameEqual0(Kind.FrameEqual, 0, 0),
+        FrameUnequal0(Kind.FrameUnequal, 0, 0),
+        ExpensiveFrameEqual4096(Kind.FrameEqual, 4096, 1, expensive = true),
+        ExpensiveFrameUnequal4096(Kind.FrameUnequal, 4096, 1, expensive = true),
+        FirstAdmission1(Kind.FirstAdmission, 1, 1),
+        FirstAdmission128(Kind.FirstAdmission, 128, 1),
+        FirstAdmission4096(Kind.FirstAdmission, 4096, 1),
     }
 
     /**
@@ -288,6 +303,20 @@ public open class MutableStateRoutingBenchmark {
             "CleanFrame1",
             "CleanFrame128",
             "CleanFrame4096",
+            "FrameEqual128Owners4",
+            "FrameUnequal128Owners4",
+            "FrameEqual4096Owners4",
+            "FrameUnequal4096Owners4",
+            "FrameEqual128Owners128",
+            "FrameUnequal128Owners128",
+            "FrameAlias0",
+            "FrameEqual0",
+            "FrameUnequal0",
+            "ExpensiveFrameEqual4096",
+            "ExpensiveFrameUnequal4096",
+            "FirstAdmission1",
+            "FirstAdmission128",
+            "FirstAdmission4096",
         )
         public var workload: Workload = Workload.EqualAlias0
 
@@ -546,6 +575,13 @@ public open class MutableStateRoutingBenchmark {
                     completeFrames()
                 }
 
+                Kind.FirstAdmission -> {
+                    closeScreens()
+                    openScreens()
+                    alternate()
+                    completeFrames()
+                }
+
                 Kind.SparseRemoval, Kind.Replacement -> {
                     val changed = if (workload.kind == Kind.SparseRemoval) Membership.Sparse else Membership.Replacement
                     changeMembership(if (membership == Membership.Full) changed else Membership.Full)
@@ -667,14 +703,14 @@ public open class MutableStateRoutingBenchmark {
             val u = screenCount().toLong()
             val writes =
                 when (workload.kind) {
-                    Kind.FrameAlias, Kind.FrameEqual, Kind.FrameUnequal, Kind.ComponentFrame -> 1L
+                    Kind.FrameAlias, Kind.FrameEqual, Kind.FrameUnequal, Kind.ComponentFrame, Kind.FirstAdmission -> 1L
                     Kind.CleanFrame -> 0L
                     else -> 64L
                 }
             val comparisons = if (workload.kind == Kind.GuardFailure || isComponent()) 0L else writes
             val roots =
                 when (workload.kind) {
-                    Kind.ColdAdmission, Kind.LastCloseReuse, Kind.SparseRemoval, Kind.Replacement -> u
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.LastCloseReuse, Kind.SparseRemoval, Kind.Replacement -> u
                     Kind.OwnerReversal -> 6L
                     else -> 0L
                 }
@@ -682,7 +718,7 @@ public open class MutableStateRoutingBenchmark {
                 when (workload.kind) {
                     Kind.FrameUnequal, Kind.Coalesced, Kind.ComponentFrame -> n
                     Kind.Cycles -> n * 64
-                    Kind.ColdAdmission, Kind.Replacement -> n * 2
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.Replacement -> n * 2
                     Kind.LastCloseReuse -> n
                     Kind.SparseRemoval -> {
                         val selected = if (previousMembership == Membership.Full) Membership.Sparse else Membership.Full
@@ -696,12 +732,12 @@ public open class MutableStateRoutingBenchmark {
                 when (workload.kind) {
                     Kind.FrameAlias, Kind.FrameEqual, Kind.FrameUnequal, Kind.Coalesced, Kind.CleanFrame, Kind.ComponentFrame -> u
                     Kind.Cycles -> u * 64
-                    Kind.ColdAdmission, Kind.SparseRemoval, Kind.Replacement -> u * 2
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.SparseRemoval, Kind.Replacement -> u * 2
                     Kind.LastCloseReuse -> u
                     Kind.OwnerReversal -> 8L
                     else -> 0L
                 }
-            val sourceChanges = if (workload.kind == Kind.ColdAdmission || workload.kind == Kind.LastCloseReuse || workload.kind == Kind.OwnerReversal) u else 0L
+            val sourceChanges = if (workload.kind == Kind.ColdAdmission || workload.kind == Kind.FirstAdmission || workload.kind == Kind.LastCloseReuse || workload.kind == Kind.OwnerReversal) u else 0L
             val notified =
                 when (workload.kind) {
                     Kind.ComponentUnequal -> 64L
@@ -712,7 +748,7 @@ public open class MutableStateRoutingBenchmark {
             val guardEnds = if (workload.kind == Kind.GuardFailure) workload.failingOwner * 64L else 0L
             val controllerWrites =
                 when (workload.kind) {
-                    Kind.ColdAdmission, Kind.LastCloseReuse, Kind.SparseRemoval, Kind.Replacement -> u
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.LastCloseReuse, Kind.SparseRemoval, Kind.Replacement -> u
                     Kind.OwnerReversal -> u * 3
                     else -> 0L
                 }
