@@ -7,6 +7,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 internal enum class MinecraftSampledPerformanceCase(
     val mode: Mode,
     val resolution: Int,
+    val resource: Resource? = null,
 ) {
     SampledStationarySmall(Mode.Stationary, 16),
     SampledStationaryMedium(Mode.Stationary, 64),
@@ -32,6 +33,14 @@ internal enum class MinecraftSampledPerformanceCase(
     SampledTiledTranslationSmall(Mode.TiledTranslation, 16),
     SampledTiledTranslationMedium(Mode.TiledTranslation, 64),
     SampledTiledTranslationLarge(Mode.TiledTranslation, 256),
+    ResourcePinnedSmall(Mode.ResourceDecode, 16, Resource.Pinned),
+    ResourcePinnedMedium(Mode.ResourceDecode, 256, Resource.Pinned),
+    ResourcePinnedLarge(Mode.ResourceDecode, 1024, Resource.Pinned),
+    ResourceBridgeHotSmall(Mode.ResourceDecode, 16, Resource.Hot),
+    ResourceBridgeHotMedium(Mode.ResourceDecode, 256, Resource.Hot),
+    ResourceBridgeHotLarge(Mode.ResourceDecode, 1024, Resource.Hot),
+    ResourceBridgeHot100(Mode.ResourceDecode, 16, Resource.Hot100),
+    ResourceBridgeColdSmall(Mode.ResourceDecode, 16, Resource.Cold),
     ;
 
     /**
@@ -46,5 +55,17 @@ internal enum class MinecraftSampledPerformanceCase(
         OrderedRows,
         ScrolledRows,
         TiledTranslation,
+        ResourceDecode,
     }
+    /**
+     * Keeps admitted host hits separate from the actual public Fabric resolution used on uncached overflow paths.
+     * Cold selects eight distinct current packaged PNGs; Hot100 resolves the same input one hundred times per declaration.
+     */
+    enum class Resource {
+        Pinned,
+        Hot,
+        Hot100,
+        Cold,
+    }
+
 }

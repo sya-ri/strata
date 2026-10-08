@@ -40,6 +40,7 @@ internal class MinecraftProfileCacheProbe(
     private val currentScreen: (Minecraft) -> Screen?,
     private val clearScreen: (Minecraft) -> Unit,
 ) : AutoCloseable {
+    private val imageProbe = MinecraftResourceDecodeNativeProbe()
     private val retiredFonts = ArrayList<WeakReference<MinecraftFontSnapshot>>()
     private val report = sortedMapOf<String, String>()
     private var retainedHost: MinecraftUiHost? = null
@@ -55,6 +56,7 @@ internal class MinecraftProfileCacheProbe(
      * Failure leaves any created host owned by this probe and released by [close].
      */
     fun begin(minecraft: Minecraft): CompletableFuture<Void> {
+        imageProbe.beforeReload()
         check(minecraft.isSameThread)
         report.putAll(MinecraftProfileCacheMixinRuntime.verify())
         val fresh = measureFreshExtraction()
@@ -82,6 +84,7 @@ internal class MinecraftProfileCacheProbe(
      * Successful return keeps the closed old host object alive to prove it no longer retains its resource snapshot.
      */
     fun afterReload(minecraft: Minecraft) {
+        imageProbe.afterReload()
         check(minecraft.isSameThread)
         check(MinecraftProfileCacheInspection.profile() == null) { "A native resource reload did not clear the normal-open cache." }
         val retained = checkNotNull(oldFonts?.get()) { "A live old host lost its immutable font snapshot." }
@@ -119,7 +122,7 @@ internal class MinecraftProfileCacheProbe(
     @Suppress("ExplicitGarbageCollectionCall")
     fun collected(): Boolean {
         System.gc()
-        return retiredFonts.all { it.get() == null } && currentFonts?.get() != null
+        return retiredFonts.all { it.get() == null } && currentFonts?.get() != null && imageProbe.collected()
     }
 
     /**
@@ -134,6 +137,7 @@ internal class MinecraftProfileCacheProbe(
         report["retired.collected"] = retiredFonts.size.toString()
         report["current.snapshots"] = "1"
         report["closedHostStillReachable"] = (closedHost != null).toString()
+        imageProbe.append(report)
         report["status"] = "verified"
         report["verifiedAt"] = Instant.now().toString()
         PerformanceJson.collectorIdentity().entrySet().forEach { (key, value) -> report["collector.$key"] = value.asString }
@@ -142,6 +146,7 @@ internal class MinecraftProfileCacheProbe(
     }
 
     override fun close() {
+        imageProbe.close()
         val host = retainedHost
         retainedHost = null
         closedHost = null

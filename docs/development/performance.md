@@ -433,7 +433,28 @@ A new host always performs its own platform resolution and can therefore observe
 
 Common JVM tests require identity reuse across initial and far-jumped retained evaluation, mixed image components and backgrounds, independent identifiers, both admission limits, pixel bypass, failure retry without failed-entry retention, owner-thread rejection, terminal invalidation after close and construction failure, and a new platform resolution per host with replacement pixels.
 The loaded Fabric gate additionally materializes repeated identifiers through deferred `VirtualList` rows, inspects the real display list and native direct sampled-image counters, and requires one miss and upload per host.
-The concrete Fabric bridge decodes a detached snapshot on every platform resolution, so its second-host check also requires a fresh image identity without changing rendered pixels.
+The concrete Fabric bridge reads the current resource stream and returns a fresh detached image on every platform resolution, so its second-host check requires a fresh image identity without changing rendered pixels.
+
+The Fabric decoder separately retains at most one private encoded-input and decoded-ARGB pair for the current native resource generation.
+Its complete key is resource-manager identity, the captured lifecycle state, exact encoded-byte equality, and the fixed compiler-selected native RGBA decoder and ARGB conversion.
+Identifier equality is unnecessary because the current resource manager selects and opens the current resource on every call; even a hit reads its entire input and creates a distinct immutable public image.
+The entry admits at most 8 MiB of encoded input and 16 MiB of encoded input plus decoded payload, including both arrays in its charge.
+Larger encoded inputs replay their bounded prefix into ordinary decoding without retaining an entry, while larger decoded payloads return normally without retention.
+Replacement and failure release the preceding captured entry, reload drops the current entry, and active-client resource close permanently disables retention while preserving ordinary direct-load behavior.
+Foreign-manager lifecycle events can release only their own populated entry.
+Loads remain confined to the Minecraft client thread; atomic lifecycle transitions may run on any thread, and state identity prevents a reload, shutdown, or reentrant load from being overwritten by an older invocation.
+The cache retains no native image, stream, host, public image, identifier history, or authoritative resource-pack state.
+Previously returned images remain independent after replacement or release; host admission and pinned identities remain unchanged.
+Stream opening, reading, both baseline-equivalent closes, image snapshot creation, and native image cleanup finish before publication.
+The encoded-input probe adds bounded temporary storage and comparison work to cold loads, and each hit still reads the source and copies the public pixel snapshot; acceptance must measure these controls rather than applying the issue's conditional 99% forecast to total resolution cost.
+The compiled resource-decoding corpus has 72 rows per JMH mode: twelve direct or host-boundary cases, three hot/cold/current-byte-replacement patterns, and separate retained-resolution and complete fresh-lifetime boundaries.
+It uses the actual packaged NativeImage RGBA decoder and compiler-selected ARGB bridge on the ordinary application loader; baseline archives without the derived helper execute their original NativeImage/read/copy/createDrawImage sequence.
+Host rows use the actual common host with 511/512/513 identifier priming or 31/32/33 real 1024-square image admissions, keeping the original 128 MiB logical payload charge.
+The fixed broad cold set has eight distinct encoded inputs and identifiers, while replacement changes current bytes behind one identifier; below-bound controls keep their first admitted snapshot.
+The native resource corpus separately measures three pinned host sizes, three repeated bridge-load sizes, one hundred repeated small bridge loads, and eight-source cold bridge loads at every declared backend and GUI density.
+Bridge cases exercise the actual public loader used by overflow resolution without claiming that those native screens exhaust host admission; common-host admission is covered by the packaged JVM fixture and deterministic tests.
+The existing native profile-reload fixture also checks real public image loads, off-thread rejection, fresh immutable identities, current-entry release by actual reload, unchanged old public pixels, and collection of the retired private array.
+Formal acceptance must retain complete CPU time and allocation, source/raster/metadata/output uploads, offscreen-through-GUI GPU time, and GUI-only GPU consumption, with unchanged packed inputs and matched source and processed-class provenance.
 
 ### Tiled-image working-set cache
 

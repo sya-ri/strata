@@ -22,3 +22,11 @@ SampledScrolledRowsLarge
 SampledTiledTranslationSmall
 SampledTiledTranslationMedium
 SampledTiledTranslationLarge
+ResourcePinnedSmall
+ResourcePinnedMedium
+ResourcePinnedLarge
+ResourceBridgeHotSmall
+ResourceBridgeHotMedium
+ResourceBridgeHotLarge
+ResourceBridgeHot100
+ResourceBridgeColdSmall
