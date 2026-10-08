@@ -223,7 +223,7 @@ Its GPU duration does not measure CPU preparation time; the timestamps bound com
 `GpuPerformanceMeter` requires every requested pair to complete before publishing separate p50, p95 and p99 GPU distributions.
 The native processor requires both complete scopes when GUI queries are available and rejects using the GUI-only scope as full presentation evidence.
 Older unsupported adapters may omit the full-scope ancestor while their GUI queries are explicitly unavailable; the adapter registers no missing-path projection and preserves full GPU metrics as null with a reason.
-Mixed ancestor availability across one raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
+Mixed ancestor presence or GUI/full-scope measurement availability across one complete raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.

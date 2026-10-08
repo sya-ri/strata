@@ -73,6 +73,24 @@ internal class NativeComponentPerformanceEvidenceTest {
     }
 
     @Test
+    internal fun gpuAvailabilityMustRemainConsistentAcrossRawMatrices() {
+        val available = complete()
+        available.getAsJsonArray("phases").forEach { phase ->
+            phase.asJsonObject.add("native_gpu", completeGpu("GUI commands"))
+            phase.asJsonObject.add("presentation_gpu", completeGpu("Frame preparation through GUI consumption"))
+        }
+        val unavailable = complete()
+        unavailable.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", unavailableGpu()) }
+        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)))
+        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(unavailable)))
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available, unavailable)) }
+        val changed = available.getAsJsonArray("phases")[0].asJsonObject
+        changed.add("native_gpu", unavailableGpu())
+        changed.add("presentation_gpu", unavailableGpu())
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)) }
+    }
+
+    @Test
     internal fun legacyUnavailableQueriesKeepFullGpuMetricsUnavailable() {
         val report = complete()
         NativeComponentPerformanceEvidence.verify(report)

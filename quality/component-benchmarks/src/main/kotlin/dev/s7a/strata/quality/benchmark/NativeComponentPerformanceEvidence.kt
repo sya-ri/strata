@@ -170,8 +170,17 @@ internal object NativeComponentPerformanceEvidence {
      * Legacy adapters may omit it only while GUI queries are unavailable; mixed matrices are rejected.
      */
     internal fun presentationGpuMetricsPresent(reports: List<JsonObject>): Boolean {
-        val present = reports.flatMap { report -> report.getAsJsonArray("phases").map { it.asJsonObject.has("presentation_gpu") } }
+        val phases = reports.flatMap { report -> report.getAsJsonArray("phases").map { it.asJsonObject } }
+        val present = phases.map { it.has("presentation_gpu") }
         require(present.isNotEmpty() && present.distinct().size == 1) { "Inconsistent full presentation GPU metric availability" }
+        val guiAvailable = phases.map { it.getAsJsonObject("native_gpu").get("available").asBoolean }
+        require(guiAvailable.distinct().size == 1) { "Inconsistent GUI GPU measurement availability" }
+        if (present.first()) {
+            val fullAvailable = phases.map { phase -> phase.get("presentation_gpu").let { it.isJsonNull.not() && it.asJsonObject.get("available").asBoolean } }
+            require(fullAvailable.distinct().size == 1 && fullAvailable.first() == guiAvailable.first()) { "Inconsistent full presentation GPU measurement availability" }
+        } else {
+            require(guiAvailable.first().not()) { "Available GUI queries require complete full presentation GPU pairs" }
+        }
         return present.first()
     }
 
