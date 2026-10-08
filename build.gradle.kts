@@ -23,6 +23,7 @@ import net.fabricmc.loom.task.AbstractRunTask
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.api.JavaVersion
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.services.BuildService
@@ -30,6 +31,7 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.api.tasks.GradleBuild
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
@@ -966,24 +968,37 @@ private val ciMinecraftTargets = minecraftFabricTargets.filter { target -> targe
 private val requestedTaskNames = gradle.startParameter.taskNames
 private val normalizedRequestedTaskNames =
     requestedTaskNames.map { taskName -> taskName.takeIf { it.startsWith(':') } ?: ":$taskName" }
+private val standardMinecraftBenchmarkRequested = ":benchmarkMinecraft" in normalizedRequestedTaskNames
 private val quickMinecraftBenchmarkRequested = ":benchmarkMinecraftQuick" in normalizedRequestedTaskNames
+private val nativeMinecraftBenchmarkRequested = standardMinecraftBenchmarkRequested || quickMinecraftBenchmarkRequested
 private val quickPerformance = providers.gradleProperty("strata.performance.quick").map(String::toBooleanStrict).getOrElse(quickMinecraftBenchmarkRequested)
-val benchmarkMinecraftQuick = tasks.register("benchmarkMinecraftQuick") {
-    group = "verification"
-    description = "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
-    if (quickMinecraftBenchmarkRequested) {
-        require(
-            normalizedRequestedTaskNames.none { taskName ->
-                taskName == ":check" || taskName.substringAfterLast(':') in minecraftClientTaskNames
-            },
-        ) { "Run quick performance collection separately from correctness clients" }
-        require(quickPerformance) { "benchmarkMinecraftQuick requires the quick profile" }
+
+/**
+ * Dispatches a native measurement profile to one production client without narrowing correctness clients.
+ */
+private fun registerMinecraftBenchmark(name: String, quick: Boolean): TaskProvider<Task> {
+    val target = if (":$name" in normalizedRequestedTaskNames) {
+        require(normalizedRequestedTaskNames.size == 1) { "Run native performance collection as a standalone task" }
+        require(quickPerformance == quick) { "$name requires strata.performance.quick=$quick" }
         require(providers.gradleProperty("strata.performance.nativeOutput").isPresent) { "Set strata.performance.nativeOutput to a fresh directory" }
-        require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a quick run" }
-        val target = if (ciMinecraftVersions.isEmpty()) minecraftFabricTargets.last() else minecraftFabricTargets.single { it.version == ciMinecraftVersions.single() }
-        dependsOn("${target.integrationProjectPath}:runProductionClientGameTest")
+        require(ciMinecraftVersions.size <= 1) { "Choose one Minecraft version for a native run" }
+        if (ciMinecraftVersions.isEmpty()) minecraftFabricTargets.last() else minecraftFabricTargets.single { it.version == ciMinecraftVersions.single() }
+    } else {
+        null
+    }
+    return tasks.register(name) {
+        group = "verification"
+        description = if (quick) {
+            "Collects one quick native component workload on one exact Minecraft version, without a full acceptance matrix."
+        } else {
+            "Collects standard native workloads on one exact Minecraft version, preserving all GUI scales and sample counts."
+        }
+        if (target != null) dependsOn("${target.integrationProjectPath}:runProductionClientGameTest")
     }
 }
+
+val benchmarkMinecraft = registerMinecraftBenchmark("benchmarkMinecraft", quick = false)
+val benchmarkMinecraftQuick = registerMinecraftBenchmark("benchmarkMinecraftQuick", quick = true)
 private val selectsEveryMinecraftClient =
     requestedTaskNames.any { taskName -> taskName == "check" || taskName in minecraftClientTaskNames }
 private val selectsFontParityClients = requestedTaskNames.any { taskName -> taskName.substringAfterLast(':') == "verifyOfflineFontParity" }
@@ -1000,7 +1015,7 @@ private val selectedMinecraftExecutionTargets =
             minecraftFabricTargets.filter { target ->
                 target in ciMinecraftTargets || (selectsFontParityClients && target.version in fontParityMinecraftVersions)
             }
-        quickMinecraftBenchmarkRequested -> listOf(minecraftFabricTargets.last())
+        nativeMinecraftBenchmarkRequested -> listOf(minecraftFabricTargets.last())
         selectsEveryMinecraftClient -> minecraftFabricTargets
         else ->
             minecraftFabricTargets.filter { target ->

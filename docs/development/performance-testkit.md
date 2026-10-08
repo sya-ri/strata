@@ -23,7 +23,7 @@ Use `-Pstrata.performance.workloads=FanOut4096 -Pstrata.performance.stress=true`
 Smoke scores remain exploratory and are not compared with warmed standard measurements.
 
 For a loaded client, `./gradlew benchmarkMinecraftQuick -Pstrata.performance.nativeOutput=<fresh-directory>` selects one native component on the newest version in the repository's verified target catalog.
-Run this entry separately from `check` and explicit client GameTest tasks; combining them fails before execution so quick selection cannot narrow correctness acceptance or share its output directory.
+Run this entry as a standalone task; combining it with other tasks fails before execution so quick selection cannot narrow correctness acceptance or share its output directory.
 Set `-Pstrata.minecraftVersions=<exact-version>` to choose a different single supported version and `-Pstrata.performance.workloads=TextField,NativeCanvas` to keep multiple explicit cases.
 The task runs the performance entry only, without the ordinary correctness scenes; it does not claim support for an unmeasured version.
 Add `"quick": true` to a native summary request and provide one run plus a real CPU receipt for binary provenance, as for standard collection.
@@ -107,8 +107,14 @@ Run native performance invocations separately after the candidate stabilizes, an
 If a later failure requires another implementation change, return to affected checks and performance evidence before repeating the final regression gate.
 Correctness-only clients use resource-aware admission that adapts during execution as described in [CI execution](ci.md); measurement clients remain exclusive on their machine.
 
-The production Fabric GameTest can collect the 26 compiled canonical component declarations and the real sampled/custom Canvas scene with `-Pstrata.performance.nativeOutput=<new-absolute-directory>`.
-Invoke the selected `:integration:minecraft-fabric-<version>:runProductionClientGameTest` task three times with independent directories, with no other builds or performance workloads running during sampling.
+Use `./gradlew benchmarkMinecraft -Pstrata.performance.nativeOutput=<new-absolute-directory>` for standard native collection on the newest version in the repository's verified target catalog.
+Set `-Pstrata.minecraftVersions=<exact-version>` to select another single supported version.
+A standalone `benchmarkMinecraft` or `benchmarkMinecraftQuick` invocation with this explicit version configures only its versioned adapters; omitted versions, mixed task requests and complete IDE models preserve their existing project inclusion.
+The production Fabric GameTest collects the 26 compiled canonical component declarations and the real sampled/custom Canvas scene by default; `-Pstrata.performance.workloads=<comma-separated-IDs>` selects the affected cases at all four GUI scales.
+For example, `./gradlew benchmarkMinecraft -Pstrata.minecraftVersions=26.3 -Pstrata.performance.sampledImages=true -Pstrata.performance.workloads=SampledStationarySmall,SampledOrderedRowsLarge,SampledScrolledRowsLarge -Pstrata.performance.gpuQueries=true -Pstrata.performance.nativeOutput=<new-absolute-directory>` collects a control case plus overlapping and scrolling images.
+Run the entry as a standalone task; it rejects other requested tasks and the quick profile, and requires a fresh output directory.
+Invoke it three times with independent directories and the same selection for each baseline and candidate, with no other builds or performance workloads running during sampling.
+The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
 It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
 Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
@@ -122,6 +128,8 @@ Missing mappings, missing host members, dead handles and iconified windows rejec
 
 Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
 The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
+Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
 That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
 The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.

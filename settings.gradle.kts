@@ -129,8 +129,12 @@ val minecraftChecksOnly = ":ciMinecraftCheck" in requestedTasks && requestedTask
 val documentationChecksOnly = requestedTasks.isNotEmpty() && requestedTasks.all {
     it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging")
 }
+val nativeBenchmarkOnly = requestedTasks.size == 1 &&
+    requestedTasks.single().removePrefix(":") in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") &&
+    providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false).not() &&
+    providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false).not()
 val minecraftCheckVersions =
-    if (minecraftChecksOnly || documentationChecksOnly) {
+    if (minecraftChecksOnly || documentationChecksOnly || nativeBenchmarkOnly) {
         providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
     } else {
         emptySet()
