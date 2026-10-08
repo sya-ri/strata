@@ -770,8 +770,7 @@ public class NativeCanvasDevice(
                 null
             }
 
-        fun target(token: NativeCanvasToken): TargetRecord? =
-            if (indexedTargets == null) targets.singleOrNull()?.takeIf { it.token === token } else indexedTargets[token]
+        fun target(token: NativeCanvasToken): TargetRecord? = if (indexedTargets == null) targets.singleOrNull()?.takeIf { it.token === token } else indexedTargets[token]
     }
 
     private class Completion(
