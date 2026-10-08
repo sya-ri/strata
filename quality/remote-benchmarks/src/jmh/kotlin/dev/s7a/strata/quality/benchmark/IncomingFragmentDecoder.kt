@@ -64,7 +64,11 @@ internal class IncomingFragmentDecoder(
             } else {
                 admission.getDeclaredField("packet").apply { isAccessible = true }.get(packet) as? RemotePacket.Frame
             }
-        val pending = RemotePacketStream::class.java.getDeclaredField("pending").apply { isAccessible = true }.get(stream) as Map<*, *>
+        val pending =
+            RemotePacketStream::class.java
+                .getDeclaredField("pending")
+                .apply { isAccessible = true }
+                .get(stream) as Map<*, *>
         val previous = frame?.let { pending[it.sequence] }
         try {
             if (frame != null) invoke(offer, stream, packet, 0L)
