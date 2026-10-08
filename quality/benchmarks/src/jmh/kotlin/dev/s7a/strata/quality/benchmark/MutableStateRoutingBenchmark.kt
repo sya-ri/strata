@@ -385,6 +385,7 @@ public open class MutableStateRoutingBenchmark {
             }
             // Admission happens once outside warm rows. Cold/churn rows separately include its complete cost in step().
             state.value = first
+            if (isComponent()) slider.value = 1.0
             verifyCurrentStorage()
         }
 
@@ -640,9 +641,10 @@ public open class MutableStateRoutingBenchmark {
                 addProperty("workload", workload.name)
                 addProperty("declaredRegions", workload.regions)
                 addProperty("declaredOwners", workload.owners)
+                addProperty("retainedScreens", if (workload.kind == Kind.GuardFailure) 0 else screenCount())
                 addProperty("measuredStateSettersPerOperation", firstOperation[0])
                 addProperty("controllerSettersPerOperation", firstOperation[11])
-                addProperty("callerComparisons", firstOperation[1])
+                addProperty("preparedValueComparisons", firstOperation[1])
                 addProperty("rootEvaluations", firstOperation[2])
                 addProperty("regionEvaluations", firstOperation[3])
                 addProperty("completedFrames", firstOperation[4])
@@ -760,17 +762,28 @@ public open class MutableStateRoutingBenchmark {
             return field.get(instance)
         }
 
+        private fun measuredState(): MutableState<*> =
+            if (isComponent()) {
+                val observable = checkNotNull(privateField(slider, "observable"))
+                checkNotNull(privateField(observable, "currentValue")) as MutableState<*>
+            } else {
+                state
+            }
+
         private fun verifyCurrentStorage() {
             if (isComponent()) check(slider.value == if (componentTone == Tone.First) 0.0 else 1.0)
-            val members = privateField(state, "observations") as Set<*>
-            val expected = if (isComponent()) 0 else (0 until workload.regions).count { active(it, membership) }
+            val current = measuredState()
+            val members = privateField(current, "observations") as Set<*>
+            val expected = (0 until workload.regions).count { active(it, membership) }
             check(members.size == expected)
-            val plan = privateField(state, "observationPlan") ?: return
+            val plan = privateField(current, "observationPlan") ?: return
             check((privateField(plan, "observations") as List<*>).size == expected)
             check((privateField(plan, "owners") as List<*>).size == workload.owners)
         }
 
         private fun verifyReleasedStorage() {
+            check((privateField(measuredState(), "observations") as Set<*>).isEmpty())
+            check(privateField(measuredState(), "observationPlan") == null)
             check((privateField(state, "observations") as Set<*>).isEmpty())
             check(privateField(state, "observationPlan") == null)
         }
