@@ -4,7 +4,9 @@ package dev.s7a.strata.render
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.internal.toIntExact
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.jvm.JvmName
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Creates an immutable source image for platform-neutral drawing.
@@ -26,6 +28,30 @@ public fun createDrawImage(
     val area = (size.width.toLong() * size.height).toIntExact()
     require(area == argb.size) { "Pixel array length must equal the image area." }
     return DrawImageSnapshot(size, argb.copyOf())
+}
+
+/**
+ * Transfers exclusively owned runtime pixels into an immutable image without copying their backing array.
+ *
+ * The caller must relinquish every mutable alias after a successful call and must never modify [argb] afterward.
+ * This privileged bridge is for fresh private runtime buffers; application arrays use [createDrawImage] instead.
+ * Validation completes before ownership transfers. The result retains the ordinary immutable image equality and copy contract.
+ *
+ * @param size the non-negative extent whose checked area must fit in `Int`.
+ * @param argb an exclusively owned row-major straight-ARGB buffer matching the checked image area.
+ * @return an immutable, thread-safe image owning the transferred buffer.
+ * @throws ArithmeticException when the checked image area overflows `Int`.
+ * @throws IllegalArgumentException when the buffer length does not equal the checked image area.
+ */
+@InternalStrataRuntimeApi
+@JvmSynthetic
+public fun createOwnedDrawImage(
+    size: IntSize,
+    argb: IntArray,
+): DrawImage {
+    val area = (size.width.toLong() * size.height).toIntExact()
+    require(area == argb.size) { "Pixel array length must equal the image area." }
+    return DrawImageSnapshot(size, argb)
 }
 
 /**

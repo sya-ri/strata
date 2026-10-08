@@ -8,6 +8,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.math.BigInteger
@@ -117,7 +118,7 @@ internal class FabricMinecraftCompositionMap private constructor(
                 writeControls(indices, (index * 3 + 2) * indexSize.width, plan.command, tints)
             }
             val factors = createDrawImage(factorSize) { x, y -> encode(factor(x, tints.getOrNull(y) ?: 0).toRawBits()) }
-            return FabricMinecraftCompositionMap(physical, plans.map { source(it.command) }, createDrawImage(indexSize, indices), factors)
+            return FabricMinecraftCompositionMap(physical, plans.map { source(it.command) }, createOwnedDrawImage(indexSize, indices), factors)
         }
 
         private fun writeControls(

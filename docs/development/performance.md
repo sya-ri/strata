@@ -340,6 +340,8 @@ All partial allocations, reload retirement, GUI-consumption fences, screen detac
 Legacy OpenGL additionally saves and restores all four touched texture units and optional sampler bindings, draw state and pixel-store parameters; its one fixed composition program belongs to the device until terminal completion.
 Native acceptance compares the production integer arithmetic with independent CPU Float bit patterns, actual transparent tile bytes with the CPU rasterizer, and complete overlapping image/glyph GUI frames with the same commands prepared through CPU fallback.
 Repeated performance comparisons use one frozen fixture on both revisions and retain GUI-only GPU timestamps separately from timestamps covering preparation, uploads, offscreen composition and GUI consumption.
+Ordered composition metadata transfers its fresh private index buffer into an immutable image through the opt-in runtime ownership bridge, avoiding a second full index array.
+The bridge validates the complete extent before ownership transfers; callers relinquish every mutable alias, while application image construction and pixel extraction keep their defensive copies.
 
 Exact GPU output and its axis texture, or the direct GUI index texture alone, belong to the existing current portable generation, with no additional history, identity lookup, or cache.
 One prepared frame admits at most 256 exact outputs, 1,024 passes and 64 MiB of output and metadata storage before deriving metadata or allocating native resources; individual lookup exhaustion selects exact CPU fallback and is counted as capacity fallback.

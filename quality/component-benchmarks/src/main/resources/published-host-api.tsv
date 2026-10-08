@@ -1665,6 +1665,7 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/DrawImages#public final class dev/s7a/strata/render/DrawImages {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/DrawImages#public static final fun createDrawImage (Ldev/s7a/strata/geometry/IntSize;Lkotlin/jvm/functions/Function2;)Ldev/s7a/strata/render/DrawImage;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/DrawImages#public static final fun createDrawImage (Ldev/s7a/strata/geometry/IntSize;[I)Ldev/s7a/strata/render/DrawImage;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/DrawImages#public static final synthetic fun createOwnedDrawImage (Ldev/s7a/strata/geometry/IntSize;[I)Ldev/s7a/strata/render/DrawImage;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PaintScope#public abstract fun blitImage (Ldev/s7a/strata/render/DrawImage;Ldev/s7a/strata/geometry/IntRect;Ldev/s7a/strata/geometry/IntRect;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PaintScope#public abstract fun drawPlatform (Ldev/s7a/strata/render/PlatformDrawCommand;Ldev/s7a/strata/geometry/IntRect;)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/render/PaintScope#public abstract fun fillRectangle-RtejO-o (Ldev/s7a/strata/geometry/IntRect;I)V
@@ -3909,6 +3910,7 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.render/SampledImageOrientation|null[0]#final enum class dev.s7a.strata.render/SampledImageOrientation : kotlin/Enum<dev.s7a.strata.render/SampledImageOrientation> {
 :api@Web	:api@Web	klib:dev.s7a.strata.render/createDrawImage|createDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.Function2<kotlin.Int,kotlin.Int,kotlin.Int>){}[0]#final fun dev.s7a.strata.render/createDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/Function2<kotlin/Int, kotlin/Int, kotlin/Int>): dev.s7a.strata.render/DrawImage
 :api@Web	:api@Web	klib:dev.s7a.strata.render/createDrawImage|createDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.IntArray){}[0]#final fun dev.s7a.strata.render/createDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/IntArray): dev.s7a.strata.render/DrawImage
+:api@Web	:api@Web	klib:dev.s7a.strata.render/createOwnedDrawImage|createOwnedDrawImage(dev.s7a.strata.geometry.IntSize;kotlin.IntArray){}[0]#final fun dev.s7a.strata.render/createOwnedDrawImage(dev.s7a.strata.geometry/IntSize, kotlin/IntArray): dev.s7a.strata.render/DrawImage
 :api@Web	:api@Web	klib:dev.s7a.strata.resource/ResourceId.<init>|<init>(kotlin.String;kotlin.String){}[0]#constructor <init>(kotlin/String, kotlin/String)
 :api@Web	:api@Web	klib:dev.s7a.strata.resource/ResourceId.component1|component1(){}[0]#final fun component1(): kotlin/String
 :api@Web	:api@Web	klib:dev.s7a.strata.resource/ResourceId.component2|component2(){}[0]#final fun component2(): kotlin/String

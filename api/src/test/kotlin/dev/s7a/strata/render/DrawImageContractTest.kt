@@ -4,11 +4,13 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -21,6 +23,24 @@ import java.util.concurrent.Executors
  * Verifies the immutable public image value and its intentionally narrow JVM surface.
  */
 internal class DrawImageContractTest {
+    @OptIn(InternalStrataRuntimeApi::class)
+    @Test
+    fun runtimeOwnedPixelsTransferWithoutCopyAndExtractionRemainsDetached() {
+        val pixels = intArrayOf(0x00123456, 0x80405060.toInt(), -1, 0)
+        val image = createOwnedDrawImage(IntSize(2, 2), pixels)
+        val backing = image.javaClass.declaredFields.single { it.type == IntArray::class.java }
+        assertTrue(backing.trySetAccessible())
+        assertSame(pixels, backing.get(image))
+        val publicImage = createDrawImage(IntSize(2, 2), pixels)
+        assertEquals(publicImage, image)
+        assertEquals(publicImage.hashCode(), image.hashCode())
+        image.copyArgb().fill(0)
+        assertEquals(publicImage, image)
+        assertEquals(emptyImage(IntSize(0, 3)), createOwnedDrawImage(IntSize(0, 3), intArrayOf()))
+        assertThrows<IllegalArgumentException> { createOwnedDrawImage(IntSize(2, 2), intArrayOf(1)) }
+        assertThrows<ArithmeticException> { createOwnedDrawImage(IntSize(Int.MAX_VALUE, 2), intArrayOf()) }
+    }
+
     @Test
     fun generatedPixelsAreOwnedValuesAndCallbacksAreSynchronousAndRowMajor() {
         val visits = ArrayList<IntOffset>()
