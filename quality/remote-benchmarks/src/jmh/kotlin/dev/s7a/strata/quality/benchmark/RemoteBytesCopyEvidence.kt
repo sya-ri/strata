@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -37,6 +38,7 @@ public object RemoteBytesCopyEvidence {
         val planFile = Path.of(args[2]).toAbsolutePath().normalize()
         require(Files.exists(output).not() && Files.exists(child).not() && output != child)
         val planHash = ArtifactIdentity.file(planFile)
+        val observer = ArtifactIdentity.applicationTrees(listOf(javaClass))
         val connector = Bootstrap.virtualMachineManager().defaultConnector()
         val arguments = connector.defaultArguments()
         val classpath = System.getProperty("java.class.path")
@@ -96,12 +98,14 @@ public object RemoteBytesCopyEvidence {
             require(plan.get("fixture_tree_sha256") == provenance.getAsJsonObject("fixture_identity").get(RemoteBytesBenchmark::class.java.name))
             val source = sources.single { it.getAsJsonObject("archives") == archives }
             require(ArtifactIdentity.file(planFile) == planHash)
+            require(ArtifactIdentity.applicationTrees(listOf(javaClass)) == observer)
             PerformanceJson.writeNew(
                 output,
                 JsonObject().apply {
                     addProperty("workload_id", "remote-bytes-copy-observation-v1")
                     addProperty("status", "passed")
                     addProperty("untimed", true)
+                    add("observer_identity", Gson().toJsonTree(observer))
                     addProperty("source_revision", source.get("revision").asString)
                     addProperty("source_plan_sha256", planHash)
                     addProperty("child_provenance", child.toString())
