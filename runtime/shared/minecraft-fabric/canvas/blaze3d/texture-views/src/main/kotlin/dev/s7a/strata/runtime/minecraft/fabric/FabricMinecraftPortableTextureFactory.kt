@@ -106,16 +106,7 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
     ) {
         RenderSystem.assertOnRenderThread()
         val device = RenderSystem.getDevice()
-        val targets =
-            FabricMinecraftCompositionTargets.create(
-                owned,
-                size,
-                IntSize(indices.width, indices.height),
-                IntSize(factors.width, factors.height),
-                { extent -> device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, extent.width, extent.height, 1, 1) },
-                { label, extent -> device.createTexture({ label }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, extent.width, extent.height, 1, 1) },
-                device::createTextureView,
-            )
+        val targets = allocateFabricMinecraftCompositionTargets(owned, size, indices, factors)
         val outputs = targets.destinations
         val (indexTexture, indexView) = targets.indices
         val (factorTexture, factorView) = targets.factors

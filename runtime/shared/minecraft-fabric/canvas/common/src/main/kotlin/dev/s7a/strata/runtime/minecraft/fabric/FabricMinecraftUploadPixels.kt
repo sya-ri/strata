@@ -24,19 +24,12 @@ internal class FabricMinecraftUploadPixels {
         get() = indices == null && factors == null
 
     /**
-     * Transfers primary staging storage before copying immutable ARGB pixels on the render thread.
-     * The source callback is borrowed only for this synchronous copy; failures retain the allocated image for fenced cleanup.
+     * Records primary storage before the inline copy starts; the enclosing owner has already reserved this empty uploader.
      */
     @JvmSynthetic
-    internal fun stage(
-        size: IntSize,
-        pixel: (Int, Int) -> Int,
-    ): NativeImage {
+    internal fun retainPrimary(native: NativeImage) {
         check(isEmpty) { "A portable upload can initialize only once." }
-        val native = NativeImage(size.width, size.height, false)
         indices = native
-        uploadFabricMinecraftArgbPixels(native, size, pixel)
-        return native
     }
 
     /**
@@ -74,4 +67,21 @@ internal class FabricMinecraftUploadPixels {
             },
         )
     }
+}
+
+/**
+ * Transfers primary staging storage before copying immutable ARGB pixels on the render thread.
+ * Inlining preserves the original primitive pixel loop without adding per-pixel callback boxing or dispatch.
+ * The callback is borrowed only for this synchronous copy; failures retain the allocated image for fenced cleanup.
+ */
+@JvmSynthetic
+internal inline fun FabricMinecraftUploadPixels.stage(
+    size: IntSize,
+    pixel: (Int, Int) -> Int,
+): NativeImage {
+    check(isEmpty) { "A portable upload can initialize only once." }
+    val native = NativeImage(size.width, size.height, false)
+    retainPrimary(native)
+    uploadFabricMinecraftArgbPixels(native, size, pixel)
+    return native
 }
