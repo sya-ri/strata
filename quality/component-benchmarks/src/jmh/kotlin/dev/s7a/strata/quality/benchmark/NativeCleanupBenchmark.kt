@@ -280,9 +280,9 @@ public open class NativeCleanupBenchmark {
             first.addSuppressed(nested)
             val managers = List(3) { Manager() }
             managers.forEach(device::registerGuiResourceManager)
-            managers[0].pollAction = { throw first }
-            managers[1].pollAction = { throw nested }
-            managers[2].pollAction = { throw second }
+            managers[0].pollAction = failing(first)
+            managers[1].pollAction = failing(nested)
+            managers[2].pollAction = failing(second)
             check(runCatching { device.poll() }.exceptionOrNull() === first)
             check(managers.all { it.polls == 1 })
             check(first.suppressed.size == 2 && first.suppressed[0] === nested && first.suppressed[1] === second)
@@ -293,8 +293,8 @@ public open class NativeCleanupBenchmark {
             managers[0].pollAction = { }
             device.poll()
             check(managers.all { it.polls == 3 })
-            managers[0].shutdownAction = { throw first }
-            managers[1].closeAction = { throw second }
+            managers[0].shutdownAction = failing(first)
+            managers[1].closeAction = failing(second)
             check(runCatching { device.closeAfterGuiDiscarded() }.exceptionOrNull() === first)
             check(managers.all { it.shutdowns == 1 && it.closes == 1 && it.acknowledgements == 1 })
             check(driver.finishes == 1 && driver.drains == 1)
@@ -303,6 +303,8 @@ public open class NativeCleanupBenchmark {
             check(managers.all { it.polls == 3 && it.closes == 1 })
             check(runCatching { device.guiResources.createOwnerId() }.exceptionOrNull() is IllegalStateException)
         }
+
+        private fun failing(failure: Throwable): () -> Unit = { throw failure }
     }
 
     /**
