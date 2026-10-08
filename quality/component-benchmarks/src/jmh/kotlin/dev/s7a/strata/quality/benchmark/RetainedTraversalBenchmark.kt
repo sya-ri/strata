@@ -195,13 +195,18 @@ public open class RetainedTraversalBenchmark {
         val extent: Int get() = if (this == First) 4 else 5
     }
 
-    private data class Payload(val phase: Phase, val change: Change)
+    private data class Payload(
+        val phase: Phase,
+        val change: Change,
+    )
 
     /**
      * One current session, exact callback counts and identity-indexed current primitives.
      */
     @Suppress("TooManyFunctions") // Update, ownership and untimed work assertions share one worker-owned fixture.
-    private class Scene(val workload: Workload) {
+    private class Scene(
+        val workload: Workload,
+    ) {
         val counts = Counts()
         val nodes: MutableMap<Int, Primitive> = HashMap()
         private val generation = mutableStateOf(Phase.First)
@@ -352,18 +357,19 @@ public open class RetainedTraversalBenchmark {
         private fun primitiveCount(): Int = workload.leaves + sources.size + workload.depth * 2 + 1
 
         private fun description(generation: Phase): Element {
-            val children = List(workload.leaves) { ordinal ->
-                if (ordinal < sources.size) {
-                    evaluateComponentTree {
-                        Observe(sources[ordinal], key = ElementKey(10_000 + ordinal)) { payload ->
-                            counts.contents += 1
-                            element(observedDescription(ordinal, payload, generation))
+            val children =
+                List(workload.leaves) { ordinal ->
+                    if (ordinal < sources.size) {
+                        evaluateComponentTree {
+                            Observe(sources[ordinal], key = ElementKey(10_000 + ordinal)) { payload ->
+                                counts.contents += 1
+                                element(observedDescription(ordinal, payload, generation))
+                            }
                         }
+                    } else {
+                        primitive(ordinal + 1, ordinal < workload.participants, generation.extent)
                     }
-                } else {
-                    primitive(ordinal + 1, ordinal < workload.participants, generation.extent)
                 }
-            }
             var root: Element = primitive(0, width = generation.extent, children = children)
             repeat(workload.depth) { depth ->
                 root = primitive(30_000 + depth * 2, width = generation.extent, children = listOf(root, primitive(30_001 + depth * 2, width = generation.extent)))
@@ -469,7 +475,12 @@ public open class RetainedTraversalBenchmark {
         }
     }
 
-    private open class Primitive(var description: PrimitiveElement) : Node(), MeasureNode, LayoutNode, LifecycleNode {
+    private open class Primitive(
+        var description: PrimitiveElement,
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        LifecycleNode {
         protected var width = description.width
         protected val counts: Counts get() = description.scene.counts
 
@@ -515,7 +526,11 @@ public open class RetainedTraversalBenchmark {
         }
     }
 
-    private class Participant(description: PrimitiveElement) : Primitive(description), FocusTargetNode, SemanticsNode {
+    private class Participant(
+        description: PrimitiveElement,
+    ) : Primitive(description),
+        FocusTargetNode,
+        SemanticsNode {
         override val acceptsFocus: Boolean
             get() {
                 counts.focusReads += 1
@@ -532,7 +547,9 @@ public open class RetainedTraversalBenchmark {
         }
     }
 
-    private class ParticipantModifierElement(val scene: Scene) : ModifierElement {
+    private class ParticipantModifierElement(
+        val scene: Scene,
+    ) : ModifierElement {
         override val type: ModifierNodeType<*, *> = Type
 
         companion object {
@@ -540,7 +557,12 @@ public open class RetainedTraversalBenchmark {
         }
     }
 
-    private class ParticipantModifier(private val scene: Scene) : ModifierNode(), LifecycleNode, FocusTargetNode, SemanticsNode {
+    private class ParticipantModifier(
+        private val scene: Scene,
+    ) : ModifierNode(),
+        LifecycleNode,
+        FocusTargetNode,
+        SemanticsNode {
         override val acceptsFocus: Boolean
             get() {
                 scene.counts.focusReads += 1
