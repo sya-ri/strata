@@ -260,6 +260,68 @@ internal class MinecraftFontResolutionTest {
     }
 
     @Test
+    fun callbackTerminalCloseCannotReadmitRasterOrResolutionState() {
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font("default", """{"type":"ttf","file":"test:terminal.ttf"}"""),
+                "assets/test/font/terminal.ttf" to byteArrayOf(1),
+            )
+        val detached = MinecraftFontGlyph(7f, 0f, 0f, 0f, 0f, null)
+        for (entries in listOf(0, 2, 4_096)) {
+            for (missing in listOf(false, true)) {
+                for (releaseFailure in listOf(null, IllegalStateException("terminal backend failure"), MinecraftFontLoadLimitException("terminal limit failure"))) {
+                    for (original in listOf(false, true)) {
+                        lateinit var owner: MinecraftFontEngine
+                        var faceCloses = 0
+                        val backend =
+                            FontTestBackend(
+                                open = { _, _ ->
+                                    FontTestFace(
+                                        {
+                                            owner.close()
+                                            if (missing) null else detached
+                                        },
+                                        {
+                                            faceCloses++
+                                            owner.close()
+                                        },
+                                    )
+                                },
+                                release = {
+                                    owner.close()
+                                    if (releaseFailure != null) throw releaseFailure
+                                },
+                            )
+                        owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
+                        val expected = if (missing) owner.glyph(ResourceId("unknown", "terminal"), 'A'.code) else detached
+                        try {
+                            val result =
+                                runCatching {
+                                    if (original) originalGlyph(snapshot, owner, FontTestResources.defaultFont, 'A'.code) else owner.glyph(FontTestResources.defaultFont, 'A'.code)
+                                }
+                            if (releaseFailure == null) {
+                                assertEquals(expected, result.getOrThrow())
+                            } else {
+                                assertTrue(result.exceptionOrNull() === releaseFailure)
+                            }
+                            assertTerminalState(owner)
+                            val rejected = assertThrows(IllegalStateException::class.java) { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
+                            assertEquals("Font engine is closed.", rejected.message)
+                            owner.close()
+                            assertTerminalState(owner)
+                            assertEquals(1, faceCloses)
+                            assertEquals(1, backend.openCalls)
+                            assertEquals(1, backend.closeCalls)
+                        } finally {
+                            owner.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun weightedPrefixHistoryUnknownFamiliesAndCloseStayBounded() {
         val snapshot = FontTestResources.snapshot(FontTestResources.font("default", List(10) { """{"type":"space","advances":{"A":7}}""" }.joinToString(",")))
         val engine = MinecraftFontEngine(snapshot, { FontTestBackend() }, cacheEntries = 8192)
@@ -281,6 +343,21 @@ internal class MinecraftFontResolutionTest {
         assertEquals(0, resolutionEntries(engine))
         assertEquals(0, engine.retainedRasterEntries)
         assertEquals(0, engine.retainedFaces)
+    }
+
+    private fun assertTerminalState(engine: MinecraftFontEngine) {
+        for (name in listOf("rasters", "resolutions", "faces", "bitmapSizes", "bitmapFailures", "faceFailures", "providerStatus", "fontStatus")) {
+            val retained = engine.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(engine) as Map<*, *>
+            assertTrue(retained.isEmpty(), name)
+        }
+        val validated = engine.javaClass.getDeclaredField("validatedFaces").apply { isAccessible = true }.get(engine) as Set<*>
+        assertTrue(validated.isEmpty())
+        assertEquals(0, resolutionUnits(engine))
+        assertEquals(0, engine.retainedRasterEntries)
+        assertEquals(0L, engine.retainedRasterBytes)
+        assertEquals(0, engine.retainedFaces)
+        assertEquals(0L, engine.javaClass.getDeclaredField("faceBytes").apply { isAccessible = true }.getLong(engine))
+        for (name in listOf("snapshot", "backend")) assertTrue(engine.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(engine) == null)
     }
 
     private fun assertEquivalent(
