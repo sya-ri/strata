@@ -82,7 +82,7 @@ public open class FocusedInputBenchmark {
          * Requires exact terminal disposal without adding close latency to the dispatch interval.
          */
         @TearDown(Level.Trial)
-        public fun close() = fixture.close()
+        public fun close(): Unit = fixture.close()
     }
 
     /**
