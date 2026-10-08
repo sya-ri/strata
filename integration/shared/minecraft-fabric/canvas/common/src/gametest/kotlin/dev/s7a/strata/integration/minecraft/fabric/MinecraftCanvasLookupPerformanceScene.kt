@@ -38,8 +38,7 @@ internal class MinecraftCanvasLookupPerformanceScene(
             }
         }
 
-    private fun source(): CanvasSource =
-        CanvasSource { identity -> open(identity) }
+    private fun source(): CanvasSource = CanvasSource { identity -> open(identity) }
 
     private fun open(identity: CanvasId): CanvasBinding {
         val delegate = native.open(identity)
