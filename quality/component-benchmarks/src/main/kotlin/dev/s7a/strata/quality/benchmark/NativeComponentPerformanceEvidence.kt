@@ -100,7 +100,7 @@ internal object NativeComponentPerformanceEvidence {
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
-        val independent = independentFixture(request, sampledImages)
+        val independent = request.independentNativeFixture(sampledImages)
         val family = independent?.get("family")?.asString
         val selection = selection(request, profile, sampledImages)
         val collector = collectorArchive()
@@ -149,22 +149,10 @@ internal object NativeComponentPerformanceEvidence {
                     require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
                 }
             }
-        if (presentationPresent.not()) recordUnavailablePresentation(summary)
+        if (presentationPresent.not()) summary.recordUnavailablePresentation(presentationMetrics)
         summary.add("binary_receipts", binaries)
         summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
-    }
-
-    private fun independentFixture(
-        request: JsonObject,
-        sampledImages: Boolean,
-    ): JsonObject? {
-        val independent = request.getAsJsonObject("independent_fixture") ?: return null
-        val family = independent.get("family")?.asString
-        require(sampledImages.not()) { "Independent and sampled-image acceptance are separate scopes" }
-        require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
-        require(independent.get("class").asString.isNotBlank())
-        return independent
     }
 
     private fun cpuProvenance(request: JsonObject): JsonObject {
@@ -175,20 +163,6 @@ internal object NativeComponentPerformanceEvidence {
             if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
         }
         return JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
-    }
-
-    private fun recordUnavailablePresentation(summary: JsonObject) {
-        summary.getAsJsonArray("phases").forEach { row ->
-            val values = row.asJsonObject.getAsJsonObject("metrics")
-            presentationMetrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
-        }
-        summary.add(
-            "presentation_gpu",
-            JsonObject().apply {
-                addProperty("available", false)
-                addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
-            },
-        )
     }
 
     /**
@@ -370,4 +344,27 @@ internal object NativeComponentPerformanceEvidence {
             require(gpu.get("duration").isJsonNull && gpu.get("operation_to_completion_observation").isJsonNull)
         }
     }
+}
+
+private fun JsonObject.independentNativeFixture(sampledImages: Boolean): JsonObject? {
+    val independent = getAsJsonObject("independent_fixture") ?: return null
+    val family = independent.get("family")?.asString
+    require(sampledImages.not()) { "Independent and sampled-image acceptance are separate scopes" }
+    require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
+    require(independent.get("class").asString.isNotBlank())
+    return independent
+}
+
+private fun JsonObject.recordUnavailablePresentation(metrics: List<PerformanceReportMetric>) {
+    getAsJsonArray("phases").forEach { row ->
+        val values = row.asJsonObject.getAsJsonObject("metrics")
+        metrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
+    }
+    add(
+        "presentation_gpu",
+        JsonObject().apply {
+            addProperty("available", false)
+            addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
+        },
+    )
 }
