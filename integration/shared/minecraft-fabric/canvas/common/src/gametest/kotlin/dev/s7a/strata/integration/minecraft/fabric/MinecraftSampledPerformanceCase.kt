@@ -7,6 +7,8 @@ package dev.s7a.strata.integration.minecraft.fabric
 internal enum class MinecraftSampledPerformanceCase(
     val mode: Mode,
     val resolution: Int,
+    val canvasTargets: Int = 0,
+    val canvasOccurrences: Int = 0,
 ) {
     SampledStationarySmall(Mode.Stationary, 16),
     SampledStationaryMedium(Mode.Stationary, 64),
@@ -32,6 +34,15 @@ internal enum class MinecraftSampledPerformanceCase(
     SampledTiledTranslationSmall(Mode.TiledTranslation, 16),
     SampledTiledTranslationMedium(Mode.TiledTranslation, 64),
     SampledTiledTranslationLarge(Mode.TiledTranslation, 256),
+    CanvasLookupNone(Mode.NativeLookup, 16, 0, 0),
+    CanvasLookupOne(Mode.NativeLookup, 16, 1, 1),
+    CanvasLookupOneRepeated64(Mode.NativeLookup, 16, 1, 64),
+    CanvasLookupOneRepeated4096(Mode.NativeLookup, 16, 1, 4096),
+    CanvasLookupSixteen(Mode.NativeLookup, 16, 16, 16),
+    CanvasLookupSixteenRepeated64(Mode.NativeLookup, 16, 16, 64),
+    CanvasLookupSixteenRepeated4096(Mode.NativeLookup, 16, 16, 4096),
+    CanvasLookupSixtyFour(Mode.NativeLookup, 16, 64, 64),
+    CanvasLookupSixtyFourRepeated4096(Mode.NativeLookup, 16, 64, 4096),
     ;
 
     /**
@@ -46,5 +57,6 @@ internal enum class MinecraftSampledPerformanceCase(
         OrderedRows,
         ScrolledRows,
         TiledTranslation,
+        NativeLookup,
     }
 }

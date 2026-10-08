@@ -10,6 +10,7 @@ import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.runtime.FrameTime
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -188,7 +189,7 @@ public class NativeCanvasDevice(
             val current = requireBatch(presentation)
             check(current.queued) { "Native canvas presentation has not been queued." }
             check(token.deviceId == deviceId) { "Native canvas token belongs to another device." }
-            checkNotNull(current.targets.singleOrNull { it.token === token }) { "Native canvas generation is foreign or expired." }.target
+            checkNotNull(current.target(token)) { "Native canvas generation is foreign or expired." }.target
         }
 
     /**
@@ -748,11 +749,30 @@ public class NativeCanvasDevice(
         Requested,
     }
 
+    /**
+     * Owns the current ordered membership and its exact-token identity index on the device thread.
+     * Zero/one-target batches keep the scalar path; larger indexes are bounded by the selected set (at most 64).
+     * Cancellation, consumption, GUI failure or shutdown releases this derived owner when the batch is settled.
+     * Queued detachment and reload retain the same pinned current records until that existing consumption boundary.
+     * The index never enters the detached presentation or resolves through live attachment membership.
+     */
     private class Batch(
         val presentation: NativeCanvasPresentation,
         val targets: Set<TargetRecord>,
         var queued: Boolean = false,
-    )
+    ) {
+        private val indexedTargets =
+            if (1 < targets.size) {
+                IdentityHashMap<NativeCanvasToken, TargetRecord>(targets.size).apply {
+                    targets.forEach { record -> put(checkNotNull(record.token), record) }
+                }
+            } else {
+                null
+            }
+
+        fun target(token: NativeCanvasToken): TargetRecord? =
+            if (indexedTargets == null) targets.singleOrNull()?.takeIf { it.token === token } else indexedTargets[token]
+    }
 
     private class Completion(
         private val fence: NativeCanvasFence,

@@ -69,6 +69,12 @@ Class selection uses anchored JMH include filters and checks the complete genera
 `strata.performance.suite=<name>` chooses a separate output label without adding a corpus-specific build flag.
 Quick collection retains explicitly selected classes, methods and parameters; ordinary quick runs keep their existing default smoke subset.
 
+The independently selected `NativeCanvasLookupBenchmark` uses `:quality:component-benchmarks:jmhComponents` with the existing generic class selection and workload suite label.
+Its 216 rows remain separate from the ordinary component matrix and distinguish target resolution, complete protocol, detached capture and output rasterization.
+The same frozen compiled fixture and collector/harness/control inputs must execute against actual baseline and candidate runtime archives; optional `verifyWork()` checks identity association and terminal mock-owner release before collection.
+Native `CanvasLookup` cases use the existing sampled-image family, selected explicitly through its ordinary workload IDs, rather than a new timing or evidence engine.
+Collect all controls and report separate accepted results or rejection for native target lookup and detached capture lookup.
+
 Add a JMH fixture to the existing source set without changing a Gradle build script or collection launcher.
 An optional public static no-argument `verifyWork()` method owns deterministic fixture acceptance outside timing; Kotlin companions expose it with `@JvmStatic`.
 Ordinary checks discover every generated fixture and its optional verifier automatically; selected collection also checks the chosen fixtures before starting forks.
