@@ -7,6 +7,7 @@ import dev.s7a.strata.render.createDrawImage
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -126,23 +127,36 @@ internal class BlitCompositionTest {
         assertEquals(4, compacted.size)
         for (extent in listOf(64, 65)) {
             val large = grid(image, IntRect(0, 0, extent, extent), 8, 8)
-            assertSame(large, (composeDenseBlits(large).single() as LocalDrawCommand.ComposedBlits).commands)
+            val unchanged = (composeDenseBlits(large).single() as LocalDrawCommand.ComposedBlits).commands
+            assertEquals(large.size, unchanged.size)
+            large.indices.forEach { assertSame(large[it], unchanged[it]) }
         }
         val stretched = commands.map { it.copy(destination = IntRect(it.destination.left * 2, it.destination.top * 2, it.destination.right * 2, it.destination.bottom * 2)) }
-        assertSame(stretched, (composeDenseBlits(stretched).single() as LocalDrawCommand.ComposedBlits).commands)
+        val unchanged = (composeDenseBlits(stretched).single() as LocalDrawCommand.ComposedBlits).commands
+        assertEquals(stretched.size, unchanged.size)
+        stretched.indices.forEach { assertSame(stretched[it], unchanged[it]) }
     }
 
     @Test
-    fun malformedInternalCropPublishesNoTemplateAndIndependentValidOwnersStillMaterialize() {
+    fun rejectedCropPublishesNoOwnerAndIndependentValidOwnersRemainImmutable() {
         val image = createDrawImage(IntSize(3, 2)) { x, y -> 0x80000000.toInt() or (y * 3 + x) }
-        // Public PaintScope rejects this crop; only an invalid internal command can fail during immutable source reads.
-        val invalid = composeDenseBlits(grid(image, IntRect(0, 0, 4, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
-        repeat(2) { assertThrows(IllegalArgumentException::class.java) { invalid.commands } }
         val valid = composeDenseBlits(grid(image, IntRect(0, 0, 3, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
         val result = valid.commands.single().image
+        val saved = result.copyArgb()
+        repeat(2) {
+            var published: LocalDrawCommand.ComposedBlits? = null
+            assertThrows(IllegalArgumentException::class.java) {
+                // The local command constructor validates source crops before any retained owner or template exists.
+                published = composeDenseBlits(grid(image, IntRect(0, 0, 4, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
+            }
+            assertNull(published)
+            assertArrayEquals(saved, result.copyArgb())
+        }
+        val independent = composeDenseBlits(grid(image, IntRect(0, 0, 3, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
+        assertNotSame(result, independent.commands.single().image)
+        assertEquals(result, independent.commands.single().image)
         for (y in 0 until 16) for (x in 0 until 24) assertEquals(image.argbAt(x % 3, y % 2), result.argbAt(x, y))
         assertSame(valid.commands, valid.commands)
-        assertThrows(IllegalArgumentException::class.java) { invalid.commands }
     }
 
     private fun grid(
