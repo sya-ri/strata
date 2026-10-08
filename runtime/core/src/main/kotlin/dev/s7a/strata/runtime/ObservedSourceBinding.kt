@@ -13,11 +13,29 @@ import dev.s7a.strata.state.StateSource
 @OptIn(InternalStrataRuntimeApi::class)
 internal class ObservedSourceBinding(
     val source: StateSource<*>,
+    pending: PendingBindingQueue<ObservedSourceBinding>,
     val upstream: ObservedSourceBinding? = null,
 ) : AutoCloseable {
     private val derivation = source as? DerivedStateSource<*>
-    private val binding = if (derivation == null) UiSessionBinding<Any?>({}, {}, {}) else null
+    private val binding =
+        if (derivation == null) {
+            UiSessionBinding<Any?>(
+                {},
+                {},
+                {},
+                pending.monitor,
+                { pending.enqueue(this) },
+                { pending.remove(this) },
+            )
+        } else {
+            null
+        }
     private var derivedValue: Any? = null
+
+    /**
+     * Current identity-map traversal order, refreshed by the owner only after graph membership changes.
+     */
+    var captureOrder: Long = 0L
 
     /**
      * Owner-thread reference count, including repeated source argument positions.
