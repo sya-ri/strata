@@ -52,7 +52,7 @@ public open class NonpaintingRasterBenchmark {
 
         private lateinit var bounds: IntRect
         private lateinit var commands: List<DrawCommand>
-        private lateinit var pixels: IntArray
+        private lateinit var destinationPixels: IntArray
         private var area = 0
 
         /**
@@ -119,11 +119,11 @@ public open class NonpaintingRasterBenchmark {
                     Continuation.Translucent -> listOf(DrawCommand.FillRectangle(bounds, ArgbColor(0x80345678.toInt())), DrawCommand.FillRectangle(bounds, ArgbColor(0x407799BB)))
                 }
             commands = prefix + clipped + suffix
-            pixels = IntArray(area + 17) { 0x001337AA }
+            destinationPixels = IntArray(area + 17) { 0x001337AA }
             val expected = NonpaintingRasterReference.paint(commands, bounds, scenario.scale)
             check(immutable().copyArgb().contentEquals(expected)) { "Immutable scalar mismatch: $scenario" }
             check(borrowed().copyOf(area).contentEquals(expected)) { "Borrowed scalar mismatch: $scenario" }
-            check(pixels.takeLast(17).all { it == 0x001337AA }) { "Borrowed tail changed: $scenario" }
+            check(destinationPixels.takeLast(17).all { it == 0x001337AA }) { "Borrowed tail changed: $scenario" }
             check(image.copyArgb().contentEquals(intArrayOf(0x001337AA, -1, 0x80445566.toInt(), 0x01020406, 0x407799BB, 0xFF224466.toInt())))
         }
 
@@ -133,7 +133,7 @@ public open class NonpaintingRasterBenchmark {
          */
         @Setup(Level.Invocation)
         public fun resetBorrowed() {
-            pixels.fill(0x001337AA)
+            destinationPixels.fill(0x001337AA)
         }
 
         /**
@@ -145,8 +145,8 @@ public open class NonpaintingRasterBenchmark {
          * Returns the existing destination after a complete paint operation; excess storage remains caller-owned.
          */
         public fun borrowed(): IntArray {
-            rasterizeHeadlessInto(commands, bounds, scenario.scale, pixels)
-            return pixels
+            rasterizeHeadlessInto(commands, bounds, scenario.scale, destinationPixels)
+            return destinationPixels
         }
     }
 
@@ -198,6 +198,7 @@ public open class NonpaintingRasterBenchmark {
      * @property scale final physical density.
      * @property patterned whether a nonuniform image precedes the selected command.
      */
+    @Suppress("LongParameterList") // Fixed case columns keep primitive, coverage, continuation, extent, density and pattern independently reviewable.
     public enum class Scenario(
         public val primitive: Primitive,
         public val coverage: Coverage,

@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -67,10 +68,16 @@ internal object NonpaintingRasterReference {
             is DrawCommand.BlitImage -> contains(command.destination, x, y)
             is DrawCommand.BlitImagePixels -> contains(command.destination, x, y)
             is DrawCommand.PushClip -> contains(command.bounds, x, y)
-            is DrawCommand.SampledImage -> command.destination.let { it.left <= x && x < it.right && it.top <= y && y < it.bottom }
-            is DrawCommand.PushFractionalClip -> command.bounds.let { it.left <= x && x < it.right && it.top <= y && y < it.bottom }
+            is DrawCommand.SampledImage -> contains(command.destination, x, y)
+            is DrawCommand.PushFractionalClip -> contains(command.bounds, x, y)
             else -> error("A pixel command or clip is required.")
         }
+
+    private fun contains(
+        bounds: FloatRect,
+        x: Double,
+        y: Double,
+    ): Boolean = bounds.left <= x && x < bounds.right && bounds.top <= y && y < bounds.bottom
 
     private fun contains(
         bounds: IntRect,
