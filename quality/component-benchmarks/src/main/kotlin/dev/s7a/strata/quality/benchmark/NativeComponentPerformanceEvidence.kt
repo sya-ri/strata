@@ -90,23 +90,12 @@ internal object NativeComponentPerformanceEvidence {
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
-        val independent = request.getAsJsonObject("independent_fixture")
+        val independent = independentFixture(request, sampledImages)
         val family = independent?.get("family")?.asString
-        if (independent != null) {
-            require(sampledImages.not()) { "Independent and sampled-image acceptance are separate scopes" }
-            require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
-            require(independent.get("class").asString.isNotBlank())
-        }
         val selection = selection(request, profile, sampledImages)
         val collector = collectorArchive()
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
-        val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
-        val metadata = cpu.getAsJsonObject("strata")
-        val selected = JsonArray()
-        metadata.getAsJsonArray("modules").forEach { entry ->
-            if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
-        }
-        val provenance = JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
+        val provenance = cpuProvenance(request)
         val arguments = mutableListOf<JsonObject>()
         val binaries = JsonArray()
         val paths = request.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
@@ -152,6 +141,28 @@ internal object NativeComponentPerformanceEvidence {
         summary.add("binary_receipts", binaries)
         summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    private fun independentFixture(
+        request: JsonObject,
+        sampledImages: Boolean,
+    ): JsonObject? {
+        val independent = request.getAsJsonObject("independent_fixture") ?: return null
+        val family = independent.get("family")?.asString
+        require(sampledImages.not()) { "Independent and sampled-image acceptance are separate scopes" }
+        require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
+        require(independent.get("class").asString.isNotBlank())
+        return independent
+    }
+
+    private fun cpuProvenance(request: JsonObject): JsonObject {
+        val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
+        val metadata = cpu.getAsJsonObject("strata")
+        val selected = JsonArray()
+        metadata.getAsJsonArray("modules").forEach { entry ->
+            if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
+        }
+        return JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
     }
 
     private fun collectorArchive(): Path {
