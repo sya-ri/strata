@@ -8,10 +8,10 @@ import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextWrap
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertSame
 
 /**
  * Compares raw-converted and independently canonical public editors through complete retained frames and real input.
@@ -35,7 +35,7 @@ internal class MinecraftTextAreaNormalizationTest {
                     compare(fixture, left, right, canonical, converted, size)
                     converted.value = "日🙂\u0085한A\re\u0301"
                     assertEquals(oldRight, fixture.frame(right, size))
-                    assertFailsWith<IllegalArgumentException> { converted.value = "日\r\n\uD800" }
+                    assertThrows(IllegalArgumentException::class.java) { converted.value = "日\r\n\uD800" }
                     assertEquals(oldRight, fixture.frame(right, size))
                     for (event in listOf(TextInputEvent.Preedit("🙂\r\n日", 4, emptyList(), -1), TextInputEvent.Character(0x1F642))) {
                         fixture.input(left, event, size)

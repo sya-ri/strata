@@ -101,9 +101,10 @@ public open class TextAreaRejectionBenchmark {
                 }
                 try {
                     val scroll = input.state.scrollState
+                    val original = input.state.value
                     check(benchmark.construct(input).message == workload.failure.message)
                     check(benchmark.setter64(input).message == workload.failure.message)
-                    check(input.state.value == "A")
+                    check(input.state.value === original)
                     check(input.state.scrollState === scroll)
                 } finally {
                     input.close()
