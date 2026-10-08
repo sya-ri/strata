@@ -151,17 +151,18 @@ public open class OperationGuardBenchmark {
                 guards = List(workload.count) { StateObservation({}, {}, {}, { counts.validations += 1 }) }
             } else {
                 nodes = List(workload.count) { FrameNode(counts) }
-                sessions = nodes.map { node ->
-                    val first = FrameElement(node, Presentation.First)
-                    val second = FrameElement(node, Presentation.Second)
-                    createRuntimeUiSession {
-                        counts.evaluations += 1
-                        when (presentation.value) {
-                            Presentation.First -> first
-                            Presentation.Second -> second
+                sessions =
+                    nodes.map { node ->
+                        val first = FrameElement(node, Presentation.First)
+                        val second = FrameElement(node, Presentation.Second)
+                        createRuntimeUiSession {
+                            counts.evaluations += 1
+                            when (presentation.value) {
+                                Presentation.First -> first
+                                Presentation.Second -> second
+                            }
                         }
                     }
-                }
                 if (workload.kind == Kind.Nested) {
                     nodes.forEachIndexed { index, node -> node.nextSession = sessions.getOrNull(index + 1) }
                 }
@@ -255,12 +256,23 @@ public open class OperationGuardBenchmark {
                 val frame = session.frame(constraints)
                 check(frame.size == IntSize(16, 16))
                 check(frame.drawCommands.single() == DrawCommand.FillRectangle(IntRect(0, 0, 16, 16), presentation.value.color))
-                check(frame.semantics.single().semantics.label == presentation.value.label)
+                check(
+                    frame.semantics
+                        .single()
+                        .semantics
+                        .label == presentation.value.label,
+                )
                 if (workload.kind != Kind.Dirty) {
                     check(frame === initialFrames[index])
                 }
                 check(initialFrames[index].drawCommands.single() == DrawCommand.FillRectangle(IntRect(0, 0, 16, 16), Presentation.First.color))
-                check(initialFrames[index].semantics.single().semantics.label == Presentation.First.label)
+                check(
+                    initialFrames[index]
+                        .semantics
+                        .single()
+                        .semantics
+                        .label == Presentation.First.label,
+                )
             }
         }
 
