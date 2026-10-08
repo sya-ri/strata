@@ -377,7 +377,7 @@ public open class FocusedInputBenchmark {
         val node: InputNode,
         children: List<Element> = emptyList(),
         modifier: Modifier = Modifier.Empty,
-    ) : Element(ElementIdentity(), inputType, children, modifier)
+    ) : Element(ElementIdentity.Positional, inputType, children, modifier)
 
     private data class DispatchElement(
         val owner: Int,

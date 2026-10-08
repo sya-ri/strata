@@ -409,7 +409,7 @@ internal class PortableFocusedInputTest {
 
     private class ProbeElement(
         val node: ProbeNode,
-    ) : Element(ElementIdentity(), probeType)
+    ) : Element(ElementIdentity.Positional, probeType)
 
     private data class InputElement(
         val node: InputModifier,
