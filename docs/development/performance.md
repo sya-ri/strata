@@ -240,6 +240,8 @@ The independent `:quality:benchmarks:jmhPortableTiles` corpus invokes the JVM-sy
 Its four cases use 128 or 4096 primitives across 64 tiles, either dispersed among individual tiles or covering every tile, with unchanged enclosing integer and fractional clips.
 It includes the same reflective invocation overhead on both revisions, preserves the ordinary JMH execution settings and shared fork provenance, and does not change the historical corpus or its runtime classpath.
 Collect repetitions 0, 1 and 2 into separate `strata.performance.portableTileOutput` roots for the baseline and candidate, then compare through the shared evidence processor.
+The separate `strata.performance.portableTileControls=true` corpus retains the same execution settings and primitive counts, with four nested clips around every dispersed primitive or a single 128-by-128-pixel run.
+Its independent default output directory preserves the original four-case receipts and measures clip-pop distribution without claiming small-run acceleration.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
 See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.

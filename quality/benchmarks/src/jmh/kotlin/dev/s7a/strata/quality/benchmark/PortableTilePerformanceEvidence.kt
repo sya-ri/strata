@@ -16,7 +16,8 @@ public object PortableTilePerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
-        val fixtures = listOf(PortableTileBenchmark::class.java)
+        val controls = System.getProperty("strata.performance.portableTileControls", "false").toBooleanStrict()
+        val fixtures = if (controls) listOf(PortableTileControlBenchmark::class.java) else listOf(PortableTileBenchmark::class.java)
         val expected = JmhWorkloadInventory.capture(fixtures, setOf("avgt"))
         check(expected.size == 4)
         JmhPerformanceRunner.run(

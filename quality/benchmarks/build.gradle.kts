@@ -69,10 +69,14 @@ tasks.register<JavaExec>("jmhPortableTiles") {
     mainClass.set("dev.s7a.strata.quality.benchmark.PortableTilePerformanceEvidence")
     val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
     require(0 <= repetition)
+    val controls = providers.gradleProperty("strata.performance.portableTileControls").map(String::toBooleanStrict).getOrElse(false)
+    systemProperty("strata.performance.portableTileControls", controls)
+    val suite = if (controls) "portable-tile-controls" else "portable-tiles"
     val output = providers.gradleProperty("strata.performance.portableTileOutput")
         .map { rootProject.file(it).resolve("run-$repetition") }
-        .orElse(layout.buildDirectory.dir("reports/jmh/portable-tiles/run-$repetition").map { it.asFile })
-    args(output.get().absolutePath, repetition.toString(), "PortableTileBenchmark.partition", "-bm", "avgt", "-wi", "3", "-w", "1s", "-i", "5", "-r", "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+        .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+    val benchmark = if (controls) "PortableTileControlBenchmark.partition" else "PortableTileBenchmark.partition"
+    args(output.get().absolutePath, repetition.toString(), benchmark, "-bm", "avgt", "-wi", "3", "-w", "1s", "-i", "5", "-r", "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     doFirst {
         val runtime = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.portableTileRuntime").orNull) { "Supply strata.performance.portableTileRuntime with the actual Fabric runtime JAR." }).canonicalFile
         require(runtime.isFile && runtime.extension == "jar") { "Portable tile collection requires an actual runtime JAR." }
