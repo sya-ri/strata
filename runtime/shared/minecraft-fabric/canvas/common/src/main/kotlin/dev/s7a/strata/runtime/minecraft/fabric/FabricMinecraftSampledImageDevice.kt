@@ -6,7 +6,6 @@ import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasFence
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResourceManager
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import java.util.Collections
 import java.util.IdentityHashMap
 
 /**
@@ -75,38 +74,72 @@ internal class FabricMinecraftSampledImageDevice(
         evicted: () -> Unit,
     ): Borrow =
         operation {
-            requireOwner(owner)
-            check(owner.closed.not()) { "A released sampled-image owner cannot borrow textures." }
-            check(terminal.not()) { "Sampled images cannot be borrowed after native shutdown begins." }
-            pollInternal()
-            val protected = Collections.newSetFromMap(IdentityHashMap<DrawImage, Boolean>())
-            val requested = images.filter(protected::add)
-            requested.forEach { image ->
-                nextUse = Math.incrementExact(nextUse)
-                val owned = owner.images[image]
-                if (owned != null) {
-                    hit()
-                    owned.lastUse = nextUse
-                    owned.entry.lastUse = nextUse
-                } else {
-                    val shared = activeByImage[image]
-                    if (shared == null) miss() else hit()
-                }
-            }
-            requested.forEach { image ->
-                if (owner.images.containsKey(image).not()) {
-                    acquire(owner, image, protected, uploaded, evicted)
-                }
-            }
-            val available = IdentityHashMap<DrawImage, Entry>()
-            requested.forEach { image ->
-                owner.images[image]?.entry?.let { entry ->
-                    entry.pins = Math.incrementExact(entry.pins)
-                    available[image] = entry
-                }
-            }
-            Borrow(available, available.values.toSet())
+            beginBorrow(owner)
+            borrowValidated(owner, FabricMinecraftSampledImageRequests(images.asSequence()), hit, miss, uploaded, evicted)
         }
+
+    /**
+     * Borrows already distinct CPU requests without repeating their identity admissions.
+     *
+     * Requests own no native state; each call performs the same live acquisition, accounting and pinning as [borrow] with a list.
+     * The request order and identity membership are borrowed only for this call, including owner-capacity protection.
+     */
+    @JvmSynthetic
+    internal fun borrow(
+        owner: Owner,
+        requests: FabricMinecraftSampledImageRequests,
+        hit: () -> Unit,
+        miss: () -> Unit,
+        uploaded: (DrawImage) -> Unit,
+        evicted: () -> Unit,
+    ): Borrow =
+        operation {
+            beginBorrow(owner)
+            borrowValidated(owner, requests, hit, miss, uploaded, evicted)
+        }
+
+    private fun beginBorrow(owner: Owner) {
+        requireOwner(owner)
+        check(owner.closed.not()) { "A released sampled-image owner cannot borrow textures." }
+        check(terminal.not()) { "Sampled images cannot be borrowed after native shutdown begins." }
+        pollInternal()
+    }
+
+    private fun borrowValidated(
+        owner: Owner,
+        requests: FabricMinecraftSampledImageRequests,
+        hit: () -> Unit,
+        miss: () -> Unit,
+        uploaded: (DrawImage) -> Unit,
+        evicted: () -> Unit,
+    ): Borrow {
+        val requested = requests.images
+        requested.forEach { image ->
+            nextUse = Math.incrementExact(nextUse)
+            val owned = owner.images[image]
+            if (owned != null) {
+                hit()
+                owned.lastUse = nextUse
+                owned.entry.lastUse = nextUse
+            } else {
+                val shared = activeByImage[image]
+                if (shared == null) miss() else hit()
+            }
+        }
+        requested.forEach { image ->
+            if (owner.images.containsKey(image).not()) {
+                acquire(owner, image, requests, uploaded, evicted)
+            }
+        }
+        val available = IdentityHashMap<DrawImage, Entry>()
+        requested.forEach { image ->
+            owner.images[image]?.entry?.let { entry ->
+                entry.pins = Math.incrementExact(entry.pins)
+                available[image] = entry
+            }
+        }
+        return Borrow(available, available.values.toSet())
+    }
 
     /**
      * Releases one screen owner's cache references without waiting for initialization or GUI work.
@@ -263,7 +296,7 @@ internal class FabricMinecraftSampledImageDevice(
     private fun acquire(
         owner: Owner,
         image: DrawImage,
-        protected: Set<DrawImage>,
+        protected: FabricMinecraftSampledImageRequests,
         uploaded: (DrawImage) -> Unit,
         evicted: () -> Unit,
     ) {
@@ -327,7 +360,7 @@ internal class FabricMinecraftSampledImageDevice(
     private fun fitOwner(
         owner: Owner,
         bytes: Long,
-        protected: Set<DrawImage>,
+        protected: FabricMinecraftSampledImageRequests,
         evicted: () -> Unit,
     ): Boolean {
         while (OWNER_ENTRIES <= owner.images.size || OWNER_BYTES < Math.addExact(owner.bytes, bytes)) {

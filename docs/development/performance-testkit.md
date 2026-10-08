@@ -75,6 +75,13 @@ Ordinary checks discover every generated fixture and its optional verifier autom
 Keep expected case counts and fixture-specific pixel, work and lifetime assertions with the fixture or its work helper.
 Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-properties-file>` with unique labels and absolute regular-file paths.
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
+
+`FabricFramePerformanceEvidence` is a generic shared-kit entry for explicitly selected generated fixtures that need an independently supplied actual Fabric archive.
+Supply the unchanged fixture/collector/control classpath and the five actual API, core, headless, Minecraft and Fabric target archives; the kit verifies and preserves their actual loaded class trees in every fork.
+It accepts a fresh output directory, repetition index and ordinary JMH settings, with the same `strata.performance.benchmarks`, `workloads`, `parameters` and immutable `fixtureInputs` selectors.
+`SampledSourceRequestsBenchmark` has eighteen preparation/borrow rows over its nine compiled direct and composed cases, including C=1/64/4096, U=1/16/C controls and six-tile source sharing.
+Use standard three one-second warmups, five one-second measurements, one independent fork, one thread, microsecond units and the GC profiler, with three independent invocations per runtime.
+Its signalled native-free resource fixture measures the actual device CPU path and normalized allocation; it reports no native pixels, real source uploads or GPU interval.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
@@ -198,6 +205,16 @@ Missing fields and non-object ancestors remain malformed evidence.
 The JVM tests exercise these contracts against the actual packaged collector rather than a compiled-directory substitute.
 
 ## Independent sampled-image, GPU and cold-image evidence
+
+The generic `strata.performance.nativeFixture` property selects a compiled `MinecraftNativePerformanceCorpus` implementation from the same verified fixture archive.
+Its own complete case IDs and family are recorded before shared workload selection; it does not change the ordinary component or sampled-image matrices or counts.
+`MinecraftSampledSourceRequestsCorpus` supplies nine source-request cases at all standard GUI scales, separating clean direct drawing, shared composed tiles and prebuilt one-use identity replacement.
+Direct unique-source controls stay within the native owner limit; the independent JVM corpus retains the 4096-identity capacity control without claiming a supported complete native frame for it.
+Process these reports with `NativeComponentPerformanceEvidence` using an `independent_fixture` object containing the exact compiled `family`, fully qualified `class` and ordered `cases` array, plus the ordinary collector, CPU provenance, runs and output fields.
+The processor rejects a changed fixture matrix, duplicate cases, missing scales, changed fixture archive, incomplete frame counts and unbalanced release, and an independent family cannot satisfy canonical native acceptance.
+Three standard baseline and three standard candidate processes must use the same compiled fixture and collector archives and workload selection for each backend.
+The ordinary loaded suite also checks complete dense/direct/composed pixels, current request identity reuse and reference release at GUI densities one and four.
+GUI-only GPU queries retain their existing scope below; a full offscreen-composition-through-GUI interval remains explicitly unavailable when the compiled query adapter cannot capture it.
 
 Set `strata.performance.sampledImages=true` together with a fresh `strata.performance.nativeOutput` to collect the independent sampled-image corpus.
 Its reviewed registry is `quality/component-benchmarks/src/main/resources/native-sampled-images.tsv`: stationary, translated, resized, clipped, replaced, ordered overlapping-row, scrolling-row and tiled-translation scenes, each with 16, 64 and 256 texel source extents.

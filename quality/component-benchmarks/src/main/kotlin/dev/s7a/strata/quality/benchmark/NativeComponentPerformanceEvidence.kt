@@ -90,6 +90,13 @@ internal object NativeComponentPerformanceEvidence {
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
+        val independent = request.getAsJsonObject("independent_fixture")
+        val family = independent?.get("family")?.asString
+        if (independent != null) {
+            require(sampledImages.not()) { "Independent and sampled-image acceptance are separate scopes" }
+            require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
+            require(independent.get("class").asString.isNotBlank())
+        }
         val selection = selection(request, profile, sampledImages)
         val collector = collectorArchive()
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
@@ -108,10 +115,15 @@ internal object NativeComponentPerformanceEvidence {
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
-                contract(selection, profile, sampledImages),
+                contract(selection, profile, sampledImages, family),
                 metrics,
             ) { report ->
-                verify(report, selection, profile, sampledImages)
+                verify(report, selection, profile, sampledImages, family)
+                if (independent != null) {
+                    require(report.get("independent_fixture_family").asString == family)
+                    require(report.get("independent_fixture_class") == independent.get("class"))
+                    require(report.getAsJsonArray("independent_fixture_cases") == independent.getAsJsonArray("cases")) { "Changed compiled native fixture matrix" }
+                }
                 arguments.add(
                     JsonObject().apply {
                         add(
@@ -155,7 +167,9 @@ internal object NativeComponentPerformanceEvidence {
         profile: PerformanceProfile,
         sampledImages: Boolean,
     ): PerformanceSelection {
-        val corpus = if (sampledImages) sampledCases else cases
+        val declared = request.getAsJsonObject("independent_fixture")?.getAsJsonArray("cases")
+        val corpus = declared?.map { it.asString }?.toSet() ?: if (sampledImages) sampledCases else cases
+        if (declared != null) require(corpus.isNotEmpty() && corpus.size == declared.size() && corpus.all(String::isNotBlank)) { "Empty or duplicate independent native cases" }
         return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)
     }
 
@@ -163,9 +177,10 @@ internal object NativeComponentPerformanceEvidence {
         selection: PerformanceSelection,
         profile: PerformanceProfile,
         sampledImages: Boolean,
+        family: String? = null,
     ): PerformanceReportContract =
         PerformanceReportContract(
-            workloadId(selection, profile, sampledImages),
+            workloadId(selection, profile, sampledImages, family),
             listOf("case", "operation", "gui_scale"),
             selection.ids.size * profile.viewports((1..4).toList()).size,
             setOf(
@@ -190,7 +205,7 @@ internal object NativeComponentPerformanceEvidence {
                 "warmup",
                 "settle_frames",
                 "preparation_timeout_ms",
-            ) + if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet(),
+            ) + (if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet()) + (if (family != null) setOf("independent_fixture_family", "independent_fixture_class", "independent_fixture_cases") else emptySet()),
             setOf("samples", "framebuffer_width", "framebuffer_height"),
             repetitions = profile.plan().repetitions,
         )
@@ -199,8 +214,9 @@ internal object NativeComponentPerformanceEvidence {
         selection: PerformanceSelection,
         profile: PerformanceProfile,
         sampledImages: Boolean,
+        independentFamily: String? = null,
     ): String {
-        val family = if (sampledImages) "native-sampled-images" else "native-components"
+        val family = independentFamily ?: if (sampledImages) "native-sampled-images" else "native-components"
         return profile.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1")
     }
 
@@ -212,8 +228,9 @@ internal object NativeComponentPerformanceEvidence {
         selection: PerformanceSelection = PerformanceSelection(cases),
         profile: PerformanceProfile = PerformanceProfile.Standard,
         sampledImages: Boolean = false,
+        family: String? = null,
     ) {
-        val expectedId = workloadId(selection, profile, sampledImages)
+        val expectedId = workloadId(selection, profile, sampledImages, family)
         require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
         report.getAsJsonArray("selected_cases")?.let { declared ->
             require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
