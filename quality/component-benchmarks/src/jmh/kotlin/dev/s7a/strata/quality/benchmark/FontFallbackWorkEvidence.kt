@@ -70,7 +70,12 @@ public object FontFallbackWorkEvidence {
             try {
                 val warm = owner.warm()
                 equalGlyph(warm, owner.uncachedWarm())
+                val traces = owner.traces()
+                check(traces.size == 3 && traces.all { it.size == 64 })
+                for (reference in traces.drop(1)) traces.first().zip(reference).forEach { (cached, uncached) -> equalGlyph(cached, uncached) }
+                equalGlyph(warm, traces.first().first())
                 val churn = owner.churn()
+                equalGlyph(churn, traces.first().last())
                 equalGlyph(churn, owner.uncached())
                 equalGlyph(warm, owner.warm())
                 val lifetime = owner.lifecycle()
@@ -80,7 +85,11 @@ public object FontFallbackWorkEvidence {
                 if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) check(warm.image != null)
                 if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned, FontFallbackWorkload.AtlasRejected)) check(warm.advance == 6f)
                 if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
-                listOf("warm" to warm, "churn" to churn, "lifecycle" to lifetime).map { (operation, glyph) -> record(workload, depth, operation, glyph) }
+                listOf(
+                    record(workload, depth, "warm", warm, listOf(warm)),
+                    record(workload, depth, "churn", churn, traces.first()),
+                    record(workload, depth, "lifecycle", lifetime, traces.last()),
+                )
             } finally {
                 owner.close()
             }
@@ -102,11 +111,22 @@ public object FontFallbackWorkEvidence {
         depth: Int,
         operation: String,
         glyph: MinecraftFontGlyph,
+        trace: List<MinecraftFontGlyph>,
     ): JsonObject =
-        JsonObject().apply {
+        glyphRecord(glyph).apply {
             addProperty("workload", workload.name)
             addProperty("depth", depth)
             addProperty("operation", operation)
+            add(
+                "glyph_trace",
+                JsonArray().apply {
+                    trace.forEachIndexed { index, scalarGlyph -> add(glyphRecord(scalarGlyph).apply { addProperty("scalar", 65 + index) }) }
+                },
+            )
+        }
+
+    private fun glyphRecord(glyph: MinecraftFontGlyph): JsonObject =
+        JsonObject().apply {
             addProperty("advance_bits", glyph.advance.toBits())
             add("metric_bits", JsonArray().apply { listOf(glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.boldOffset, glyph.shadowOffset).forEach { add(it.toBits()) } })
             addProperty("orientation", glyph.orientation.name)

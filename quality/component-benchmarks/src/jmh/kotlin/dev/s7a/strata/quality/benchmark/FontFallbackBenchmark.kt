@@ -127,6 +127,12 @@ public open class FontFallbackBenchmark {
         public fun uncachedWarm(): MinecraftFontGlyph = createEngine(0).use { it.glyph(font, 65) }
 
         /**
+         * Captures all 64 scalar results with current, uncached and fresh bounded owners outside timing.
+         * The outer order is cached churn, uncached reference and complete lifecycle.
+         */
+        public fun traces(): List<List<MinecraftFontGlyph>> = listOf(trace(engine), createEngine(0).use(::trace), createEngine(64).use(::trace))
+
+        /**
          * Closes the prepared engine and requires all existing retention gauges to reach zero.
          */
         @TearDown(Level.Trial)
@@ -180,6 +186,8 @@ public open class FontFallbackBenchmark {
                 cacheBytes = 1024 * 1024,
                 maxFaces = 1,
             )
+
+        private fun trace(owner: MinecraftFontEngine): List<MinecraftFontGlyph> = (65..128).map { scalar -> owner.glyph(font, scalar) }
 
         private fun glyphs(owner: MinecraftFontEngine): MinecraftFontGlyph {
             var glyph = owner.glyph(font, 65)
