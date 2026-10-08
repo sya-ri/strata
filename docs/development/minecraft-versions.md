@@ -102,6 +102,20 @@ Versioned `runtime/minecraft-fabric-<version>` and `integration/minecraft-fabric
 Shared runtime sources live under `runtime/shared/minecraft-fabric/`; matching verification sources live under `integration/shared/minecraft-fabric/`.
 Game-independent font comparison sources live under `integration/shared/font-parity/`.
 These shared directories are source roots, not Gradle projects or published libraries.
+
+Native performance pacing stays inside fixture source roots under `integration/shared/minecraft-fabric/canvas/pacing/`.
+The typed target matrix selects exactly one compiled API family, with no version dispatch or copied inactivity policy in the fixture.
+
+| Supported targets | Fixture pacing API family |
+| --- | --- |
+| 1.20–1.21.1 | `legacy`: remapped invoker for the private native selector, GLFW iconification check and explicit unavailable inactivity option/reason |
+| 1.21.2–1.21.4 | `tracker`: native inactivity option and direct selector, with an unavailable throttle reason |
+| 1.21.5–1.21.11 | `reason`: native inactivity option, actual throttle enum and direct selector |
+| 26.1 | `game-state-getter`: selected tracker limit and independently applied `getGameRenderState().framerateLimit` |
+| 26.2–26.3 | `game-state-accessor`: selected tracker limit and independently applied `gameRenderState().framerateLimit` |
+
+The legacy invoker belongs only to the GameTest artifact; runtime and consumer distributions retain their original integration boundary.
+The common fixture owns borrowing, readiness, bounded observations and restoration as defined in the [performance testkit contract](performance-testkit.md#native-component-presentation).
 The [generated shared-source matrix](minecraft-shared-sources.md) shows the runtime roots compiled by each target, with purpose-specific Canvas and input tables comparing alternative adapters separately from the roots used together.
 
 Group shared sources by responsibility: lifecycle, resources, input, screen, HUD, rendering, Canvas, and transport.

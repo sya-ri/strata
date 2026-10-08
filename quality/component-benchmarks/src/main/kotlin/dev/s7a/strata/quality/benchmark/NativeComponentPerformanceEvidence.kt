@@ -114,12 +114,14 @@ internal object NativeComponentPerformanceEvidence {
         val binaries = JsonArray()
         val paths = request.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
         val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
-        val presentationPresent = presentationGpuMetricsPresent(paths.map(JvmPerformanceEvidence::readReport))
+        val reports = paths.map(JvmPerformanceEvidence::readReport)
+        val epoch = NativePresentationEpoch.fromWorkloadIds(reports.map { it.get("workload_id").asString }, selection, profile, sampledImages)
+        val presentationPresent = presentationGpuMetricsPresent(reports)
         val summary =
             JvmPerformanceReports.summarize(
                 paths,
                 collector,
-                contract(selection, profile, sampledImages),
+                contract(selection, profile, sampledImages, epoch),
                 metrics + if (presentationPresent) presentationMetrics else emptyList(),
             ) { report ->
                 verify(report, selection, profile, sampledImages)
@@ -221,9 +223,10 @@ internal object NativeComponentPerformanceEvidence {
         selection: PerformanceSelection,
         profile: PerformanceProfile,
         sampledImages: Boolean,
+        epoch: NativePresentationEpoch,
     ): PerformanceReportContract =
         PerformanceReportContract(
-            workloadId(selection, profile, sampledImages),
+            epoch.workloadId(selection, profile, sampledImages),
             listOf("case", "operation", "gui_scale"),
             selection.ids.size * profile.viewports((1..4).toList()).size,
             setOf(
@@ -248,19 +251,12 @@ internal object NativeComponentPerformanceEvidence {
                 "warmup",
                 "settle_frames",
                 "preparation_timeout_ms",
-            ) + if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet(),
-            setOf("samples", "framebuffer_width", "framebuffer_height"),
+            ) +
+                (if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet()) +
+                (if (epoch == NativePresentationEpoch.Paced) setOf("inactivity_mode") else emptySet()),
+            setOf("samples", "framebuffer_width", "framebuffer_height") + if (epoch == NativePresentationEpoch.Paced) setOf("pacing") else emptySet(),
             repetitions = profile.plan().repetitions,
         )
-
-    private fun workloadId(
-        selection: PerformanceSelection,
-        profile: PerformanceProfile,
-        sampledImages: Boolean,
-    ): String {
-        val family = if (sampledImages) "native-sampled-images" else "native-components"
-        return profile.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1")
-    }
 
     /**
      * Requires the reviewed case/scale matrix, complete presentation boundaries and balanced native release.
@@ -271,8 +267,7 @@ internal object NativeComponentPerformanceEvidence {
         profile: PerformanceProfile = PerformanceProfile.Standard,
         sampledImages: Boolean = false,
     ) {
-        val expectedId = workloadId(selection, profile, sampledImages)
-        require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
+        val epoch = NativePresentationEpoch.fromWorkloadId(report.get("workload_id").asString, selection, profile, sampledImages)
         report.getAsJsonArray("selected_cases")?.let { declared ->
             require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
         }
@@ -284,6 +279,12 @@ internal object NativeComponentPerformanceEvidence {
         val scales = profile.viewports((1..4).toList())
         require(report.get("warmup").asInt == plan.warmup && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == plan.preparationTimeoutMillis)
         val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
+        when (epoch) {
+            NativePresentationEpoch.Paced -> NativePacingEvidence.verify(report)
+            NativePresentationEpoch.Legacy -> require(report.has("inactivity_mode").not() && report.has("borrowed_options_restored").not() && phases.none { it.has("pacing") }) {
+                "Live pacing evidence requires the paced native fixture epoch"
+            }
+        }
         require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> scales.map { name to it } }.toSet()) { "Changed native component matrix" }
         require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->

@@ -142,10 +142,31 @@ Run the entry as a standalone task; it rejects other requested tasks and the qui
 Invoke it three times with independent directories and the same selection for each baseline and candidate, with no other builds or performance workloads running during sampling.
 The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
-It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
+It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a configured 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
 Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
 The 108-phase corpus measures settled presentation; it does not measure input, mutation, resize, release latency or GPU completion.
 Terminal native resource release is a correctness assertion outside timing.
+
+Native performance collection borrows `MINIMIZED` where the loaded client exposes an inactivity option, preserving native menu and iconification policy.
+The fixture captures all borrowed values without mutation, applies them inside its protected client-owner lifetime, and attempts every independent restoration even after partial application or later failure.
+It reads back each restored option and publishes successful `report.json` only after native cleanup and option restoration pass.
+Versions without an inactivity option record `UNAVAILABLE`; their actual native selector remains unchanged.
+
+Each phase waits for agreement between the actual selected limit and the applied limiter input before the existing warm-up begins.
+The initial pre-sample boundary and every completed sampled boundary record the native option, throttle reason and availability, selected limit, applied limit, applied-limit source and iconification state outside extraction.
+Direct selectors explicitly identify their applied-limit observation as `DIRECT_SELECTOR`; only extracted game render state identifies it as `GAME_RENDER_STATE`.
+A configured limit does not prove that the native selector chose it: native menu caps remain valid observations.
+Formal collection rejects iconification, safety throttling, AFK reasons and any option, reason, observation-source or cap change after readiness.
+The bounded observations belong to the invocation's client owner and are cleared at phase replacement and terminal close.
+Failed phase receipts retain the last actual observation and completed boundaries without publishing partial timings as success.
+
+Use `-Pstrata.performance.inactivity=afk` only for a separate causal diagnostic on targets that expose the native option.
+It preserves actual AFK cap transitions without synthesizing input or changing the native clock, and still rejects iconification and window safety throttling.
+Its controlled conditions differ from the formal default, so it cannot supply a comparable baseline/candidate group with `MINIMIZED` evidence.
+
+Live pacing and restoration receipts use the `*-paced-presented-v2` native fixture identity; selected and quick profiles retain their distinct suffixes and original counts.
+Historical `*-presented-v1` receipts keep their original contract and cannot be mixed with the new epoch in a repetition group.
+Recollect both sides using the same frozen fixture archive; the processor requires the requested inactivity mode, complete pacing boundaries, restoration success and identical phase pacing observations within each group.
 The ordinary Canvas acceptance path remains unchanged when the property is absent.
 Each invocation keeps a separate client directory beneath its integration project's `build/run/native-performance/`, preserving the actual processed-mod code sources needed for later archive/class-tree verification and satisfying the existing client-run containment contract.
 Do not delete these client directories before processing or replace their origins with standalone Maven files.
@@ -416,7 +437,7 @@ Class and method selection also apply to the font fixtures; their declared param
 The same option selects loaded native cases such as `TextField,NativeCanvas` at all four GUI scales.
 The native performance entry prepares the actual resource profile and then collects directly, without running ordinary profile-reload, input, inventory and pixel-regression scenes on every measurement invocation.
 Omitting the option retains the full 108-interval matrix and its existing acceptance contract.
-A proper subset uses the distinct `native-components-selected-presented-v1` workload ID; pass the same comma-separated IDs as `workloads` in the native summary request.
+A proper subset uses the distinct `native-components-selected-paced-presented-v2` workload ID; pass the same comma-separated IDs as `workloads` in the native summary request.
 The processor rejects missing scales, duplicates, leaked native ownership and a selection that disagrees with the request; targeted evidence cannot satisfy full-suite acceptance.
 
 During optimization, run only affected workload phases and the deterministic parity/invalidation checks needed by that change.

@@ -15,6 +15,7 @@ import java.nio.file.Path
 internal object MinecraftNativePerformanceEntry {
     /**
      * Collects into a fresh explicit directory and restores all owned resources and pacing options.
+     * Success is published only after cleanup; preparation, collection, restoration and storage failures retain one primary cause.
      */
     @Suppress("TooGenericExceptionCaught")
     internal fun run(
@@ -22,30 +23,41 @@ internal object MinecraftNativePerformanceEntry {
         profile: MinecraftUiProfile,
         output: Path,
     ) {
-        val options = context.onClient { MinecraftNativePerformanceOptions() }
+        var options: MinecraftNativePerformanceOptions? = null
         var fixture: MinecraftCanvasTestFixture? = null
         var failure: Throwable? = null
         try {
-            val native = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
-            fixture = native
-            context.configureViewport(IntSize(1920, 1080), 1)
-            val conditions = context.onClient { options.conditions() }
-            MinecraftNativePerformanceProbe(context, profile, native, output, options::validate).run(conditions)
+            val report =
+                try {
+                    val borrowed = context.onClient { MinecraftNativePerformanceOptions() }
+                    options = borrowed
+                    context.onClient { borrowed.apply() }
+                    val native = context.onClient { MinecraftCanvasTestFixture(createMinecraftCanvasTestResources()) }
+                    fixture = native
+                    context.configureViewport(IntSize(1920, 1080), 1)
+                    val conditions = context.onClient { borrowed.conditions() }
+                    MinecraftNativePerformanceProbe(context, profile, native, output, borrowed).run(conditions)
+                } catch (caught: Throwable) {
+                    failure = caught
+                    throw caught
+                } finally {
+                    runCanvasTestCleanup(
+                        failure,
+                        { context.waitFor(2400) { fixture?.let { it.leasesOpened == it.leasesClosed && it.renderersOpened == it.renderersClosed } ?: true } },
+                        { context.onClient { fixture?.close() ?: Unit } },
+                        { context.onClient { options?.close() ?: Unit } },
+                    )
+                }
+            report.addProperty("borrowed_options_restored", true)
+            report.addProperty("status", "passed")
+            PerformanceJson.writeNew(output.resolve("report.json"), report)
         } catch (caught: Throwable) {
-            failure = caught
             try {
                 PerformanceJson.writeNew(output.resolve("failed-entry.json"), JsonObject().apply { addProperty("failure", caught.toString()) })
             } catch (storageFailure: Throwable) {
                 if (caught !== storageFailure) caught.addSuppressed(storageFailure)
             }
             throw caught
-        } finally {
-            runCanvasTestCleanup(
-                failure,
-                { context.waitFor(2400) { fixture?.let { it.leasesOpened == it.leasesClosed && it.renderersOpened == it.renderersClosed } ?: true } },
-                { context.onClient { fixture?.close() ?: Unit } },
-                { context.onClient { options.close() } },
-            )
         }
     }
 }

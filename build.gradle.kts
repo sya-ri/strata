@@ -96,6 +96,7 @@ private data class MinecraftFabricTarget(
     val javaVersion: Int,
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
+    val nativePacingFamily: NativePacingFamily,
     val sourceLinkPaths: List<String>,
     val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
@@ -127,6 +128,7 @@ private data class MinecraftFabricTarget(
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
@@ -136,6 +138,11 @@ private data class MinecraftFabricTarget(
                 CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
         )
+
+    /** Fixture-only limiter APIs verified from the exact mapped client archives; no version dispatch occurs at runtime. */
+    enum class NativePacingFamily(val sourceRoot: String) {
+        Legacy("legacy"), Tracker("tracker"), Reason("reason"), GameStateGetter("game-state-getter"), GameStateAccessor("game-state-accessor"),
+    }
 
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
@@ -194,6 +201,7 @@ private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -208,6 +216,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -221,6 +230,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -236,6 +246,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
@@ -252,6 +263,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -266,6 +278,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -280,6 +293,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -294,6 +308,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -308,6 +323,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -322,6 +338,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
@@ -337,6 +354,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -351,6 +369,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -364,6 +383,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
@@ -377,6 +397,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -391,6 +412,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -405,6 +427,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -419,6 +442,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -432,6 +456,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -445,6 +470,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
@@ -459,6 +485,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateGetter,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
@@ -475,6 +502,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
@@ -490,6 +518,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
@@ -1558,6 +1587,11 @@ subprojects {
                     val enabled = selected.toBooleanStrict()
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
+                }
+                providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
+                    require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
                 }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }

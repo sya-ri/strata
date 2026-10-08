@@ -16,6 +16,25 @@ import kotlin.test.assertTrue
  */
 internal class NativeComponentPerformanceEvidenceTest {
     @Test
+    internal fun pacedFixtureAdmissionRequiresItsOwnIdentityAndCompleteRestorationEvidence() {
+        val report = paced()
+        NativeComponentPerformanceEvidence.verify(report)
+        val mutations: List<(JsonObject) -> Unit> =
+            listOf(
+                { it.remove("inactivity_mode") },
+                { it.remove("borrowed_options_restored") },
+                { it.addProperty("borrowed_options_restored", false) },
+                { it.getAsJsonArray("phases")[0].asJsonObject.remove("pacing") },
+                { it.addProperty("workload_id", "native-components-presented-v1") },
+            )
+        mutations.forEach { mutate ->
+            val changed = report.deepCopy()
+            mutate(changed)
+            assertFails { NativeComponentPerformanceEvidence.verify(changed) }
+        }
+    }
+
+    @Test
     internal fun incompleteGpuPairsCannotCertifyCompletePresentation() {
         listOf("native_gpu", "presentation_gpu").forEach { scope ->
             listOf("duration", "operation_to_completion_observation").forEach { distribution ->
@@ -219,6 +238,40 @@ internal class NativeComponentPerformanceEvidenceTest {
         report.getAsJsonArray("phases").add(report.getAsJsonArray("phases")[0].deepCopy())
         assertFails { NativeComponentPerformanceEvidence.verify(report) }
     }
+
+    private fun paced(): JsonObject =
+        complete().apply {
+            addProperty("workload_id", "native-components-paced-presented-v2")
+            addProperty("inactivity_mode", "MINIMIZED")
+            addProperty("borrowed_options_restored", true)
+            getAsJsonArray("phases").forEach { entry ->
+                entry.asJsonObject.add(
+                    "pacing",
+                    JsonObject().apply {
+                        addProperty("scope", "Detached admission observations without timings")
+                        addProperty("sample_boundaries", 61)
+                        add(
+                            "boundaries",
+                            JsonArray().apply {
+                                repeat(61) {
+                                    add(
+                                        JsonObject().apply {
+                                            addProperty("inactivity", "MINIMIZED")
+                                            addProperty("reason", "OUT_OF_LEVEL_MENU")
+                                            addProperty("reason_available", true)
+                                            addProperty("selected_limit", 60)
+                                            addProperty("applied_limit", 60)
+                                            addProperty("applied_limit_source", "GAME_RENDER_STATE")
+                                            addProperty("iconified", false)
+                                        },
+                                    )
+                                }
+                            },
+                        )
+                    },
+                )
+            }
+        }
 
     private fun complete(sampledImages: Boolean = false): JsonObject =
         JsonObject().apply {
