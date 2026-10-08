@@ -165,7 +165,6 @@ internal class NativeCanvasPresentationWorkload(
             val newTokens = current.drawCommands.filterIsInstance<DrawCommand.Platform>().map { it.command }
             check(oldTokens.zip(newTokens).all { (oldToken, newToken) -> (oldToken === newToken) == changed.not() })
         }
-
     }
 
     private fun verifyPixels(
