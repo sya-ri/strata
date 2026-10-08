@@ -147,22 +147,42 @@ internal class ScrollInputFixture(
     @Suppress("CyclomaticComplexMethod")
     internal fun operation(): RuntimeUiFrame {
         when (workload.action) {
-            Action.WheelOutward -> host.dispatchPointer(wheelOutward)
-            Action.WheelZero -> host.dispatchPointer(wheelZero)
-            Action.Overflow -> host.dispatchPointer(wheelOverflow)
-            Action.CoalescedUnchanged -> repeat(4) { host.dispatchPointer(wheelOutward) }
-            Action.WheelFractional -> pointerCycle(wheelFraction, wheelFractionReverse)
-            Action.WheelOrdinary -> pointerCycle(wheelForward, wheelReverse)
+            Action.WheelOutward -> {
+                host.dispatchPointer(wheelOutward)
+            }
+
+            Action.WheelZero -> {
+                host.dispatchPointer(wheelZero)
+            }
+
+            Action.Overflow -> {
+                host.dispatchPointer(wheelOverflow)
+            }
+
+            Action.CoalescedUnchanged -> {
+                repeat(4) { host.dispatchPointer(wheelOutward) }
+            }
+
+            Action.WheelFractional -> {
+                pointerCycle(wheelFraction, wheelFractionReverse)
+            }
+
+            Action.WheelOrdinary -> {
+                pointerCycle(wheelForward, wheelReverse)
+            }
+
             Action.CoalescedChanged -> {
                 repeat(4) { host.dispatchPointer(wheelForward) }
                 frame()
                 repeat(4) { host.dispatchPointer(wheelReverse) }
             }
+
             Action.SignedZero -> {
                 target.scrollTo(-0.0)
                 frame()
                 host.dispatchPointer(wheelZero)
             }
+
             Action.DirtyLeaf -> {
                 color.value = secondColor
                 host.dispatchPointer(wheelOutward)
@@ -170,6 +190,7 @@ internal class ScrollInputFixture(
                 color.value = firstColor
                 host.dispatchPointer(wheelOutward)
             }
+
             Action.ExternalState -> {
                 target.scrollTo(9.0)
                 host.dispatchPointer(wheelZero)
@@ -177,6 +198,7 @@ internal class ScrollInputFixture(
                 target.scrollTo(0.0)
                 host.dispatchPointer(wheelZero)
             }
+
             Action.Geometry -> {
                 extent.value = secondExtent
                 host.dispatchPointer(wheelZero)
@@ -184,12 +206,30 @@ internal class ScrollInputFixture(
                 extent.value = firstExtent
                 host.dispatchPointer(wheelZero)
             }
-            Action.BarOutward -> host.dispatchPointer(barOutward)
-            Action.BarZero -> host.dispatchPointer(barZero)
-            Action.BarOutside -> checkNotNull(barInput).onPointerEvent(barOutside, outsideLocal)
-            Action.BarFractional -> pointerCycle(barFraction, barFractionReverse)
-            Action.BarOrdinary -> pointerCycle(barForward, barReverse)
-            Action.Clean -> Unit
+
+            Action.BarOutward -> {
+                host.dispatchPointer(barOutward)
+            }
+
+            Action.BarZero -> {
+                host.dispatchPointer(barZero)
+            }
+
+            Action.BarOutside -> {
+                checkNotNull(barInput).onPointerEvent(barOutside, outsideLocal)
+            }
+
+            Action.BarFractional -> {
+                pointerCycle(barFraction, barFractionReverse)
+            }
+
+            Action.BarOrdinary -> {
+                pointerCycle(barForward, barReverse)
+            }
+
+            Action.Clean -> {
+                Unit
+            }
         }
         return frame()
     }
@@ -207,8 +247,13 @@ internal class ScrollInputFixture(
             when (workload.action) {
                 Action.WheelOutward, Action.WheelZero, Action.Overflow, Action.CoalescedUnchanged,
                 Action.BarOutward, Action.BarZero, Action.BarOutside, Action.Clean,
-                -> true
-                else -> false
+                -> {
+                    true
+                }
+
+                else -> {
+                    false
+                }
             }
         val repetitions = if (noChange) 100 else 1
         val trace = ArrayList<Pair<Observer, ScrollMetrics>>()
@@ -309,31 +354,32 @@ internal class ScrollInputFixture(
 
     private fun verifyPixels(frame: RuntimeUiFrame) {
         val outerTop = 2 - area.metrics.offset.toInt()
-        val reference = buildList {
-            add(DrawCommand.FillRectangle(IntRect(0, 0, 100, 50), ArgbColor(0xff111111.toInt())))
-            add(DrawCommand.PushClip(IntRect(0, 0, 100, 50)))
-            if (workload.nested) {
-                add(DrawCommand.PushClip(IntRect(10, outerTop, 90, outerTop + 50)))
-                val top = outerTop + 2 - inner.metrics.offset.toInt()
-                add(DrawCommand.FillRectangle(IntRect(20, top, 80, top + 180), color.value))
-                add(DrawCommand.PopClip)
-            } else {
-                add(DrawCommand.FillRectangle(IntRect(10, outerTop, 90, outerTop + extent.value.height), color.value))
-            }
-            add(DrawCommand.PopClip)
-            if (workload.bars) {
-                val thumbTop = ((area.metrics.offset / 134.0) * 18.0).toInt()
-                for (x in listOf(104, 114)) {
-                    add(DrawCommand.FillRectangle(IntRect(x, 0, x + 6, 50), ArgbColor(0xff141414.toInt())))
-                    add(DrawCommand.FillRectangle(IntRect(x, thumbTop, x + 6, thumbTop + 32), ArgbColor(0xff151515.toInt())))
+        val reference =
+            buildList {
+                add(DrawCommand.FillRectangle(IntRect(0, 0, 100, 50), ArgbColor(0xff111111.toInt())))
+                add(DrawCommand.PushClip(IntRect(0, 0, 100, 50)))
+                if (workload.nested) {
+                    add(DrawCommand.PushClip(IntRect(10, outerTop, 90, outerTop + 50)))
+                    val top = outerTop + 2 - inner.metrics.offset.toInt()
+                    add(DrawCommand.FillRectangle(IntRect(20, top, 80, top + 180), color.value))
+                    add(DrawCommand.PopClip)
+                } else {
+                    add(DrawCommand.FillRectangle(IntRect(10, outerTop, 90, outerTop + extent.value.height), color.value))
                 }
-                val actualThumbs =
-                    frame.drawCommands
-                        .filterIsInstance<DrawCommand.BlitImage>()
-                        .filter { command -> command.image === ScrollInputAssets.thumb }
-                check(actualThumbs.map { command -> command.destination } == listOf(IntRect(104, thumbTop, 110, thumbTop + 32), IntRect(114, thumbTop, 120, thumbTop + 32)))
+                add(DrawCommand.PopClip)
+                if (workload.bars) {
+                    val thumbTop = ((area.metrics.offset / 134.0) * 18.0).toInt()
+                    for (x in listOf(104, 114)) {
+                        add(DrawCommand.FillRectangle(IntRect(x, 0, x + 6, 50), ArgbColor(0xff141414.toInt())))
+                        add(DrawCommand.FillRectangle(IntRect(x, thumbTop, x + 6, thumbTop + 32), ArgbColor(0xff151515.toInt())))
+                    }
+                    val actualThumbs =
+                        frame.drawCommands
+                            .filterIsInstance<DrawCommand.BlitImage>()
+                            .filter { command -> command.image === ScrollInputAssets.thumb }
+                    check(actualThumbs.map { command -> command.destination } == listOf(IntRect(104, thumbTop, 110, thumbTop + 32), IntRect(114, thumbTop, 120, thumbTop + 32)))
+                }
             }
-        }
         for (scale in 1..3) {
             check(rasterizeHeadless(frame.drawCommands, viewport, scale).copyArgb().contentEquals(rasterizeHeadless(reference, viewport, scale).copyArgb()))
         }

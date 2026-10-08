@@ -164,8 +164,14 @@ private class MinecraftScrollbarElement private constructor(
             val currentObserver = checkNotNull(observer)
             val metrics = currentState.metrics
             when {
-                localPosition.y < 0 -> currentState.scrollTo(0.0, currentObserver)
-                size.height < localPosition.y -> currentState.scrollTo(metrics.maximumOffset, currentObserver)
+                localPosition.y < 0 -> {
+                    currentState.scrollTo(0.0, currentObserver)
+                }
+
+                size.height < localPosition.y -> {
+                    currentState.scrollTo(metrics.maximumOffset, currentObserver)
+                }
+
                 else -> {
                     val travel = Math.subtractExact(size.height, thumbHeight(size.height, metrics))
                     val multiplier = max(1.0, metrics.maximumOffset / travel.toDouble())

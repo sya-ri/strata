@@ -165,20 +165,21 @@ internal class MinecraftScrollInputFixture(
         val metrics = state.metrics
         val content = extent.value
         val top = 2 - metrics.offset.toInt()
-        val reference = buildList {
-            add(DrawCommand.FillRectangle(IntRect(0, 0, 100, 50), ArgbColor(0xff111111.toInt())))
-            add(DrawCommand.PushClip(IntRect(0, 0, 100, 50)))
-            add(DrawCommand.FillRectangle(IntRect((100 - content.width) / 2, top, (100 + content.width) / 2, top + content.height), color.value))
-            add(DrawCommand.PopClip)
-            if (bars && metrics.canScroll) {
-                val height = (2500L / metrics.contentExtent).toInt().coerceIn(32, 42)
-                val thumb = ((metrics.offset / metrics.maximumOffset) * (50 - height)).toInt().coerceAtLeast(0)
-                for (x in listOf(104, 114)) {
-                    add(DrawCommand.FillRectangle(IntRect(x, 0, x + 6, 50), ArgbColor(0xff141414.toInt())))
-                    add(DrawCommand.FillRectangle(IntRect(x, thumb, x + 6, thumb + height), ArgbColor(0xff151515.toInt())))
+        val reference =
+            buildList {
+                add(DrawCommand.FillRectangle(IntRect(0, 0, 100, 50), ArgbColor(0xff111111.toInt())))
+                add(DrawCommand.PushClip(IntRect(0, 0, 100, 50)))
+                add(DrawCommand.FillRectangle(IntRect((100 - content.width) / 2, top, (100 + content.width) / 2, top + content.height), color.value))
+                add(DrawCommand.PopClip)
+                if (bars && metrics.canScroll) {
+                    val height = (2500L / metrics.contentExtent).toInt().coerceIn(32, 42)
+                    val thumb = ((metrics.offset / metrics.maximumOffset) * (50 - height)).toInt().coerceAtLeast(0)
+                    for (x in listOf(104, 114)) {
+                        add(DrawCommand.FillRectangle(IntRect(x, 0, x + 6, 50), ArgbColor(0xff141414.toInt())))
+                        add(DrawCommand.FillRectangle(IntRect(x, thumb, x + 6, thumb + height), ArgbColor(0xff151515.toInt())))
+                    }
                 }
             }
-        }
         for (scale in 1..3) {
             check(rasterizeHeadless(frame.drawCommands, viewport, scale).copyArgb().contentEquals(rasterizeHeadless(reference, viewport, scale).copyArgb()))
         }
