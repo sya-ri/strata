@@ -388,7 +388,10 @@ public open class PendingSourceBenchmark {
             verifyFrame(initial, List(if (workload.kind == Kind.FanOut) 128 else workload.roots) { Presentation.First })
         }
 
-        private fun verifyFrame(frame: RuntimeUiFrame, expected: List<Presentation>) {
+        private fun verifyFrame(
+            frame: RuntimeUiFrame,
+            expected: List<Presentation>,
+        ) {
             check(frame.size == IntSize(16, 16))
             check(frame.drawCommands == expected.map { DrawCommand.FillRectangle(IntRect(0, 0, 16, 16), it.color) })
             check(frame.semantics.map { it.semantics.label } == expected.map { it.label })
@@ -410,7 +413,9 @@ public open class PendingSourceBenchmark {
         /**
          * Single physical worker publisher; every callback revision strictly increases and subscriptions can be readmitted.
          */
-        private inner class Source(initial: Presentation) : StateSource<Value> {
+        private inner class Source(
+            initial: Presentation,
+        ) : StateSource<Value> {
             private var snapshot = StateSnapshot(StateRevision(0), Value(initial, ::compared))
             var observer: ((StateSnapshot<Value>) -> Unit)? = null
                 private set
