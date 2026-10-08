@@ -20,6 +20,7 @@ public class MutableState<T> internal constructor(
     private val owner = currentOwner()
     private var current = initialValue
     private val observations = LinkedHashSet<StateObservation>()
+    private var observationPlan: ObservationPlan? = null
 
     override var value: T
         get() {
@@ -38,22 +39,35 @@ public class MutableState<T> internal constructor(
     internal fun update(value: T): Boolean {
         checkAccess()
         StateObservation.checkMutation()
-        val active = observations.toList()
-        val entered = ArrayList<StateObservation>()
+        val plan = captureObservationPlan()
+        val owners = plan?.owners.orEmpty()
+        var entered = 0
         try {
-            active.map { it.mutationOwner }.distinct().forEach { observation ->
+            for (observation in owners) {
                 observation.beginMutation()
-                entered.add(observation)
+                entered += 1
             }
             val changed = StateObservation.compare { current == value }.not()
             if (changed) {
                 current = value
-                active.forEach(StateObservation::invalidate)
+                plan?.observations?.forEach(StateObservation::invalidate)
             }
             return changed
         } finally {
-            entered.asReversed().forEach(StateObservation::endMutation)
+            while (0 < entered) {
+                entered -= 1
+                owners[entered].endMutation()
+            }
         }
+    }
+
+    private fun captureObservationPlan(): ObservationPlan? {
+        if (observations.isEmpty()) return null
+        observationPlan?.let { return it }
+        val active = observations.toList()
+        val owners = LinkedHashSet<StateObservation>()
+        active.forEach { owners.add(it.mutationOwner) }
+        return ObservationPlan(active, owners.toList()).also { observationPlan = it }
     }
 
     private fun checkAccess() {
@@ -66,7 +80,7 @@ public class MutableState<T> internal constructor(
      */
     internal fun observe(observation: StateObservation) {
         checkAccess()
-        observations.add(observation)
+        if (observations.add(observation)) observationPlan = null
     }
 
     /**
@@ -74,8 +88,20 @@ public class MutableState<T> internal constructor(
      */
     internal fun forget(observation: StateObservation) {
         check(currentOwner() == owner) { "State requires its construction execution owner." }
-        observations.remove(observation)
+        if (observations.remove(observation)) observationPlan = null
     }
+
+    /**
+     * Immutable routing for the current ordered observation identities and their fixed mutation-owner identities.
+     * Successful admission/removal immediately drops the stored plan; duplicate changes preserve its order and identity.
+     * The construction execution owner derives it lazily and retains at most N observations and U distinct owners.
+     * Value, equality, permission and invalidation outcomes stay outside this derived presentation metadata.
+     * An ongoing attempt alone may retain a replaced plan until its reverse-prefix finally exit.
+     */
+    private class ObservationPlan(
+        val observations: List<StateObservation>,
+        val owners: List<StateObservation>,
+    )
 }
 
 /**

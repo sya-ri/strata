@@ -17,6 +17,17 @@ Deterministic tests must prove identity reuse on a clean request, replacement af
 Benchmarks then measure whether the cache removes meaningful work and whether its transfer, hashing, synchronization, or allocation cost outweighs reuse.
 The same distinction applies to the build: dependency and tool-derived intermediates may use content- or model-addressed caches, while loaded worlds, screenshots, parity receipts, generated documentation, and quality reports are current-revision evidence and are always recreated.
 
+## Mutable state assignment routing
+
+The routing key, lazy admission, immediate invalidation, owner confinement and terminal release contract lives in [caller-owned reactive state](ui-sessions.md#caller-owned-reactive-state).
+`MutableStateRoutingBenchmark` fixes 67 complete public assignment/frame rows, including N = 0, 1, 128 and 4,096, shared and independent roots, first admission, membership churn, failure and component normalization controls.
+Warm stable rows exclude setup; cold, removal, replacement and close rows include their complete lifetime work.
+A batch score covers 64 measured-state setters, with controller setters separately counted in churn rows.
+Coalesced rows perform 63 alternating changes and one equal setter followed by one frame per screen; cycle rows complete a frame per screen after each of 64 changed setters.
+The untimed verifier checks independent literal work counts, complete geometry, ordered drawing and semantics, all ARGB pixels at scales one and two, old immutable frames, and actual current routing storage when present in the selected runtime.
+It uses the generic fixture selection and Standard collector; admission and retained storage are tradeoffs requiring paired actual runtime-archive evidence alongside warm reuse, with no timing CI threshold.
+No native upload, GPU consumption, native input latency or FPS is measured by these assignment/headless CPU boundaries.
+
 ## Benchmark methodology
 
 Run `./gradlew :quality:benchmarks:jmh` for average time and normalized allocation using the `gc` profiler.
