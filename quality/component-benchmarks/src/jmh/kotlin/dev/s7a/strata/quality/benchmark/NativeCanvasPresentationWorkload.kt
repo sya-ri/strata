@@ -85,8 +85,16 @@ internal class NativeCanvasPresentationWorkload(
         producers.forEach { it.available = initiallyUnavailable.not() }
         val primed = device.prepare(commands, FrameTime(1L), 1)
         publicationCommands = primed.drawCommands.toList()
-        publicationDeviceId = NativeCanvasPresentation::class.java.getDeclaredField("deviceId").apply { check(trySetAccessible()) }.getLong(primed)
-        publicationBatchId = NativeCanvasPresentation::class.java.getDeclaredField("batchId").apply { check(trySetAccessible()) }.getLong(primed)
+        publicationDeviceId =
+            NativeCanvasPresentation::class.java
+                .getDeclaredField("deviceId")
+                .apply { check(trySetAccessible()) }
+                .getLong(primed)
+        publicationBatchId =
+            NativeCanvasPresentation::class.java
+                .getDeclaredField("batchId")
+                .apply { check(trySetAccessible()) }
+                .getLong(primed)
         publicationReceipts =
             if (initiallyUnavailable) {
                 emptyList()
@@ -183,7 +191,13 @@ internal class NativeCanvasPresentationWorkload(
         val images = captured.filterIsInstance<DrawCommand.BlitImagePixels>()
         check(images.size == canvasCount)
         images.forEachIndexed { index, command -> check(command.image === producers[index].images[imagePhase]) }
-        verifyPixels(captured, producers.lastOrNull()?.images?.get(imagePhase)?.argbAt(0, 0))
+        val nativeColor =
+            producers
+                .lastOrNull()
+                ?.images
+                ?.get(imagePhase)
+                ?.argbAt(0, 0)
+        verifyPixels(captured, nativeColor)
     }
 
     private fun verifyPixels(
