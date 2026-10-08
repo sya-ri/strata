@@ -336,14 +336,20 @@ public class RemoteComponentRuntime : ComponentRuntime {
         modifier: Modifier,
         source: ImageSource,
         scale: ImageScale,
-    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.ImageBackground) { scope -> record(encode(source, scope), encode(scale)) })
+    ): Modifier {
+        RemoteProperties.validateImage(source)
+        return modifier.then(RemoteProfileModifier(RemoteProfileComponent.ImageBackground) { scope -> record(encode(source, scope), encode(scale)) })
+    }
 
     override fun imageBackground(
         modifier: Modifier,
         source: ImageSource,
         border: Insets,
         centerMode: NineSliceCenterMode,
-    ): Modifier = modifier.then(RemoteProfileModifier(RemoteProfileComponent.NineSliceBackground) { scope -> record(encode(source, scope), encode(border), encode(centerMode)) })
+    ): Modifier {
+        RemoteProperties.validateImage(source)
+        return modifier.then(RemoteProfileModifier(RemoteProfileComponent.NineSliceBackground) { scope -> record(encode(source, scope), encode(border), encode(centerMode)) })
+    }
 
     override fun containerBackground(
         modifier: Modifier,

@@ -2,20 +2,28 @@
 
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
+import dev.s7a.strata.component.NineSliceCenterMode
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
 import dev.s7a.strata.element.ElementType
+import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionAction
+import dev.s7a.strata.projection.ProjectionBinding
+import dev.s7a.strata.projection.ProjectionScope
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.remote.RemoteComponentRuntime
 import dev.s7a.strata.runtime.remote.RemoteImageCodec
 import dev.s7a.strata.runtime.remote.RemoteLimits
 import dev.s7a.strata.runtime.remote.RemoteMessage
@@ -24,6 +32,7 @@ import dev.s7a.strata.runtime.remote.RemoteServerSession
 import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.runtime.remote.RemoteTree
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -159,6 +168,7 @@ public open class RemoteImageBenchmark {
          * Small/control cases are retained even if their measured CPU or allocation does not improve.
          */
         public fun verifyWork() {
+            if (extent == Extent.NearStandaloneLimit) verifyProfileAdmission()
             val original = first.copyArgb()
             val expected = ByteArrayOutputStream().also { bytes -> DataOutputStream(bytes).use { output -> original.forEach(output::writeInt) } }.toByteArray()
             val encoded = codec.encode(ImageSource.Pixels(first)) as ProjectionValue.Sequence
@@ -193,6 +203,34 @@ public open class RemoteImageBenchmark {
             owners = emptyList()
             current.forEach(RemoteServerSession::close)
             last = null
+        }
+
+        /**
+         * Runs unchanged public APIs against either runtime archive before any measured operation.
+         * Both modifier constructors must reject an oversized profile source before a scope exists;
+         * a larger scope encoder must not expand the standalone profile-image schema.
+         */
+        private fun verifyProfileAdmission() {
+            val byteLimit = RemoteLimits().messageBytes
+            val area = byteLimit / Int.SIZE_BYTES + 1
+            val source = ImageSource.Pixels(createDrawImage(IntSize(area, 1), IntArray(area)))
+            val runtime = RemoteComponentRuntime()
+            check(runCatching { runtime.imageBackground(Modifier.Empty, source, ImageScale.Stretch) }.exceptionOrNull() is IllegalArgumentException)
+            check(runCatching { runtime.imageBackground(Modifier.Empty, source, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) }.exceptionOrNull() is IllegalArgumentException)
+            var imageCalls = 0
+            val scope = object : ProjectionScope {
+                override fun image(image: DrawImage): ProjectionValue {
+                    imageCalls++
+                    return RemoteImageCodec(byteLimit + Int.SIZE_BYTES).encode(ImageSource.Pixels(image))
+                }
+                override fun text(text: UiText): ProjectionValue = error("Unused text")
+                override fun requireType(type: ProjectionType): Unit = error("Unused type")
+                override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = error("Unused action")
+                override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
+            }
+            val element = runtime.image(source, null, null, Modifier.Empty, null)
+            check(runCatching { requireNotNull(element.projection).encode(scope) }.exceptionOrNull() is IllegalArgumentException)
+            check(imageCalls == 0)
         }
 
         private fun currentImage(): DrawImage = if (selected) second else first

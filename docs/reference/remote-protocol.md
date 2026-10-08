@@ -87,10 +87,13 @@ Queue exhaustion is an explicit terminal failure, including for business operati
 
 Images transfer either resource identifiers or detached pixel bytes.
 The public image codec remains stateless and independently validates each byte/dimension record.
+Profile pixel sources retain their standalone codec byte bound before the session scope applies its negotiated bound.
+Both image-background modifier forms validate that standalone bound during description construction using only immutable dimensions; pixel encoding remains deferred to projection.
 Server projection reuses detached immutable image encodings only within one session, keyed by exact immutable image identity under its fixed negotiated limits.
 Its current/pending union charges both source and encoded pixel payloads against the pending-byte bound, with distinct image membership bounded by the collection limit.
 A shared current/pending identity is charged once; admission overflow uses the ordinary uncached encoding path.
-Successful projection retires absent images, and failure or terminal close clears both maps before user cleanup/notification callbacks.
+Successful projection retires images not requested in that projection, and failure or terminal close clears both maps before user cleanup/notification callbacks.
+Reusable map storage is bounded by the fixed collection limit and is discarded at terminal close.
 Resource references, authoritative values and native graphics handles are outside this derived pixel cache.
 CPU Canvas projects the committed source revision and image; native Canvas references an installed renderer schema.
 Tiled images retain only the standard bounded working set on the server, transfer its current ready/empty cells with a source generation, and reconstruct the standard tile renderer on the client.

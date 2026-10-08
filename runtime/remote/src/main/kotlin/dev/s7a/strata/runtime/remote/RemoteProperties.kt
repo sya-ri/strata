@@ -104,11 +104,21 @@ internal object RemoteProperties {
     fun encode(
         value: ImageSource,
         scope: ProjectionScope,
-    ): ProjectionValue =
-        when (value) {
+    ): ProjectionValue {
+        images.validate(value)
+        return when (value) {
             is ImageSource.Resource -> encode(value)
             is ImageSource.Pixels -> scope.image(value.image)
         }
+    }
+
+    /**
+     * Preserves the profile source's standalone byte bound before a deferred modifier projection is installed.
+     * Validation reads only immutable dimensions and leaves both pixel snapshots and negotiated limits untouched.
+     */
+    fun validateImage(value: ImageSource) {
+        images.validate(value)
+    }
 
     /**
      * Encodes the portable player-skin source without performing a lookup.
@@ -129,7 +139,7 @@ internal object RemoteProperties {
         scope: ProjectionScope,
     ): ProjectionValue =
         when (value) {
-            is PlayerSkinSource.Pixels -> record(encode(SkinKind.Pixels), scope.image(value.skin))
+            is PlayerSkinSource.Pixels -> record(encode(SkinKind.Pixels), encode(ImageSource.Pixels(value.skin), scope))
             else -> encode(value)
         }
 

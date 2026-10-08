@@ -68,10 +68,23 @@ public class RemoteImageCodec(
         return result
     }
 
-    private fun encodePixels(image: DrawImage): ProjectionValue {
+    /**
+     * Checks the source's existing codec bound using immutable geometry, without copying or encoding pixels.
+     * Profile modifiers use this before deferring their session-owned image projection.
+     */
+    internal fun validate(source: ImageSource) {
+        if (source is ImageSource.Pixels) checkedArea(source.image)
+    }
+
+    private fun checkedArea(image: DrawImage): Int {
         val area = image.size.width.toLong() * image.size.height.toLong()
         require(area <= maximumBytes / Int.SIZE_BYTES) { "Image exceeds its byte bound." }
-        val bytes = ByteBuffer.allocate(area.toInt() * Int.SIZE_BYTES)
+        return area.toInt()
+    }
+
+    private fun encodePixels(image: DrawImage): ProjectionValue {
+        val area = checkedArea(image)
+        val bytes = ByteBuffer.allocate(area * Int.SIZE_BYTES)
         bytes.asIntBuffer().put(image.copyArgb())
         return ProjectionValue.Sequence(
             listOf(
