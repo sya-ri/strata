@@ -109,6 +109,7 @@ exclude:
   # The project deliberately reserves const values for external compile-time API requirements.
   - name: MayBeConstant
     paths:
+      - runtime/shared/minecraft-fabric/resources/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftImageDecodeCache.kt
       - api/src/main/kotlin/dev/s7a/strata/input/KeyCode.kt
       - integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/StrataMinecraftLegacyLoadedSuite.kt
       - integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftSocialParity.kt
