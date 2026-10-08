@@ -178,8 +178,7 @@ internal class PortableContainerBuilderTest {
             override val bounds: LongRect = LongRect(0L, 0L, 8L, 8L)
             override val levels: List<TiledImageLevel> = listOf(TiledImageLevel(IntSize(8, 8), 1L))
 
-            override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> =
-                StateSource { StateSubscription(StateSnapshot(StateRevision(0L), TiledImageTile.Empty)) {} }
+            override fun tile(id: TiledImageTileId): StateSource<TiledImageTile> = StateSource { StateSubscription(StateSnapshot(StateRevision(0L), TiledImageTile.Empty)) {} }
         }
 
     private enum class Kind {
