@@ -485,6 +485,11 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingComposition.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingShaders.kt
       # Ordered composition is consumed through the same exact-version linked adapter owners.
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTargets.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftUploadPixels.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortablePipeline.kt
+      - runtime/shared/minecraft-fabric/canvas/blaze3d/texture-format-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureAllocation.kt
+      - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionInitialization.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/bind-groups/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/direct-textures/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt
       - runtime/shared/minecraft-fabric/canvas/blaze3d/samplers/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftCompositionTextureFactory.kt

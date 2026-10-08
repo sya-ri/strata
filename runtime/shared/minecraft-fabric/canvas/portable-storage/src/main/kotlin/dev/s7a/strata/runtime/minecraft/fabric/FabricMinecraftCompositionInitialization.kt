@@ -1,7 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
-import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
