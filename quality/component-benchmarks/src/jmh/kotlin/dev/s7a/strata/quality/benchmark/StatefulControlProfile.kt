@@ -54,5 +54,9 @@ internal object StatefulControlProfile {
     /**
      * Creates opaque synthetic pixels with explicit source dimensions.
      */
-    fun image(width: Int, height: Int, color: Int = 0xFF102030.toInt()): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { color })
+    fun image(
+        width: Int,
+        height: Int,
+        color: Int = 0xFF102030.toInt(),
+    ): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { color })
 }

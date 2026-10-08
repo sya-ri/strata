@@ -57,34 +57,36 @@ internal class StatefulControlFixture(
     private val viewport = IntSize(150, count * 20 + 1)
     private var cachedControls: List<Element>? = null
     private var current = 0
-    private val host = createMinecraftUiHost(
-        UiDefinition("stateful-control fixture") {
-            val version = revision.value
-            Column {
-                for (index in 0 until count) {
-                    val retained = cachedControls
-                    if (change == StatefulControlBenchmark.Change.Reuse && retained != null) {
-                        element(retained[index])
-                    } else {
-                        control(index, version)
+    private val host =
+        createMinecraftUiHost(
+            UiDefinition("stateful-control fixture") {
+                val version = revision.value
+                Column {
+                    for (index in 0 until count) {
+                        val retained = cachedControls
+                        if (change == StatefulControlBenchmark.Change.Reuse && retained != null) {
+                            element(retained[index])
+                        } else {
+                            control(index, version)
+                        }
                     }
+                    Observe(status) { value -> Image(statuses[value % 2]) }
                 }
-                Observe(status) { value -> Image(statuses[value % 2]) }
-            }
-        },
-        StatefulControlProfile.create(),
-    )
+            },
+            StatefulControlProfile.create(),
+        )
     private val session: RuntimeUiSession
 
     init {
-        session = try {
-            val field = host.javaClass.getDeclaredField("session")
-            field.isAccessible = true
-            field.get(host) as RuntimeUiSession
-        } catch (failure: Throwable) {
-            runCatching { host.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
-            throw failure
-        }
+        session =
+            try {
+                val field = host.javaClass.getDeclaredField("session")
+                field.isAccessible = true
+                field.get(host) as RuntimeUiSession
+            } catch (failure: Throwable) {
+                runCatching { host.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
+                throw failure
+            }
         try {
             host.attach()
             host.frame(viewport)
@@ -169,7 +171,10 @@ internal class StatefulControlFixture(
         status.publish(current)
     }
 
-    private fun UiScope.control(index: Int, version: Int) {
+    private fun UiScope.control(
+        index: Int,
+        version: Int,
+    ) {
         val key = ElementKey(index)
         val text = label(index, version)
         when (rowKind(index)) {
@@ -188,7 +193,10 @@ internal class StatefulControlFixture(
             kind
         }
 
-    private fun label(index: Int, version: Int): String {
+    private fun label(
+        index: Int,
+        version: Int,
+    ): String {
         val changes = change == StatefulControlBenchmark.Change.AllLabels || (change == StatefulControlBenchmark.Change.OneLabel && index == 0)
         return (if (changes && version % 2 == 1) "B" else "A").repeat(labels.length)
     }
@@ -232,12 +240,13 @@ internal class StatefulControlFixture(
             check(semantic.bounds == IntRect(0, top, 150, top + 20))
             check(semantic.semantics.label == UiText.Literal(text))
             check(semantic.semantics.disabled.not())
-            val role = when (row) {
-                StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
-                StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
-                StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
-                else -> error("Missing primitive role")
-            }
+            val role =
+                when (row) {
+                    StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
+                    StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
+                    StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
+                    else -> error("Missing primitive role")
+                }
             check(semantic.semantics.role == role)
             if (checkboxRow) check(semantic.semantics.checked == false)
             if (row == StatefulControlBenchmark.Kind.Slider) check(semantic.semantics.value == UiText.Literal("0.0"))

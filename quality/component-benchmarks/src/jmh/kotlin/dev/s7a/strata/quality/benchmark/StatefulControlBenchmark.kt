@@ -103,7 +103,9 @@ public class StatefulControlBenchmark {
     /**
      * Fixed glyph counts chosen before collection.
      */
-    public enum class Labels(public val length: Int) {
+    public enum class Labels(
+        public val length: Int,
+    ) {
         Short(1),
         Long(32),
     }
@@ -111,7 +113,9 @@ public class StatefulControlBenchmark {
     /**
      * Immutable option orders used by every CycleButton in the fixture.
      */
-    public enum class Choices(public val size: Int) {
+    public enum class Choices(
+        public val size: Int,
+    ) {
         Small(3),
         Many(64),
     }
@@ -145,7 +149,11 @@ public class StatefulControlBenchmark {
             }
         }
 
-        private fun verifyChoices(count: Int, kind: Kind, labels: Labels) {
+        private fun verifyChoices(
+            count: Int,
+            kind: Kind,
+            labels: Labels,
+        ) {
             for (choices in Choices.entries) {
                 for (change in Change.entries) {
                     StatefulControlFixture(count, kind, labels, choices, change).use { it.verifyWork() }
