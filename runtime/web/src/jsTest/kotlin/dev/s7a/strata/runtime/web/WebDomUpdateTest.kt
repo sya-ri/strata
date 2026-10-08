@@ -240,7 +240,10 @@ internal class WebDomUpdateTest {
 
     private fun text(identity: Int): Visual = native(identity, WebPresentation.Kind.Text)
 
-    private fun native(identity: Int, kind: WebPresentation.Kind): Visual =
+    private fun native(
+        identity: Int,
+        kind: WebPresentation.Kind,
+    ): Visual =
         Visual(
             bounds = IntRect(0, identity * 14, 64, identity * 14 + 12),
             presentation = WebPresentation(identity, kind, "Before", true, TextStyle.Normal, if (kind == WebPresentation.Kind.Progress) 0.5 else null),
@@ -326,15 +329,21 @@ internal class WebDomUpdateTest {
     ) : Element(ElementIdentity.Positional, TYPE) {
         private class Node(
             var snapshot: Snapshot,
-        ) : RetainedNode(), MeasureNode, PaintNode {
-            override fun measure(scope: MeasureScope, constraints: Constraints): IntSize = constraints.constrain(snapshot.size)
+        ) : RetainedNode(),
+            MeasureNode,
+            PaintNode {
+            override fun measure(
+                scope: MeasureScope,
+                constraints: Constraints,
+            ): IntSize = constraints.constrain(snapshot.size)
 
             override fun paint(scope: PaintScope) {
                 for (visual in snapshot.visuals) {
-                    val paint = {
-                        visual.presentation?.let { scope.drawPlatform(it, visual.bounds) }
-                        visual.background?.let { scope.fillRectangle(visual.bounds, it) }
-                    }
+                    val paint =
+                        {
+                            visual.presentation?.let { scope.drawPlatform(it, visual.bounds) }
+                            visual.background?.let { scope.fillRectangle(visual.bounds, it) }
+                        }
                     val clip = visual.clip
                     if (clip == null) paint() else scope.withClip(clip, paint)
                 }
@@ -342,16 +351,17 @@ internal class WebDomUpdateTest {
         }
 
         companion object {
-            private val TYPE = ElementType(
-                elementClass = PaintElement::class,
-                nodeClass = Node::class,
-                validateLocal = { _ -> },
-                createNode = { Node(it.snapshot) },
-                updateNode = { previous, current, node ->
-                    node.snapshot = current.snapshot
-                    if (previous.snapshot == current.snapshot) DirtyMask.None else DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Paint)
-                },
-            )
+            private val TYPE =
+                ElementType(
+                    elementClass = PaintElement::class,
+                    nodeClass = Node::class,
+                    validateLocal = { _ -> },
+                    createNode = { Node(it.snapshot) },
+                    updateNode = { previous, current, node ->
+                        node.snapshot = current.snapshot
+                        if (previous.snapshot == current.snapshot) DirtyMask.None else DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Paint)
+                    },
+                )
         }
     }
 }

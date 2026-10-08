@@ -89,10 +89,15 @@ internal class WebDomRenderer(
         uncommitted = null
         stylesheet = null
         var failure: Throwable? = null
+
         fun release(action: () -> Unit) {
             runCatching(action).exceptionOrNull()?.let { caught ->
                 val primary = failure
-                if (primary == null) failure = caught else if (primary !== caught) primary.addSuppressed(caught)
+                if (primary == null) {
+                    failure = caught
+                } else if (primary !== caught) {
+                    primary.addSuppressed(caught)
+                }
             }
         }
         previous.values.forEach { retained -> release { retained.element.let { it.parentNode?.removeChild(it) } } }
@@ -172,21 +177,34 @@ internal class WebDomRenderer(
         updateNativeControl(element, presentation, previous?.presentation, previous == null)
     }
 
-    private fun updateBounds(style: CSSStyleDeclaration, bounds: IntRect, previous: IntRect?) {
+    private fun updateBounds(
+        style: CSSStyleDeclaration,
+        bounds: IntRect,
+        previous: IntRect?,
+    ) {
         if (previous?.left != bounds.left) style.left = "${bounds.left}px"
         if (previous?.top != bounds.top) style.top = "${bounds.top}px"
         if (previous?.width != bounds.width) style.width = "${bounds.width}px"
         if (previous?.height != bounds.height) style.height = "${bounds.height}px"
     }
 
-    private fun updateClip(style: CSSStyleDeclaration, entry: Entry, previous: Entry?) {
+    private fun updateClip(
+        style: CSSStyleDeclaration,
+        entry: Entry,
+        previous: Entry?,
+    ) {
         if (previous == null || previous.clip != entry.clip || (entry.clip != null && previous.bounds != entry.bounds)) {
             val clip = clipPath(entry.bounds, entry.clip)
             if (previous == null || clipPath(previous.bounds, previous.clip) != clip) style.setProperty("clip-path", clip)
         }
     }
 
-    private fun updateTextStyle(style: CSSStyleDeclaration, presentation: WebPresentation?, previous: WebPresentation?, initial: Boolean) {
+    private fun updateTextStyle(
+        style: CSSStyleDeclaration,
+        presentation: WebPresentation?,
+        previous: WebPresentation?,
+        initial: Boolean,
+    ) {
         val color = textColor(presentation)
         if (initial || textColor(previous) != color) style.color = color
         if (initial || (previous?.style == TextStyle.ContainerLabel) != (presentation?.style == TextStyle.ContainerLabel)) {
@@ -194,7 +212,12 @@ internal class WebDomRenderer(
         }
     }
 
-    private fun updateNativeControl(element: HTMLElement, presentation: WebPresentation?, previous: WebPresentation?, initial: Boolean) {
+    private fun updateNativeControl(
+        element: HTMLElement,
+        presentation: WebPresentation?,
+        previous: WebPresentation?,
+        initial: Boolean,
+    ) {
         if (element is HTMLButtonElement) {
             if (initial) element.type = "button"
             if (initial || previous?.enabled != presentation?.enabled) element.disabled = presentation?.enabled != true
