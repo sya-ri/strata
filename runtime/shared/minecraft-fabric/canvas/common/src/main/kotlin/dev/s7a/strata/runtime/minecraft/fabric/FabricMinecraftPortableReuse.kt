@@ -165,8 +165,8 @@ private fun samePreparedSample(
     b: DrawCommand,
 ): Boolean {
     if (b is DrawCommand.SampledImage) {
-        if (a.image !== b.image || a.source != b.source || a.destination != b.destination) return false
-        return a.tint == b.tint && a.alphaCutoff.toRawBits() == b.alphaCutoff.toRawBits() && a.orientation == b.orientation
+        val sameGeometry = a.image === b.image && a.source == b.source && a.destination == b.destination
+        return sameGeometry && a.tint == b.tint && a.alphaCutoff.toRawBits() == b.alphaCutoff.toRawBits() && a.orientation == b.orientation
     }
     return false
 }

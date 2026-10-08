@@ -12,6 +12,7 @@ import dev.s7a.strata.render.createDrawImage
  * Existing per-tile reservations conservatively charge every factor payload and their fixed/per-pass owner overhead.
  * The caller drops the workspace on return or failure; no previous frame or authoritative state is retained.
  */
+@Suppress("unused") // Synthetic preparation bridges own this workspace; remapped tests observe its bounded counters.
 internal class FabricMinecraftCompositionFactors {
     private val tables = HashMap<List<Int>, DrawImage>()
     private var rows = 0
