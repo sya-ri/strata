@@ -96,14 +96,23 @@ public class TextAreaState(
     }
 
     private fun normalize(value: String): String {
-        val result = StringBuilder(minOf(value.length, maxLength))
+        var result: StringBuilder? = null
+        var length = 0
         var offset = 0
         while (offset < value.length) {
             val codePoint = value.scalarAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "Text area value contains an isolated surrogate." }
             when (codePoint) {
-                0x0A, 0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029 -> {
-                    result.append('\n')
+                0x0A -> {
+                    result?.append('\n')
+                    length += 1
+                }
+
+                0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029 -> {
+                    // Only an actual conversion admits scratch; the unchanged prefix has already passed validation.
+                    val output = result ?: StringBuilder(minOf(value.length, maxLength)).append(value, 0, offset).also { result = it }
+                    output.append('\n')
+                    length += 1
                     if (codePoint == 0x0D && offset + 1 < value.length && value[offset + 1] == '\n') offset += 1
                 }
 
@@ -111,13 +120,14 @@ public class TextAreaState(
                     require(0x20 <= codePoint && codePoint != 0x7F && codePoint != 0xA7) {
                         "Text area value contains a control character or formatting marker."
                     }
-                    result.appendScalar(codePoint)
+                    result?.appendScalar(codePoint)
+                    length += (if (codePoint < 0x10000) 1 else 2)
                 }
             }
-            require(result.length <= maxLength) { "Text area value exceeds its maximum length after newline normalization." }
+            require(length <= maxLength) { "Text area value exceeds its maximum length after newline normalization." }
             offset += (if (codePoint < 0x10000) 1 else 2)
         }
-        return result.toString()
+        return result?.toString() ?: value
     }
 
     private fun checkOwner() {
