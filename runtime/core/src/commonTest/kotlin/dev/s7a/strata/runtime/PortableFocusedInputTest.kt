@@ -394,7 +394,8 @@ internal class PortableFocusedInputTest {
         override fun onTextInput(event: TextInputEvent): InputResult = callback()
     }
 
-    private class ClipProbe : ProbeNode(accepting = false),
+    private class ClipProbe :
+        ProbeNode(accepting = false),
         ClipChildrenNode
 
     private class InputModifier(
