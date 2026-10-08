@@ -137,8 +137,8 @@ public object RemoteBytesCopyEvidence {
         fun enter(event: MethodEntryEvent) {
             val method = event.method()
             if (method.declaringType().name() == RemoteBytesCopyProbe::class.java.name) {
-                when (method.name()) {
-                    "begin" -> {
+                when (RemoteProbeMarker.decode(method.name())) {
+                    RemoteProbeMarker.Begin -> {
                         check(current == null && calls.isEmpty())
                         val arguments = event.thread().frame(0).getArgumentValues()
                         val corpus = RemoteBytesBenchmark.Corpus.valueOf((arguments[0] as StringReference).value())
@@ -154,12 +154,13 @@ public object RemoteBytesCopyEvidence {
                             addProperty("extraction_snapshot_bytes", 0L)
                         }
                     }
-                    "finish" -> {
+                    RemoteProbeMarker.Finish -> {
                         check(owner == event.thread().uniqueID() && calls.isEmpty())
                         rows.add(checkNotNull(current))
                         current = null
                         owner = null
                     }
+                    null -> Unit
                 }
                 return
             }
