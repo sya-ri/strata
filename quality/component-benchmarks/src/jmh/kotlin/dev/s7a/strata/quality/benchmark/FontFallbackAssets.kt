@@ -25,16 +25,24 @@ internal object FontFallbackAssets {
         val miss = """{"type":"space","advances":{"日":3}}"""
         val terminal =
             when (workload) {
-                FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate -> hit
-                FontFallbackWorkload.Missing -> miss
+                FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate -> {
+                    hit
+                }
+
+                FontFallbackWorkload.Missing -> {
+                    miss
+                }
+
                 FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate -> {
                     files["assets/strata_benchmark/font/fixture.ttf"] = Files.readAllBytes(Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))))
                     """{"type":"ttf","file":"strata_benchmark:fixture.ttf","size":11,"oversample":2}"""
                 }
+
                 FontFallbackWorkload.AtlasRejected -> {
                     files["assets/strata_benchmark/textures/font/rejected.png"] = FontRasterAssets.png(257)
                     """{"type":"bitmap","file":"strata_benchmark:font/rejected.png","height":257,"ascent":256,"chars":["A"]}"""
                 }
+
                 FontFallbackWorkload.Poisoned -> {
                     files["assets/strata_benchmark/font/invalid.ttf"] = byteArrayOf(0)
                     """{"type":"ttf","file":"strata_benchmark:invalid.ttf","filter":{"uniform":true}}"""
@@ -56,6 +64,5 @@ internal object FontFallbackAssets {
     /**
      * Uses the actual declared native generation and immutable modern provider-filter capabilities.
      */
-    internal fun compatibility(workload: FontFallbackWorkload): MinecraftFontCompatibility =
-        FontRasterAssets.compatibility(if (workload == FontFallbackWorkload.StbLate) MinecraftTrueTypeRasterizer.Stb else MinecraftTrueTypeRasterizer.FreeType)
+    internal fun compatibility(workload: FontFallbackWorkload): MinecraftFontCompatibility = FontRasterAssets.compatibility(if (workload == FontFallbackWorkload.StbLate) MinecraftTrueTypeRasterizer.Stb else MinecraftTrueTypeRasterizer.FreeType)
 }
