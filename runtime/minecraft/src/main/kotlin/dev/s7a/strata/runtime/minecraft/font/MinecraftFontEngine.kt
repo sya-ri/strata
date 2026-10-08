@@ -15,6 +15,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Sheets share detached resource identity; bitmap scans share resource, grid, and cell identity with one current metric result per cell.
  * TrueType faces and glyphs share resource and exact settings, with provider skips checked before glyph lookup.
  * Other glyphs use snapshot-local provider identities and Unicode scalars; changing resources, limits, or options requires a new engine.
+ * Resolution keys use selected font and scalar within this immutable snapshot and its captured options.
+ * Access-ordered resolutions retain selected providers and preceding cached-miss keys, never glyph pixels.
+ * Their combined entry and miss-key count is at most min(cacheEntries, 4096); zero disables reuse.
+ * Hits touch the same preceding raster keys in order before retrieving the winner, preserving raster eviction semantics.
+ * Raster replacement or eviction and permanent face failure clear resolutions; walks that evict raster entries bypass admission.
+ * Every resolution still preflights its font and retrieves the selected provider's ordinary glyph cache.
  * Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled.
  * Native faces have an independent entry bound of at most 16 and a combined encoded-input ceiling equal to the snapshot's maxAssetBytes.
  * Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state.
@@ -46,6 +52,10 @@ public class MinecraftFontEngine
         private var backend: MinecraftFontBackend?
         private val rasters = LinkedHashMap<RasterKey, RasterValue>(16, 0.75f, true)
         private var rasterBytes = 0L
+        private val resolutions = LinkedHashMap<ResolutionKey, Resolution>(16, 0.75f, true)
+        private val resolutionLimit = minOf(cacheEntries, 4096)
+        private var rasterEpoch = Any()
+        private var resolutionUnits = 0
         private val faces = LinkedHashMap<FontFaceKey, MinecraftTrueTypeFace>(16, 0.75f, true)
         private var faceBytes = 0L
         private val validatedFaces = HashSet<FontFaceKey>()
@@ -137,12 +147,24 @@ public class MinecraftFontEngine
                 if (current.compatibility.providerFilters.not() && current.options.uniform && font == defaultFont) uniformFont else font
             val providers = current.fonts[selected] ?: return missingGlyph
             if (prepareFont(selected, providers).not()) return missingGlyph
+            val key = if (resolutionLimit == 0) null else ResolutionKey(selected, codePoint)
+            key?.let { resolutions[it] }?.let { resolution ->
+                resolution.misses.forEach { rasters[it] }
+                return resolution.provider?.let { cachedGlyph(it, codePoint) } ?: missingGlyph
+            }
+            val epoch = rasterEpoch
+            val misses = if (key == null) null else ArrayList<RasterKey>()
             for (entry in providers) {
                 if (applies(entry.filter, current.options)) {
                     val glyph = cachedGlyph(entry, codePoint)
-                    if (glyph != null) return glyph
+                    if (glyph != null) {
+                        if (key != null) putResolution(key, entry, checkNotNull(misses), epoch)
+                        return glyph
+                    }
+                    if (misses != null) missingRasterKey(entry, codePoint)?.let(misses::add)
                 }
             }
+            if (key != null) putResolution(key, null, checkNotNull(misses), epoch)
             return missingGlyph
         }
 
@@ -196,6 +218,8 @@ public class MinecraftFontEngine
             snapshot = null
             rasters.clear()
             rasterBytes = 0
+            resolutions.clear()
+            resolutionUnits = 0
             providerStatus.clear()
             fontStatus.clear()
             bitmapSizes.clear()
@@ -316,6 +340,7 @@ public class MinecraftFontEngine
             failure: MinecraftFontLoadLimitException,
         ) {
             val key = FontFaceKey(provider.resource, provider.settings)
+            invalidateResolutions()
             faceFailures[key] = FaceFailure(failure.message ?: "Font backend returned an oversized glyph image.", allocationLimit = true)
             validatedFaces.remove(key)
             val face = faces.remove(key) ?: return
@@ -477,7 +502,10 @@ public class MinecraftFontEngine
                     val bytes = provider.resource.copyBytes()
                     if (decoder is MinecraftBoundedFontBackend) decoder.openTrueType(bytes, provider.settings, requireSnapshot().limits) else decoder.openTrueType(bytes, provider.settings)
                 }.getOrElse { failure ->
-                    if (failure is Exception) faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
+                    if (failure is Exception) {
+                        invalidateResolutions()
+                        faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
+                    }
                     throw failure
                 }
             faces[key] = face
@@ -492,14 +520,52 @@ public class MinecraftFontEngine
         ) {
             val size = value.bytes()
             if (cacheEntries == 0 || cacheBytes < size) return
-            rasters.remove(key)?.let { previous -> rasterBytes -= previous.bytes() }
+            rasters.remove(key)?.let { previous ->
+                rasterBytes -= previous.bytes()
+                invalidateResolutions()
+            }
             while (rasters.isNotEmpty() && (cacheEntries <= rasters.size || cacheBytes - size < rasterBytes)) {
                 val oldest = rasters.entries.iterator()
                 rasterBytes -= oldest.next().value.bytes()
                 oldest.remove()
+                invalidateResolutions()
             }
             rasters[key] = value
             rasterBytes += size
+        }
+
+        private fun putResolution(
+            key: ResolutionKey,
+            provider: FontProviderEntry?,
+            misses: List<RasterKey>,
+            epoch: Any,
+        ) {
+            val units = 1 + misses.size
+            if (resolutionLimit < units || epoch !== rasterEpoch) return
+            while (resolutionLimit - units < resolutionUnits) {
+                val oldest = resolutions.entries.iterator()
+                resolutionUnits -= 1 + oldest.next().value.misses.size
+                oldest.remove()
+            }
+            resolutions[key] = Resolution(provider, misses)
+            resolutionUnits += units
+        }
+
+        private fun missingRasterKey(
+            entry: FontProviderEntry,
+            codePoint: Int,
+        ): RasterKey? =
+            when (val provider = entry.provider) {
+                is FontProvider.Bitmap -> null
+                is FontProvider.TrueType ->
+                    if (codePoint in provider.skipped) null else RasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
+                else -> RasterKey.Glyph(entry.identity, codePoint)
+            }
+
+        private fun invalidateResolutions() {
+            resolutions.clear()
+            resolutionUnits = 0
+            rasterEpoch = Any()
         }
 
         private fun applies(
@@ -523,6 +589,16 @@ public class MinecraftFontEngine
         private fun checkOwner() {
             check(Thread.currentThread() === owner) { "Font engine requires its owner thread." }
         }
+
+        private data class ResolutionKey(
+            val font: ResourceId,
+            val codePoint: Int,
+        )
+
+        private data class Resolution(
+            val provider: FontProviderEntry?,
+            val misses: List<RasterKey>,
+        )
 
         private enum class LoadStatus {
             Ready,
