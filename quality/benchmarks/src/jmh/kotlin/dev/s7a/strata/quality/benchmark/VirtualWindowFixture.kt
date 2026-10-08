@@ -102,9 +102,7 @@ internal class VirtualWindowFixture(
         step += 1
         val alternate = step % 2 == 1
         when (motion) {
-            VirtualWindowBenchmark.Motion.Clean -> {
-                Unit
-            }
+            VirtualWindowBenchmark.Motion.Clean -> {}
 
             VirtualWindowBenchmark.Motion.OneRow -> {
                 state.scrollState.scrollTo(if (alternate) 1_010.0 else 1_000.0)
