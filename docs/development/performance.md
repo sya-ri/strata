@@ -48,6 +48,18 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Current client editable membership
+
+The remote client state store indexes editable capability by the same current remote identity and trusted type token as its complete store.
+Admission fixes the value and adds editable membership once; preparation updates preserve membership and original insertion order.
+Distinct keys referencing one value remain distinct entries, and every current editable entry is polled even without a dirty notification.
+The index is execution-owner confined, bounded by the current store and negotiated collection limit, and contains no authoritative value snapshots.
+Retirement removes both references before invoking the entry's release callback; terminal or failed-session cleanup clears the complete index before attempting all releases.
+
+The native-free client-state corpus measures idle flush, local edits, pre-action flush, incoming replacements and complete address churn separately at 100, 1,000 and 8,192 current entries with none, ten or all entries editable.
+Its untimed independent map wrapper counts actual entry traversal and checks ordered edits, recursive allocation, replacement and cleanup; timed scenes use ordinary production maps.
+Shared-kit owner CPU intervals supplement JMH elapsed time and normalized allocation, with native upload and GPU scopes unavailable in this corpus.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

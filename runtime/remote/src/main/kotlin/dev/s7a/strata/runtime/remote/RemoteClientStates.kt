@@ -9,6 +9,8 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
  * Execution-owner-confined presentation-state store bounded by the current decoded screen and its negotiated entry limit.
  * Keys combine a remote identity and a trusted type token; removed identities and terminal screens release their entries.
  * Preparation runs before declaration evaluation, so incoming values never mutate state from a render callback.
+ * Editable membership uses the same keys and admission order, contains only current entries, and is cleared before release callbacks.
+ * Every current editable entry is polled, including distinct keys sharing a value; membership never caches authoritative values.
  */
 public class RemoteClientStates internal constructor(
     private val limits: RemoteLimits,
@@ -16,6 +18,7 @@ public class RemoteClientStates internal constructor(
     private val owner = RuntimeExecutionOwner.current()
     private val values = mutableMapOf<Key, Entry>()
     private val retained = mutableSetOf<Key>()
+    private val editable = mutableMapOf<Key, RemoteEditableValue>()
     private var phase = Phase.Idle
     private var flushing = false
 
@@ -38,7 +41,10 @@ public class RemoteClientStates internal constructor(
             values[address] ?: run {
                 require(values.size < limits.collectionEntries) { "Too many retained remote values." }
                 val value = create()
-                Entry(value) { release(value) }.also { values[address] = it }
+                Entry(value) { release(value) }.also {
+                    values[address] = it
+                    if (value is RemoteEditableValue) editable[address] = value
+                }
             }
         retained.add(address)
         update(key.type.java.cast(entry.value))
@@ -65,7 +71,7 @@ public class RemoteClientStates internal constructor(
         if (flushing) return
         flushing = true
         try {
-            values.values.forEach { (it.value as? RemoteEditableValue)?.flushEdits(actions) }
+            editable.values.forEach { it.flushEdits(actions) }
         } finally {
             flushing = false
         }
@@ -82,7 +88,11 @@ public class RemoteClientStates internal constructor(
         try {
             prepare()
             val obsolete = values.keys.filter { (it in retained).not() }
-            obsolete.forEach { values.remove(it)?.release?.invoke() }
+            obsolete.forEach { address ->
+                val entry = values.remove(address)
+                editable.remove(address)
+                entry?.release?.invoke()
+            }
         } finally {
             retained.clear()
             phase = Phase.Idle
@@ -94,6 +104,7 @@ public class RemoteClientStates internal constructor(
         phase = Phase.Closed
         val retiring = values.values.toList()
         values.clear()
+        editable.clear()
         retained.clear()
         var failure: Throwable? = null
         retiring.forEach { entry ->

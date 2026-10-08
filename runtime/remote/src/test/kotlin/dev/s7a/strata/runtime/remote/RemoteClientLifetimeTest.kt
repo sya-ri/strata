@@ -56,6 +56,32 @@ internal class RemoteClientLifetimeTest {
         assertEquals(2, outgoing.size)
     }
 
+    @Test
+    fun retirementFailureClosesSurvivingAndNewEditableEntriesWithoutReleasingTheFailedEntryTwice() {
+        val released = mutableListOf<Long>()
+        val outgoing = mutableListOf<RemoteMessage>()
+        val failure = IllegalStateException("retirement failed")
+        val registry = RemoteRegistry()
+        val key = RemoteStateKey(Owned::class)
+        registry.element(TYPE, { it }, { _, context ->
+            context.states.prepare(context.identity, key, { Owned(context.identity) }, {}, { value ->
+                released.add(value.identity)
+                if (value.identity == 2L) throw failure
+            })
+        }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
+        val first = tree(listOf(node(1, 1, listOf(2)), node(2, 2)))
+        val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, first), registry, send = outgoing::add)
+        val next = tree(listOf(node(1, 1, listOf(3)), node(3, 3)))
+        assertSame(failure, assertThrows(IllegalStateException::class.java) {
+            client.receive(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next)))
+        })
+        assertEquals(listOf(2L, 1L, 3L), released)
+        assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)
+        assertEquals(RemoteFailure.InvalidMessage, outgoing.filterIsInstance<RemoteMessage.Close>().single().reason)
+        client.close()
+        assertEquals(3, released.size)
+    }
+
     private fun node(
         identity: Long,
         value: Long,
@@ -66,7 +92,9 @@ internal class RemoteClientLifetimeTest {
 
     private class Owned(
         val identity: Long,
-    )
+    ) : RemoteEditableValue {
+        override fun flushEdits(actions: RemoteClientActions) = Unit
+    }
 
     private companion object {
         val TYPE = ProjectionType(ResourceId("test", "owned"))
