@@ -407,6 +407,16 @@ Selected JMH runs use separate `*-selected` directories and their exact generate
 Keep all phases of the selected workloads, default warm-up/sampling settings and three independent invocations when comparing a baseline and candidate.
 Class and method selection also apply to the font fixtures; their declared parameter subsets use the same parameter manifest.
 
+`UnihexOverrideBenchmark` is a separate 144-case synthetic custom-pack corpus selected through the same generated fixture mechanism.
+Sixteen immutable scenarios cover zero, one, small, 128, 1,024 and unadmitted 8,193 ranges, first/middle/last/no matches, absent sparse glyphs, unsorted overlaps, supplementary scalars, padding, short owners, eviction and fully warm rasters.
+Its nine operations separate complete public glyph batches, repeated scalar lookup, one-query first-use ownership, snapshot load, engine lifecycle, actual retained Text clean/dirty frames, complete Text host lifecycle and snapshot/profile replacement.
+The original ZIP contains 192 synthetic eight-pixel glyphs with fixed row bits and a checked input manifest; prepare and register the exact ZIP through `strata.performance.fixtureInputs` alongside every frozen control input.
+`verifyWork()` checks the generated matrix, independent original-loop glyph pixels/metric bits, actual Text frame pixels, clean work, changed work and terminal ownership outside timing.
+It records original predicate counts, actual retained segments and reserved primitive payload separately; logarithmic probe bounds are source-derived and do not substitute for independent untimed probe/construction instrumentation.
+Source-only preparation and a passing verifier do not establish an improvement: freeze actual fixture/collector/runtime archives and loaded class trees, collect every operation in three independent Standard invocations per side, and retain every control or slower result.
+Both sides must use identical prerequisite runtime changes, including any explicitly declared unaccepted dependency, rather than relabeling historical archives.
+The public JVM operations establish no native upload or GPU timing; native presentation metrics are N/A, while applicable fresh font pixel and lifecycle gates remain required before review.
+
 The same option selects loaded native cases such as `TextField,NativeCanvas` at all four GUI scales.
 The native performance entry prepares the actual resource profile and then collects directly, without running ordinary profile-reload, input, inventory and pixel-regression scenes on every measurement invocation.
 Omitting the option retains the full 108-interval matrix and its existing acceptance contract.

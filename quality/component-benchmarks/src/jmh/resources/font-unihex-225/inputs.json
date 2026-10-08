@@ -1,0 +1,10 @@
+{
+  "contract": "font-unihex-225-input-v1",
+  "original": true,
+  "license": "CC0-1.0",
+  "glyph_count": 192,
+  "row_width": 8,
+  "row_bits_hex": "81",
+  "zip_sha256": "f8f9ae4ccfc5548b89b0b7fd3ca9532c0a33eeee2c27fd2e206116d795c2444a",
+  "hex_sha256": "46e653cbc61aa51d3b69e96e4696a43c00a076ec63cee6e9e5c534f0e92d2988"
+}
