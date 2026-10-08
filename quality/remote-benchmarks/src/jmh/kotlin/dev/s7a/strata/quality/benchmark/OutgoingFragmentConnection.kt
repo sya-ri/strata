@@ -6,7 +6,9 @@ import dev.s7a.strata.runtime.remote.RemotePacketStream
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
-/** Frozen bridge adapter; only an absent candidate factory chooses the original production connection on the baseline. */
+/**
+ * Frozen bridge adapter; only an absent candidate factory chooses the original production connection on the baseline.
+ */
 public class OutgoingFragmentConnection {
     private val native: Method? =
         try {
@@ -15,10 +17,14 @@ public class OutgoingFragmentConnection {
             null
         }
 
-    /** Whether this actual loaded runtime supplies the candidate decoder-free native factory. */
+    /**
+     * Whether this actual loaded runtime supplies the candidate decoder-free native factory.
+     */
     public val hasNativeFactory: Boolean get() = native != null
 
-    /** Calls the actual native factory or the original connection-to-packet-stream binding; linkage failures propagate. */
+    /**
+     * Calls the actual native factory or the original connection-to-packet-stream binding; linkage failures propagate.
+     */
     public fun create(
         limits: RemoteLimits,
         stream: RemotePacketStream,

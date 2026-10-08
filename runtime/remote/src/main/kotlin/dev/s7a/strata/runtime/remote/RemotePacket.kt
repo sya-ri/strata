@@ -33,7 +33,9 @@ public sealed interface RemotePacket {
         private const val HEADER_BYTES: Int = 26
         private val nativeLimit = RemoteLimits().frameBytes
 
-        /** Reserved storage for the opt-in private outgoing path; excluded from negotiated inner bytes. */
+        /**
+         * Reserved storage for the opt-in private outgoing path; excluded from negotiated inner bytes.
+         */
         @InternalStrataRuntimeApi
         internal val envelopeBytes: Int get() = HEADER_BYTES
 

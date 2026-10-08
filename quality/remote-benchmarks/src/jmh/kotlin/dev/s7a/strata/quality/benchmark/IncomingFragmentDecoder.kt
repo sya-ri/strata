@@ -69,7 +69,8 @@ internal class IncomingFragmentDecoder(
         try {
             if (frame != null) invoke(offer, stream, packet, 0L)
             val stored = frame?.let { pending[it.sequence] }
-            val copied = if (frame != null && previous == null && stored != null && stored !== frame.bytes) frame.bytes.size else 0
+            val admitted = previous == null && stored != null
+            val copied = if (frame != null && admitted && stored !== frame.bytes) frame.bytes.size else 0
             return (frame?.bytes?.size ?: 0) to copied
         } finally {
             if (admission != null) (packet as AutoCloseable).close()

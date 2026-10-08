@@ -33,7 +33,7 @@ public class IncomingFragmentFixture(
     private val fragmentCount = if (expected.isEmpty()) 0 else (expected.size - 1) / (limits.frameBytes - 16) + 1
     private val templateAddress = RemoteAddress(RemoteEndpoint.Server, UUID(0, 1))
     private val templates = packets(templateAddress)
-    private var active = emptyList<Owner>()
+    private var active = emptyList<TransferOwner>()
     private var phase = IncomingFragmentPhase.Admission
 
     init {
@@ -50,7 +50,7 @@ public class IncomingFragmentFixture(
         check(active.isEmpty())
         require(selected != IncomingFragmentPhase.ServerIngress || route == IncomingFragmentRoute.Production)
         phase = selected
-        active = (0 until owners).map { Owner(selected) }
+        active = (0 until owners).map { TransferOwner(selected) }
         active.forEach { holder ->
             holder.owner.run {
                 if (workload == IncomingFragmentWorkload.Stale) {
@@ -166,7 +166,7 @@ public class IncomingFragmentFixture(
         }
     }
 
-    private fun assemble(holder: Owner) {
+    private fun assemble(holder: TransferOwner) {
         val count = (field(holder.stream, "pending") as Map<*, *>).size
         repeat((count + 63) / 64) {
             holder.stream.drain(0) { bytes ->
@@ -213,7 +213,7 @@ public class IncomingFragmentFixture(
     /**
      * Independent current invocation state created and released under one serial execution owner.
      */
-    private inner class Owner(
+    private inner class TransferOwner(
         selected: IncomingFragmentPhase,
     ) {
         val owner = RuntimeExecutionOwner()

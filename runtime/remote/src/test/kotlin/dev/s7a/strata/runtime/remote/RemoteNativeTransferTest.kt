@@ -131,7 +131,9 @@ internal class RemoteNativeTransferTest {
         assertArrayEquals(reference(expected, 0), native)
     }
 
-    /** Complete literal envelope reference independent of production framing and native encoding. */
+    /**
+     * Complete literal envelope reference independent of production framing and native encoding.
+     */
     private fun reference(
         logical: ByteArray,
         index: Int,

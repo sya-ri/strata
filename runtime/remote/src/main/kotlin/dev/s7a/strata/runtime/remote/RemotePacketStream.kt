@@ -36,7 +36,9 @@ public class RemotePacketStream(
         checkNotNull(outgoing) { "Remote packet stream is closed." }(RemotePacket.encode(RemotePacket.Frame(address, nextOutgoing++, bytes)))
     }
 
-    /** Requires the constructing execution owner before a private native connection can bind this stream. */
+    /**
+     * Requires the constructing execution owner before a private native connection can bind this stream.
+     */
     internal fun checkExecutionOwner() {
         checkOwner()
     }

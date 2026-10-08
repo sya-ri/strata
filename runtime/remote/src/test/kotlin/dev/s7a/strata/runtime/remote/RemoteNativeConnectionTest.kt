@@ -353,7 +353,9 @@ internal class RemoteNativeConnectionTest {
         name: String,
     ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
 
-    /** One independently owned packet stream and connection with deterministic terminal release. */
+    /**
+     * One independently owned packet stream and connection with deterministic terminal release.
+     */
     private class Fixture(
         val stream: RemotePacketStream,
         val connection: RemoteConnection,

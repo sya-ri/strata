@@ -21,28 +21,36 @@ internal class RemoteNativeTransfer private constructor(
 ) : AutoCloseable {
     private var owner: ExecutionOwnerId? = RuntimeExecutionOwner.current()
 
-    /** Current retained fragment count; empty groups retain no payload or owner. */
+    /**
+     * Current retained fragment count; empty groups retain no payload or owner.
+     */
     val frameCount: Int
         get() {
             checkReadableOwner()
             return frames.size
         }
 
-    /** Semantic bytes charged by existing inner-fragment admission, excluding native headroom. */
+    /**
+     * Semantic bytes charged by existing inner-fragment admission, excluding native headroom.
+     */
     val queuedBytes: Int
         get() {
             checkReadableOwner()
             return frames.sumOf { it.size - RemotePacket.envelopeBytes }
         }
 
-    /** Inner length of the next privately held fragment, without exposing its array. */
+    /**
+     * Inner length of the next privately held fragment, without exposing its array.
+     */
     val firstBytes: Int
         get() {
             checkOwner()
             return frames.first().size - RemotePacket.envelopeBytes
         }
 
-    /** Checked reserved-array-payload bytes, excluding JVM headers/alignment, released as fragments leave the queue. */
+    /**
+     * Checked reserved-array-payload bytes, excluding JVM headers/alignment, released as fragments leave the queue.
+     */
     val retainedHeadroom: Long get() = Math.multiplyExact(RemotePacket.envelopeBytes.toLong(), frameCount.toLong())
 
     /**

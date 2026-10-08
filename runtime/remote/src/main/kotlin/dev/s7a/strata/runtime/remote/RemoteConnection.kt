@@ -232,7 +232,9 @@ public class RemoteConnection(
 
         abstract fun clear()
 
-        /** Ordinary callback storage, retaining the original inner-only layout and array ownership. */
+        /**
+         * Ordinary callback storage, retaining the original inner-only layout and array ownership.
+         */
         class Public(
             session: Long?,
             private val frames: ArrayDeque<ByteArray>,
@@ -255,7 +257,9 @@ public class RemoteConnection(
             }
         }
 
-        /** Exclusive final-envelope group; header completion and outer sequence assignment happen only during sendNext. */
+        /**
+         * Exclusive final-envelope group; header completion and outer sequence assignment happen only during sendNext.
+         */
         class Native(
             session: Long?,
             private val frames: RemoteNativeTransfer,
