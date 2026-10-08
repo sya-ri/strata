@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { installDomPerformanceBridge } from './dom-performance-browser.mjs';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -122,9 +123,31 @@ async function verifyTheme(browser, engine, theme, expected) {
     const receipt = { theme, engine: engine.name(), version: browser.version(), snapshots: observed };
     receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
     assert.equal(await page.evaluate(() => window.strataDomPerformance.verifyAll()), true, 'Compiled changed-frame workloads match independent full rendering and release ownership');
+    receipt.domWork = await verifyDomWork(browser, page, address);
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
+}
+
+async function verifyDomWork(browser, page, address) {
+    const inventory = JSON.parse(await page.evaluate(() => window.strataDomPerformance.inventory()));
+    const receipts = [];
+    for (const item of inventory.cases) {
+        const probe = await browser.newPage({ viewport: { width: 640, height: 480 } });
+        try {
+            await probe.addInitScript(installDomPerformanceBridge);
+            const parameters = new URLSearchParams({ 'strata-dom-mode': item.mode, 'strata-dom-count': String(item.count) });
+            await probe.goto(`${address}?${parameters}`);
+            assert.equal(await probe.evaluate(() => window.strataVerifyPerformanceCollector()), true, 'Untimed native work, descriptor restoration, parity and cleanup');
+            const work = await probe.evaluate(() => window.strataDomWorkCounts());
+            assert.ok(Object.values(work).every(value => Number.isSafeInteger(value) && 0 <= value));
+            assert.equal(work.rendered_elements, item.count, 'The native work probe must cover every compiled element');
+            assert.equal(work.elements_with_setters, item.changed_elements, 'Equal native presentations must receive no property setters');
+            assert.equal(work.root_setter_attempts, item.changed_root_properties, 'Only changed viewport properties may be assigned on the root');
+            receipts.push({ ...item, work });
+        } finally { await probe.close(); }
+    }
+    return receipts;
 }
 
 async function verifyDomUpdates(browser, page, engine, theme, evidence) {

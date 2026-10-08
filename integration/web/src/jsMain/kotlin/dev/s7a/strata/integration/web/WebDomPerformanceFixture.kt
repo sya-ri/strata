@@ -236,7 +236,7 @@ internal class WebDomPerformanceFixture private constructor(
             val cases =
                 Mode.entries
                     .flatMap { mode ->
-                        mode.counts.map { count -> json("mode" to mode.name, "count" to count, "phase" to mode.phase.name) }
+                        mode.counts.map { count -> json("mode" to mode.name, "count" to count, "phase" to mode.phase.name, "changed_elements" to mode.changedElements(count), "changed_root_properties" to if (mode == Mode.Resize) 2 else 0) }
                     }.toTypedArray()
             return JSON.stringify(
                 json(
@@ -282,6 +282,17 @@ internal class WebDomPerformanceFixture private constructor(
         Reorder(listOf(100)),
         Button(listOf(100)),
         Progress(listOf(100)),
+        ;
+
+        /**
+         * Counts native presentations changed by the forward transition, independently of renderer setter attempts.
+         */
+        fun changedElements(count: Int): Int =
+            when (this) {
+                Localized, Button, Progress -> 1
+                Resize -> 0
+                Full, Bounds, Clip, Reorder -> count
+            }
     }
 
     /**
