@@ -75,6 +75,7 @@ internal class NativeGuiResourceFixture : AutoCloseable {
         var destroyed: Boolean = false
         var destructionPolls: Int = 0
         var destructionFailure: Throwable? = null
+        var onDestruction: (() -> Unit)? = null
         var releaseAccepted: Boolean = false
             private set
 
@@ -90,6 +91,7 @@ internal class NativeGuiResourceFixture : AutoCloseable {
         override fun isDestroyed(): Boolean {
             check(releaseAccepted) { "Physical destruction may only be queried after a successful release request." }
             destructionPolls += 1
+            onDestruction?.invoke()
             destructionFailure?.let { throw it }
             return destroyed
         }

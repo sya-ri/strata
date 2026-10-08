@@ -422,13 +422,16 @@ internal class FabricMinecraftSampledImageDevice(
      */
     @JvmSynthetic
     internal fun pollInternal() {
-        if (terminal) return
+        if (terminal || entries.isEmpty()) return
         val failures = Failures()
-        entries.toList().forEach { entry ->
+        // All callbacks run under operation's reentry guard; physical acknowledgement removes only this entry.
+        val iterator = entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
             failures.attempt { finishInitialization(entry, force = false) }
             failures.attempt { finishGui(entry, force = false) }
             if (releasable(entry)) failures.attempt { requestClose(entry, retry = false) }
-            if (entry.release == Release.Requested) failures.attempt { acknowledge(entry, terminal = false) }
+            if (entry.release == Release.Requested) failures.attempt { acknowledge(entry, terminal = false, iterator = iterator) }
         }
         failures.throwIfPresent()
     }
@@ -503,6 +506,7 @@ internal class FabricMinecraftSampledImageDevice(
     private fun acknowledge(
         entry: Entry,
         terminal: Boolean,
+        iterator: MutableIterator<Entry>? = null,
     ) {
         if (entry.release != Release.Requested) {
             if (terminal) error("A sampled-image resource has no accepted terminal release.")
@@ -516,7 +520,7 @@ internal class FabricMinecraftSampledImageDevice(
         entry.release = Release.Destroyed
         entry.resource = null
         entry.texture = null
-        entries.remove(entry)
+        if (iterator == null) entries.remove(entry) else iterator.remove()
         retainedBytes = Math.subtractExact(retainedBytes, entry.bytes)
     }
 

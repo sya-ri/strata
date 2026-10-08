@@ -176,12 +176,15 @@ internal class NativeCanvasFixture : AutoCloseable {
         var destroyed: Boolean = false
         var destructionPolls: Int = 0
         var destructionFailure: Throwable? = null
+        var onClose: (() -> Unit)? = null
+        var onDestruction: (() -> Unit)? = null
         var releaseAccepted: Boolean = false
             private set
 
         override fun close() {
             closeCalls += 1
             check(releaseAccepted.not()) { "A successful target release must not be requested twice." }
+            onClose?.invoke()
             closeFailure?.let { throw it }
             releaseAccepted = true
             if (destroyOnClose) destroyed = true
@@ -190,6 +193,7 @@ internal class NativeCanvasFixture : AutoCloseable {
         override fun isDestroyed(): Boolean {
             check(releaseAccepted) { "Physical destruction may only be queried after a successful release request." }
             destructionPolls += 1
+            onDestruction?.invoke()
             destructionFailure?.let { throw it }
             return destroyed
         }
@@ -231,6 +235,7 @@ internal class NativeCanvasFixture : AutoCloseable {
         var renderFailure: Throwable? = null
         var captureCloseFailure: Throwable? = null
         var closeFailure: Throwable? = null
+        var onClose: (() -> Unit)? = null
         var onCapture: (() -> Unit)? = null
         var onRender: (() -> Unit)? = null
 
@@ -244,6 +249,7 @@ internal class NativeCanvasFixture : AutoCloseable {
 
         override fun close() {
             closeCalls += 1
+            onClose?.invoke()
             closeFailure?.let { throw it }
         }
     }

@@ -485,8 +485,8 @@ public class NativeCanvasDevice(
             .firstOrNull {
                 it.canvasId == attachment.canvasId && it.owner === existingOwner && it.target.size == size && reusable(it)
             }?.let { return it }
-        targets.firstOrNull { it.canvasId == attachment.canvasId && reusable(it) }?.let(::destroy)
-        if (64 <= permits) targets.firstOrNull(::reusable)?.let(::destroy)
+        targets.firstOrNull { it.canvasId == attachment.canvasId && reusable(it) }?.let { destroy(it) }
+        if (64 <= permits) targets.firstOrNull(::reusable)?.let { destroy(it) }
         if (64 <= permits || 3 <= targets.count { it.canvasId == attachment.canvasId }) return null
         permits += 1
         val owner = acquireOwner(attachment)
@@ -552,17 +552,23 @@ public class NativeCanvasDevice(
     private fun pollInternal() {
         if (closed) return
         val failures = CanvasFailures()
-        targets.toList().forEach { record ->
-            failures.attempt { finishInitialization(record, force = false) }
-            failures.attempt { finishCapture(record, force = false) }
-            failures.attempt { finishGui(record, force = false) }
-            if (record.release == TargetRelease.Requested && record.quarantined.not()) {
-                failures.attempt { acknowledgeDestruction(record) }
-            } else if (record.owner.retired && reusable(record)) {
-                failures.attempt { destroy(record) }
+        if (targets.isNotEmpty()) {
+            // Guarded callbacks may retire attachments, but only this traversal removes target membership.
+            val iterator = targets.iterator()
+            while (iterator.hasNext()) {
+                val record = iterator.next()
+                failures.attempt { finishInitialization(record, force = false) }
+                failures.attempt { finishCapture(record, force = false) }
+                failures.attempt { finishGui(record, force = false) }
+                if (record.release == TargetRelease.Requested && record.quarantined.not()) {
+                    failures.attempt { acknowledgeDestruction(record, iterator = iterator) }
+                } else if (record.owner.retired && reusable(record)) {
+                    failures.attempt { destroy(record, iterator) }
+                }
             }
         }
-        owners.toList().filter { it.retired && targets.none { record -> record.owner === it } }.forEach { owner ->
+        // Eligibility remains eager: a producer close callback can retire another owner.
+        owners.filter { it.retired && targets.none { record -> record.owner === it } }.forEach { owner ->
             failures.attempt { closeProducer(owner) }
         }
         failures.attempt { guiResources.poll() }
@@ -605,9 +611,12 @@ public class NativeCanvasDevice(
         completion.release()
     }
 
-    private fun destroy(record: TargetRecord) {
+    private fun destroy(
+        record: TargetRecord,
+        iterator: MutableIterator<TargetRecord>? = null,
+    ) {
         requestDestruction(record)
-        acknowledgeDestruction(record)
+        acknowledgeDestruction(record, iterator = iterator)
     }
 
     private fun requestDestruction(
@@ -636,10 +645,20 @@ public class NativeCanvasDevice(
     private fun acknowledgeDestruction(
         record: TargetRecord,
         terminal: Boolean = false,
+        iterator: MutableIterator<TargetRecord>? = null,
     ) {
         if (record.release != TargetRelease.Requested) return
         val destroyed = record.target.isDestroyed()
-        if (destroyed && targets.remove(record)) permits -= 1
+        if (destroyed) {
+            val removed =
+                if (iterator == null) {
+                    targets.remove(record)
+                } else {
+                    iterator.remove()
+                    true
+                }
+            if (removed) permits -= 1
+        }
         check(terminal.not() || destroyed) { "Native canvas target remains physically allocated after terminal retirement drain." }
     }
 
