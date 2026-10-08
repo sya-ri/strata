@@ -11,6 +11,7 @@ import dev.s7a.strata.component.Slider
 import dev.s7a.strata.component.SliderState
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
@@ -21,13 +22,16 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onCheckedChange
 import dev.s7a.strata.modifier.onCycle
 import dev.s7a.strata.modifier.onSliderChange
+import dev.s7a.strata.modifier.padding
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
+import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -186,6 +190,69 @@ internal class MinecraftStatefulControlFrameTest {
                 assertEquals(semantics, original.semantics)
             } finally {
                 monitor.close()
+            }
+        }
+    }
+
+    @Test
+    fun structuralPaddingPreservesTheControlAndMovesOnlyItsEffectiveGeometry() {
+        val padded = mutableStateOf(false)
+        val checked = CheckboxState()
+        val host = createMinecraftUiHost(
+            UiDefinition("padding") {
+                Checkbox("A", checked, modifier = if (padded.value) Modifier.Empty.padding(2) else Modifier.Empty)
+            },
+            MinecraftProfileFixture.create(),
+        )
+        host.use {
+            host.attach()
+            val original = host.frame(IntSize(150, 20))
+            val commands = original.drawCommands.toList()
+            padded.value = true
+            val current = host.frame(IntSize(154, 24))
+            assertEquals(IntRect(2, 2, 152, 22), current.semantics.single().bounds)
+            assertEquals(0, rasterizeHeadless(current.drawCommands, IntSize(154, 24)).argbAt(0, 0))
+            assertEquals(0xFF191919.toInt(), rasterizeHeadless(current.drawCommands, IntSize(154, 24)).argbAt(2, 2))
+            assertEquals(InputResult.Consumed, host.dispatchPointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary)))
+            assertEquals(true, checked.checked)
+            assertEquals(commands, original.drawCommands)
+        }
+    }
+
+    @Test
+    fun freshFailingActionsPreservePrimaryFailureAndReleaseEveryControlHost() {
+        for (kind in Kind.entries) {
+            val revision = mutableStateOf(0)
+            val failure = IllegalStateException("Current control callback failed")
+            val checkbox = CheckboxState()
+            val slider = SliderState(0.0)
+            val cycle = CycleButtonState(listOf(0, 1, 2))
+            val host = createMinecraftUiHost(
+                UiDefinition("failure") {
+                    val version = revision.value
+                    when (kind) {
+                        Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { if (version == 1) throw failure })
+                        Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { if (version == 1) throw failure })
+                        Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { if (version == 1) throw failure })
+                    }
+                },
+                MinecraftProfileFixture.create(),
+            )
+            try {
+                host.attach()
+                val original = host.frame(IntSize(150, 20))
+                val semantics = original.semantics.toList()
+                revision.value = 1
+                host.frame(IntSize(150, 20))
+                val x = if (kind == Kind.Slider) 149 else 1
+                assertSame(failure, assertFailsWith<IllegalStateException> { host.dispatchPointer(PointerEvent.Press(IntOffset(x, 1), PointerButton.Primary)) })
+                val evaluator = host.javaClass.getDeclaredField("evaluator")
+                evaluator.isAccessible = true
+                assertEquals(null, evaluator.get(host))
+                assertEquals(semantics, original.semantics)
+            } finally {
+                host.close()
+                host.close()
             }
         }
     }
