@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.lang.reflect.InvocationTargetException
 import java.util.Random
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random as KotlinRandom
@@ -258,6 +259,283 @@ internal class MinecraftFontUnihexIndexTest {
             oldOwner.close()
             newOwner.close()
         }
+    }
+
+    @Test
+    fun callbackCloseContinuationKeepsOriginalGlyphAndWidthFailureOrderWithoutReadmittingIndexes() {
+        for (case in ContinuationCase.entries) {
+            val ranges = continuationRanges(case)
+            val document = """{"type":"ttf","file":"test:continuation.ttf"}""" + "," + provider(ranges)
+            val state =
+                FontTestResources.snapshot(
+                    FontTestResources.font("default", document),
+                    "assets/test/font/continuation.ttf" to byteArrayOf(1),
+                    archive(),
+                )
+            assertTrue(state.diagnostics.isEmpty())
+            for (control in continuationControls()) {
+                val cleanupFailure = IllegalStateException("observed backend cleanup")
+                val reference = closedContinuation(state, case, control, cleanupFailure, original = true)
+                val candidate = closedContinuation(state, case, control, cleanupFailure, original = false)
+                assertEquals(reference.getOrNull(), candidate.getOrNull())
+                assertEquals(reference.exceptionOrNull()?.javaClass, candidate.exceptionOrNull()?.javaClass)
+                assertEquals(reference.exceptionOrNull()?.message, candidate.exceptionOrNull()?.message)
+                when {
+                    control.cleanup == ContinuationCleanup.PropagatedFailure -> assertSame(cleanupFailure, candidate.exceptionOrNull())
+                    control.imageNull -> assertEquals(7f, candidate.getOrThrow().advance)
+                    case == ContinuationCase.Absent -> {
+                        assertEquals(6f, candidate.getOrThrow().advance)
+                        assertEquals(IntSize(5, 8), checkNotNull(candidate.getOrThrow().image).size)
+                    }
+                    case == ContinuationCase.Overflow -> assertTrue(candidate.exceptionOrNull() is ArithmeticException)
+                    else -> assertEquals("Font engine is closed.", checkNotNull(candidate.exceptionOrNull()).message)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun foreignThreadRejectionAndCallbackCloseLeaveAnIndependentIndexOwnerOpen() {
+        val ranges = continuationRanges(ContinuationCase.Late)
+        val document = """{"type":"ttf","file":"test:continuation.ttf"}""" + "," + provider(ranges)
+        val state = FontTestResources.snapshot(FontTestResources.font("default", document), "assets/test/font/continuation.ttf" to byteArrayOf(1), archive())
+        lateinit var first: MinecraftFontEngine
+        var closeOnGlyph = false
+        val firstBackend =
+            FontTestBackend(
+                open = { _, _ ->
+                    FontTestFace(
+                        lookup = {
+                            if (closeOnGlyph) first.close()
+                            null
+                        },
+                    )
+                },
+            )
+        val secondBackend = FontTestBackend(open = { _, _ -> FontTestFace(lookup = { null }) })
+        first = MinecraftFontEngine(state, { firstBackend }, cacheEntries = 0, maxFaces = 1)
+        val second = MinecraftFontEngine(state, { secondBackend }, cacheEntries = 0, maxFaces = 1)
+        try {
+            first.glyph(FontTestResources.defaultFont, 70)
+            second.glyph(FontTestResources.defaultFont, 70)
+            for (operation in listOf({ first.glyph(FontTestResources.defaultFont, 65) }, { first.close() })) {
+                val failure = AtomicReference<Throwable?>()
+                val thread = Thread { failure.set(runCatching(operation).exceptionOrNull()) }
+                thread.start()
+                thread.join()
+                assertTrue(failure.get() is IllegalStateException)
+                assertEquals(1, indexes(first).size)
+                assertEquals(1, indexes(second).size)
+            }
+            closeOnGlyph = true
+            assertThrows(IllegalStateException::class.java) { first.glyph(FontTestResources.defaultFont, 65) }
+            assertContinuationTerminal(first)
+            assertEquals(expected(ranges, 65, true), second.glyph(FontTestResources.defaultFont, 65))
+            assertEquals(1, indexes(second).size)
+            assertEquals(1, firstBackend.closeCalls)
+            assertEquals(0, secondBackend.closeCalls)
+        } finally {
+            first.close()
+            second.close()
+        }
+        assertContinuationTerminal(second)
+        assertEquals(1, secondBackend.closeCalls)
+    }
+
+    private fun closedContinuation(
+        state: MinecraftFontSnapshot,
+        case: ContinuationCase,
+        control: ContinuationControl,
+        cleanupFailure: Throwable,
+        original: Boolean,
+    ): Result<MinecraftFontGlyph> {
+        lateinit var engine: MinecraftFontEngine
+        var armed = false
+        var glyphCalls = 0
+        var faceCloses = 0
+        var observedCloseFailure: Throwable? = null
+        val detachedGlyph = MinecraftFontGlyph(7f, 0f, 0f, 0f, 0f, null)
+        val backend =
+            FontTestBackend(
+                open = { _, _ ->
+                    FontTestFace(
+                        lookup = {
+                            glyphCalls++
+                            if (armed) {
+                                if (control.cleanup == ContinuationCleanup.PropagatedFailure) {
+                                    engine.close()
+                                } else {
+                                    observedCloseFailure = runCatching(engine::close).exceptionOrNull()
+                                }
+                            }
+                            if (armed && control.imageNull) detachedGlyph else null
+                        },
+                        release = {
+                            faceCloses++
+                            assertTrue(indexes(engine).isEmpty())
+                            assertEquals(0, units(engine))
+                            if (control.cleanup == ContinuationCleanup.Reentrant) engine.close()
+                        },
+                    )
+                },
+                release = {
+                    assertTrue(indexes(engine).isEmpty())
+                    assertEquals(0, units(engine))
+                    if (control.cleanup == ContinuationCleanup.Reentrant) engine.close()
+                    if (control.cleanup in setOf(ContinuationCleanup.CaughtFailure, ContinuationCleanup.PropagatedFailure)) throw cleanupFailure
+                },
+            )
+        engine = MinecraftFontEngine(state, { backend }, cacheEntries = control.entries, maxFaces = 1)
+        try {
+            val missing = engine.glyph(ResourceId("unknown", "continuation"), 65)
+            if (control.primed) {
+                engine.glyph(FontTestResources.defaultFont, 70)
+                assertEquals(if (case == ContinuationCase.Unadmitted) 0 else 1, indexes(engine).size)
+            }
+            armed = true
+            val scalar = if (case == ContinuationCase.Absent) 80 else 65
+            val result = runCatching { if (original) originalContinuation(state, engine, scalar) else engine.glyph(FontTestResources.defaultFont, scalar) }
+            if (control.cleanup == ContinuationCleanup.CaughtFailure) assertSame(cleanupFailure, observedCloseFailure)
+            if (control.cleanup != ContinuationCleanup.PropagatedFailure) {
+                if (control.imageNull) assertSame(detachedGlyph, result.getOrThrow())
+                if (control.imageNull.not() && case == ContinuationCase.Absent) assertSame(missing, result.getOrThrow())
+            }
+            assertEquals(if (control.primed) 2 else 1, glyphCalls)
+            assertEquals(1, backend.openCalls)
+            assertEquals(1, faceCloses)
+            assertEquals(1, backend.closeCalls)
+            assertContinuationTerminal(engine)
+            return result
+        } finally {
+            engine.close()
+        }
+    }
+
+    // This independent original walk bypasses both resolution selection and Unihex index selection.
+    // Private preflight and TrueType raster hooks are shared; call counts and terminal results are asserted separately.
+    private fun originalContinuation(
+        state: MinecraftFontSnapshot,
+        engine: MinecraftFontEngine,
+        scalar: Int,
+    ): MinecraftFontGlyph {
+        FontJson.validateScalar(scalar)
+        val missing = engine.glyph(ResourceId("unknown", "continuation"), scalar)
+        val providers = checkNotNull(state.fonts[FontTestResources.defaultFont])
+        if ((continuationInvoke(engine, "prepareFont", arrayOf(ResourceId::class.java, List::class.java), FontTestResources.defaultFont, providers) as Boolean).not()) return missing
+        for (entry in providers) {
+            check(entry.filter.isEmpty())
+            val result =
+                if (entry.provider is FontProvider.Unihex) {
+                    originalContinuationUnihex(engine, entry.provider, scalar)
+                } else {
+                    continuationInvoke(engine, "cachedGlyph", arrayOf(FontProviderEntry::class.java, Int::class.java), entry, scalar) as MinecraftFontGlyph?
+                }
+            if (result != null) return result
+        }
+        return missing
+    }
+
+    private fun originalContinuationUnihex(
+        engine: MinecraftFontEngine,
+        provider: FontProvider.Unihex,
+        scalar: Int,
+    ): MinecraftFontGlyph? {
+        val glyph = provider.glyphs.glyph(scalar) ?: return null
+        val override = provider.overrides.firstOrNull { bounds -> scalar in bounds.first..bounds.last }
+        val bounds = override?.let { it.left..it.right } ?: glyph.bounds()
+        val width = Math.addExact(Math.subtractExact(bounds.last, bounds.first), 1)
+        val current = continuationInvoke(engine, "requireSnapshot", emptyArray()) as MinecraftFontSnapshot
+        current.limits.requireImageSize(width, 16)
+        return expected(provider.overrides, scalar, current.compatibility.fractionalUnihexAdvance)
+    }
+
+    private fun assertContinuationTerminal(engine: MinecraftFontEngine) {
+        assertTrue(indexes(engine).isEmpty())
+        assertEquals(0, units(engine))
+        assertEquals(0, engine.retainedRasterEntries)
+        assertEquals(0L, engine.retainedRasterBytes)
+        assertEquals(0, engine.retainedFaces)
+        assertEquals(0L, continuationField(engine, "faceBytes"))
+        assertEquals(0, continuationField(engine, "resolutionUnits"))
+        for (name in listOf("resolutions", "rasters", "faces", "bitmapSizes", "bitmapFailures", "faceFailures", "providerStatus", "fontStatus")) {
+            assertTrue((continuationField(engine, name) as Map<*, *>).isEmpty(), name)
+        }
+        assertTrue((continuationField(engine, "validatedFaces") as Set<*>).isEmpty())
+        assertNull(continuationField(engine, "snapshot"))
+        assertNull(continuationField(engine, "backend"))
+        assertEquals("Font engine is closed.", assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, 65) }.message)
+        engine.close()
+        assertTrue(indexes(engine).isEmpty())
+        assertEquals(0, units(engine))
+    }
+
+    private fun continuationRanges(case: ContinuationCase): List<FontProvider.WidthOverride> {
+        val valid = FontProvider.WidthOverride(65, 66, 0, 7)
+        return when (case) {
+            ContinuationCase.First -> listOf(valid) + fillers(16)
+            ContinuationCase.Unadmitted -> fillers(8_192) + valid
+            ContinuationCase.Overflow -> fillers(16) + valid.copy(left = Int.MIN_VALUE, right = Int.MAX_VALUE)
+            ContinuationCase.Shadowed -> fillers(16) + listOf(valid, valid.copy(left = Int.MIN_VALUE, right = Int.MAX_VALUE))
+            ContinuationCase.Late, ContinuationCase.Absent -> fillers(16) + valid
+        }
+    }
+
+    private fun continuationControls(): List<ContinuationControl> =
+        buildList {
+            for (entries in listOf(0, 2, 4096)) {
+                for (cleanup in ContinuationCleanup.entries) {
+                    for (imageNull in listOf(false, true)) {
+                        for (primed in listOf(false, true)) add(ContinuationControl(entries, cleanup, imageNull, primed))
+                    }
+                }
+            }
+        }
+
+    private fun continuationField(
+        engine: MinecraftFontEngine,
+        name: String,
+    ): Any? =
+        MinecraftFontEngine::class.java
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(engine)
+
+    private fun continuationInvoke(
+        engine: MinecraftFontEngine,
+        name: String,
+        types: Array<Class<*>>,
+        vararg arguments: Any,
+    ): Any? =
+        try {
+            MinecraftFontEngine::class.java
+                .getDeclaredMethod(name, *types)
+                .apply { isAccessible = true }
+                .invoke(engine, *arguments)
+        } catch (failure: InvocationTargetException) {
+            throw checkNotNull(failure.targetException)
+        }
+
+    private data class ContinuationControl(
+        val entries: Int,
+        val cleanup: ContinuationCleanup,
+        val imageNull: Boolean,
+        val primed: Boolean,
+    )
+
+    private enum class ContinuationCase {
+        Late,
+        First,
+        Absent,
+        Unadmitted,
+        Overflow,
+        Shadowed,
+    }
+
+    private enum class ContinuationCleanup {
+        Success,
+        Reentrant,
+        CaughtFailure,
+        PropagatedFailure,
     }
 
     private fun originalWinner(

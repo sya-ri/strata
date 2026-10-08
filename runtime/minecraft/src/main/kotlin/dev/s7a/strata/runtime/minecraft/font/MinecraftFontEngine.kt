@@ -495,7 +495,8 @@ public class MinecraftFontEngine
             overrides: List<FontProvider.WidthOverride>,
             codePoint: Int,
         ): FontProvider.WidthOverride? {
-            if (overrides.size < 16 || FontUnihexWidthIndex.MAX_OVERRIDES < overrides.size) {
+            // A previous provider can close this owner; preserve original width failures without terminal admission.
+            if (closed || overrides.size < 16 || FontUnihexWidthIndex.MAX_OVERRIDES < overrides.size) {
                 return overrides.firstOrNull { bounds -> codePoint in bounds.first..bounds.last }
             }
             val first = overrides.first()
