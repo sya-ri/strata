@@ -98,6 +98,7 @@ internal class ContainerDeclarationFixture(
 
     /**
      * Builds fresh parent descriptions; repeated-template scenes reuse only immutable leaf inputs.
+     * A single group uses the selected container as its root; grouped recipes add one membership-owning stack.
      */
     fun construct(value: Int): Element {
         var nextLeaf = 0
@@ -152,7 +153,9 @@ internal class ContainerDeclarationFixture(
                 }
             }
         }
-        return evaluateComponentTree { Stack { repeat(shape.groups) { branch(shape.depth, Modifier.Empty) } } }
+        return evaluateComponentTree {
+            if (shape.groups == 1) branch(shape.depth, Modifier.Empty) else Stack { repeat(shape.groups) { branch(shape.depth, Modifier.Empty) } }
+        }
     }
 
     /**
@@ -182,11 +185,12 @@ internal class ContainerDeclarationFixture(
             if (shape.template) List(shape.groups) { (0 until shape.width).toList() }.flatten() else (0 until leafCount).toList()
         check(originalLeaves.map { it.ordinal } == expectedOrdinals)
         val tileLayers = if (container == Container.TiledImage) parentCount else 0
-        check(elementCount(originalDeclaration) == 1 + parentCount + tileLayers + leafCount)
+        val outerStacks = if (shape.groups == 1) 0 else 1
+        check(elementCount(originalDeclaration) == outerStacks + parentCount + tileLayers + leafCount)
         val expectedCopySlots =
             shape.groups * (shape.depth * 2 + if (2 <= shape.width) shape.width else 0) +
                 if (2 <= shape.groups) shape.groups else 0
-        check(redundantCopySlots(originalDeclaration, root = true) == expectedCopySlots)
+        check(redundantCopySlots(originalDeclaration, outerStack = shape.groups != 1) == expectedCopySlots)
         val expected = expectedLayout()
         check(expected.leaves.map { it.ordinal } == expectedOrdinals)
         check(counts.created == leafCount && counts.live == leafCount)
@@ -285,7 +289,8 @@ internal class ContainerDeclarationFixture(
                 }
             return layout(container, children)
         }
-        return layout(Container.Stack, List(shape.groups) { branch(shape.depth) })
+        val groups = List(shape.groups) { branch(shape.depth) }
+        return if (shape.groups == 1) groups.single() else layout(Container.Stack, groups)
     }
 
     private fun leaves(element: Element): List<LeafElement> = if (element is LeafElement) listOf(element) else element.children.flatMap(::leaves)
@@ -294,12 +299,12 @@ internal class ContainerDeclarationFixture(
 
     private fun redundantCopySlots(
         element: Element,
-        root: Boolean,
+        outerStack: Boolean,
     ): Int {
         if (element is LeafElement) return 0
-        val count = element.children.size - if (root.not() && container == Container.TiledImage && element.children.isNotEmpty()) 1 else 0
+        val count = element.children.size - if (outerStack.not() && container == Container.TiledImage && element.children.isNotEmpty()) 1 else 0
         val current = if (2 <= count) count else 0
-        return current + element.children.sumOf { redundantCopySlots(it, root = false) }
+        return current + element.children.sumOf { redundantCopySlots(it, outerStack = false) }
     }
 
     private class Counts {
