@@ -2,15 +2,19 @@ import dev.detekt.gradle.extensions.DetektExtension
 import me.champeau.jmh.JMHTask
 import me.champeau.jmh.JmhBytecodeGeneratorTask
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.util.Properties
 
 plugins { alias(libs.plugins.jmh) }
-extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+extensions.configure<DetektExtension> { source.from("src/jmh/kotlin", rootProject.file("quality/shared/tiled-image-fixture")) }
 dependencies {
     add("jmh", project(":api"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:remote"))
     add("jmh", project(":performance-testkit"))
+}
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("jmh") { kotlin.srcDir(rootProject.file("quality/shared/tiled-image-fixture")) }
 }
 jmh { jmhVersion.set(libs.versions.benchmark.harness) }
 
