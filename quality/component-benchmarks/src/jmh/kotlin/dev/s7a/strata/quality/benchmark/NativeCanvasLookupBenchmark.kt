@@ -98,7 +98,8 @@ public open class NativeCanvasLookupBenchmark {
         public var portable: Int = 8
 
         /**
-         * Whether complete protocol commits a fresh generation or reuses the initial immutable capture.
+         * Whether complete protocol requests fresh captures or keeps the initial immutable capture.
+         * Full 64-target membership exercises the existing quota fallback and cannot reserve a replacement target.
          */
         @JvmField
         @Param("false", "true")

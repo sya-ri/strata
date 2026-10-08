@@ -68,7 +68,7 @@ internal class NativeCanvasLookupWorkload(
     init {
         val requests =
             List(targets) { index ->
-                val source = device.source({ Producer(index).also(producers::add) })
+                val source = device.source({ Producer(index, driver).also(producers::add) })
                 val tree = UiTree().also(trees::add)
                 tree.update(evaluateComponentTree { Canvas(source, size) })
                 tree.measure(Constraints.fixed(size.width, size.height))
@@ -174,18 +174,9 @@ internal class NativeCanvasLookupWorkload(
         val expectedTargets = driver.created.toList()
         tokens.forEachIndexed { index, token -> check(device.target(initial, token) === expectedTargets[index % targets]) }
         if (0 < targets) {
-            repeat(8) {
+            repeat(8) { iteration ->
                 val current = prepareProtocol()
-                val nativeCommands = current.drawCommands.filterIsInstance<DrawCommand.Platform>()
-                val currentImages = current.capture().filterIsInstance<DrawCommand.BlitImagePixels>()
-                check(nativeCommands.size == occurrences && currentImages.size == occurrences)
-                nativeCommands.forEachIndexed { index, command ->
-                    val token = command.command as NativeCanvasToken
-                    check(device.target(current, token) === expectedTargets[index % targets])
-                    check(currentImages[index].image === producers[index % targets].images[if (changed) phase else 0])
-                    check((token === tokens[index]) == changed.not())
-                }
-                check(device.retainedTargetCount() == targets)
+                verifyProtocol(current, iteration)
                 device.consumed()
                 check(initial.capture() == captured)
             }
@@ -195,6 +186,35 @@ internal class NativeCanvasLookupWorkload(
         check(producers.all { it.closed })
         check(initial.capture() == captured)
         check(captureAndRasterize().copyArgb().contentEquals(pixels))
+    }
+
+    private fun verifyProtocol(
+        current: NativeCanvasPresentation,
+        iteration: Int,
+    ) {
+        val nativeCommands = current.drawCommands.filterIsInstance<DrawCommand.Platform>()
+        val currentImages = current.capture().filterIsInstance<DrawCommand.BlitImagePixels>()
+        val replacesGeneration = changed && targets < 64
+        val expectedPhysicalTargets = minOf(targets * 2, 64)
+        check(nativeCommands.size == occurrences && currentImages.size == occurrences)
+        check(device.retainedTargetCount() == expectedPhysicalTargets)
+        check(driver.liveTargets == expectedPhysicalTargets && driver.created.size == expectedPhysicalTargets)
+        nativeCommands.forEachIndexed { index, command ->
+            val producerIndex = index % targets
+            val producer = producers[producerIndex]
+            val token = command.command as NativeCanvasToken
+            val physicalIndex = producerIndex + if (replacesGeneration && iteration % 2 == 0) targets else 0
+            check(device.target(current, token) === driver.created[physicalIndex])
+            check(device.target(current, token) === driver.created[checkNotNull(producer.renderedTargetIndex)])
+            check(currentImages[index].image === producer.images[if (replacesGeneration) phase else 0])
+            check(currentImages[index].destination == command.bounds)
+            check(currentImages[index].source == IntRect(0, 0, 2, 2))
+            check((token === tokens[index]) == replacesGeneration.not())
+        }
+        producers.forEach { producer ->
+            check(producer.captureCalls == if (targets < 64) iteration + 2 else 1)
+            check(producer.renderCalls == if (replacesGeneration) iteration + 2 else 1)
+        }
     }
 
     override fun close() {
@@ -240,13 +260,18 @@ internal class NativeCanvasLookupWorkload(
      */
     private class Producer(
         index: Int,
+        private val driver: Driver,
     ) : NativeCanvasProducer {
         val images = listOf(0xFF336600.toInt() or index, 0xFF884400.toInt() or index).map { color -> createDrawImage(IntSize(2, 2), IntArray(4) { color }) }
         var phase = 0
         var available = true
         var closed = false
+        var captureCalls = 0
+        var renderCalls = 0
+        var renderedTargetIndex: Int? = null
 
         override fun capture(): NativeCanvasCapture? {
+            captureCalls += 1
             if (available.not()) return null
             val image = images[phase]
             return object : NativeCanvasCapture {
@@ -256,6 +281,8 @@ internal class NativeCanvasLookupWorkload(
                     frameTime: FrameTime,
                 ): DrawImage {
                     check(target.size == image.size && logicalSize == image.size)
+                    renderCalls += 1
+                    renderedTargetIndex = driver.created.indexOfFirst { it === target }.also { check(0 <= it) }
                     return image
                 }
 
