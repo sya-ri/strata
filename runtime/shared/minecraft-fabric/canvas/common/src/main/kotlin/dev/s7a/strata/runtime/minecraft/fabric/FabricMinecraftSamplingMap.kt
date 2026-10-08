@@ -15,7 +15,7 @@ import kotlin.math.floor
  * Supplies exact headless texel indices for one tight GPU-resampled image without reading source pixels.
  *
  * The first two rows encode x and y indices plus one; zero denotes an uncovered physical pixel.
- * Row two stores the physical output width and height plus one in its first two texels.
+ * Row two stores output width and height plus one, followed by an opaque RGB mask and exact alpha-byte threshold.
  * RGBA bytes encode little-endian integers, independently of the source image's alpha or colors.
  * Each axis is bounded to 4,096 pixels. Only the current prepared frame retains these immutable CPU inputs.
  */
@@ -38,11 +38,15 @@ internal class FabricMinecraftSamplingMap(
 
     init {
         require(physicalSize.width in 1..4_096 && physicalSize.height in 1..4_096) { "Exact sampled GPU axes must fit the bounded lookup." }
-        val width = maxOf(2, physicalSize.width, physicalSize.height)
+        require(command.hasExactFabricSamplingEffects()) { "Exact sampled GPU effects must preserve identity sampling or select only opaque channel-masked texels." }
+        val width = maxOf(3, physicalSize.width, physicalSize.height)
         val left = Math.multiplyExact(bounds.left, scale)
         val top = Math.multiplyExact(bounds.top, scale)
         val source = command.source
         val destination = command.destination
+        val minimumAlpha = if (command.alphaCutoff == 1f) 255 else 0
+        val mask = (command.tint.value ushr 16 and 1) or ((command.tint.value ushr 8 and 1) shl 1) or ((command.tint.value and 1) shl 2)
+        val effects = (minimumAlpha shl 3) or mask
         indices =
             createDrawImage(IntSize(width, 3)) { coordinate, row ->
                 val value =
@@ -59,6 +63,7 @@ internal class FabricMinecraftSamplingMap(
                             when (coordinate) {
                                 0 -> physicalSize.width + 1
                                 1 -> physicalSize.height + 1
+                                2 -> effects
                                 else -> 0
                             }
                         }

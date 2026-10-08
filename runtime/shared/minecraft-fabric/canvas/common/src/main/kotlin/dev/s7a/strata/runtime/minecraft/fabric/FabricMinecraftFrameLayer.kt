@@ -34,9 +34,9 @@ internal sealed interface FabricMinecraftFrameLayer {
         @get:JvmSynthetic
         internal val capacitySampledImages: Int = 0,
         @get:JvmSynthetic
-        internal val tintFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint != ArgbColor(-1) },
+        internal val tintFallbackImages: Int = 0,
         @get:JvmSynthetic
-        internal val alphaCutoffFallbackImages: Int = commands.count { it is DrawCommand.SampledImage && it.tint == ArgbColor(-1) && it.alphaCutoff != 0f },
+        internal val alphaCutoffFallbackImages: Int = 0,
         @get:JvmSynthetic
         internal val orderingGroup: Any? = null,
     ) : FabricMinecraftFrameLayer
@@ -95,7 +95,8 @@ internal inline fun submitFabricMinecraftFrameLayers(
 /**
  * Partitions one committed frame into tight portable runs, independently cacheable sampled images, and platform barriers.
  *
- * Direct eligibility requires opaque-white tint and zero alpha cutoff; exact lookup adapters also preserve mirrored orientations.
+ * Ordinary direct eligibility requires opaque-white tint and zero alpha cutoff.
+ * Exact lookup adapters also preserve mirrored orientations and independent opaque-texel channel masks.
  * Adapters with floating UV submission may admit fractional source edges; other adapters require integer texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
  * Invisible portable primitives are omitted from pixel inputs; direct-image barriers retain their exact display-list positions.
@@ -124,31 +125,36 @@ internal fun partitionFabricMinecraftFrame(
     var portableBounds: IntRect? = null
     var portableIneligibleSampledImages = 0
     var portableCapacitySampledImages = 0
+    var portableTintFallbackImages = 0
+    var portableAlphaCutoffFallbackImages = 0
     val samplingBudget = FabricMinecraftSamplingBudget()
+    val samplingComposition = FabricMinecraftSamplingComposition(commands)
 
     fun flushPortable() {
         val bounds = portableBounds
         if (bounds != null) {
             repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
-            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages))
+            layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages, portableTintFallbackImages, portableAlphaCutoffFallbackImages))
         }
         portable = ArrayList()
         portable.addAll(activeClipCommands)
         portableBounds = null
         portableIneligibleSampledImages = 0
         portableCapacitySampledImages = 0
+        portableTintFallbackImages = 0
+        portableAlphaCutoffFallbackImages = 0
     }
 
-    commands.forEach { command ->
+    commands.forEachIndexed { occurrence, command ->
         when (command) {
             is DrawCommand.FillRectangle -> {
-                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.BlitImage -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
@@ -156,8 +162,11 @@ internal fun partitionFabricMinecraftFrame(
             is DrawCommand.SampledImage -> {
                 val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
                 val ordinary = isDirectFabricSampledImage(command, scale, fractionalSource)
+                val extendedEffects = command.tint != ArgbColor(-1) || command.alphaCutoff != 0f
+                val supported = isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)
+                val independent = supported && (extendedEffects.not() || samplingComposition.admits(occurrence, command))
                 var directClip =
-                    if (isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)) {
+                    if (independent) {
                         if (fractionalClipsContain(activeClipCommands, command.destination, visibleClip)) {
                             visibleClip
                         } else {
@@ -174,7 +183,7 @@ internal fun partitionFabricMinecraftFrame(
                         layers.add(sampledFabricLayer(command, directClip.takeIf { activeClips.isNotEmpty() }, visible, scale, fractionalSource))
                     }
                 } else {
-                    val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEach
+                    val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEachIndexed
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible)
                     if (capacity) {
@@ -182,11 +191,16 @@ internal fun partitionFabricMinecraftFrame(
                     } else {
                         portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
                     }
+                    when {
+                        capacity -> Unit
+                        command.tint != ArgbColor(-1) && (exactSampling.not() || command.hasExactFabricSamplingEffects().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
+                        command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && (exactSampling.not() || command.alphaCutoff != 1f) -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
+                    }
                 }
             }
 
             is DrawCommand.BlitImagePixels -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEach
+                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }

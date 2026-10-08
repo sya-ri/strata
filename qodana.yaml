@@ -482,6 +482,7 @@ exclude:
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSourceSampling.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingMap.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingBudget.kt
+      - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingComposition.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSamplingShaders.kt
       - runtime/shared/minecraft-fabric/canvas/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftNativeStorage.kt
       - runtime/shared/minecraft-fabric/canvas/portable-storage/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftPortableNativeStorage.kt

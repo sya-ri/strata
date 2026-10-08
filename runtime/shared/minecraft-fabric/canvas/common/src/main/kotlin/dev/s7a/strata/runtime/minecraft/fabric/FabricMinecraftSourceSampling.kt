@@ -61,7 +61,7 @@ private fun stableFractionalSourceAxis(
  * @param command immutable sampled command whose constructor already validates source containment.
  * @param scale positive physical density used to reject ambiguous native quad-edge ownership at pixel centers.
  * @param fractionalSource whether the adapter submits floating source UVs without converting source extents to integers.
- * @param exactSampling whether the adapter can preserve headless texel selection through bounded axis lookup textures.
+ * @param exactSampling whether the adapter supports bounded exact axis lookup and opaque-texel RGB masks.
  * @return true when native nearest sampling can preserve its source and compositing contract.
  */
 @JvmSynthetic
@@ -71,15 +71,46 @@ internal fun isDirectFabricSampledImage(
     fractionalSource: Boolean = false,
     exactSampling: Boolean = false,
 ): Boolean {
+    if (exactSampling && command.hasExactFabricSamplingEffects()) {
+        val destination = command.destination
+        val bounded = ceil(destination.right.toDouble()) - floor(destination.left.toDouble()) <= 4_096.0 / scale && ceil(destination.bottom.toDouble()) - floor(destination.top.toDouble()) <= 4_096.0 / scale
+        if (bounded) return true
+    }
+    return isOrdinaryFabricSampledImage(command, scale, fractionalSource || exactSampling)
+}
+
+/**
+ * Preserves the existing untinted path and admits new channel masks only when the cutoff discards every translucent texel.
+ * Native source-over rounding can differ from CPU Float composition even for independent translucent images.
+ */
+@JvmSynthetic
+internal fun DrawCommand.SampledImage.hasExactFabricSamplingEffects(): Boolean = (tint == ArgbColor(-1) && alphaCutoff == 0f) || (alphaCutoff == 1f && tint.hasExactFabricSamplingTint())
+
+private fun isOrdinaryFabricSampledImage(
+    command: DrawCommand.SampledImage,
+    scale: Int,
+    fractionalSource: Boolean,
+): Boolean {
     if (command.tint != ArgbColor(-1) || command.alphaCutoff != 0f) return false
     val integerSource = command.source.left.isWholeTexel() && command.source.top.isWholeTexel() && command.source.right.isWholeTexel() && command.source.bottom.isWholeTexel()
-    if ((integerSource || fractionalSource || exactSampling).not()) return false
+    if ((integerSource || fractionalSource).not()) return false
     val destination = command.destination
-    val bounded = ceil(destination.right.toDouble()) - floor(destination.left.toDouble()) <= 4_096.0 / scale && ceil(destination.bottom.toDouble()) - floor(destination.top.toDouble()) <= 4_096.0 / scale
-    if (exactSampling && bounded) return true
     if (command.orientation != SampledImageOrientation.Normal) return false
     if (destination.hasFabricPhysicalCenterEdge(scale)) return false
     return hasStableFabricSourceSampling(command, scale, alignedEdges = integerSource.not())
+}
+
+/**
+ * Admits only opaque channel masks, whose multiplication leaves each source channel unchanged or zero.
+ * Intermediate channel values and alpha modulation retain CPU Float composition without early quantization.
+ */
+@JvmSynthetic
+internal fun ArgbColor.hasExactFabricSamplingTint(): Boolean {
+    if (value ushr 24 != 255) return false
+    val red = value ushr 16 and 255
+    val green = value ushr 8 and 255
+    val blue = value and 255
+    return (red == 0 || red == 255) && (green == 0 || green == 255) && (blue == 0 || blue == 255)
 }
 
 private fun Float.isWholeTexel(): Boolean = toDouble() == floor(toDouble())
