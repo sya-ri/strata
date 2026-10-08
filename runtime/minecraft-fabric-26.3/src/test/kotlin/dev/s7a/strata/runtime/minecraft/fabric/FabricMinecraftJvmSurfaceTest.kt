@@ -286,6 +286,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftFrameLayer\$Platform",
                 "$packageName.FabricMinecraftFrameLayerKt",
                 "$packageName.FabricMinecraftSampledImageCache",
+                "$packageName.FabricMinecraftSampledImageRequests",
                 "$packageName.FabricMinecraftSampledImageDevice",
                 "$packageName.FabricMinecraftSampledImageDevice\$Owner",
                 "$packageName.FabricMinecraftSampledImageDevice\$Borrow",
