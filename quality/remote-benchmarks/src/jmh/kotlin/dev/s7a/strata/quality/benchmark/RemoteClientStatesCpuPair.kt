@@ -103,7 +103,11 @@ internal class RemoteClientStatesCpuPair(
         require(Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments) == jvmArguments)
     }
 
-    private fun verifyArchives(receipt: JsonObject, runtime: JsonObject, inputs: Map<String, Path>) {
+    private fun verifyArchives(
+        receipt: JsonObject,
+        runtime: JsonObject,
+        inputs: Map<String, Path>,
+    ) {
         val targets = archiveIdentity(runtime)
         require(archiveIdentity(receipt.getAsJsonObject("runtime_metadata")) == targets)
         require(receipt.getAsJsonObject("target_archives").keySet() == targets.keySet())
@@ -121,7 +125,10 @@ internal class RemoteClientStatesCpuPair(
         require(inputs.values.any { it.toAbsolutePath().normalize() == sourceFile }) { "Archive the source plan as an immutable JMH fixture input" }
     }
 
-    private fun archive(path: Path, hash: String) {
+    private fun archive(
+        path: Path,
+        hash: String,
+    ) {
         val normalized = path.toAbsolutePath().normalize()
         require(normalized.parent == directory && ArtifactIdentity.file(normalized) == hash)
         hashes[normalized] = hash
@@ -138,7 +145,11 @@ internal class RemoteClientStatesCpuPair(
         require(controls.get("jvmArgs") == jvmArguments) { "Supplemental CPU and JMH must use identical actual JVM arguments" }
     }
 
-    private fun source(plan: JsonObject, runtime: JsonObject, fixture: String): JsonObject {
+    private fun source(
+        plan: JsonObject,
+        runtime: JsonObject,
+        fixture: String,
+    ): JsonObject {
         require(plan.get("fixture_revision").asString.matches(REVISION))
         require(plan.get("fixture_tree_sha256").asString == fixture)
         val sources = plan.getAsJsonArray("sources").map { it.asJsonObject }

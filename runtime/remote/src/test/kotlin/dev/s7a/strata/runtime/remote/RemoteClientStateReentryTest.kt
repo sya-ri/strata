@@ -324,7 +324,11 @@ internal class RemoteClientStateReentryTest {
         }
     }
 
-    private fun prepare(states: RemoteClientStates, identity: Long, value: Owned) {
+    private fun prepare(
+        states: RemoteClientStates,
+        identity: Long,
+        value: Owned,
+    ) {
         states.prepare(identity, KEY, { value }, {}, Owned::release)
     }
 
@@ -338,17 +342,21 @@ internal class RemoteClientStateReentryTest {
         states.close()
     }
 
-    private fun entries(states: RemoteClientStates): Map<*, *> = RemoteClientStates::class.java
-        .getDeclaredField("values")
-        .apply { isAccessible = true }
-        .get(states) as Map<*, *>
+    private fun entries(states: RemoteClientStates): Map<*, *> {
+        val field = RemoteClientStates::class.java.getDeclaredField("values")
+        field.isAccessible = true
+        return field.get(states) as Map<*, *>
+    }
 
-    private fun editable(states: RemoteClientStates): Map<*, *> = RemoteClientStates::class.java
-        .getDeclaredField("editable")
-        .apply { isAccessible = true }
-        .get(states) as Map<*, *>
+    private fun editable(states: RemoteClientStates): Map<*, *> {
+        val field = RemoteClientStates::class.java.getDeclaredField("editable")
+        field.isAccessible = true
+        return field.get(states) as Map<*, *>
+    }
 
-    private class Owned(private val onRelease: () -> Unit = {}) : RemoteEditableValue {
+    private class Owned(
+        private val onRelease: () -> Unit = {},
+    ) : RemoteEditableValue {
         var releases = 0
         var polls = 0
         var onPoll: (RemoteClientActions) -> Unit = {}

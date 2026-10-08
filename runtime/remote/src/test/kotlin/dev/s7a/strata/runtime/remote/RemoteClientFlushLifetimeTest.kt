@@ -30,7 +30,10 @@ internal class RemoteClientFlushLifetimeTest {
         EntryPoint.entries.forEach { verifyCutoff(it, IllegalArgumentException("edit failed after close")) }
     }
 
-    private fun verifyCutoff(entryPoint: EntryPoint, failure: IllegalArgumentException?) {
+    private fun verifyCutoff(
+        entryPoint: EntryPoint,
+        failure: IllegalArgumentException?,
+    ) {
         val released = mutableListOf<Long>()
         val outgoing = mutableListOf<RemoteMessage>()
         var firstPolls = 0

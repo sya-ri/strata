@@ -203,10 +203,11 @@ internal class RemoteClientStatesTest {
         }
     }
 
-    private fun entries(states: RemoteClientStates): Map<*, *> = RemoteClientStates::class.java
-        .getDeclaredField("values")
-        .apply { isAccessible = true }
-        .get(states) as Map<*, *>
+    private fun entries(states: RemoteClientStates): Map<*, *> {
+        val field = RemoteClientStates::class.java.getDeclaredField("values")
+        field.isAccessible = true
+        return field.get(states) as Map<*, *>
+    }
 
     private fun membership(states: RemoteClientStates): List<*> {
         val field =
