@@ -41,23 +41,21 @@ public fun UiScope.Row(
     checkUsable()
     require(0 <= spacing) { "Linear layout spacing must be non-negative." }
     val scope = RowScope.create()
-    val children =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            LinearElement(
+                orientation = LinearOrientation.Row(verticalAlignment),
+                spacing = spacing,
+                arrangement = horizontalArrangement,
+                key = key,
+                children = scope.borrowChildElements(),
+                modifier = modifier,
+            )
         } finally {
             scope.close()
         }
-    element(
-        LinearElement(
-            orientation = LinearOrientation.Row(verticalAlignment),
-            spacing = spacing,
-            arrangement = horizontalArrangement,
-            key = key,
-            children = children,
-            modifier = modifier,
-        ),
-    )
+    element(parent)
 }
 
 /**
@@ -94,24 +92,22 @@ public fun UiScope.FlowRow(
     require(0 <= horizontalSpacing) { "FlowRow horizontal spacing must be non-negative." }
     require(0 <= verticalSpacing) { "FlowRow vertical spacing must be non-negative." }
     val scope = FlowRowScope.create()
-    val children =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            FlowRowElement(
+                horizontalSpacing = horizontalSpacing,
+                verticalSpacing = verticalSpacing,
+                horizontalArrangement = horizontalArrangement,
+                verticalAlignment = verticalAlignment,
+                key = key,
+                children = scope.borrowChildElements(),
+                modifier = modifier,
+            )
         } finally {
             scope.close()
         }
-    element(
-        FlowRowElement(
-            horizontalSpacing = horizontalSpacing,
-            verticalSpacing = verticalSpacing,
-            horizontalArrangement = horizontalArrangement,
-            verticalAlignment = verticalAlignment,
-            key = key,
-            children = children,
-            modifier = modifier,
-        ),
-    )
+    element(parent)
 }
 
 /**
@@ -140,23 +136,21 @@ public fun UiScope.Column(
     checkUsable()
     require(0 <= spacing) { "Linear layout spacing must be non-negative." }
     val scope = ColumnScope.create()
-    val children =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            LinearElement(
+                orientation = LinearOrientation.Column(horizontalAlignment),
+                spacing = spacing,
+                arrangement = verticalArrangement,
+                key = key,
+                children = scope.borrowChildElements(),
+                modifier = modifier,
+            )
         } finally {
             scope.close()
         }
-    element(
-        LinearElement(
-            orientation = LinearOrientation.Column(horizontalAlignment),
-            spacing = spacing,
-            arrangement = verticalArrangement,
-            key = key,
-            children = children,
-            modifier = modifier,
-        ),
-    )
+    element(parent)
 }
 
 /**
@@ -179,21 +173,19 @@ public fun UiScope.Stack(
 ) {
     checkUsable()
     val scope = StackScope.create()
-    val children =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            StackElement(
+                contentAlignment = contentAlignment,
+                key = key,
+                children = scope.borrowChildElements(),
+                modifier = modifier,
+            )
         } finally {
             scope.close()
         }
-    element(
-        StackElement(
-            contentAlignment = contentAlignment,
-            key = key,
-            children = children,
-            modifier = modifier,
-        ),
-    )
+    element(parent)
 }
 
 /**
@@ -228,24 +220,22 @@ public fun UiScope.Grid(
     require(0 <= horizontalSpacing) { "Grid horizontal spacing must be non-negative." }
     require(0 <= verticalSpacing) { "Grid vertical spacing must be non-negative." }
     val scope = GridScope.create()
-    val children =
+    val parent =
         try {
             scope.content()
-            scope.childElementsSnapshot()
+            GridElement(
+                columns = columns,
+                horizontalSpacing = horizontalSpacing,
+                verticalSpacing = verticalSpacing,
+                contentAlignment = contentAlignment,
+                key = key,
+                children = scope.borrowChildElements(),
+                modifier = modifier,
+            )
         } finally {
             scope.close()
         }
-    element(
-        GridElement(
-            columns = columns,
-            horizontalSpacing = horizontalSpacing,
-            verticalSpacing = verticalSpacing,
-            contentAlignment = contentAlignment,
-            key = key,
-            children = children,
-            modifier = modifier,
-        ),
-    )
+    element(parent)
 }
 
 /**

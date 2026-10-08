@@ -841,7 +841,7 @@ private fun buildOptionalComponentTree(content: UiScope.() -> Unit): Element? {
     val scope = UiScope.createRoot()
     return try {
         scope.content()
-        when (scope.childElementsSnapshot().size) {
+        when (scope.borrowChildElements().size) {
             0 -> null
             1 -> scope.rootElement()
             else -> throw IllegalArgumentException("An optional component callback may emit at most one root element.")
