@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -106,6 +107,45 @@ internal class VelocityScreensTest {
             fixture.close()
             assertTrue(current.isDone)
             assertTrue(pending.all { it.isDone })
+        }
+    }
+
+    @Test
+    fun sparseAndBoundedCommandBurstsPreserveOrderFailuresAndCancellation() {
+        Harness().use { fixture ->
+            listOf(0, 1, 7, 8, 63, 64, 65).forEach { count ->
+                val entered = CountDownLatch(1)
+                val proceed = CountDownLatch(1)
+                val calls = mutableListOf<Int>()
+                val failure = IllegalStateException("command")
+                val blocker = VelocityScreens.execute(fixture.owner) {
+                    entered.countDown()
+                    check(proceed.await(5, TimeUnit.SECONDS))
+                }
+                check(entered.await(5, TimeUnit.SECONDS))
+                val requests =
+                    try {
+                        List(count) { index ->
+                            VelocityScreens.execute(fixture.owner) {
+                                calls.add(index)
+                                if (index == 1) throw failure
+                            }
+                        }.also { if (2 < it.size) assertTrue(it[2].cancel(false)) }
+                    } finally {
+                        proceed.countDown()
+                    }
+                blocker.get(5, TimeUnit.SECONDS)
+                requests.forEachIndexed { index, request ->
+                    when (index) {
+                        1 -> assertSame(failure, assertThrows(ExecutionException::class.java) { request.get(5, TimeUnit.SECONDS) }.cause)
+                        2 -> assertTrue(request.isCancelled)
+                        else -> request.get(5, TimeUnit.SECONDS)
+                    }
+                }
+                VelocityScreens.execute(fixture.owner) {
+                    assertEquals((0 until count).filter { it != 2 }, calls)
+                }.get(5, TimeUnit.SECONDS)
+            }
         }
     }
 

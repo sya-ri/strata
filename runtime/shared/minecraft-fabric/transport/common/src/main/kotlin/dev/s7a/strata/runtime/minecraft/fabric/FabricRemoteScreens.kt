@@ -105,8 +105,8 @@ public object FabricRemoteScreens {
         runCatching {
             val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
             if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
-            repeat(64) {
-                val bytes = inbox.poll() ?: return@repeat
+            for (index in 0 until 64) {
+                val bytes = inbox.poll() ?: break
                 receiveFrame(native, bytes)
             }
             peers.values
