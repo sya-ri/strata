@@ -50,7 +50,7 @@ tasks.register<JavaExec>("jmhRemote") {
     listOf("benchmarks", "workloads").forEach { name ->
         providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", it) }
     }
-    listOf("parameters", "fixtureInputs").forEach { name ->
+    listOf("parameters", "fixtureInputs", "remoteInventory").forEach { name ->
         providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", rootProject.file(it).absolutePath) }
     }
     val suite = (if (quick) "$family-quick" else if (smoke) "$family-smoke" else family) + (if (selected) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
