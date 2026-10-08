@@ -245,7 +245,7 @@ internal class MinecraftTextAreaEditor(
                     }
                 editing.edit {
                     if (preedit == null) {
-                        cursor.moveToLine(currentLayout, index, localX)
+                        cursor.moveToBoundary(currentLayout, index, composed)
                     } else {
                         editing.clearPreedit()
                         cursor.move(configuration.state.value, committed)

@@ -661,6 +661,27 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Logical multiline insertion lookup
+
+Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
+Only a nondecreasing coordinate sequence admits logarithmic lower-bound lookup; raw glyph advances, visual ordering and font capabilities do not establish admission.
+The insertion winner uses exact Long distance and the earliest original logical scalar boundary for coordinate plateaus and equal-distance ties.
+Non-monotone signed, overflow-wrapped or non-finite-derived coordinates retain the complete ordered scan.
+No input lookup allocates an array, calls a font backend or retains a coordinate/result history.
+The flag is released with its current line when layout changes; editor detach clears the layout and terminal disposal clears borrowed inputs.
+
+A normal primary press reuses its already resolved boundary through the same placement and soft-wrap-affinity operation used by vertical navigation.
+Composition mapping still uses the composed layout before cancellation and preserves the committed scalar insertion offset.
+Independent runtime tests compare the search with complete ordered scans, actual release-selected rounded Float prefixes and exact headless cursor/glyph images.
+Existing editor navigation, viewport, composition and replacement tests remain required controls for preferred columns, hard breaks, soft wraps, pan, scroll and ownership.
+
+The separate `TextAreaInputBenchmark` corpus keeps real input dispatch apart from isolated lookup, complete initial host/layout ownership and clean frames.
+Its bounded coordinate-read diagnostic executes the same inlined search outside measurement; ordinary input carries no counter or callback.
+At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B.
+The constructor's admission scan remains part of the separately measured initial-layout cost.
+CPU and allocation comparisons require the complete frozen corpus and independent Standard repetitions described in [the testkit contract](performance-testkit.md); structural bounds alone establish no measured speedup.
+This corpus measures neither native input latency, uploads nor GPU time.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
