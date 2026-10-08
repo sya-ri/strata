@@ -460,12 +460,13 @@ These are protocol CPU measurements; actual Paper/Velocity owner scheduling, plu
 `IncomingFragmentBenchmark` is a separate selected corpus on `jmhRemote`, with 120 generated cases and unchanged Standard JMH warm-up, measurement, fork and profiler settings.
 Select all three methods with `-Pstrata.performance.benchmarks=IncomingFragmentBenchmark`; the original 30-case protocol corpus remains unchanged.
 Its 1/8-owner matrix retains minimum, small and maximum fragments, 1 MiB and near-message-limit transfers, reversed and gap-filling input, duplicate/stale/incarnation/discovery controls and 64-byte negotiated fragments.
-`admission` measures actual decoding and bounded reorder admission; `assembly` additionally includes defensive native inbox snapshots, ordered drain and logical assembly.
+`admissionCycle` measures a complete invocation lifecycle around actual decoding and bounded reorder admission; `assemblyCycle` additionally includes defensive native inbox snapshots before ordered drain and logical assembly.
 Both retain the public decode/Frame-offer control beside the loaded production route.
-`serverIngress` separately invokes the actual common-service native inbox and bounded receive phase, with fresh discovered peers and literal native input.
+`serverIngressCycle` separately invokes the actual common-service native inbox and bounded receive phase, with fresh discovered peers and literal native input.
 It does not substitute a copied server loop or use the public control to represent the production server.
-Per-invocation service/owner creation and source preparation happen before elapsed timing, and complete output, accounting and terminal-release assertions run after it.
-JMH GC-profiler allocation includes invocation setup/teardown allocation, while the supplemental shared CPU meter excludes that preparation and verification; retain and compare those scopes separately.
+Literal source construction is outside JMH timing, while every JMH cycle includes fresh service/owner/queue preparation, discovery or stale preparation, the selected core operation, downstream complete output checks and terminal release.
+This keeps elapsed and GC-profiler allocation on the same declared lifecycle scope and avoids invocation-level timestamp distortion for tiny controls.
+The supplemental shared CPU meter isolates Admission, Assembly and ServerIngress with preparation, downstream parity and release outside each interval; retain and compare these separate scopes independently.
 The identical reflection adapter and logical-owner entry remain inside the selected operation on both runtime revisions.
 Native adapters retain their loaded-client/host acceptance obligations; this corpus cannot establish native scheduling or complete screen latency.
 

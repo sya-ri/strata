@@ -19,7 +19,7 @@ import java.util.UUID
 /**
  * Native-independent real decoder/reorder/assembly and common-service ingress, with independent literal wire inputs.
  * One invocation owns only its current streams and outputs; immutable source envelopes belong to this trial.
- * Preparation and complete byte/terminal assertions are outside both JMH and supplemental CPU samples.
+ * The supplemental CPU meter isolates receive; JMH includes preparation, downstream byte/terminal checks and cleanup.
  */
 @Suppress("TooManyFunctions") // Explicit preparation, operation and release boundaries support the same frozen fixture in both collectors.
 public class IncomingFragmentFixture(
@@ -41,7 +41,8 @@ public class IncomingFragmentFixture(
     }
 
     /**
-     * Builds fresh execution owners, queues and assembly state outside measurement, including stale/discovery preparation.
+     * Builds fresh execution owners, queues and assembly state, including stale/discovery preparation.
+     * CPU collection calls this outside its interval; JMH includes it in the declared lifecycle cycle.
      * Server ingress uses actual service-owned peers and the original private receive phase signature on both revisions.
      */
     public fun prepare(selected: IncomingFragmentPhase) {
@@ -91,7 +92,8 @@ public class IncomingFragmentFixture(
 
     /**
      * Asserts exact complete bytes, no logical delivery for controls, bounded accounting and terminal release.
-     * This runs after the sample; it also verifies callback arrays remain stable through owner cleanup.
+     * CPU collection calls this after the sample; JMH includes it in the lifecycle cycle.
+     * Also verifies callback arrays remain stable through owner cleanup.
      */
     public fun verifyAndClose() {
         try {

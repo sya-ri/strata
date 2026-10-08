@@ -1,7 +1,8 @@
 package dev.s7a.strata.quality.benchmark
 
 /**
- * Declared interval boundaries; source construction, owner creation and parity assertions are always untimed.
+ * Declared core CPU interval boundaries; literal source construction is outside every timed scope.
+ * JMH measures each selected core operation together with its invocation preparation, parity and release.
  */
 public enum class IncomingFragmentPhase {
     /** Decodes existing native bytes and admits into the real reorder queue; assembly follows outside timing. */

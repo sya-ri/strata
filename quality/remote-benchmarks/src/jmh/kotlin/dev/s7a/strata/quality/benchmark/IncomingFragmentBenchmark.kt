@@ -8,33 +8,33 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
-import org.openjdk.jmh.infra.BenchmarkParams
 
 /**
  * Frozen actual decoder, queue, logical assembly and common-service ingress intervals.
- * Sources and per-invocation owners are prepared before timing; full byte and terminal checks follow each invocation.
+ * Literal sources are prepared before timing; each JMH cycle includes fresh owner/queue preparation, byte checks and release.
+ * The supplemental shared CPU meter separately isolates the selected core operation without invocation-level JMH timestamps.
  */
 public open class IncomingFragmentBenchmark {
     /**
-     * Measures native decoding and real bounded reorder admission without inbox or assembly copies.
+     * Measures a complete lifecycle around native decode/admission; downstream byte parity and cleanup are included.
      */
     @Benchmark
-    public fun admission(state: Transfer): Int = state.receive()
+    public fun admissionCycle(state: Transfer): Int = state.cycle(IncomingFragmentPhase.Admission)
 
     /**
-     * Measures complete native-envelope-to-logical-message work, retaining the native snapshot and assembly copy.
+     * Measures a complete lifecycle around inbox snapshots, decode, reorder and logical assembly.
      */
     @Benchmark
-    public fun assembly(state: Transfer): Int = state.receive()
+    public fun assemblyCycle(state: Transfer): Int = state.cycle(IncomingFragmentPhase.Assembly)
 
     /**
-     * Measures native inbox submission and actual common-service bounded ingress, with downstream assembly untimed.
+     * Measures a complete lifecycle around actual common-service ingress, including discovery, downstream parity and release.
      */
     @Benchmark
-    public fun serverIngress(state: Server): Int = state.receive()
+    public fun serverIngressCycle(state: Server): Int = state.cycle()
 
     /**
-     * Shared source corpus and public defensive-copy control, with invocation lifecycle outside timing.
+     * Shared literal source corpus and public defensive-copy control, with invocation lifecycle inside JMH timing.
      */
     @State(Scope.Thread)
     public open class Transfer {
@@ -60,20 +60,16 @@ public open class IncomingFragmentBenchmark {
             fixture = IncomingFragmentFixture(owners, IncomingFragmentWorkload.valueOf(workload), IncomingFragmentRoute.valueOf(route))
         }
 
-        /** Creates fresh queues according to the selected compiled method. */
-        @Setup(Level.Invocation)
-        public fun prepare(parameters: BenchmarkParams) {
-            val phase = IncomingFragmentPhase.valueOf(parameters.benchmark.substringAfterLast('.').replaceFirstChar(Char::uppercaseChar))
+        /** Runs preparation, the selected core operation, complete parity and release as one JMH cycle. */
+        public fun cycle(phase: IncomingFragmentPhase): Int {
             fixture.prepare(phase)
-        }
-
-        /** Performs one current invocation through the actual runtime archive. */
-        public fun receive(): Int = fixture.receive()
-
-        /** Checks exact output and releases every current-owner resource after timing. */
-        @TearDown(Level.Invocation)
-        public fun verify() {
-            fixture.verifyAndClose()
+            return try {
+                val result = fixture.receive()
+                fixture.verifyAndClose()
+                result
+            } finally {
+                fixture.close()
+            }
         }
 
         /** Releases an incomplete invocation if a collector aborts. */
@@ -105,19 +101,16 @@ public open class IncomingFragmentBenchmark {
             fixture = IncomingFragmentFixture(owners, IncomingFragmentWorkload.valueOf(workload), IncomingFragmentRoute.Production)
         }
 
-        /** Creates actual service peers and admits discovery before timing. */
-        @Setup(Level.Invocation)
-        public fun prepare() {
+        /** Runs actual service preparation, core ingress, complete parity and release inside one JMH cycle. */
+        public fun cycle(): Int {
             fixture.prepare(IncomingFragmentPhase.ServerIngress)
-        }
-
-        /** Calls actual native inbox admission and common server receive phases. */
-        public fun receive(): Int = fixture.receive()
-
-        /** Verifies every assembled byte and terminal queue/writer release after timing. */
-        @TearDown(Level.Invocation)
-        public fun verify() {
-            fixture.verifyAndClose()
+            return try {
+                val result = fixture.receive()
+                fixture.verifyAndClose()
+                result
+            } finally {
+                fixture.close()
+            }
         }
 
         /** Releases any incomplete operation on collector failure. */
