@@ -82,7 +82,7 @@ public open class SampledSourceRequestsBenchmark {
     }
 
     /**
-     * Resolves a supplied actual Fabric archive without loading Minecraft or allocating game resources.
+     * Resolves a supplied actual Fabric archive without starting Minecraft or allocating game resources.
      * Only the current inputs and the bounded real device cache survive between operations.
      */
     @State(Scope.Thread)
@@ -122,15 +122,7 @@ public open class SampledSourceRequestsBenchmark {
             val deviceConstructor = deviceType.declaredConstructors.single { it.parameterCount == 3 }
             check(deviceConstructor.trySetAccessible())
             val driverType = deviceConstructor.parameterTypes[0]
-            val fenceType = driverType.getMethod("fence").returnType
-            val driver =
-                Proxy.newProxyInstance(driverType.classLoader, arrayOf(driverType)) { _, method, _ ->
-                    when (method.name) {
-                        "fence" -> Proxy.newProxyInstance(fenceType.classLoader, arrayOf(fenceType)) { _, operation, _ -> if (operation.name == "isSignalled") true else null }
-                        "finish", "drainRetirements" -> null
-                        else -> error("Source borrowing must not allocate native targets: ${method.name}")
-                    }
-                }
+            val driver = createDriver(driverType)
             val resourceType = Class.forName("dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource")
             val supports: (DrawImage) -> Boolean = { true }
             val create: (DrawImage, (Any) -> Unit) -> Any? = { _, retain ->
@@ -199,6 +191,28 @@ public open class SampledSourceRequestsBenchmark {
                 .invoke(driver)
             invoke("acknowledgeAfterDrain")
             check(invoke("retainedResourceCount") == 0)
+        }
+
+        @Suppress("StringLiteralComparison") // JVM method names select the supplied driver ABI, without domain-state discrimination.
+        private fun createDriver(driverType: Class<*>): Any {
+            val fenceType = driverType.getMethod("fence").returnType
+            return Proxy.newProxyInstance(driverType.classLoader, arrayOf(driverType)) { _, method, _ ->
+                when (method.name) {
+                    "fence" -> {
+                        Proxy.newProxyInstance(fenceType.classLoader, arrayOf(fenceType)) { _, operation, _ ->
+                            if (operation.name == "isSignalled") true else null
+                        }
+                    }
+
+                    "finish", "drainRetirements" -> {
+                        null
+                    }
+
+                    else -> {
+                        error("Source borrowing must not allocate native targets: ${method.name}")
+                    }
+                }
+            }
         }
 
         private fun invoke(name: String): Any {

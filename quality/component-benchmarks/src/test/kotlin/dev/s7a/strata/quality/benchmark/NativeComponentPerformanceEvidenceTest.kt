@@ -16,7 +16,13 @@ internal class NativeComponentPerformanceEvidenceTest {
     @Test
     internal fun independentFixtureCannotCertifyCanonicalAcceptanceOrOmitASelectedScale() {
         val report = complete()
-        val phases = report.getAsJsonArray("phases").filter { it.asJsonObject.get("case").asString.contentEquals("TextField") }
+        val phases =
+            report.getAsJsonArray("phases").filter {
+                it.asJsonObject
+                    .get("case")
+                    .asString
+                    .contentEquals("TextField")
+            }
         phases.forEach { it.asJsonObject.addProperty("case", "RequestsOne") }
         report.add("phases", JsonArray().apply { phases.forEach(::add) })
         report.add("selected_cases", JsonArray().apply { add("RequestsOne") })
