@@ -499,3 +499,16 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+## Component runtime archive substitution
+
+The generic `:quality:component-benchmarks:jmhComponents` collector accepts `-Pstrata.performance.runtimeArchives=/absolute/runtime-archives.properties` for controlled historical comparisons of any explicitly selected compiled fixture.
+The UTF-8 Java Properties file registers exactly five project keys: `\:api`, `\:runtime\:core`, `\:runtime\:headless`, `\:runtime\:minecraft` and `\:runtime\:minecraft-fonts-lwjgl`.
+Each value identifies one distinct actual JAR; escape path separators according to Java Properties or use forward slashes.
+The task replaces only the resolved artifacts for those projects, and rejects missing, duplicate or extra targets and classpath inventory drift.
+The shared kit verifies actual loaded symbol origins and preserves hashes and binaries; filenames do not certify identity.
+
+Compile and freeze the same fixture, generated harness and collector once for both sides, with identical resolved external libraries, registered font/control inputs, profile recipe and input manifests.
+Only actual affected runtime binaries may differ between sides; unchanged runtime modules can use the same frozen actual JARs.
+Use fully qualified preparation and collection tasks with `-Pstrata.jvmOnly=true`, and quote each dotted property argument in PowerShell.
+Full acceptance still requires the complete build model and the final revision's ordinary checks.

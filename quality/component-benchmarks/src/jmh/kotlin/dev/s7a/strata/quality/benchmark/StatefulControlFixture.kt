@@ -44,6 +44,10 @@ internal class StatefulControlFixture(
     choices: StatefulControlBenchmark.Choices,
     private val change: StatefulControlBenchmark.Change,
 ) : AutoCloseable {
+    init {
+        require(count in setOf(1, 64, 512))
+    }
+
     private val revision = mutableStateOf(0)
     private val status = StressStateSource(0)
     private val checkbox = List(count) { CheckboxState() }
@@ -73,10 +77,14 @@ internal class StatefulControlFixture(
     private val session: RuntimeUiSession
 
     init {
-        require(count in setOf(1, 64, 512))
-        val field = host.javaClass.getDeclaredField("session")
-        field.isAccessible = true
-        session = field.get(host) as RuntimeUiSession
+        session = try {
+            val field = host.javaClass.getDeclaredField("session")
+            field.isAccessible = true
+            field.get(host) as RuntimeUiSession
+        } catch (failure: Throwable) {
+            runCatching { host.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
+            throw failure
+        }
         try {
             host.attach()
             host.frame(viewport)
@@ -129,8 +137,8 @@ internal class StatefulControlFixture(
                 check(paints == required || paints == historical) { "$count/$kind/$labels/$change: paint $paints, expected $required or historical $historical" }
                 if (change == StatefulControlBenchmark.Change.Clean) check(frame === original)
                 if (change in setOf(StatefulControlBenchmark.Change.Fresh, StatefulControlBenchmark.Change.Reuse, StatefulControlBenchmark.Change.Clean)) {
-                    val rowCommands = frame.drawCommands.filter { command -> (command as? DrawCommand.BlitImage)?.destination?.top != count * 20 }
-                    val originalRows = commands.filter { command -> (command as? DrawCommand.BlitImage)?.destination?.top != count * 20 }
+                    val rowCommands = frame.drawCommands.filter { command -> (command as? DrawCommand.SampledImage)?.destination?.top != (count * 20).toFloat() }
+                    val originalRows = commands.filter { command -> (command as? DrawCommand.SampledImage)?.destination?.top != (count * 20).toFloat() }
                     check(rowCommands == originalRows)
                 }
             }

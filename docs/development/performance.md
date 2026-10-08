@@ -696,7 +696,6 @@ Each changed frame also updates an independently observed image sibling, while t
 Untimed checks compare independently calculated original-asset pixels, complete ordered semantics, geometry, raw unchanged-row commands, necessary work, current source ownership, detachment/reattachment and old-frame immutability.
 The declaration operation borrows the real host's existing core session once outside timing to call its public declaration projection contract; its result includes snapshot projection cost and excludes measurement and painting.
 
-For historical comparisons, the generic component collector accepts `strata.performance.runtimeArchives` naming exactly the API, core, headless, Minecraft and font runtime project paths.
-It replaces only those resolved project artifacts with distinct actual JARs; the shared kit verifies actual loaded origins and preserves their hashes and binaries.
+The [performance testkit](performance-testkit.md#component-runtime-archive-substitution) defines actual runtime-archive substitution and shared collector provenance.
 The fixture, harness, collector, control libraries, font input, profile recipe and input manifests remain identical between sides.
 GPU upload and timing remain unmeasured for this CPU corpus.

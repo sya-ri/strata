@@ -85,7 +85,7 @@ public class StatefulControlBenchmark {
          */
         @TearDown(Level.Trial)
         public fun close() {
-            scene.close()
+            if (::scene.isInitialized) scene.close()
         }
     }
 
