@@ -77,8 +77,16 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
+This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules without versioned Fabric projects or Web applications.
+It accepts `formatKotlin` (including the native font backend), JVM tests and archives, ABI checks, `jmhClasses`, `jmhRunBytecodeGenerator`, `jmhCompileGeneratedClasses`, `jmhHistorical`, `jmhComponents`, `jmhRemote` and `processEvidence`.
+Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
+The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and fail at settings when combined with the flag.
+Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
+Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
+
 The generated `TextAreaInputBenchmark` fixture adds a separate 60-case logical editing corpus through the existing component entry point:
-`jmhComponents -Pstrata.performance.benchmarks=TextAreaInputBenchmark -Pstrata.performance.suite=text-area-input`.
+`:quality:component-benchmarks:jmhComponents '-Pstrata.jvmOnly=true' '-Pstrata.performance.benchmarks=TextAreaInputBenchmark' '-Pstrata.performance.suite=text-area-input'`.
 Its 30 input rows cover beginning/middle/end primary presses on short wrapped, long BMP, supplementary, plateau and signed-coordinate lines, vertical/page navigation between two long hard-break lines, and three composition mapping regions.
 Each source respects the default state capacity; middle/end unwrapped inputs preserve real caret-following horizontal pan.
 Six initial-layout rows include fresh host creation, attach, first frame and terminal close with resource bytes prepared, while six clean-frame rows retain the existing frame.
@@ -136,6 +144,8 @@ The root `verifyPublishedPerformanceInventory` gate compares [reviewed module/ho
 Adding or removing a published project without updating its exact registration fails `check`; duplicate hosts, missing fixture source files and missing verification tasks also fail.
 This entry-point registration check is paired with `:quality:component-benchmarks:verifyPublishedHostInventory`.
 The member gate first requires every published project's actual `checkKotlinAbi` task, then uses `CompilerApiInventory` and `PerformanceInventory` to reject new, removed or unassigned compiler declarations for each reviewed physical host.
+Both gates remain mandatory in ordinary complete-model `check` before review; isolated collection does not rerun publication-wide acceptance.
+Run `:quality:component-benchmarks:check` without a scoped flag on the revision being reviewed, in addition to the full verification boundary described in [build and verification](build.md).
 `:quality:component-benchmarks:capturePublishedHostInventory` stages prospective assignments for review without changing the checked-in registry.
 Compiler source visibility is distinct from the separate loaded-JVM inventories; those origin checks remain required.
 Registration is not completed measurement evidence or proof that every member executed.
