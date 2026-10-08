@@ -165,7 +165,8 @@ internal object ReactiveRenderScenario {
             assertCachedOverlays(snapshot)
             val after = driver.work()
             check(before.preparations < after.preparations)
-            check(before.rasterizations < after.rasterizations && before.uploads < after.uploads) {
+            val recomposed = before.rasterizations < after.rasterizations || before.samplingBytes < after.samplingBytes
+            check(recomposed && before.uploads < after.uploads) {
                 "Changed lower progress must recompose its portable layer, including the cached foreground: before=$before, after=$after"
             }
         }

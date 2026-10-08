@@ -26,6 +26,7 @@ import org.lwjgl.opengl.GL32
 internal object FabricNativeCanvasDriver : NativeCanvasDriver {
     private var topLeftProgram: FabricNativeCanvasGlProgram? = null
     private var bottomLeftProgram: FabricNativeCanvasGlProgram? = null
+    private var compositionProgram: FabricNativeCanvasGlProgram? = null
 
     @JvmSynthetic
     override fun createTarget(
@@ -67,7 +68,25 @@ internal object FabricNativeCanvasDriver : NativeCanvasDriver {
             val primary = failure
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
         }
+        try {
+            compositionProgram?.close()
+            compositionProgram = null
+        } catch (caught: Throwable) {
+            val primary = failure
+            if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
+        }
         failure?.let { throw it }
+    }
+
+    /**
+     * Borrows the device's one exact composition program within the caller's saved four-unit OpenGL state.
+     * The fixed source is the key; terminal [finish] releases it after all pending GUI generations complete.
+     */
+    @JvmSynthetic
+    internal fun drawComposition(commandIndex: Int) {
+        RenderSystem.assertOnRenderThread()
+        val program = compositionProgram ?: FabricNativeCanvasGlProgram.createComposition().also { compositionProgram = it }
+        program.drawComposition(commandIndex)
     }
 
     /**

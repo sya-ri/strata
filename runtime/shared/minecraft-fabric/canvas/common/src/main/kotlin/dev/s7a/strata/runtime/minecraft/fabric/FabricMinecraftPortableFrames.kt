@@ -44,6 +44,7 @@ internal class FabricMinecraftPortableFrames {
      * @param rasterized render-thread counter callback invoked once before each rasterization attempt, never retained.
      * @param uploaded render-thread counter callback invoked after each successful upload, never retained.
      * @param sampled optional synchronous factory for exact GPU output; the caller pins and marks its source before recording the pass.
+     * @param composed optional synchronous factory for a whole portable tile; every source remains pinned through ordered GUI consumption.
      * @param submit borrowed callback receiving every prepared texture and a marker it must invoke before each portable blit.
      * The callback must not retain either argument and may trigger reentrant screen release.
      * @throws Throwable when capacity, preparation, submission, or independently attempted cleanup fails.
@@ -54,6 +55,7 @@ internal class FabricMinecraftPortableFrames {
         rasterized: () -> Unit,
         uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
         submit: (List<FabricMinecraftPortableTexture>, () -> Unit) -> Unit,
     ) {
         if (images.isEmpty()) {
@@ -61,7 +63,7 @@ internal class FabricMinecraftPortableFrames {
             submit(emptyList()) {}
             return
         }
-        val prepared = prepare(images, rasterized, uploaded, sampled)
+        val prepared = prepare(images, rasterized, uploaded, sampled, composed)
         val resources = prepared.resources
         resources.beginUse(prepared.set)
         FabricMinecraftFailures.runWithCleanup(
@@ -88,6 +90,7 @@ internal class FabricMinecraftPortableFrames {
         rasterized: () -> Unit,
         uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
     ): Prepared {
         val previous = current
         reuseCurrent(images)?.let { return it }
@@ -106,7 +109,7 @@ internal class FabricMinecraftPortableFrames {
                         resources.reuse(set, previous.set, source)
                         textures.add(previous.textures[source])
                     } else {
-                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled) { resource -> resources.add(set, resource) })
+                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled, composed) { resource -> resources.add(set, resource) })
                         uploaded(input)
                     }
                 }
@@ -146,21 +149,24 @@ internal class FabricMinecraftPortableFrames {
     ): IntArray? {
         var area = 0
         images.forEachIndexed { index, input ->
-            if (input.sampling == null && matchedSource(matches, index) < 0) {
+            if (input.sampling == null && input.composition == null && matchedSource(matches, index) < 0) {
                 area = maxOf(area, Math.multiplyExact(input.physicalSize.width, input.physicalSize.height))
             }
         }
         return if (area == 0) null else IntArray(area)
     }
 
+    @Suppress("LongParameterList") // The factories borrow separately pinned source sets inside one generation's existing failure boundary.
     private fun prepareTexture(
         input: FabricMinecraftPortableImage,
         pixels: IntArray?,
         scratch: HeadlessRasterScratch?,
         rasterized: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
         retain: (NativeGuiResource) -> Unit,
     ): FabricMinecraftPortableTexture {
+        input.composition?.let { return checkNotNull(composed) { "Ordered GPU composition requires pinned source textures." }(it, retain) }
         val sampling = input.sampling
         if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
         rasterized()

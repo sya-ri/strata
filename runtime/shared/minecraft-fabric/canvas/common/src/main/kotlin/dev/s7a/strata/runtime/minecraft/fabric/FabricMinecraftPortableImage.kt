@@ -40,6 +40,8 @@ internal class FabricMinecraftPortableImage(
     internal val origin: IntOffset = IntOffset.Zero,
     @get:JvmSynthetic
     internal val sampling: FabricMinecraftSamplingMap? = null,
+    @get:JvmSynthetic
+    internal val composition: FabricMinecraftCompositionMap? = null,
 ) {
     /**
      * Exact positive physical upload and lifetime-reservation extent derived with checked arithmetic.
@@ -52,7 +54,7 @@ internal class FabricMinecraftPortableImage(
      */
     @get:JvmSynthetic
     internal val reservationSize: IntSize
-        get() = sampling?.let { IntSize(maxOf(physicalSize.width, it.indices.size.width), Math.addExact(physicalSize.height, 3)) } ?: physicalSize
+        get() = composition?.reservationSize ?: sampling?.let { IntSize(maxOf(physicalSize.width, it.indices.size.width), Math.addExact(physicalSize.height, 3)) } ?: physicalSize
 
     init {
         require(0 < size.width && 0 < size.height) { "Portable image size must be positive." }
@@ -71,11 +73,14 @@ internal class FabricMinecraftPortableImage(
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftPortableImage): Boolean {
+        if (size != other.size || scale != other.scale) return false
+        val ordered = composition
+        if (ordered != null) return other.composition?.let(ordered::equivalent) == true
+        if (other.composition != null) return false
         val indices = sampling
-        if (indices != null) return size == other.size && scale == other.scale && other.sampling?.let(indices::equivalent) == true
-        val sameGeometry = origin == other.origin && size == other.size && scale == other.scale
-        if (sameGeometry && commands == other.commands && other.sampling == null) return true
-        if (size != other.size || scale != other.scale || other.sampling != null) return false
+        if (indices != null) return other.sampling?.let(indices::equivalent) == true
+        if (other.sampling != null) return false
+        if (origin == other.origin && commands == other.commands) return true
         return translated(other)
     }
 

@@ -87,6 +87,14 @@ internal object MinecraftCanvasGameTest {
                 { context.onClient { fixture.close() } },
             )
         }
+        verifyPortableOwners(context, profile)
+        MinecraftOrderedCompositionGameTest.run(context, profile)
+    }
+
+    private fun verifyPortableOwners(
+        context: MinecraftCanvasTestContext,
+        profile: MinecraftUiProfile,
+    ) {
         MinecraftCanvasLifetimeGameTest.run(context, profile)
         MinecraftPortableLayerReuseGameTest.run(context, profile)
         MinecraftCanvasCapacityGameTest.run(context, profile)

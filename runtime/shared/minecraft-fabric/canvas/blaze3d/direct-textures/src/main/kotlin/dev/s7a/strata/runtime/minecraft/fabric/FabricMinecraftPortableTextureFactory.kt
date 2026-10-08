@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.platform.NativeImage
+import com.mojang.blaze3d.shaders.ShaderType
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.textures.TextureFormat
 import dev.s7a.strata.geometry.IntSize
@@ -8,6 +9,7 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
+import java.util.OptionalInt
 
 /**
  * Checks whether one immutable image fits the active device's two-dimensional texture limit before direct-cache reservation.
@@ -51,7 +53,7 @@ internal fun initializeFabricMinecraftSampledTexture(
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
-    private var destruction: FabricNativeCanvasDestruction? = null
+    private val owned = FabricMinecraftNativeStorage()
     private var closeRequested = false
 
     /**
@@ -66,7 +68,7 @@ internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
         val device = RenderSystem.getDevice()
         val maximum = device.maxTextureSize
         require(pixels.width <= maximum && pixels.height <= maximum) { "A portable GUI image exceeds the active device texture extent limit." }
-        texture = device.createTexture({ "Strata immutable portable layer" }, TextureFormat.RGBA8, pixels.width, pixels.height, 1)
+        texture = owned.allocate { device.createTexture({ "Strata immutable portable layer" }, TextureFormat.RGBA8, pixels.width, pixels.height, 1) }
         setClamp(true)
         setFilter(false, false)
         device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
@@ -82,8 +84,7 @@ internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
     internal fun destroy() {
         RenderSystem.assertOnRenderThread()
         if (closeRequested) return
-        if (destruction == null) destruction = trackPortableDestruction(listOfNotNull(texture))
-        texture?.close()
+        owned.close()
         texture = null
         closeRequested = true
     }
@@ -97,9 +98,65 @@ internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
     internal fun isDestroyed(): Boolean {
         RenderSystem.assertOnRenderThread()
         check(closeRequested) { "Portable GUI destruction is queried only after successful close." }
-        return checkNotNull(destruction).isDestroyed()
+        return owned.isDestroyed()
     }
 
     @JvmSynthetic
     override fun close() = Unit
+
+    /**
+     * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
+     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
+     */
+    @JvmSynthetic
+    internal fun initializeComposition(
+        indices: NativeImage,
+        factors: NativeImage,
+        size: IntSize,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        val outputs =
+            (0..1).map {
+                val target = owned.allocate { device.createTexture({ "Strata ordered composition destination" }, TextureFormat.RGBA8, size.width, size.height, 1) }
+                target
+            }
+        val indexTexture = owned.allocate { device.createTexture({ "Strata ordered composition axes" }, TextureFormat.RGBA8, indices.width, indices.height, 1) }
+
+        val factorTexture = owned.allocate { device.createTexture({ "Strata binary32 source factors" }, TextureFormat.RGBA8, factors.width, factors.height, 1) }
+
+        val encoder = device.createCommandEncoder()
+        encoder.writeToTexture(indexTexture, indices)
+        encoder.writeToTexture(factorTexture, factors)
+        encoder.clearColorTexture(outputs[0], 0)
+        check(
+            device
+                .precompilePipeline(fabricMinecraftCompositionPipeline()) { _, stage ->
+                    when (stage) {
+                        ShaderType.VERTEX -> FabricMinecraftCompositionShaders.vertex
+                        ShaderType.FRAGMENT -> FabricMinecraftCompositionShaders.fragment
+                    }
+                }.isValid,
+        ) { "Ordered portable composition pipeline compilation failed." }
+        val vertexBuffer = RenderSystem.getQuadVertexBuffer()
+        sources.forEachIndexed { index, source ->
+            val previous = outputs[index % 2]
+            val target = outputs[(index + 1) % 2]
+            encoder.createRenderPass(target, OptionalInt.empty()).use { pass ->
+                pass.setPipeline(fabricMinecraftCompositionPipeline())
+                pass.bindSampler("InSampler", source?.getTexture() ?: previous)
+                pass.bindSampler("DestinationSampler", previous)
+                pass.bindSampler("IndexSampler", indexTexture)
+                pass.bindSampler("FactorSampler", factorTexture)
+                pass.setVertexBuffer(0, vertexBuffer)
+                pass.draw(index * 3, 3)
+            }
+        }
+        texture = outputs[sources.size % 2]
+
+        setClamp(true)
+        setFilter(false, false)
+    }
 }

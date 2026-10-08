@@ -253,8 +253,18 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftImageUploadKt",
                 "$packageName.FabricMinecraftSourceSamplingKt",
                 "$packageName.FabricMinecraftSamplingMap",
+                "$packageName.FabricMinecraftCompositionMap",
+                "$packageName.FabricMinecraftCompositionMap\$Companion",
+                "$packageName.FabricMinecraftCompositionShaders",
+                "$packageName.FabricMinecraftCompositionInitializationKt",
+                "$packageName.FabricMinecraftCompositionTargets",
+                "$packageName.FabricMinecraftCompositionTargets\$Companion",
+                "$packageName.FabricMinecraftUploadPixels",
+                "$packageName.FabricMinecraftUploadPixelsKt",
+                "$packageName.FabricMinecraftCompositionTextureFactoryKt",
                 "$packageName.FabricMinecraftUploadWork",
                 "$packageName.FabricMinecraftSamplingBudget",
+                "$packageName.FabricMinecraftSamplingBudget\$Companion",
                 "$packageName.FabricMinecraftSamplingComposition",
                 "$packageName.FabricMinecraftNativeStorage",
                 "$packageName.FabricMinecraftSamplingShaders",
@@ -325,11 +335,15 @@ internal class FabricMinecraftJvmSurfaceTest {
             val family = GuiConsumerFamily.entries.single { candidate -> candidate.parameterTypes in renderDescriptors }
             return when (family) {
                 GuiConsumerFamily.ProjectedBuffer -> {
-                    mapOf("$packageName.FabricNativeCanvasPipelineKt" to emptySet())
+                    mapOf(
+                        "$packageName.FabricNativeCanvasPipelineKt" to emptySet(),
+                        "$packageName.FabricMinecraftCompositionTextureAllocationKt" to emptySet(),
+                    )
                 }
 
                 GuiConsumerFamily.DirectSubmission -> {
                     mapOf(
+                        "$packageName.FabricMinecraftPortablePipelineKt" to emptySet(),
                         "$packageName.FabricVulkanDestroyedResource" to setOf("strataCanvasResourceDestroyed"),
                         "$packageName.mixin.vulkan.FabricVulkanCanvasDeviceAccessor" to setOf("strataCanvasBackend"),
                         "$packageName.mixin.vulkan.FabricVulkanCanvasEncoderAccessor" to setOf("strataCanvasDestructionQueue"),

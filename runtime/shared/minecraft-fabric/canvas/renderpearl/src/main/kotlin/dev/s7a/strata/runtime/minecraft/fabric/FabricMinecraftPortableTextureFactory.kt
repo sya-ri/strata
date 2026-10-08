@@ -18,6 +18,8 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.client.renderer.state.gui.BlitRenderState
 import net.minecraft.client.renderer.texture.AbstractTexture
 import org.joml.Matrix3x2f
+import org.joml.Vector4f
+import java.util.Optional
 
 /**
  * Uploads only exact axis metadata for deferred GUI sampling, transferring ownership before allocation.
@@ -88,6 +90,56 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
         sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
         textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
         device.createCommandEncoder().writeToTexture(checkNotNull(texture), pixels)
+    }
+
+    /**
+     * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
+     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
+     */
+    @JvmSynthetic
+    internal fun initializeComposition(
+        indices: NativeImage,
+        factors: NativeImage,
+        size: IntSize,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        val targets =
+            FabricMinecraftCompositionTargets.create(
+                owned,
+                size,
+                IntSize(indices.width, indices.height),
+                IntSize(factors.width, factors.height),
+                { extent -> device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_SRC or GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                { label, extent -> device.createTexture({ label }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                device::createTextureView,
+            )
+        val outputs = targets.destinations
+        val (indexTexture, indexView) = targets.indices
+        val (factorTexture, factorView) = targets.factors
+        val nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+        val encoder = device.createCommandEncoder()
+        encoder.writeToTexture(indexTexture, indices)
+        encoder.writeToTexture(factorTexture, factors)
+        encoder.clearColorTexture(outputs[0].first, Vector4f(0f, 0f, 0f, 0f))
+        val compiled = RenderSystem.getCompiledPipeline(fabricMinecraftCompositionPipeline())
+        sources.forEachIndexed { index, source ->
+            val previous = outputs[index % 2].second
+            val target = outputs[(index + 1) % 2].second
+            encoder.createRenderPass({ "Strata ordered portable composition" }, target, Optional.empty()).use { pass ->
+                pass.setPipeline(compiled)
+                pass.setUniform("InSampler", source?.getTextureView() ?: previous, nearest)
+                pass.setUniform("DestinationSampler", previous, nearest)
+                pass.setUniform("IndexSampler", indexView, nearest)
+                pass.setUniform("FactorSampler", factorView, nearest)
+                pass.draw(3, 1, index * 3, 0)
+            }
+        }
+        texture = outputs[sources.size % 2].first
+        textureView = outputs[sources.size % 2].second
+        sampler = nearest
     }
 }
 

@@ -91,6 +91,57 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
             pass.draw(0, 3)
         }
     }
+
+    /**
+     * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
+     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
+     */
+    @JvmSynthetic
+    internal fun initializeComposition(
+        indices: NativeImage,
+        factors: NativeImage,
+        size: IntSize,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        val targets = allocateFabricMinecraftCompositionTargets(owned, size, indices, factors)
+        val outputs = targets.destinations
+        val (indexTexture, indexView) = targets.indices
+        val (factorTexture, factorView) = targets.factors
+        val nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+        val encoder = device.createCommandEncoder()
+        encoder.writeToTexture(indexTexture, indices)
+        encoder.writeToTexture(factorTexture, factors)
+        encoder.clearColorTexture(outputs[0].first, 0)
+        check(
+            device
+                .precompilePipeline(fabricMinecraftCompositionPipeline()) { _, stage ->
+                    when (stage) {
+                        ShaderType.VERTEX -> FabricMinecraftCompositionShaders.vertex.replace("#version 150", "#version 330")
+                        ShaderType.FRAGMENT -> FabricMinecraftCompositionShaders.fragment.replace("#version 150", "#version 330")
+                    }
+                }.isValid,
+        ) { "Ordered portable composition pipeline compilation failed." }
+        val vertexBuffer = owned.allocate { device.createBuffer({ "Strata composition fullscreen triangle" }, GpuBuffer.USAGE_VERTEX, 1) }
+        sources.forEachIndexed { index, source ->
+            val previous = outputs[index % 2].second
+            val target = outputs[(index + 1) % 2].second
+            encoder.createRenderPass({ "Strata ordered portable composition" }, target, OptionalInt.empty()).use { pass ->
+                pass.setPipeline(fabricMinecraftCompositionPipeline())
+                pass.bindTexture("InSampler", source?.getTextureView() ?: previous, nearest)
+                pass.bindTexture("DestinationSampler", previous, nearest)
+                pass.bindTexture("IndexSampler", indexView, nearest)
+                pass.bindTexture("FactorSampler", factorView, nearest)
+                pass.setVertexBuffer(0, vertexBuffer)
+                pass.draw(index * 3, 3)
+            }
+        }
+        texture = outputs[sources.size % 2].first
+        textureView = outputs[sources.size % 2].second
+        sampler = nearest
+    }
 }
 
 private val samplingPipeline: RenderPipeline =

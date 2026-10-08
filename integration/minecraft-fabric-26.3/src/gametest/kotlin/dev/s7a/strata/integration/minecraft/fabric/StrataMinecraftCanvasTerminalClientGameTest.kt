@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.minecraft.client.Minecraft
 import org.apache.commons.lang3.function.FailableConsumer
 import org.apache.commons.lang3.function.FailableFunction
+import java.nio.file.Path
 
 /**
  * Runs the explicitly selected acceptance scope before arming the 26.3 client shutdown proof.
@@ -30,6 +31,13 @@ public class StrataMinecraftCanvasTerminalClientGameTest : FabricClientGameTest 
                 },
             )
         val scope = MinecraftCanvasSuiteScope.current()
+        if (scope != MinecraftCanvasSuiteScope.TerminalOnly && System.getProperty("strata.performance.nativeOutput") == null) {
+            context.runOnClient(
+                FailableConsumer<Minecraft, RuntimeException> {
+                    MinecraftFloat32ArithmeticProbe.run(Path.of(requireNotNull(System.getProperty("strata.minecraftParityOutput"))))
+                },
+            )
+        }
         when (scope) {
             MinecraftCanvasSuiteScope.Full -> StrataMinecraftFontGameTest().runTest(context)
             MinecraftCanvasSuiteScope.CanvasOnly -> MinecraftCanvasBackendGameTest.run(context)

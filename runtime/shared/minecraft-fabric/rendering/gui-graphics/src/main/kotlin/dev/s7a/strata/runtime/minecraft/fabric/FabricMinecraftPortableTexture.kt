@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
@@ -24,7 +23,7 @@ internal class FabricMinecraftPortableTexture private constructor(
     @get:JvmSynthetic
     internal val location: MinecraftResourceLocation,
 ) : NativeGuiResource {
-    private var pixels: NativeImage? = null
+    private val uploadPixels = FabricMinecraftUploadPixels()
     private var borrowed: AbstractTexture? = null
     private var storage: NativeGuiResource? = null
     private var registrationAttempted = false
@@ -59,12 +58,10 @@ internal class FabricMinecraftPortableTexture private constructor(
         scratch: HeadlessRasterScratch? = null,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
         input.rasterizeInto(argb, scratch)
         val size = input.physicalSize
-        val native = NativeImage(size.width, size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, size) { x, y -> argb[y * size.width + x] }
+        val native = uploadPixels.stage(size) { x, y -> argb[y * size.width + x] }
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
         registrationAttempted = true
         Minecraft.getInstance().textureManager.register(location, texture)
@@ -78,10 +75,8 @@ internal class FabricMinecraftPortableTexture private constructor(
     @JvmSynthetic
     internal fun initialize(image: DrawImage) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val native = NativeImage(image.size.width, image.size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val native = uploadPixels.stage(image.size, image::argbAt)
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
         registrationAttempted = true
         Minecraft.getInstance().textureManager.register(location, texture)
@@ -97,11 +92,9 @@ internal class FabricMinecraftPortableTexture private constructor(
         source: FabricMinecraftPortableTexture,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val indices = sampling.indices
-        val native = NativeImage(indices.size.width, indices.size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        val native = uploadPixels.stage(indices.size, indices::argbAt)
         initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
         registrationAttempted = true
         Minecraft.getInstance().textureManager.register(location, texture)
@@ -124,6 +117,22 @@ internal class FabricMinecraftPortableTexture private constructor(
     }
 
     /**
+     * Uploads bounded command metadata and composes a complete tile against synchronously borrowed, pinned sources.
+     * The receiving generation owns both staging images and every partial native allocation before another allocation begins.
+     */
+    @JvmSynthetic
+    internal fun initialize(
+        composition: FabricMinecraftCompositionMap,
+        sources: List<AbstractTexture?>,
+    ) {
+        RenderSystem.assertOnRenderThread()
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        uploadPixels.initialize(composition, sources, ::retainStorage)
+        registrationAttempted = true
+        Minecraft.getInstance().textureManager.register(location, texture)
+    }
+
+    /**
      * Releases the CPU upload buffer after the device initialization fence completes while retaining immutable GPU storage.
      *
      * A failed close leaves the buffer owned for a later terminal retry.
@@ -131,9 +140,7 @@ internal class FabricMinecraftPortableTexture private constructor(
     @JvmSynthetic
     internal fun releaseUploadPixels() {
         RenderSystem.assertOnRenderThread()
-        val retained = pixels ?: return
-        retained.close()
-        pixels = null
+        uploadPixels.close()
     }
 
     @JvmSynthetic
@@ -159,8 +166,7 @@ internal class FabricMinecraftPortableTexture private constructor(
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
         }
         try {
-            pixels?.close()
-            pixels = null
+            releaseUploadPixels()
         } catch (caught: Throwable) {
             val primary = failure
             if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
@@ -183,6 +189,23 @@ internal class FabricMinecraftPortableTexture private constructor(
      * This factory retains only a process-local identifier counter; every texture and pixel buffer belongs to its returned or partially initialized owner.
      */
     internal companion object {
+        /**
+         * Transfers an empty owner before uploading metadata or recording the tile's ordered GPU passes.
+         * Sources are borrowed only during initialization and remain pinned by the caller through GUI consumption.
+         */
+        @JvmSynthetic
+        internal fun create(
+            composition: FabricMinecraftCompositionMap,
+            sources: List<AbstractTexture?>,
+            retain: (NativeGuiResource) -> Unit,
+        ): FabricMinecraftPortableTexture {
+            val location = minecraftResourceLocation("strata", "runtime/composed/${sequence.getAndIncrement().toULong()}")
+            val owner = FabricMinecraftPortableTexture(location)
+            retain(owner)
+            owner.initialize(composition, sources)
+            return owner
+        }
+
         /**
          * Transfers an empty registered-output owner before recording work against the caller's pinned source.
          * The receiving generation must seal initialization and retain both borrows through their completion fences.
