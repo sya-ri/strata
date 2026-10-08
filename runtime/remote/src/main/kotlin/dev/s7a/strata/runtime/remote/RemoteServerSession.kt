@@ -109,7 +109,8 @@ public class RemoteServerSession(
             }
             val projected = session.projectDeclarations(::project)
             val old = previous
-            if (old !== projected && old != projected) {
+            val changed = if (old === projected) false else old != projected
+            if (changed) {
                 check(revision < Long.MAX_VALUE) { "Remote revision space is exhausted." }
                 val base = revision++
                 previous = projected
