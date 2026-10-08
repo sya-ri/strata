@@ -28,9 +28,18 @@ internal object NonpaintingRasterReference {
         val clips = ArrayList<DrawCommand>()
         for (command in commands) {
             when (command) {
-                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip -> clips.add(command)
-                DrawCommand.PopClip -> clips.removeAt(clips.lastIndex)
-                is DrawCommand.Platform -> error("The portable oracle does not accept platform commands.")
+                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip -> {
+                    clips.add(command)
+                }
+
+                DrawCommand.PopClip -> {
+                    clips.removeAt(clips.lastIndex)
+                }
+
+                is DrawCommand.Platform -> {
+                    error("The portable oracle does not accept platform commands.")
+                }
+
                 else -> {
                     for (index in pixels.indices) {
                         val px = bounds.left * scale + index % width
@@ -77,17 +86,22 @@ internal object NonpaintingRasterReference {
         destination: Int,
     ): Int =
         when (command) {
-            is DrawCommand.FillRectangle -> blendInteger(command.color.value, destination)
+            is DrawCommand.FillRectangle -> {
+                blendInteger(command.color.value, destination)
+            }
+
             is DrawCommand.BlitImage -> {
                 val x = sourceAt(px / scale, command.destination.left, command.destination.width, command.source.left, command.source.width, 1)
                 val y = sourceAt(py / scale, command.destination.top, command.destination.height, command.source.top, command.source.height, 1)
                 blendInteger(command.image.argbAt(x, y), destination)
             }
+
             is DrawCommand.BlitImagePixels -> {
                 val x = sourceAt(px, command.destination.left, command.destination.width, command.source.left, command.source.width, scale)
                 val y = sourceAt(py, command.destination.top, command.destination.height, command.source.top, command.source.height, scale)
                 blendInteger(command.image.argbAt(x, y), destination)
             }
+
             is DrawCommand.SampledImage -> {
                 val rx = ((px.toFloat() + 0.5f) / scale - command.destination.left) / command.destination.width
                 val ry = ((py.toFloat() + 0.5f) / scale - command.destination.top) / command.destination.height
@@ -97,6 +111,7 @@ internal object NonpaintingRasterReference {
                 val y = floor(sy).toInt().coerceIn(0, command.image.size.height - 1)
                 blendSampled(command.image.argbAt(x, y), destination, command.tint.value, command.alphaCutoff)
             }
+
             else -> {
                 error("A pixel command is required.")
             }

@@ -95,13 +95,20 @@ public open class NonpaintingRasterBenchmark {
                 }
             val clipped =
                 when (scenario.coverage) {
-                    Coverage.EmptyClip -> listOf(DrawCommand.PushClip(IntRect(12, 10, 12, bounds.bottom))) + selected + DrawCommand.PopClip
-                    Coverage.FractionalClip ->
+                    Coverage.EmptyClip -> {
+                        listOf(DrawCommand.PushClip(IntRect(12, 10, 12, bounds.bottom))) + selected + DrawCommand.PopClip
+                    }
+
+                    Coverage.FractionalClip -> {
                         listOf(
                             DrawCommand.PushClip(bounds),
                             DrawCommand.PushFractionalClip(FloatRect(12f, 10f, 12f + 0.25f / scenario.scale, 10f + 0.25f / scenario.scale)),
                         ) + selected + listOf(DrawCommand.PopClip, DrawCommand.PopClip)
-                    else -> selected
+                    }
+
+                    else -> {
+                        selected
+                    }
                 }
             val prefix = if (scenario.patterned) listOf(DrawCommand.BlitImage(image, source, bounds)) else emptyList()
             val suffix =
