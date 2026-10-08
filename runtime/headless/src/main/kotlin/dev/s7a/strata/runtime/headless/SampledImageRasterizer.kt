@@ -20,21 +20,6 @@ import kotlin.math.roundToInt
 @OptIn(InternalStrataRuntimeApi::class)
 internal object SampledImageRasterizer {
     /**
-     * Tests the painter's exact coverage and zero-alpha tint rejection without reading or retaining source pixels.
-     * The clip is an absolute physical intersection with the output region; positive fractional extents may cover no centers.
-     */
-    fun doesNotPaint(
-        command: DrawCommand.SampledImage,
-        scale: Int,
-        clip: IntRect,
-    ): Boolean {
-        if (command.tint.value ushr 24 == 0) return true
-        val destination = command.destination
-        return minOf(firstPixel(destination.right, scale), clip.right) <= maxOf(firstPixel(destination.left, scale), clip.left) ||
-            minOf(firstPixel(destination.bottom, scale), clip.bottom) <= maxOf(firstPixel(destination.top, scale), clip.top)
-    }
-
-    /**
      * Paints one validated command using final-density pixel centers and continuous tint multiplication.
      *
      * @param pixels the exclusively owned physical ARGB raster matching [physicalSize].

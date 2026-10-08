@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.headless
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -17,6 +18,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.Adler32
 import java.util.zip.CRC32
+import kotlin.math.ceil
 
 /**
  * Rasterizes ordered portable commands into an immutable physical ARGB image.
@@ -311,9 +313,23 @@ private object HeadlessImplementation {
             is DrawCommand.FillRectangle -> emptyCoverage(command.bounds, dimensions, clip)
             is DrawCommand.BlitImage -> emptyCoverage(command.destination, dimensions, clip)
             is DrawCommand.BlitImagePixels -> emptyCoverage(command.destination, dimensions, clip)
-            is DrawCommand.SampledImage -> SampledImageRasterizer.doesNotPaint(command, dimensions.scale, clip ?: dimensions.physicalBounds)
+            is DrawCommand.SampledImage -> command.tint.value ushr 24 == 0 || emptyCoverage(command.destination, dimensions.scale, clip ?: dimensions.physicalBounds)
             else -> false
         }
+
+    /**
+     * Tests fractional coverage with the painter's exact Double, ceil and saturated Int pixel-center edges.
+     * This dispatch-only predicate reads no image pixels and allocates no intermediate rectangle.
+     */
+    private fun emptyCoverage(
+        bounds: FloatRect,
+        scale: Int,
+        clip: IntRect,
+    ): Boolean {
+        fun firstPixel(edge: Float): Int = ceil(edge.toDouble() * scale.toDouble() - 0.5).toInt()
+        return minOf(firstPixel(bounds.right), clip.right) <= maxOf(firstPixel(bounds.left), clip.left) ||
+            minOf(firstPixel(bounds.bottom), clip.bottom) <= maxOf(firstPixel(bounds.top), clip.top)
+    }
 
     /**
      * Tests final physical coverage without allocating an outward logical clip or an intermediate rectangle.
