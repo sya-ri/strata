@@ -49,7 +49,8 @@ internal class FabricMinecraftImageDecodeCache(
                     }
                 }
             val image = prepared.decoded.snapshot()
-            if (prepared.decoded === initial.entry?.decoded && prepared.encoded === initial.entry?.encoded) return image
+            val retained = initial.entry
+            if (retained != null && prepared.decoded === retained.decoded && prepared.encoded === retained.encoded) return image
             val encoded = prepared.encoded
             val entry =
                 if (initial.terminal.not() && encoded != null && encoded.size.toLong() + prepared.decoded.payloadBytes <= maxRetainedBytes) {

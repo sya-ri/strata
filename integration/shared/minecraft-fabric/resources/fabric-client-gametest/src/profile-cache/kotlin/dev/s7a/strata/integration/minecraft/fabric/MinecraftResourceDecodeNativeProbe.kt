@@ -47,10 +47,10 @@ internal class MinecraftResourceDecodeNativeProbe {
         oldImage = first
         if (cacheType != null) {
             val entry = checkNotNull(entry())
-            check(entry.javaClass.getDeclaredField("manager").apply { isAccessible = true }.get(entry) === Minecraft.getInstance().resourceManager)
-            val encoded = entry.javaClass.getDeclaredField("encoded").apply { isAccessible = true }.get(entry) as ByteArray
-            val decoded = entry.javaClass.getDeclaredField("decoded").apply { isAccessible = true }.get(entry)
-            val pixels = decoded.javaClass.getDeclaredField("pixels").apply { isAccessible = true }.get(decoded) as IntArray
+            check(readField(entry, "manager") === Minecraft.getInstance().resourceManager)
+            val encoded = readField(entry, "encoded") as ByteArray
+            val decoded = checkNotNull(readField(entry, "decoded"))
+            val pixels = readField(decoded, "pixels") as IntArray
             check(encoded.size <= 8 * 1024 * 1024 && encoded.size.toLong() + pixels.size.toLong() * Int.SIZE_BYTES <= 16L * 1024 * 1024)
             retiredPixels = WeakReference(pixels)
         }
@@ -112,7 +112,7 @@ internal class MinecraftResourceDecodeNativeProbe {
     private fun verifyOwnedClose() {
         val cache = checkNotNull(adapterCache)
         val retained = checkNotNull(entry())
-        val encoded = retained.javaClass.getDeclaredField("encoded").apply { isAccessible = true }.get(retained) as ByteArray
+        val encoded = readField(retained, "encoded") as ByteArray
         val load = cache.javaClass.getMethod("load", Any::class.java, Function0::class.java)
         ReloadableResourceManager(PackType.CLIENT_RESOURCES).use { owned ->
             val open = { encoded.inputStream() }
@@ -125,9 +125,17 @@ internal class MinecraftResourceDecodeNativeProbe {
 
     private fun entry(): Any? {
         val cache = checkNotNull(adapterCache)
-        val state =
-            (cache.javaClass.getDeclaredField("current").apply { isAccessible = true }.get(cache) as AtomicReference<*>).get()
-        return state.javaClass.getDeclaredField("entry").apply { isAccessible = true }.get(state)
+        val state = checkNotNull((readField(cache, "current") as AtomicReference<*>).get())
+        return readField(state, "entry")
+    }
+
+    private fun readField(
+        instance: Any,
+        name: String,
+    ): Any? {
+        val reflected = instance.javaClass.getDeclaredField(name)
+        reflected.isAccessible = true
+        return reflected.get(instance)
     }
 
     private companion object {

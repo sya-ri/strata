@@ -57,6 +57,7 @@ internal enum class MinecraftSampledPerformanceCase(
         TiledTranslation,
         ResourceDecode,
     }
+
     /**
      * Keeps admitted host hits separate from the actual public Fabric resolution used on uncached overflow paths.
      * Cold selects eight distinct current packaged PNGs; Hot100 resolves the same input one hundred times per declaration.
@@ -67,5 +68,4 @@ internal enum class MinecraftSampledPerformanceCase(
         Hot100,
         Cold,
     }
-
 }
