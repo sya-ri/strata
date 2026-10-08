@@ -203,7 +203,8 @@ internal object MinecraftTextLineBreaker {
             }
         val run = renderer.create(text, style, enabled, logicalOrder = logicalOrder)
         val positions = IntArray(last + 1) { renderer.roundedWidth(widths[it]) }
-        return MinecraftTextLine.createOwned(range.start, end, range.nextStart, run, offsets.copyOf(last + 1), positions)
+        val visibleOffsets = if (last < offsets.lastIndex) offsets.copyOf(last + 1) else offsets
+        return MinecraftTextLine.createOwned(range.start, end, range.nextStart, run, visibleOffsets, positions)
     }
 
     private fun ellipsisEnd(

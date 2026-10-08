@@ -5,7 +5,8 @@ import kotlin.math.abs
 /**
  * One detached laid-out line with scalar-aligned original offsets and logical caret metrics.
  *
- * Arrays are copied once and never exposed; one admission flag belongs to their current immutable lifetime.
+ * Arbitrary caller arrays are copied; the line breaker exclusively transfers its fresh compact arrays.
+ * Arrays are never exposed, and one admission flag belongs to their current immutable lifetime.
  * The line owns no renderer, font backend, coordinate history or lookup result cache.
  * Display shaping changes only the run's visual glyphs, not the logical editing coordinates.
  *
@@ -16,7 +17,7 @@ import kotlin.math.abs
  * @param offsets ordered original scalar boundaries, including both ends.
  * @param positions signed native horizontal widths corresponding to [offsets].
  */
-internal class MinecraftTextLine(
+internal class MinecraftTextLine private constructor(
     @get:JvmSynthetic
     internal val start: Int,
     @get:JvmSynthetic
@@ -27,9 +28,23 @@ internal class MinecraftTextLine(
     internal val run: MinecraftTextRun,
     offsets: IntArray,
     positions: IntArray,
+    ownership: Ownership,
 ) {
-    private val offsets = offsets.copyOf()
-    private val positions = positions.copyOf()
+    /**
+     * Snapshots arbitrary caller-owned arrays through the original six-argument JVM construction contract.
+     * Scalar-boundary/coordinate inputs and detached ownership follow the enclosing line contract.
+     */
+    internal constructor(
+        start: Int,
+        end: Int,
+        nextStart: Int,
+        run: MinecraftTextRun,
+        offsets: IntArray,
+        positions: IntArray,
+    ) : this(start, end, nextStart, run, offsets, positions, Ownership.Defensive)
+
+    private val offsets = if (ownership === Ownership.Exclusive) offsets else offsets.copyOf()
+    private val positions = if (ownership === Ownership.Exclusive) positions else positions.copyOf()
     private val monotone = (1 until this.positions.size).all { index -> this.positions[index - 1] <= this.positions[index] }
 
     /**
@@ -149,6 +164,11 @@ internal class MinecraftTextLine(
         return nearest
     }
 
+    private enum class Ownership {
+        Defensive,
+        Exclusive,
+    }
+
     /**
      * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
      */
@@ -176,6 +196,6 @@ internal class MinecraftTextLine(
             run: MinecraftTextRun,
             offsets: IntArray,
             positions: IntArray,
-        ): MinecraftTextLine = MinecraftTextLine(start, end, nextStart, run, offsets, positions)
+        ): MinecraftTextLine = MinecraftTextLine(start, end, nextStart, run, offsets, positions, Ownership.Exclusive)
     }
 }
