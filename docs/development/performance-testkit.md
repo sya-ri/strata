@@ -358,6 +358,15 @@ Applications supply artifact paths, engines, fixture URLs and operations rather 
 Before measurements, each browser verifies that operation and cleanup failures reject the interval and release the fixture exactly once.
 Preparation, assertion, collector cleanup, and evidence writing are outside synchronous action timing.
 
+Process the unchanged raw browser format with the shared [browser comparison processor](../../performance-testkit/src/jsMain/resources/browser-performance-reports.mjs).
+Run `node performance-testkit/src/jsMain/resources/browser-performance-reports.mjs <request.json>` with absolute `baselinePath`, `candidatePath`, `collectorPath`, `driverPath`, `baselineTargetPath`, `candidateTargetPath` and a new `outputPath`.
+The request also supplies the exact collection `inputPaths`, `conditions`, engine names and `scenarios` with each compiled `id` and complete `phases` list; these declarations must come from the frozen collection registration rather than from the observed raw rows.
+The processor checks every declared case and all three independent invocations per engine, loaded browser versions, actual collector/driver/bundle/input bytes, conditions and unavailable metrics before writing output exclusively.
+It records raw-report and executing-processor hashes and rechecks all files before publication.
+Each comparison row preserves the three run values and their median for both synchronous wall time and action-to-animation-frame p50/p95/p99, totals and maxima, plus any deterministic untimed work counts.
+It never pools workload rows or quantiles; ratios against zero and unavailable CPU/allocation accounting remain null.
+Missing, duplicated, copied, changed or invalid evidence rejects processing without a successful comparison.
+
 The independent compiled `WebDomPerformanceFixture` supplements those unchanged controls with localized and full updates at one, 100 and 1,000 current DOM elements and bounded geometry, clip, resize, reorder, button and progress cases.
 Its fixture-owned [adapter](../../tools/web/dom-performance.mjs) reads the loaded compiled inventory and delegates collection to the same browser driver, without extending the shipped dispatcher, default matrix or Gradle flags.
 Supply the built site, actual linked collector artifact, new output file, immutable extra-file manifest and preserved compiled inventory as its five positional arguments.
