@@ -67,7 +67,7 @@ internal class TextLineLayoutFixture(
     private val right = KeyboardEvent.Press(KeyCode.Right, 0)
     private val left = KeyboardEvent.Press(KeyCode.Left, 0)
     private val home = KeyboardEvent.Press(KeyCode.Home, 0, KeyboardModifiers(control = true))
-    private val clear = TextInputEvent.Preedit("", 0)
+    private val clear = TextInputEvent.Preedit("", 0, emptyList(), -1)
     private val firstComposition = TextInputEvent.Preedit("🙂Z", 0, listOf("🙂", "Z"), 0)
     private val focusedBlock =
         when (region) {
