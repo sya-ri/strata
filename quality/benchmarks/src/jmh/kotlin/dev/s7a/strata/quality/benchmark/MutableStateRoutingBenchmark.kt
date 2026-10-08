@@ -55,7 +55,7 @@ public open class MutableStateRoutingBenchmark {
     public fun operation(scene: AssignmentScene): Long = scene.step()
 
     /**
-     * Operation boundaries; batches have 64 setters unless the name explicitly describes one frame or a clean frame.
+     * Operation boundaries; stable batches have 64 setters, FirstAdmission and single-frame rows have one, and clean rows have none.
      * Coalesced performs 63 alternating changes plus one equal setter and one final frame per screen.
      * Cycles performs 64 alternating changes with a completed frame per screen after each write.
      * Cold/churn/close rows include their complete admission, removal, rebuild and release operation.
@@ -94,7 +94,7 @@ public open class MutableStateRoutingBenchmark {
         public val owners: Int,
         public val expensive: Boolean = false,
         public val reads: Int = 1,
-        public val failingOwner: Int = -1,
+        public val failingOwner: Int? = null,
     ) {
         EqualAlias0(Kind.EqualAlias, 0, 0),
         EqualAlias1(Kind.EqualAlias, 1, 1),
@@ -338,7 +338,7 @@ public open class MutableStateRoutingBenchmark {
         private var componentTone = Tone.Second
         private var membership = Membership.Full
         private var failComparison = false
-        private var failOwner = -1
+        private var failOwner: Int? = null
         private var comparisons = 0L
         private var writes = 0L
         private var roots = 0L
@@ -621,7 +621,7 @@ public open class MutableStateRoutingBenchmark {
                     try {
                         repeat(64) { assignFailure() }
                     } finally {
-                        failOwner = -1
+                        failOwner = null
                     }
                 }
 
@@ -744,8 +744,8 @@ public open class MutableStateRoutingBenchmark {
                     Kind.ComponentFrame -> 1L
                     else -> 0L
                 }
-            val guardBegins = if (workload.kind == Kind.GuardFailure) (workload.failingOwner + 1) * 64L else 0L
-            val guardEnds = if (workload.kind == Kind.GuardFailure) workload.failingOwner * 64L else 0L
+            val guardBegins = if (workload.kind == Kind.GuardFailure) (checkNotNull(workload.failingOwner) + 1) * 64L else 0L
+            val guardEnds = if (workload.kind == Kind.GuardFailure) checkNotNull(workload.failingOwner) * 64L else 0L
             val controllerWrites =
                 when (workload.kind) {
                     Kind.ColdAdmission, Kind.FirstAdmission, Kind.LastCloseReuse, Kind.SparseRemoval, Kind.Replacement -> u

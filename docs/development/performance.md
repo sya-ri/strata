@@ -22,6 +22,7 @@ The same distinction applies to the build: dependency and tool-derived intermedi
 The routing key, lazy admission, immediate invalidation, owner confinement and terminal release contract lives in [caller-owned reactive state](ui-sessions.md#caller-owned-reactive-state).
 `MutableStateRoutingBenchmark` fixes 81 complete public assignment/frame rows, including N = 0, 1, 128 and 4,096, shared and independent roots, first admission, membership churn, failure and component normalization controls.
 Warm stable rows exclude setup; cold, removal, replacement and close rows include their complete lifetime work.
+FirstAdmission includes close/readmission, one changed setter and completed frames, so later warm setters cannot mask its admission cost.
 A batch score covers 64 measured-state setters, with controller setters separately counted in churn rows.
 Coalesced rows perform 63 alternating changes and one equal setter followed by one frame per screen; cycle rows complete a frame per screen after each of 64 changed setters.
 The untimed verifier checks independent literal work counts, complete geometry, ordered drawing and semantics, all ARGB pixels at scales one and two, old immutable frames, and actual current routing storage when present in the selected runtime.
