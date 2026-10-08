@@ -853,79 +853,102 @@ private object HeadlessImplementation {
             size: IntSize,
             pixels: IntArray,
         ): ByteArray {
-            val scanlines = scanlines(size, pixels)
-            val compressed = zlib(scanlines)
-            val ihdr =
-                ByteBuffer
-                    .allocate(13)
-                    .putInt(size.width)
-                    .putInt(size.height)
-                    .put(8)
-                    .put(6)
-                    .array()
-            val output = ByteBuffer.allocate(sizeBytes(ihdr, compressed))
-            output.put(signature)
-            output.writeChunk("IHDR", ihdr)
-            output.writeChunk("IDAT", compressed)
-            output.writeChunk("IEND", ByteArray(0))
-            return output.array()
-        }
-
-        private fun scanlines(
-            size: IntSize,
-            pixels: IntArray,
-        ): ByteArray {
             val rowBytes = checkedAdd(checkedMultiply(size.width, 4, "PNG row width"), 1, "PNG row width")
-            val totalBytes = checkedMultiply(rowBytes, size.height, "PNG scanline data")
-            val scanlines = ByteArray(totalBytes)
-            var target = 0
+            val scanlineBytes = checkedMultiply(rowBytes, size.height, "PNG scanline data")
+            val blockCount = scanlineBytes / MAX_STORED_BLOCK_LENGTH + if (scanlineBytes % MAX_STORED_BLOCK_LENGTH == 0) 0 else 1
+            val deflateBytes = checkedAdd(scanlineBytes, checkedMultiply(blockCount, 5, "PNG stored-block headers"), "PNG deflate stream")
+            val zlibBytes = checkedAdd(deflateBytes, 6, "PNG zlib stream")
+            var outputBytes = checkedAdd(signature.size, chunkSize(13), "PNG output")
+            outputBytes = checkedAdd(outputBytes, chunkSize(zlibBytes), "PNG output")
+            outputBytes = checkedAdd(outputBytes, chunkSize(0), "PNG output")
+            val output = ByteBuffer.allocate(outputBytes)
+            output.put(signature)
+            output.putInt(13).putInt(0x49484452)
+            output
+                .putInt(size.width)
+                .putInt(size.height)
+                .put(8)
+                .put(6)
+                .put(0)
+                .put(0)
+                .put(0)
+            output.finishChunk(13)
+            output.putInt(zlibBytes).putInt(0x49444154)
+            output.put(0x78).put(0x01)
+            val blocks = StoredBlocks(output, scanlineBytes)
             var source = 0
             repeat(size.height) {
-                scanlines[target] = 0
-                target += 1
+                blocks.putByte(0)
                 repeat(size.width) {
-                    val argb = pixels[source]
+                    blocks.putPixel(pixels[source])
                     source += 1
-                    scanlines[target] = (argb ushr 16).toByte()
-                    scanlines[target + 1] = (argb ushr 8).toByte()
-                    scanlines[target + 2] = argb.toByte()
-                    scanlines[target + 3] = (argb ushr 24).toByte()
-                    target += 4
                 }
             }
-            return scanlines
-        }
-
-        private fun zlib(data: ByteArray): ByteArray {
-            val blockCount = data.size / MAX_STORED_BLOCK_LENGTH + if (data.size % MAX_STORED_BLOCK_LENGTH == 0) 0 else 1
-            val deflateBytes = checkedAdd(data.size, checkedMultiply(blockCount, 5, "PNG stored-block headers"), "PNG deflate stream")
-            val output = ByteBuffer.allocate(checkedAdd(deflateBytes, 6, "PNG zlib stream"))
-            output.put(0x78).put(0x01).order(ByteOrder.LITTLE_ENDIAN)
-            var source = 0
-            repeat(blockCount) { blockIndex ->
-                val blockLength = minOf(data.size - source, MAX_STORED_BLOCK_LENGTH)
-                output.put(if (blockIndex == blockCount - 1) 0x01 else 0x00)
-                output.putShort(blockLength.toShort())
-                output.putShort(blockLength.inv().toShort())
-                output.put(data, source, blockLength)
-                source += blockLength
-            }
-            val adler = Adler32().apply { update(data) }.value.toInt()
-            output.order(ByteOrder.BIG_ENDIAN).putInt(adler)
+            blocks.finish()
+            output.finishChunk(zlibBytes)
+            output.putInt(0).putInt(0x49454E44)
+            output.finishChunk(0)
             return output.array()
-        }
-
-        private fun sizeBytes(
-            ihdr: ByteArray,
-            idat: ByteArray,
-        ): Int {
-            var size = signature.size
-            size = checkedAdd(size, chunkSize(ihdr.size), "PNG output")
-            size = checkedAdd(size, chunkSize(idat.size), "PNG output")
-            return checkedAdd(size, chunkSize(0), "PNG output")
         }
 
         private fun chunkSize(payloadSize: Int): Int = checkedAdd(payloadSize, 12, "PNG chunk")
+
+        private fun ByteBuffer.finishChunk(payloadSize: Int) {
+            val bytes = payloadSize + 4
+            val crc = CRC32().apply { update(array(), position() - bytes, bytes) }.value.toInt()
+            putInt(crc)
+        }
+
+        /**
+         * Writes filter and RGBA bytes directly into the invocation-owned final PNG storage.
+         */
+        private class StoredBlocks(
+            private val output: ByteBuffer,
+            private var unwrittenBytes: Int,
+        ) {
+            private val adler = Adler32()
+            private var blockRemaining = 0
+            private var blockStart = output.position()
+
+            fun putByte(value: Int) {
+                if (blockRemaining == 0) startBlock()
+                output.put(value.toByte())
+                blockRemaining -= 1
+            }
+
+            fun putPixel(argb: Int) {
+                if (4 <= blockRemaining) {
+                    output.putInt(Integer.rotateLeft(argb, 8))
+                    blockRemaining -= 4
+                } else {
+                    // A stored-block boundary may split any channel of a pixel.
+                    putByte(argb ushr 16)
+                    putByte(argb ushr 8)
+                    putByte(argb)
+                    putByte(argb ushr 24)
+                }
+            }
+
+            fun finish() {
+                updateAdler()
+                output.putInt(adler.value.toInt())
+            }
+
+            private fun startBlock() {
+                updateAdler()
+                val length = minOf(unwrittenBytes, MAX_STORED_BLOCK_LENGTH)
+                unwrittenBytes -= length
+                output.put(if (unwrittenBytes == 0) 0x01 else 0x00)
+                output.order(ByteOrder.LITTLE_ENDIAN).putShort(length.toShort()).putShort(length.inv().toShort())
+                output.order(ByteOrder.BIG_ENDIAN)
+                blockStart = output.position()
+                blockRemaining = length
+            }
+
+            private fun updateAdler() {
+                adler.update(output.array(), blockStart, output.position() - blockStart)
+            }
+        }
 
         private fun checkedAdd(
             first: Int,
@@ -937,24 +960,6 @@ private object HeadlessImplementation {
             } catch (_: ArithmeticException) {
                 throw ArithmeticException("$label exceeds Int.MAX_VALUE.")
             }
-
-        private fun ByteBuffer.writeChunk(
-            type: String,
-            payload: ByteArray,
-        ) {
-            val typeBytes = type.encodeToByteArray()
-            putInt(payload.size)
-            put(typeBytes)
-            put(payload)
-            val crc =
-                CRC32()
-                    .apply {
-                        update(typeBytes)
-                        update(payload)
-                    }.value
-                    .toInt()
-            putInt(crc)
-        }
     }
 
     private data class PhysicalDimensions(
