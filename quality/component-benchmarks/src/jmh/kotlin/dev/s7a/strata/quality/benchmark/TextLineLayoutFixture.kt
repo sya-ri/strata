@@ -130,12 +130,16 @@ internal class TextLineLayoutFixture(
                 states[next.ordinal].value = values[content.value.ordinal]
                 selected.value = next
             }
+
             LayoutOperation.Edit -> {
                 val next = opposite(content.value)
                 states[selected.value.ordinal].value = values[next.ordinal]
                 content.value = next
             }
-            LayoutOperation.Reflow -> size.value = if (size.value == firstSize) secondSize else firstSize
+
+            LayoutOperation.Reflow -> {
+                size.value = if (size.value == firstSize) secondSize else firstSize
+            }
         }
         return frame()
     }
@@ -145,13 +149,17 @@ internal class TextLineLayoutFixture(
      */
     internal fun control(operation: ControlOperation): RuntimeUiFrame =
         when (operation) {
-            ControlOperation.Clean -> frame()
+            ControlOperation.Clean -> {
+                frame()
+            }
+
             ControlOperation.Caret -> {
                 host.dispatchKeyboard(right)
                 frame()
                 host.dispatchKeyboard(left)
                 frame()
             }
+
             ControlOperation.Composition -> {
                 host.dispatchTextInput(firstComposition)
                 frame()
