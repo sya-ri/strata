@@ -165,11 +165,12 @@ internal class MinecraftNativePerformanceProbe(
                     mapOf(
                         "api" to "dev.s7a.strata.render.DrawImage",
                         "core" to "dev.s7a.strata.runtime.UiSession",
+                        "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                         "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
                         "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
                         "fabric" to FabricMinecraftScreen::class.java.name,
                     ),
-                    setOf("api", "core", "minecraft", "fonts"),
+                    setOf("api", "core", "headless", "minecraft", "fonts"),
                 ).also(LoadedArtifactMetadata::verifyComplete)
         }
 

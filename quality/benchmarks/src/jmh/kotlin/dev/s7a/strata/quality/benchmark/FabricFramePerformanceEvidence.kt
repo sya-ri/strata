@@ -35,9 +35,10 @@ public object FabricFramePerformanceEvidence {
             fixtures,
             mapOf(
                 "api" to "dev.s7a.strata.render.DrawImage",
-                "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
+                "core" to "dev.s7a.strata.runtime.UiSession",
                 "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
-                "minecraft" to "dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDriver",
+                "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
+                "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
                 "fabric" to "dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameInputs",
             ),
             Path.of(args[0]),

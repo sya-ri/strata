@@ -7,6 +7,8 @@ import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceSelection
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFails
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Admission regressions reject missing native cases, incomplete presentation boundaries and leaked resources.
@@ -37,22 +39,89 @@ internal class NativeComponentPerformanceEvidenceTest {
 
     @Test
     internal fun incompleteGpuPairsCannotCertifyCompletePresentation() {
-        val report = complete()
-        val gpu =
-            JsonObject().apply {
-                addProperty("available", true)
-                addProperty("samples", 60)
-                addProperty("timestamp_period_ns", 1.0)
-                addProperty("scope", "GUI commands")
-                add("duration", JsonObject().apply { addProperty("samples", 60) })
-                add("operation_to_completion_observation", JsonObject().apply { addProperty("samples", 59) })
+        listOf("native_gpu", "presentation_gpu").forEach { scope ->
+            listOf("duration", "operation_to_completion_observation").forEach { distribution ->
+                val report = complete()
+                val phase = report.getAsJsonArray("phases")[0].asJsonObject
+                phase.add("native_gpu", completeGpu("GUI commands"))
+                phase.add("presentation_gpu", completeGpu("Frame preparation through GUI consumption"))
+                val gpu = phase.getAsJsonObject(scope)
+                gpu.getAsJsonObject(distribution).addProperty("samples", 59)
+                assertFails { NativeComponentPerformanceEvidence.verify(report) }
+                gpu.getAsJsonObject(distribution).addProperty("samples", 60)
+                NativeComponentPerformanceEvidence.verify(report)
+                gpu.addProperty("timestamp_period_ns", 0.0)
+                assertFails { NativeComponentPerformanceEvidence.verify(report) }
             }
-        report.getAsJsonArray("phases")[0].asJsonObject.add("native_gpu", gpu)
+        }
+    }
+
+    @Test
+    internal fun availableGuiQueriesRequireIndependentFullPresentationPairs() {
+        val report = complete()
+        val phase = report.getAsJsonArray("phases")[0].asJsonObject
+        val gui = completeGpu("GUI commands")
+        phase.add("native_gpu", gui)
         assertFails { NativeComponentPerformanceEvidence.verify(report) }
-        gpu.getAsJsonObject("operation_to_completion_observation").addProperty("samples", 60)
+        phase.add("presentation_gpu", JsonNull.INSTANCE)
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        phase.add("presentation_gpu", unavailableGpu())
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        phase.add("presentation_gpu", gui.deepCopy())
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        val full = completeGpu("Frame preparation through GUI consumption")
+        phase.add("presentation_gpu", full)
         NativeComponentPerformanceEvidence.verify(report)
-        gpu.addProperty("timestamp_period_ns", 0.0)
+        full.remove("duration")
         assertFails { NativeComponentPerformanceEvidence.verify(report) }
+    }
+
+    @Test
+    internal fun fullPresentationAvailabilityMustMatchTheGuiScope() {
+        val report = complete()
+        val phase = report.getAsJsonArray("phases")[0].asJsonObject
+        phase.add("presentation_gpu", completeGpu("Frame preparation through GUI consumption"))
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+    }
+
+    @Test
+    internal fun mixedFullScopeAncestorsCannotCertifyOneRawMatrix() {
+        val legacy = complete()
+        val declared = complete()
+        declared.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", JsonNull.INSTANCE) }
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(legacy, declared)) }
+        legacy.getAsJsonArray("phases")[0].asJsonObject.add("presentation_gpu", unavailableGpu())
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(legacy)) }
+    }
+
+    @Test
+    internal fun gpuAvailabilityMustRemainConsistentAcrossRawMatrices() {
+        val available = complete()
+        available.getAsJsonArray("phases").forEach { phase ->
+            phase.asJsonObject.add("native_gpu", completeGpu("GUI commands"))
+            phase.asJsonObject.add("presentation_gpu", completeGpu("Frame preparation through GUI consumption"))
+        }
+        val unavailable = complete()
+        unavailable.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", unavailableGpu()) }
+        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)))
+        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(unavailable)))
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available, unavailable)) }
+        val changed = available.getAsJsonArray("phases")[0].asJsonObject
+        changed.add("native_gpu", unavailableGpu())
+        changed.add("presentation_gpu", unavailableGpu())
+        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)) }
+    }
+
+    @Test
+    internal fun legacyUnavailableQueriesKeepFullGpuMetricsUnavailable() {
+        val report = complete()
+        NativeComponentPerformanceEvidence.verify(report)
+        assertFalse(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(report)))
+        report.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", JsonNull.INSTANCE) }
+        NativeComponentPerformanceEvidence.verify(report)
+        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(report)))
+        report.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", unavailableGpu()) }
+        NativeComponentPerformanceEvidence.verify(report)
     }
 
     @Test
@@ -215,6 +284,16 @@ internal class NativeComponentPerformanceEvidenceTest {
                     }
                 },
             )
+        }
+
+    private fun completeGpu(scope: String): JsonObject =
+        JsonObject().apply {
+            addProperty("available", true)
+            addProperty("samples", 60)
+            addProperty("timestamp_period_ns", 1.0)
+            addProperty("scope", scope)
+            add("duration", JsonObject().apply { addProperty("samples", 60) })
+            add("operation_to_completion_observation", JsonObject().apply { addProperty("samples", 60) })
         }
 
     private fun unavailableGpu(): JsonObject =
