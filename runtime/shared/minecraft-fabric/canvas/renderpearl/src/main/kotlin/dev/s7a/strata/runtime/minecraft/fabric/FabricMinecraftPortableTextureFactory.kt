@@ -106,15 +106,19 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
     ) {
         RenderSystem.assertOnRenderThread()
         val device = RenderSystem.getDevice()
-        val outputs =
-            (0..1).map {
-                val target = owned.allocate { device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_SRC or GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, size.width, size.height, 1, 1) }
-                target to owned.allocate { device.createTextureView(target) }
-            }
-        val indexTexture = owned.allocate { device.createTexture({ "Strata ordered composition axes" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, indices.width, indices.height, 1, 1) }
-        val indexView = owned.allocate { device.createTextureView(indexTexture) }
-        val factorTexture = owned.allocate { device.createTexture({ "Strata binary32 source factors" }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, factors.width, factors.height, 1, 1) }
-        val factorView = owned.allocate { device.createTextureView(factorTexture) }
+        val targets =
+            FabricMinecraftCompositionTargets.create(
+                owned,
+                size,
+                IntSize(indices.width, indices.height),
+                IntSize(factors.width, factors.height),
+                { extent -> device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_SRC or GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                { label, extent -> device.createTexture({ label }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA8_UNORM, extent.width, extent.height, 1, 1) },
+                device::createTextureView,
+            )
+        val outputs = targets.destinations
+        val (indexTexture, indexView) = targets.indices
+        val (factorTexture, factorView) = targets.factors
         val nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
         val encoder = device.createCommandEncoder()
         encoder.writeToTexture(indexTexture, indices)

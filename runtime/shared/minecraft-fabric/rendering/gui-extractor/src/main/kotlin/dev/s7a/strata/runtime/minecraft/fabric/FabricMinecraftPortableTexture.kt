@@ -20,7 +20,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
 @Suppress("TooGenericExceptionCaught")
 internal class FabricMinecraftPortableTexture private constructor() : NativeGuiResource {
     private var pixels: NativeImage? = null
-    private var factorPixels: NativeImage? = null
+    private var compositionUpload: FabricMinecraftCompositionUpload? = null
     private var borrowed: AbstractTexture? = null
     private var storage: NativeGuiResource? = null
     private var nativeClosed = false
@@ -66,7 +66,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         scratch: HeadlessRasterScratch? = null,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         input.rasterizeInto(argb, scratch)
         val size = input.physicalSize
         val native = NativeImage(size.width, size.height, false)
@@ -83,7 +83,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     @JvmSynthetic
     internal fun initialize(image: DrawImage) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val native = NativeImage(image.size.width, image.size.height, false)
         pixels = native
         uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
@@ -100,7 +100,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         source: FabricMinecraftPortableTexture,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val indices = sampling.indices
         val native = NativeImage(indices.size.width, indices.size.height, false)
         pixels = native
@@ -134,16 +134,10 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         sources: List<AbstractTexture?>,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val indices = composition.indices
-        val native = NativeImage(indices.size.width, indices.size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
-        val factors = composition.factors
-        val factorNative = NativeImage(factors.size.width, factors.size.height, false)
-        factorPixels = factorNative
-        uploadFabricMinecraftArgbPixels(factorNative, factors.size, factors::argbAt)
-        initializeFabricMinecraftCompositionTexture(native, factorNative, composition.physicalSize, sources, ::retainStorage)
+        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val upload = FabricMinecraftCompositionUpload()
+        compositionUpload = upload
+        upload.initialize(composition, sources, ::retainStorage)
     }
 
     /**
@@ -160,8 +154,8 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
                 pixels = null
             },
             {
-                factorPixels?.close()
-                factorPixels = null
+                compositionUpload?.close()
+                compositionUpload = null
             },
         )
     }
