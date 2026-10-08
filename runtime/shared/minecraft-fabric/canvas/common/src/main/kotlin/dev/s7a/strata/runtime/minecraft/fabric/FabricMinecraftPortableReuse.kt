@@ -128,7 +128,7 @@ private fun samePreparedCommand(
     b: DrawCommand,
 ): Boolean =
     when (a) {
-        is DrawCommand.FillRectangle -> b is DrawCommand.FillRectangle && a.bounds == b.bounds && a.color == b.color
+        is DrawCommand.FillRectangle -> b is DrawCommand.FillRectangle && a.bounds == b.bounds && a.isFabricMinecraftCompositionNoOp() == b.isFabricMinecraftCompositionNoOp() && a.color == b.color
         is DrawCommand.BlitImage -> samePreparedBlit(a, b)
         is DrawCommand.BlitImagePixels -> samePreparedPixelBlit(a, b)
         is DrawCommand.SampledImage -> samePreparedSample(a, b)
@@ -199,7 +199,7 @@ private fun sameAxisCommand(
         is DrawCommand.SampledImage -> {
             if (b is DrawCommand.SampledImage) {
                 val geometry = a.image.size == b.image.size && a.source == b.source && a.destination == b.destination
-                geometry && a.orientation == b.orientation
+                geometry && a.orientation == b.orientation && a.isFabricMinecraftCompositionNoOp() == b.isFabricMinecraftCompositionNoOp()
             } else {
                 false
             }

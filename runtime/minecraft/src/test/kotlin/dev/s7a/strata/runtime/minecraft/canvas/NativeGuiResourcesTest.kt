@@ -41,6 +41,45 @@ internal class NativeGuiResourcesTest {
     }
 
     @Test
+    fun sharedIntermediateRetiresAfterGuiCompletionWhileOffsetFinalStorageSurvivesImmutableReuse() {
+        NativeGuiResourceFixture().use { fixture ->
+            val extent = IntSize(2, 2)
+            val first = fixture.gui.reserve(fixture.owner, listOf(IntSize(2, 3), extent, extent))
+            val scratch = fixture.add(first)
+            val retained = fixture.add(first)
+            val replaced = fixture.add(first)
+            fixture.gui.seal(first)
+            fixture.driver.signalAll()
+            fixture.device.poll()
+            fixture.gui.beginUse(first)
+            fixture.gui.queued(first)
+            fixture.gui.endUse(first)
+            fixture.device.consumed()
+            val completion = fixture.driver.fences.last()
+            val second = fixture.gui.reserve(fixture.owner, listOf(extent, extent))
+            fixture.gui.reuse(second, first, 1)
+            val next = fixture.add(second)
+            fixture.gui.seal(second)
+            fixture.gui.release(first)
+            repeat(10) { fixture.device.poll() }
+            assertEquals(0, scratch.closeCalls)
+            assertEquals(0, retained.closeCalls)
+            assertEquals(0, replaced.closeCalls)
+            completion.signalled = true
+            fixture.device.poll()
+            assertEquals(1, scratch.closeCalls)
+            assertEquals(1, replaced.closeCalls)
+            assertEquals(0, retained.closeCalls)
+            assertEquals(0, next.closeCalls)
+            fixture.gui.release(second)
+            fixture.driver.signalAll()
+            fixture.device.poll()
+            assertTrue(fixture.allocations.all { it.closeCalls == 1 && it.destroyed })
+            assertEquals(0, fixture.gui.retainedSetCount())
+        }
+    }
+
+    @Test
     fun copiedExtentListBoundsTransfersAndSealedGenerationRejectsMutation() {
         NativeGuiResourceFixture().use { fixture ->
             val extents = arrayListOf(IntSize(2, 2), IntSize(3, 1))

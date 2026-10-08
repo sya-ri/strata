@@ -41,6 +41,7 @@ internal class FabricMinecraftUploadPixels {
         composition: FabricMinecraftCompositionMap,
         sources: List<AbstractTexture?>,
         retain: (AbstractTexture, NativeGuiResource) -> Unit,
+        workspace: FabricMinecraftCompositionWorkspace? = null,
     ) {
         val axes = composition.indices
         val nativeIndices = stage(axes.size, axes::argbAt)
@@ -48,7 +49,7 @@ internal class FabricMinecraftUploadPixels {
         val nativeFactors = NativeImage(weights.size.width, weights.size.height, false)
         factors = nativeFactors
         uploadFabricMinecraftArgbPixels(nativeFactors, weights.size, weights::argbAt)
-        initializeFabricMinecraftCompositionTexture(nativeIndices, nativeFactors, composition.physicalSize, sources, retain)
+        initializeFabricMinecraftCompositionTexture(nativeIndices, nativeFactors, composition.physicalSize, sources, retain, workspace)
     }
 
     /**

@@ -29,9 +29,10 @@ internal fun initializeFabricMinecraftCompositionTexture(
     size: IntSize,
     sources: List<AbstractTexture?>,
     retain: (AbstractTexture, NativeGuiResource) -> Unit,
+    workspace: FabricMinecraftCompositionWorkspace? = null,
 ) {
     RenderSystem.assertOnRenderThread()
     val storage = FabricMinecraftGlCompositionStorage()
     retain(storage.texture, storage)
-    storage.initialize(indices, factors, size, sources)
+    storage.initialize(indices, factors, size, sources, workspace?.borrow(size))
 }

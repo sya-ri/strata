@@ -718,3 +718,42 @@ Record the measured revision, configuration, and environment with each temporary
 Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.
 Historical measurements in Git history do not establish performance on the current revision.
 Promote a verified architectural conclusion into this contract instead of accumulating host-specific result tables in it.
+
+
+## Preparation-local ordered composition targets
+
+A changed native portable generation may share one RGBA8 composition intermediate between tiles with the same physical extent.
+The complete varying key is `IntSize`; device, format, usage flags, queue and render-thread owner are fixed by that receiving generation and its compiled adapter.
+Only changed composed tiles participate, with at least two tiles per selected shape.
+Each tile keeps an independent immutable final output; pass parity selects which alternating slot owns that final texture.
+The original full-target ordered passes and per-command RGBA8 quantization remain intact, including pixels outside coverage.
+No copy, scissor approximation, cross-device sharing or cross-generation mutation is introduced.
+
+`FabricMinecraftCompositionTargetPlan` rejects more than 256 portable outputs and retains at most 128 selected shapes.
+It charges each tile's existing metadata copies and scalar allowances, one final target per shared tile, one intermediate per shape, and separate workspace overhead.
+Rounded native reservation rectangles must not exceed the original complete rectangles; otherwise the original private target pairs remain in use.
+The independent 256-output, 1024-pass and 64 MiB admission ledger remains conservative and unchanged.
+Matched outputs preserve their exact previous reservation extents and account for the workspace's preceding native-resource index.
+
+The workspace transfers to the reserved GUI generation before allocating its first native object.
+Every intermediate is recorded empty before initialization; each final texture and metadata owner follows the same existing partial-allocation boundary.
+Scratch never becomes a GUI output, and later tiles borrow it only after preceding full-target commands have been recorded in the same ordered native queue.
+The final outputs remain immutable after preparation and are the only textures submitted to GUI consumers.
+The existing initialization fences, full-presentation pins, queued GUI markers, actual consumption fences, quarantine, retirement and physical-destruction acknowledgements own every resource.
+Release drops the presenter's current workspace and texture references; the device retains pending resources through their existing terminal drain.
+There is no idle pool or historical target cache.
+
+Whole-pass pruning uses a source-free proof.
+Transparent fills leave canonical transparent destination pixels unchanged; initialization and all existing source-over/quantization paths maintain zero RGB whenever output alpha is zero.
+Sampled passes with zero tint alpha or a strict cutoff above their maximum possible Float32 alpha leave all pixels unchanged.
+Clip and geometry validation still runs in original order, and active-pass status joins the finer axis-copy key so swapped active rows cannot reuse stale axes.
+Partially transparent, boundary-equal cutoff, sparse, clipped, source-replaced and nonredundant passes retain the complete original arithmetic.
+
+`CompositionTargetsBenchmark` measures actual CPU input preparation, immutable native-image matching and target-reservation planning through supplied runtime archives.
+Its cold/replacement boundaries do not allocate native textures or measure GPU submission.
+`MinecraftCompositionTargetsCorpus` covers the same dense odd/even, sparse, scroll, redundant/cutoff, active-row swap, local/source, mixed-pass/shape, clean, single-tile and CPU-fallback controls through ordinary Canvas revisions.
+Native GameTests compare every complete current frame with original headless pixels and retain an immutable old capture across replacements.
+Published owner identity, initialized scratch shapes, actual prepared passes and rounded reservations are diagnostic work observations; a source-derived `2N` versus `N+K` target forecast is not a native counter or timing result.
+
+Acceptance still requires identical frozen fixtures and controls, actual original archive/class-tree provenance, three independent Standard baseline and candidate processes, full CPU/allocation tables, separate full offscreen-through-GUI and GUI-only GPU evidence, all regressions and final-head quality/all-22/OpenGL/Vulkan verification.
+No measured benefit or hardware-independent latency is claimed while these receipts are pending.

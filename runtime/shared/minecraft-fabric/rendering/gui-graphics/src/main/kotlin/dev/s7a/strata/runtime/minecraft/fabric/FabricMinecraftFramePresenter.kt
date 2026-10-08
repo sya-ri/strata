@@ -169,7 +169,7 @@ internal class FabricMinecraftFramePresenter(
                         sampledQueued(sampling.command.image)
                         FabricMinecraftPortableTexture.create(sampling, source, retain).also { sampledImageDrawCount += 1L }
                     },
-                    { composition, retain ->
+                    { composition, retain, workspace ->
                         val sources =
                             composition.sources.map { image ->
                                 image?.let {
@@ -180,7 +180,7 @@ internal class FabricMinecraftFramePresenter(
                                     source.texture
                                 }
                             }
-                        FabricMinecraftPortableTexture.create(composition, sources, retain).also {
+                        FabricMinecraftPortableTexture.create(composition, sources, retain, workspace).also {
                             sampledImageDrawCount = Math.addExact(sampledImageDrawCount, composition.sources.count { it != null }.toLong())
                         }
                     },

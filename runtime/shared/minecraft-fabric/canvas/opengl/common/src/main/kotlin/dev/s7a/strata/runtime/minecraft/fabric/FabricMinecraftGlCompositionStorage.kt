@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL33
 
 /**
- * Owns both RGBA8 destinations, two metadata textures and two framebuffer names inside one fenced portable generation.
+ * Owns the final RGBA8 destination, optional private intermediate, two metadata textures and two framebuffer names inside one fenced generation.
  * Initialization records each name before another native operation can fail; no source, metadata image or screen is retained.
  * The device owns the one fixed shader program separately through terminal completion.
  * Independent release steps retain failed names for retry and acknowledge physical deletion only after every close succeeds.
@@ -24,6 +24,7 @@ import org.lwjgl.opengl.GL33
 internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
     private val textures = IntArray(4)
     private val framebuffers = IntArray(2)
+    private var borrowedOutput = -1
     private var output = -1
     private var closed = false
 
@@ -43,11 +44,20 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
         factors: NativeImage,
         size: IntSize,
         sources: List<AbstractTexture?>,
+        scratch: AbstractTexture? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         FabricNativeCanvasGlState(textureUnits = 4).use {
-            allocateTexture(0, size.width, size.height)
-            allocateTexture(1, size.width, size.height)
+            val intermediate = scratch?.getId()
+            val sharedIndex = if (sources.size % 2 == 0) 1 else 0
+            for (index in 0..1) {
+                if (intermediate != null && index == sharedIndex) {
+                    borrowedOutput = index
+                    textures[index] = intermediate
+                } else {
+                    allocateTexture(index, size.width, size.height)
+                }
+            }
             allocateTexture(2, indices.width, indices.height)
             indices.upload(0, 0, 0, false)
             allocateTexture(3, factors.width, factors.height)
@@ -122,7 +132,10 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
         if (closed) return
         FabricMinecraftFailures.runWithCleanup(
             { release(framebuffers, GL30::glDeleteFramebuffers) },
-            { release(textures, TextureUtil::releaseTextureId) },
+            {
+                if (0 <= borrowedOutput) textures[borrowedOutput] = 0
+                release(textures, TextureUtil::releaseTextureId)
+            },
         )
         closed = true
     }

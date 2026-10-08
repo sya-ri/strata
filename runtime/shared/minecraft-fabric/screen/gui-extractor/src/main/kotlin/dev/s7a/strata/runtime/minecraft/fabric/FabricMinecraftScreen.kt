@@ -737,7 +737,7 @@ public class FabricMinecraftScreen private constructor(
                             }
                         }
                     },
-                    { composition, retain ->
+                    { composition, retain, workspace ->
                         val sources =
                             composition.sources.map { image ->
                                 image?.let {
@@ -748,7 +748,7 @@ public class FabricMinecraftScreen private constructor(
                                     source.texture
                                 }
                             }
-                        FabricMinecraftPortableTexture.create(composition, sources, retain).also {
+                        FabricMinecraftPortableTexture.create(composition, sources, retain, workspace).also {
                             sampledImageDrawCount = Math.addExact(sampledImageDrawCount, composition.sources.count { it != null }.toLong())
                             sampledImageResampleCount = Math.addExact(sampledImageResampleCount, composition.sources.count { it != null }.toLong())
                         }

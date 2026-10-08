@@ -93,8 +93,22 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
     }
 
     /**
+     * Initializes a generation-owned intermediate with the same format, flags and extent as an ordinary composition destination.
+     * It is never a GUI output; ordered offscreen passes borrow it only before the generation seals.
+     */
+    @JvmSynthetic
+    internal fun initializeCompositionScratch(size: IntSize) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        texture = owned.allocate { device.createTexture({ "Strata preparation composition intermediate" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, size.width, size.height, 1, 1) }
+        textureView = owned.allocate { device.createTextureView(checkNotNull(texture)) }
+        setClamp(true)
+        setFilter(false, false)
+    }
+
+    /**
      * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
-     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Source views belong to the full-presentation pin; owned targets and metadata transfer before use, and optional scratch belongs to the same generation.
      * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
      */
     @JvmSynthetic
@@ -103,10 +117,11 @@ internal class FabricMinecraftPortableNativeTexture : FabricMinecraftPortableTex
         factors: NativeImage,
         size: IntSize,
         sources: List<AbstractTexture?>,
+        scratch: AbstractTexture? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         val device = RenderSystem.getDevice()
-        val targets = allocateFabricMinecraftCompositionTargets(owned, size, indices, factors)
+        val targets = allocateFabricMinecraftCompositionTargets(owned, size, indices, factors, scratch, sources.size)
         val outputs = targets.destinations
         val (indexTexture, indexView) = targets.indices
         val (factorTexture, factorView) = targets.factors
