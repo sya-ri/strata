@@ -102,7 +102,11 @@ internal class ContainerDeclarationFixture(
     fun construct(value: Int): Element {
         var nextLeaf = 0
         var nextParent = 0
-        fun UiScope.branch(depth: Int, parentModifier: Modifier) {
+
+        fun UiScope.branch(
+            depth: Int,
+            parentModifier: Modifier,
+        ) {
             val state = states[nextParent++]
             val content: UiScope.(Modifier) -> Unit = { childModifier ->
                 if (0 < depth) {
@@ -121,15 +125,31 @@ internal class ContainerDeclarationFixture(
                 }
             }
             when (container) {
-                Container.Row -> Row(modifier = parentModifier) { content(Modifier.Empty) }
-                Container.FlowRow -> FlowRow(modifier = parentModifier) { content(Modifier.Empty) }
-                Container.Column -> Column(modifier = parentModifier) { content(Modifier.Empty) }
-                Container.Stack -> Stack(modifier = parentModifier) { content(Modifier.Empty) }
-                Container.Grid -> Grid(columns = 4, modifier = parentModifier) { content(Modifier.Empty) }
-                Container.TiledImage ->
+                Container.Row -> {
+                    Row(modifier = parentModifier) { content(Modifier.Empty) }
+                }
+
+                Container.FlowRow -> {
+                    FlowRow(modifier = parentModifier) { content(Modifier.Empty) }
+                }
+
+                Container.Column -> {
+                    Column(modifier = parentModifier) { content(Modifier.Empty) }
+                }
+
+                Container.Stack -> {
+                    Stack(modifier = parentModifier) { content(Modifier.Empty) }
+                }
+
+                Container.Grid -> {
+                    Grid(columns = 4, modifier = parentModifier) { content(Modifier.Empty) }
+                }
+
+                Container.TiledImage -> {
                     TiledImage(source, state, IntSize(1_024, 1_024), modifier = parentModifier) {
                         content(Modifier.Empty.atContentPosition(DoubleOffset.Zero, Alignment.TopStart))
                     }
+                }
             }
         }
         return evaluateComponentTree { Stack { repeat(shape.groups) { branch(shape.depth, Modifier.Empty) } } }
@@ -215,7 +235,11 @@ internal class ContainerDeclarationFixture(
         session.close()
     }
 
-    private fun verifyFrame(frame: RuntimeUiFrame, layout: Layout, value: Int) {
+    private fun verifyFrame(
+        frame: RuntimeUiFrame,
+        layout: Layout,
+        value: Int,
+    ) {
         check(frame.size == layout.size)
         check(frame.semantics.size == leafCount)
         frame.semantics.zip(layout.leaves).forEach { (entry, leaf) ->
@@ -251,6 +275,7 @@ internal class ContainerDeclarationFixture(
 
     private fun expectedLayout(): Layout {
         var nextLeaf = 0
+
         fun branch(depth: Int): Layout {
             val children =
                 if (0 < depth) {
@@ -263,12 +288,14 @@ internal class ContainerDeclarationFixture(
         return layout(Container.Stack, List(shape.groups) { branch(shape.depth) })
     }
 
-    private fun leaves(element: Element): List<LeafElement> =
-        if (element is LeafElement) listOf(element) else element.children.flatMap(::leaves)
+    private fun leaves(element: Element): List<LeafElement> = if (element is LeafElement) listOf(element) else element.children.flatMap(::leaves)
 
     private fun elementCount(element: Element): Int = 1 + element.children.sumOf(::elementCount)
 
-    private fun redundantCopySlots(element: Element, root: Boolean): Int {
+    private fun redundantCopySlots(
+        element: Element,
+        root: Boolean,
+    ): Int {
         if (element is LeafElement) return 0
         val count = element.children.size - if (root.not() && container == Container.TiledImage && element.children.isNotEmpty()) 1 else 0
         val current = if (2 <= count) count else 0
@@ -288,10 +315,19 @@ internal class ContainerDeclarationFixture(
         var semantics = 0
     }
 
-    private data class PlacedLeaf(val ordinal: Int, val bounds: IntRect)
+    private data class PlacedLeaf(
+        val ordinal: Int,
+        val bounds: IntRect,
+    )
 
-    private data class Layout(val size: IntSize, val leaves: List<PlacedLeaf>) {
-        fun at(x: Int, y: Int): List<PlacedLeaf> =
+    private data class Layout(
+        val size: IntSize,
+        val leaves: List<PlacedLeaf>,
+    ) {
+        fun at(
+            x: Int,
+            y: Int,
+        ): List<PlacedLeaf> =
             leaves.map { it.copy(bounds = IntRect(it.bounds.left + x, it.bounds.top + y, it.bounds.right + x, it.bounds.bottom + y)) }
 
         companion object {
@@ -321,8 +357,11 @@ internal class ContainerDeclarationFixture(
         }
     }
 
-    private class LeafNode(val ordinal: Int, var value: Int, val counts: Counts) :
-        Node(),
+    private class LeafNode(
+        val ordinal: Int,
+        var value: Int,
+        val counts: Counts,
+    ) : Node(),
         MeasureNode,
         PaintNode,
         SemanticsNode,
@@ -343,7 +382,10 @@ internal class ContainerDeclarationFixture(
             counts.disposed += 1
         }
 
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             counts.measures += 1
             return constraints.constrain(IntSize(1, 1))
         }
@@ -358,18 +400,30 @@ internal class ContainerDeclarationFixture(
             scope.emit(semantic(ordinal, value))
         }
 
-        override fun onPointerEvent(event: PointerEvent, localPosition: IntOffset): InputResult {
+        override fun onPointerEvent(
+            event: PointerEvent,
+            localPosition: IntOffset,
+        ): InputResult {
             counts.lastPointer = ordinal
             return InputResult.Consumed
         }
     }
 
     internal companion object {
-        private fun color(ordinal: Int, value: Int): ArgbColor = ArgbColor(0xFF000000.toInt() or (ordinal * 73_471 and 0xFFFFFF) xor (value * 0x00010101))
+        private fun color(
+            ordinal: Int,
+            value: Int,
+        ): ArgbColor = ArgbColor(0xFF000000.toInt() or (ordinal * 73_471 and 0xFFFFFF) xor (value * 0x00010101))
 
-        private fun semantic(ordinal: Int, value: Int): Semantics = Semantics(label = UiText.Literal("leaf-$ordinal"), value = UiText.Literal("version-$value"))
+        private fun semantic(
+            ordinal: Int,
+            value: Int,
+        ): Semantics = Semantics(label = UiText.Literal("leaf-$ordinal"), value = UiText.Literal("version-$value"))
 
-        private fun layout(container: Container, children: List<Layout>): Layout {
+        private fun layout(
+            container: Container,
+            children: List<Layout>,
+        ): Layout {
             if (container == Container.TiledImage) return Layout(IntSize(1_024, 1_024), children.flatMap { it.leaves })
             if (children.isEmpty()) return Layout(IntSize.Zero, emptyList())
             val columns = IntArray(4)
@@ -387,20 +441,35 @@ internal class ContainerDeclarationFixture(
                         placements += child.at(x, 0)
                         x += child.size.width
                     }
+
                     Container.Column -> {
                         placements += child.at(0, y)
                         y += child.size.height
                     }
-                    Container.Stack -> placements += child.leaves
-                    Container.Grid -> placements += child.at(columns.take(index % 4).sum(), rows.take(index / 4).sum())
-                    Container.TiledImage -> error("Tiled layout is handled above.")
+
+                    Container.Stack -> {
+                        placements += child.leaves
+                    }
+
+                    Container.Grid -> {
+                        placements += child.at(columns.take(index % 4).sum(), rows.take(index / 4).sum())
+                    }
+
+                    Container.TiledImage -> {
+                        error("Tiled layout is handled above.")
+                    }
                 }
             }
             val size = naturalSize(container, children, columns, rows)
             return Layout(size, placements)
         }
 
-        private fun naturalSize(container: Container, children: List<Layout>, columns: IntArray, rows: IntArray): IntSize =
+        private fun naturalSize(
+            container: Container,
+            children: List<Layout>,
+            columns: IntArray,
+            rows: IntArray,
+        ): IntSize =
             when (container) {
                 Container.Row, Container.FlowRow -> IntSize(children.sumOf { it.size.width }, children.maxOf { it.size.height })
                 Container.Column -> IntSize(children.maxOf { it.size.width }, children.sumOf { it.size.height })

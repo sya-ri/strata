@@ -44,67 +44,87 @@ import kotlin.test.assertSame
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PortableContainerBuilderTest {
     @Test
-    fun keyedRebuildsPreserveGeometryPaintInputSemanticsIdentityAndEarlierFrames() {
-        for (kind in Kind.entries) {
-            val probe = TestProbe()
-            val first = TestProbe.ProbeId("first")
-            val second = TestProbe.ProbeId("second")
-            val order = mutableStateOf(listOf(first, second))
-            val state = PanZoomState()
-            val source = source()
-            var declaration: Element? = null
-            val session =
-                createRuntimeUiSession {
-                    evaluateComponentTree {
-                        container(kind, state, source) { modifier ->
-                            order.value.forEach { id -> element(probe.element(id, key = id, modifier = modifier)) }
-                        }
-                    }.also { declaration = it }
-                }
-            try {
-                session.attach()
-                val constraints = Constraints(maxWidth = 8, maxHeight = 8)
-                val original = session.frame(constraints)
-                val originalDeclaration = checkNotNull(declaration)
-                val originalChildren = originalDeclaration.children.toList()
-                val originalCommands = original.drawCommands.toList()
-                val originalSemantics = original.semantics.toList()
-                val firstNode = probe.nodeForTag(first)
-                val secondNode = probe.nodeForTag(second)
-                assertEquals(bounds(kind), original.semantics.map { it.bounds })
-                assertEquals(bounds(kind), original.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().map { it.bounds })
-                assertEquals(listOf(UiText.Literal("first"), UiText.Literal("second")), original.semantics.map { it.semantics.label })
-                assertSame(original, session.frame(constraints))
+    fun rowPreservesRetainedContracts() = verifyContainer(Kind.Row)
 
-                order.value = listOf(second, first)
-                val reordered = session.frame(constraints)
-                assertEquals(bounds(kind), reordered.semantics.map { it.bounds })
-                assertEquals(listOf(UiText.Literal("second"), UiText.Literal("first")), reordered.semantics.map { it.semantics.label })
-                assertSame(firstNode, probe.nodeForTag(first))
-                assertSame(secondNode, probe.nodeForTag(second))
-                assertEquals(2, probe.created.size)
-                assertEquals(originalChildren, originalDeclaration.children)
-                assertEquals(originalCommands, original.drawCommands)
-                assertEquals(originalSemantics, original.semantics)
-                assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
-                val overlaps = kind == Kind.Stack || kind == Kind.TiledImage
-                assertEquals(if (overlaps) first else second, probe.inputEvents.last())
+    @Test
+    fun flowRowPreservesRetainedContracts() = verifyContainer(Kind.FlowRow)
 
-                session.detach()
-                session.attach()
-                assertEquals(reordered.semantics, session.frame(constraints).semantics)
-                assertEquals(2, probe.created.size)
-                order.value = listOf(second)
-                assertEquals(listOf(UiText.Literal("second")), session.frame(constraints).semantics.map { it.semantics.label })
-                assertSame(secondNode, probe.nodeForTag(second))
-                assertEquals(1, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
-            } finally {
-                session.close()
+    @Test
+    fun columnPreservesRetainedContracts() = verifyContainer(Kind.Column)
+
+    @Test
+    fun stackPreservesRetainedContracts() = verifyContainer(Kind.Stack)
+
+    @Test
+    fun gridPreservesRetainedContracts() = verifyContainer(Kind.Grid)
+
+    @Test
+    fun tiledImagePreservesRetainedContracts() = verifyContainer(Kind.TiledImage)
+
+    /**
+     * Exercises keyed rebuilds, all frame outputs, previous snapshots and terminal ownership for one builder.
+     */
+    private fun verifyContainer(kind: Kind) {
+        val probe = TestProbe()
+        val first = TestProbe.ProbeId("first")
+        val second = TestProbe.ProbeId("second")
+        val order = mutableStateOf(listOf(first, second))
+        val state = PanZoomState()
+        val source = source()
+        var declaration: Element? = null
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    container(kind, state, source) { modifier ->
+                        order.value.forEach { id -> element(probe.element(id, key = id, modifier = modifier)) }
+                    }
+                }.also { declaration = it }
             }
-            assertEquals(2, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
+        try {
+            session.attach()
+            val constraints = Constraints(maxWidth = 8, maxHeight = 8)
+            // Tiled viewport geometry invalidates its tile observer during the first measurement.
+            session.frame(constraints)
+            val original = session.frame(constraints)
+            val originalDeclaration = checkNotNull(declaration)
+            val originalChildren = originalDeclaration.children.toList()
+            val originalCommands = original.drawCommands.toList()
+            val originalSemantics = original.semantics.toList()
+            val firstNode = probe.nodeForTag(first)
+            val secondNode = probe.nodeForTag(second)
+            assertEquals(bounds(kind), original.semantics.map { it.bounds }, "$kind initial semantic bounds")
+            assertEquals(bounds(kind), original.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().map { it.bounds }, "$kind initial paint bounds")
+            assertEquals(listOf(UiText.Literal("first"), UiText.Literal("second")), original.semantics.map { it.semantics.label }, "$kind initial semantic order")
+            assertSame(original, session.frame(constraints), "$kind settled frame reuse")
+
+            order.value = listOf(second, first)
+            val reordered = session.frame(constraints)
+            assertEquals(bounds(kind), reordered.semantics.map { it.bounds }, "$kind reordered semantic bounds")
+            assertEquals(listOf(UiText.Literal("second"), UiText.Literal("first")), reordered.semantics.map { it.semantics.label }, "$kind reordered semantic order")
+            assertSame(firstNode, probe.nodeForTag(first))
+            assertSame(secondNode, probe.nodeForTag(second))
+            assertEquals(2, probe.created.size)
+            assertEquals(originalChildren, originalDeclaration.children)
+            assertEquals(originalCommands, original.drawCommands)
+            assertEquals(originalSemantics, original.semantics)
+            assertEquals(InputResult.Consumed, session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
+            val overlaps = kind == Kind.Stack || kind == Kind.TiledImage
+            assertEquals(if (overlaps) first else second, probe.inputEvents.last(), "$kind reordered pointer winner")
+
+            session.detach()
+            session.attach()
+            assertEquals(reordered.semantics, session.frame(constraints).semantics)
+            assertEquals(2, probe.created.size)
+            order.value = listOf(second)
+            assertEquals(listOf(UiText.Literal("second")), session.frame(constraints).semantics.map { it.semantics.label })
+            assertSame(secondNode, probe.nodeForTag(second))
+            assertEquals(1, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
+        } finally {
             session.close()
-            assertEquals(2, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
         }
+        assertEquals(2, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
+        session.close()
+        assertEquals(2, probe.events.filterIsInstance<TestProbe.Event.Dispose>().size)
     }
 
     private fun UiScope.container(
