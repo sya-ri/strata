@@ -3819,6 +3819,9 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Absent.toString|toString(){}[0]#final fun toString(): kotlin/String
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Absent|null[0]#final object Absent : dev.s7a.strata.projection/ProjectionValue {
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.<init>|<init>(kotlin.ByteArray){}[0]#constructor <init>(kotlin/ByteArray)
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.Companion.fromOwned|fromOwned(kotlin.ByteArray){}[0]#final fun fromOwned(kotlin/ByteArray): dev.s7a.strata.projection/ProjectionValue.Bytes
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.Companion|null[0]#final object Companion {
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.copyInto|copyInto(kotlin.ByteArray;kotlin.Int){}[0]#final fun copyInto(kotlin/ByteArray, kotlin/Int)
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.size.<get-size>|<get-size>(){}[0]#final fun <get-size>(): kotlin/Int
