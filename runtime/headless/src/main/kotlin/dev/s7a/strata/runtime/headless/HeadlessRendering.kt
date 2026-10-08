@@ -875,7 +875,7 @@ private object HeadlessImplementation {
             output.putInt(zlibBytes).putInt(0x49444154)
             output.put(0x78).put(0x01)
             val blocks = StoredBlocks(output.array(), output.position(), scanlineBytes)
-            blocks.putScanlines(pixels, size.width, size.height)
+            blocks.putScanlines(pixels, size.width, size.height, rowBytes)
             output.position(blocks.finish())
             output.finishChunk(zlibBytes)
             output.putInt(0).putInt(0x49454E44)
@@ -907,49 +907,89 @@ private object HeadlessImplementation {
                 pixels: IntArray,
                 width: Int,
                 height: Int,
+                rowBytes: Int,
             ) {
-                // Keep row positions local; synchronize writer fields for block changes and completion.
                 var source = 0
-                var target = position
-                var remaining = blockRemaining
-                repeat(height) {
-                    if (remaining == 0) {
-                        position = target
-                        startBlock()
-                        target = position
-                        remaining = blockRemaining
+                var row = 0
+                while (row < height) {
+                    if (blockRemaining == 0) startBlock()
+                    // Hoist block checks across complete rows; only boundary rows need split-channel handling.
+                    val completeRows = minOf(height - row, blockRemaining / rowBytes)
+                    if (completeRows == 0) {
+                        putSplitRow(pixels, source, width)
+                        source += width
+                        row += 1
+                    } else {
+                        position = putCompleteRows(pixels, source, width, completeRows)
+                        source += completeRows * width
+                        blockRemaining -= completeRows * rowBytes
+                        row += completeRows
                     }
+                }
+            }
+
+            private fun putCompleteRows(
+                pixels: IntArray,
+                start: Int,
+                width: Int,
+                rows: Int,
+            ): Int {
+                var source = start
+                var target = position
+                val end = start + rows * width
+                while (source < end) {
                     output[target] = 0
                     target += 1
-                    remaining -= 1
-                    val end = source + width
-                    while (source < end) {
-                        val count = minOf(end - source, remaining / 4)
-                        if (count == 0) {
-                            // A stored-block boundary may split any channel of a pixel.
+                    val rowEnd = source + width
+                    while (source < rowEnd) {
+                        val argb = pixels[source]
+                        output[target] = (argb ushr 16).toByte()
+                        output[target + 1] = (argb ushr 8).toByte()
+                        output[target + 2] = argb.toByte()
+                        output[target + 3] = (argb ushr 24).toByte()
+                        source += 1
+                        target += 4
+                    }
+                }
+                return target
+            }
+
+            private fun putSplitRow(
+                pixels: IntArray,
+                start: Int,
+                width: Int,
+            ) {
+                putByte(0)
+                var source = start
+                var target = position
+                var remaining = blockRemaining
+                val end = start + width
+                while (source < end) {
+                    val count = minOf(end - source, remaining / 4)
+                    if (count == 0) {
+                        // A stored-block boundary may split any channel of a pixel.
+                        val argb = pixels[source]
+                        position = target
+                        blockRemaining = remaining
+                        putByte(argb ushr 16)
+                        putByte(argb ushr 8)
+                        putByte(argb)
+                        putByte(argb ushr 24)
+                        target = position
+                        remaining = blockRemaining
+                        source += 1
+                    } else {
+                        val limit = source + count
+                        while (source < limit) {
                             val argb = pixels[source]
-                            position = target
-                            blockRemaining = remaining
-                            putByte(argb ushr 16)
-                            putByte(argb ushr 8)
-                            putByte(argb)
-                            putByte(argb ushr 24)
-                            target = position
-                            remaining = blockRemaining
+                            output[target] = (argb ushr 16).toByte()
+                            output[target + 1] = (argb ushr 8).toByte()
+                            output[target + 2] = argb.toByte()
+                            output[target + 3] = (argb ushr 24).toByte()
                             source += 1
-                        } else {
-                            val limit = source + count
-                            while (source < limit) {
-                                val argb = pixels[source]
-                                output[target] = (argb ushr 16).toByte()
-                                output[target + 1] = (argb ushr 8).toByte()
-                                output[target + 2] = argb.toByte()
-                                output[target + 3] = (argb ushr 24).toByte()
-                                source += 1
-                                target += 4
-                            }
-                            remaining -= count * 4
+                            target += 4
                         }
+                        remaining -= count * 4
                     }
                 }
                 position = target
