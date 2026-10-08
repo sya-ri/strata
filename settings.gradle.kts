@@ -122,37 +122,67 @@ dependencyResolutionManagement {
 rootProject.name = "strata"
 
 val webOnly = providers.gradleProperty("strata.webOnly").map(String::toBooleanStrict).getOrElse(false)
+val jvmOnly = providers.gradleProperty("strata.jvmOnly").map(String::toBooleanStrict).getOrElse(false)
+val completeIdeaModel = providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false) ||
+    providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false)
 val requestedTasks = gradle.startParameter.taskNames
-val minecraftChecksOnly = ":ciMinecraftCheck" in requestedTasks && requestedTasks.all {
+val minecraftChecksOnly = completeIdeaModel.not() && ":ciMinecraftCheck" in requestedTasks && requestedTasks.all {
     it in setOf(":ciMinecraftCheck", ":integration:docs:checkMinecraftShowcaseParity")
 }
-val documentationChecksOnly = requestedTasks.isNotEmpty() && requestedTasks.all {
+val documentationChecksOnly = completeIdeaModel.not() && requestedTasks.isNotEmpty() && requestedTasks.all {
     it in setOf(":integration:docs:check", ":integration:docs:checkDokkaPagesStaging")
 }
 val nativeBenchmarkOnly = requestedTasks.size == 1 &&
     requestedTasks.single().removePrefix(":") in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") &&
-    providers.systemProperty("idea.sync.active").map(String::toBoolean).getOrElse(false).not() &&
-    providers.gradleProperty("strata.completeIdeaModel").map(String::toBoolean).getOrElse(false).not()
+    completeIdeaModel.not()
 val minecraftCheckVersions =
     if (minecraftChecksOnly || documentationChecksOnly || nativeBenchmarkOnly) {
         providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
     } else {
         emptySet()
     }
-val webProjectPaths = setOf(
-    ":api", ":runtime:core", ":runtime:web", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
-    ":integration:web", ":examples:web", ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
+// This union closes the three JVM fixture source sets over their runtime, testkit and quality dependencies.
+val jvmProjectPaths = setOf(
+    ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
+    ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
 )
-if (webOnly) {
+val webProjectPaths = jvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
+val benchmarkProjectPaths = setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks")
+val jvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":performance-testkit")
+val jvmPublishedProjectPaths = jvmProjectPaths - benchmarkProjectPaths - ":quality:detekt-rules"
+val jvmCollectorTasks = setOf(
+    ":quality:benchmarks:jmhHistorical", ":quality:component-benchmarks:jmhComponents",
+    ":quality:remote-benchmarks:jmhRemote", ":performance-testkit:processEvidence",
+)
+if (webOnly || jvmOnly) {
+    require((webOnly && jvmOnly).not()) { "Choose one scoped project model: strata.webOnly or strata.jvmOnly." }
+    require(completeIdeaModel.not()) { "IDE/Qodana requires the complete project model; remove strata.webOnly and strata.jvmOnly." }
+    require(providers.gradleProperty("strata.minecraftVersions").orNull.isNullOrBlank()) { "Minecraft target selection requires the complete project model." }
+}
+if (jvmOnly) {
+    require(requestedTasks.isNotEmpty() && requestedTasks.all { task ->
+        val owner = task.substringBeforeLast(':')
+        val name = task.substringAfterLast(':')
+        owner in jvmProjectPaths && (
+            name in setOf("formatKotlin", "lintKotlin", "detekt", "classes") ||
+                (owner in jvmPublishedProjectPaths && name in setOf("checkKotlinAbi", "updateKotlinAbi")) ||
+                (owner in jvmMultiplatformProjectPaths && name in setOf("jvmTest", "jvmJar")) ||
+                (owner in jvmProjectPaths - jvmMultiplatformProjectPaths && name in setOf("test", "jar")) ||
+                task in jvmCollectorTasks ||
+                (owner in benchmarkProjectPaths && name in setOf("jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses"))
+            )
+    }) { "strata.jvmOnly supports only fully qualified JVM fixture preparation, tests and collection; run check, publication, Kover and inventory acceptance with the complete build." }
+    include(*jvmProjectPaths.toTypedArray())
+} else if (webOnly) {
     require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
         task.substringBeforeLast(':') in webProjectPaths &&
-            (task.substringAfterLast(':') in setOf("check", "jsTest") ||
+            ((task.substringAfterLast(':') in setOf("check", "jsTest") && task != ":quality:component-benchmarks:check") ||
                 (task.substringBeforeLast(':') in setOf(":runtime:core", ":runtime:minecraft") && task.substringAfterLast(':') in setOf("formatKotlin", "updateKotlinAbi")) ||
                 (task.substringBeforeLast(':') == ":performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi", "processEvidence")) ||
                 (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhPortableTiles", "jmhRemote", "jmhComponents", "captureComponentInventory", "captureRuntimeSurfaceInventory", "captureHeadlessInventory", "captureRemoteInventory")) ||
                 (task.substringBeforeLast(':') == ":quality:detekt-rules" && task.substringAfterLast(':') in setOf("formatKotlin")) ||
                 (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
-    }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; use the complete build for other work." }
+    }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; component check and published inventory acceptance require the complete build." }
     include(*webProjectPaths.toTypedArray())
 } else {
     val commonProjectPaths = listOf(
