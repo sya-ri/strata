@@ -207,7 +207,7 @@ public open class RemoteImageBenchmark {
 
         /**
          * Runs unchanged public APIs against either runtime archive before any measured operation.
-         * Both modifier constructors must reject an oversized profile source before a scope exists;
+         * Both uninstalled modifier constructors must reject before a scope exists, including empty/control scenes;
          * a larger scope encoder must not expand the standalone profile-image schema.
          */
         private fun verifyProfileAdmission() {
@@ -215,8 +215,12 @@ public open class RemoteImageBenchmark {
             val area = byteLimit / Int.SIZE_BYTES + 1
             val source = ImageSource.Pixels(createDrawImage(IntSize(area, 1), IntArray(area)))
             val runtime = RemoteComponentRuntime()
-            check(runCatching { runtime.imageBackground(Modifier.Empty, source, ImageScale.Stretch) }.exceptionOrNull() is IllegalArgumentException)
-            check(runCatching { runtime.imageBackground(Modifier.Empty, source, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) }.exceptionOrNull() is IllegalArgumentException)
+            val expected = requireNotNull(runCatching { RemoteImageCodec().encode(source) }.exceptionOrNull())
+            check(expected is IllegalArgumentException)
+            val ordinary = requireNotNull(runCatching { runtime.imageBackground(Modifier.Empty, source, ImageScale.Stretch) }.exceptionOrNull())
+            val nineSlice = requireNotNull(runCatching { runtime.imageBackground(Modifier.Empty, source, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) }.exceptionOrNull())
+            check(ordinary.javaClass == expected.javaClass && ordinary.message == expected.message)
+            check(nineSlice.javaClass == expected.javaClass && nineSlice.message == expected.message)
             var imageCalls = 0
             val scope = object : ProjectionScope {
                 override fun image(image: DrawImage): ProjectionValue {
@@ -229,7 +233,8 @@ public open class RemoteImageBenchmark {
                 override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
             }
             val element = runtime.image(source, null, null, Modifier.Empty, null)
-            check(runCatching { requireNotNull(element.projection).encode(scope) }.exceptionOrNull() is IllegalArgumentException)
+            val projected = requireNotNull(runCatching { requireNotNull(element.projection).encode(scope) }.exceptionOrNull())
+            check(projected.javaClass == expected.javaClass && projected.message == expected.message)
             check(imageCalls == 0)
         }
 

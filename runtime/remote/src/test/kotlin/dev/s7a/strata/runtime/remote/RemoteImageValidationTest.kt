@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.remote
 import dev.s7a.strata.component.ImageScale
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.NineSliceCenterMode
+import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
@@ -15,6 +16,8 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.text.UiText
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
@@ -53,6 +56,48 @@ internal class RemoteImageValidationTest {
             val scope = ImageScope(128)
             assertThrows(IllegalArgumentException::class.java) { requireNotNull(background.elements().single().projection).encode(scope) }
             assertEquals(1, scope.imageCalls)
+        }
+    }
+
+    @Test
+    fun unusedOversizedBackgroundConstructionFailsBeforeDeclarationsAndReleasesTheSession() {
+        val source = oversizedSource()
+        val expected = requireNotNull(runCatching { RemoteImageCodec().encode(source) }.exceptionOrNull())
+        val constructors: List<(RemoteComponentRuntime, ImageSource) -> Modifier> = listOf(
+            { runtime, value -> runtime.imageBackground(Modifier.Empty, value, ImageScale.Stretch) },
+            { runtime, value -> runtime.imageBackground(Modifier.Empty, value, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) },
+        )
+        constructors.forEach { construct ->
+            val runtime = RemoteComponentRuntime()
+            var contentFinished = false
+            var snapshots = 0
+            var closes = 0
+            lateinit var server: RemoteServerSession
+            server = RemoteServerSession(1, ProjectionValue.Absent, RemoteRegistry().also(RemoteBuiltins::register).types, send = { message ->
+                when (message) {
+                    is RemoteMessage.Snapshot -> snapshots++
+                    is RemoteMessage.Close -> {
+                        closes++
+                        assertTrue(server.status is RemoteSessionStatus.Closed)
+                        assertEquals(0, server.nodeCount)
+                        assertTrue(server.requiredTypes.isEmpty())
+                    }
+                    else -> Unit
+                }
+            }) {
+                construct(runtime, source)
+                contentFinished = true
+                runtime.evaluate { Spacer() }
+            }
+            val actual = assertThrows(IllegalArgumentException::class.java, server::tick)
+            assertEquals(expected.javaClass, actual.javaClass)
+            assertEquals(expected.message, actual.message)
+            assertFalse(contentFinished)
+            assertEquals(0, snapshots)
+            assertEquals(1, closes)
+            assertTrue(server.status is RemoteSessionStatus.Closed)
+            server.close()
+            assertEquals(1, closes)
         }
     }
 
