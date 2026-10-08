@@ -11,6 +11,7 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import kotlin.math.abs
 
@@ -19,6 +20,7 @@ import kotlin.math.abs
  * Expected boundaries never come from a target line; temporary oracle rows are released before timing.
  * Pixel checks cover a bounded 64 by 64 window at densities one through three, including viewport clipping.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class TextLineLayoutReference(
     private val value: String,
     private val fontAt: (Int) -> ResourceId,

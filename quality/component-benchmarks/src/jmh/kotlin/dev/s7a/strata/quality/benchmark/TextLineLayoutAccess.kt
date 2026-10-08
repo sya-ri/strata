@@ -2,11 +2,13 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Consumer
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Untimed read-only adapter for actual current layout owners on the frozen runtime sides.
  * Existing internal symbols are decoded once by class identity; no runtime field is changed or passed into timing.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal object TextLineLayoutAccess {
     private val layoutType = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextLayout")
 
