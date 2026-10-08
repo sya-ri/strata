@@ -120,7 +120,27 @@ async function verifyTheme(browser, engine, theme, expected) {
     await mkdir(evidence, { recursive: true });
     await page.screenshot({ path: resolve(evidence, `${engine.name()}-${theme}.png`) });
     const receipt = { theme, engine: engine.name(), version: browser.version(), snapshots: observed };
+    receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
+}
+
+async function verifyDomUpdates(browser, page, engine, theme, evidence) {
+    const updates = JSON.parse(await page.evaluate(() => window.strataVerifyDomUpdates()));
+    assert.equal(updates.length, 12, 'Three sizes each retain localized, full-change and geometry controls, plus three clip/background controls');
+    const styles = await page.locator('head > style').allTextContents();
+    const comparison = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 640, height: 480 } });
+    try {
+        for (const update of updates) {
+            const prefix = `${engine.name()}-${theme}-${update.count}-${update.phase}`;
+            const documentFor = html => `<!doctype html><html><head><style>body { margin: 0; }${styles.join('\n')}</style></head><body>${html}</body></html>`;
+            await comparison.setContent(documentFor(update.currentHtml));
+            const actual = await comparison.screenshot({ path: resolve(evidence, `${prefix}-incremental.png`) });
+            await comparison.setContent(documentFor(update.referenceHtml));
+            const expected = await comparison.screenshot({ path: resolve(evidence, `${prefix}-fresh.png`) });
+            assert.deepEqual(actual, expected, `Incremental pixels differ from fresh DOM: ${prefix}`);
+        }
+    } finally { await comparison.close(); }
+    return updates.map(({ count, phase, mutations }) => ({ count, phase, mutations }));
 }

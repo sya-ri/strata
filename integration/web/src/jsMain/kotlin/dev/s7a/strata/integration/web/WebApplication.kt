@@ -17,6 +17,7 @@ import kotlin.js.Promise
 public fun main() {
     val theme = mapOf("minecraft.html" to WebTheme.Minecraft)[window.location.pathname.substringAfterLast('/')] ?: WebTheme.Native
     window.asDynamic().strataPerformanceInventory = { WebComponentPerformanceContract.inventory() }
+    window.asDynamic().strataVerifyDomUpdates = { WebDomUpdateCheck.verify(theme) }
     if (WebLaunchMode.decode(window.location.search) == WebLaunchMode.Prerender) {
         val html = renderWebDocument(ReactiveScenario().definition(), ReactiveScenario.viewport, "Strata runtime parity", "application.js", theme)
         window.asDynamic().strataInitialDocument = html
