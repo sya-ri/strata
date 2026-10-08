@@ -1,11 +1,11 @@
 package dev.s7a.strata.runtime.minecraft.canvas
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertSame
 
 /**
  * Verifies lazy native failure storage without changing graph identity, callback completion or suppression order.
@@ -36,7 +36,8 @@ internal class CanvasFailuresTest {
         var completed = 0
 
         failures.attempt { throw first }
-        val identities = assertNotNull(storage.get(failures))
+        val identities = storage.get(failures)
+        assertNotNull(identities)
         listOf(first, second, second).forEach { failure ->
             failures.attempt {
                 completed += 1
@@ -49,7 +50,7 @@ internal class CanvasFailuresTest {
         assertSame(identities, storage.get(failures))
         assertEquals(1, first.suppressed.size)
         assertSame(second, first.suppressed.single())
-        repeat(2) { assertSame(first, assertFailsWith<EqualFailure> { failures.throwIfPresent() }) }
+        repeat(2) { assertSame(first, assertThrows(EqualFailure::class.java) { failures.throwIfPresent() }) }
     }
 
     @Test
@@ -72,7 +73,7 @@ internal class CanvasFailuresTest {
         assertEquals(3, first.suppressed.size)
         listOf(existing, later, last).forEachIndexed { index, failure -> assertSame(failure, first.suppressed[index]) }
         assertSame(nested, later.suppressed.single())
-        assertSame(first, assertFailsWith<EqualFailure> { failures.throwIfPresent() })
+        assertSame(first, assertThrows(EqualFailure::class.java) { failures.throwIfPresent() })
     }
 
     @Test
@@ -101,7 +102,7 @@ internal class CanvasFailuresTest {
         assertEquals(2, first.suppressed.size)
         assertSame(second, first.suppressed[0])
         assertSame(third, first.suppressed[1])
-        assertSame(first, assertFailsWith<EqualFailure> { outer.throwIfPresent() })
+        assertSame(first, assertThrows(EqualFailure::class.java) { outer.throwIfPresent() })
     }
 
     private class EqualFailure : RuntimeException("equal failure") {
