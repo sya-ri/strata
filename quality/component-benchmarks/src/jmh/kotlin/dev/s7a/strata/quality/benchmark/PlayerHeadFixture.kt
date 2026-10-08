@@ -86,6 +86,13 @@ internal class PlayerHeadFixture(
     internal fun frame(): RuntimeUiFrame = host.frame(viewport)
 
     /**
+     * Explicit public-host viewport for supplementary boundary controls outside the fixed timed matrix.
+     */
+    internal fun frame(viewport: IntSize): RuntimeUiFrame = host.frame(viewport)
+
+
+
+    /**
      * Requests only a different set of layers for the same identity/size key.
      */
     internal fun hat(visible: Boolean) {
@@ -108,6 +115,14 @@ internal class PlayerHeadFixture(
     internal fun resize() {
         val current = declared.value
         declared.value = current.copy(size = if (current.size == workload.size) workload.replacementSize else workload.size, visible = true, revision = current.revision + 1)
+    }
+
+    /**
+     * Supplementary untimed boundary control uses the public logical-size declaration.
+     */
+    internal fun resizeTo(size: Int) {
+        val current = declared.value
+        declared.value = current.copy(size = size, revision = current.revision + 1)
     }
 
     /**

@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -30,6 +31,7 @@ internal object PlayerHeadWorkProof {
         PlayerHeadWorkload.entries.forEach { workload ->
             val assets = PlayerHeadFixture.Assets()
             Operation.entries.forEach { operation -> verify(workload, assets, operation, counters) }
+            if (workload in setOf(PlayerHeadWorkload.SyncOne127, PlayerHeadWorkload.AsyncOne127)) verifyNearLimit(counters, assets, workload)
         }
     }
 
@@ -61,6 +63,46 @@ internal object PlayerHeadWorkProof {
             caches.forEach(PlayerHeadFixture.Cache::verifyEmpty)
             check(fixture.activeBindings == 0)
             println(workload.name + "," + operation.method + "," + sourceReads + "," + constructions + "," + retained + ",0,N/A,N/A")
+        }
+    }
+
+    private fun verifyNearLimit(
+        counters: Counters,
+        assets: PlayerHeadFixture.Assets,
+        workload: PlayerHeadWorkload,
+    ) {
+        val size = 1023
+        val area = size * size
+        PlayerHeadFixture(workload, assets, false).use { fixture ->
+            fixture.attach()
+            fixture.resizeTo(size)
+            val caches = fixture.caches()
+            counters.begin.accept(area)
+            val hidden =
+                try {
+                    fixture.frame(IntSize(size, size))
+                } finally {
+                    counters.stop.run()
+                }
+            verifyWorkCounts(workload, Operation.ColdHidden, area, counters.reads.asLong, counters.images.asLong)
+            fixture.verify(hidden)
+            val face = caches.single().face
+            counters.begin.accept(area)
+            fixture.hat(true)
+            val visible =
+                try {
+                    fixture.frame(IntSize(size, size))
+                } finally {
+                    counters.stop.run()
+                }
+            verifyWorkCounts(workload, Operation.EnableHat, area, counters.reads.asLong, counters.images.asLong)
+            fixture.verify(visible)
+            check(caches.single().face === face)
+            check(caches.single().retainedPixels() == area * 2L)
+            fixture.close()
+            caches.single().verifyEmpty()
+            check(fixture.activeBindings == 0)
+            println("playerHeadBoundary," + workload.name + ",1023,passed,0,N/A,N/A")
         }
     }
 
