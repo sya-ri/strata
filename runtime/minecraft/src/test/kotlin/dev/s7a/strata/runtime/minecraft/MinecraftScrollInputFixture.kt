@@ -30,6 +30,7 @@ import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.ui.UiDefinition
+import java.lang.reflect.Field
 
 /**
  * Real retained profile area with two independently keyed linked bars and independent uniform pixel geometry.
@@ -207,11 +208,21 @@ internal class MinecraftScrollInputFixture(
         name: String,
     ): Any =
         checkNotNull(
-            owner.javaClass
-                .getDeclaredField(name)
+            member(owner.javaClass, name)
                 .apply { isAccessible = true }
                 .get(owner),
         )
+
+    private fun member(
+        type: Class<*>,
+        name: String,
+    ): Field =
+        try {
+            type.getDeclaredField(name)
+        } catch (missing: NoSuchFieldException) {
+            val parent = type.superclass ?: throw missing
+            member(parent, name)
+        }
 
     private fun findBar(entry: Any): PointerInputNode? {
         val node = field(entry, "node")
