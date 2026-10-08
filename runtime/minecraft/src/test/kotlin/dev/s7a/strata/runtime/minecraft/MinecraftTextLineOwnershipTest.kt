@@ -165,7 +165,12 @@ internal class MinecraftTextLineOwnershipTest {
                 assertNull(field.get(editor))
                 editor.dispose()
                 assertNull(field.get(editor))
-                assertNull(MinecraftTextAreaEditor::class.java.getDeclaredField("current").apply { isAccessible = true }.get(editor))
+                val current =
+                    MinecraftTextAreaEditor::class.java
+                        .getDeclaredField("current")
+                        .apply { isAccessible = true }
+                        .get(editor)
+                assertNull(current)
                 for ((line, snapshot) in original.lines.zip(snapshots)) {
                     assertArrayEquals(snapshot.first, array(line, "offsets"))
                     assertArrayEquals(snapshot.second, array(line, "positions"))
