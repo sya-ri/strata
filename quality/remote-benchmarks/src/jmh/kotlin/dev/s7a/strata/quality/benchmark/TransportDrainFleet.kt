@@ -41,9 +41,10 @@ public class TransportDrainFleet(
     init {
         require(count in setOf(1, 100, 1000))
         peers.forEach { peer ->
-            peer.client = RemoteConnection(emptySet(), RemotePacket.limits) { bytes ->
-                peer.incoming.addLast(RemotePacket.encode(RemotePacket.Frame(checkNotNull(peer.address), peer.sequence++, bytes)))
-            }
+            peer.client =
+                RemoteConnection(emptySet(), RemotePacket.limits) { bytes ->
+                    peer.incoming.addLast(RemotePacket.encode(RemotePacket.Frame(checkNotNull(peer.address), peer.sequence++, bytes)))
+                }
             service.join(peer.index)
             val retained = field(service.javaClass, "peers").get(service) as Map<*, *>
             val owner = checkNotNull(retained[peer.index])

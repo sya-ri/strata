@@ -118,10 +118,11 @@ internal class VelocityScreensTest {
                 val proceed = CountDownLatch(1)
                 val calls = mutableListOf<Int>()
                 val failure = IllegalStateException("command")
-                val blocker = VelocityScreens.execute(fixture.owner) {
-                    entered.countDown()
-                    check(proceed.await(5, TimeUnit.SECONDS))
-                }
+                val blocker =
+                    VelocityScreens.execute(fixture.owner) {
+                        entered.countDown()
+                        check(proceed.await(5, TimeUnit.SECONDS))
+                    }
                 check(entered.await(5, TimeUnit.SECONDS))
                 val requests =
                     try {
@@ -142,9 +143,10 @@ internal class VelocityScreensTest {
                         else -> request.get(5, TimeUnit.SECONDS)
                     }
                 }
-                VelocityScreens.execute(fixture.owner) {
-                    assertEquals((0 until count).filter { it != 2 }, calls)
-                }.get(5, TimeUnit.SECONDS)
+                VelocityScreens
+                    .execute(fixture.owner) {
+                        assertEquals((0 until count).filter { it != 2 }, calls)
+                    }.get(5, TimeUnit.SECONDS)
             }
         }
     }
@@ -250,11 +252,19 @@ internal class VelocityScreensTest {
         }
     }
 
+    @Test
+    fun commandAfterEmptyObservationWaitsForTheNextOwnedTick() {
+        VelocityDrainFixture(VelocityDrainWorkload.Idle, instrumentProbes = true).use { fixture ->
+            val observed = fixture.onOwner { fixture.lateArrival() }
+            assertEquals(listOf(0L, 1L, 7L, 8L), observed)
+        }
+    }
+
     /**
      * Owns one native-channel double and drains real worker output through the client codec.
      */
     @Suppress("StringLiteralComparison") // Dispatches Java reflection method names at the test-double boundary.
-    private class Harness : AutoCloseable {
+    internal class Harness : AutoCloseable {
         val owner = Any()
         val outgoing = LinkedBlockingQueue<ByteArray>()
         val backendMessages = LinkedBlockingQueue<ByteArray>()
@@ -270,6 +280,9 @@ internal class VelocityScreensTest {
             }
         val backend: ServerConnection = replacementBackend()
 
+        /**
+         * Creates one independently authenticated backend route for switch controls.
+         */
         fun replacementBackend(): ServerConnection =
             proxy(ServerConnection::class.java) { name, arguments ->
                 when (name) {
@@ -318,8 +331,14 @@ internal class VelocityScreensTest {
             plugin.initialize(ProxyInitializeEvent())
         }
 
+        /**
+         * Routes a current client packet through the actual plugin message adapter.
+         */
         fun send(bytes: ByteArray): PluginMessageEvent = PluginMessageEvent(player, backend, VelocityScreenService.CHANNEL, bytes).also { plugin.message(it) }
 
+        /**
+         * Completes actual discovery and greeting exchange on the coordinator-owned test client.
+         */
         fun negotiate(discover: Boolean = true): RemoteAddress {
             if (discover) assertFalse(send(RemotePacket.encode(RemotePacket.Discovery)).result.isAllowed)
             client.close()
@@ -337,6 +356,9 @@ internal class VelocityScreensTest {
             error("Proxy negotiation did not complete.")
         }
 
+        /**
+         * Retires one client sequence without sending it, simulating a lost transition packet.
+         */
         fun dropOutgoingFrame() {
             sequence++
         }
@@ -346,6 +368,9 @@ internal class VelocityScreensTest {
                 send(RemotePacket.encode(RemotePacket.Frame(checkNotNull(address), sequence++, it)))
             }
 
+        /**
+         * Decodes the next complete worker message on the test client owner, failing on missing output.
+         */
         fun nextMessage(): RemoteMessage {
             while (true) {
                 val packet = RemotePacket.decode(checkNotNull(outgoing.poll(5, TimeUnit.SECONDS)) { "Missing proxy output." }) as RemotePacket.Frame
@@ -353,12 +378,18 @@ internal class VelocityScreensTest {
             }
         }
 
+        /**
+         * Acknowledges the snapshot control sequence through the actual client codec.
+         */
         @OptIn(InternalStrataRuntimeApi::class)
         fun acknowledge(snapshot: RemoteMessage.Snapshot) {
             client.send(RemoteMessage.ControlApplied(snapshot.session, checkNotNull(snapshot.control).sequence))
             client.flush()
         }
 
+        /**
+         * Sends the snapshot pointer action with its authenticated current binding.
+         */
         fun activate(snapshot: RemoteMessage.Snapshot) {
             val press =
                 snapshot.tree.nodes.values
