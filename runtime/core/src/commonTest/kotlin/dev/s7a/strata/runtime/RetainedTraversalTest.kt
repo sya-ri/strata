@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.runtime.TraversalTestFixture.Kind
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -13,6 +14,7 @@ import kotlin.test.assertTrue
 /**
  * Proves exact current-child membership, reuse, propagation, bounded retention and terminal release on both targets.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal class RetainedTraversalTest {
     @Test
     fun broadTreesRetainOnlyRelevantChildrenAndGeometryDoesNotReplaceTheirLists() {
