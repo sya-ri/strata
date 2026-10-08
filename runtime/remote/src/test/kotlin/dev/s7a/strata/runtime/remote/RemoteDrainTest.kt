@@ -20,7 +20,10 @@ internal class RemoteDrainTest {
             val address = RemoteAddress(RemoteEndpoint.Server)
             RemotePacketStream(address, send = {}).use { stream ->
                 val pending = ProbedPackets()
-                RemotePacketStream::class.java.getDeclaredField("pending").apply { isAccessible = true }.set(stream, pending)
+                RemotePacketStream::class.java
+                    .getDeclaredField("pending")
+                    .apply { isAccessible = true }
+                    .set(stream, pending)
                 repeat(count) { index -> stream.offer(RemotePacket.Frame(address, index + 1L, ByteArray(17) { index.toByte() }), 0) }
                 val delivered = mutableListOf<Int>()
                 stream.drain(1) { delivered.add(it[0].toInt()) }
@@ -40,7 +43,10 @@ internal class RemoteDrainTest {
         val address = RemoteAddress(RemoteEndpoint.Server)
         RemotePacketStream(address, send = {}).use { stream ->
             val pending = ProbedPackets()
-            RemotePacketStream::class.java.getDeclaredField("pending").apply { isAccessible = true }.set(stream, pending)
+            RemotePacketStream::class.java
+                .getDeclaredField("pending")
+                .apply { isAccessible = true }
+                .set(stream, pending)
             stream.offer(RemotePacket.Frame(address, 2, ByteArray(17) { 2 }), 0)
             pending.afterEmpty = { stream.offer(RemotePacket.Frame(address, 1, ByteArray(17) { 1 }), 1) }
             val delivered = mutableListOf<Int>()
@@ -124,7 +130,13 @@ internal class RemoteDrainTest {
         fail = true
         assertSame(failure, assertThrows(IllegalStateException::class.java) { connection.flush() })
         assertNull(connection.capabilities)
-        assertEquals(false, RemoteConnection::class.java.getDeclaredField("sending").apply { isAccessible = true }.get(connection))
+        assertEquals(
+            false,
+            RemoteConnection::class.java
+                .getDeclaredField("sending")
+                .apply { isAccessible = true }
+                .get(connection),
+        )
         assertThrows(IllegalStateException::class.java) { connection.flush() }
         connection.close()
 
@@ -134,7 +146,13 @@ internal class RemoteDrainTest {
             reenter = { guarded.flush() }
             assertThrows(IllegalStateException::class.java) { guarded.flush() }
             assertNull(guarded.capabilities)
-            assertEquals(false, RemoteConnection::class.java.getDeclaredField("sending").apply { isAccessible = true }.get(guarded))
+            assertEquals(
+                false,
+                RemoteConnection::class.java
+                    .getDeclaredField("sending")
+                    .apply { isAccessible = true }
+                    .get(guarded),
+            )
         }
     }
 

@@ -10,7 +10,8 @@ import org.openjdk.jmh.annotations.TearDown
 
 /**
  * Actual negotiated service queues without screens, native classes or presentation work.
- * Includes packet preparation, synchronized ingress and every bounded service tick needed to finish one frozen cycle.
+ * Includes packet preparation, synchronized ingress and every bounded peer tick needed to finish one frozen cycle.
+ * The identical reflection adapter supplies logical timestamps; public tick clock/snapshot/failure orchestration is excluded.
  */
 public open class TransportDrainBenchmark {
     /**

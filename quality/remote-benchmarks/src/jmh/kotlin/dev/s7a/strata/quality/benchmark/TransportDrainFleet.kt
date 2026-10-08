@@ -8,6 +8,7 @@ import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -15,7 +16,9 @@ import java.util.concurrent.TimeUnit
 /**
  * Owns negotiated native-free players and actual transport state for one worker.
  * Each cycle uses monotonically increasing packet/message identities and releases its current input/output bytes.
- * White-box inspection is restricted to untimed assertions; timed operations use the ordinary service API.
+ * The source-verified per-peer runtime tick receives fixed logical timestamps on both revisions.
+ * Timing includes the identical reflection adapter and excludes the public tick's clock/map snapshot/failure wrapper.
+ * Ordinary public-tick contracts separately verify ownership and failed-peer removal.
  */
 public class TransportDrainFleet(
     count: Int,
@@ -24,6 +27,14 @@ public class TransportDrainFleet(
     private val peers = List(count) { Peer(it) }
     private val producer = if (workload == TransportDrainWorkload.BusyProducer) Executors.newSingleThreadExecutor() else null
     private val service = RemoteScreenService<Int, Unit>(RemoteEndpoint.Server, { index, bytes -> peers[index].receive(bytes) }, { throw it })
+    private val tickMethod =
+        RemoteScreenService::class.java
+            .getDeclaredMethod(
+                "tick",
+                Class.forName("${RemoteScreenService::class.java.name}\$Peer"),
+                checkNotNull(Long::class.javaPrimitiveType),
+            ).apply { isAccessible = true }
+    private var logicalMillis = 0L
     private var generation = 0L
     private var closed = false
 
@@ -36,18 +47,19 @@ public class TransportDrainFleet(
             service.join(peer.index)
             val retained = field(service.javaClass, "peers").get(service) as Map<*, *>
             val owner = checkNotNull(retained[peer.index])
+            peer.retained = owner
             val address = RemoteAddress(RemoteEndpoint.Server, UUID(0, peer.index + 1L))
             field(owner.javaClass, "address").set(owner, address)
             field(RemotePacketStream::class.java, "address").set(field(owner.javaClass, "stream").get(owner), address)
             service.enqueue(peer.index, RemotePacket.encode(RemotePacket.Discovery))
         }
-        service.tick()
+        tick()
         peers.forEach { peer ->
             peer.client.flush()
             peer.incoming.forEach { service.enqueue(peer.index, it) }
             peer.incoming.clear()
         }
-        service.tick()
+        tick()
         val retained = field(service.javaClass, "peers").get(service) as Map<*, *>
         peers.forEach { peer ->
             check(service.capabilities(peer.index) != null)
@@ -75,37 +87,48 @@ public class TransportDrainFleet(
             if (0 < workload.frames) peer.client.flush(workload.frames)
         }
         when (workload) {
-            TransportDrainWorkload.SequenceGap -> {
-                peers.forEach { peer -> service.enqueue(peer.index, peer.incoming.removeLast()) }
-                service.tick()
-                peers.forEach { peer -> service.enqueue(peer.index, peer.incoming.removeFirst()) }
-                service.tick()
-            }
-
-            TransportDrainWorkload.BusyProducer -> {
-                peers.forEach { peer ->
-                    peer.afterWrite = {
-                        checkNotNull(producer).submit {
-                            peer.incoming.forEach { service.enqueue(peer.index, it) }
-                            peer.incoming.clear()
-                        }.get(10, TimeUnit.SECONDS)
-                    }
-                    peer.server.send(RemoteMessage.Resynchronize(generation))
-                }
-                service.tick()
-                service.tick()
-                service.tick()
-            }
-
-            else -> {
-                peers.forEach { peer ->
-                    peer.incoming.forEach { service.enqueue(peer.index, it) }
-                    peer.incoming.clear()
-                }
-                repeat(maxOf(1, (workload.frames + 7) / 8)) { service.tick() }
-            }
+            TransportDrainWorkload.SequenceGap -> drainGap()
+            TransportDrainWorkload.BusyProducer -> drainBusy()
+            else -> drainAvailable()
         }
         return peers.sumOf { it.delivered }
+    }
+
+    /**
+     * Admits a later sequence before the missing first frame, retaining it until the next logical tick.
+     */
+    private fun drainGap() {
+        peers.forEach { peer -> service.enqueue(peer.index, peer.incoming.removeLast()) }
+        tick()
+        peers.forEach { peer -> service.enqueue(peer.index, peer.incoming.removeFirst()) }
+        tick()
+    }
+
+    /**
+     * Publishes immutable ingress on a producer after the same peer reaches its outgoing continuation.
+     */
+    private fun drainBusy() {
+        peers.forEach { peer ->
+            peer.afterWrite = {
+                checkNotNull(producer).submit {
+                    peer.incoming.forEach { service.enqueue(peer.index, it) }
+                    peer.incoming.clear()
+                }.get(10, TimeUnit.SECONDS)
+            }
+            peer.server.send(RemoteMessage.Resynchronize(generation))
+        }
+        repeat(3) { tick() }
+    }
+
+    /**
+     * Supplies the current ready burst and completes every eight-frame outgoing budget it requires.
+     */
+    private fun drainAvailable() {
+        peers.forEach { peer ->
+            peer.incoming.forEach { service.enqueue(peer.index, it) }
+            peer.incoming.clear()
+        }
+        repeat(maxOf(1, (workload.frames + 7) / 8)) { tick() }
     }
 
     /**
@@ -144,6 +167,21 @@ public class TransportDrainFleet(
         }
     }
 
+    /**
+     * Calls the unchanged actual peer-tick signature with one frozen logical timestamp for the complete fleet.
+     * Reflective exception wrapping is removed so protocol/callback failure identity remains authoritative.
+     */
+    private fun tick() {
+        logicalMillis++
+        peers.forEach { peer ->
+            try {
+                tickMethod.invoke(service, peer.retained, logicalMillis)
+            } catch (failure: InvocationTargetException) {
+                throw checkNotNull(failure.cause)
+            }
+        }
+    }
+
     private fun field(type: Class<*>, name: String): Field = type.getDeclaredField(name).apply { isAccessible = true }
 
     /**
@@ -155,6 +193,7 @@ public class TransportDrainFleet(
         var delivered = 0L
         var lastMessage = 0L
         val incoming = ArrayDeque<ByteArray>()
+        lateinit var retained: Any
         lateinit var client: RemoteConnection
         lateinit var server: RemoteConnection
         lateinit var stream: RemotePacketStream
