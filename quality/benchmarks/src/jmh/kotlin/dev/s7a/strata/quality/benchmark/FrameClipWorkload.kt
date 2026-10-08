@@ -43,14 +43,20 @@ internal class FrameClipWorkload private constructor(
         check(resolvePrepared() === prepared)
     }
 
-    /** Returns new complete layer descriptions; timing includes the identical reflective invocation on each side. */
+    /**
+     * Returns new complete layer descriptions; timing includes the identical reflective invocation on each side.
+     */
     internal fun partition(): List<*> = checkNotNull(entryPoint.invoke(null, commands, viewport, 1, false, false) as? List<*>)
 
-    /** Returns the primed actual frame inputs through their all-available source-resolution path. */
+    /**
+     * Returns the primed actual frame inputs through their all-available source-resolution path.
+     */
     internal fun resolvePrepared(): Any = checkNotNull(resolve.invoke(prepared, available, available))
 
     companion object {
-        /** Builds balanced original clips, ordinary blits/fills and ordered direct, fallback and platform barriers. */
+        /**
+         * Builds balanced original clips, ordinary blits/fills and ordered direct, fallback and platform barriers.
+         */
         internal fun scene(
             depth: Int,
             primitives: Int,
@@ -96,23 +102,35 @@ internal class FrameClipWorkload private constructor(
             return FrameClipWorkload(commands, IntSize(side, side)).also { check(it.partition().isNotEmpty()) }
         }
 
-        /** Builds bounded control commands with no image or native resource state. */
+        /**
+         * Builds bounded control commands with no image or native resource state.
+         */
         internal fun edge(scenario: FrameClipBenchmark.EdgeCase): FrameClipWorkload {
             val bounds = IntRect(0, 0, 32, 32)
             val fill = DrawCommand.FillRectangle(bounds, ArgbColor(-1))
             val commands =
                 when (scenario) {
-                    FrameClipBenchmark.EdgeCase.EmptyFrame -> emptyList()
+                    FrameClipBenchmark.EdgeCase.EmptyFrame -> {
+                        emptyList()
+                    }
 
-                    FrameClipBenchmark.EdgeCase.ClipOnly -> List(128) { DrawCommand.PushClip(bounds) } + List(128) { DrawCommand.PopClip }
+                    FrameClipBenchmark.EdgeCase.ClipOnly -> {
+                        List(128) { DrawCommand.PushClip(bounds) } + List(128) { DrawCommand.PopClip }
+                    }
 
-                    FrameClipBenchmark.EdgeCase.EmptyClip -> listOf(DrawCommand.PushClip(IntRect(4, 4, 4, 8)), fill, DrawCommand.PopClip)
+                    FrameClipBenchmark.EdgeCase.EmptyClip -> {
+                        listOf(DrawCommand.PushClip(IntRect(4, 4, 4, 8)), fill, DrawCommand.PopClip)
+                    }
 
-                    FrameClipBenchmark.EdgeCase.Offscreen -> listOf(DrawCommand.PushClip(IntRect(40, 40, 48, 48)), fill, DrawCommand.PopClip)
+                    FrameClipBenchmark.EdgeCase.Offscreen -> {
+                        listOf(DrawCommand.PushClip(IntRect(40, 40, 48, 48)), fill, DrawCommand.PopClip)
+                    }
 
-                    FrameClipBenchmark.EdgeCase.LargeEdges -> listOf(DrawCommand.PushClip(IntRect(Int.MIN_VALUE + 1, Int.MIN_VALUE + 1, Int.MAX_VALUE, Int.MAX_VALUE)), fill, DrawCommand.PopClip)
+                    FrameClipBenchmark.EdgeCase.LargeEdges -> {
+                        listOf(DrawCommand.PushClip(IntRect(Int.MIN_VALUE + 1, Int.MIN_VALUE + 1, Int.MAX_VALUE, Int.MAX_VALUE)), fill, DrawCommand.PopClip)
+                    }
 
-                    FrameClipBenchmark.EdgeCase.Siblings ->
+                    FrameClipBenchmark.EdgeCase.Siblings -> {
                         buildList {
                             add(DrawCommand.PushClip(bounds))
                             repeat(128) { index ->
@@ -123,6 +141,7 @@ internal class FrameClipWorkload private constructor(
                             }
                             add(DrawCommand.PopClip)
                         }
+                    }
                 }
             return FrameClipWorkload(commands, IntSize(32, 32)).also {
                 val empty = scenario in setOf(FrameClipBenchmark.EdgeCase.EmptyFrame, FrameClipBenchmark.EdgeCase.ClipOnly, FrameClipBenchmark.EdgeCase.EmptyClip, FrameClipBenchmark.EdgeCase.Offscreen)
@@ -131,13 +150,17 @@ internal class FrameClipWorkload private constructor(
         }
     }
 
-    /** The three ordinary primitive contracts varied without decoding component kinds from scalar values. */
+    /**
+     * The three ordinary primitive contracts varied without decoding component kinds from scalar values.
+     */
     private enum class Primitive {
         Fill,
         LogicalImage,
         PhysicalImage,
     }
 
-    /** An opaque portable-independent platform barrier that never initializes a native drawing implementation. */
+    /**
+     * An opaque portable-independent platform barrier that never initializes a native drawing implementation.
+     */
     private object Marker : PlatformDrawCommand
 }

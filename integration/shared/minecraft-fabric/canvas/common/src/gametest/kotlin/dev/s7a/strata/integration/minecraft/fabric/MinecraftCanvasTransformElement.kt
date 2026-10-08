@@ -19,7 +19,9 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** A fixture-only immutable child translation used to generate raw fractional clips through the real retained core. */
+/**
+ * A fixture-only immutable child translation used to generate raw fractional clips through the real retained core.
+ */
 private class MinecraftCanvasTransformElement(
     private val offset: Double,
     child: Element,
@@ -57,7 +59,9 @@ private class MinecraftCanvasTransformElement(
     }
 }
 
-/** Emits exactly one child under a fixed translation, with no retained callback or native ownership. */
+/**
+ * Emits exactly one child under a fixed translation, with no retained callback or native ownership.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal fun UiScope.canvasTestTransform(
     offset: Double,

@@ -31,12 +31,16 @@ internal class MinecraftFrameClipPerformanceScene(
     private val image = createDrawImage(IntSize(4, 4), IntArray(16) { 0xFF112200.toInt() or it })
     private var revision = 0
 
-    /** Publishes one new paint observation outside the declarative frame; clean controls retain the original observation. */
+    /**
+     * Publishes one new paint observation outside the declarative frame; clean controls retain the original observation.
+     */
     internal fun update() {
         if (case.mode != MinecraftSampledPerformanceCase.Mode.FrameClipsClean) revision += 1
     }
 
-    /** Creates one attachment-scoped binding and bounded clip tree, borrowing the externally owned native source. */
+    /**
+     * Creates one attachment-scoped binding and bounded clip tree, borrowing the externally owned native source.
+     */
     internal fun definition(): UiDefinition =
         UiDefinition(case.name) {
             clips(0, 0.0)

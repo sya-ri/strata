@@ -68,7 +68,9 @@ internal enum class MinecraftSampledPerformanceCase(
         FrameClipsClean,
     }
 
-    /** Raw clip representation produced by alternating fixed child translations before leaf coordinates are restored. */
+    /**
+     * Raw clip representation produced by alternating fixed child translations before leaf coordinates are restored.
+     */
     enum class ClipPattern {
         Integer,
         Fractional,

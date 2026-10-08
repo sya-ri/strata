@@ -6,7 +6,9 @@ import dev.s7a.strata.performance.JvmPerformanceInputs
 import org.openjdk.jmh.annotations.Mode
 import java.nio.file.Path
 
-/** Registers the complete actual-Fabric clip corpus with the existing shared JMH receipt collector. */
+/**
+ * Registers the complete actual-Fabric clip corpus with the existing shared JMH receipt collector.
+ */
 public object FrameClipPerformanceEvidence {
     /**
      * Accepts a fresh output directory, repetition index and ordinary unchanged JMH CLI settings.
