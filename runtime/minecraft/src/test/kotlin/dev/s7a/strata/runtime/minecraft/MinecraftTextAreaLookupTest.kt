@@ -56,7 +56,13 @@ internal class MinecraftTextAreaLookupTest {
                         val actual = fixture.frame(pointer, size)
                         val expected = fixture.frame(scalar, size)
                         assertPixels(expected, actual, size)
-                        assertEquals(UiText.Literal(value), pointer.semantics().single().semantics.value)
+                        val semanticValue =
+                            pointer
+                                .semantics()
+                                .single()
+                                .semantics
+                                .value
+                        assertEquals(UiText.Literal(value), semanticValue)
                         fixture.input(pointer, TextInputEvent.Character('M'.code), size)
                         fixture.input(scalar, TextInputEvent.Character('M'.code), size)
                         assertEquals(value.substring(0, offsets[boundary]) + "M" + value.substring(offsets[boundary]), pointerState.value)
@@ -116,7 +122,12 @@ internal class MinecraftTextAreaLookupTest {
                 editor.dispose()
             }
             assertNull(layout.get(editor))
-            assertNull(MinecraftTextAreaEditor::class.java.getDeclaredField("current").apply { isAccessible = true }.get(editor))
+            val current =
+                MinecraftTextAreaEditor::class.java
+                    .getDeclaredField("current")
+                    .apply { isAccessible = true }
+                    .get(editor)
+            assertNull(current)
             state.observe {}.close()
         }
     }

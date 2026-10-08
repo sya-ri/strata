@@ -29,6 +29,7 @@ internal class MinecraftTextLineLookupTest {
         val coordinates = intArrayOf(-4, -1, 0, 2, 4)
         for (length in 1..7) {
             val positions = IntArray(length)
+
             fun fill(
                 index: Int,
                 minimum: Int,
@@ -167,8 +168,7 @@ internal class MinecraftTextLineLookupTest {
     private fun line(
         positions: IntArray,
         offsets: IntArray = IntArray(positions.size) { it },
-    ): MinecraftTextLine =
-        MinecraftTextLine(offsets.first(), offsets.last(), offsets.last(), emptyRun, offsets, positions)
+    ): MinecraftTextLine = MinecraftTextLine(offsets.first(), offsets.last(), offsets.last(), emptyRun, offsets, positions)
 
     private fun reference(
         positions: IntArray,
