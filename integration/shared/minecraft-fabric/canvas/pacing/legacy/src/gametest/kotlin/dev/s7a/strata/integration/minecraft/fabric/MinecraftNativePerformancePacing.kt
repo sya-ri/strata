@@ -1,6 +1,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.integration.minecraft.fabric.mixin.pacing.MinecraftNativePerformanceClientAccess
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import org.lwjgl.glfw.GLFW
 
@@ -16,6 +17,7 @@ internal fun Minecraft.captureNativeInactivity(lease: MinecraftNativePerformance
 /**
  * Reads the actual private native selector through a remapped fixture-only invoker.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 internal fun Minecraft.nativePerformancePacing(): MinecraftNativePerformancePacing {
     check(isSameThread)
     val selected = (this as MinecraftNativePerformanceClientAccess).strataNativeFramerateLimit()
