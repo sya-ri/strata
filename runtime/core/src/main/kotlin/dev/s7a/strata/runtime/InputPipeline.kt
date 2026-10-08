@@ -56,9 +56,7 @@ internal class InputPipeline(
             is PointerEvent.Press,
             is PointerEvent.Release,
             is PointerEvent.Scroll,
-            -> {
-                Unit
-            }
+            -> {}
         }
         if (event is PointerEvent.Press && event.button === PointerButton.Primary) {
             focusedInputPipeline.acquireFromPointer(root, event.position)
