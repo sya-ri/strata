@@ -31,17 +31,21 @@ internal class SemanticsPipeline(
     ) {
         if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
-            val collector = SemanticsCollector(ownerGuard)
-            try {
-                val semanticsCapability = retained.node as? SemanticsNode
-                if (semanticsCapability != null) {
-                    monitoring.record(UiRenderMetric.Semantics, retained)
-                    semanticsCapability.semantics(collector)
+            val semanticsCapability = retained.node as? SemanticsNode
+            retained.localSemantics =
+                if (semanticsCapability == null) {
+                    ownerGuard.check()
+                    emptyList()
+                } else {
+                    val collector = SemanticsCollector(ownerGuard)
+                    try {
+                        monitoring.record(UiRenderMetric.Semantics, retained)
+                        semanticsCapability.semantics(collector)
+                        collector.snapshot()
+                    } finally {
+                        collector.close()
+                    }
                 }
-                retained.localSemantics = collector.snapshot()
-            } finally {
-                collector.close()
-            }
         }
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
@@ -61,11 +65,24 @@ internal class SemanticsPipeline(
         ownerGuard: OwnerGuard,
     ) : SemanticsScope {
         private val guard = ScopeGuard(ownerGuard)
-        private val values: MutableList<Semantics> = ArrayList()
+        private var first: Semantics? = null
+        private var values: MutableList<Semantics>? = null
 
         override fun emit(semantics: Semantics) {
             guard.check()
-            values.add(semantics)
+            val buffer = values
+            val initial = first
+            if (buffer != null) {
+                buffer.add(semantics)
+            } else if (initial == null) {
+                first = semantics
+            } else {
+                values = ArrayList<Semantics>().also {
+                    it.add(initial)
+                    it.add(semantics)
+                }
+                first = null
+            }
         }
 
         /**
@@ -73,7 +90,7 @@ internal class SemanticsPipeline(
          */
         fun snapshot(): List<Semantics> {
             guard.check()
-            return values.toList()
+            return values?.toList() ?: first?.let { listOf(it) } ?: emptyList()
         }
 
         /**
@@ -81,6 +98,8 @@ internal class SemanticsPipeline(
          */
         fun close() {
             guard.close()
+            first = null
+            values = null
         }
     }
 }
