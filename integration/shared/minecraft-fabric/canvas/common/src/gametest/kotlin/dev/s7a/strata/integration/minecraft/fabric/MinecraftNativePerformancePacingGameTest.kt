@@ -119,7 +119,9 @@ internal object MinecraftNativePerformancePacingGameTest {
         val outcome =
             runCatching {
                 withBorrowedOptions(context) {
-                    context.onClient { captureMinecraftCanvasNativeFrame(blocker.resolve("frame.png")) }.join()
+                    val capture = context.onClient { captureMinecraftCanvasNativeFrame(blocker.resolve("frame.png")) }
+                    context.waitFor { capture.isDone }
+                    capture.join()
                 }
             }
         runCanvasTestCleanup(outcome.exceptionOrNull(), { Files.delete(blocker) })
