@@ -23,6 +23,26 @@ It must not measure, draw, mutate session state, or invoke business handlers.
 CPU Canvas uses its existing committed source binding; virtual lists use their existing bounded row generation and keyed reconciliation.
 No second resource subscription or alternate row model is created by the projection SPI.
 
+## Fixed detached values
+
+The opt-in runtime bridge `DeclarationProjection.fixed` accepts one immutable detached value and never invokes a caller encoder or scope operation.
+Its `fixedValue` is the complete constant output; ordinary constructors expose no fixed-value proof, even after equal results.
+Standard positional property projections use this contract, while action, binding, image, Canvas, tile and other arbitrary encoders retain their ordinary execution behavior.
+Standard layout and modifier descriptions keep their existing projection getters, so this reuse adds no projection creation during local-only description construction.
+
+Core applies the source cutoff, `prepareDeclaration` and dynamic-child reconciliation before selecting a declaration snapshot.
+It reuses a subtree only with the exact current description identities, equal fixed type/enabled/value inputs and unchanged ordered modifier and child snapshots.
+Only fixed subtrees occupy the cache: one current snapshot per retained component, sharing descendant snapshots without keeping a transport history.
+Replacement or removal invalidates ancestor snapshots before node callbacks; session detachment and terminal cleanup clear every current key before resource callbacks.
+This cache is confined to its owning retained tree's execution owner, and stores no authoritative source snapshots or registered actions.
+
+The owner-tree `RuntimeDeclaration.revision` is separate from retained node identity and the adapter's wire revision.
+An arbitrary encoder or changed subtree always advances that projection revision; equal opaque wire output still executes its encoder and refreshes current endpoints.
+A remote session may reuse its validated tree for an unchanged complete fixed root revision under the same session, supported types and negotiated limits.
+The server retains the primitive revision and its existing detached tree, without retaining a runtime declaration or local callback as a key.
+Preparation, source commitment, UI controls, acknowledgements and cleanup continue through the ordinary session boundary.
+Fixed metadata construction and equality are still work and belong in performance measurements.
+
 ## Scoped actions and bindings
 
 The encoder receives a callback-lifetime `ProjectionScope`.

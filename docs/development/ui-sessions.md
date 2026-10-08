@@ -76,6 +76,9 @@ This shared behavior applies to Minecraft hosts in both headless tests and Fabri
 The bridge delegates exact primary-failure identity, suppression order, lifecycle transitions, and cleanup-once behavior to the retained session.
 `projectDeclarations` uses the same frame operation, source cutoff, state-read tracking, deferred evaluation, and reconciliation while skipping measurement, layout, paint, and semantics.
 It prepares declaration-specific derived metadata and bounded dynamic children, then exposes callback-local retained IDs and descriptions to a projection adapter.
+Declaration-only projection always completes the source cutoff and resource/dynamic-child preparation before considering reuse.
+The [fixed declaration contract](../reference/declaration-projection.md#fixed-detached-values) owns complete keys, current-state bounds, revisions and release behavior.
+Arbitrary encoders continue to run on every projection, including when their previous wire output was equal.
 `dispatchAction` runs an already authenticated and decoded remote handler through the input operation without requiring a rendered frame; it does not perform transport validation itself.
 Both operations preserve the ordinary no-state-mutation-during-declaration rule and terminal failure cleanup.
 It retains the content lambda while created, attached, or detached and releases it before cleanup callbacks after terminal failure or close.

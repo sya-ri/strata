@@ -628,7 +628,9 @@ A changed label may legitimately invalidate ancestor measurement.
 The core declaration cutoff creates owned child and modifier lists after reconciliation and reads each live projection again.
 Its internal snapshot constructor takes exclusive ownership of these fresh lists instead of copying them a second time.
 Empty and singleton snapshots use their exact list forms without intermediate map buffers.
-Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
+Later reconciliation and terminal close cannot mutate lists in an earlier snapshot.
+The separate [fixed declaration contract](../reference/declaration-projection.md#fixed-detached-values) permits current-tree sharing and completed remote-tree reuse only for a complete unchanged fixed subtree.
+Arbitrary encoders still run on every cutoff, including endpoint registration when their previous detached output was equal.
 The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
 
 ### Remote topology allocation

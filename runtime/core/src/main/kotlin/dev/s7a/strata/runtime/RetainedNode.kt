@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.node.Node
+import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 
@@ -26,6 +27,32 @@ internal class RetainedNode(
      * State reads of the current deferred callback, released before node cleanup.
      */
     var contentObservation: StateObservation? = null
+
+    /**
+     * One current fixed subtree snapshot shared with ancestors; opaque encoders never occupy this cache.
+     * Description/projection/ordered-child changes invalidate it, and detach or cleanup clears it before callbacks.
+     */
+    var declarationSnapshot: RuntimeDeclaration? = null
+
+    /**
+     * Retires this description key and every ancestor key before replacement or removal callbacks can run.
+     */
+    fun invalidateDeclarationSnapshot() {
+        var current: RetainedNode? = this
+        // A cached ancestor requires each child to have its own fixed current snapshot.
+        while (current != null && current.declarationSnapshot != null) {
+            current.declarationSnapshot = null
+            current = current.logicalParent
+        }
+    }
+
+    /**
+     * Releases the complete current snapshot set before session-scoped resources are detached.
+     */
+    fun releaseDeclarationSnapshots() {
+        declarationSnapshot = null
+        children.forEach(RetainedNode::releaseDeclarationSnapshots)
+    }
 
     override val effectiveChildCount: Int
         get() = children.size
