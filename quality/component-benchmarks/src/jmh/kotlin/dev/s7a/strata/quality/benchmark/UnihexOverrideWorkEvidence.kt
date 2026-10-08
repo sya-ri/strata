@@ -59,7 +59,14 @@ public object UnihexOverrideWorkEvidence {
             try {
                 val source = UnihexOverrideAssets.source(scenario)
                 val document = checkNotNull(source.read("assets/minecraft/font/default.json"))
-                val ranges = JsonParser.parseString(document.toString(Charsets.UTF_8)).asJsonObject.getAsJsonArray("providers").single().asJsonObject.getAsJsonArray("size_overrides")
+                val ranges =
+                    JsonParser
+                        .parseString(document.toString(Charsets.UTF_8))
+                        .asJsonObject
+                        .getAsJsonArray("providers")
+                        .single()
+                        .asJsonObject
+                        .getAsJsonArray("size_overrides")
                 val trace = state.trace()
                 val scalars = UnihexOverrideAssets.scalars(scenario)
                 check(trace.size == scalars.size)
@@ -143,15 +150,29 @@ public object UnihexOverrideWorkEvidence {
     }
 
     private fun indexRetention(state: UnihexOverrideBenchmark.OverrideSession): JsonObject {
-        val engine = state.javaClass.getDeclaredField("engine").apply { isAccessible = true }.get(state) as MinecraftFontEngine
+        val engine =
+            state.javaClass
+                .getDeclaredField("engine")
+                .apply { isAccessible = true }
+                .get(state) as MinecraftFontEngine
         val field = engine.javaClass.declaredFields.firstOrNull { it.name == "unihexIndexes" }
         val indexes = field?.apply { isAccessible = true }?.get(engine) as? Map<*, *> ?: emptyMap<Any, Any>()
         var segments = 0L
         var bytes = 0L
         indexes.values.forEach { value ->
             val index = checkNotNull(value)
-            segments += index.javaClass.getDeclaredField("segmentCount").apply { isAccessible = true }.getInt(index)
-            bytes += (index.javaClass.getDeclaredField("starts").apply { isAccessible = true }.get(index) as IntArray).size.toLong() * 8L
+            segments +=
+                index.javaClass
+                    .getDeclaredField("segmentCount")
+                    .apply { isAccessible = true }
+                    .getInt(index)
+            bytes +=
+                (
+                    index.javaClass
+                        .getDeclaredField("starts")
+                        .apply { isAccessible = true }
+                        .get(index) as IntArray
+                ).size.toLong() * 8L
         }
         check(bytes <= 512 * 1024L)
         return JsonObject().apply {
@@ -182,13 +203,14 @@ public object UnihexOverrideWorkEvidence {
         return FontRasterAssets.digest(bytes.array())
     }
 
-    private fun glyphRecord(glyph: MinecraftFontGlyph): JsonObject = JsonObject().apply {
-        addProperty("advance_bits", glyph.advance.toBits())
-        add("metric_bits", JsonArray().apply { listOf(glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.boldOffset, glyph.shadowOffset).forEach { add(it.toBits()) } })
-        addProperty("channel", glyph.channel.name)
-        addProperty("orientation", glyph.orientation.name)
-        addProperty("width", glyph.image?.size?.width)
-        addProperty("height", glyph.image?.size?.height)
-        addProperty("argb_sha256", glyph.image?.let { digest(it.copyArgb()) })
-    }
+    private fun glyphRecord(glyph: MinecraftFontGlyph): JsonObject =
+        JsonObject().apply {
+            addProperty("advance_bits", glyph.advance.toBits())
+            add("metric_bits", JsonArray().apply { listOf(glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.boldOffset, glyph.shadowOffset).forEach { add(it.toBits()) } })
+            addProperty("channel", glyph.channel.name)
+            addProperty("orientation", glyph.orientation.name)
+            addProperty("width", glyph.image?.size?.width)
+            addProperty("height", glyph.image?.size?.height)
+            addProperty("argb_sha256", glyph.image?.let { digest(it.copyArgb()) })
+        }
 }

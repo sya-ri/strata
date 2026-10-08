@@ -202,11 +202,12 @@ public open class UnihexOverrideBenchmark {
         /**
          * Alternates actual source text and extracts the resulting dirty frame.
          */
-        public fun dirtyFrame(): RuntimeUiFrame = frame {
-            phase = 1 - phase
-            textSource.publish(texts[phase])
-            host.frame(viewport, FrameTime(0))
-        }
+        public fun dirtyFrame(): RuntimeUiFrame =
+            frame {
+                phase = 1 - phase
+                textSource.publish(texts[phase])
+                host.frame(viewport, FrameTime(0))
+            }
 
         /**
          * Detached first Text frame from an independently closed host.
@@ -246,10 +247,11 @@ public open class UnihexOverrideBenchmark {
 
         private fun freshHost(selected: MinecraftUiProfile): MinecraftUiHost = createMinecraftUiHost(UiDefinition("Ordered Unihex text") { Observe(textSource) { Text(it, TextLayout.Multiline()) } }, selected, fontBackend = LwjglMinecraftFontBackendFactory)
 
-        private fun extract(selected: MinecraftUiProfile): RuntimeUiFrame = freshHost(selected).use { owner ->
-            owner.attach()
-            owner.frame(viewport, FrameTime(0))
-        }
+        private fun extract(selected: MinecraftUiProfile): RuntimeUiFrame =
+            freshHost(selected).use { owner ->
+                owner.attach()
+                owner.frame(viewport, FrameTime(0))
+            }
 
         private inline fun frame(crossinline operation: () -> RuntimeUiFrame): RuntimeUiFrame = monitor?.sample { operation() } ?: operation()
     }

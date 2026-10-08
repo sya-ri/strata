@@ -34,8 +34,26 @@ internal object UnihexOverrideAssets {
                 JsonObject().apply {
                     addProperty("from", String(Character.toChars(if (hit || overlap) first else 10_000 + position * 2)))
                     addProperty("to", String(Character.toChars(if (hit || overlap) first + 63 else 10_001 + position * 2)))
-                    addProperty("left", if (scenario == UnihexOverrideScenario.Padding) -1 else if (overlap) 1 else 0)
-                    addProperty("right", if (scenario == UnihexOverrideScenario.Padding) 8 else if (overlap) position else 7)
+                    addProperty(
+                        "left",
+                        if (scenario == UnihexOverrideScenario.Padding) {
+                            -1
+                        } else if (overlap) {
+                            1
+                        } else {
+                            0
+                        },
+                    )
+                    addProperty(
+                        "right",
+                        if (scenario == UnihexOverrideScenario.Padding) {
+                            8
+                        } else if (overlap) {
+                            position
+                        } else {
+                            7
+                        },
+                    )
                 },
             )
         }
