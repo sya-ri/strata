@@ -26,8 +26,8 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.nio.file.Files
 import java.nio.file.Path
-import javax.imageio.ImageIO
 import java.util.concurrent.atomic.AtomicReference
+import javax.imageio.ImageIO
 
 /**
  * Uses normal packaged NativeImage and the actual optional decoder helper, never copied cache algorithms or loaders.
@@ -51,10 +51,15 @@ internal class ResourceImageDecodeWorkload(
     private val nativeHeight = nativeType.getMethod("getHeight")
     private val nativePixels =
         Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftNativeImageBridgeKt")
-            .declaredMethods.single { it.name.substringBefore('$') == "copyFabricMinecraftArgbPixels" }
+            .declaredMethods
+            .single { it.parameterCount == 1 && it.parameterTypes[0] == nativeType && it.returnType == IntArray::class.java }
             .apply { isAccessible = true }
     private val cacheType = optionalCache()
-    private val decodedConstructor = cacheType?.declaredClasses?.single { it.simpleName == "Decoded" }?.getConstructor(IntSize::class.java, IntArray::class.java)
+    private val decodedConstructor =
+        cacheType
+            ?.declaredClasses
+            ?.flatMap { it.constructors.toList() }
+            ?.single { it.parameterTypes.contentEquals(arrayOf(IntSize::class.java, IntArray::class.java)) }
     private val loadMethod = cacheType?.getMethod("load", Any::class.java, Function0::class.java)
     private val closeMethod = cacheType?.getMethod("close", Any::class.java, Boolean::class.javaPrimitiveType)
     private var operation = 0
@@ -189,7 +194,7 @@ internal class ResourceImageDecodeWorkload(
         try {
             method.invoke(receiver, *arguments) ?: Unit
         } catch (failure: InvocationTargetException) {
-            throw failure.targetException
+            throw failure.cause ?: failure
         }
 
     private inner class Session : AutoCloseable {
