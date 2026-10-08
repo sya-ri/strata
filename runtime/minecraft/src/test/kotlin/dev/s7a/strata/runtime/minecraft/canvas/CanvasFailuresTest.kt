@@ -94,8 +94,7 @@ internal class CanvasFailuresTest {
             }
             inner.throwIfPresent()
         }
-        outer.attempt { throw second }
-        outer.attempt { throw third }
+        listOf(second, third).forEach { failure -> outer.attempt { throw failure } }
         outer.attempt { completed += 1 }
 
         assertEquals(4, completed)
