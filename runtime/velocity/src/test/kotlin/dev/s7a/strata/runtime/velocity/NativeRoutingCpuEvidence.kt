@@ -99,6 +99,7 @@ internal object NativeRoutingCpuEvidence {
             }
             val verify = {
                 if (phase == NativeRoutingPhase.Callback) verifyCounts(fixture.verifyCallback(), expected)
+                if (phase == NativeRoutingPhase.OwnerProcessing) verifyCounts(fixture.verifyOwnerProcessing(), expected)
                 fixture.finish()
             }
             val operation = {

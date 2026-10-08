@@ -516,6 +516,7 @@ Prepared peers use the original scheduled action on its actual worker, fixed inc
 `NativeRoutingCpuEvidence` consumes the shared 100-warm-up/200-sample runner for 266 rows: 114 actual callbacks, 114 public full-decoder controls and 38 separate client-to-proxy owner phases.
 Only the selected operation is timed; event construction, setup, parity, worker dispatch/waits, teardown and debugger instrumentation are outside each interval.
 The callback meter runs on its caller; owner processing runs on the actual UI thread, with identical declared tick pacing on both runtimes.
+Owner verification checks the actual final inner identity, empty framing/reorder storage and complete logical assembly length against the independent literal input; timeout or partial-transfer cleanup cannot certify a completed row.
 `NativeRoutingProbeEvidence` launches an untimed frozen-classpath child and observes actual event-accessor arrays, public decoder returns, forwarded array identities, inbox offers/snapshots and assembly returns in disjoint intervals.
 It requires supported JDI method-return values and emits observed scalars after releasing each row's bounded debugger references; debugger suspension and child duration never become CPU evidence.
 The probe checks forwarding uses the actual accessor-returned storage and the actual proxy snapshot differs from that storage, without assuming the pinned event getter's implementation.

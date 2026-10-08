@@ -17,6 +17,7 @@ import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.runtime.velocity.VelocityScreensTest.Harness
 import java.lang.reflect.Field
+import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.FutureTask
@@ -49,6 +50,7 @@ internal class NativeRoutingFixture(
     private var events = emptyList<PluginMessageEvent>()
     private val results = mutableListOf<EventTask?>()
     private var peers = emptyList<Any>()
+    private var initialIncoming = emptyList<Long>()
     private var closed = false
     private val ticker =
         runCatching {
@@ -100,7 +102,12 @@ internal class NativeRoutingFixture(
                 }
             }
             ticker.run()
-            actors.forEach { check(host.capabilities(it.player) != null) }
+            actors.forEach { checkNotNull(host.capabilities(it.player)) }
+            initialIncoming = peers.map { peer ->
+                val connection = field(peer.javaClass, "connection").get(peer) as RemoteConnection
+                val framing = checkNotNull(field(connection.javaClass, "framing").get(connection))
+                field(framing.javaClass, "lastIncoming").getLong(framing)
+            }
         }
         actors.forEach { actor ->
             actor.clear()
@@ -155,6 +162,31 @@ internal class NativeRoutingFixture(
         repeat(count) { ticker.run() }
         return count
     }
+
+    /**
+     * Proves complete actual owner consumption or cancellation independently of callback parity and elapsed values.
+     * A timed-out partial transfer cannot count as a completed near-limit row merely because disconnect clears it.
+     */
+    fun verifyOwnerProcessing(): Map<String, Long> =
+        onOwner {
+            val validSource = skipsRouting().not() && invalidPacket().not() && workload != NativeRoutingWorkload.UnknownSender
+            val frame = validSource && workload != NativeRoutingWorkload.Discovery
+            val proxy = direction == NativeRoutingDirection.ClientProxy || workload == NativeRoutingWorkload.ProxyImpersonation
+            val playerProxy = direction != NativeRoutingDirection.BackendClient && proxy
+            val callbackRan = results.size == events.size
+            val consumed = frame && playerProxy && callbackRan
+            peers.forEachIndexed { index, peer ->
+                val connection = field(peer.javaClass, "connection").get(peer) as RemoteConnection
+                val framing = checkNotNull(field(connection.javaClass, "framing").get(connection))
+                check(field(framing.javaClass, "lastIncoming").getLong(framing) == if (consumed) 2L else initialIncoming[index])
+                check(field(framing.javaClass, "pending").get(framing) == null)
+                val stream = field(peer.javaClass, "stream").get(peer) as RemotePacketStream
+                check((field(stream.javaClass, "pending").get(stream) as Map<*, *>).isEmpty())
+            }
+            val assembled = if (consumed) packets.sumOf { ByteBuffer.wrap(it.first()).getInt(34).toLong() } else 0L
+            val transfers = if (consumed) peers.size.toLong() else 0L
+            mapOf("owner_consumed_or_cancelled_transfers" to transfers, "expected_assembly_bytes" to assembled)
+        }
 
     /**
      * Runs inline on the existing owner or dispatches from the coordinator; dispatch/wait stays outside owner samples.
@@ -220,6 +252,7 @@ internal class NativeRoutingFixture(
      */
     fun finish() {
         onOwner { processOwner() }
+        verifyOwnerProcessing()
         field(plugin.javaClass, "screens").set(plugin, service)
         onOwner {
             val disconnected = actors.map { service.disconnect(it.player) }
@@ -236,6 +269,7 @@ internal class NativeRoutingFixture(
         events = emptyList()
         results.clear()
         peers = emptyList()
+        initialIncoming = emptyList()
         actors.forEach(NativeRoutingPlayer::clear)
     }
 
@@ -266,6 +300,7 @@ internal class NativeRoutingFixture(
         events = emptyList()
         results.clear()
         peers = emptyList()
+        initialIncoming = emptyList()
         actors.forEach(NativeRoutingPlayer::clear)
     }
 

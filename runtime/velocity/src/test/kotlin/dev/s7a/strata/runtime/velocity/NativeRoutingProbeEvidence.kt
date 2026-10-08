@@ -123,6 +123,9 @@ internal object NativeRoutingProbeEvidence {
                     check(measured.get("inbox_snapshot_packets").asLong == row.getAsJsonObject("work").get("owner_inbox_packets").asLong)
                     check(measured.get("inbox_snapshot_bytes").asLong == row.getAsJsonObject("work").get("owner_inbox_snapshot_bytes").asLong)
                 }
+                if (NativeRoutingPhase.valueOf(row.get("phase").asString) == NativeRoutingPhase.OwnerProcessing) {
+                    check(measured.get("assembled_bytes").asLong == row.getAsJsonObject("work").get("expected_assembly_bytes").asLong) { "Actual owner assembly must complete the full independent logical reference" }
+                }
                 row.add("probes", measured)
             }
             report.addProperty("contract", "native-routing-return-arrays-v1")

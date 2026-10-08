@@ -57,6 +57,7 @@ internal object NativeRoutingProbeTarget {
             }
             val value = if (phase == NativeRoutingPhase.OwnerProcessing) fixture.onOwner(operation) else operation()
             if (phase == NativeRoutingPhase.Callback) work.putAll(fixture.verifyCallback())
+            if (phase == NativeRoutingPhase.OwnerProcessing) work.putAll(fixture.verifyOwnerProcessing())
             val row = JsonObject().apply {
                 addProperty("players", players)
                 addProperty("workload", workload.name)
