@@ -122,35 +122,22 @@ tasks.register<JavaExec>("jmhHistorical") {
     val short = quick || smoke
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
-    val targeted = providers.gradleProperty("strata.performance.workloads").isPresent || providers.gradleProperty("strata.performance.parameters").isPresent
-    val nonuniform = providers.gradleProperty("strata.performance.nonuniformOverlay").map(String::toBooleanStrict).getOrElse(false)
-    val sampledRaster = providers.gradleProperty("strata.performance.sampledRaster").map(String::toBooleanStrict).getOrElse(false)
-    val denseSampledRaster = providers.gradleProperty("strata.performance.denseSampledRaster").map(String::toBooleanStrict).getOrElse(false)
-    val childLayout = providers.gradleProperty("strata.performance.childLayout").map(String::toBooleanStrict).getOrElse(false)
-    val coldImage = providers.gradleProperty("strata.performance.coldImage").map(String::toBooleanStrict).getOrElse(false)
-    val semanticsFrame = providers.gradleProperty("strata.performance.semanticsFrame").map(String::toBooleanStrict).getOrElse(false)
-    require(semanticsFrame.not() || (smoke.not() && childLayout.not() && coldImage.not() && nonuniform.not() && sampledRaster.not() && denseSampledRaster.not())) { "Semantics frame handoff is a separate corpus" }
-    if (semanticsFrame) systemProperty("strata.performance.semanticsFrame", true)
-    require(childLayout.not() || (smoke.not() && nonuniform.not() && sampledRaster.not() && denseSampledRaster.not() && coldImage.not())) { "Child geometry is a separate corpus" }
-    if (childLayout) systemProperty("strata.performance.childLayout", true)
-    require(coldImage.not() || (smoke.not() && nonuniform.not() && sampledRaster.not() && denseSampledRaster.not())) { "Cold images are a separate corpus" }
-    if (coldImage) systemProperty("strata.performance.coldImage", true)
-    require(nonuniform.not() || smoke.not()) { "Nonuniform overlays are a separate full-default corpus" }
-    require(sampledRaster.not() || (smoke.not() && nonuniform.not())) { "Sampled rasters are a separate full-default corpus" }
-    require(denseSampledRaster.not() || (smoke.not() && nonuniform.not() && sampledRaster.not())) { "Dense sampled rasters are a separate full-default corpus" }
-    systemProperty("strata.performance.nonuniformOverlay", nonuniform)
-    systemProperty("strata.performance.sampledRaster", sampledRaster)
-    // Keep existing corpus fork arguments identical when the independent dense corpus is absent.
-    if (denseSampledRaster) systemProperty("strata.performance.denseSampledRaster", true)
-    val suite = (if (semanticsFrame) "semantics-frame" else if (childLayout) "child-layout" else if (coldImage) "cold-image" else if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (quick) "-quick" else "") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
-    providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
-    providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
-    val quickSmoke = quick && semanticsFrame.not() && childLayout.not() && coldImage.not() && targeted.not() && denseSampledRaster.not() && sampledRaster.not() && nonuniform.not()
-    val includes = if (semanticsFrame) "SemanticsFrameBenchmark.*" else if (childLayout) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*" else if (coldImage) "ColdImageBenchmark.*" else if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke || quickSmoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    require(listOf("semanticsFrame", "childLayout", "coldImage", "denseSampledRaster", "sampledRaster", "nonuniformOverlay").none { providers.gradleProperty("strata.performance.$it").isPresent }) { "Select generated fixture classes with strata.performance.benchmarks" }
+    val selected = listOf("benchmarks", "workloads", "parameters").any { providers.gradleProperty("strata.performance.$it").isPresent }
+    val label = providers.gradleProperty("strata.performance.suite").getOrElse(if (selected) "selected" else "historical")
+    require(label.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*"))) { "Invalid performance output suite name" }
+    val suite = label + (if (smoke) "-smoke" else "") + (if (quick) "-quick" else "") + (if (mode == "sample") "-sample" else "")
+    listOf("benchmarks", "workloads").forEach { name ->
+        providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", it) }
+    }
+    listOf("parameters", "fixtureInputs").forEach { name ->
+        providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", rootProject.file(it).absolutePath) }
+    }
+    val quickSmoke = quick && selected.not()
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    args(result.get().absolutePath, repetition.toString(), ".*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.smoke", smoke || quickSmoke)
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")

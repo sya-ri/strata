@@ -72,7 +72,7 @@ Cleanup clears every marker and offset before input or lifecycle callbacks, incl
 Common JVM and JavaScript tests cover duplicate operations, unmeasured reads and placement, sparse child changes, layout-only updates, keyed reordering and replacement, effective modifier-parent changes, current paint/input/semantics geometry, and cleanup after disposal failure.
 These markers track existing phase participation; they do not skip required measure or layout callbacks or retain historical child lists.
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
-Its `jmhHistorical -Pstrata.performance.childLayout=true` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
+Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
 ### Current-tree frame callbacks
 
@@ -194,12 +194,12 @@ Independent per-pixel regression covers both paths, nonuniform destination alpha
 
 `DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.
 Compiled JMH include filters must select exactly the registered method names before forks start; a similarly named supplemental benchmark cannot extend an existing corpus implicitly.
-Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.denseSampledRaster=true` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
+Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
 
 `DestinationPaletteBenchmark` is a separate 15-case corpus of transparent, translucent and opaque uniform backgrounds, per-pixel heterogeneity and an ARGB change after the first 16 destinations, each with 1, 16 or 256 source alpha bytes.
-Run `:quality:benchmarks:jmhHistorical -Pstrata.performance.destinationPalette=true`; source and background construction stay outside measurement, and each operation owns a fresh 128 by 64 raster and its scratch.
+Run `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DestinationPaletteBenchmark -Pstrata.performance.suite=destination-palette`; source and background construction stay outside measurement, and each operation owns a fresh 128 by 64 raster and its scratch.
 Its one-to-one sampling prevents magnified spans and repeated source rows from hiding destination-table allocation; it leaves the historical and other independent matrices unchanged.
 
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.

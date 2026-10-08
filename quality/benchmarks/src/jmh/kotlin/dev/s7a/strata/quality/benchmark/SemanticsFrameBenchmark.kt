@@ -14,6 +14,7 @@ import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -240,7 +241,9 @@ public open class SemanticsFrameBenchmark {
         /**
          * Verifies rebuilt output, clean-frame reuse and close for all twenty-five collection cases.
          */
+        @JvmStatic
         public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(SemanticsFrameBenchmark::class.java), setOf("avgt")).size == 25)
             for (count in listOf(0, 1, 128, 1_000, 10_000)) {
                 val scene = Scene()
                 scene.semanticsCount = count
