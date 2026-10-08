@@ -181,8 +181,7 @@ internal class ContainerDeclarationFixture(
     fun verifyWork() {
         val originalDeclaration = construct(0)
         val originalLeaves = leaves(originalDeclaration)
-        val expectedOrdinals =
-            if (shape.template) List(shape.groups) { (0 until shape.width).toList() }.flatten() else (0 until leafCount).toList()
+        val expectedOrdinals = expectedOrdinals()
         check(originalLeaves.map { it.ordinal } == expectedOrdinals)
         val tileLayers = if (container == Container.TiledImage) parentCount else 0
         val outerStacks = if (shape.groups == 1) 0 else 1
@@ -211,7 +210,7 @@ internal class ContainerDeclarationFixture(
             check(counts.measures == measures && counts.paints == paints + leafCount && counts.semantics == semantics + leafCount)
             verifyFrame(frame, expected, version.value)
             check(session.frame(constraints) === frame)
-            check(originalLeaves.map { it.ordinal } == expectedOrdinals)
+            check(originalLeaves.map { leaf -> leaf.ordinal } == expectedOrdinals)
             check(originalDeclaration.children.size == shape.groups)
             check(originalFrame.semantics == oldSemantics)
             check(pixels(originalFrame).contentEquals(oldPixels))
@@ -294,6 +293,8 @@ internal class ContainerDeclarationFixture(
     }
 
     private fun leaves(element: Element): List<LeafElement> = if (element is LeafElement) listOf(element) else element.children.flatMap(::leaves)
+
+    private fun expectedOrdinals(): List<Int> = if (shape.template) List(shape.groups) { (0 until shape.width).toList() }.flatten() else (0 until leafCount).toList()
 
     private fun elementCount(element: Element): Int = 1 + element.children.sumOf(::elementCount)
 
@@ -413,6 +414,9 @@ internal class ContainerDeclarationFixture(
         }
     }
 
+    /**
+     * Independent geometry, paint and semantics arithmetic plus isolated parent-data session checks.
+     */
     internal companion object {
         private fun color(
             ordinal: Int,
