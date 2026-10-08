@@ -5,7 +5,9 @@ package dev.s7a.strata.runtime.velocity
  * BusyProducer starts with one callback that admits the other 64 commands from a separate producer before emptiness.
  * Arrival after an empty observation is a separate untimed latency control.
  */
-internal enum class VelocityDrainWorkload(val commands: Int) {
+internal enum class VelocityDrainWorkload(
+    val commands: Int,
+) {
     Idle(0),
     One(1),
     Seven(7),

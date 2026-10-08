@@ -69,7 +69,11 @@ public object TransportDrainCpuEvidence {
     /**
      * Uses the shared owner meter for one fixed matrix row; provenance and work assertions stay outside timing.
      */
-    private fun collect(peers: Int, workload: TransportDrainWorkload, plan: PerformancePlan): JsonObject {
+    private fun collect(
+        peers: Int,
+        workload: TransportDrainWorkload,
+        plan: PerformancePlan,
+    ): JsonObject {
         val batch = maxOf(1, 1000 / (peers * maxOf(1, workload.frames)))
         return TransportDrainFleet(peers, workload).use { fleet ->
             val sample =

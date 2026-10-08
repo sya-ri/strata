@@ -28,13 +28,14 @@ internal object VelocityDrainCpuEvidence {
         require(args.size == 2)
         val repetition = args[1].toInt()
         require(repetition in 0..2)
-        val targets = mapOf(
-            "api" to "dev.s7a.strata.projection.ProjectionValue",
-            "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
-            "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
-            "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
-            "velocity" to "dev.s7a.strata.runtime.velocity.VelocityScreens",
-        )
+        val targets =
+            mapOf(
+                "api" to "dev.s7a.strata.projection.ProjectionValue",
+                "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
+                "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
+                "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
+                "velocity" to "dev.s7a.strata.runtime.velocity.VelocityScreens",
+            )
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
         val identity = ArtifactIdentity.applicationTrees(listOf(VelocityDrainFixture::class.java, VelocityDrainWorkload::class.java, javaClass))
@@ -87,7 +88,11 @@ internal object VelocityDrainCpuEvidence {
     /**
      * Uses the shared fixed owner-thread plan; probe collection never enters a measured interval.
      */
-    private fun collect(workload: VelocityDrainWorkload, plan: PerformancePlan, controls: WorkControls): JsonObject =
+    private fun collect(
+        workload: VelocityDrainWorkload,
+        plan: PerformancePlan,
+        controls: WorkControls,
+    ): JsonObject =
         VelocityDrainFixture(workload).use { fixture ->
             fixture.onOwner {
                 val batch = maxOf(1, 1000 / maxOf(1, workload.commands))
@@ -114,7 +119,10 @@ internal object VelocityDrainCpuEvidence {
     /**
      * Detached untimed scalar controls, retained separately from all measured owner intervals.
      */
-    private data class WorkControls(val probes: Long, val lateArrival: List<Long>)
+    private data class WorkControls(
+        val probes: Long,
+        val lateArrival: List<Long>,
+    )
 
     private fun environment(): JsonObject =
         Gson()

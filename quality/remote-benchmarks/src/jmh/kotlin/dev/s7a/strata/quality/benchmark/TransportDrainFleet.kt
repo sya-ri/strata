@@ -183,12 +183,17 @@ public class TransportDrainFleet(
         }
     }
 
-    private fun field(type: Class<*>, name: String): Field = type.getDeclaredField(name).apply { isAccessible = true }
+    private fun field(
+        type: Class<*>,
+        name: String,
+    ): Field = type.getDeclaredField(name).apply { isAccessible = true }
 
     /**
      * Holds only the current routed frames and scalar sequence/delivery provenance for one authenticated player.
      */
-    private class Peer(val index: Int) {
+    private class Peer(
+        val index: Int,
+    ) {
         var address: RemoteAddress? = null
         var sequence = 1L
         var delivered = 0L
