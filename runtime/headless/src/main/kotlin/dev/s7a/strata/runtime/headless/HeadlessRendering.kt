@@ -575,12 +575,22 @@ private object HeadlessImplementation {
         val sourceHeight = command.source.height.toLong()
         val destinationWidth = bounds.width.toLong()
         val destinationHeight = bounds.height.toLong()
+        val sourceXs =
+            IntegerBlitColumns.create(left, right, bottom - top) { logicalX ->
+                val destinationX = Math.subtractExact(logicalX, bounds.left)
+                RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
+            }
         for (logicalY in top until bottom) {
             val destinationY = Math.subtractExact(logicalY, bounds.top)
             val sourceY = RasterMath.sampleSourceCoordinate(destinationY, command.source.top, sourceHeight, destinationHeight)
             for (logicalX in left until right) {
-                val destinationX = Math.subtractExact(logicalX, bounds.left)
-                val sourceX = RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
+                val sourceX =
+                    if (sourceXs == null) {
+                        val destinationX = Math.subtractExact(logicalX, bounds.left)
+                        RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
+                    } else {
+                        sourceXs[logicalX - left]
+                    }
                 val sourceColor = command.image.argbAt(sourceX, sourceY)
                 paintLogicalPixel(pixels, dimensions, logicalX, logicalY, sourceColor, clip)
             }
@@ -661,11 +671,13 @@ private object HeadlessImplementation {
         val right = minOf(Math.multiplyExact(visible.right, scale), clip?.right ?: dimensions.physicalBounds.right)
         val top = maxOf(Math.multiplyExact(visible.top, scale), clip?.top ?: dimensions.physicalBounds.top)
         val bottom = minOf(Math.multiplyExact(visible.bottom, scale), clip?.bottom ?: dimensions.physicalBounds.bottom)
+        val sourceXs = IntegerBlitColumns.create(left, right, bottom - top) { x -> horizontal.sourceAt(x) }
         for (y in top until bottom) {
             val sourceY = vertical.sourceAt(y)
             val row = Math.multiplyExact(y - dimensions.physicalOrigin.y, dimensions.physicalSize.width)
             for (x in left until right) {
-                val sourceColor = command.image.argbAt(horizontal.sourceAt(x), sourceY)
+                val sourceX = if (sourceXs == null) horizontal.sourceAt(x) else sourceXs[x - left]
+                val sourceColor = command.image.argbAt(sourceX, sourceY)
                 val index = Math.addExact(row, x - dimensions.physicalOrigin.x)
                 pixels[index] = RasterMath.blend(sourceColor, pixels[index])
             }
