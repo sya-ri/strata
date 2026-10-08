@@ -123,6 +123,9 @@ public open class NativeCanvasLookupBenchmark {
         }
     }
 
+    /**
+     * Provides the shared runner with deterministic verification of the complete compiled lookup corpus.
+     */
     public companion object {
         /**
          * Checks all fixture input combinations, exact ordered image association and terminal owner release untimed.
