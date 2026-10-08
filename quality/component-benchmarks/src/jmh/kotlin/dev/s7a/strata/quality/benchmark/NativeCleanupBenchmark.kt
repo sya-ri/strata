@@ -320,7 +320,10 @@ public open class NativeCleanupBenchmark {
         var drains = 0
         private val extents = listOf(IntSize(2, 2))
 
-        override fun createTarget(physicalSize: IntSize, depth: Boolean): NativeCanvasTarget = error("Cleanup fixture must not allocate Canvas targets.")
+        override fun createTarget(
+            physicalSize: IntSize,
+            depth: Boolean,
+        ): NativeCanvasTarget = error("Cleanup fixture must not allocate Canvas targets.")
 
         override fun fence(): NativeCanvasFence {
             fences += 1
@@ -353,7 +356,11 @@ public open class NativeCleanupBenchmark {
         /**
          * Transfers one current generation to the actual portable owner and optionally retires it.
          */
-        fun allocate(device: NativeCanvasDevice, owner: NativeGuiResourceOwnerId, retire: Boolean) {
+        fun allocate(
+            device: NativeCanvasDevice,
+            owner: NativeGuiResourceOwnerId,
+            retire: Boolean,
+        ) {
             val gui = device.guiResources
             val set = gui.reserve(owner, extents)
             gui.add(
