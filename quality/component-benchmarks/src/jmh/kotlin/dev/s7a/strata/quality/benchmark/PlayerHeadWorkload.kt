@@ -31,6 +31,7 @@ public enum class PlayerHeadWorkload(
     SyncManyScale2(Source.Sync, 32, 16, Entry.Scale, 24),
     AsyncOneScale2(Source.Async, 1, 16, Entry.Scale, 24),
     AsyncManyScale2(Source.Async, 32, 16, Entry.Scale, 24),
+    ;
 
     /**
      * Public immediate pixels and deterministic asynchronous lookup routes.
