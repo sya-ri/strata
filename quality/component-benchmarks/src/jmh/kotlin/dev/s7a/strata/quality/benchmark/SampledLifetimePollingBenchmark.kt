@@ -121,7 +121,10 @@ public open class SampledLifetimePollingBenchmark {
         public var count: Int = 0
     }
 
-    companion object {
+    /**
+     * Shared deterministic fixture admission before any JMH collection begins.
+     */
+    public companion object {
         /**
          * Verifies actual bounded Fabric source admission, repeated state stability and terminal physical release.
          */

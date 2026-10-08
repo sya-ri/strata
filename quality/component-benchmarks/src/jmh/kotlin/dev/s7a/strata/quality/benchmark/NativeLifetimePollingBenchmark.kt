@@ -165,7 +165,10 @@ public open class NativeLifetimePollingBenchmark {
         public var count: Int = 0
     }
 
-    companion object {
+    /**
+     * Shared deterministic fixture admission before any JMH collection begins.
+     */
+    public companion object {
         /**
          * Verifies persistent membership and terminal release for every native/portable input before timing.
          */
