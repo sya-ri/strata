@@ -55,6 +55,7 @@ internal class FabricMinecraftSampledImageDeviceTest {
     }
 
     @Test
+    @Suppress("TooGenericExceptionCaught") // The worker transfers any rejected operation failure to its owner-thread assertion.
     fun offThreadBorrowRejectsBeforeEnumeratingDuplicateListInputs() {
         SampledFixture().use { fixture ->
             val owner = fixture.manager.openOwner()
@@ -83,7 +84,8 @@ internal class FabricMinecraftSampledImageDeviceTest {
             val owner = fixture.manager.openOwner()
             fixture.borrow(owner, listOf(image(10)))
             fixture.driver.signalAll()
-            fixture.driver.fences.single().closeFailures = 1
+            val fence = fixture.driver.fences.single()
+            fence.closeFailures = 1
             val images = CallbackList(image(11)) { error("Failed polling must precede enumeration.") }
             assertThrows(IllegalStateException::class.java) { fixture.borrow(owner, images) }
             assertEquals(0, images.enumerations)

@@ -76,7 +76,7 @@ internal class MinecraftSampledSourceRequestsScene(
         repeat(case.occurrences) { index ->
             val x = (index % 64 * 2).toFloat()
             val y = (index / 64 * 2).toFloat()
-            val destination = if (case.composed) FloatRect(0f, 0f, 256f, 128f) else FloatRect(x, y, x + 2f, y + 2f)
+            val destination = if (case.composed) FloatRect(0f, 0f, 320f, 180f) else FloatRect(x, y, x + 2f, y + 2f)
             scope.sampledImage(images[generation][index % case.identities], source, destination, if (case.composed) ArgbColor(0xC0BFD7EF.toInt()) else ArgbColor(-1), alphaCutoff = 0f)
         }
     }

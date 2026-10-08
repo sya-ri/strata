@@ -51,7 +51,7 @@ internal object MinecraftSampledSourceRequestsGameTest {
             val before = context.onClient { observe(screen) }
             check(before.images == case.identities.toLong())
             check(before.uploads == case.expectedNativeSources.toLong())
-            if (case.composed) check(context.onClient { MinecraftCompositionParityInputs.portable(screen).any { MinecraftCompositionParityInputs.composed(it.first) } })
+            if (case.composed) check(1 < context.onClient { MinecraftCompositionParityInputs.portable(screen).count { MinecraftCompositionParityInputs.composed(it.first) } })
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
             val after = context.onClient { observe(screen) }
             check(before.inputs === after.inputs && before.requests === after.requests)

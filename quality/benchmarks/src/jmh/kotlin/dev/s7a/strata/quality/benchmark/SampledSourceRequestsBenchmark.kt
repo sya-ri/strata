@@ -111,7 +111,7 @@ public open class SampledSourceRequestsBenchmark {
          * Source uploads are ownership transfers only in this JVM fixture and are never reported as native work.
          */
         @Setup(Level.Trial)
-        @Suppress("LongMethod") // One untimed boundary resolves the exact supplied runtime and its independently owned fixture resources.
+        @Suppress("LongMethod", "StringLiteralComparison") // One untimed boundary resolves external JVM member names and independently owned fixture resources, without domain-state discrimination.
         public fun setup() {
             commands = case.commands()
             val layersType = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameLayerKt")
