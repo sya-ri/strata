@@ -15,39 +15,157 @@ import kotlin.test.assertSame
  */
 internal class TextAreaNormalizationTest {
     @Test
-    fun exhaustiveShortCodeUnitInputsPreserveBothReferencesAndFirstFailure() {
-        val alphabet = charArrayOf('A', '日', '\u0301', '\u200D', '\u2066', '\n', '\r', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029', '\u0000', '\t', '\u001F', '\u007F', '\u00A7', '\uD83D', '\uDE42')
-        var inputs = listOf("")
-        repeat(4) { size ->
-            for (input in inputs) {
-                for (maximum in 1..5) verify(input, maximum)
-            }
-            if (size < 3) inputs = inputs.flatMap { prefix -> alphabet.map { unit -> prefix + unit } }
-        }
+    fun emptyInputPreservesBothReferences() {
+        for (maximum in 1..5) verify("", maximum)
     }
 
     @Test
-    fun longCanonicalConvertedAndMalformedTailsPreserveReachabilityAndNormalizedBounds() {
+    fun exhaustiveAsciiPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('A')
+
+    @Test
+    fun exhaustiveBmpPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('日')
+
+    @Test
+    fun exhaustiveCombiningPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u0301')
+
+    @Test
+    fun exhaustiveJoinerPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u200D')
+
+    @Test
+    fun exhaustiveDirectionPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u2066')
+
+    @Test
+    fun exhaustiveLineFeedPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\n')
+
+    @Test
+    fun exhaustiveCarriageReturnPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\r')
+
+    @Test
+    fun exhaustiveVerticalTabPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u000B')
+
+    @Test
+    fun exhaustiveFormFeedPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u000C')
+
+    @Test
+    fun exhaustiveNextLinePrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u0085')
+
+    @Test
+    fun exhaustiveLineSeparatorPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u2028')
+
+    @Test
+    fun exhaustiveParagraphSeparatorPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u2029')
+
+    @Test
+    fun exhaustiveNullPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u0000')
+
+    @Test
+    fun exhaustiveTabPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\t')
+
+    @Test
+    fun exhaustiveControlPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u001F')
+
+    @Test
+    fun exhaustiveDeletePrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u007F')
+
+    @Test
+    fun exhaustiveFormattingPrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\u00A7')
+
+    @Test
+    fun exhaustiveHighSurrogatePrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\uD83D')
+
+    @Test
+    fun exhaustiveLowSurrogatePrefixesPreserveBothReferencesAndFirstFailure() = verifyShortInputs('\uDE42')
+
+    @Test
+    fun longLineFeed2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\n")
+
+    @Test
+    fun longLineFeed16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\n")
+
+    @Test
+    fun longCrLf2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\r\n")
+
+    @Test
+    fun longCrLf16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\r\n")
+
+    @Test
+    fun longCarriageReturn2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\r")
+
+    @Test
+    fun longCarriageReturn16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\r")
+
+    @Test
+    fun longVerticalTab2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\u000B")
+
+    @Test
+    fun longVerticalTab16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\u000B")
+
+    @Test
+    fun longFormFeed2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\u000C")
+
+    @Test
+    fun longFormFeed16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\u000C")
+
+    @Test
+    fun longNextLine2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\u0085")
+
+    @Test
+    fun longNextLine16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\u0085")
+
+    @Test
+    fun longLineSeparator2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\u2028")
+
+    @Test
+    fun longLineSeparator16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\u2028")
+
+    @Test
+    fun longParagraphSeparator2048InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(2_048, "\u2029")
+
+    @Test
+    fun longParagraphSeparator16384InputsPreserveReachabilityAndNormalizedBounds() = verifyLongInputs(16_384, "\u2029")
+
+    @Test
+    fun crLfContraction2048PreservesReachabilityAndNormalizedBounds() = verifyContraction(2_048)
+
+    @Test
+    fun crLfContraction16384PreservesReachabilityAndNormalizedBounds() = verifyContraction(16_384)
+
+    @Test
+    fun nonPositiveMaximumFailsBeforeMalformedInput() {
+        for (maximum in listOf(-1, 0)) verify("\uD800", maximum, setter = false)
+    }
+
+    private fun verifyShortInputs(first: Char) {
+        val alphabet = charArrayOf('A', '日', '\u0301', '\u200D', '\u2066', '\n', '\r', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029', '\u0000', '\t', '\u001F', '\u007F', '\u00A7', '\uD83D', '\uDE42')
+        var inputs = listOf(first.toString())
+        // Partition by the first unit so each runner invocation retains its ordinary per-test time limit.
+        repeat(3) { suffixSize ->
+            for (input in inputs) {
+                for (maximum in 1..5) verify(input, maximum)
+            }
+            if (suffixSize < 2) inputs = inputs.flatMap { prefix -> alphabet.map { unit -> prefix + unit } }
+        }
+    }
+
+    private fun verifyLongInputs(length: Int, separator: String) {
         val pieces = listOf("A", "日", "🙂", "e\u0301", "\u2066B\u2069", "\n")
-        for (length in listOf(2_048, 16_384)) {
-            val canonical = buildString { repeat(length) { append(pieces[it % pieces.size]) } }
-            val positions = listOf(0, 1, canonical.length / 2, canonical.length)
-            val tails = listOf("", "\u0000", "\uD800", "\uDC00", "\u00A7", "AA\u0000", "🙂\uD800")
-            for (separator in listOf("\n", "\r\n", "\r", "\u000B", "\u000C", "\u0085", "\u2028", "\u2029")) {
-                for (position in positions) {
-                    val converted = canonical.substring(0, position) + separator + canonical.substring(position)
-                    for (tail in tails) {
-                        for (maximum in listOf(1, canonical.length - 1, canonical.length, canonical.length + 1, canonical.length + 3)) {
-                            verify(converted + tail, maximum)
-                        }
-                    }
+        val canonical = buildString { repeat(length) { append(pieces[it % pieces.size]) } }
+        val positions = listOf(0, 1, canonical.length / 2, canonical.length)
+        val tails = listOf("", "\u0000", "\uD800", "\uDC00", "\u00A7", "AA\u0000", "🙂\uD800")
+        for (position in positions) {
+            val converted = canonical.substring(0, position) + separator + canonical.substring(position)
+            for (tail in tails) {
+                for (maximum in listOf(1, canonical.length - 1, canonical.length, canonical.length + 1, canonical.length + 3)) {
+                    verify(converted + tail, maximum)
                 }
             }
-            verify("\r\n".repeat(length), length)
-            verify("\r\n".repeat(length) + "\uD800", length)
-            verify("\r\n".repeat(length) + "A\uD800", length)
         }
-        for (maximum in listOf(-1, 0)) verify("\uD800", maximum, setter = false)
+    }
+
+    private fun verifyContraction(length: Int) {
+        verify("\r\n".repeat(length), length)
+        verify("\r\n".repeat(length) + "\uD800", length)
+        verify("\r\n".repeat(length) + "A\uD800", length)
     }
 
     @Test
