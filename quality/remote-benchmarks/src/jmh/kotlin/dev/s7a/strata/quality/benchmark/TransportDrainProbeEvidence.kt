@@ -33,11 +33,12 @@ public object TransportDrainProbeEvidence {
     @Suppress("LongMethod", "CyclomaticComplexMethod") // Keeps debugger setup, interval boundaries and teardown in one untimed transaction.
     public fun main(args: Array<String>) {
         require(args.size == 4)
-        val sites = listOf(
-            Site("dev.s7a.strata.runtime.remote.RemoteScreenService", "peer.inbox.poll()"),
-            Site("dev.s7a.strata.runtime.remote.RemotePacketStream", "pending.remove(nextIncoming)"),
-            Site("dev.s7a.strata.runtime.remote.RemoteConnection", "pending.firstOrNull()"),
-        )
+        val sites =
+            listOf(
+                Site("dev.s7a.strata.runtime.remote.RemoteScreenService", "peer.inbox.poll()"),
+                Site("dev.s7a.strata.runtime.remote.RemotePacketStream", "pending.remove(nextIncoming)"),
+                Site("dev.s7a.strata.runtime.remote.RemoteConnection", "pending.firstOrNull()"),
+            )
         val sourceRoot = Path.of(args[1])
         val lines = sites.associateWith { site ->
             val type = Class.forName(site.type)
@@ -135,5 +136,8 @@ public object TransportDrainProbeEvidence {
     /**
      * One source-verified probe expression in the actual runtime, without modified bytecode or queue doubles.
      */
-    private data class Site(val type: String, val expression: String)
+    private data class Site(
+        val type: String,
+        val expression: String,
+    )
 }

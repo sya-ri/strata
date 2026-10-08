@@ -75,6 +75,18 @@ Constant translucent images use the same exact destination comparison, while opa
 The independent pixel reference covers transparent, translucent and opaque patterned rows, fractional sampling, flips, cutoffs and destination changes at both ends of a row.
 The sampled and dense sampled JMH corpora measure this CPU fallback separately from native texture upload.
 
+### Immutable modifier membership construction
+
+Modifier values accept only internally created empty, singleton or concatenated membership through their private constructor.
+Each concatenation transfers its newly owned list directly and never mutates it, preserving earlier chains, duplicate description references, order and value equality.
+Public caller-owned lists are not admitted, and the runtime continues to borrow a stable read-only description sequence.
+This removes one redundant membership snapshot; individual appends still perform quadratic aggregate concatenation work and introduce no retained cache.
+
+Common JVM/JavaScript tests verify intermediate-chain reuse, self-concatenation, repeated identities, equality/hash/text values and empty shortcuts.
+The separate `jmhHistorical -Pstrata.performance.modifierComposition=true` corpus covers lengths 0, 1, 8, 32 and 128 for individual appends, prepared-half concatenation, self-concatenation and extending an intermediate chain.
+It also measures an actual 128-child declaration rebuild separately from construction-only operations; no retained frame, rasterization, upload or GPU consumption occurs inside these boundaries.
+It uses the existing receipt collector, runtime manifest replacement and standard sampling settings without changing the historical corpus.
+
 ### Current-child geometry participation
 
 Each retained entry owns its current measure and layout pass identities; direct children record only their last participating parent pass and one placement offset.

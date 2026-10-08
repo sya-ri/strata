@@ -166,7 +166,11 @@ internal class VelocityDrainFixture(
     /**
      * Uses the actual asynchronous API; only producer admission runs on the producer thread.
      */
-    private fun submit(count: Int, offset: Int = 0, failure: Throwable? = null): List<CompletableFuture<Unit>> =
+    private fun submit(
+        count: Int,
+        offset: Int = 0,
+        failure: Throwable? = null,
+    ): List<CompletableFuture<Unit>> =
         List(count) { index ->
             val command = index + offset
             service
@@ -188,7 +192,10 @@ internal class VelocityDrainFixture(
 
     private fun queue(): ArrayBlockingQueue<*> = field(service.javaClass, "commands").get(service) as ArrayBlockingQueue<*>
 
-    private fun field(type: Class<*>, name: String): Field = type.getDeclaredField(name).apply { isAccessible = true }
+    private fun field(
+        type: Class<*>,
+        name: String,
+    ): Field = type.getDeclaredField(name).apply { isAccessible = true }
 
     /**
      * Untimed observation of the actual runtime's queue calls; the producer hook runs after super.poll returns null.
