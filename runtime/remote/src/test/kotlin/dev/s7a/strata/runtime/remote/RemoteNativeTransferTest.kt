@@ -117,6 +117,35 @@ internal class RemoteNativeTransferTest {
     }
 
     @Test
+    fun oneFragmentAdmissionAndRejectedSecondFragmentKeepTheOriginalCallbackBoundary() {
+        val limits = RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 1024, collectionEntries = 1, treeNodes = 1)
+        RemoteFraming(limits).use { framing ->
+            val admitted = mutableListOf<Int>()
+            framing.nativeTransfer(ByteArray(48) { 3 }, admitted::add).use { transfer ->
+                assertEquals(listOf(64), admitted)
+                assertEquals(1, transfer.frameCount)
+                assertEquals(64, transfer.queuedBytes)
+                assertEquals(26L, transfer.retainedHeadroom)
+            }
+        }
+        listOf(false, true).forEach { native ->
+            val admitted = mutableListOf<Int>()
+            val failure = RemoteProtocolException(RemoteFailure.ResourceLimit, "One fragment admission")
+            RemoteFraming(limits).use { framing ->
+                val admit: (Int) -> Unit = { bytes ->
+                    admitted.add(bytes)
+                    if (limits.collectionEntries < admitted.size) throw failure
+                }
+                val thrown = assertThrows(RemoteProtocolException::class.java) {
+                    if (native) framing.nativeTransfer(ByteArray(49) { 3 }, admit).close() else framing.send(ByteArray(49) { 3 }) { admit(it.size) }
+                }
+                assertSame(failure, thrown)
+                assertEquals(listOf(64, 17), admitted)
+            }
+        }
+    }
+
+    @Test
     fun publicFramingAndEncodingKeepTheirInnerOnlyAndDetachedCopyContracts() {
         val source = ByteArray(24535) { 3 }
         val expected = source.copyOf()
