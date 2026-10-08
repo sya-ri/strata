@@ -91,9 +91,15 @@ internal class TextLineLayoutAssets(
         font: ResourceId,
     ): Float =
         when (shape) {
-            Shape.Signed -> if (codePoint == 'B'.code) -2f else 3f
-            Shape.ZeroAdvance -> if (codePoint == 'B'.code) 0f else 3f
-            Shape.ExceptionalMetrics ->
+            Shape.Signed -> {
+                if (codePoint == 'B'.code) -2f else 3f
+            }
+
+            Shape.ZeroAdvance -> {
+                if (codePoint == 'B'.code) 0f else 3f
+            }
+
+            Shape.ExceptionalMetrics -> {
                 when (codePoint) {
                     'A'.code -> 1.25f
                     'B'.code -> -0.1f
@@ -102,7 +108,11 @@ internal class TextLineLayoutAssets(
                     'D'.code -> -3e9f
                     else -> Float.NaN
                 }
-            else -> if (font == alternateFont) 4f else 3f
+            }
+
+            else -> {
+                if (font == alternateFont) 4f else 3f
+            }
         }
 
     /**

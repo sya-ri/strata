@@ -48,16 +48,18 @@ internal class TextLineLayoutReference(
      */
     internal fun verifyPixels(frame: RuntimeUiFrame) {
         val bounds = if (consumer === Consumer.TextArea) IntRect(4, 4, size.width - 4, size.height - 4) else IntRect(0, 0, size.width, size.height)
-        val actual = buildList {
-            add(DrawCommand.PushClip(bounds))
-            addAll(frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>())
-            add(DrawCommand.PopClip)
-        }
-        val expected = buildList {
-            add(DrawCommand.PushClip(bounds))
-            if (shape !== Shape.ExceptionalMetrics) rows.forEachIndexed { index, row -> addAll(glyphs(row, index)) }
-            add(DrawCommand.PopClip)
-        }
+        val actual =
+            buildList {
+                add(DrawCommand.PushClip(bounds))
+                addAll(frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>())
+                add(DrawCommand.PopClip)
+            }
+        val expected =
+            buildList {
+                add(DrawCommand.PushClip(bounds))
+                if (shape !== Shape.ExceptionalMetrics) rows.forEachIndexed { index, row -> addAll(glyphs(row, index)) }
+                add(DrawCommand.PopClip)
+            }
         val window = IntSize(minOf(64, size.width), minOf(64, size.height))
         for (scale in 1..3) {
             check(rasterizeHeadless(actual, window, scale).copyArgb().contentEquals(rasterizeHeadless(expected, window, scale).copyArgb()))
@@ -100,9 +102,15 @@ internal class TextLineLayoutReference(
             val index = row.positions.indices.minBy { abs(row.positions[it].toLong() - x.toLong()) }
             check(lookup.applyAsInt(x) == row.offsets[index])
         }
-        val caret = line.javaClass.declaredMethods.single { it.name.startsWith("caretX") }.apply { isAccessible = true }
+        val caret =
+            line.javaClass.declaredMethods
+                .single { it.name.startsWith("caretX") }
+                .apply { isAccessible = true }
         for (index in listOf(0, row.offsets.size / 2, row.offsets.lastIndex)) check(caret.invoke(line, row.offsets[index]) == row.positions[index])
-        val extents = line.javaClass.declaredMethods.single { it.name.startsWith("caretExtents") }.apply { isAccessible = true }
+        val extents =
+            line.javaClass.declaredMethods
+                .single { it.name.startsWith("caretExtents") }
+                .apply { isAccessible = true }
         check(extents.invoke(line, row.offsets.first(), row.offsets.last()) == row.positions.min()..row.positions.max())
     }
 
@@ -165,11 +173,12 @@ internal class TextLineLayoutReference(
     ): Row {
         val ellipsis = shape === Shape.EllipsisFirst || shape === Shape.EllipsisMiddle || shape === Shape.EllipsisLast
         if (ellipsis.not() || (heightOverflow.not() && row.positions.last() <= width)) return row
-        val last = row.offsets.indices.lastOrNull { index ->
-            val previous = if (0 < index) row.offsets[index - 1] else row.offsets.first()
-            val marker = assets.advance('.'.code, fontAt(previous))
-            assets.compatibility.roundedWidth(((row.prefixes[index] + marker) + marker) + marker) <= width
-        } ?: return row
+        val last =
+            row.offsets.indices.lastOrNull { index ->
+                val previous = if (0 < index) row.offsets[index - 1] else row.offsets.first()
+                val marker = assets.advance('.'.code, fontAt(previous))
+                assets.compatibility.roundedWidth(((row.prefixes[index] + marker) + marker) + marker) <= width
+            } ?: return row
         return Row(row.offsets.copyOf(last + 1), row.positions.copyOf(last + 1), row.prefixes.copyOf(last + 1), row.nextStart, true)
     }
 
