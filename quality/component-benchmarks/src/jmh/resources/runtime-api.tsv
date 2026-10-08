@@ -2224,11 +2224,16 @@ api	Api	dev.s7a.strata.projection.ProjectionValue$Absent#method:1:hashCode:()I
 api	Api	dev.s7a.strata.projection.ProjectionValue$Absent#method:1:toString:()Ljava/lang/String;
 api	Api	dev.s7a.strata.projection.ProjectionValue$Absent#type:25:java.lang.Object:dev.s7a.strata.projection.ProjectionValue
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#constructor:1:([B)V
+api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#field:25:Companion:Ldev/s7a/strata/projection/ProjectionValue$Bytes$Companion;
+api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#method:17:copyInto:([BI)V
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#method:17:getSize:()I
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#method:17:toByteArray:()[B
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#method:1:equals:(Ljava/lang/Object;)Z
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#method:1:hashCode:()I
 api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes#type:25:java.lang.Object:dev.s7a.strata.projection.ProjectionValue
+api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes$Companion#method:17:fromOwned:([B)Ldev/s7a/strata/projection/ProjectionValue$Bytes;
+api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes$Companion#type:25:java.lang.Object:
+api	Api	dev.s7a.strata.projection.ProjectionValue$Bytes$WhenMappings#type:4121:java.lang.Object:
 api	Api	dev.s7a.strata.projection.ProjectionValue$Flag#constructor:1:(Z)V
 api	Api	dev.s7a.strata.projection.ProjectionValue$Flag#method:17:component1:()Z
 api	Api	dev.s7a.strata.projection.ProjectionValue$Flag#method:17:copy:(Z)Ldev/s7a/strata/projection/ProjectionValue$Flag;
