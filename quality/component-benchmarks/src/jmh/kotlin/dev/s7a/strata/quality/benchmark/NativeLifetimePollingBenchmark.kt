@@ -30,9 +30,8 @@ public open class NativeLifetimePollingBenchmark {
      * Construction remains inside this boundary rather than hiding its allocations in invocation setup.
      */
     @Benchmark
-    public fun retireProtocol(state: Retirement): Int {
-        return NativeLifetimePollingWorkload(state.subject, state.count, Condition.InitializationPending).use { it.retireAndSignal() }
-    }
+    public fun retireProtocol(state: Retirement): Int =
+        NativeLifetimePollingWorkload(state.subject, state.count, Condition.InitializationPending).use { it.retireAndSignal() }
 
     /**
      * Identifies the independently budgeted resource groups retained by one device.
