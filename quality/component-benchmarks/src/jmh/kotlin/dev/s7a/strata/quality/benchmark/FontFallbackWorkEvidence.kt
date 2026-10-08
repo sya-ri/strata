@@ -82,7 +82,7 @@ public object FontFallbackWorkEvidence {
                 equalGlyph(churn, lifetime)
                 val retained = owner.retained
                 check(retained[0] <= 64L && retained[1] <= 1024 * 1024L && retained[2] <= 1L)
-                if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) check(warm.image != null)
+                if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) checkNotNull(warm.image)
                 if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned, FontFallbackWorkload.AtlasRejected)) check(warm.advance == 6f)
                 if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
                 listOf(

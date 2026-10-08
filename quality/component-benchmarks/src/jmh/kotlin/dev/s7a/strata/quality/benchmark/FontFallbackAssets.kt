@@ -20,7 +20,7 @@ internal object FontFallbackAssets {
         depth: Int,
     ): MinecraftFontSnapshot {
         val files = linkedMapOf<String, ByteArray>()
-        val glyphs = JsonObject().apply { (65..128).forEach { scalar -> addProperty(scalar.toChar().toString(), 7) } }
+        val glyphs = JsonObject().apply { for (scalar in 65..128) addProperty(scalar.toChar().toString(), 7) }
         val hit = """{"type":"space","advances":$glyphs}"""
         val miss = """{"type":"space","advances":{"日":3}}"""
         val terminal =
