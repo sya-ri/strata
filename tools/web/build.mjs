@@ -151,7 +151,10 @@ async function verifyDomWork(browser, page, address) {
 }
 
 async function verifyDomUpdates(browser, page, engine, theme, evidence) {
-    const updates = JSON.parse(await page.evaluate(() => window.strataVerifyDomUpdates()));
+    const result = await page.evaluate(() => window.strataVerifyDomUpdates());
+    assert.equal(result.error, undefined, `Compiled DOM update verification failed: ${result.error}`);
+    assert.equal(typeof result.receipts, 'string', 'Compiled DOM update verification must return serialized receipts');
+    const updates = JSON.parse(result.receipts);
     assert.equal(updates.length, 15, 'Three sizes retain localized/full/geometry/disabled controls, plus three clip/background controls');
     const styles = await page.locator('head > style').allTextContents();
     const comparison = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 640, height: 480 } });

@@ -281,7 +281,7 @@ internal class WebDomUpdateTest {
         val root: HTMLElement = document.createElement("div") as HTMLElement,
     ) : AutoCloseable {
         private val state = mutableStateOf(initial)
-        private val session = createRuntimeUiSession { element(PaintElement(state.value)) }
+        private val session = createRuntimeUiSession { PaintElement(state.value) }
         val renderer = WebDomRenderer(root, theme)
 
         init {
@@ -342,7 +342,7 @@ internal class WebDomUpdateTest {
 
             override fun paint(scope: PaintScope) {
                 for (visual in snapshot.visuals) {
-                    val paint =
+                    val paint: () -> Unit =
                         {
                             visual.presentation?.let { scope.drawPlatform(it, visual.bounds) }
                             visual.background?.let { scope.fillRectangle(visual.bounds, it) }
