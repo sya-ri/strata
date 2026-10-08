@@ -6,7 +6,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.ArtifactIdentity
-import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.MinecraftPerformanceMeter
 import dev.s7a.strata.performance.NativePerformanceFixture
 import dev.s7a.strata.performance.PerformanceJson
@@ -14,7 +13,6 @@ import dev.s7a.strata.performance.PerformanceProfile
 import dev.s7a.strata.performance.PerformanceSelection
 import dev.s7a.strata.quality.benchmark.ComponentWorkload
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
-import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
@@ -134,21 +132,7 @@ internal class MinecraftNativePerformanceProbe(
             UiDefinition(payload.title, pausesGame = payload.pausesGame) { payload.content(this) }
         }
 
-    private fun runtimeMetadata(): JsonObject =
-        context.onClient {
-            LoadedArtifactMetadata
-                .capture(
-                    FabricMinecraftScreen::class.java.classLoader,
-                    mapOf(
-                        "api" to "dev.s7a.strata.render.DrawImage",
-                        "core" to "dev.s7a.strata.runtime.UiSession",
-                        "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
-                        "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
-                        "fabric" to FabricMinecraftScreen::class.java.name,
-                    ),
-                    setOf("api", "core", "minecraft", "fonts"),
-                ).also(LoadedArtifactMetadata::verifyComplete)
-        }
+    private fun runtimeMetadata(): JsonObject = context.nativePerformanceRuntimeMetadata()
 
     @Suppress("TooGenericExceptionCaught") // Native fixture failures remain primary while independent owner-thread cleanup is attempted.
     private fun measure(

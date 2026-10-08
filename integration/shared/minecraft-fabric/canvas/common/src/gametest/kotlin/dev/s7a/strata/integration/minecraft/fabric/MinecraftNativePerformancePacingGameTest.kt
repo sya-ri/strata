@@ -2,6 +2,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.geometry.IntSize
+import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.Minecraft
 import java.io.IOException
 import java.nio.file.Files
@@ -21,6 +22,9 @@ internal object MinecraftNativePerformancePacingGameTest {
         context: MinecraftCanvasTestContext,
         nativeFailure: () -> Unit,
     ) {
+        if (FabricLoader.getInstance().isDevelopmentEnvironment.not()) {
+            Files.writeString(context.outputDirectory.resolve("strata-native-loaded-artifacts.json"), context.nativePerformanceRuntimeMetadata().toString())
+        }
         verifyOwner(context)
         verifyPartialApplication(context)
         var observation: MinecraftNativePerformancePacing? = null
