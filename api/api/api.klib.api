@@ -1226,9 +1226,14 @@ sealed interface dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.p
         final val size // dev.s7a.strata.projection/ProjectionValue.Bytes.size|{}size[0]
             final fun <get-size>(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Bytes.size.<get-size>|<get-size>(){}[0]
 
+        final fun copyInto(kotlin/ByteArray, kotlin/Int) // dev.s7a.strata.projection/ProjectionValue.Bytes.copyInto|copyInto(kotlin.ByteArray;kotlin.Int){}[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Bytes.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Bytes.hashCode|hashCode(){}[0]
         final fun toByteArray(): kotlin/ByteArray // dev.s7a.strata.projection/ProjectionValue.Bytes.toByteArray|toByteArray(){}[0]
+
+        final object Companion { // dev.s7a.strata.projection/ProjectionValue.Bytes.Companion|null[0]
+            final fun fromOwned(kotlin/ByteArray): dev.s7a.strata.projection/ProjectionValue.Bytes // dev.s7a.strata.projection/ProjectionValue.Bytes.Companion.fromOwned|fromOwned(kotlin.ByteArray){}[0]
+        }
     }
 
     final class Flag : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Flag|null[0]
