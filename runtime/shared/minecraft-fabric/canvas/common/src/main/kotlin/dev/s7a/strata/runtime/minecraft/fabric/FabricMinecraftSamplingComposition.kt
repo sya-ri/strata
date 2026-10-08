@@ -114,19 +114,21 @@ internal class FabricMinecraftSamplingComposition(
     ): Boolean =
         when (command) {
             is DrawCommand.FillRectangle -> command.color.value ushr 24 == 255
-            is DrawCommand.SampledImage -> {
-                if (command.tint.value ushr 24 == 0) {
-                    true
-                } else if (command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) {
-                    false
-                } else {
-                    prepared.add(Mask(index, command.destination))
-                }
-            }
+            is DrawCommand.SampledImage -> appendMask(index, command, prepared)
 
             is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> false
             is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> true
         }
+
+    private fun appendMask(
+        index: Int,
+        command: DrawCommand.SampledImage,
+        prepared: MutableList<Mask>,
+    ): Boolean {
+        if (command.tint.value ushr 24 == 0) return true
+        if (command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) return false
+        return prepared.add(Mask(index, command.destination))
+    }
 
     private fun spend(): Boolean {
         if (remaining == 0) return false
