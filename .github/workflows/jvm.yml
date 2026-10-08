@@ -167,6 +167,15 @@ jobs:
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
+    - name: Verify scoped JVM collection without fixture registration
+      run: python3 -B gradle/verify-jvm-fixture-collection.py
+    - name: Upload scoped collection evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: scoped-jvm-fixture
+        path: build/fixture-tests/jvm-collection
+        if-no-files-found: error
     - name: Upload coverage reports
       uses: actions/upload-artifact@v7
       with:
