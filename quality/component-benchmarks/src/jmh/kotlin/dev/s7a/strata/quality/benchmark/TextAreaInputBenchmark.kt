@@ -99,12 +99,22 @@ public open class TextAreaInputBenchmark {
     /**
      * Logical starting column, or before/inside/after the fixed composition.
      */
-    public enum class Point { Beginning, Middle, End }
+    public enum class Point {
+        Beginning,
+        Middle,
+        End,
+    }
 
     /**
      * One public input operation, with preparation of its opposite direction excluded from sampling.
      */
-    internal enum class Operation { Primary, Up, Down, PageUp, PageDown }
+    internal enum class Operation {
+        Primary,
+        Up,
+        Down,
+        PageUp,
+        PageDown,
+    }
 
     /**
      * Actual public input owner; every invocation starts with settled geometry and unchanged cached line data.
@@ -257,7 +267,9 @@ public open class TextAreaInputBenchmark {
             TextAreaInputFixture(shape).use { fixture ->
                 fixture.verifyClean()
                 fixture.initialLayout()
-                for (point in Point.entries) {
+            }
+            for (point in Point.entries) {
+                TextAreaInputFixture(shape, point).use { fixture ->
                     val line = fixture.currentLine()
                     fixture.verifyLookup(line, fixture.lookupX(line, point), TextAreaLookupAccess.create(line))
                 }

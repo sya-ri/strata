@@ -114,5 +114,8 @@ internal object TextAreaInputAccess {
             member(parent, name)
         }
 
-    private enum class Affinity { Upstream, Downstream }
+    private enum class Affinity {
+        Upstream,
+        Downstream,
+    }
 }
