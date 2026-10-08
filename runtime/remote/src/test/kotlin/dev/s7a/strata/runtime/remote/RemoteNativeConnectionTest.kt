@@ -111,6 +111,27 @@ internal class RemoteNativeConnectionTest {
     }
 
     @Test
+    fun singleEntryLogicalLimitRejectsTheTwoValueControlBeforeQueueAdmissionOnBothRoutes() {
+        val limits = RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 1024, collectionEntries = 1, treeNodes = 1)
+        val failures = mutableListOf<String?>()
+        listOf(false, true).forEach { native ->
+            val output = mutableListOf<ByteArray>()
+            negotiated(native, limits, output::add).use { fixture ->
+                output.clear()
+                val failure = assertThrows(IllegalArgumentException::class.java) { fixture.connection.send(RemoteMessage.Resynchronize(1)) }
+                failures.add(failure.message)
+                assertTrue(output.isEmpty())
+                assertEquals(0, field(fixture.connection, "queuedFrames"))
+                assertEquals(0, field(fixture.connection, "queuedBytes"))
+                assertTrue((field(fixture.connection, "pending") as Collection<*>).isEmpty())
+                assertNull(field(fixture.connection, "outgoing"))
+                assertNull(field(fixture.connection, "nativeStream"))
+            }
+        }
+        assertEquals(failures.first(), failures.last())
+    }
+
+    @Test
     fun semanticByteAndEntryAdmissionMatchesLegacyAndFailuresReleaseAllNativeReferences() {
         listOf(
             RemoteLimits(frameBytes = 64, messageBytes = 256, pendingBytes = 256, collectionEntries = 8, treeNodes = 1),
