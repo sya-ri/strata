@@ -19,7 +19,7 @@ The standard profile preserves existing sample counts, repetitions and complete 
 For component, historical and remote JMH, the same Gradle flag uses no warm-up iterations, one 100 ms measurement iteration and one fork, under separate `*-quick` directories.
 With no explicit selection, the ordinary corpora use their existing smoke input subsets. Explicit workloads and historical parameter selections are retained; the independent raster corpora keep their selected input matrix.
 The original smoke option and every standard JMH configuration remain unchanged.
-Use `-Pstrata.performance.workloads=FanOut4096 -Pstrata.performance.stress=true` to investigate that stress case through `:quality:component-benchmarks:jmhComponents`.
+Use `-Pstrata.performance.benchmarks=StressRenderingBenchmark -Pstrata.performance.parameters=<file>` with `workload=FanOut4096` in the parameter file to investigate that stress case through `:quality:component-benchmarks:jmhComponents`.
 Smoke scores remain exploratory and are not compared with warmed standard measurements.
 
 For a loaded client, `./gradlew benchmarkMinecraftQuick -Pstrata.performance.nativeOutput=<fresh-directory>` selects one native component on the newest version in the repository's verified target catalog.
@@ -61,6 +61,21 @@ The request specifies `command` (`jmh-summary` or `jmh-comparison`), the actual 
 The task runs `PerformanceEvidenceCli` from the packaged collector with its normal Kotlin/Gson runtime classpath and refuses to overwrite output.
 An external application can call that same JVM entry point or the typed API using its resolved testkit artifact.
 
+Both `:quality:benchmarks:jmhHistorical` and `:quality:component-benchmarks:jmhComponents` select generated fixture classes through `-Pstrata.performance.benchmarks=<comma-separated-class-names>`.
+Use exact qualified names or unambiguous simple names; empty, duplicate, unknown and ambiguous names fail before timing.
+Omitting this option preserves each task's original default corpus.
+Class selection uses anchored JMH include filters and checks the complete generated method/parameter matrix, so similarly named supplemental fixtures cannot enter a selected corpus implicitly.
+`strata.performance.suite=<name>` chooses a separate output label without adding a corpus-specific build flag.
+Quick collection retains explicitly selected classes, methods and parameters; ordinary quick runs keep their existing default smoke subset.
+
+Add a JMH fixture to the existing source set without changing a Gradle build script or collection launcher.
+An optional public static no-argument `verifyWork()` method owns deterministic fixture acceptance outside timing; Kotlin companions expose it with `@JvmStatic`.
+Ordinary checks discover every generated fixture and its optional verifier automatically; selected collection also checks the chosen fixtures before starting forks.
+Keep expected case counts and fixture-specific pixel, work and lifetime assertions with the fixture or its work helper.
+Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-properties-file>` with unique labels and absolute regular-file paths.
+The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
+For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
+
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
 JDK Properties requires escaped colons in these project-path keys and escaped backslashes in Windows paths.
@@ -70,12 +85,12 @@ Use `-Pstrata.performance.historicalOutputRoot=<new-directory>` for the other si
 Execute both modes three times with repetition indexes 0–2 for each side and process `jmh-comparison` separately for each mode.
 Older targets that cannot execute the unchanged fixture are failures, not permission to remove cases or loosen provenance checks.
 
-The separate `-Pstrata.performance.nonuniformOverlay=true` family measures prepared mixed-alpha/RGB images followed by 1, 16 or 64 full-area translucent fills at 320×180 and 1920×1080.
+The separate `-Pstrata.performance.benchmarks=NonuniformOverlayBenchmark -Pstrata.performance.suite=nonuniform-overlay` family measures prepared mixed-alpha/RGB images followed by 1, 16 or 64 full-area translucent fills at 320×180 and 1920×1080.
 It uses the same JMH defaults, controlled-runtime selection and shared evidence processing, with its own six-case fixture registration and `nonuniform-overlay` output directory.
 Source preparation is outside measurement; each operation allocates a fresh output and preserves every ordered blend.
 This family does not change the historical 54-case matrix or satisfy its acceptance.
 
-The separate `-Pstrata.performance.sampledRaster=true` family measures fractional portable image generation with solid opaque, solid translucent and 64×64 patterned sources, each with an opaque non-identity RGB tint.
+The separate `-Pstrata.performance.benchmarks=SampledRasterBenchmark -Pstrata.performance.suite=sampled-raster` family measures fractional portable image generation with solid opaque, solid translucent and 64×64 patterned sources, each with an opaque non-identity RGB tint.
 Its 12 cases keep physical output at 320×180 or 1920×1080 while varying final density between one and four.
 Prepared immutable inputs exclude resource decoding; each operation allocates a fresh raster.
 It retains the same JMH defaults, actual loaded-runtime selection and shared evidence processing, writes `sampled-raster` outputs, and leaves every historical workload unchanged.
@@ -209,12 +224,12 @@ Queries and their callbacks are owned by the fixture, bounded by the sample coun
 Other compiled families and disabled query collection explicitly report unavailable GPU measurements.
 Compare repetitions only with matching version, backend, driver/device description, viewport, pacing, query mode and archive identities; different devices or backends remain separate evidence, not an interchangeable speed ratio.
 
-`ColdImageBenchmark` is a separate six-case JVM corpus selected with `strata.performance.coldImage=true` on `:quality:benchmarks:jmhHistorical`.
+`ColdImageBenchmark` is a separate six-case JVM corpus selected with `strata.performance.benchmarks=ColdImageBenchmark` on `:quality:benchmarks:jmhHistorical`.
 It measures opening a fresh input stream, PNG decoding and immutable pixel acquisition separately from deterministic PNG encoding at 64, 256 and 1024 texels per axis.
 The encoded input is resident before measurement, and PNG encoding returns fresh bytes without filesystem persistence; these boundaries do not claim an operating-system file-cache or network-cold workload.
 The historical, sampled-raster and native steady-presentation definitions and defaults remain unchanged.
 
-The independent `PortableTextBenchmark` corpus is selected with `strata.performance.portableText=true` on `:quality:component-benchmarks:jmhComponents`.
+The independent `PortableTextBenchmark` corpus is selected with `strata.performance.benchmarks=PortableTextBenchmark` on `:quality:component-benchmarks:jmhComponents`.
 Its twelve phases separate fresh host/layout/glyph extraction from CPU composition of prepared detached glyph commands over alternating opaque destinations.
 The existing multilingual bitmap source and original geometric TrueType fixture at 64 and 256 logical pixels run at densities one and four with fixed full-HD output.
 Font acquisition and snapshot decoding stay outside both operations; the extraction phase includes creation and terminal close of its fresh font owner, while composition owns a new raster each time.
@@ -373,12 +388,13 @@ The list contains repository-relative paths, one per line; known declaration and
 An empty list selects no component operations, but still verifies the complete API registration.
 Release verification omits this property and runs the entire corpus.
 
-For iterative fixes, `-Pstrata.performance.workloads=<comma-separated-IDs>` explicitly selects component or stress workloads through the shared `PerformanceSelection` contract.
-For example, select `TextField32,TextField16384` with `strata.performance.stress=true`, or `NineSlice1,NineSlice2,NineSlice4` for tiled-image work.
+For iterative fixes, the default component corpus accepts `-Pstrata.performance.workloads=<comma-separated-IDs>` through the shared `PerformanceSelection` contract.
+For other compiled fixtures, select classes with `strata.performance.benchmarks`, method IDs with `strata.performance.workloads`, and compiled parameter values with `strata.performance.parameters`.
+For example, select `StressRenderingBenchmark` with a parameter file containing `workload=TextField32,TextField16384`, or `workload=NineSlice1,NineSlice2,NineSlice4` for tiled-image work.
 Unknown, empty and duplicate IDs fail before collection; the complete API registration is still verified.
 Selected JMH runs use separate `*-selected` directories and their exact generated matrix remains bound to the evidence receipt.
 Keep all phases of the selected workloads, default warm-up/sampling settings and three independent invocations when comparing a baseline and candidate.
-This option currently supports component and stress collection, not the font corpus.
+Class and method selection also apply to the font fixtures; their declared parameter subsets use the same parameter manifest.
 
 The same option selects loaded native cases such as `TextField,NativeCanvas` at all four GUI scales.
 The native performance entry prepares the actual resource profile and then collects directly, without running ordinary profile-reload, input, inventory and pixel-regression scenes on every measurement invocation.
@@ -395,7 +411,7 @@ Automatic correctness-client concurrency does not apply to performance collectio
 Retained remote collection also accepts workload IDs such as `Shared16At512` with `strata.performance.remoteSessions=true`.
 Protocol collection accepts compiled method IDs such as `RemoteProtocolBenchmark.diff` through the same shared selection contract, retaining both declared node counts and all three change patterns for each selected method.
 Omitting selection preserves its full 30-case matrix; unknown, duplicate or empty method IDs fail before collection, and selected evidence cannot satisfy full-suite acceptance.
-The font corpus rejects unsupported workload selection rather than silently ignoring it.
+Every selected corpus rejects unknown method IDs and unsupported parameter selections before collection.
 The historical shared-kit entry accepts method IDs such as `OverlayRenderingBenchmark.composition` and an optional `strata.performance.parameters` UTF-8 properties file containing compiled JMH parameter subsets, for example `width=320,1920`, `layers=1,64` and `monitoring=false` on separate lines.
 These selected runs have independent `*-selected` directories; omitting both options preserves the formal 54-case historical matrix and the original `jmh` task.
 `strata.performance.output` supplies a fresh invocation directory for component or remote evidence; historical collection keeps its existing `strata.performance.historicalOutputRoot` directory option.
@@ -417,13 +433,13 @@ Every measured fork and iteration must return its provenance confirmation; a mis
 Generated `@Fork` arguments are checked alongside CLI overrides, so benchmark annotations cannot bypass the fork-classpath constraints.
 Collector changes require fresh evidence; earlier receipts without child verification cannot satisfy this contract.
 
-The separate stress corpus is selected with `-Pstrata.performance.stress=true` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
+The separate stress corpus is selected with `-Pstrata.performance.benchmarks=StressRenderingBenchmark -Pstrata.performance.suite=stress` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
 
-The supplemental `-Pstrata.performance.exceptionalText=true` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
+The supplemental `-Pstrata.performance.benchmarks=ExceptionalTextFieldBenchmark -Pstrata.performance.suite=exceptional-text` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
 Its 18 independent idle/update/lifecycle cases use the unchanged JMH defaults and shared processing, with `exceptional-text` / `exceptional-text-sample` outputs; it does not change the existing stress matrix or font inputs.
 Resource preparation stays outside sampling, and its detached empty glyphs measure width/control work rather than native font rasterization.
 `verifyExceptionalTextWork` checks every combination's clean reuse, changed public value and semantics, equal-metric pixel stability and complete font-resource release without elapsed-time thresholds.
-Explicit workload selection accepts its compiled `ExceptionalTextWorkload` IDs through the same shared selection contract.
+Its compiled `ExceptionalTextWorkload` values can be selected through the generic parameter manifest.
 The stress corpus measures 100/1,000,000-row indexed virtual lists, eight-image Canvas churn at 256/1024 pixels, configured text lengths of 32/16,384 UTF-16 units, actual checkbox pointer activation, explicit animation-cell time advances, 128/4096-observer fan-out, and 1/2/4-pixel nine-slice patterns with transparency.
 These sizes are declared stress inputs, rather than claims about application limits or complete font-provider coverage.
 Its 39 generated cases preserve the existing component and historical matrices; JMH and the shared kit own all collection and comparison.
@@ -443,7 +459,7 @@ These are protocol CPU measurements; actual Paper/Velocity owner scheduling, plu
 The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
 The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.
 
-The separate font corpus is selected with `-Pstrata.performance.fonts=true` on `jmhComponents` and writes independent `fonts` / `fonts-sample` directories.
+The separate font corpus is selected with `-Pstrata.performance.benchmarks=FontProviderBenchmark,FontTextBenchmark -Pstrata.performance.suite=fonts` on `jmhComponents` and writes independent `fonts` / `fonts-sample` directories.
 Its 42 generated cases cover bitmap and Unihex with enabled/disabled raster caching, accepted 128-level and rejected 129-level reference graphs, STB and FreeType glyphs, 17 native face descriptors against 1/16-face bounds, and ICU mixed-direction shaping at 32/16,384 UTF-16 units.
 The original CC0 geometric TTF fixture and all resolved control libraries are archived as explicit inputs; no operating-system font or fetched resource is substituted.
 Source bytes, PNG encoding and ZIP preparation happen outside measurement. Snapshot loading has its own named operation; retained glyph resolution, cache/face churn, shaping and native-engine lifetimes are separate operations.
