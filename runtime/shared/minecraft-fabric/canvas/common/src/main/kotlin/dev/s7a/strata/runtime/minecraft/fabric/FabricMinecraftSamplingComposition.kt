@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
@@ -10,16 +11,53 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Opaque fills are destination backgrounds or replacements; other exact opaque masks must be disjoint.
  * Any potentially translucent primitive retains CPU composition, even outside the admitted image's bounds.
  * Inserting a native barrier can split and change the rounding of those other commands' portable run.
- * The render-thread traversal borrows only the current command list and spends at most 8,192 command visits per frame.
- * Exhaustion selects the existing exact CPU path, and no proof state survives preparation.
+ * Classification starts only when an extended effect needs proof and visits the current list at most once.
+ * One of at most 8,192 work units covers candidate validation, one command classification and amortized bounds append,
+ * or one mask occurrence visit with its complete constant-size half-open overlap check.
+ * Every classification and geometry loop spends that shared budget; rejection after exhaustion is constant work.
+ * The synchronous render-thread operation retains only bounded occurrence indexes and immutable bounds, with no source pixels or native handles.
+ * Exhaustion selects the existing exact CPU path; partial classification fails closed, and no proof state survives preparation.
  */
 internal class FabricMinecraftSamplingComposition(
     private val commands: List<DrawCommand>,
 ) {
     private var remaining = 8_192
+    private var state = State.Pending
+    private var masks: List<Mask> = emptyList()
+
+    /** Number of candidate validations charged to this preparation's shared work bound. */
+    @get:JvmSynthetic
+    internal var admissionVisits: Int = 0
+        private set
+
+    /** Current-list classification visits, including a blocking command or failed read. */
+    @get:JvmSynthetic
+    internal var classificationVisits: Int = 0
+        private set
+
+    /** Number of cached occurrence visits, including the candidate's own occurrence. */
+    @get:JvmSynthetic
+    internal var maskVisits: Int = 0
+        private set
+
+    /** Complete half-open geometry checks, each contained in one charged mask visit. */
+    @get:JvmSynthetic
+    internal var geometryChecks: Int = 0
+        private set
+
+    /** Bounded scalar/bounds records; global rejection, exhaustion and failed classification retain none. */
+    @get:JvmSynthetic
+    internal val retainedOccurrenceCount: Int
+        get() = masks.size
+
+    /** All charged validation, classification and overlap work; never more than 8,192 units. */
+    @get:JvmSynthetic
+    internal val workCount: Int
+        get() = 8_192 - remaining
 
     /**
-     * Checks one occurrence independently of equal or repeated command identities, without reading source pixels.
+     * Checks a supported opaque-mask command at its original occurrence, without reading source pixels.
+     * Equal or repeated command objects remain separate occurrences; invalid candidates cannot establish a proof.
      * Clips are ignored conservatively; commands separated by native barriers are still checked for overlap.
      */
     @JvmSynthetic
@@ -27,42 +65,78 @@ internal class FabricMinecraftSamplingComposition(
         occurrence: Int,
         command: DrawCommand.SampledImage,
     ): Boolean {
-        for (index in commands.indices) {
-            if (remaining == 0) return false
-            remaining -= 1
-            if (index == occurrence) continue
-            val changesComposition =
-                when (val other = commands[index]) {
-                    is DrawCommand.FillRectangle -> {
-                        other.color.value ushr 24 != 255
-                    }
-
-                    is DrawCommand.SampledImage -> {
-                        other.tint.value ushr 24 != 0 &&
-                            (other.alphaCutoff != 1f || other.hasExactFabricSamplingEffects().not() || intersects(command, other.destination.left.toDouble(), other.destination.top.toDouble(), other.destination.right.toDouble(), other.destination.bottom.toDouble()))
-                    }
-
-                    is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> {
-                        true
-                    }
-
-                    is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
-                        false
-                    }
-                }
-            if (changesComposition) return false
+        if (spend().not()) return reject()
+        admissionVisits += 1
+        if (state == State.Rejected) return false
+        if ((occurrence in commands.indices).not() || commands[occurrence] !== command || command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) return false
+        if (state == State.Pending && classify().not()) return false
+        for (index in masks.indices) {
+            if (spend().not()) return reject()
+            maskVisits += 1
+            val other = masks[index]
+            if (other.occurrence == occurrence) continue
+            geometryChecks += 1
+            if (intersects(command.destination, other.bounds)) return false
         }
         return true
     }
 
+    private fun classify(): Boolean {
+        state = State.Rejected
+        val prepared = ArrayList<Mask>()
+        for (index in commands.indices) {
+            if (spend().not()) return false
+            classificationVisits += 1
+            when (val other = commands[index]) {
+                is DrawCommand.FillRectangle -> {
+                    if (other.color.value ushr 24 != 255) return false
+                }
+
+                is DrawCommand.SampledImage -> {
+                    if (other.tint.value ushr 24 == 0) continue
+                    if (other.alphaCutoff != 1f || other.hasExactFabricSamplingEffects().not()) return false
+                    prepared.add(Mask(index, other.destination))
+                }
+
+                is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> {
+                    return false
+                }
+
+                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
+                    Unit
+                }
+            }
+        }
+        masks = prepared
+        state = State.Ready
+        return true
+    }
+
+    private fun spend(): Boolean {
+        if (remaining == 0) return false
+        remaining -= 1
+        return true
+    }
+
+    private fun reject(): Boolean {
+        state = State.Rejected
+        masks = emptyList()
+        return false
+    }
+
     private fun intersects(
-        command: DrawCommand.SampledImage,
-        left: Double,
-        top: Double,
-        right: Double,
-        bottom: Double,
-    ): Boolean {
-        val target = command.destination
-        return left < target.right.toDouble() && target.left.toDouble() < right && top < target.bottom.toDouble() && target.top.toDouble() < bottom
+        target: FloatRect,
+        other: FloatRect,
+    ): Boolean = other.left.toDouble() < target.right.toDouble() && target.left.toDouble() < other.right.toDouble() && other.top.toDouble() < target.bottom.toDouble() && target.top.toDouble() < other.bottom.toDouble()
+
+    private data class Mask(
+        val occurrence: Int,
+        val bounds: FloatRect,
+    )
+
+    private enum class State {
+        Pending,
+        Ready,
+        Rejected,
     }
 }
