@@ -71,7 +71,10 @@ public class IncomingFragmentFixture(
         active.forEach { holder ->
             holder.owner.run {
                 when (phase) {
-                    IncomingFragmentPhase.Admission -> holder.frames.forEach { decoder.receive(holder.stream, it) }
+                    IncomingFragmentPhase.Admission -> {
+                        holder.frames.forEach { decoder.receive(holder.stream, it) }
+                    }
+
                     IncomingFragmentPhase.Assembly -> {
                         holder.frames.forEach { check(holder.inbox.offer(it)) }
                         while (true) {
@@ -80,6 +83,7 @@ public class IncomingFragmentFixture(
                         }
                         assemble(holder)
                     }
+
                     IncomingFragmentPhase.ServerIngress -> {
                         val service = checkNotNull(holder.service)
                         holder.frames.forEach { service.enqueue(Unit, it) }
@@ -185,7 +189,8 @@ public class IncomingFragmentFixture(
             (0 until fragmentCount).map { index ->
                 val offset = index * (limits.frameBytes - 16)
                 val count = minOf(limits.frameBytes - 16, expected.size - offset)
-                ByteBuffer.allocate(26 + 16 + count)
+                ByteBuffer
+                    .allocate(26 + 16 + count)
                     .put(1.toByte())
                     .put(target.endpoint.ordinal.toByte())
                     .putLong(target.incarnation.mostSignificantBits)
@@ -208,7 +213,11 @@ public class IncomingFragmentFixture(
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+    ): Any? =
+        target.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(target)
 
     /**
      * Independent current invocation state created and released under one serial execution owner.
@@ -229,9 +238,15 @@ public class IncomingFragmentFixture(
                 service?.let { host ->
                     host.join(Unit)
                     checkNotNull((field(host, "peers") as Map<*, *>)[Unit]).also { retained ->
-                        retained.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retained, templateAddress)
+                        retained.javaClass
+                            .getDeclaredField("address")
+                            .apply { isAccessible = true }
+                            .set(retained, templateAddress)
                         val retainedStream = field(retained, "stream") as RemotePacketStream
-                        retainedStream.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retainedStream, templateAddress)
+                        retainedStream.javaClass
+                            .getDeclaredField("address")
+                            .apply { isAccessible = true }
+                            .set(retainedStream, templateAddress)
                     }
                 }
             }

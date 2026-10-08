@@ -111,10 +111,12 @@ public class TransportDrainFleet(
     private fun drainBusy() {
         peers.forEach { peer ->
             peer.afterWrite = {
-                checkNotNull(producer).submit {
-                    peer.incoming.forEach { service.enqueue(peer.index, it) }
-                    peer.incoming.clear()
-                }.get(10, TimeUnit.SECONDS)
+                checkNotNull(producer)
+                    .submit {
+                        peer.incoming.forEach { service.enqueue(peer.index, it) }
+                        peer.incoming.clear()
+                    }
+                    .get(10, TimeUnit.SECONDS)
             }
             peer.server.send(RemoteMessage.Resynchronize(generation))
         }
