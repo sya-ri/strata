@@ -45,11 +45,11 @@ internal class VirtualListDeclarationReuseTest {
         Fixture().use { fixture ->
             val first = fixture.window(1_000.0)
             fixture.resetWork()
-            val fractional = fixture.window(1_000.25)
+            val fractional = fixture.window(1_001.25)
             assertEquals(41, fractional.size)
             assertEquals(listOf(139), fixture.constructed)
             for (index in first.indices) assertSame(first[index], fractional[index])
-            assertSame(fractional, fixture.window(1_000.5))
+            assertSame(fractional, fixture.window(1_001.5))
             repeat(100) { step -> assertEquals(40, fixture.window((200 + step * 5) * 10.0).size) }
             fixture.resetWork()
             val returned = fixture.window(1_000.0)

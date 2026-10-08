@@ -43,7 +43,11 @@ internal class PortableVirtualRowReuseTest {
                 assertEquals(listOf(fixture.items[139]), fixture.constructed)
                 assertEquals(1L, monitor.snapshot().counts[UiRenderMetric.RowEvaluation])
                 assertSame(retained, fixture.probe.nodeForTag(fixture.items[110]))
-                assertSame(shifted, fixture.session.frame(fixture.constraints))
+                // New rows change the retained revision during measurement; the following frame establishes its clean snapshot.
+                val settled = fixture.session.frame(fixture.constraints)
+                assertEquals(shifted.drawCommands, settled.drawCommands)
+                assertEquals(shifted.semantics, settled.semantics)
+                assertSame(settled, fixture.session.frame(fixture.constraints))
                 assertEquals(InputResult.Consumed, fixture.session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
                 assertEquals(fixture.items[101], fixture.probe.inputEvents.last())
                 fixture.session.dispatchPointer(PointerEvent.Release(IntOffset.Zero, PointerButton.Primary))

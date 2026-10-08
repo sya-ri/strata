@@ -102,15 +102,30 @@ internal class VirtualWindowFixture(
         step += 1
         val alternate = step % 2 == 1
         when (motion) {
-            VirtualWindowBenchmark.Motion.Clean -> Unit
-            VirtualWindowBenchmark.Motion.OneRow -> state.scrollState.scrollTo(if (alternate) 1_010.0 else 1_000.0)
-            VirtualWindowBenchmark.Motion.Fractional -> state.scrollState.scrollTo(if (alternate) 1_000.25 else 1_000.0)
-            VirtualWindowBenchmark.Motion.FastJump -> state.scrollState.scrollTo(if (alternate) 30_000.0 else 1_000.0)
+            VirtualWindowBenchmark.Motion.Clean -> {
+                Unit
+            }
+
+            VirtualWindowBenchmark.Motion.OneRow -> {
+                state.scrollState.scrollTo(if (alternate) 1_010.0 else 1_000.0)
+            }
+
+            VirtualWindowBenchmark.Motion.Fractional -> {
+                state.scrollState.scrollTo(if (alternate) 1_001.25 else 1_000.0)
+            }
+
+            VirtualWindowBenchmark.Motion.FastJump -> {
+                state.scrollState.scrollTo(if (alternate) 30_000.0 else 1_000.0)
+            }
+
             VirtualWindowBenchmark.Motion.Refresh -> {
                 presentation = if (alternate) 1 else 0
                 state.refresh()
             }
-            VirtualWindowBenchmark.Motion.DefinitionReplacement -> definition.value = if (alternate) 1 else 0
+
+            VirtualWindowBenchmark.Motion.DefinitionReplacement -> {
+                definition.value = if (alternate) 1 else 0
+            }
         }
         return session.frame(constraints)
     }
@@ -137,7 +152,7 @@ internal class VirtualWindowFixture(
                 val current = indices()
                 val actual = counts.factories - before
                 val required = requiredFactories(previous, current)
-                check(actual == required || admitsHistoricalFullWindow() && actual == current.count()) {
+                check(actual == required || (admitsHistoricalFullWindow() && actual == current.count())) {
                     "$window/$factory/$motion factory work $actual, required $required or historical full window"
                 }
                 check(monitor.snapshot().counts.getValue(UiRenderMetric.RowEvaluation) - rowWork == actual.toLong())
@@ -180,8 +195,7 @@ internal class VirtualWindowFixture(
             else -> if (factory == VirtualWindowBenchmark.Factory.DirectState) current.count() else current.count { (it in previous).not() }
         }
 
-    private fun admitsHistoricalFullWindow(): Boolean =
-        motion == VirtualWindowBenchmark.Motion.OneRow || motion == VirtualWindowBenchmark.Motion.Fractional || motion == VirtualWindowBenchmark.Motion.FastJump
+    private fun admitsHistoricalFullWindow(): Boolean = motion == VirtualWindowBenchmark.Motion.OneRow || motion == VirtualWindowBenchmark.Motion.Fractional || motion == VirtualWindowBenchmark.Motion.FastJump
 
     private fun verifyObservation() {
         if (factory == VirtualWindowBenchmark.Factory.Observed) {
@@ -225,7 +239,9 @@ internal class VirtualWindowFixture(
 
     private fun verifyFrame(frame: RuntimeUiFrame) {
         val value = currentValue()
-        val offset = state.scrollState.metrics.offset.toInt()
+        val offset =
+            state.scrollState.metrics.offset
+                .toInt()
         val indices = indices()
         val bounds = indices.map { index -> IntRect(0, index * 10 - offset, size.width, index * 10 - offset + 10) }
         check(frame.size == size)
