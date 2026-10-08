@@ -61,7 +61,12 @@ internal object TiledImageTopologyObservation {
         val painted = (checkNotNull(field(topology, "cells")) as List<*>).map { cell -> checkNotNull(field(checkNotNull(cell), "id")) as TiledImageTileId }
         val key = field(topology, "key")
         val ranges = if (key == null) 0 else (checkNotNull(field(key, "requiredRanges")) as List<*>).size + if (0 < input.policy.overscanTiles) 1 else 0
-        val bytes = required.sumOf { id -> input.source.levels[id.level].tilePixelSize.let { size -> size.width.toLong() * size.height * 4L } }
+        val bytes =
+            required.sumOf { id ->
+                input.source.levels[id.level]
+                    .tilePixelSize
+                    .let { size -> size.width.toLong() * size.height * 4L }
+            }
         return Snapshot(topology, required, painted, ranges, bytes)
     }
 
