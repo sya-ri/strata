@@ -180,19 +180,20 @@ internal class ContainerDeclarationFixture(
      */
     fun verifyWork() {
         val originalDeclaration = construct(0)
+        val originalChildren = originalDeclaration.children.toList()
         val originalLeaves = leaves(originalDeclaration)
         val expectedOrdinals = expectedOrdinals()
-        check(originalLeaves.map { it.ordinal } == expectedOrdinals)
+        check(originalLeaves.map { it.ordinal } == expectedOrdinals) { "$container/$shape declaration order" }
         val tileLayers = if (container == Container.TiledImage) parentCount else 0
         val outerStacks = if (shape.groups == 1) 0 else 1
-        check(elementCount(originalDeclaration) == outerStacks + parentCount + tileLayers + leafCount)
+        check(elementCount(originalDeclaration) == outerStacks + parentCount + tileLayers + leafCount) { "$container/$shape declaration cardinality" }
         val expectedCopySlots =
             shape.groups * (shape.depth * 2 + if (2 <= shape.width) shape.width else 0) +
                 if (2 <= shape.groups) shape.groups else 0
-        check(redundantCopySlots(originalDeclaration, outerStack = shape.groups != 1) == expectedCopySlots)
+        check(redundantCopySlots(originalDeclaration, outerStack = shape.groups != 1) == expectedCopySlots) { "$container/$shape copied reference slots" }
         val expected = expectedLayout()
-        check(expected.leaves.map { it.ordinal } == expectedOrdinals)
-        check(counts.created == leafCount && counts.live == leafCount)
+        check(expected.leaves.map { it.ordinal } == expectedOrdinals) { "$container/$shape layout oracle order" }
+        check(counts.created == leafCount && counts.live == leafCount) { "$container/$shape initial node ownership" }
         val originalFrame = session.frame(constraints)
         verifyFrame(originalFrame, expected, version.value)
         val oldSemantics = originalFrame.semantics.toList()
@@ -204,27 +205,29 @@ internal class ContainerDeclarationFixture(
             val paints = counts.paints
             val semantics = counts.semantics
             val frame = rebuildFrame()
-            check(counts.rootEvaluations == evaluations + 1)
-            check(counts.created == leafCount && counts.live == leafCount && counts.disposed == 0)
-            check(counts.updates == updates + leafCount)
-            check(counts.measures == measures && counts.paints == paints + leafCount && counts.semantics == semantics + leafCount)
+            check(counts.rootEvaluations == evaluations + 1) { "$container/$shape root revision" }
+            check(counts.created == leafCount && counts.live == leafCount && counts.disposed == 0) { "$container/$shape retained node identity" }
+            check(counts.updates == updates + leafCount) { "$container/$shape updates: ${counts.updates - updates}, expected $leafCount" }
+            check(counts.measures == measures && counts.paints == paints + leafCount && counts.semantics == semantics + leafCount) {
+                "$container/$shape phase work: measure=${counts.measures - measures}, paint=${counts.paints - paints}, semantics=${counts.semantics - semantics}, expected 0/$leafCount/$leafCount"
+            }
             verifyFrame(frame, expected, version.value)
-            check(session.frame(constraints) === frame)
-            check(originalLeaves.map { leaf -> leaf.ordinal } == expectedOrdinals)
-            check(originalDeclaration.children.size == shape.groups)
-            check(originalFrame.semantics == oldSemantics)
-            check(pixels(originalFrame).contentEquals(oldPixels))
+            check(session.frame(constraints) === frame) { "$container/$shape clean frame identity" }
+            check(originalLeaves.map { leaf -> leaf.ordinal } == expectedOrdinals) { "$container/$shape original leaf order" }
+            check(originalDeclaration.children == originalChildren) { "$container/$shape original root membership" }
+            check(originalFrame.semantics == oldSemantics) { "$container/$shape original semantics" }
+            check(pixels(originalFrame).contentEquals(oldPixels)) { "$container/$shape original pixels" }
         }
         val retained = counts.live
         session.detach()
         session.attach()
         verifyFrame(session.frame(constraints), expected, version.value)
-        check(counts.created == leafCount && counts.live == retained && counts.disposed == 0)
+        check(counts.created == leafCount && counts.live == retained && counts.disposed == 0) { "$container/$shape reattached ownership" }
         val hit = expected.leaves.lastOrNull { it.bounds.left == 0 && it.bounds.top == 0 }
         counts.lastPointer = null
         val result = session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary))
-        check(result == if (hit == null) InputResult.Ignored else InputResult.Consumed)
-        check(counts.lastPointer == hit?.ordinal)
+        check(result == if (hit == null) InputResult.Ignored else InputResult.Consumed) { "$container/$shape pointer result: $result" }
+        check(counts.lastPointer == hit?.ordinal) { "$container/$shape pointer winner: ${counts.lastPointer}, expected ${hit?.ordinal}" }
     }
 
     /**
@@ -243,11 +246,11 @@ internal class ContainerDeclarationFixture(
         layout: Layout,
         value: Int,
     ) {
-        check(frame.size == layout.size)
-        check(frame.semantics.size == leafCount)
+        check(frame.size == layout.size) { "$container/$shape frame size: ${frame.size}, expected ${layout.size}" }
+        check(frame.semantics.size == leafCount) { "$container/$shape semantic cardinality" }
         frame.semantics.zip(layout.leaves).forEach { (entry, leaf) ->
-            check(entry.bounds == leaf.bounds)
-            check(entry.semantics == semantic(leaf.ordinal, value))
+            check(entry.bounds == leaf.bounds) { "$container/$shape bounds of ${leaf.ordinal}: ${entry.bounds}, expected ${leaf.bounds}" }
+            check(entry.semantics == semantic(leaf.ordinal, value)) { "$container/$shape semantics of ${leaf.ordinal} at version $value" }
         }
         val rasterSize = rasterSize(layout.size)
         val pixels = IntArray(rasterSize.width * rasterSize.height)
@@ -258,7 +261,7 @@ internal class ContainerDeclarationFixture(
                 }
             }
         }
-        check(pixels(frame).contentEquals(pixels))
+        check(pixels(frame).contentEquals(pixels)) { "$container/$shape pixel oracle at version $value" }
     }
 
     private fun pixels(frame: RuntimeUiFrame): IntArray = rasterizeHeadless(frame.drawCommands, rasterSize(frame.size)).copyArgb()
