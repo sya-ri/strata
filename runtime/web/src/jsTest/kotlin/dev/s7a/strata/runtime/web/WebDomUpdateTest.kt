@@ -23,6 +23,8 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLProgressElement
 import org.w3c.dom.MutationObserver
 import org.w3c.dom.MutationObserverInit
+import kotlin.js.json
+import kotlin.js.unsafeCast
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -236,7 +238,8 @@ internal class WebDomUpdateTest {
     }
 
     private fun observe(root: HTMLElement): MutationObserver =
-        MutationObserver { _, _ -> }.also { it.observe(root, MutationObserverInit(attributes = true, childList = true, subtree = true)) }
+        // Omit attributeFilter rather than supplying an invalid null native sequence.
+        MutationObserver { _, _ -> }.also { it.observe(root, json("attributes" to true, "childList" to true, "subtree" to true).unsafeCast<MutationObserverInit>()) }
 
     private fun text(identity: Int): Visual = native(identity, WebPresentation.Kind.Text)
 

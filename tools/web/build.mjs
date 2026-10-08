@@ -171,5 +171,5 @@ async function verifyDomUpdates(browser, page, engine, theme, evidence) {
             assert.deepEqual(actualLast, expectedLast, `Changed last-element pixels differ from fresh DOM: ${prefix}`);
         }
     } finally { await comparison.close(); }
-    return updates.map(({ count, phase, mutations }) => ({ count, phase, mutations }));
+    return updates.map(({ count, phase, mutations, checks }) => ({ count, phase, mutations, checks }));
 }

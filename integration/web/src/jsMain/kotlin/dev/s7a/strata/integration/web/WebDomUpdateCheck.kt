@@ -36,6 +36,7 @@ import org.w3c.dom.MutationObserverInit
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.MouseEventInit
 import kotlin.js.json
+import kotlin.js.unsafeCast
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -87,7 +88,7 @@ internal object WebDomUpdateCheck {
         try {
             mountWeb(UiDefinition { element(ClipElement(inputs)) }, reference, IntSize(120, 80), theme).use {
                 check(elements(root).map(::properties) == elements(reference).map(::properties)) { "Incremental clip or background differs from fresh rendering" }
-                return json("count" to 1, "phase" to "clip-$index", "mutations" to null, "currentHtml" to root.outerHTML, "referenceHtml" to reference.outerHTML)
+                return json("count" to 1, "phase" to "clip-$index", "mutations" to null, "currentHtml" to root.outerHTML, "referenceHtml" to reference.outerHTML, "checks" to json("independent_full_render" to true, "retained_identity" to true))
             }
         } finally {
             reference.parentNode?.removeChild(reference)
@@ -122,7 +123,8 @@ internal object WebDomUpdateCheck {
             val button = root.querySelector("button") as HTMLButtonElement
             button.focus()
             check(document.activeElement === button)
-            observer.observe(root, MutationObserverInit(attributes = true, childList = true, subtree = true))
+            // Omit attributeFilter entirely: a present null value cannot be converted to a native sequence.
+            observer.observe(root, json("attributes" to true, "childList" to true, "subtree" to true).unsafeCast<MutationObserverInit>())
             val localized = initial.copy(changed = setOf(count - 1))
             scenario.snapshot.value = localized
             host.render(viewport)
@@ -196,6 +198,18 @@ internal object WebDomUpdateCheck {
                 container.parentNode?.removeChild(container)
             }
         }
+        evidence.last().checks =
+            json(
+                "hydration" to true,
+                "keyed_reorder" to true,
+                "untouched_focus_on_reorder" to true,
+                "removed_owner_detached" to true,
+                "reinserted_owner_is_fresh" to true,
+                "enabled_activation" to true,
+                "disabled_activation_rejected" to true,
+                "insertion_failure_released" to true,
+                "terminal_close" to true,
+            )
         return evidence
     }
 
