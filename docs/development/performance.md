@@ -228,12 +228,18 @@ The internal region rasterizer allocates only the tight visible run extent while
 CPU fallback runs exceeding 262,144 physical pixels are split into disjoint logical tiles targeting 256 physical pixels per edge.
 Tile edges grow until each run has at most 64 tiles; smaller runs retain their single tight image.
 Each tile retains original commands and sampling coordinates, with balanced clips emitted only for intersecting primitives, and replays complete ordered composition within its region.
+Large-run partitioning reads each command occurrence once and routes each primitive to its intersecting grid cells, preserving lazy original clip emission separately for each tile.
+Temporary command lists and emitted clip depths are bounded by the same 64-tile grid and are transferred only to the current prepared descriptions; no history or spatial cache is retained.
 Disjoint tiles from one original run share an ordering identity and one native ordering group; boundaries remain between original runs, direct images and platform payloads.
 The existing generation key and resource sharing reuse unchanged tiles, including after a small primitive moves or disappears; changed tiles start from transparent black so erased pixels cannot persist.
 Unavailable direct images use the same bounded tiling, and fallback-reason counters count original command occurrences once rather than duplicated tile coverage.
 The screen owns only the current tile descriptions and generation, and unchanged frames still skip partitioning, rasterization and uploads.
 A changed layer count does not invalidate an unchanged prefix or suffix whose index shifts.
 There is no historical content lookup or new application-facing cache.
+The independent `:quality:benchmarks:jmhPortableTiles` corpus invokes the JVM-synthetic common partition entry point from the actual JAR supplied by `-Pstrata.performance.portableTileRuntime=<path>` without initializing Minecraft.
+Its four cases use 128 or 4096 primitives across 64 tiles, either dispersed among individual tiles or covering every tile, with unchanged enclosing integer and fractional clips.
+It includes the same reflective invocation overhead on both revisions, preserves the ordinary JMH execution settings and shared fork provenance, and does not change the historical corpus or its runtime classpath.
+Collect repetitions 0, 1 and 2 into separate `strata.performance.portableTileOutput` roots for the baseline and candidate, then compare through the shared evidence processor.
 Cached foreground paint callbacks do not make overlapping composition free: changing a lower command can invalidate the portable run containing the foreground, requiring its rasterization and upload again.
 The full ordered commands and clips are replayed, so translucent overlays blend against the updated background and erased lower pixels do not persist.
 See [render monitoring](render-monitoring.md#overlapping-content-and-overlays) for the distinction between callback counts and composition work and the corresponding pixel regressions.

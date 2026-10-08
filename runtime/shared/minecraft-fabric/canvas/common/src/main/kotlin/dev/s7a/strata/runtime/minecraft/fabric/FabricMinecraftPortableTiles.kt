@@ -42,6 +42,8 @@ internal fun tileFabricMinecraftPortable(
 
     fun count(): Long = ((bounds.width.toLong() + extent - 1) / extent) * ((bounds.height.toLong() + extent - 1) / extent)
     while (64L < count()) extent = Math.multiplyExact(extent, 2)
+    val selectedCommands = partitionTileCommands(commands, bounds, extent, count().toInt())
+    var tileIndex = 0
     var ineligibleCount = ineligibleSampledImages
     var capacityCount = capacitySampledImages
     var tintCount = tintFallbackImages
@@ -54,7 +56,7 @@ internal fun tileFabricMinecraftPortable(
         while (left < bounds.right) {
             val right = left + minOf(extent, bounds.right - left)
             val tile = IntRect(left, top, right, bottom)
-            val selected = selectTileCommands(commands, tile)
+            val selected = selectedCommands[tileIndex++]
             if (selected.isNotEmpty()) {
                 result.add(
                     FabricMinecraftFrameLayer.Portable(
@@ -80,16 +82,19 @@ internal fun tileFabricMinecraftPortable(
     return result
 }
 
-// Emit a clip only when it contains a selected primitive, so unrelated clip changes do not invalidate every tile.
-@Suppress("CyclomaticComplexMethod")
-private fun selectTileCommands(
+// Read commands once and emit clips only for selected primitives, so unrelated clip changes still leave other tiles equal.
+@Suppress("CyclomaticComplexMethod", "LongMethod") // Keep one clip-stack traversal with the bounded row/column distribution.
+private fun partitionTileCommands(
     commands: List<DrawCommand>,
-    tile: IntRect,
-): List<DrawCommand> {
-    val result = ArrayList<DrawCommand>()
+    bounds: IntRect,
+    extent: Int,
+    tileCount: Int,
+): Array<ArrayList<DrawCommand>> {
+    val columns = ((bounds.width.toLong() + extent - 1) / extent).toInt()
+    val result = Array(tileCount) { ArrayList<DrawCommand>() }
     val clips = ArrayList<DrawCommand>()
-    val coverage = arrayListOf(tile)
-    var emittedDepth = 0
+    val coverage = arrayListOf(bounds)
+    val emittedDepth = IntArray(tileCount)
     commands.forEach { command ->
         when (command) {
             is DrawCommand.PushClip -> {
@@ -104,9 +109,11 @@ private fun selectTileCommands(
 
             DrawCommand.PopClip -> {
                 require(clips.isNotEmpty()) { "Clip pop has no matching push." }
-                if (emittedDepth == clips.size) {
-                    result.add(command)
-                    emittedDepth--
+                result.forEachIndexed { index, selected ->
+                    if (emittedDepth[index] == clips.size) {
+                        selected.add(command)
+                        emittedDepth[index]--
+                    }
                 }
                 clips.removeAt(clips.lastIndex)
                 coverage.removeAt(coverage.lastIndex)
@@ -122,15 +129,34 @@ private fun selectTileCommands(
                         is DrawCommand.SampledImage -> encloseTileBounds(command.destination, clip)
                         else -> error("Portable tiles require portable primitives and balanced clips.")
                     }
-                if (0 < visible.width && 0 < visible.height) {
-                    while (emittedDepth < clips.size) result.add(clips[emittedDepth++])
-                    result.add(command)
+                if (visible.width <= 0 || visible.height <= 0) return@forEach
+                val firstColumn = ((visible.left.toLong() - bounds.left) / extent).toInt()
+                val lastColumn = ((visible.right.toLong() - 1 - bounds.left) / extent).toInt()
+                val firstRow = ((visible.top.toLong() - bounds.top) / extent).toInt()
+                val lastRow = ((visible.bottom.toLong() - 1 - bounds.top) / extent).toInt()
+                for (row in firstRow..lastRow) {
+                    for (column in firstColumn..lastColumn) {
+                        val index = row * columns + column
+                        emittedDepth[index] = emitTileCommand(result[index], clips, emittedDepth[index], command)
+                    }
                 }
             }
         }
     }
     require(clips.isEmpty()) { "Clip push has no matching pop." }
     return result
+}
+
+private fun emitTileCommand(
+    selected: ArrayList<DrawCommand>,
+    clips: List<DrawCommand>,
+    emittedDepth: Int,
+    command: DrawCommand,
+): Int {
+    var depth = emittedDepth
+    while (depth < clips.size) selected.add(clips[depth++])
+    selected.add(command)
+    return depth
 }
 
 private fun encloseTileBounds(
