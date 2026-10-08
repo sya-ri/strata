@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.headless
 
+import java.lang.reflect.InvocationTargetException
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -15,20 +16,21 @@ internal class IntegerBlitColumnsTest {
     fun eligibleMapEvaluatesEachAbsoluteColumnOnce() {
         val positions = ArrayList<Int>()
         val map =
-            IntegerBlitColumns.create(29, 93, 64) { x ->
+            create(29, 93, 64) { x ->
                 positions.add(x)
                 x * 7
             }
         assertEquals((29 until 93).toList(), positions)
         assertArrayEquals(IntArray(64) { (29 + it) * 7 }, map)
-        assertTrue(IntegerBlitColumns::class.java.declaredFields.all { it.type == IntegerBlitColumns::class.java || it.type.isPrimitive })
+        val owner = Class.forName("dev.s7a.strata.runtime.headless.HeadlessImplementation")
+        assertTrue(owner.declaredFields.all { it.type == owner || it.type.isPrimitive })
     }
 
     @Test
     fun scalarControlsEvaluateNothingAndAllocateNoMap() {
         val controls = listOf(64 to 3, 1024 to 1, 63 to 65, 16385 to 4, 0 to 99)
         for ((width, height) in controls) {
-            assertNull(IntegerBlitColumns.create(0, width, height) { error("Scalar setup must not sample.") })
+            assertNull(create(0, width, height) { error("Scalar setup must not sample.") })
         }
     }
 
@@ -37,7 +39,7 @@ internal class IntegerBlitColumnsTest {
         var evaluations = 0
         val map =
             checkNotNull(
-                IntegerBlitColumns.create(51, 51 + 16384, 4) { x ->
+                create(51, 51 + 16384, 4) { x ->
                     evaluations += 1
                     x
                 },
@@ -53,7 +55,7 @@ internal class IntegerBlitColumnsTest {
         val failure = IllegalStateException("sample failure")
         var evaluations = 0
         val thrown = assertThrows<IllegalStateException> {
-            IntegerBlitColumns.create(0, 64, 64) { x ->
+            create(0, 64, 64) { x ->
                 evaluations += 1
                 if (x == 7) throw failure
                 x
@@ -61,6 +63,26 @@ internal class IntegerBlitColumnsTest {
         }
         assertTrue(thrown === failure)
         assertEquals(8, evaluations)
-        assertArrayEquals(IntArray(64) { 100 - it }, IntegerBlitColumns.create(0, 64, 64) { 100 - it })
+        assertArrayEquals(IntArray(64) { 100 - it }, create(0, 64, 64) { 100 - it })
+    }
+
+    /** Invokes the private production admission helper outside any measured raster operation. */
+    private fun create(
+        left: Int,
+        right: Int,
+        rows: Int,
+        sourceAt: (Int) -> Int,
+    ): IntArray? {
+        val owner = Class.forName("dev.s7a.strata.runtime.headless.HeadlessImplementation")
+        val integer = checkNotNull(Int::class.javaPrimitiveType)
+        val method = owner.getDeclaredMethod("blitColumns", integer, integer, integer, Function1::class.java)
+        val singleton = owner.getDeclaredField("INSTANCE")
+        assertTrue(method.trySetAccessible())
+        assertTrue(singleton.trySetAccessible())
+        return try {
+            method.invoke(singleton.get(null), left, right, rows, sourceAt) as IntArray?
+        } catch (failure: InvocationTargetException) {
+            throw checkNotNull(failure.cause)
+        }
     }
 }

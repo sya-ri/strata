@@ -546,6 +546,25 @@ private object HeadlessImplementation {
         return uniform
     }
 
+    /**
+     * Builds exact clipped horizontal coordinates for one integer-blit invocation.
+     * Eligible coverage has at least four rows and 4096 cells, with at most 16384 columns.
+     * Each call owns at most 64 KiB of primitive payload and retains no callback, image, command or output.
+     * Scalar fallbacks allocate no map and evaluate no coordinates during setup; failure publishes no partial map.
+     * Calls [sourceAt] once per absolute column using the original validated integer equation.
+     * All legal coordinates are total after command preflight; precomputation therefore moves no arithmetic failure.
+     */
+    private inline fun blitColumns(
+        left: Int,
+        right: Int,
+        rows: Int,
+        sourceAt: (Int) -> Int,
+    ): IntArray? {
+        val width = right - left
+        if (rows < 4 || width <= 0 || 16384 < width || width.toLong() * rows < 4096L) return null
+        return IntArray(width) { offset -> sourceAt(left + offset) }
+    }
+
     private fun paintBlit(
         pixels: IntArray,
         dimensions: PhysicalDimensions,
@@ -576,7 +595,7 @@ private object HeadlessImplementation {
         val destinationWidth = bounds.width.toLong()
         val destinationHeight = bounds.height.toLong()
         val sourceXs =
-            IntegerBlitColumns.create(left, right, bottom - top) { logicalX ->
+            blitColumns(left, right, bottom - top) { logicalX ->
                 val destinationX = Math.subtractExact(logicalX, bounds.left)
                 RasterMath.sampleSourceCoordinate(destinationX, command.source.left, sourceWidth, destinationWidth)
             }
@@ -671,7 +690,7 @@ private object HeadlessImplementation {
         val right = minOf(Math.multiplyExact(visible.right, scale), clip?.right ?: dimensions.physicalBounds.right)
         val top = maxOf(Math.multiplyExact(visible.top, scale), clip?.top ?: dimensions.physicalBounds.top)
         val bottom = minOf(Math.multiplyExact(visible.bottom, scale), clip?.bottom ?: dimensions.physicalBounds.bottom)
-        val sourceXs = IntegerBlitColumns.create(left, right, bottom - top) { x -> horizontal.sourceAt(x) }
+        val sourceXs = blitColumns(left, right, bottom - top) { x -> horizontal.sourceAt(x) }
         for (y in top until bottom) {
             val sourceY = vertical.sourceAt(y)
             val row = Math.multiplyExact(y - dimensions.physicalOrigin.y, dimensions.physicalSize.width)
