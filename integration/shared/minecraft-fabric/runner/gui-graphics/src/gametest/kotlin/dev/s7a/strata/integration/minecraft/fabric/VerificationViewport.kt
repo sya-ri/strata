@@ -5,11 +5,13 @@ import org.lwjgl.glfw.GLFW
 import org.lwjgl.system.MemoryStack
 
 /**
- * Requests a physical viewport and waits for GLFW, Window, and the render target to agree across client ticks.
+ * Requests a physical viewport and waits for GLFW, Window, the render target and GUI density to agree across client ticks.
  *
  * Called from the test coordinator; all native reads and mutations run on the client thread.
  * A window resize request is asynchronous on Windows, so calling resizeDisplay immediately is not completion evidence.
- * The bounded wait preserves strict screenshot dimensions and reports the last native sizes on failure.
+ * Reapply the GUI scale after physical dimensions converge because legacy resizing can clamp an earlier request against the old framebuffer.
+ * Automatic scale zero remains valid when restoring the previous test options.
+ * The bounded wait preserves strict screenshot dimensions and reports the last native sizes and density on failure.
  */
 internal fun MinecraftLoadedTestContext.configureVerificationViewport(
     size: IntSize,
@@ -24,6 +26,7 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
         minecraft.options.guiScale().set(guiScale)
         minecraft.resizeDisplay()
     }
+    var guiScaleApplied = false
     var consecutiveMatches = 0
     var mismatches = 0
     var lastDimensions = "not sampled"
@@ -35,14 +38,21 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
                 GLFW.glfwGetFramebufferSize(minecraftTestWindowHandle(), width, height)
                 val window = minecraft.window
                 val target = minecraft.mainRenderTarget
-                lastDimensions = "GLFW=${width[0]}x${height[0]}, Window=${window.width}x${window.height}, target=${target.width}x${target.height}"
-                val matches =
+                lastDimensions = "GLFW=${width[0]}x${height[0]}, Window=${window.width}x${window.height}, target=${target.width}x${target.height}, requestedGuiScale=$guiScale, actualGuiScale=${window.guiScale}"
+                val dimensionsMatch =
                     width[0] == size.width && height[0] == size.height &&
                         window.width == size.width && window.height == size.height &&
                         target.width == size.width && target.height == size.height
-                if (matches) {
+                if (dimensionsMatch && guiScaleApplied.not()) {
+                    minecraft.options.guiScale().set(guiScale)
+                    minecraft.resizeDisplay()
+                    guiScaleApplied = true
+                }
+                val scaleMatches = guiScale == 0 || window.guiScale == guiScale.toDouble()
+                if (dimensionsMatch && scaleMatches) {
                     consecutiveMatches += 1
                 } else {
+                    guiScaleApplied = false
                     consecutiveMatches = 0
                     mismatches += 1
                 }

@@ -16,6 +16,7 @@ import dev.s7a.strata.quality.benchmark.ComponentWorkload
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 import java.nio.file.Files
@@ -143,10 +144,11 @@ internal class MinecraftNativePerformanceProbe(
                         "api" to "dev.s7a.strata.render.DrawImage",
                         "core" to "dev.s7a.strata.runtime.UiSession",
                         "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
+                        "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                         "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
                         "fabric" to FabricMinecraftScreen::class.java.name,
                     ),
-                    setOf("api", "core", "minecraft", "fonts"),
+                    setOf("api", "core", "minecraft", "headless", "fonts"),
                 ).also(LoadedArtifactMetadata::verifyComplete)
         }
 
@@ -186,7 +188,7 @@ internal class MinecraftNativePerformanceProbe(
                 )
             }
             context.waitFor(2400) { checkNotNull(meter).completed }
-            return collectResult(scale, name, checkNotNull(meter), gpu)
+            return collectResult(scale, name, checkNotNull(meter), gpu, screen)
         } catch (caught: Throwable) {
             failure = caught
             try {
@@ -215,6 +217,7 @@ internal class MinecraftNativePerformanceProbe(
         name: String,
         meter: MinecraftPerformanceMeter,
         gpu: MinecraftNativeGpuProbe?,
+        screen: FabricMinecraftScreen,
     ): JsonObject {
         val result = context.onClient { meter.result() }
         val queries = gpu
@@ -228,6 +231,7 @@ internal class MinecraftNativePerformanceProbe(
         result.addProperty("gui_scale", scale)
         result.addProperty("framebuffer_width", viewport.width)
         result.addProperty("framebuffer_height", viewport.height)
+        result.add("portable_composition", context.onClient { portableComposition(screen, name) })
         val screenshot = context.takeScreenshot("performance-$name-scale-$scale", viewport)
         val images = output.resolve("images")
         Files.createDirectories(images)
@@ -235,6 +239,28 @@ internal class MinecraftNativePerformanceProbe(
         result.addProperty("png_file", screenshot.fileName.toString())
         result.addProperty("png_sha256", ArtifactIdentity.file(screenshot))
         return result
+    }
+
+    // Inspect immutable current preparation after measurement; no diagnostic read enters a sampled interval.
+    private fun portableComposition(
+        screen: FabricMinecraftScreen,
+        name: String,
+    ): JsonObject {
+        val images = MinecraftCompositionParityInputs.portable(screen).map { it.first }
+        val gpuTiles = images.count(MinecraftCompositionParityInputs::composed)
+        val cpuSampledTiles =
+            images.count { image ->
+                MinecraftCompositionParityInputs.composed(image).not() &&
+                    (MinecraftCompositionParityInputs.member(image, "commands") as List<*>).any { it is DrawCommand.SampledImage }
+            }
+        val case = MinecraftSampledPerformanceCase.entries.singleOrNull { it.name == name }
+        val cpuRows = case == MinecraftSampledPerformanceCase.SampledOrderedRowsSmall || case == MinecraftSampledPerformanceCase.SampledScrolledRowsSmall
+        if (cpuRows) check(0 < cpuSampledTiles && gpuTiles == 0) { "Small sampled rows must measure portable CPU composition." }
+        return JsonObject().apply {
+            addProperty("tiles", images.size)
+            addProperty("gpu_tiles", gpuTiles)
+            addProperty("cpu_sampled_tiles", cpuSampledTiles)
+        }
     }
 
     // The optional class is compiled only for the native timestamp-query family; other targets report unavailable.
