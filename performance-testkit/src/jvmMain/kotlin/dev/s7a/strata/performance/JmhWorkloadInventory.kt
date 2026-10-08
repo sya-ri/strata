@@ -22,7 +22,7 @@ public object JmhWorkloadInventory {
         parameterOverrides: Map<String, Set<String>> = emptyMap(),
         includes: List<String> = emptyList(),
     ): Set<String> {
-        val classes = fixtures.map { it.name }.toSet()
+        val classes = fixtures.map { it.name.replace('$', '.') }.toSet()
         require(classes.isNotEmpty() && classes.size == fixtures.size && modes.isNotEmpty())
         val selectedModes = modes.map(Mode::deepValueOf).toSet()
         require(Mode.All !in selectedModes) { "Register explicit JMH modes" }

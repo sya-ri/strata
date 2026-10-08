@@ -80,6 +80,7 @@ val verifyComponentRenderingWork = tasks.register<JavaExec>("verifyComponentRend
     dependsOn(generated, generator)
     classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.ComponentWorkEvidence")
+    systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     javaLauncher.set(componentLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
@@ -112,25 +113,24 @@ tasks.register<JavaExec>("jmhComponents") {
     val short = quick || smoke
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
-    val stress = providers.gradleProperty("strata.performance.stress").map(String::toBooleanStrict).getOrElse(false)
-    val fonts = providers.gradleProperty("strata.performance.fonts").map(String::toBooleanStrict).getOrElse(false)
-    val exceptionalText = providers.gradleProperty("strata.performance.exceptionalText").map(String::toBooleanStrict).getOrElse(false)
-    val portableText = providers.gradleProperty("strata.performance.portableText").map(String::toBooleanStrict).getOrElse(false)
-    require(listOf(stress, fonts, exceptionalText, portableText).count { it } <= 1) { "Choose one independent corpus" }
-    val corpus = if (portableText) "portable-text" else if (fonts) "fonts" else if (stress) "stress" else if (exceptionalText) "exceptional-text" else "components"
+    val benchmarks = providers.gradleProperty("strata.performance.benchmarks").orNull
+    val parameters = providers.gradleProperty("strata.performance.parameters").orNull
+    val fixtureInputs = providers.gradleProperty("strata.performance.fixtureInputs").orNull
+    require(listOf("fonts", "stress", "exceptionalText", "portableText").none { providers.gradleProperty("strata.performance.$it").isPresent }) { "Select generated fixture classes with strata.performance.benchmarks" }
+    require(benchmarks == null || smoke.not()) { "Smoke and explicit fixture selection are separate scopes" }
+    require(parameters == null || benchmarks != null) { "Compiled parameter selection requires explicit fixtures" }
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
-    require(fonts.not() || workloads == null) { "Workload selection supports the component, stress and exceptional-text corpora" }
-    require(portableText.not() || workloads == null) { "Portable text retains its complete independent matrix" }
-    val suite = (if (quick) "$corpus-quick" else if (smoke) "$corpus-smoke" else corpus) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    val corpus = providers.gradleProperty("strata.performance.suite").getOrElse(if (benchmarks != null) "selected" else if (workloads != null) "components-selected" else "components")
+    require(corpus.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*"))) { "Invalid performance output suite name" }
+    val suite = (if (quick) "$corpus-quick" else if (smoke) "$corpus-smoke" else corpus) + (if (mode in setOf("sample")) "-sample" else "")
     workloads?.let { systemProperty("strata.performance.workloads", it) }
+    benchmarks?.let { systemProperty("strata.performance.benchmarks", it) }
+    parameters?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
+    fixtureInputs?.let { systemProperty("strata.performance.fixtureInputs", rootProject.file(it).absolutePath) }
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), if (portableText) "PortableTextBenchmark.*" else if (fonts) "Font(Provider|Text)Benchmark.*" else if (stress) "StressRenderingBenchmark.*" else if (exceptionalText) "ExceptionalTextFieldBenchmark.*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
-    if (portableText) systemProperty("strata.performance.portableText", true)
-    systemProperty("strata.performance.fonts", fonts)
+    args(result.get().absolutePath, repetition.toString(), if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
-    systemProperty("strata.performance.stress", stress)
-    systemProperty("strata.performance.exceptionalText", exceptionalText)
-    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null))
+    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {

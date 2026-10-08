@@ -59,6 +59,18 @@ Constant translucent images use the same exact destination comparison, while opa
 The independent pixel reference covers transparent, translucent and opaque patterned rows, fractional sampling, flips, cutoffs and destination changes at both ends of a row.
 The sampled and dense sampled JMH corpora measure this CPU fallback separately from native texture upload.
 
+### Immutable modifier membership construction
+
+Modifier values accept only internally created empty, singleton or concatenated membership through their private constructor.
+Each concatenation transfers its newly owned list directly and never mutates it, preserving earlier chains, duplicate description references, order and value equality.
+Public caller-owned lists are not admitted, and the runtime continues to borrow a stable read-only description sequence.
+This removes one redundant membership snapshot; individual appends still perform quadratic aggregate concatenation work and introduce no retained cache.
+
+Common JVM/JavaScript tests verify intermediate-chain reuse, self-concatenation, repeated identities, equality/hash/text values and empty shortcuts.
+The separate `jmhHistorical -Pstrata.performance.modifierComposition=true` corpus covers lengths 0, 1, 8, 32 and 128 for individual appends, prepared-half concatenation, self-concatenation and extending an intermediate chain.
+It also measures an actual 128-child declaration rebuild separately from construction-only operations; no retained frame, rasterization, upload or GPU consumption occurs inside these boundaries.
+It uses the existing receipt collector, runtime manifest replacement and standard sampling settings without changing the historical corpus.
+
 ### Current-child geometry participation
 
 Each retained entry owns its current measure and layout pass identities; direct children record only their last participating parent pass and one placement offset.
@@ -72,7 +84,7 @@ Cleanup clears every marker and offset before input or lifecycle callbacks, incl
 Common JVM and JavaScript tests cover duplicate operations, unmeasured reads and placement, sparse child changes, layout-only updates, keyed reordering and replacement, effective modifier-parent changes, current paint/input/semantics geometry, and cleanup after disposal failure.
 These markers track existing phase participation; they do not skip required measure or layout callbacks or retain historical child lists.
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
-Its `jmhHistorical -Pstrata.performance.childLayout=true` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
+Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
 ### Current-tree frame callbacks
 
@@ -192,7 +204,7 @@ Independent per-pixel regression covers both paths, nonuniform destination alpha
 
 `DenseSampledRasterBenchmark` separately measures opaque and translucent patterned sources at 64, 256 and 1024 texels per axis over an opaque destination, with fixed 1920 by 1080 physical output, fractional nearest sampling and an opaque nonwhite tint.
 Compiled JMH include filters must select exactly the registered method names before forks start; a similarly named supplemental benchmark cannot extend an existing corpus implicitly.
-Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.denseSampledRaster=true` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
+Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
 
