@@ -2,6 +2,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.PerformanceProfile
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.Minecraft
 import java.io.IOException
@@ -31,6 +32,7 @@ internal object MinecraftNativePerformancePacingGameTest {
         withBorrowedOptions(context) {
             observation = context.onClient { Minecraft.getInstance().nativePerformancePacing() }
         }
+        verifySamplingBoundaries(context)
         verifyViewportFailure(context)
         val queryFailure = verifyQueryFailure(context)
         verifyPngFailure(context)
@@ -38,7 +40,7 @@ internal object MinecraftNativePerformancePacingGameTest {
         Files.writeString(
             context.outputDirectory.resolve("strata-native-pacing-restoration.txt"),
             "case=native-pacing-restoration\nowner=verified\ncapture=nonmutating\npartialNativeApplication=restored\n" +
-                "viewportFailure=restored\nqueryFailure=$queryFailure\npngFailure=restored\nnativeProducerFailure=restored\n" +
+                "sampleBoundaries=verified\nviewportFailure=restored\nqueryFailure=$queryFailure\npngFailure=restored\nnativeProducerFailure=restored\n" +
                 "pacing=${checkNotNull(observation)}\n",
         )
     }
@@ -81,6 +83,28 @@ internal object MinecraftNativePerformancePacingGameTest {
             check(outcome.exceptionOrNull() === marker && marker.suppressed.isEmpty()) { "Partial application replaced the exact native setter failure." }
         }
         check(snapshot(context) == before) { "Partial native application did not restore every captured setting." }
+    }
+
+    private fun verifySamplingBoundaries(context: MinecraftCanvasTestContext) {
+        val samples = PerformanceProfile.Standard.plan().samples
+        context.configureViewport(IntSize(1920, 1080), 1)
+        withBorrowedOptions(context) { options ->
+            context.onClient { options.beginPhase(samples) }
+            context.waitFor { options.pacingReady() }
+            context.onClient {
+                options.beforeSamples()
+                check(options.pacingProgress().get("observed_boundaries").asInt == 0)
+                repeat(samples + 1) { options.validate(1) }
+                options.afterSamples()
+                val evidence = options.pacingEvidence()
+                check(evidence.get("sample_boundaries").asInt == samples + 1)
+                check(evidence.getAsJsonArray("boundaries").size() == samples + 1)
+                options.validate(1)
+                check(options.pacingProgress().get("observed_boundaries").asInt == samples + 1)
+                options.beginPhase(samples)
+                check(options.pacingProgress().get("observed_boundaries").asInt == 0)
+            }
+        }
     }
 
     private fun verifyViewportFailure(context: MinecraftCanvasTestContext) {

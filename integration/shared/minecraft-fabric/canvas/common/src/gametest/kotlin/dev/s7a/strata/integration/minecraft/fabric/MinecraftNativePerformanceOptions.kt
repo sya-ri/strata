@@ -61,14 +61,13 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
     }
 
     /**
-     * Captures the first sampled boundary outside extraction after the existing settle presentations.
+     * Arms observations after settling; the next validation records the actual initial sample boundary.
      */
     internal fun beforeSamples() {
         check(client.isSameThread)
         val pacing = pacingObservation
         pacing.validate(inactivity)
         if (inactivity == MinecraftNativePerformancePacing.Inactivity.MINIMIZED) pacing.verifyStable(checkNotNull(expectedPacing))
-        pacingBoundaries.add(pacing)
         observingPacing = true
     }
 
