@@ -4579,6 +4579,18 @@
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public final fun result ()Lcom/google/gson/JsonObject;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public fun <init> (IDLjava/lang/String;Lkotlin/jvm/functions/Function1;)V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/GpuPerformanceMeter#public fun close ()V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final class dev/s7a/strata/performance/JmhFixtureSelection {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun all ()Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun includes (Ljava/util/List;)Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun inputs ()Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun methods (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun parameters ()Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun select (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun verifyIncludes (Ljava/util/Set;Ljava/util/List;)V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public final fun verifyWork (Ljava/util/List;)V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public static final field INSTANCE Ldev/s7a/strata/performance/JmhFixtureSelection;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public static synthetic fun methods$default (Ldev/s7a/strata/performance/JmhFixtureSelection;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhFixtureSelection#public static synthetic fun select$default (Ldev/s7a/strata/performance/JmhFixtureSelection;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Ljava/util/List;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhForkProfiler#public final class dev/s7a/strata/performance/JmhForkProfiler : org/openjdk/jmh/profile/InternalProfiler {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhForkProfiler#public fun <init> (Ljava/lang/String;)V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JmhForkProfiler#public fun afterIteration (Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/results/IterationResult;)Ljava/util/Collection;

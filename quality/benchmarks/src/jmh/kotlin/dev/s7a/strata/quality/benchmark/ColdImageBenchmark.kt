@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
@@ -76,5 +77,18 @@ public open class ColdImageBenchmark {
                 val pixels = decoded.getRGB(0, 0, resolution, resolution, null, 0, resolution)
                 createDrawImage(IntSize(resolution, resolution), pixels)
             }
+    }
+
+    /**
+     * Owns the fixed generated matrix contract for this independent corpus.
+     */
+    public companion object {
+        /**
+         * Checks all 6 compiled AverageTime cases before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(ColdImageBenchmark::class.java), setOf("avgt")).size == 6)
+        }
     }
 }

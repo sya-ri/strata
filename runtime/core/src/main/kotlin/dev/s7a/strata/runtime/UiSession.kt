@@ -13,7 +13,7 @@ import dev.s7a.strata.runtime.platform.currentThread
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
-import dev.s7a.strata.runtime.spi.createRuntimeUiFrame
+import dev.s7a.strata.runtime.spi.createRuntimeUiFrameWithOwnedSemantics
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.state.StateSource
@@ -373,7 +373,7 @@ internal class UiSession(
                 retainedTree.layout()
                 val draw = retainedTree.paint()
                 val semantics = retainedTree.semantics()
-                val frame = createRuntimeUiFrame(size, draw, semantics)
+                val frame = createRuntimeUiFrameWithOwnedSemantics(size, draw, semantics)
                 committedFrameConstraints = constraints
                 frameAvailable = true
                 if (retainedTree.currentRevision() == revision) {

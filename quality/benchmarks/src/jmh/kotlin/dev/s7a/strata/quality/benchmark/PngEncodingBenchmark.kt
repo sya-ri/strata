@@ -2,6 +2,8 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JmhPerformanceRunner
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
@@ -14,6 +16,10 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.util.zip.Adler32
+import java.util.zip.CRC32
 import javax.imageio.ImageIO
 
 /**
@@ -27,6 +33,103 @@ public open class PngEncodingBenchmark {
      */
     @Benchmark
     public fun encodePng(state: Pixels): ByteArray = state.image.encodePng()
+
+    /**
+     * Owns untimed byte parity and generated-matrix checks for this supplemental corpus.
+     */
+    public companion object {
+        /**
+         * Verifies all twelve shape/alpha cases and independent output ownership before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            val expected =
+                buildSet {
+                    for (shape in Shape.entries) {
+                        for (alpha in Alpha.entries) {
+                            add(
+                                JmhPerformanceRunner.workloadIdentity(
+                                    "${PngEncodingBenchmark::class.java.name}.encodePng",
+                                    "avgt",
+                                    mapOf("shape" to shape.name, "alpha" to alpha.name),
+                                ),
+                            )
+                            val state = Pixels()
+                            state.shape = shape
+                            state.alpha = alpha
+                            state.setup()
+                            val pixels = state.image.copyArgb()
+                            val canonical = canonicalPng(shape.size, pixels)
+                            val encoded = PngEncodingBenchmark().encodePng(state)
+                            check(encoded.contentEquals(canonical))
+                            encoded.fill(0)
+                            check(state.image.encodePng().contentEquals(canonical))
+                            check(state.image.copyArgb().contentEquals(pixels))
+                        }
+                    }
+                }
+            check(expected.size == 12)
+            check(JmhWorkloadInventory.capture(listOf(PngEncodingBenchmark::class.java), setOf("avgt")) == expected)
+        }
+
+        private fun canonicalPng(
+            size: IntSize,
+            pixels: IntArray,
+        ): ByteArray {
+            val scanlines = ByteArrayOutputStream()
+            DataOutputStream(scanlines).use { rows ->
+                pixels.forEachIndexed { index, argb ->
+                    if (index % size.width == 0) rows.writeByte(0)
+                    rows.writeByte(argb ushr 16)
+                    rows.writeByte(argb ushr 8)
+                    rows.writeByte(argb)
+                    rows.writeByte(argb ushr 24)
+                }
+            }
+            val raw = scanlines.toByteArray()
+            val compressed = ByteArrayOutputStream()
+            DataOutputStream(compressed).use { zlib ->
+                zlib.writeShort(0x7801)
+                var offset = 0
+                while (offset < raw.size) {
+                    val count = minOf(65_535, raw.size - offset)
+                    zlib.writeByte(if (offset + count == raw.size) 1 else 0)
+                    zlib.writeByte(count)
+                    zlib.writeByte(count ushr 8)
+                    zlib.writeByte(count.inv())
+                    zlib.writeByte(count.inv() ushr 8)
+                    zlib.write(raw, offset, count)
+                    offset += count
+                }
+                zlib.writeInt(Adler32().apply { update(raw) }.value.toInt())
+            }
+            val header = ByteArrayOutputStream()
+            DataOutputStream(header).use { ihdr ->
+                ihdr.writeInt(size.width)
+                ihdr.writeInt(size.height)
+                ihdr.write(byteArrayOf(8, 6, 0, 0, 0))
+            }
+            val png = ByteArrayOutputStream()
+            DataOutputStream(png).use { output ->
+                output.write(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
+                listOf("IHDR" to header.toByteArray(), "IDAT" to compressed.toByteArray(), "IEND" to ByteArray(0)).forEach { (type, payload) ->
+                    val bytes = type.encodeToByteArray()
+                    output.writeInt(payload.size)
+                    output.write(bytes)
+                    output.write(payload)
+                    output.writeInt(
+                        CRC32()
+                            .apply {
+                                update(bytes)
+                                update(payload)
+                            }.value
+                            .toInt(),
+                    )
+                }
+            }
+            return png.toByteArray()
+        }
+    }
 
     /**
      * Owns one prepared immutable image per worker, without retaining encoded output history.

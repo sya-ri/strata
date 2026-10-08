@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonParser
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmApiInventory
 import dev.s7a.strata.performance.PerformanceCoverage
@@ -8,9 +9,6 @@ import dev.s7a.strata.performance.PerformanceHost
 import dev.s7a.strata.performance.PerformanceInventory
 import dev.s7a.strata.performance.PerformancePhase
 import dev.s7a.strata.performance.PerformanceScenario
-import org.openjdk.jmh.runner.BenchmarkList
-import org.openjdk.jmh.runner.format.OutputFormatFactory
-import org.openjdk.jmh.runner.options.VerboseMode
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -31,27 +29,17 @@ public object HistoricalWorkloadEvidence {
             return
         }
         verifySurface()
-        ChildLayoutBenchmark.verifyWork()
-        check(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")).size == 4)
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*"))
         val fixtures = HistoricalPerformanceEvidence.fixtures()
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
-        check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
-        check(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")).size == 12)
-        check(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")).size == 6)
-        check(JmhWorkloadInventory.capture(listOf(PngEncodingBenchmark::class.java), setOf("avgt")).size == 12)
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(PngEncodingBenchmark::class.java), setOf("avgt")), listOf("PngEncodingBenchmark.*"))
-        check(JmhWorkloadInventory.capture(listOf(ColdImageBenchmark::class.java), setOf("avgt")).size == 6)
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(ColdImageBenchmark::class.java), setOf("avgt")), listOf("ColdImageBenchmark.*"))
-        verifyIncludes(JmhWorkloadInventory.capture(fixtures, setOf("avgt")), listOf("(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"))
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")), listOf("NonuniformOverlayBenchmark.*"))
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*"))
-        verifyIncludes(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")), listOf("DenseSampledRasterBenchmark.*"))
-        check(
-            runCatching {
-                verifyIncludes(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")), listOf("SampledRasterBenchmark.*"))
-            }.exceptionOrNull() is IllegalArgumentException,
-        )
+        // New compiled fixtures participate without changing this launcher or Gradle registration.
+        val compiled = JmhFixtureSelection.all()
+        JmhFixtureSelection.verifyWork(compiled)
+        compiled.forEach { fixture ->
+            val includes = JmhFixtureSelection.includes(listOf(fixture))
+            val expected = JmhWorkloadInventory.capture(listOf(fixture), setOf("avgt"), includes = includes)
+            JmhFixtureSelection.verifyIncludes(expected, includes)
+            check(JmhFixtureSelection.select(emptyList(), fixture.name) == listOf(fixture))
+        }
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 108)
         check(
             JmhWorkloadInventory
@@ -99,15 +87,7 @@ public object HistoricalWorkloadEvidence {
         expected: Set<String>,
         includes: List<String>,
     ) {
-        val methods = expected.map { JsonParser.parseString(it).asJsonArray[0].asString }.toSet()
-        val output = OutputFormatFactory.createFormatInstance(System.out, VerboseMode.SILENT)
-        val selected =
-            BenchmarkList
-                .defaultList()
-                .find(output, includes, emptyList())
-                .map { it.username }
-                .toSet()
-        require(selected == methods) { "JMH include filters select methods outside the registered fixture matrix" }
+        JmhFixtureSelection.verifyIncludes(expected, includes)
     }
 
     private fun headlessSurface(): Map<String, Set<String>> = JvmApiInventory.capture(javaClass.classLoader, mapOf("headless" to "dev.s7a.strata.runtime.headless.HeadlessImage"))
