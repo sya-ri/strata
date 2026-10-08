@@ -62,9 +62,11 @@ internal class FabricMinecraftClipPrefixTest {
                         assertEquals(original.source, actual.source)
                         assertEquals(original.destination, actual.destination)
                     }
-                    assertTrue(layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().all {
-                        it.ineligibleSampledImages == 0 && it.capacitySampledImages == 0 && it.tintFallbackImages == 0 && it.alphaCutoffFallbackImages == 0
-                    })
+                    assertTrue(
+                        layers.filterIsInstance<FabricMinecraftFrameLayer.Portable>().all {
+                            it.ineligibleSampledImages == 0 && it.capacitySampledImages == 0 && it.tintFallbackImages == 0 && it.alphaCutoffFallbackImages == 0
+                        },
+                    )
                     assertArrayEquals(
                         rasterizeHeadless(commands.map(::portablePlatform), viewport, scale).copyArgb(),
                         rasterizeHeadless(reconstruct(layers), viewport, scale).copyArgb(),
@@ -83,12 +85,13 @@ internal class FabricMinecraftClipPrefixTest {
         val sampled = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(0f, 0f, 16f, 12f), alphaCutoff = 0f)
         val raw = DrawCommand.PushFractionalClip(FloatRect(0.25f, 0.25f, 15.75f, 11.75f))
         for (depth in listOf(1, 4, 32, 128)) {
-            val commands = buildList {
-                repeat(depth - 1) { add(DrawCommand.PushClip(IntRect(0, 0, 16, 12))) }
-                add(raw)
-                add(sampled)
-                repeat(depth) { add(DrawCommand.PopClip) }
-            }
+            val commands =
+                buildList {
+                    repeat(depth - 1) { add(DrawCommand.PushClip(IntRect(0, 0, 16, 12))) }
+                    add(raw)
+                    add(sampled)
+                    repeat(depth) { add(DrawCommand.PopClip) }
+                }
             for (scale in 1..4) {
                 val layers = partitionFabricMinecraftFrame(commands, viewport, scale)
                 if (scale == 1) {
@@ -140,18 +143,19 @@ internal class FabricMinecraftClipPrefixTest {
         val viewport = IntSize(512, 512)
         val payload = DrawCommand.Platform(TestPlatform(ArgbColor(-1)), IntRect(256, 256, 257, 257))
         for (depth in listOf(1, 4, 32, 128)) {
-            val commands = buildList {
-                repeat(depth) { index ->
-                    val inset = index + 1
-                    add(DrawCommand.PushClip(IntRect(inset, inset, 512 - inset, 512 - inset)))
-                    add(payload)
-                    add(payload)
+            val commands =
+                buildList {
+                    repeat(depth) { index ->
+                        val inset = index + 1
+                        add(DrawCommand.PushClip(IntRect(inset, inset, 512 - inset, 512 - inset)))
+                        add(payload)
+                        add(payload)
+                    }
+                    repeat(depth) {
+                        add(DrawCommand.PopClip)
+                        add(payload)
+                    }
                 }
-                repeat(depth) {
-                    add(DrawCommand.PopClip)
-                    add(payload)
-                }
-            }
             val first = partitionFabricMinecraftFrame(commands, viewport).filterIsInstance<FabricMinecraftFrameLayer.Platform>()
             val before = first.map { it.clip }
             repeat(depth) { index ->
@@ -177,14 +181,15 @@ internal class FabricMinecraftClipPrefixTest {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { -1 })
         val sampled = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(4f, 4f, 8f, 8f), alphaCutoff = 0f)
         val platform = DrawCommand.Platform(TestPlatform(ArgbColor(-1)), IntRect(2, 2, 3, 3))
-        val commands = buildList {
-            repeat(32) { add(DrawCommand.PushClip(IntRect(0, 0, 768, 768))) }
-            add(firstFill)
-            add(sampled)
-            add(secondFill)
-            add(platform)
-            repeat(32) { add(DrawCommand.PopClip) }
-        }
+        val commands =
+            buildList {
+                repeat(32) { add(DrawCommand.PushClip(IntRect(0, 0, 768, 768))) }
+                add(firstFill)
+                add(sampled)
+                add(secondFill)
+                add(platform)
+                repeat(32) { add(DrawCommand.PopClip) }
+            }
         val layers = partitionFabricMinecraftFrame(commands, viewport)
         assertEquals(20, layers.size)
         val first = layers.take(9).map { it as FabricMinecraftFrameLayer.Portable }
@@ -226,7 +231,11 @@ internal class FabricMinecraftClipPrefixTest {
         }
     }
 
-    private fun clips(depth: Int, pattern: ClipPattern, viewport: IntSize): List<DrawCommand> =
+    private fun clips(
+        depth: Int,
+        pattern: ClipPattern,
+        viewport: IntSize,
+    ): List<DrawCommand> =
         List(depth) { index ->
             val inset = index % 3
             if (pattern == ClipPattern.Integer || (pattern == ClipPattern.Mixed && index % 2 == 0)) {
@@ -238,25 +247,35 @@ internal class FabricMinecraftClipPrefixTest {
         }
 
     // Scalar extrema across the complete stack form an independent oracle; it does not replay prefix updates.
-    private fun completeClip(clips: List<DrawCommand>, viewport: IntSize): IntRect {
-        val rectangles = listOf(IntRect(0, 0, viewport.width, viewport.height)) + clips.map { command ->
-            when (command) {
-                is DrawCommand.PushClip -> command.bounds
-                is DrawCommand.PushFractionalClip -> IntRect(
-                    floor(command.bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
-                    floor(command.bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
-                    ceil(command.bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
-                    ceil(command.bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
-                )
-                else -> error("The clip oracle accepts only push commands.")
+    private fun completeClip(
+        clips: List<DrawCommand>,
+        viewport: IntSize,
+    ): IntRect {
+        val rectangles =
+            listOf(IntRect(0, 0, viewport.width, viewport.height)) + clips.map { command ->
+                when (command) {
+                    is DrawCommand.PushClip -> command.bounds
+
+                    is DrawCommand.PushFractionalClip ->
+                        IntRect(
+                            floor(command.bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                            floor(command.bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                            ceil(command.bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                            ceil(command.bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                        )
+
+                    else -> error("The clip oracle accepts only push commands.")
+                }
             }
-        }
         val left = rectangles.maxOf { it.left }
         val top = rectangles.maxOf { it.top }
         return IntRect(left, top, maxOf(left, rectangles.minOf { it.right }), maxOf(top, rectangles.minOf { it.bottom }))
     }
 
-    private fun mixedCommands(clips: List<DrawCommand>, viewport: IntSize): List<DrawCommand> {
+    private fun mixedCommands(
+        clips: List<DrawCommand>,
+        viewport: IntSize,
+    ): List<DrawCommand> {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { 0xFF112200.toInt() or it })
         return clips + listOf(
             DrawCommand.FillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(0xFF102030.toInt())),
@@ -272,28 +291,30 @@ internal class FabricMinecraftClipPrefixTest {
     private fun portablePlatform(command: DrawCommand): DrawCommand =
         if (command is DrawCommand.Platform) DrawCommand.FillRectangle(command.bounds, (command.command as TestPlatform).color) else command
 
-    private fun reconstruct(layers: List<FabricMinecraftFrameLayer>): List<DrawCommand> = buildList {
-        layers.forEach { layer ->
-            when (layer) {
-                is FabricMinecraftFrameLayer.Portable -> {
-                    add(DrawCommand.PushClip(layer.bounds))
-                    addAll(globalCommands(layer))
-                    add(DrawCommand.PopClip)
-                }
-                is FabricMinecraftFrameLayer.Sampled -> {
-                    layer.clip?.let { add(DrawCommand.PushClip(it)) }
-                    add(layer.command)
-                    if (layer.clip != null) add(DrawCommand.PopClip)
-                }
-                is FabricMinecraftFrameLayer.Platform -> {
-                    layer.clip?.let { add(DrawCommand.PushClip(it)) }
-                    add(portablePlatform(layer.command))
-                    if (layer.clip != null) add(DrawCommand.PopClip)
+    private fun reconstruct(layers: List<FabricMinecraftFrameLayer>): List<DrawCommand> =
+        buildList {
+            layers.forEach { layer ->
+                when (layer) {
+                    is FabricMinecraftFrameLayer.Portable -> {
+                        add(DrawCommand.PushClip(layer.bounds))
+                        addAll(globalCommands(layer))
+                        add(DrawCommand.PopClip)
+                    }
+
+                    is FabricMinecraftFrameLayer.Sampled -> {
+                        layer.clip?.let { add(DrawCommand.PushClip(it)) }
+                        add(layer.command)
+                        if (layer.clip != null) add(DrawCommand.PopClip)
+                    }
+
+                    is FabricMinecraftFrameLayer.Platform -> {
+                        layer.clip?.let { add(DrawCommand.PushClip(it)) }
+                        add(portablePlatform(layer.command))
+                        if (layer.clip != null) add(DrawCommand.PopClip)
+                    }
                 }
             }
         }
-    }
-
     private fun globalCommands(layer: FabricMinecraftFrameLayer.Portable): List<DrawCommand> {
         if (layer.absoluteCoordinates) return layer.commands
         val offset = IntOffset(layer.bounds.left, layer.bounds.top)

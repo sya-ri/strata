@@ -63,33 +63,34 @@ internal class FrameClipWorkload private constructor(
             val destination = IntRect(center, center, center + 4, center + 4)
             val floating = FloatRect(center.toFloat(), center.toFloat(), center + 4f, center + 4f)
             val source = IntRect(0, 0, 4, 4)
-            val commands = buildList {
-                repeat(depth) { index ->
-                    val inset = index % 3
-                    if (pattern == FrameClipBenchmark.ClipPattern.Integer || (pattern == FrameClipBenchmark.ClipPattern.Mixed && index % 2 == 0)) {
-                        add(DrawCommand.PushClip(IntRect(inset, inset, side - inset, side - inset)))
-                    } else {
-                        val edge = inset + 0.25f
-                        add(DrawCommand.PushFractionalClip(FloatRect(edge, edge, side - edge, side - edge)))
+            val commands =
+                buildList {
+                    repeat(depth) { index ->
+                        val inset = index % 3
+                        if (pattern == FrameClipBenchmark.ClipPattern.Integer || (pattern == FrameClipBenchmark.ClipPattern.Mixed && index % 2 == 0)) {
+                            add(DrawCommand.PushClip(IntRect(inset, inset, side - inset, side - inset)))
+                        } else {
+                            val edge = inset + 0.25f
+                            add(DrawCommand.PushFractionalClip(FloatRect(edge, edge, side - edge, side - edge)))
+                        }
                     }
-                }
-                repeat(primitives) { index ->
-                    add(
-                        when (Primitive.entries[index % Primitive.entries.size]) {
-                            Primitive.Fill -> DrawCommand.FillRectangle(bounds, ArgbColor(0x80456789.toInt()))
-                            Primitive.LogicalImage -> DrawCommand.BlitImage(image, source, destination)
-                            Primitive.PhysicalImage -> DrawCommand.BlitImagePixels(image, source, destination)
-                        },
-                    )
-                    if (index == primitives / 2) {
-                        add(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), floating, alphaCutoff = 0f))
-                        add(DrawCommand.FillRectangle(destination, ArgbColor(0xFF112233.toInt())))
-                        add(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), floating, tint = ArgbColor(0xFF8899AA.toInt()), alphaCutoff = 0f))
-                        add(DrawCommand.Platform(Marker, destination))
+                    repeat(primitives) { index ->
+                        add(
+                            when (Primitive.entries[index % Primitive.entries.size]) {
+                                Primitive.Fill -> DrawCommand.FillRectangle(bounds, ArgbColor(0x80456789.toInt()))
+                                Primitive.LogicalImage -> DrawCommand.BlitImage(image, source, destination)
+                                Primitive.PhysicalImage -> DrawCommand.BlitImagePixels(image, source, destination)
+                            },
+                        )
+                        if (index == primitives / 2) {
+                            add(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), floating, alphaCutoff = 0f))
+                            add(DrawCommand.FillRectangle(destination, ArgbColor(0xFF112233.toInt())))
+                            add(DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), floating, tint = ArgbColor(0xFF8899AA.toInt()), alphaCutoff = 0f))
+                            add(DrawCommand.Platform(Marker, destination))
+                        }
                     }
+                    repeat(depth) { add(DrawCommand.PopClip) }
                 }
-                repeat(depth) { add(DrawCommand.PopClip) }
-            }
             check(commands.count { it is DrawCommand.PushClip || it is DrawCommand.PushFractionalClip } == depth)
             check(commands.count { it === DrawCommand.PopClip } == depth)
             return FrameClipWorkload(commands, IntSize(side, side)).also { check(it.partition().isNotEmpty()) }
@@ -102,20 +103,26 @@ internal class FrameClipWorkload private constructor(
             val commands =
                 when (scenario) {
                     FrameClipBenchmark.EdgeCase.EmptyFrame -> emptyList()
+
                     FrameClipBenchmark.EdgeCase.ClipOnly -> List(128) { DrawCommand.PushClip(bounds) } + List(128) { DrawCommand.PopClip }
+
                     FrameClipBenchmark.EdgeCase.EmptyClip -> listOf(DrawCommand.PushClip(IntRect(4, 4, 4, 8)), fill, DrawCommand.PopClip)
+
                     FrameClipBenchmark.EdgeCase.Offscreen -> listOf(DrawCommand.PushClip(IntRect(40, 40, 48, 48)), fill, DrawCommand.PopClip)
+
                     FrameClipBenchmark.EdgeCase.LargeEdges -> listOf(DrawCommand.PushClip(IntRect(Int.MIN_VALUE + 1, Int.MIN_VALUE + 1, Int.MAX_VALUE, Int.MAX_VALUE)), fill, DrawCommand.PopClip)
-                    FrameClipBenchmark.EdgeCase.Siblings -> buildList {
-                        add(DrawCommand.PushClip(bounds))
-                        repeat(128) { index ->
-                            val inset = index % 3
-                            add(DrawCommand.PushFractionalClip(FloatRect(inset + 0.25f, inset + 0.25f, 31.75f - inset, 31.75f - inset)))
-                            add(fill)
+
+                    FrameClipBenchmark.EdgeCase.Siblings ->
+                        buildList {
+                            add(DrawCommand.PushClip(bounds))
+                            repeat(128) { index ->
+                                val inset = index % 3
+                                add(DrawCommand.PushFractionalClip(FloatRect(inset + 0.25f, inset + 0.25f, 31.75f - inset, 31.75f - inset)))
+                                add(fill)
+                                add(DrawCommand.PopClip)
+                            }
                             add(DrawCommand.PopClip)
                         }
-                        add(DrawCommand.PopClip)
-                    }
                 }
             return FrameClipWorkload(commands, IntSize(32, 32)).also {
                 val empty = scenario in setOf(FrameClipBenchmark.EdgeCase.EmptyFrame, FrameClipBenchmark.EdgeCase.ClipOnly, FrameClipBenchmark.EdgeCase.EmptyClip, FrameClipBenchmark.EdgeCase.Offscreen)

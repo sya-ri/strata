@@ -24,8 +24,16 @@ private class MinecraftCanvasTransformElement(
     private val offset: Double,
     child: Element,
 ) : Element(ElementIdentity.Positional, TYPE, listOf(child)) {
-    private class TransformNode(private val offset: Double) : Node(), MeasureNode, LayoutNode, ChildTransformNode {
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize = scope.measureChild(0, constraints)
+    private class TransformNode(
+        private val offset: Double,
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        ChildTransformNode {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize = scope.measureChild(0, constraints)
 
         override fun layout(scope: LayoutScope) {
             scope.placeChild(0, IntOffset.Zero)
@@ -51,6 +59,9 @@ private class MinecraftCanvasTransformElement(
 
 /** Emits exactly one child under a fixed translation, with no retained callback or native ownership. */
 @OptIn(InternalStrataRuntimeApi::class)
-internal fun UiScope.canvasTestTransform(offset: Double, content: UiScope.() -> Unit) {
+internal fun UiScope.canvasTestTransform(
+    offset: Double,
+    content: UiScope.() -> Unit,
+) {
     element(MinecraftCanvasTransformElement(offset, evaluateComponentTree(content)))
 }

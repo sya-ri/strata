@@ -42,7 +42,10 @@ internal class MinecraftFrameClipPerformanceScene(
             clips(0, 0.0)
         }
 
-    private fun UiScope.clips(level: Int, offset: Double) {
+    private fun UiScope.clips(
+        level: Int,
+        offset: Double,
+    ) {
         if (level == case.clipDepth) {
             canvasTestTransform(-offset) {
                 Stack {
@@ -87,7 +90,10 @@ internal class MinecraftFrameClipPerformanceScene(
         }
     }
 
-    private fun paintPrimitives(scope: PaintScope, revision: Int) {
+    private fun paintPrimitives(
+        scope: PaintScope,
+        revision: Int,
+    ) {
         val source = IntRect(0, 0, 4, 4)
         val destination = IntRect(16, 16, 20, 20)
         val floating = FloatRect(16f, 16f, 20f, 20f)
