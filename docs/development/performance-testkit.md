@@ -62,6 +62,7 @@ The task runs `PerformanceEvidenceCli` from the packaged collector with its norm
 An external application can call that same JVM entry point or the typed API using its resolved testkit artifact.
 
 Both `:quality:benchmarks:jmhHistorical` and `:quality:component-benchmarks:jmhComponents` select generated fixture classes through `-Pstrata.performance.benchmarks=<comma-separated-class-names>`.
+Nested fixtures accept either Java source names (`Outer.Inner`) or JVM binary names (`Outer$Inner`); collection and fork certification use the exact generated JMH method names.
 Use exact qualified names or unambiguous simple names; empty, duplicate, unknown and ambiguous names fail before timing.
 Omitting this option preserves each task's original default corpus.
 Class selection uses anchored JMH include filters and checks the complete generated method/parameter matrix, so similarly named supplemental fixtures cannot enter a selected corpus implicitly.
