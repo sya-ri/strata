@@ -58,7 +58,7 @@ internal class WebDomRenderer(
         entries.forEach { entry ->
             val previous = nodes[entry.identity]
             val retained =
-                if (previous != null && (previous.entry?.tag ?: previous.element.tagName.lowercase()) == entry.tag) {
+                if (previous != null && previous.matches(entry.tag)) {
                     previous
                 } else {
                     val element = checkNotNull(root.ownerDocument).createElement(entry.tag) as HTMLElement
@@ -72,7 +72,10 @@ internal class WebDomRenderer(
             next[entry.identity] = retained
         }
         nodes.forEach { (identity, retained) ->
-            if (next[identity] !== retained) retained.element.let { it.parentNode?.removeChild(it) }
+            if (next[identity] !== retained) {
+                val element = retained.element
+                element.parentNode?.removeChild(element)
+            }
         }
         nodes = next
         uncommitted = null
@@ -163,7 +166,11 @@ internal class WebDomRenderer(
             style.position = "absolute"
             style.boxSizing = "border-box"
         }
-        updateBounds(style, bounds, previous?.bounds)
+        val previousBounds = previous?.bounds
+        if (previousBounds?.left != bounds.left) style.left = "${bounds.left}px"
+        if (previousBounds?.top != bounds.top) style.top = "${bounds.top}px"
+        if (previousBounds?.width != bounds.width) style.width = "${bounds.width}px"
+        if (previousBounds?.height != bounds.height) style.height = "${bounds.height}px"
         if (previous == null) {
             style.font = theme.font
             style.whiteSpace = "pre"
@@ -177,23 +184,13 @@ internal class WebDomRenderer(
         updateNativeControl(element, presentation, previous?.presentation, previous == null)
     }
 
-    private fun updateBounds(
-        style: CSSStyleDeclaration,
-        bounds: IntRect,
-        previous: IntRect?,
-    ) {
-        if (previous?.left != bounds.left) style.left = "${bounds.left}px"
-        if (previous?.top != bounds.top) style.top = "${bounds.top}px"
-        if (previous?.width != bounds.width) style.width = "${bounds.width}px"
-        if (previous?.height != bounds.height) style.height = "${bounds.height}px"
-    }
-
     private fun updateClip(
         style: CSSStyleDeclaration,
         entry: Entry,
         previous: Entry?,
     ) {
-        if (previous == null || previous.clip != entry.clip || (entry.clip != null && previous.bounds != entry.bounds)) {
+        val boundsAffectClip = entry.clip != null && previous?.bounds != entry.bounds
+        if (previous == null || previous.clip != entry.clip || boundsAffectClip) {
             val clip = clipPath(entry.bounds, entry.clip)
             if (previous == null || clipPath(previous.bounds, previous.clip) != clip) style.setProperty("clip-path", clip)
         }
@@ -311,5 +308,10 @@ internal class WebDomRenderer(
     private class RetainedElement(
         val element: HTMLElement,
         var entry: Entry? = null,
-    )
+    ) {
+        /**
+         * Checks native kind against the current snapshot, reading the actual tag only for uninitialized adoption.
+         */
+        fun matches(tag: String): Boolean = (entry?.tag ?: element.tagName.lowercase()) == tag
+    }
 }

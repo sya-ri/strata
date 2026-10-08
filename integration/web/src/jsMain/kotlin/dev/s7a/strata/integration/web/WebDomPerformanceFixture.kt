@@ -234,9 +234,10 @@ internal class WebDomPerformanceFixture private constructor(
 
         private fun inventory(): String {
             val cases =
-                Mode.entries.flatMap { mode ->
-                    mode.counts.map { count -> json("mode" to mode.name, "count" to count, "phase" to mode.phase.name) }
-                }.toTypedArray()
+                Mode.entries
+                    .flatMap { mode ->
+                        mode.counts.map { count -> json("mode" to mode.name, "count" to count, "phase" to mode.phase.name) }
+                    }.toTypedArray()
             return JSON.stringify(
                 json(
                     "schema" to "strata-dom-writes-v1",
