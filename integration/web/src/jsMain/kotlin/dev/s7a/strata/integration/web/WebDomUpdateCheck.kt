@@ -5,9 +5,9 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.ProgressBar
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextStyle
-import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementIdentity
+import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntRect
@@ -64,22 +64,26 @@ internal object WebDomUpdateCheck {
                     state.value = changed
                     host.render(viewport)
                     check(root.firstElementChild === original)
-                    val reference = document.createElement("div") as HTMLElement
-                    checkNotNull(document.body).appendChild(reference)
-                    try {
-                        mountWeb(UiDefinition { element(ClipElement(changed)) }, reference, viewport, theme).use {
-                            check(elements(root).map(::properties) == elements(reference).map(::properties)) { "Incremental clip or background differs from fresh rendering" }
-                            evidence.add(json("count" to 1, "phase" to "clip-$index", "mutations" to null, "currentHtml" to root.outerHTML, "referenceHtml" to reference.outerHTML))
-                        }
-                    } finally {
-                        reference.parentNode?.removeChild(reference)
-                    }
+                    evidence.add(compareClip(root, changed, theme, index))
                 }
                 return evidence
             }
         } finally {
             check(root.hasChildNodes().not())
             root.parentNode?.removeChild(root)
+        }
+    }
+
+    private fun compareClip(root: HTMLElement, inputs: ClipInputs, theme: WebTheme, index: Int): dynamic {
+        val reference = document.createElement("div") as HTMLElement
+        checkNotNull(document.body).appendChild(reference)
+        try {
+            mountWeb(UiDefinition { element(ClipElement(inputs)) }, reference, IntSize(120, 80), theme).use {
+                check(elements(root).map(::properties) == elements(reference).map(::properties)) { "Incremental clip or background differs from fresh rendering" }
+                return json("count" to 1, "phase" to "clip-$index", "mutations" to null, "currentHtml" to root.outerHTML, "referenceHtml" to reference.outerHTML)
+            }
+        } finally {
+            reference.parentNode?.removeChild(reference)
         }
     }
 
@@ -148,12 +152,13 @@ internal object WebDomUpdateCheck {
             val event = MouseEvent("pointerdown", MouseEventInit(bubbles = true, cancelable = true, clientX = (bounds.left + bounds.width / 2).toInt(), clientY = (bounds.top + bounds.height / 2).toInt()))
             currentButton.dispatchEvent(event)
             check(scenario.activations == 1) { "Enabled native button did not activate" }
+            observer.takeRecords()
             scenario.snapshot.value = initial.copy(enabled = false)
             host.render(viewport)
             check(currentButton.disabled)
             currentButton.dispatchEvent(event)
             check(scenario.activations == 1) { "Disabled native button activated" }
-            compare(root, initial.copy(enabled = false), viewport, theme, "controls", observer.takeRecords().size)
+            evidence.add(compare(root, initial.copy(enabled = false), viewport, theme, "controls", observer.takeRecords().size))
 
             val original = root.asDynamic().insertBefore
             val expected = IllegalStateException("Injected DOM insertion failure")

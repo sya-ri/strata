@@ -128,7 +128,7 @@ async function verifyTheme(browser, engine, theme, expected) {
 
 async function verifyDomUpdates(browser, page, engine, theme, evidence) {
     const updates = JSON.parse(await page.evaluate(() => window.strataVerifyDomUpdates()));
-    assert.equal(updates.length, 12, 'Three sizes each retain localized, full-change and geometry controls, plus three clip/background controls');
+    assert.equal(updates.length, 15, 'Three sizes retain localized/full/geometry/disabled controls, plus three clip/background controls');
     const styles = await page.locator('head > style').allTextContents();
     const comparison = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 640, height: 480 } });
     try {
@@ -137,9 +137,12 @@ async function verifyDomUpdates(browser, page, engine, theme, evidence) {
             const documentFor = html => `<!doctype html><html><head><style>body { margin: 0; }${styles.join('\n')}</style></head><body>${html}</body></html>`;
             await comparison.setContent(documentFor(update.currentHtml));
             const actual = await comparison.screenshot({ path: resolve(evidence, `${prefix}-incremental.png`) });
+            const actualLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-incremental-last.png`) });
             await comparison.setContent(documentFor(update.referenceHtml));
             const expected = await comparison.screenshot({ path: resolve(evidence, `${prefix}-fresh.png`) });
+            const expectedLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-fresh-last.png`) });
             assert.deepEqual(actual, expected, `Incremental pixels differ from fresh DOM: ${prefix}`);
+            assert.deepEqual(actualLast, expectedLast, `Changed last-element pixels differ from fresh DOM: ${prefix}`);
         }
     } finally { await comparison.close(); }
     return updates.map(({ count, phase, mutations }) => ({ count, phase, mutations }));
