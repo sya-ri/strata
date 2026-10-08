@@ -101,7 +101,7 @@ internal object NativeComponentPerformanceEvidence {
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
         val selection = selection(request, profile, sampledImages)
-        val collector = collectorArchive()
+        val collector = collectorArchive
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
         val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
         val provenance = nativeCpuProvenance(cpu)
@@ -216,13 +216,17 @@ internal object NativeComponentPerformanceEvidence {
         return present.first()
     }
 
-    private fun collectorArchive(): Path {
-        val type = JvmPerformanceMeter::class.java
-        return Path.of(
-            type.protectionDomain.codeSource.location
-                .toURI(),
-        )
-    }
+    /**
+     * Resolves the actual loaded collector when the request reaches archive admission.
+     */
+    private val collectorArchive: Path
+        get() {
+            val type = JvmPerformanceMeter::class.java
+            return Path.of(
+                type.protectionDomain.codeSource.location
+                    .toURI(),
+            )
+        }
 
     private fun selection(
         request: JsonObject,
