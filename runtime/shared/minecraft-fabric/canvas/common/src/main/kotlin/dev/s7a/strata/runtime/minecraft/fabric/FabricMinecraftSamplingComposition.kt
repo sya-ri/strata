@@ -115,7 +115,6 @@ internal class FabricMinecraftSamplingComposition(
         when (command) {
             is DrawCommand.FillRectangle -> command.color.value ushr 24 == 255
             is DrawCommand.SampledImage -> appendMask(index, command, prepared)
-
             is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> false
             is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> true
         }
