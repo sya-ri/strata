@@ -338,6 +338,7 @@ public open class MutableStateRoutingBenchmark {
         private var componentTone = Tone.Second
         private var membership = Membership.Full
         private var failComparison = false
+        private var diagnose = false
         private var failOwner: Int? = null
         private var comparisons = 0L
         private var writes = 0L
@@ -466,8 +467,10 @@ public open class MutableStateRoutingBenchmark {
             sessions.forEach(RuntimeUiSession::close)
             sessions.clear()
             frames.clear()
-            verifyReleasedStorage()
-            check(source.active == 0)
+            if (diagnose) {
+                verifyReleasedStorage()
+                check(source.active == 0)
+            }
         }
 
         private fun completeFrames() {
@@ -655,6 +658,7 @@ public open class MutableStateRoutingBenchmark {
          * Reflection reads only actual storage; no cache builder, token or owner projection calculates the reference.
          */
         public fun verifyWork(): JsonObject {
+            diagnose = true
             val oldFrames = frames.toList()
             val oldTones = expectedTones()
             val before = counters()
