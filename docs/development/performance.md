@@ -536,6 +536,9 @@ Provider and font initialization status is bounded by the snapshot's provider gr
 Changing resource packs, provider filters, or language direction requires a new snapshot and host; existing host engines never mutate their snapshot and never share native faces.
 All host-cache and native access is confined to the host's owner thread.
 Terminal cleanup clears cache and snapshot references and closes all faces and the backend, including when an initialization, rasterization, or cleanup step fails.
+A backend callback may close its engine on that same owner thread; subsequent cache and preflight publication is rejected.
+A face returned after terminal close is released immediately, and its cleanup failure propagates with the original throwable identity.
+An interrupted preflight returns the missing shape without opening another face; completed detached glyph results remain usable.
 Detachment preserves common host ownership for reattachment but releases Fabric presentation textures independently.
 
 Tests compare enabled and disabled raster caches, assert entry and payload bounds, churn face keys and weighted input limits, exercise duplicate-provider preflight and permanent poisoned-face rejection, isolate engines sharing one snapshot, and verify terminal counters and backend release after failures.

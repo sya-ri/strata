@@ -21,6 +21,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Preallocation-limit failures occupy ordinary bounded glyph-cache entries and retain only a message.
  * A backend returning an image beyond its allocation contract permanently disables that face descriptor and closes its live face.
  * Closing clears snapshot, cache, and native references and never invalidates returned glyphs.
+ * Backend callbacks may close this owner; terminal owners admit no later cache or preflight state.
+ * A face returned after callback-driven close is released immediately without entering the engine.
+ * Interrupted preflight returns the missing shape, while completed detached glyph results and cleanup failures retain their identities.
  * Glyph selection, cache eviction, and terminal cleanup share this owner to preserve resource lifetime boundaries.
  *
  * @param snapshot immutable font definitions and resource bytes, safely reusable by other engines.
@@ -221,22 +224,23 @@ public class MinecraftFontEngine
             var ready = true
             for (entry in providers) {
                 val state =
-                    providerStatus.getOrPut(entry.identity) {
-                        runCatching { preflight(entry) }.fold(
-                            onSuccess = { LoadStatus.Ready },
-                            onFailure = { failure ->
-                                if ((failure is Exception).not()) throw failure
-                                loadDiagnostics +=
-                                    MinecraftFontDiagnostic(
-                                        MinecraftFontDiagnostic.Kind.ProviderLoadFailure,
-                                        font,
-                                        entry.source,
-                                        failure.message ?: "Font provider failed during CPU loading.",
-                                    )
-                                LoadStatus.Failed
-                            },
-                        )
-                    }
+                    providerStatus[entry.identity] ?: runCatching { preflight(entry) }.fold(
+                        onSuccess = { LoadStatus.Ready },
+                        onFailure = { failure ->
+                            if (failure is TerminalFaceCloseException) throw failure.failure
+                            if ((failure is Exception).not()) throw failure
+                            loadDiagnostics +=
+                                MinecraftFontDiagnostic(
+                                    MinecraftFontDiagnostic.Kind.ProviderLoadFailure,
+                                    font,
+                                    entry.source,
+                                    failure.message ?: "Font provider failed during CPU loading.",
+                                )
+                            LoadStatus.Failed
+                        },
+                    )
+                if (closed) return false
+                providerStatus[entry.identity] = state
                 if (state === LoadStatus.Failed) ready = false
             }
             fontStatus[font] = if (ready) LoadStatus.Ready else LoadStatus.Failed
@@ -255,7 +259,7 @@ public class MinecraftFontEngine
                 is FontProvider.TrueType -> {
                     val key = FontFaceKey(provider.resource, provider.settings)
                     faceFailures[key]?.raise()
-                    if (validatedFaces.contains(key).not()) face(provider)
+                    if (validatedFaces.contains(key).not()) face(provider, preparing = true)
                 }
 
                 is FontProvider.Space, is FontProvider.Unihex -> {}
@@ -334,7 +338,7 @@ public class MinecraftFontEngine
                 is FontProvider.Bitmap -> error("Bitmap glyph lookup requires its shared cell cache.")
                 is FontProvider.Space -> provider.advances[codePoint]?.let { advance -> spacingGlyph(advance) }
                 is FontProvider.Unihex -> unihexGlyph(provider, codePoint)
-                is FontProvider.TrueType -> face(provider).glyph(codePoint)
+                is FontProvider.TrueType -> face(provider)?.glyph(codePoint)
                 is FontProvider.Failed, is FontProvider.Reference -> error("Unresolved provider reached glyph lookup.")
             }
 
@@ -354,10 +358,10 @@ public class MinecraftFontEngine
             bitmapFailures[provider.resource]?.let { message -> throw IllegalArgumentException(message) }
             val image =
                 runCatching { decodeBitmap(provider.resource) }.getOrElse { failure ->
-                    if (failure is Exception) bitmapFailures[provider.resource] = failure.message ?: "Font bitmap decoding failed."
+                    if (closed.not() && failure is Exception) bitmapFailures[provider.resource] = failure.message ?: "Font bitmap decoding failed."
                     throw failure
                 }
-            bitmapSizes[provider.resource] = image.size
+            if (closed.not()) bitmapSizes[provider.resource] = image.size
             putRaster(key, RasterValue.Bitmap(image))
             return image
         }
@@ -457,7 +461,11 @@ public class MinecraftFontEngine
             )
         }
 
-        private fun face(provider: FontProvider.TrueType): MinecraftTrueTypeFace {
+        private fun face(
+            provider: FontProvider.TrueType,
+            preparing: Boolean = false,
+        ): MinecraftTrueTypeFace? {
+            if (closed) return null
             val key = FontFaceKey(provider.resource, provider.settings)
             faces[key]?.let { return it }
             faceFailures[key]?.raise()
@@ -470,6 +478,7 @@ public class MinecraftFontEngine
                 oldest.remove()
                 faceBytes -= previous.key.resource.size
                 previous.value.close()
+                if (closed) return null
             }
             val face =
                 runCatching {
@@ -477,9 +486,17 @@ public class MinecraftFontEngine
                     val bytes = provider.resource.copyBytes()
                     if (decoder is MinecraftBoundedFontBackend) decoder.openTrueType(bytes, provider.settings, requireSnapshot().limits) else decoder.openTrueType(bytes, provider.settings)
                 }.getOrElse { failure ->
-                    if (failure is Exception) faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
+                    if (closed.not() && failure is Exception) faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
                     throw failure
                 }
+            if (closed) {
+                val failure = runCatching(face::close).exceptionOrNull()
+                if (failure != null) {
+                    if (preparing) throw TerminalFaceCloseException(failure)
+                    throw failure
+                }
+                return null
+            }
             faces[key] = face
             faceBytes += weight
             validatedFaces.add(key)
@@ -490,6 +507,7 @@ public class MinecraftFontEngine
             key: RasterKey,
             value: RasterValue,
         ) {
+            if (closed) return
             val size = value.bytes()
             if (cacheEntries == 0 || cacheBytes < size) return
             rasters.remove(key)?.let { previous -> rasterBytes -= previous.bytes() }
@@ -523,6 +541,14 @@ public class MinecraftFontEngine
         private fun checkOwner() {
             check(Thread.currentThread() === owner) { "Font engine requires its owner thread." }
         }
+
+        /**
+         * Carries a late unowned face's cleanup failure through ordinary provider-load diagnostics.
+         * Only preflight creates this private carrier; its exact original failure is rethrown before status admission.
+         */
+        private class TerminalFaceCloseException(
+            val failure: Throwable,
+        ) : RuntimeException(failure)
 
         private enum class LoadStatus {
             Ready,
