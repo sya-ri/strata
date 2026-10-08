@@ -26,7 +26,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class NativeLifetimePollingWorkload(
-    private val subject: NativeLifetimePollingBenchmark.Subject,
+    subject: NativeLifetimePollingBenchmark.Subject,
     private val count: Int,
     private val condition: NativeLifetimePollingBenchmark.Condition,
 ) : AutoCloseable {

@@ -156,7 +156,7 @@ internal class SampledLifetimePollingWorkload(
             if (queued) {
                 val queue =
                     borrowed.javaClass.declaredMethods
-                        .single { it.name.substringBefore('$') == "queued" && it.parameterCount == 1 }
+                        .single { it.parameterCount == 1 && it.parameterTypes[0] == DrawImage::class.java && it.returnType == Void.TYPE }
                 images[index].forEach { image -> invoke(queue, borrowed, image) }
             }
         } finally {
@@ -181,7 +181,7 @@ internal class SampledLifetimePollingWorkload(
         try {
             method.invoke(receiver, *arguments)
         } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
+            throw failure.cause ?: failure
         }
 
     override fun close() {
