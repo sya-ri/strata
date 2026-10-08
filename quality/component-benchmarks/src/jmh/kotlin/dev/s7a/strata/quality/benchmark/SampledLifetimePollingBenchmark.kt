@@ -29,8 +29,7 @@ public open class SampledLifetimePollingBenchmark {
      * Includes fresh admission and signalled retirement rather than timing subsequent empty polls as retirement work.
      */
     @Benchmark
-    public fun retireProtocol(state: Retirement): Int =
-        SampledLifetimePollingWorkload(state.count, NativeLifetimePollingBenchmark.Condition.InitializationPending).use { it.retireAndSignal() }
+    public fun retireProtocol(state: Retirement): Int = SampledLifetimePollingWorkload(state.count, NativeLifetimePollingBenchmark.Condition.InitializationPending).use { it.retireAndSignal() }
 
     /**
      * Holds one actual current sampled manager with one owner up to 256 entries and two owners at 512.
