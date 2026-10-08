@@ -7,6 +7,7 @@ import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.JvmPerformanceEvidence
 import dev.s7a.strata.performance.JvmPerformanceMeter
 import dev.s7a.strata.performance.JvmPerformanceReports
+import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.NativePerformanceEvidence
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.PerformanceProfile
@@ -103,7 +104,7 @@ internal object NativeComponentPerformanceEvidence {
         val collector = collectorArchive()
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
         val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
-        val metadata = cpu.getAsJsonObject("strata")
+        val metadata = cpuRuntimeMetadata(cpu)
         val selected = JsonArray()
         metadata.getAsJsonArray("modules").forEach { entry ->
             if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
@@ -163,6 +164,21 @@ internal object NativeComponentPerformanceEvidence {
         summary.add("binary_receipts", binaries)
         summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    /**
+     * Reads loaded metadata from one actual legacy JVM report or current JMH receipt without rewriting it.
+     * Current receipts must retain successful per-iteration fork verification; archive checks remain native admission's responsibility.
+     */
+    internal fun cpuRuntimeMetadata(cpu: JsonObject): JsonObject {
+        require(cpu.get("status")?.asString?.contentEquals("passed") == true) { "CPU provenance invocation did not pass" }
+        val fields = listOf("strata", "runtime_metadata").filter(cpu::has)
+        require(fields.size == 1) { "Expected one actual CPU runtime metadata field" }
+        if (cpu.has("runtime_metadata")) {
+            require(cpu.get("contract")?.asString?.contentEquals("strata-jmh-v1") == true) { "Unsupported CPU JMH receipt" }
+            require(cpu.get("fork_verification")?.asString?.contentEquals("loaded-artifacts-per-iteration-v1") == true) { "Missing actual CPU fork verification" }
+        }
+        return cpu.getAsJsonObject(fields.single()).also(LoadedArtifactMetadata::verifyComplete)
     }
 
     /**

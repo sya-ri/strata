@@ -143,10 +143,11 @@ For legacy production clients, window validation resolves intermediary client/wi
 Missing mappings, missing host members, dead handles and iconified windows reject collection rather than producing a valid zero-cost interval.
 
 Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
-The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report or current JMH `receipt.json` with the same runtime binaries).
 For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
 Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
-That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+That JVM report or receipt supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+The adapter reads exactly one legacy `strata` or current `runtime_metadata` inventory without rewriting the raw receipt, requires a successful invocation and current per-iteration fork verification, and preserves strict file/resource/class-tree checks.
 The adapter selects the five shared API/core/headless/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
