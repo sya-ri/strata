@@ -109,11 +109,8 @@ internal class IdenticalModifierChainTest {
         val first = TestProbe.ProbeId("first")
         val second = TestProbe.ProbeId("second")
 
-        fun description(
-            reverse: Boolean,
-            parentModifiers: Modifier,
-        ): TestProbe.ProbeElement {
-            return components.root(
+        val description = { reverse: Boolean, parentModifiers: Modifier ->
+            components.root(
                 (if (reverse) listOf(second, first) else listOf(first, second)).map { id ->
                     components.element(id, key = id, modifier = modifiers)
                 },
