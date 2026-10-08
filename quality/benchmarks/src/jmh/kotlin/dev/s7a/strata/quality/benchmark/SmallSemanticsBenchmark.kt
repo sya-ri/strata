@@ -195,9 +195,7 @@ public open class SmallSemanticsBenchmark {
                     arrangement.value = if (alternate) Arrangement.Trimmed else Arrangement.Normal
                 }
 
-                Mode.Initial, Mode.Clean -> {
-                    Unit
-                }
+                Mode.Initial, Mode.Clean -> Unit
             }
             return checkNotNull(session).frame(currentConstraints)
         }
