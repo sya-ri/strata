@@ -133,29 +133,16 @@ internal class BlitCompositionTest {
     }
 
     @Test
-    fun aFailedPrivateTemplatePublishesNothingAndTheLazyOwnerCanRetry() {
-        val failure = IllegalStateException("template source failed")
-        var fail = true
-        val image =
-            object : DrawImage {
-                override val size: IntSize = IntSize(3, 2)
-
-                override fun argbAt(
-                    x: Int,
-                    y: Int,
-                ): Int {
-                    if (fail && x == 2) throw failure
-                    return 0x80000000.toInt() or (y * 3 + x)
-                }
-
-                override fun copyArgb(): IntArray = IntArray(6) { argbAt(it % 3, it / 3) }
-            }
-        val owner = composeDenseBlits(grid(image, IntRect(0, 0, 3, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { owner.commands })
-        fail = false
-        val result = owner.commands.single().image
+    fun malformedInternalCropPublishesNoTemplateAndIndependentValidOwnersStillMaterialize() {
+        val image = createDrawImage(IntSize(3, 2)) { x, y -> 0x80000000.toInt() or (y * 3 + x) }
+        // Public PaintScope rejects this crop; only an invalid internal command can fail during immutable source reads.
+        val invalid = composeDenseBlits(grid(image, IntRect(0, 0, 4, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
+        repeat(2) { assertThrows(IllegalArgumentException::class.java) { invalid.commands } }
+        val valid = composeDenseBlits(grid(image, IntRect(0, 0, 3, 2), 8, 8)).single() as LocalDrawCommand.ComposedBlits
+        val result = valid.commands.single().image
         for (y in 0 until 16) for (x in 0 until 24) assertEquals(image.argbAt(x % 3, y % 2), result.argbAt(x, y))
-        assertSame(owner.commands, owner.commands)
+        assertSame(valid.commands, valid.commands)
+        assertThrows(IllegalArgumentException::class.java) { invalid.commands }
     }
 
     private fun grid(
