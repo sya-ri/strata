@@ -44,6 +44,7 @@ public class IncomingFragmentFixture(
      * Builds fresh execution owners, queues and assembly state, including stale/discovery preparation.
      * CPU collection calls this outside its interval; JMH includes it in the declared lifecycle cycle.
      * Server ingress uses actual service-owned peers and the original private receive phase signature on both revisions.
+     * Their address is fixed before discovery, so every phase reuses exactly the same immutable literal envelopes.
      */
     public fun prepare(selected: IncomingFragmentPhase) {
         check(active.isEmpty())
@@ -227,13 +228,16 @@ public class IncomingFragmentFixture(
             owner.run {
                 service?.let { host ->
                     host.join(Unit)
-                    checkNotNull((field(host, "peers") as Map<*, *>)[Unit])
+                    checkNotNull((field(host, "peers") as Map<*, *>)[Unit]).also { retained ->
+                        retained.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retained, templateAddress)
+                        val retainedStream = field(retained, "stream") as RemotePacketStream
+                        retainedStream.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retainedStream, templateAddress)
+                    }
                 }
             }
-        val address = peer?.let { field(it, "address") as RemoteAddress } ?: templateAddress
         val stream =
-            owner.run { peer?.let { field(it, "stream") as RemotePacketStream } ?: RemotePacketStream(address, limits, {}) }
-        val frames = if (peer == null) templates else packets(address)
+            owner.run { peer?.let { field(it, "stream") as RemotePacketStream } ?: RemotePacketStream(templateAddress, limits, {}) }
+        val frames = templates
         private val serverPhase: Method? =
             peer?.let {
                 checkNotNull(service).javaClass.getDeclaredMethod("receivePackets", it.javaClass, Long::class.javaPrimitiveType).apply { isAccessible = true }
