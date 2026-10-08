@@ -90,8 +90,6 @@ internal class PlayerHeadFixture(
      */
     internal fun frame(viewport: IntSize): RuntimeUiFrame = host.frame(viewport)
 
-
-
     /**
      * Requests only a different set of layers for the same identity/size key.
      */
