@@ -148,4 +148,34 @@ internal class MinecraftTextLine(
         }
         return nearest
     }
+
+    /**
+     * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
+     */
+    companion object {
+        /**
+         * Consumes fresh producer-private scalar boundaries and their matching rounded coordinates.
+         * The producer must relinquish both arrays after this call; no array or mutable view is exposed by the result.
+         * Each array contains exactly the visible scalar boundaries, including both ends and at least one boundary.
+         * Ellipsis input must already be compact, without a discarded suffix or previous-layout history.
+         * The current layout owns the detached line until replacement or release; no renderer or resource owner is retained.
+         *
+         * @param start inclusive original UTF-16 start.
+         * @param end exclusive visible logical end before a hard break or ellipsis.
+         * @param nextStart original next-line start after any consumed break.
+         * @param run detached immutable run with original font provenance.
+         * @param offsets exclusive ordered original scalar boundaries.
+         * @param positions exclusive rounded logical caret coordinates with the same length as [offsets].
+         * @return one detached immutable current line.
+         */
+        @JvmSynthetic
+        internal fun createOwned(
+            start: Int,
+            end: Int,
+            nextStart: Int,
+            run: MinecraftTextRun,
+            offsets: IntArray,
+            positions: IntArray,
+        ): MinecraftTextLine = MinecraftTextLine(start, end, nextStart, run, offsets, positions)
+    }
 }

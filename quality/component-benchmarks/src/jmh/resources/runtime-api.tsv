@@ -3963,7 +3963,9 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextInputAppearanc
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLayout#constructor:1:(Ldev/s7a/strata/runtime/minecraft/MinecraftTextContent;Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;IZ)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLayout#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#constructor:1:(IIILdev/s7a/strata/runtime/minecraft/MinecraftTextRun;[I[I)V
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftTextLine$Companion;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#type:17:java.lang.Object:
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine$Companion#type:25:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLineBreaker#field:25:INSTANCE:Ldev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLineBreaker#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRenderer#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftTextRenderer$Companion;
