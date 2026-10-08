@@ -24,8 +24,8 @@ public object JmhFixtureSelection {
         requested: String? = System.getProperty("strata.performance.benchmarks"),
     ): List<Class<*>> {
         val available = entries().map { it.userClassQName }.toSet()
-        val names = requested?.split(',')?.map(String::trim) ?: defaults.map { it.name }
-        return resolve(names, available).map { Class.forName(it, false, javaClass.classLoader) }
+        val names = requested?.split(',')?.map(String::trim) ?: defaults.map { it.name.replace('$', '.') }
+        return resolve(names, available).map(::load)
     }
 
     /**
@@ -36,12 +36,12 @@ public object JmhFixtureSelection {
             .map { it.userClassQName }
             .distinct()
             .sorted()
-            .map { Class.forName(it, false, javaClass.classLoader) }
+            .map(::load)
 
     /**
      * Uses anchored class names so similarly named fixtures cannot enter the selected matrix.
      */
-    public fun includes(fixtures: List<Class<*>>): List<String> = fixtures.map { "^${Regex.escape(it.name)}\\.[^.]+$" }
+    public fun includes(fixtures: List<Class<*>>): List<String> = fixtures.map { "^${Regex.escape(it.name.replace('$', '.'))}\\.[^.]+$" }
 
     /**
      * Resolves optional qualified or unambiguous `Class.method` IDs within the selected fixtures.
@@ -56,7 +56,15 @@ public object JmhFixtureSelection {
         require(names.all(String::isNotBlank)) { "Empty JMH method selection" }
         val selected =
             names.map { name ->
-                val matches = if (name in available) listOf(name) else available.filter { "${it.substringBeforeLast('.').substringAfterLast('.').substringAfterLast('$')}.${it.substringAfterLast('.')}" == name }
+                val qualified = "${name.substringBeforeLast('.').replace('$', '.')}.${name.substringAfterLast('.')}"
+                val matches =
+                    if (name in available) {
+                        listOf(name)
+                    } else if (qualified in available) {
+                        listOf(qualified)
+                    } else {
+                        available.filter { "${it.substringBeforeLast('.').substringAfterLast('.').substringAfterLast('$')}.${it.substringAfterLast('.')}" == name }
+                    }
                 require(matches.size == 1) { "Unknown or ambiguous JMH method: $name" }
                 matches.single()
             }
@@ -128,12 +136,34 @@ public object JmhFixtureSelection {
         require(names.isNotEmpty() && names.all(String::isNotBlank)) { "Empty JMH fixture selection" }
         val resolved =
             names.map { name ->
-                val matches = if (name in available) listOf(name) else available.filter { it.substringAfterLast('.').substringAfterLast('$') == name }
+                val qualified = name.replace('$', '.')
+                val matches =
+                    if (name in available) {
+                        listOf(name)
+                    } else if (qualified in available) {
+                        listOf(qualified)
+                    } else {
+                        available.filter { it.substringAfterLast('.').substringAfterLast('$') == name }
+                    }
                 require(matches.size == 1) { "Unknown or ambiguous JMH fixture: $name" }
                 matches.single()
             }
         require(resolved.distinct().size == resolved.size) { "Duplicate JMH fixture selection" }
         return resolved
+    }
+
+    // JMH records Java source names; resolve binary nesting without initializing fixture classes.
+    private fun load(name: String): Class<*> {
+        var binary = name
+        while (true) {
+            try {
+                return Class.forName(binary, false, javaClass.classLoader)
+            } catch (failure: ClassNotFoundException) {
+                val separator = binary.lastIndexOf('.')
+                if (separator < 0) throw failure
+                binary = binary.substring(0, separator) + '$' + binary.substring(separator + 1)
+            }
+        }
     }
 
     private fun entries(includes: List<String> = emptyList()) = BenchmarkList.defaultList().find(OutputFormatFactory.createFormatInstance(System.out, VerboseMode.SILENT), includes, emptyList())

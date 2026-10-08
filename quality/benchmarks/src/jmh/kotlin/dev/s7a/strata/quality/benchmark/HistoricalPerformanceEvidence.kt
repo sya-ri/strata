@@ -25,7 +25,7 @@ public object HistoricalPerformanceEvidence {
         val registered = JmhFixtureSelection.select(fixtures())
         JmhFixtureSelection.verifyWork(registered)
         val methods = JmhFixtureSelection.methods(registered, requested)
-        val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else registered.filter { fixture -> methods.any { it.startsWith("${fixture.name}.") } }
+        val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else registered.filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
         val parameters =
             if (smoke) {
                 mapOf("viewport" to setOf(RenderingBenchmark.Viewport.Compact.name))

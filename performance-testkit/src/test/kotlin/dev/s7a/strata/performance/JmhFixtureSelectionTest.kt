@@ -34,6 +34,10 @@ class JmhFixtureSelectionTest {
         assertEquals(listOf(first), JmhFixtureSelection.resolve(listOf("Fixture"), setOf(first)))
         assertEquals(listOf(second), JmhFixtureSelection.resolve(listOf(second), setOf(first, second)))
         assertFailsWith<IllegalArgumentException> { JmhFixtureSelection.resolve(listOf("Fixture"), setOf(first, second)) }
+        val canonical = first.replace('$', '.')
+        assertEquals(listOf(canonical), JmhFixtureSelection.resolve(listOf(first), setOf(canonical)))
+        assertEquals(listOf(canonical), JmhFixtureSelection.resolve(listOf("Fixture"), setOf(canonical)))
+        assertFailsWith<IllegalArgumentException> { JmhFixtureSelection.resolve(listOf(first, canonical), setOf(canonical)) }
     }
 
     @Test
@@ -47,11 +51,13 @@ class JmhFixtureSelectionTest {
     @Test
     fun classFiltersDoNotAdmitPrefixOrSuffixCollisions() {
         val fixture = PlainFixture::class.java
+        val name = fixture.name.replace('$', '.')
         val include = Regex(JmhFixtureSelection.includes(listOf(fixture)).single())
-        assertTrue(include.containsMatchIn("${fixture.name}.run"))
-        assertFalse(include.containsMatchIn("prefix.${fixture.name}.run"))
-        assertFalse(include.containsMatchIn("${fixture.name}Suffix.run"))
-        assertFalse(include.containsMatchIn("${fixture.name}.Nested.run"))
+        assertTrue(include.containsMatchIn("$name.run"))
+        assertFalse(include.containsMatchIn("${fixture.name}.run"))
+        assertFalse(include.containsMatchIn("prefix.$name.run"))
+        assertFalse(include.containsMatchIn("${name}Suffix.run"))
+        assertFalse(include.containsMatchIn("$name.Nested.run"))
     }
 
     @Test
