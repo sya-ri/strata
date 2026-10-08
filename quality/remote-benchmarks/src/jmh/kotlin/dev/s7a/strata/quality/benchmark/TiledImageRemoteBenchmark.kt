@@ -203,7 +203,7 @@ public open class TiledImageRemoteBenchmark {
                     val consumer = peer(case, change)
                     try {
                         val first = consumer.projectedConsumption()
-                        val old = first.drawCommands.filterIsInstance<DrawCommand.SampledImage>().map { it.image.copyArgbPixels().toList() }
+                        val old = first.drawCommands.filterIsInstance<DrawCommand.SampledImage>().map { it.image.copyArgb().toList() }
                         repeat(8) {
                             val remote = consumer.projectedConsumption()
                             val local = consumer.localFrame()
@@ -212,11 +212,11 @@ public open class TiledImageRemoteBenchmark {
                             check(remoteSamples.size == localSamples.size)
                             remoteSamples.zip(localSamples).forEach { (actual, expected) ->
                                 check(actual.destination == expected.destination && actual.source == expected.source)
-                                check(actual.image.copyArgbPixels().contentEquals(expected.image.copyArgbPixels()))
+                                check(actual.image.copyArgb().contentEquals(expected.image.copyArgb()))
                             }
                             check(remote.drawCommands.filterIsInstance<DrawCommand.FillRectangle>() == local.drawCommands.filterIsInstance<DrawCommand.FillRectangle>())
                         }
-                        check(old == first.drawCommands.filterIsInstance<DrawCommand.SampledImage>().map { it.image.copyArgbPixels().toList() })
+                        check(old == first.drawCommands.filterIsInstance<DrawCommand.SampledImage>().map { it.image.copyArgb().toList() })
                     } finally {
                         consumer.close()
                     }

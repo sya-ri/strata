@@ -190,7 +190,7 @@ internal class TiledImageTopologyTest {
             assertFrame(replacement.source, replacement.state, replacement.size, replacement.policy, frame)
         }
         assertEquals(1, source.events.count { it is Event.Close })
-        val originalPixels = samples(original).single().image.copyArgbPixels()
+        val originalPixels = samples(original).single().image.copyArgb()
         session.detach()
         assertEmptyTopology(layer)
         session.attach()
@@ -199,7 +199,7 @@ internal class TiledImageTopologyTest {
         session.close()
         assertEmptyTopology(layer)
         assertTrue(configuration.value.source.active.isEmpty())
-        assertEquals(originalPixels.toList(), samples(original).single().image.copyArgbPixels().toList())
+        assertEquals(originalPixels.toList(), samples(original).single().image.copyArgb().toList())
     }
 
     @Test
