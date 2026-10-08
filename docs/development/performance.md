@@ -86,6 +86,21 @@ These markers track existing phase participation; they do not skip required meas
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
 Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
+### Synchronous operation guards
+
+`StateObservation` links only the currently entered observations instead of allocating an outer-operation list and backing array.
+The execution context owns the outermost guard, whose tail supports constant-time entry, reentry detection and reverse-order exit; state-write validation follows the forward links in outer-to-inner order.
+The links are bounded by current synchronous nesting, belong to the paired owner-confined operation, and do not cache observations or retain a historical nesting maximum.
+Every successful entry must leave in `finally`, including after observation close or terminal session failure; leaving clears the departing link and the parent's forward link, and the final exit clears the tail and execution context.
+Runtime validators check operation phases without running application code.
+Common JVM and JavaScript tests cover guard order, reentry, wrong-order exit, deep nesting, cross-session mutation rejection and failure/close paths; JVM tests also cover physical-thread isolation, serial owner migration and deterministic null-reference checks after release.
+
+`OperationGuardBenchmark` freezes direct guard depths one, two and eight, actual mutation controls, clean/timed/dirty sessions, 128-session batches, a 10,000-frame headless loop and nested timed sessions.
+The same declarations and caller-owned state are prepared before sampling; dirty frames still reevaluate content and change paint/semantics, and timed frames still notify every capable node.
+The generic collector selects the compiled fixture with `strata.performance.benchmarks=OperationGuardBenchmark` and discovers its static work verifier.
+Report both batch metrics and their declared operation/frame counts; the high-rate and many-session controls are not single-frame results.
+Removing list bookkeeping does not establish a CPU-time or FPS improvement, and the JVM execution context may still allocate a ThreadLocal entry; paired measurements determine the surviving allocation change.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.
