@@ -275,10 +275,8 @@ internal class ResourceImageDecodeWorkload(
             }
             val cache = decoder
             return if (cache == null) {
-                open().use { stream ->
-                    val pixels = decoded(stream)
-                    createDrawImage(pixels.size, pixels.argb)
-                }
+                val pixels = open().use { stream -> decoded(stream) }
+                createDrawImage(pixels.size, pixels.argb)
             } else {
                 call(checkNotNull(loadMethod), cache, manager, open) as DrawImage
             }

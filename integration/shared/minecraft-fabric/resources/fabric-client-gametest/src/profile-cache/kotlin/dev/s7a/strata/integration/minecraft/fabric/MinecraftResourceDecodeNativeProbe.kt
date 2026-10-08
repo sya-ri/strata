@@ -38,6 +38,7 @@ internal class MinecraftResourceDecodeNativeProbe {
             adapterCache = part.getDeclaredField("currentImageDecode").apply { isAccessible = true }.get(null)
             verifyOwnedClose()
         }
+        verifySourceFailures()
         repeat(100) {
             val image = loadMinecraftUiImage(asset)
             check(image !== first && image.copyArgb().contentEquals(expected))
@@ -81,6 +82,7 @@ internal class MinecraftResourceDecodeNativeProbe {
         report["resourceImage.currentSourceEachLoad"] = "verified"
         report["resourceImage.freshIdentityAndPixels"] = "verified"
         report["resourceImage.ownerThread"] = "verified"
+        report["resourceImage.realMissingAndMalformedSources"] = "verified"
         report["resourceImage.reloadAndDetachedOldImage"] = "verified"
         report["resourceImage.realOwnedManagerClose"] = if (adapterCache == null) "baseline-no-derived-entry" else "verified"
         report["resourceImage.retiredPrivatePixels"] = if (adapterCache == null) "baseline-no-derived-entry" else "collected"
@@ -93,6 +95,18 @@ internal class MinecraftResourceDecodeNativeProbe {
         oldImage = null
         retiredPixels = null
         adapterCache = null
+    }
+
+    private fun verifySourceFailures() {
+        val missing =
+            runCatching { loadMinecraftUiImage(ResourceId("strata_test", "textures/gui/resource_decode/missing.png")) }.exceptionOrNull()
+        check(missing is IllegalArgumentException)
+        if (adapterCache != null) check(entry() == null)
+        loadMinecraftUiImage(asset)
+        val malformed =
+            runCatching { loadMinecraftUiImage(ResourceId("strata_test", "textures/gui/resource_decode/invalid.png")) }.exceptionOrNull()
+        check(malformed != null) { "The real native decoder accepted a malformed PNG input." }
+        if (adapterCache != null) check(entry() == null)
     }
 
     private fun verifyOwnedClose() {
