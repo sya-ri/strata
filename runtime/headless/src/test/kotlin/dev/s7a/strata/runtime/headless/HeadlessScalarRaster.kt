@@ -97,7 +97,9 @@ internal object HeadlessScalarRaster {
                 val y = floor(sy).toInt().coerceIn(0, command.image.size.height - 1)
                 blendSampled(command.image.argbAt(x, y), destination, command.tint.value, command.alphaCutoff)
             }
-            else -> error("A pixel command is required.")
+            else -> {
+                error("A pixel command is required.")
+            }
         }
 
     @Suppress("LongParameterList") // The rational coordinate proof names the original source and destination axes separately.
