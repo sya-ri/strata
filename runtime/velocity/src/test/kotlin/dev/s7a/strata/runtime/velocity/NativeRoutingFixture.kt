@@ -115,7 +115,7 @@ internal class NativeRoutingFixture(
         val unknown = object : ChannelMessageSource { }
         events = actors.flatMapIndexed { index, actor ->
             packets[index].map { bytes ->
-                val source = if (workload == NativeRoutingWorkload.UnknownSender) unknown else if (direction == NativeRoutingDirection.BackendClient) actor.backend else actor.player
+                val source: ChannelMessageSource = if (workload == NativeRoutingWorkload.UnknownSender) unknown else if (direction == NativeRoutingDirection.BackendClient) actor.backend else actor.player
                 PluginMessageEvent(source, actor.player, channel, bytes).also { event ->
                     if (workload == NativeRoutingWorkload.AlreadyHandled) event.result = PluginMessageEvent.ForwardResult.handled()
                 }

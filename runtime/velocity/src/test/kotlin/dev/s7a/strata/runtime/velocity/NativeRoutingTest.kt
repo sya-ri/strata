@@ -1,6 +1,7 @@
 package dev.s7a.strata.runtime.velocity
 
 import com.velocitypowered.api.event.connection.PluginMessageEvent
+import com.velocitypowered.api.proxy.messages.ChannelMessageSource
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -113,7 +114,7 @@ internal class NativeRoutingTest {
             fixture.close()
             assertEquals(null, inbox.poll())
             val bytes = NativeRoutingInputs.packets(0, NativeRoutingWorkload.SmallControl, NativeRoutingDirection.ClientBackend).single()
-            listOf(actor.player, actor.backend).forEach { source ->
+            listOf<ChannelMessageSource>(actor.player, actor.backend).forEach { source ->
                 val event = PluginMessageEvent(source, actor.player, VelocityScreenService.CHANNEL, bytes)
                 assertEquals(null, fixture.plugin.message(event))
                 assertFalse(event.result.isAllowed)

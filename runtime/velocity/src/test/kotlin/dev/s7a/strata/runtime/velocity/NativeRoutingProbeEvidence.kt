@@ -131,7 +131,11 @@ internal object NativeRoutingProbeEvidence {
             report.add("logs", Gson().toJsonTree(logs))
             PerformanceJson.writeNew(destination, report)
         } finally {
-            active?.release()
+            try {
+                active?.release()
+            } catch (_: VMDisconnectedException) {
+                // A failed/disconnected child no longer retains debugger-protected target arrays.
+            }
             try {
                 vm.dispose()
             } catch (_: VMDisconnectedException) {
@@ -147,6 +151,7 @@ internal object NativeRoutingProbeEvidence {
      * One bounded interval's scalar counters and temporarily protected actual arrays; no row history retains mirrors.
      */
     private class Row(val key: List<String>, val thread: Long) {
+        private val phase = NativeRoutingPhase.valueOf(key[3])
         private val getters = mutableMapOf<Long, Int>()
         private val offered = mutableMapOf<Long, Int>()
         private val retained = mutableListOf<ObjectReference>()
@@ -158,6 +163,8 @@ internal object NativeRoutingProbeEvidence {
         private var forwardedPackets = 0L
         private var forwardedBytes = 0L
         private var inboxOffers = 0L
+        private var endpointPackets = 0L
+        private var endpointBytes = 0L
 
         /**
          * Observes real inbox offer arguments and exact arrays passed to the authenticated writer double.
@@ -173,9 +180,18 @@ internal object NativeRoutingProbeEvidence {
                 "write" -> {
                     val arguments = values[1] as ArrayReference
                     val array = arguments.getValue(1) as ArrayReference
-                    check(getters[array.uniqueID()] == array.length()) { "Forwarded storage must be the actual event accessor result" }
-                    forwardedPackets++
-                    forwardedBytes += array.length()
+                    when (phase) {
+                        NativeRoutingPhase.Callback -> {
+                            check(getters[array.uniqueID()] == array.length()) { "Forwarded storage must be the actual event accessor result" }
+                            forwardedPackets++
+                            forwardedBytes += array.length()
+                        }
+                        NativeRoutingPhase.OwnerProcessing -> {
+                            endpointPackets++
+                            endpointBytes += array.length()
+                        }
+                        NativeRoutingPhase.PublicDecode -> error("Public decoder control cannot invoke an endpoint writer")
+                    }
                 }
             }
         }
@@ -241,6 +257,8 @@ internal object NativeRoutingProbeEvidence {
                 addProperty("inbox_snapshot_bytes", arrays.sumOf { it.length().toLong() })
                 addProperty("assembled_arrays", assembledArrays)
                 addProperty("assembled_bytes", assembledBytes)
+                addProperty("endpoint_output_packets", endpointPackets)
+                addProperty("endpoint_output_bytes", endpointBytes)
             }
         }
 
