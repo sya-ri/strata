@@ -166,6 +166,8 @@ internal class VirtualWindowFixture(
         check(reattached.drawCommands == beforeDetach.drawCommands && reattached.semantics == beforeDetach.semantics)
         verifyFrame(reattached)
         verifyOwnerIsolation()
+        state.scrollState.scrollTo(1_000.0)
+        verifyFrame(session.frame(constraints))
     }
 
     private fun requiredFactories(
