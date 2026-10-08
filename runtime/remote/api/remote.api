@@ -142,6 +142,8 @@ public final class dev/s7a/strata/runtime/remote/RemoteConnection : java/lang/Au
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteConnection$Companion {
+	public final fun native (Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
+	public static synthetic fun native$default (Ldev/s7a/strata/runtime/remote/RemoteConnection$Companion;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemoteDeclaration {
