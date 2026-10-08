@@ -208,6 +208,14 @@ Failure and close paths must clear cached references so a session cannot keep a 
 The time-aware clean path must preserve the same complete frame snapshot when no time-aware node changes observable state.
 Loading indicators and delayed tooltips additionally verify that timestamps inside one discrete animation or delay cell reuse the complete snapshot and that crossing the boundary creates exactly one fresh snapshot.
 
+### Owned semantics frame handoff
+
+The retained semantics pipeline completes an immutable, detached list before publishing a rebuilt frame.
+The session transfers that list directly through an internal ownership path; the general frame factory still snapshots caller-owned collections.
+The transferred list contains only detached semantics entries and retains no builder, node, callback, tree or prior-frame history.
+Order, transformed bounds and immutable values remain identical, and clean frames keep their existing complete-snapshot reuse.
+The separate `SemanticsFrameBenchmark` invalidates paint on one retained node with a cached local semantics payload, separating rebuilt frame construction from clean-frame controls without attributing tree reconciliation or native rendering to the copy removal.
+
 ### Current-entry transformed paint
 
 Paint-only layout traversal preserves each placed child's current world transform and bounds while its layout and its parent's placement and transform remain unchanged.
