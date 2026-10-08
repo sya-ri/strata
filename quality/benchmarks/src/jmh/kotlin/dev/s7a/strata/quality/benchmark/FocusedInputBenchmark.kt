@@ -196,40 +196,7 @@ public open class FocusedInputBenchmark {
             val layouts = counters.layouts
             counters.record = true
             repeat(8) {
-                val current = counters.focused
-                val order = (0 until workload.modifiers).reversed().toList() + workload.modifiers
-                val delivered = if (current == null) emptyList() else order.map { Actor(current, it) }
-                val expectedTrace =
-                    when (workload.consumption) {
-                        Consumption.Early -> delivered.take(1)
-                        Consumption.Late, Consumption.None -> delivered
-                    }
-                val consumed = current != null && workload.consumption !== Consumption.None
-                val traversal = workload.protocol === Protocol.Tab || workload.protocol === Protocol.ShiftTab
-                val next = if (traversal && consumed.not()) expectedNext(current) else current
-                val expectedResult = if (consumed || (traversal && next != null && next in targets)) InputResult.Consumed else InputResult.Ignored
-                val token = session.textInputFocus
-                counters.trace.clear()
-                counters.transitions.clear()
-                counters.callbacks = 0
-                counters.acceptanceReads.clear()
-                val traversalOrder = if (traversal && consumed.not()) expectedTraversal(current) else emptyList()
-                val firstAccepting = traversalOrder.indexOfFirst { it in targets }
-                val candidateReads = if (firstAccepting < 0) traversalOrder else traversalOrder.take(firstAccepting + 1)
-                val expectedReads = candidateReads + if (next != current && next != null) listOf(next) else emptyList()
-
-                check(dispatch() === expectedResult)
-                check(counters.trace == expectedTrace && counters.callbacks == expectedTrace.size)
-                check(counters.acceptanceReads == expectedReads)
-                check(counters.focused == next)
-                val expectedTransitions =
-                    if (next == current) {
-                        emptyList()
-                    } else {
-                        listOfNotNull(current?.let { Transition(it, false) }, next?.let { Transition(it, true) })
-                    }
-                check(counters.transitions == expectedTransitions)
-                if (next == current) check(session.textInputFocus === token)
+                verifyDispatch()
                 check(session.frame(constraints) === preparedFrame)
                 check(counters.measures == measures && counters.layouts == layouts)
             }
@@ -238,6 +205,70 @@ public open class FocusedInputBenchmark {
             counters.transitions.clear()
             counters.acceptanceReads.clear()
         }
+
+        private fun verifyDispatch() {
+            val current = counters.focused
+            val expectedTrace = expectedTrace(current)
+            val consumed = current != null && workload.consumption !== Consumption.None
+            val traversal = workload.protocol === Protocol.Tab || workload.protocol === Protocol.ShiftTab
+            val next = if (traversal && consumed.not()) expectedNext(current) else current
+            val expectedResult = expectedResult(consumed, traversal, next)
+            val expectedReads = expectedReads(current, next, traversal && consumed.not())
+            val expectedTransitions = expectedTransitions(current, next)
+            val token = session.textInputFocus
+            counters.trace.clear()
+            counters.transitions.clear()
+            counters.callbacks = 0
+            counters.acceptanceReads.clear()
+
+            check(dispatch() === expectedResult)
+            check(counters.trace == expectedTrace && counters.callbacks == expectedTrace.size)
+            check(counters.acceptanceReads == expectedReads)
+            check(counters.focused == next)
+            check(counters.transitions == expectedTransitions)
+            if (next == current) check(session.textInputFocus === token)
+        }
+
+        private fun expectedTrace(current: Int?): List<Actor> {
+            if (current == null) return emptyList()
+            val order = (0 until workload.modifiers).reversed().toList() + workload.modifiers
+            val delivered = order.map { member -> Actor(current, member) }
+            return when (workload.consumption) {
+                Consumption.Early -> delivered.take(1)
+                Consumption.Late, Consumption.None -> delivered
+            }
+        }
+
+        private fun expectedResult(
+            consumed: Boolean,
+            traversal: Boolean,
+            next: Int?,
+        ): InputResult {
+            if (consumed) return InputResult.Consumed
+            if (traversal.not() || next == null) return InputResult.Ignored
+            return if (next in targets) InputResult.Consumed else InputResult.Ignored
+        }
+
+        private fun expectedReads(
+            current: Int?,
+            next: Int?,
+            traversal: Boolean,
+        ): List<Int> {
+            val order = if (traversal) expectedTraversal(current) else emptyList()
+            val firstAccepting = order.indexOfFirst { owner -> owner in targets }
+            val candidates = if (firstAccepting < 0) order else order.take(firstAccepting + 1)
+            return candidates + if (next != current && next != null) listOf(next) else emptyList()
+        }
+
+        private fun expectedTransitions(
+            current: Int?,
+            next: Int?,
+        ): List<Transition> =
+            if (next == current) {
+                emptyList()
+            } else {
+                listOfNotNull(current?.let { owner -> Transition(owner, false) }, next?.let { owner -> Transition(owner, true) })
+            }
 
         override fun close() {
             session.close()
