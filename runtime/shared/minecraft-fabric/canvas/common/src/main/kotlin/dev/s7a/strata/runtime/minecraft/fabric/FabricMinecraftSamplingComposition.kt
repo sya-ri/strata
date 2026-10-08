@@ -25,32 +25,44 @@ internal class FabricMinecraftSamplingComposition(
     private var state = State.Pending
     private var masks: List<Mask> = emptyList()
 
-    /** Number of candidate validations charged to this preparation's shared work bound. */
+    /**
+     * Number of candidate validations charged to this preparation's shared work bound.
+     */
     @get:JvmSynthetic
     internal var admissionVisits: Int = 0
         private set
 
-    /** Current-list classification visits, including a blocking command or failed read. */
+    /**
+     * Current-list classification visits, including a blocking command or failed read.
+     */
     @get:JvmSynthetic
     internal var classificationVisits: Int = 0
         private set
 
-    /** Number of cached occurrence visits, including the candidate's own occurrence. */
+    /**
+     * Number of cached occurrence visits, including the candidate's own occurrence.
+     */
     @get:JvmSynthetic
     internal var maskVisits: Int = 0
         private set
 
-    /** Complete half-open geometry checks, each contained in one charged mask visit. */
+    /**
+     * Complete half-open geometry checks, each contained in one charged mask visit.
+     */
     @get:JvmSynthetic
     internal var geometryChecks: Int = 0
         private set
 
-    /** Bounded scalar/bounds records; global rejection, exhaustion and failed classification retain none. */
+    /**
+     * Bounded scalar/bounds records; global rejection, exhaustion and failed classification retain none.
+     */
     @get:JvmSynthetic
     internal val retainedOccurrenceCount: Int
         get() = masks.size
 
-    /** All charged validation, classification and overlap work; never more than 8,192 units. */
+    /**
+     * All charged validation, classification and overlap work; never more than 8,192 units.
+     */
     @get:JvmSynthetic
     internal val workCount: Int
         get() = 8_192 - remaining
@@ -68,7 +80,8 @@ internal class FabricMinecraftSamplingComposition(
         if (spend().not()) return reject()
         admissionVisits += 1
         if (state == State.Rejected) return false
-        if ((occurrence in commands.indices).not() || commands[occurrence] !== command || command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) return false
+        if ((occurrence in commands.indices).not() || commands[occurrence] !== command) return false
+        if (command.alphaCutoff != 1f || command.hasExactFabricSamplingEffects().not()) return false
         if (state == State.Pending && classify().not()) return false
         for (index in masks.indices) {
             if (spend().not()) return reject()

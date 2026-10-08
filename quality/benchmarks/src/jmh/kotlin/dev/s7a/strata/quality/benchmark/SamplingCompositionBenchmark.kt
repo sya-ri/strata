@@ -31,15 +31,21 @@ import java.nio.file.Path
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public open class SamplingCompositionBenchmark {
-    /** Constructs one preparation-local proof and checks every eligible mask occurrence with the original shared budget. */
+    /**
+     * Constructs one preparation-local proof and checks every eligible mask occurrence with the original shared budget.
+     */
     @Benchmark
     public fun proof(state: ProofState): Int = state.prove()
 
-    /** Partitions the complete original frame, preserving independent visibility, sampling and output-capacity gates. */
+    /**
+     * Partitions the complete original frame, preserving independent visibility, sampling and output-capacity gates.
+     */
     @Benchmark
     public fun partition(state: ProofState): Any = state.partition()
 
-    /** Frozen controls distinguish lazy ordinary frames, mask relationships and early or late global blockers. */
+    /**
+     * Frozen controls distinguish lazy ordinary frames, mask relationships and early or late global blockers.
+     */
     public enum class Case {
         OrdinaryLarge,
         OneMaskFew,
@@ -53,7 +59,9 @@ public open class SamplingCompositionBenchmark {
         LateBlockedMany,
         ;
 
-        /** Creates the full original stream outside recurring measurement, including equal/repeated object occurrences. */
+        /**
+         * Creates the full original stream outside recurring measurement, including equal/repeated object occurrences.
+         */
         public fun commands(): List<DrawCommand> {
             val count = if (this == OneMaskFew || this == OneMaskMany) 1 else 32
             val fills = if (this == OneMaskFew || this == DisjointFew) 1 else 4096
@@ -72,15 +80,16 @@ public open class SamplingCompositionBenchmark {
                 }
 
                 EarlyBlockedMany -> {
-                    listOf(first) + base + listOf(
-                        second,
-                        prototype.copy(tint = ArgbColor(0xFF123456.toInt())),
-                        prototype.copy(alphaCutoff = 0.5f),
-                        prototype.copy(tint = ArgbColor(-1), alphaCutoff = 0f),
-                        DrawCommand.BlitImage(image, IntRect(0, 0, 2, 2), IntRect(432, 180, 434, 182)),
-                        DrawCommand.BlitImagePixels(image, IntRect(0, 0, 2, 2), IntRect(436, 180, 438, 182)),
-                        DrawCommand.Platform(ProofPlatform, IntRect(440, 180, 442, 182)),
-                    )
+                    listOf(first) + base +
+                        listOf(
+                            second,
+                            prototype.copy(tint = ArgbColor(0xFF123456.toInt())),
+                            prototype.copy(alphaCutoff = 0.5f),
+                            prototype.copy(tint = ArgbColor(-1), alphaCutoff = 0f),
+                            DrawCommand.BlitImage(image, IntRect(0, 0, 2, 2), IntRect(432, 180, 434, 182)),
+                            DrawCommand.BlitImagePixels(image, IntRect(0, 0, 2, 2), IntRect(436, 180, 438, 182)),
+                            DrawCommand.Platform(ProofPlatform, IntRect(440, 180, 442, 182)),
+                        )
                 }
 
                 LateBlockedMany -> {
@@ -111,10 +120,14 @@ public open class SamplingCompositionBenchmark {
             }
     }
 
-    /** Reflects the actual Fabric implementation without starting a client or introducing a second proof engine. */
+    /**
+     * Reflects the actual Fabric implementation without starting a client or introducing a second proof engine.
+     */
     @State(Scope.Thread)
     public open class ProofState {
-        /** Complete compiled case selection, shared by baseline and candidate. */
+        /**
+         * Complete compiled case selection, shared by baseline and candidate.
+         */
         @JvmField
         @Param("OrdinaryLarge", "OneMaskFew", "OneMaskMany", "DisjointFew", "DisjointMany", "TouchingMany", "OverlappingMany", "RepeatedMany", "EarlyBlockedMany", "LateBlockedMany")
         public var case: Case = Case.OrdinaryLarge
@@ -125,7 +138,9 @@ public open class SamplingCompositionBenchmark {
         private lateinit var admits: Method
         private lateinit var partitionMethod: Method
 
-        /** Resolves immutable input and actual implementation members, then verifies every possible positive decision. */
+        /**
+         * Resolves immutable input and actual implementation members, then verifies every possible positive decision.
+         */
         @Setup(Level.Trial)
         @Suppress("StringLiteralComparison") // Reflection matches actual external JVM member names, not domain-state strings.
         public fun setup() {
@@ -145,7 +160,9 @@ public open class SamplingCompositionBenchmark {
             check(partition() is List<*>)
         }
 
-        /** Returns the real positive admission count; construction and all selected occurrences remain inside this boundary. */
+        /**
+         * Returns the real positive admission count; construction and all selected occurrences remain inside this boundary.
+         */
         internal fun prove(): Int {
             val proof = proofConstructor.newInstance(commands)
             var admitted = 0
@@ -155,10 +172,14 @@ public open class SamplingCompositionBenchmark {
             return admitted
         }
 
-        /** Uses the actual complete partition entry with exact effects enabled and a fixed logical viewport. */
+        /**
+         * Uses the actual complete partition entry with exact effects enabled and a fixed logical viewport.
+         */
         internal fun partition(): Any = checkNotNull(partitionMethod.invoke(null, commands, IntSize(512, 256), 1, false, true))
 
-        /** Captures actual untimed decisions and available bounded-work fields without synthesizing missing legacy diagnostics. */
+        /**
+         * Captures actual untimed decisions and available bounded-work fields without synthesizing missing legacy diagnostics.
+         */
         internal fun work(): JsonObject {
             val proof = proofConstructor.newInstance(commands)
             var admitted = 0
@@ -197,9 +218,13 @@ public open class SamplingCompositionBenchmark {
         }
     }
 
-    /** Optional shared fixture verification and a separate actual-runtime work diagnostic, both outside timing. */
+    /**
+     * Optional shared fixture verification and a separate actual-runtime work diagnostic, both outside timing.
+     */
     public companion object {
-        /** Verifies the complete immutable case metadata, conservative relationships and literal opaque-mask pixels. */
+        /**
+         * Verifies the complete immutable case metadata, conservative relationships and literal opaque-mask pixels.
+         */
         @JvmStatic
         public fun verifyWork() {
             check(Case.entries.size == 10)
@@ -222,7 +247,9 @@ public open class SamplingCompositionBenchmark {
             }
         }
 
-        /** Writes fresh actual proof work diagnostics; this contains no timings and cannot replace a CPU provenance receipt. */
+        /**
+         * Writes fresh actual proof work diagnostics; this contains no timings and cannot replace a CPU provenance receipt.
+         */
         @JvmStatic
         public fun main(args: Array<String>) {
             require(args.size == 1)
@@ -241,11 +268,12 @@ public open class SamplingCompositionBenchmark {
                     addProperty("fixture_archive_sha256", ArtifactIdentity.fullCodeSource(SamplingCompositionBenchmark::class.java))
                     add(
                         "runtime",
-                        LoadedArtifactMetadata.capture(
-                            SamplingCompositionBenchmark::class.java.classLoader,
-                            mapOf("fabric" to "dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSamplingComposition"),
-                            setOf("fabric"),
-                        ).also(LoadedArtifactMetadata::verifyComplete),
+                        LoadedArtifactMetadata
+                            .capture(
+                                SamplingCompositionBenchmark::class.java.classLoader,
+                                mapOf("fabric" to "dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSamplingComposition"),
+                                setOf("fabric"),
+                            ).also(LoadedArtifactMetadata::verifyComplete),
                     )
                     add("cases", rows)
                 },

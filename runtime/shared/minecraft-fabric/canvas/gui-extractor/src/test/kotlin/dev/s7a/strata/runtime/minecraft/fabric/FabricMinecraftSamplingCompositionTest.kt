@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
 
-/** Checks independent effect admission without changing overlapping CPU composition or retaining proof history. */
+/**
+ * Checks independent effect admission without changing overlapping CPU composition or retaining proof history.
+ */
 internal class FabricMinecraftSamplingCompositionTest {
     private val image = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0x807195B3.toInt(), 0, -1))
     private val sample = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(1f, 1f, 5f, 5f), ArgbColor(0xFF00FFFF.toInt()), alphaCutoff = 1f)

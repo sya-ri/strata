@@ -16,7 +16,9 @@ internal class MinecraftSamplingCompositionCorpus : MinecraftNativePerformanceCo
         operations: Int,
     ): MinecraftNativePerformanceScene = MinecraftSamplingCompositionScene(Case.valueOf(id), viewport)
 
-    /** Complete frozen native controls; changed cases alternate two immutable destinations through the normal source cutoff. */
+    /**
+     * Complete frozen native controls; changed cases alternate two immutable destinations through the normal source cutoff.
+     */
     internal enum class Case(
         val masks: Int = 32,
         val fills: Int = 4096,

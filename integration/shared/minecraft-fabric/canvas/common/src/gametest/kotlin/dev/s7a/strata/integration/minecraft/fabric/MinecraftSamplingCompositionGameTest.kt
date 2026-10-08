@@ -20,7 +20,9 @@ import javax.imageio.ImageIO
 internal object MinecraftSamplingCompositionGameTest {
     private val physical = IntSize(1920, 1080)
 
-    /** Runs two immutable destination revisions per scene, with complete terminal release before the next screen. */
+    /**
+     * Runs two immutable destination revisions per scene, with complete terminal release before the next screen.
+     */
     internal fun run(
         context: MinecraftCanvasTestContext,
         profile: MinecraftUiProfile,
