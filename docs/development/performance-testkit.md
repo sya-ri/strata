@@ -538,3 +538,50 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+## Retained scroll origin opportunities
+
+`ScrollInputBenchmark` selects the actual public retained profile Scroll and linked independent Scrollbar entry points through `:quality:component-benchmarks:jmhComponents '-Pstrata.jvmOnly=true' '-Pstrata.performance.benchmarks=ScrollInputBenchmark' '-Pstrata.performance.suite=scroll-input'`.
+Its complete generated corpus contains 31 cases, including all controls:
+
+| Case group | Cases | Timed opportunity |
+| --- | ---: | --- |
+| Endpoint/zero wheel, with or without linked bars | 6 | One prepared input and one frame |
+| Fractional, ordinary and reverse wheel cycles | 3 | Forward input/frame followed by restoring reverse input/frame |
+| Signed-zero cycle | 1 | Public negative-zero restoration/frame and zero wheel/frame |
+| Finite wheel with nonfinite rate multiplication | 1 | One prepared input and one frame |
+| Unrelated dirty leaf, external position and geometry | 3 | Both public state restorations, wheel requests and frame settlements |
+| Four unchanged or changed requests before frames | 3 | Four input requests before each stated frame; the changed cycle includes reversal |
+| Nested endpoint and fractional wheel | 3 | The inner public area consumes input; parent position and linked bars remain separate |
+| In-track bar endpoint/zero and restoring changed cycles | 7 | One active public drag/frame or both restoring drag/frame directions |
+| Outside-track actual node SPI | 2 | One prebound actual node callback and one frame |
+| Clean endpoint controls | 2 | One frame without input |
+
+Profiles, immutable images, input events, keys and initial geometry are prepared outside collection.
+The area is 100 by 50 logical pixels, its ordinary content is 80 by 180 plus the existing four-pixel inset, and its exact maximum offset is 134.
+Two separately keyed bars are 6 by 50 and placed at x=104 and x=114 in a 120 by 50 viewport; no-bar controls use 100 by 50.
+Nested controls put an 80 by 50 inner area and 130-pixel spacer in the outer content; inner content is 60 by 180 plus its inset.
+Ordinary wheel rate is one; the finite-overflow control retains rate nine.
+Every selected endpoint and active bar drag flag is primed before sampling.
+No per-invocation fixture setup, reflection, work counter, caller trace or pixel oracle enters timing.
+
+The standalone bar has no pointer-capture capability, so ordinary out-of-track public drag/release is ignored by existing hit testing.
+The two explicitly named `Spi` cases exercise its real outside-node branches directly and must be reported separately from public host input.
+They establish branch invalidation opportunity only.
+They do not measure or add captured gestures, native cursor delivery or cancellation.
+
+The generic compiled fixture verifier admits every declared case and records actual origin Layout/Paint and linked Paint attempts.
+For unchanged cases it performs 100 independently framed opportunities, requires unchanged snapshots and literal empty observer traces, and compares the exact ordered draw-command and semantics lists.
+Independent full-viewport reference pixels cover densities one through three, and independently placed thumb destinations verify bar ordering and geometry.
+The baseline may record the former originating callbacks; the candidate's runtime regression tests require zero such callbacks on otherwise clean unchanged requests.
+Four unchanged public wheel events before one frame can cause four baseline layouts through input geometry synchronization and one baseline paint; those counts are not presented as one coalesced layout.
+Changed-state cycles require their literal ordered callback snapshots and necessary linked feedback, while dirty child paint and external geometry remain visible.
+Detach/release and terminal close must clear retained observers and borrowed node state without changing detached old frames.
+
+Freeze the same compiled fixture classes, shared read-only `TextAreaInputAccess` helper, generated harness, profile assets, inventory controls and collector for both compared sides.
+Vary only the target Minecraft runtime archive; use the identical accepted prerequisite revision on both sides.
+The Issue's discovery source is not a compiled comparison archive.
+Record exact source/archive/loaded identities and preserve the untimed work transcript with the raw collector output.
+Use three independent Standard repetitions per side, including the complete 31-case matrix, controls and regressions, with the same viewport, densities, JMH warmup/sample settings and exclusive host conditions.
+Every restoring cycle includes restoration in both CPU operation time and normalized allocation.
+The isolated JVM corpus measures no native uploads, GPU time, event latency or FPS; those values remain inapplicable.

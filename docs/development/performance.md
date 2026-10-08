@@ -676,6 +676,24 @@ Scalar offsets, forward Float accumulation, native signed rounding, nearest-boun
 The `TextLineLayoutBenchmark` corpus exercises actual construction and clean/editing controls with independent boundaries, bounded reference pixels and release checks; its complete frozen paired evidence is defined by [the testkit contract](performance-testkit.md).
 Removed source copy sites are separate from normalized VM allocation and do not establish measured CPU, native input or FPS gains.
 
+### Unchanged profile scroll input
+
+Minecraft Scroll wheel and independent Scrollbar drag handlers compare the complete immutable `ScrollMetrics` snapshots immediately before and after their actual origin-aware state operation.
+Equal snapshots omit only the originating node's explicit invalidation; changed snapshots still request the area's Layout/Paint phases or the bar's Paint phase.
+State validation, clamping, execution ownership, callback ordering and suppressed feedback to the originating observer keep their existing behavior.
+The comparison preserves fractional offsets and signed-zero snapshot equality, including callback reentry that replaces the final authoritative state.
+Previously queued dirtiness, external geometry/state updates, linked controls and nested input consumption retain their required work.
+
+The standalone Scrollbar implements `PointerInputNode` without `PointerCaptureNode`.
+Its ordinary public input remains subject to hit testing; the separate outside-track benchmark cases invoke the prebound actual node SPI and do not establish captured host input.
+Resetting core input state therefore does not invent a missing scrollbar cancellation hook; ordinary in-track release and component detach retain their existing drag lifetime.
+
+The `ScrollInputBenchmark` corpus records actual untimed origin Layout/Paint and linked Paint attempts alongside independent state, observer order, command destinations and pixels.
+Repeated unchanged public wheel requests at an otherwise clean endpoint require zero additional originating callbacks after this guard.
+Multiple wheel requests before a frame can still synchronize dirty geometry before each later request; frame coalescing alone does not imply that baseline layout work coalesces.
+TextArea's existing guard and VirtualList's boundary demand/content refresh are separate contracts.
+CPU/allocation, frame restoration and the direct-SPI scope are defined by [the performance testkit](performance-testkit.md); omitted callback attempts do not establish native uploads, input latency or FPS gains.
+
 ### Logical multiline insertion lookup
 
 Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.

@@ -159,8 +159,10 @@ private class MinecraftScrollElement private constructor(
                 is PointerEvent.Scroll -> {
                     val delta = event.deltaY * scrollRate.toDouble()
                     if (delta.isFinite()) {
-                        checkNotNull(state).scrollBy(delta, checkNotNull(stateObserver))
-                        invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
+                        val currentState = checkNotNull(state)
+                        val previous = currentState.metrics
+                        currentState.scrollBy(delta, checkNotNull(stateObserver))
+                        if (previous != currentState.metrics) invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
                     }
                     InputResult.Consumed
                 }

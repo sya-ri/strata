@@ -163,20 +163,16 @@ private class MinecraftScrollbarElement private constructor(
             val currentState = checkNotNull(state)
             val currentObserver = checkNotNull(observer)
             val metrics = currentState.metrics
-            if (localPosition.y < 0) {
-                currentState.scrollTo(0.0, currentObserver)
-                invalidate(DirtyMask.of(DirtyPhase.Paint))
-                return
+            when {
+                localPosition.y < 0 -> currentState.scrollTo(0.0, currentObserver)
+                size.height < localPosition.y -> currentState.scrollTo(metrics.maximumOffset, currentObserver)
+                else -> {
+                    val travel = Math.subtractExact(size.height, thumbHeight(size.height, metrics))
+                    val multiplier = max(1.0, metrics.maximumOffset / travel.toDouble())
+                    currentState.scrollBy(event.deltaY * multiplier, currentObserver)
+                }
             }
-            if (size.height < localPosition.y) {
-                currentState.scrollTo(metrics.maximumOffset, currentObserver)
-                invalidate(DirtyMask.of(DirtyPhase.Paint))
-                return
-            }
-            val travel = Math.subtractExact(size.height, thumbHeight(size.height, metrics))
-            val multiplier = max(1.0, metrics.maximumOffset / travel.toDouble())
-            currentState.scrollBy(event.deltaY * multiplier, currentObserver)
-            invalidate(DirtyMask.of(DirtyPhase.Paint))
+            if (metrics != currentState.metrics) invalidate(DirtyMask.of(DirtyPhase.Paint))
         }
 
         private fun thumbHeight(
