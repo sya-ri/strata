@@ -32,7 +32,10 @@ internal class FrameClipWorkload private constructor(
                 checkNotNull(Boolean::class.javaPrimitiveType),
             )
     private val inputType = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameInputs")
-    private val resolve = inputType.declaredMethods.single { it.name.substringBefore('$') == "resolve" && it.parameterCount == 2 }
+    private val resolve =
+        inputType.declaredMethods.single { method ->
+            method.parameterTypes.contentEquals(arrayOf(Function1::class.java, Function1::class.java)) && method.returnType == inputType
+        }
     private val available: (DrawImage) -> Boolean = { true }
     private val prepared: Any = inputType.constructors.single { it.parameterCount == 6 }.newInstance(partition(), 1, 0L, 0L, false, null)
 
@@ -53,7 +56,10 @@ internal class FrameClipWorkload private constructor(
      */
     internal fun resolvePrepared(): Any = checkNotNull(resolve.invoke(prepared, available, available))
 
-    companion object {
+    /**
+     * Constructs deterministic clip scenes consumed by the actual packaged Fabric boundary.
+     */
+    internal companion object {
         /**
          * Builds balanced original clips, ordinary blits/fills and ordered direct, fallback and platform barriers.
          */
