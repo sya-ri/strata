@@ -41,13 +41,14 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
 import java.util.function.IntUnaryOperator
 
+// Why: this single current editor owns preparation, independent input/control oracles and terminal release together.
+
 /**
  * One actual retained editor with fixed synthetic resources, current-layout oracles and bounded face ownership.
  * The constructor establishes an arbitrary canonical column through the caller state before first layout.
  * Navigation cycles restore through the opposite public key; composition cycles restore through public Home and preedit.
  * No reflection, font creation, frame production or oracle scan occurs in [input].
  */
-// Why: this single current editor owns preparation, independent input/control oracles and terminal release together.
 @Suppress("TooManyFunctions")
 @OptIn(InternalStrataRuntimeApi::class)
 internal class TextAreaInputFixture(
@@ -139,7 +140,10 @@ internal class TextAreaInputFixture(
     /**
      * Selects beginning/middle/end coordinates from the actual immutable rounded positions.
      */
-    internal fun lookupX(line: Any, selected: Point): Int {
+    internal fun lookupX(
+        line: Any,
+        selected: Point,
+    ): Int {
         val positions = TextAreaInputAccess.field(line, "positions") as IntArray
         val index =
             when (selected) {
@@ -153,7 +157,11 @@ internal class TextAreaInputFixture(
     /**
      * Requires exact loaded lookup output, no font work and the candidate's actual coordinate-read ceiling.
      */
-    internal fun verifyLookup(line: Any, x: Int, lookup: IntUnaryOperator) {
+    internal fun verifyLookup(
+        line: Any,
+        x: Int,
+        lookup: IntUnaryOperator,
+    ) {
         val calls = glyphCalls
         check(lookup.applyAsInt(x) == TextAreaInputAccess.nearest(line, x))
         TextAreaInputAccess.verifyVisits(line, x)
@@ -169,7 +177,12 @@ internal class TextAreaInputFixture(
         check(frame() === first)
         val next = initialLayout()
         check(backends == 1 && faces == 1)
-        check(next.semantics.single { entry -> entry.semantics.role === SemanticsRole.TextArea }.semantics.value == UiText.Literal(value))
+        check(
+            next.semantics
+                .single { entry -> entry.semantics.role === SemanticsRole.TextArea }
+                .semantics
+                .value == UiText.Literal(value),
+        )
         val expected = first.drawCommands.filterNot { command -> command is DrawCommand.FillRectangle }
         val actual = next.drawCommands.filterNot { command -> command is DrawCommand.FillRectangle }
         for (scale in 1..3) {
@@ -198,7 +211,12 @@ internal class TextAreaInputFixture(
         check(host.textInputFocus === token)
         if (composed.not()) check(TextAreaInputAccess.field(editor(), "layout") === previous)
         val after = frame()
-        check(after.semantics.single { entry -> entry.semantics.role === SemanticsRole.TextArea }.semantics.value == UiText.Literal(value))
+        check(
+            after.semantics
+                .single { entry -> entry.semantics.role === SemanticsRole.TextArea }
+                .semantics
+                .value == UiText.Literal(value),
+        )
         check(state.scrollState.metrics.offset == scroll)
         check(TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") == pan)
         verifyPixels(before, after, expected, pan, scroll.toInt())
@@ -225,7 +243,12 @@ internal class TextAreaInputFixture(
         val top = placement.line * (TextAreaInputAccess.field(layout, "lineStep") as Int) - scroll
         val bounds = IntRect(4 + left, 4 + maxOf(0, top), 5 + left, 4 + minOf(size.height - 8, top + 9))
         val reference = before.drawCommands.map { command -> if (command is DrawCommand.FillRectangle) command.copy(bounds = bounds) else command }
-        check(after.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().single().bounds == bounds)
+        check(
+            after.drawCommands
+                .filterIsInstance<DrawCommand.FillRectangle>()
+                .single()
+                .bounds == bounds,
+        )
         for (scale in 1..3) {
             check(rasterizeHeadless(reference, size, scale).copyArgb().contentEquals(rasterizeHeadless(after.drawCommands, size, scale).copyArgb()))
         }
@@ -236,13 +259,21 @@ internal class TextAreaInputFixture(
         if (composed.not()) return placement
         val offset = TextAreaInputAccess.field(cursor(), "offset") as Int
         val next = placement.offset
-        val committed = if (next <= offset) next else if (next < offset + composition.fullText.length) offset else next - composition.fullText.length
+        val committed =
+            if (next <= offset) {
+                next
+            } else if (next < offset + composition.fullText.length) {
+                offset
+            } else {
+                next - composition.fullText.length
+            }
         return Placement(committed, 0)
     }
 
     private fun pointerPlacement(layout: Any): Placement {
         val pan = TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") as Int
-        val y = (press.position.y - 4).coerceIn(0, size.height - 9) + state.scrollState.metrics.offset.toInt()
+        val scroll = state.scrollState.metrics.offset
+        val y = (press.position.y - 4).coerceIn(0, size.height - 9) + scroll.toInt()
         val index = TextAreaInputAccess.pointerLine(layout, y)
         val x = (press.position.x - 4).coerceIn(0, size.width - 8) + pan
         return nearest(TextAreaInputAccess.lines(layout), index, x)
@@ -261,7 +292,11 @@ internal class TextAreaInputFixture(
         return nearest(lines, index, x)
     }
 
-    private fun nearest(lines: List<Any>, index: Int, x: Int): Placement {
+    private fun nearest(
+        lines: List<Any>,
+        index: Int,
+        x: Int,
+    ): Placement {
         val offset = TextAreaInputAccess.nearest(lines[index], x)
         TextAreaInputAccess.verifyVisits(lines[index], x)
         return Placement(offset, index)
@@ -284,8 +319,15 @@ internal class TextAreaInputFixture(
         val x = TextAreaInputAccess.coordinate(line, TextAreaInputAccess.field(current, "offset") as Int)
         val pan = TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") as Int
         val step = TextAreaInputAccess.field(layout, "lineStep") as Int
-        val y = index * step - state.scrollState.metrics.offset.toInt()
-        return PointerEvent.Press(IntOffset(4 + (x - pan).coerceIn(0, size.width - 8), 4 + y.coerceIn(0, size.height - 9)), PointerButton.Primary)
+        val scroll = state.scrollState.metrics.offset
+        val y = index * step - scroll.toInt()
+        return PointerEvent.Press(
+            IntOffset(
+                4 + (x - pan).coerceIn(0, size.width - 8),
+                4 + y.coerceIn(0, size.height - 9),
+            ),
+            PointerButton.Primary,
+        )
     }
 
     private fun editor(): Any = TextAreaInputAccess.editor(host)
@@ -336,7 +378,10 @@ internal class TextAreaInputFixture(
         return object : MinecraftFontBackend {
             override fun decodePng(bytes: ByteArray): DrawImage = error("The metric fixture has no bitmap provider")
 
-            override fun openTrueType(bytes: ByteArray, settings: MinecraftTrueTypeSettings): MinecraftTrueTypeFace {
+            override fun openTrueType(
+                bytes: ByteArray,
+                settings: MinecraftTrueTypeSettings,
+            ): MinecraftTrueTypeFace {
                 faces += 1
                 return object : MinecraftTrueTypeFace {
                     override fun glyph(codePoint: Int): MinecraftFontGlyph {

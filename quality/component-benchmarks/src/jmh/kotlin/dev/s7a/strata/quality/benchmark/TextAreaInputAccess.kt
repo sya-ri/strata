@@ -5,11 +5,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.lang.reflect.Field
 import kotlin.math.abs
 
+// Why: the external-symbol adapter keeps all untimed reads and independent line oracles in one place.
+
 /**
  * Untimed read-only access to the exact current retained editor and detached line data.
  * Reflection resolves existing internal symbols, never mutates runtime fields, and never participates in session input timing.
  */
-// Why: the external-symbol adapter keeps all untimed reads and independent line oracles in one place.
 @Suppress("TooManyFunctions")
 @OptIn(InternalStrataRuntimeApi::class)
 internal object TextAreaInputAccess {
@@ -27,12 +28,21 @@ internal object TextAreaInputAccess {
     /**
      * Reads one required current field without copying or retaining ownership history.
      */
-    internal fun field(owner: Any, name: String): Any = checkNotNull(optional(owner, name))
+    internal fun field(
+        owner: Any,
+        name: String,
+    ): Any = checkNotNull(optional(owner, name))
 
     /**
      * Reads nullable current ownership, used only outside collection.
      */
-    internal fun optional(owner: Any, name: String): Any? = member(owner.javaClass, name).apply { isAccessible = true }.get(owner)
+    internal fun optional(
+        owner: Any,
+        name: String,
+    ): Any? =
+        member(owner.javaClass, name)
+            .apply { isAccessible = true }
+            .get(owner)
 
     /**
      * Borrows the current line list without exposing it to timed session code.
@@ -42,7 +52,10 @@ internal object TextAreaInputAccess {
     /**
      * Finds the current visual line independently from scalar intervals and decoded soft-wrap affinity.
      */
-    internal fun lineIndex(layout: Any, cursor: Any): Int {
+    internal fun lineIndex(
+        layout: Any,
+        cursor: Any,
+    ): Int {
         val offset = field(cursor, "offset") as Int
         val lines = lines(layout)
         val index = lines.indexOfLast { line -> (field(line, "start") as Int) <= offset }.coerceAtLeast(0)
@@ -57,7 +70,10 @@ internal object TextAreaInputAccess {
     /**
      * Selects pointer line boxes by the complete spacing-gap midpoint rule, independently of runtime lookup.
      */
-    internal fun pointerLine(layout: Any, y: Int): Int {
+    internal fun pointerLine(
+        layout: Any,
+        y: Int,
+    ): Int {
         val lines = lines(layout)
         val step = field(layout, "lineStep") as Int
         val index = Math.floorDiv(y.coerceAtLeast(0), step).coerceAtMost(lines.lastIndex)
@@ -68,7 +84,10 @@ internal object TextAreaInputAccess {
     /**
      * Complete independent Long-distance scan with earliest logical ties.
      */
-    internal fun nearest(line: Any, x: Int): Int {
+    internal fun nearest(
+        line: Any,
+        x: Int,
+    ): Int {
         val positions = field(line, "positions") as IntArray
         val offsets = field(line, "offsets") as IntArray
         val nearest = positions.indices.minBy { index -> abs(positions[index].toLong() - x.toLong()) }
@@ -78,7 +97,10 @@ internal object TextAreaInputAccess {
     /**
      * Reads an exact scalar coordinate by its original UTF-16 boundary.
      */
-    internal fun coordinate(line: Any, offset: Int): Int {
+    internal fun coordinate(
+        line: Any,
+        offset: Int,
+    ): Int {
         val offsets = field(line, "offsets") as IntArray
         return (field(line, "positions") as IntArray)[offsets.indexOf(offset)]
     }
@@ -86,7 +108,10 @@ internal object TextAreaInputAccess {
     /**
      * Checks candidate coordinate reads when available; old runtimes still execute the identical complete-scan oracle.
      */
-    internal fun verifyVisits(line: Any, x: Int) {
+    internal fun verifyVisits(
+        line: Any,
+        x: Int,
+    ) {
         val method = line.javaClass.declaredMethods.singleOrNull { candidate -> candidate.name.startsWith("boundaryVisits") }
         if (method == null) return
         method.isAccessible = true
@@ -106,7 +131,10 @@ internal object TextAreaInputAccess {
         return null
     }
 
-    private fun member(type: Class<*>, name: String): Field =
+    private fun member(
+        type: Class<*>,
+        name: String,
+    ): Field =
         try {
             type.getDeclaredField(name)
         } catch (missing: NoSuchFieldException) {
