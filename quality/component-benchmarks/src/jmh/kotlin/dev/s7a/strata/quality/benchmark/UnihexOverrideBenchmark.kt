@@ -203,10 +203,10 @@ public open class UnihexOverrideBenchmark {
          * Alternates actual source text and extracts the resulting dirty frame.
          */
         public fun dirtyFrame(): RuntimeUiFrame = frame {
-                phase = 1 - phase
-                textSource.publish(texts[phase])
-                host.frame(viewport, FrameTime(0))
-            }
+            phase = 1 - phase
+            textSource.publish(texts[phase])
+            host.frame(viewport, FrameTime(0))
+        }
 
         /**
          * Detached first Text frame from an independently closed host.
