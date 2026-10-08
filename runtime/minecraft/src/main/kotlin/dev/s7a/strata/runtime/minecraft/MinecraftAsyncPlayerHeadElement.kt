@@ -18,6 +18,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.runtime.minecraft.font.FontCloseFailures
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -126,18 +127,19 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         }
 
         override fun detach() {
-            releaseBinding()
             snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
             painter.clear()
             attached = false
+            releaseBinding()
         }
 
         override fun dispose() {
-            releaseBinding()
+            snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
             painter.clear()
             platform = null
             source = null
             attached = false
+            releaseBinding()
         }
 
         /**
@@ -153,6 +155,8 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             val fallbackChanged = loadingIndex != current.loadingIndex || failureIndex != current.failureIndex
             val hatChanged = showHat != current.showHat
             if (sourceChanged) {
+                painter.clear()
+                snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
                 releaseBinding()
                 platform = current.platform
                 source = current.source
@@ -189,25 +193,45 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                         if (binding !== acquired) return@observe
                         val next = acquired.snapshot()
                         validateSnapshot(next)
-                        if (snapshot != next) {
+                        val previousSkin = (snapshot as? MinecraftPlayerSkinBinding.Snapshot.Ready)?.skin
+                        val nextSkin = (next as? MinecraftPlayerSkinBinding.Snapshot.Ready)?.skin
+                        if (snapshot != next || previousSkin !== nextSkin) {
                             snapshot = next
                             painter.clear()
                             invalidate(DirtyMask.of(DirtyPhase.Measure))
                         }
                     }
             } catch (failure: Throwable) {
-                acquired.close()
-                throw failure
+                binding = null
+                subscription = null
+                snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
+                painter.clear()
+                val cleanup = runCatching { acquired.close() }.exceptionOrNull()
+                throwBindingFailures(failure, cleanup)
             }
         }
 
         private fun releaseBinding() {
             val currentSubscription = subscription
-            subscription = null
-            currentSubscription?.close()
             val currentBinding = binding
+            subscription = null
             binding = null
-            currentBinding?.close()
+            val subscriptionFailure = runCatching { currentSubscription?.close() }.exceptionOrNull()
+            val bindingFailure = runCatching { currentBinding?.close() }.exceptionOrNull()
+            if (subscriptionFailure != null) throwBindingFailures(subscriptionFailure, bindingFailure)
+            bindingFailure?.let { throw it }
+        }
+
+        private fun throwBindingFailures(
+            primary: Throwable,
+            secondary: Throwable?,
+        ): Nothing {
+            if (secondary == null || secondary === primary) throw primary
+            val failures = FontCloseFailures()
+            failures.attempt { throw primary }
+            failures.attempt { throw secondary }
+            failures.throwFailure()
+            throw primary
         }
 
         private fun validateSnapshot(candidate: MinecraftPlayerSkinBinding.Snapshot) {

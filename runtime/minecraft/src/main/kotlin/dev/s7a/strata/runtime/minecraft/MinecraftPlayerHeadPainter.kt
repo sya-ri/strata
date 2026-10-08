@@ -11,10 +11,16 @@ import dev.s7a.strata.render.createDrawImage
  * Retains the derived images needed to paint one player head without uneven source-texel sizes.
  *
  * Exact integer scales keep the original skin and nearest sampling.
- * Other sizes retain one bilinearly resampled face and hat for the current skin identity and logical size.
+ * Other sizes retain one bilinearly resampled face and an independently requested hat for the current skin identity and logical size.
  * The owning retained node must call [clear] when its attachment ends.
+ * Requested layers are prepared before any command is emitted; a failed new generation retains no preceding generation.
+ *
+ * @param imageFactory synchronous immutable-image construction boundary, defaulting to the ordinary copying factory.
+ * It must copy the borrowed private pixel buffer, must not reenter this painter, and must not retain that buffer on failure.
  */
-internal class MinecraftPlayerHeadPainter {
+internal class MinecraftPlayerHeadPainter(
+    private val imageFactory: (IntSize, IntArray) -> DrawImage = ::createDrawImage,
+) {
     private var cachedSkin: DrawImage? = null
     private var cachedSize: Int = 0
     private var cachedFace: DrawImage? = null
@@ -43,7 +49,7 @@ internal class MinecraftPlayerHeadPainter {
             return
         }
 
-        prepare(skin, size)
+        prepare(skin, size, showHat)
         val source = FloatRect(0f, 0f, size.toFloat(), size.toFloat())
         scope.sampledImage(checkNotNull(cachedFace), source, destination, alphaCutoff = 0f)
         if (showHat) {
@@ -64,10 +70,13 @@ internal class MinecraftPlayerHeadPainter {
     private fun prepare(
         skin: DrawImage,
         size: Int,
+        showHat: Boolean,
     ) {
-        if (cachedSkin === skin && cachedSize == size) return
-        val face = resample(skin, faceSource, size)
-        val hat = resample(skin, hatSource, size)
+        if (cachedSkin !== skin || cachedSize != size) {
+            clear()
+        }
+        val face = cachedFace ?: resample(skin, faceSource, size)
+        val hat = if (showHat) cachedHat ?: resample(skin, hatSource, size) else cachedHat
         cachedSkin = skin
         cachedSize = size
         cachedFace = face
@@ -129,7 +138,7 @@ internal class MinecraftPlayerHeadPainter {
                 pixels[y * size + x] = interpolate(samples, weights, totalWeight)
             }
         }
-        return createDrawImage(IntSize(size, size), pixels)
+        return imageFactory(IntSize(size, size), pixels)
     }
 
     private fun interpolate(
