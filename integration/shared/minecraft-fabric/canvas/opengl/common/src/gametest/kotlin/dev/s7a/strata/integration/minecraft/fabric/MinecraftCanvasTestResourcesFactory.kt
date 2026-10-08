@@ -41,7 +41,9 @@ internal fun createMinecraftCanvasTestResources(): MinecraftCanvasTestResources 
     return object : MinecraftCanvasTestResources {
         private var closed = false
 
-        override val inputValidation: List<MinecraftCanvasInputValidation> = listOf(MinecraftCanvasGlInputValidation)
+        override val inputValidation: List<MinecraftCanvasInputValidation> = listOf(MinecraftCanvasGlInputValidation, MinecraftCompositionGlRetentionValidation)
+
+        override val compositionTargetValidation: MinecraftCompositionTargetValidation = MinecraftCompositionGlRetentionValidation
 
         override val backend: MinecraftCanvasTestBackend = MinecraftCanvasTestBackend.OpenGl
 

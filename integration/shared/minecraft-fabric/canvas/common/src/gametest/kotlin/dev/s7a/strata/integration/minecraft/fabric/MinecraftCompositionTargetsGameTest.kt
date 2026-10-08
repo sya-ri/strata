@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
+import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -22,14 +23,16 @@ internal object MinecraftCompositionTargetsGameTest {
     /**
      * Verifies factory-source identity, immutable target independence, ordinary fallback and exact whole-screen pixels.
      * The surrounding version adapter restores its initial viewport, and each scene recreates all screenshots and receipts.
+     * Optional [validation] checks actual adapter container references while reused final outputs remain live.
      */
     internal fun run(
         context: MinecraftCanvasTestContext,
         profile: MinecraftUiProfile,
+        validation: MinecraftCompositionTargetValidation? = null,
     ) {
         for (scale in listOf(1, 4)) {
             context.configureViewport(physical, scale)
-            MinecraftCompositionTargetsCorpus.Case.entries.forEach { verify(context, profile, scale, it) }
+            MinecraftCompositionTargetsCorpus.Case.entries.forEach { verify(context, profile, scale, it, validation) }
         }
     }
 
@@ -39,6 +42,7 @@ internal object MinecraftCompositionTargetsGameTest {
         profile: MinecraftUiProfile,
         scale: Int,
         case: MinecraftCompositionTargetsCorpus.Case,
+        validation: MinecraftCompositionTargetValidation?,
     ) {
         context.waitFor { released() }
         val logical = IntSize(physical.width / scale, physical.height / scale)
@@ -66,11 +70,15 @@ internal object MinecraftCompositionTargetsGameTest {
                 if (0 < generation && case.stationary) check(before.inputs === after.inputs && before.preparations == after.preparations)
                 if (0 < generation && case.stationary.not()) check(before.inputs !== after.inputs && before.preparations < after.preparations)
                 if (0 < generation && case == MinecraftCompositionTargetsCorpus.Case.OneDirtyLarge) check(0 < reused)
+                val retired = before.workspace?.takeIf { it !== after.workspace }
+                if (retired != null) context.waitFor { nullableMember(retired, "closed") == true && retired.isDestroyed() }
+                val detached = validation?.let { context.onClient { it.inspect(after.composedTextures) } }
+                if (validation != null && 0 < after.scratchShapes) check(checkNotNull(detached) != 0)
                 if (case.small) check(after.scratchShapes == 0)
                 check(after.intermediateViews.none { intermediate -> after.outputViews.any { it === intermediate } })
                 compare(context, screen, logical, scale, case, generation)
                 check(context.onClient { rasterizeHeadless(oldFrame, logical, scale).copyArgb().contentEquals(oldPixels) })
-                rows.add("generation=$generation maps=" + after.maps.size + " reusedOutputOwners=$reused preparedPasses=" + after.passes + " initializedScratchShapes=" + after.scratchShapes + " roundedReservationBytes=" + after.reservedBytes)
+                rows.add("generation=$generation maps=" + after.maps.size + " reusedOutputOwners=$reused preparedPasses=" + after.passes + " initializedScratchShapes=" + after.scratchShapes + " roundedReservationBytes=" + after.reservedBytes + " retiredWorkspaceAcknowledged=" + (retired != null) + " detachedIntermediateAttachments=" + (detached ?: "not-applicable"))
                 before = after
             }
             Files.writeString(context.outputDirectory.resolve("composition-targets-${case.name}-$scale.properties"), rows.joinToString("\n", postfix = "\ntolerance=0\nresult=passed\n"))
@@ -119,7 +127,8 @@ internal object MinecraftCompositionTargetsGameTest {
         val portable = MinecraftCompositionParityInputs.member(prepared, "images") as List<*>
         val textures = (MinecraftCompositionParityInputs.member(prepared, "textures") as List<*>).filterNotNull()
         val maps = portable.filterNotNull().filter(MinecraftCompositionParityInputs::composed).map { MinecraftCompositionParityInputs.member(it, "composition") }
-        val workspace = nullableMember(prepared, "workspace")
+        val composedTextures = portable.zip(textures).filter { (image, _) -> image != null && MinecraftCompositionParityInputs.composed(image) }.map { (_, texture) -> texture }
+        val workspace = nullableMember(prepared, "workspace") as NativeGuiResource?
         val scratch = workspace?.let { MinecraftCompositionParityInputs.member(it, "scratch") as Map<*, *> }
         val intermediates = scratch?.values?.filterNotNull()?.map { MinecraftCompositionParityInputs.member(it, "borrowed") } ?: emptyList()
         val outputs = textures.map { MinecraftCompositionParityInputs.member(it, "borrowed") }
@@ -128,7 +137,7 @@ internal object MinecraftCompositionTargetsGameTest {
         val sizes = reservations.map { it as IntSize } + (sharedReservation?.let(::listOf) ?: emptyList())
         val bytes = sizes.sumOf { it.width.toLong() * it.height * 4L }
         val passes = maps.sumOf { (MinecraftCompositionParityInputs.member(it, "sources") as List<*>).size }
-        return Observation(inputs, maps, textures, outputs, intermediates, scratch?.size ?: 0, passes, bytes, MinecraftCompositionParityInputs.member(holder, "framePreparationCount") as Long)
+        return Observation(inputs, maps, textures, outputs, intermediates, scratch?.size ?: 0, passes, bytes, MinecraftCompositionParityInputs.member(holder, "framePreparationCount") as Long, workspace, composedTextures)
     }
 
     private fun nullableMember(
@@ -153,5 +162,7 @@ internal object MinecraftCompositionTargetsGameTest {
         val passes: Int,
         val reservedBytes: Long,
         val preparations: Long,
+        val workspace: NativeGuiResource?,
+        val composedTextures: List<Any>,
     )
 }

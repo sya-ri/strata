@@ -739,6 +739,8 @@ The workspace transfers to the reserved GUI generation before allocating its fir
 Every intermediate is recorded empty before initialization; each final texture and metadata owner follows the same existing partial-allocation boundary.
 Scratch never becomes a GUI output, and later tiles borrow it only after preceding full-target commands have been recorded in the same ordered native queue.
 The final outputs remain immutable after preparation and are the only textures submitted to GUI consumers.
+Legacy OpenGL removes each borrowed scratch framebuffer attachment before restoring caller state, including after partial initialization failure.
+Retained final-output framebuffers must not keep an older generation's scratch backing alive after its fenced workspace retires.
 The existing initialization fences, full-presentation pins, queued GUI markers, actual consumption fences, quarantine, retirement and physical-destruction acknowledgements own every resource.
 Release drops the presenter's current workspace and texture references; the device retains pending resources through their existing terminal drain.
 There is no idle pool or historical target cache.
@@ -753,6 +755,8 @@ Partially transparent, boundary-equal cutoff, sparse, clipped, source-replaced a
 Its cold/replacement boundaries do not allocate native textures or measure GPU submission.
 `MinecraftCompositionTargetsCorpus` covers the same dense odd/even, sparse, scroll, redundant/cutoff, active-row swap, local/source, mixed-pass/shape, clean, single-tile and CPU-fallback controls through ordinary Canvas revisions.
 Native GameTests compare every complete current frame with original headless pixels and retain an immutable old capture across replacements.
+Legacy OpenGL additionally queries live framebuffer attachments during output reuse and checks fenced old-workspace retirement; deleted texture names alone are not physical-release evidence.
+Actual source-borrow failures after framebuffer allocation verify detachment, primary exception identity and complete caller-state restoration.
 Published owner identity, initialized scratch shapes, actual prepared passes and rounded reservations are diagnostic work observations; a source-derived `2N` versus `N+K` target forecast is not a native counter or timing result.
 
 Acceptance still requires identical frozen fixtures and controls, actual original archive/class-tree provenance, three independent Standard baseline and candidate processes, full CPU/allocation tables, separate full offscreen-through-GUI and GUI-only GPU evidence, all regressions and final-head quality/all-22/OpenGL/Vulkan verification.

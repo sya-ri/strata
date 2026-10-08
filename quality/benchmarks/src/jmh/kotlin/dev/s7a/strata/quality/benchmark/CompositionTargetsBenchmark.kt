@@ -316,7 +316,9 @@ public open class CompositionTargetsBenchmark {
             }
             val planned = targetPlan?.invoke(targetCompanion, images, matches, base)
             val reserved =
-                if (planned == null) base else {
+                if (planned == null) {
+                    base
+                } else {
                     val values = getter(planned.javaClass, "getReservations").invoke(planned) as List<*>
                     values.drop(1).map { it as IntSize }
                 }
@@ -480,6 +482,5 @@ public open class CompositionTargetsBenchmark {
             val changed = if (stable || (case == Case.OneDirtyLarge && group != 0)) 0 else generation
             return 0x80BFD7EF.toInt() xor changed
         }
-
     }
 }
