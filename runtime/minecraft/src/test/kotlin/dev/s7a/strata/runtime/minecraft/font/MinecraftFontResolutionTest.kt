@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Compares resolution reuse with the original ordered provider walk, including raster LRU and face failures.
@@ -216,6 +217,49 @@ internal class MinecraftFontResolutionTest {
     }
 
     @Test
+    fun backendReentryKeepsWeightedAdmissionAndPressureEquivalentToTheOriginalWalk() {
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font("default", """{"type":"ttf","file":"test:reentrant.ttf"}"""),
+                FontTestResources.font("test:pressure", """{"type":"space","advances":{"Z":3}},{"type":"ttf","file":"test:reentrant.ttf"}"""),
+                "assets/test/font/reentrant.ttf" to byteArrayOf(1),
+            )
+        lateinit var candidate: MinecraftFontEngine
+        lateinit var reference: MinecraftFontEngine
+        val candidateBackend = reenteringBackend { scalar -> candidate.glyph(FontTestResources.defaultFont, scalar) }
+        val referenceBackend = reenteringBackend { scalar -> originalGlyph(snapshot, reference, FontTestResources.defaultFont, scalar) }
+        candidate = MinecraftFontEngine(snapshot, { candidateBackend }, cacheEntries = 2, cacheBytes = 0, maxFaces = 1)
+        reference = MinecraftFontEngine(snapshot, { referenceBackend }, cacheEntries = 2, cacheBytes = 0, maxFaces = 1)
+        try {
+            assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code)
+            repeat(3) { assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code) }
+            for (scalar in listOf('B'.code, 'C'.code, 'D'.code, 'A'.code)) {
+                assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), scalar)
+            }
+            assertEquals(0, resolutionUnits(candidate))
+            assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code)
+            assertOtherThreadRejects(snapshot, reference, candidate)
+            assertEquals(2, resolutionUnits(candidate))
+            assertEquals(1, resolutionEntries(candidate))
+            assertEquals(1, candidateBackend.openCalls)
+            assertEquals(referenceBackend.openCalls, candidateBackend.openCalls)
+        } finally {
+            candidate.close()
+            reference.close()
+        }
+        assertEquals(0, resolutionUnits(candidate))
+        assertEquals(0, resolutionEntries(candidate))
+        assertEquals(0, candidate.retainedRasterEntries)
+        assertEquals(0L, candidate.retainedRasterBytes)
+        assertEquals(0, candidate.retainedFaces)
+        assertEquals(1, candidateBackend.closeCalls)
+        assertEquals(referenceBackend.closeCalls, candidateBackend.closeCalls)
+        val expected = assertThrows(IllegalStateException::class.java) { originalGlyph(snapshot, reference, FontTestResources.defaultFont, 'A'.code) }
+        val actual = assertThrows(IllegalStateException::class.java) { candidate.glyph(FontTestResources.defaultFont, 'A'.code) }
+        assertEquals(expected.message, actual.message)
+    }
+
+    @Test
     fun weightedPrefixHistoryUnknownFamiliesAndCloseStayBounded() {
         val snapshot = FontTestResources.snapshot(FontTestResources.font("default", List(10) { """{"type":"space","advances":{"A":7}}""" }.joinToString(",")))
         val engine = MinecraftFontEngine(snapshot, { FontTestBackend() }, cacheEntries = 8192)
@@ -316,6 +360,43 @@ internal class MinecraftFontResolutionTest {
                 )
             },
         )
+
+    private fun assertOtherThreadRejects(
+        snapshot: MinecraftFontSnapshot,
+        reference: MinecraftFontEngine,
+        candidate: MinecraftFontEngine,
+    ) {
+        val candidateFailure = AtomicReference<Throwable?>()
+        val referenceFailure = AtomicReference<Throwable?>()
+        val worker =
+            Thread {
+                candidateFailure.set(runCatching { candidate.glyph(FontTestResources.defaultFont, 'A'.code) }.exceptionOrNull())
+                referenceFailure.set(runCatching { originalGlyph(snapshot, reference, FontTestResources.defaultFont, 'A'.code) }.exceptionOrNull())
+            }
+        worker.start()
+        worker.join()
+        assertTrue(candidateFailure.get() is IllegalStateException)
+        assertTrue(referenceFailure.get() is IllegalStateException)
+        assertEquals(referenceFailure.get()?.message, candidateFailure.get()?.message)
+        assertEquals(rasterKeys(reference), rasterKeys(candidate))
+    }
+
+    private fun reenteringBackend(onFirstGlyph: (Int) -> Unit): FontTestBackend {
+        var reentered = false
+        return FontTestBackend(
+            open = { _, _ ->
+                FontTestFace(
+                    lookup = { scalar ->
+                        if (reentered.not()) {
+                            reentered = true
+                            onFirstGlyph(scalar)
+                        }
+                        raster(1)
+                    },
+                )
+            },
+        )
+    }
 
     private fun reopeningBackend(events: MutableList<String>): FontTestBackend {
         val opens = HashMap<Int, Int>()

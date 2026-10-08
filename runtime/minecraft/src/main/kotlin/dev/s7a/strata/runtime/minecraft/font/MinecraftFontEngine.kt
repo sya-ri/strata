@@ -542,6 +542,8 @@ public class MinecraftFontEngine
         ) {
             val units = 1 + misses.size
             if (resolutionLimit < units || epoch !== rasterEpoch) return
+            // A backend may admit this same key while reentering the outer glyph walk.
+            resolutions.remove(key)?.let { previous -> resolutionUnits -= 1 + previous.misses.size }
             while (resolutionLimit - units < resolutionUnits) {
                 val oldest = resolutions.entries.iterator()
                 resolutionUnits -= 1 + oldest.next().value.misses.size
