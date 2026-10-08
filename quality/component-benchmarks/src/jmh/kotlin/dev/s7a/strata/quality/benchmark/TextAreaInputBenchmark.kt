@@ -106,7 +106,7 @@ public open class TextAreaInputBenchmark {
     }
 
     /**
-     * One public input operation, with preparation of its opposite direction excluded from sampling.
+     * One target public input operation; measured cycles include restoration through its opposite direction.
      */
     internal enum class Operation {
         Primary,

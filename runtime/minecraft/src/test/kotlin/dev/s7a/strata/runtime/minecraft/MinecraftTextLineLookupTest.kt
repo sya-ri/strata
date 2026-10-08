@@ -29,7 +29,10 @@ internal class MinecraftTextLineLookupTest {
         val coordinates = intArrayOf(-4, -1, 0, 2, 4)
         for (length in 1..7) {
             val positions = IntArray(length)
-            fun fill(index: Int, minimum: Int) {
+            fun fill(
+                index: Int,
+                minimum: Int,
+            ) {
                 if (index == length) {
                     val line = line(positions)
                     for (x in -6..6) assertEquals(reference(positions, x), line.offsetAt(x))
@@ -108,7 +111,10 @@ internal class MinecraftTextLineLookupTest {
         }
     }
 
-    private fun verifyRounded(advances: List<Float>, saturating: Boolean) {
+    private fun verifyRounded(
+        advances: List<Float>,
+        saturating: Boolean,
+    ) {
         val value = "AB🙂CD"
         val scalars = value.codePoints().toArray()
         var calls = 0
@@ -158,8 +164,14 @@ internal class MinecraftTextLineLookupTest {
         }
     }
 
-    private fun line(positions: IntArray, offsets: IntArray = IntArray(positions.size) { it }): MinecraftTextLine =
+    private fun line(
+        positions: IntArray,
+        offsets: IntArray = IntArray(positions.size) { it },
+    ): MinecraftTextLine =
         MinecraftTextLine(offsets.first(), offsets.last(), offsets.last(), emptyRun, offsets, positions)
 
-    private fun reference(positions: IntArray, x: Int): Int = positions.indices.minBy { index -> abs(positions[index].toLong() - x.toLong()) }
+    private fun reference(
+        positions: IntArray,
+        x: Int,
+    ): Int = positions.indices.minBy { index -> abs(positions[index].toLong() - x.toLong()) }
 }

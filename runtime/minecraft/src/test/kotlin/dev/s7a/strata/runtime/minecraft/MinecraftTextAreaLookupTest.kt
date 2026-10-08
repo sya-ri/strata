@@ -121,7 +121,11 @@ internal class MinecraftTextAreaLookupTest {
         }
     }
 
-    private fun assertPixels(expected: List<DrawCommand>, actual: List<DrawCommand>, size: IntSize) {
+    private fun assertPixels(
+        expected: List<DrawCommand>,
+        actual: List<DrawCommand>,
+        size: IntSize,
+    ) {
         for (scale in 1..3) {
             assertArrayEquals(rasterizeHeadless(expected, size, scale).copyArgb(), rasterizeHeadless(actual, size, scale).copyArgb())
         }
