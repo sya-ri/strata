@@ -159,10 +159,11 @@ internal class MutableStateRoutingTest {
     @Test
     fun equalityDirectionAndIdenticalReferenceAttemptsAlwaysInvokeTheCurrentValue() {
         var comparisons = 0
-        val first = Equality {
-            comparisons += 1
-            true
-        }
+        val first =
+            Equality {
+                comparisons += 1
+                true
+            }
         val next = Equality { error("The next value must not own comparison") }
         val state = mutableStateOf(first)
         state.value = first
@@ -213,13 +214,16 @@ internal class MutableStateRoutingTest {
         val other = mutableStateOf(0)
         val observer = StateObservation({}, {}, {}, {})
         var comparisons = 0
-        val state = mutableStateOf(Equality {
-            comparisons += 1
-            assertFailsWith<IllegalStateException> { other.value }
-            assertFailsWith<IllegalStateException> { other.value = 1 }
-            assertFailsWith<IllegalStateException> { observer.evaluate { other.value } }
-            false
-        })
+        val state =
+            mutableStateOf(
+                Equality {
+                    comparisons += 1
+                    assertFailsWith<IllegalStateException> { other.value }
+                    assertFailsWith<IllegalStateException> { other.value = 1 }
+                    assertFailsWith<IllegalStateException> { observer.evaluate { other.value } }
+                    false
+                },
+            )
         try {
             observer.evaluate { state.value }
             state.value = Equality { true }
@@ -338,9 +342,10 @@ internal class MutableStateRoutingTest {
 
         fun add(owner: Owner): Entry {
             val index = nextIndex++
-            val observation = roots.getValue(owner).fork {
-                events.add(Event(Phase.Invalidate, owner, index, state.value.tone))
-            }
+            val observation =
+                roots.getValue(owner).fork {
+                    events.add(Event(Phase.Invalidate, owner, index, state.value.tone))
+                }
             observation.evaluate { state.value }
             return Entry(index, owner, observation).also(members::add)
         }
