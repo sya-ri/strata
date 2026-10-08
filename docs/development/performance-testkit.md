@@ -508,6 +508,24 @@ The unchanged logical message codec array, its payload copy into framing storage
 `OutgoingFragmentCpuComparison` registers every control/regression row with the shared three-baseline/three-candidate processor and actual runtime/compiler/fixture/input provenance.
 Use one frozen compiled fixture/generated JMH/collector/control-library set, declare both compiler inventories as immutable inputs, and select the actual loaded inventory on each runtime.
 The outgoing baseline must contain the accepted incoming and bounded-drain changes on both sides; preserve their separate source and raw evidence rather than reattributing them.
+
+`NativeRoutingFixture` invokes the actual `StrataVelocityPlugin.message` with independently authenticated Velocity API doubles and literal complete native transfers.
+Its nineteen workloads cover all three routes, one/eight players, small/control/greeting and maximum fragments, complete multifragment/1 MiB/near-limit transfers, cancellation/discovery, malformed/kind/endpoint controls, retired backends, proxy impersonation, wrong channels, handled events and unavailable sources/services/backends.
+The expected matrix checks complete original bytes, current destination references, handled/return decisions, client/backend failure distinctions and actual proxy inbox snapshots before the captured worker runs.
+Prepared peers use the original scheduled action on its actual worker, fixed incarnations and distinct bootstrap/application inner identities; no relay or owner loop is reimplemented.
+`NativeRoutingCpuEvidence` consumes the shared 100-warm-up/200-sample runner for 266 rows: 114 actual callbacks, 114 public full-decoder controls and 38 separate client-to-proxy owner phases.
+Only the selected operation is timed; event construction, setup, parity, worker dispatch/waits, teardown and debugger instrumentation are outside each interval.
+The callback meter runs on its caller; owner processing runs on the actual UI thread, with identical declared tick pacing on both runtimes.
+`NativeRoutingProbeEvidence` launches an untimed frozen-classpath child and observes actual event-accessor arrays, public decoder returns, forwarded array identities, inbox offers/snapshots and assembly returns in disjoint intervals.
+It requires supported JDI method-return values and emits observed scalars after releasing each row's bounded debugger references; debugger suspension and child duration never become CPU evidence.
+The probe checks forwarding uses the actual accessor-returned storage and the actual proxy snapshot differs from that storage, without assuming the pinned event getter's implementation.
+Freeze each runtime's complete probe report as an immutable generic `fixtureInputs` entry, include both reports identically on both classpaths, and match only the report with exact loaded plugin/common metadata and frozen fixture identity.
+The collector rejects missing/duplicate rows or absent matching probes; it captures the actual plugin class tree and complete loaded remote/Velocity compiler surfaces.
+`NativeRoutingCpuComparison` retains all 266 controls/regressions through the shared three-baseline/three-candidate comparison, normalized operation/all-thread allocation and scoped work counts.
+Bridge fragment arrays, public decoding, necessary endpoint decoding, event accessor arrays, defensive inbox copies and assembly are separate work; no earlier incoming/outgoing/drain saving is attributed to routing.
+The routing comparison must use the eventual accepted outgoing/incoming/drain runtime parent identically on both sides; a source-only Draft parent is not accepted evidence.
+Native uploads, GPU time and FPS are N/A for isolated routing; final shared remote changes still require all supported targets and applicable fresh loaded client, Paper/Velocity backend-switch/input/cleanup acceptance.
+
 Fully qualified JVM fixture preparation and collection can use the scoped model with quoted PowerShell `'-Pstrata.jvmOnly=true'`; exact inventory, ABI and final quality/acceptance retain the complete build model.
 All supported Fabric targets and applicable real native/host parity remain acceptance requirements; native uploads/GPU/FPS are unavailable for this JVM-only transport corpus.
 

@@ -16,6 +16,7 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemotePacket
+import dev.s7a.strata.runtime.remote.RemotePacketRoute
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.velocity.VelocityUi
 import org.slf4j.Logger
@@ -62,18 +63,18 @@ public class StrataVelocityPlugin
                 val service = screens ?: return@synchronized null
                 val bytes = event.data
                 val packet =
-                    runCatching { RemotePacket.decode(bytes) }.getOrElse {
+                    runCatching { RemotePacket.inspect(bytes) }.getOrElse {
                         (event.source as? Player)?.let { player -> service.enqueue(player, byteArrayOf()) }
                         return@synchronized null
                     }
                 when (val source = event.source) {
                     is Player -> {
                         when (packet) {
-                            RemotePacket.Discovery -> {
+                            RemotePacketRoute.Discovery -> {
                                 return@synchronized EventTask.resumeWhenComplete(service.discover(source))
                             }
 
-                            is RemotePacket.Frame -> {
+                            is RemotePacketRoute.Frame -> {
                                 when (packet.address.endpoint) {
                                     RemoteEndpoint.Server -> source.currentServer.ifPresent { it.sendPluginMessage(VelocityScreenService.CHANNEL, bytes) }
                                     RemoteEndpoint.Proxy -> service.enqueue(source, bytes)
@@ -83,7 +84,7 @@ public class StrataVelocityPlugin
                     }
 
                     is ServerConnection -> {
-                        if (packet is RemotePacket.Frame && packet.address.endpoint == RemoteEndpoint.Server && source.player.currentServer.orElse(null) === source) {
+                        if (packet is RemotePacketRoute.Frame && packet.address.endpoint == RemoteEndpoint.Server && source.player.currentServer.orElse(null) === source) {
                             source.player.sendPluginMessage(VelocityScreenService.CHANNEL, bytes)
                         }
                     }
