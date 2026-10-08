@@ -59,6 +59,19 @@ Constant translucent images use the same exact destination comparison, while opa
 The independent pixel reference covers transparent, translucent and opaque patterned rows, fractional sampling, flips, cutoffs and destination changes at both ends of a row.
 The sampled and dense sampled JMH corpora measure this CPU fallback separately from native texture upload.
 
+### Current-child geometry participation
+
+Each retained entry owns its current measure and layout pass identities; direct children record only their last participating parent pass and one placement offset.
+Opaque markers contain no scope, node, callback, or resource and use reference identity, so keyed reordering and effective modifier-parent replacement cannot collide with an earlier pass.
+A completed measure replaces its parent marker; a layout callback replaces its marker before placing any children.
+Clean phases reuse the current markers, and leaves allocate none.
+Sparse participation requires no child-count-sized array, collection entry, or clearing scan.
+The five reference slots per current entry bound storage to the current retained tree, including old markers or offsets still held by unselected children; comparison with the current parent marker excludes those values from geometry.
+Cleanup clears every marker and offset before input or lifecycle callbacks, including terminal failure.
+
+Common JVM and JavaScript tests cover duplicate operations, unmeasured reads and placement, sparse child changes, layout-only updates, keyed reordering and replacement, effective modifier-parent changes, current paint/input/semantics geometry, and cleanup after disposal failure.
+These markers track existing phase participation; they do not skip required measure or layout callbacks or retain historical child lists.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.

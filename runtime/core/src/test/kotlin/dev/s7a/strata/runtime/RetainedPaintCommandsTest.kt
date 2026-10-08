@@ -43,8 +43,11 @@ internal class RetainedPaintCommandsTest {
         for ((parent, nested) in listOf(root to child, child to descendant)) {
             parent.children.add(nested)
             nested.parent = parent
-            parent.measuredChildren = setOf(0)
-            parent.placements[0] = IntOffset.Zero
+            parent.childMeasurePass = Any()
+            nested.parentMeasurePass = parent.childMeasurePass
+            parent.childLayoutPass = Any()
+            nested.parentLayoutPass = parent.childLayoutPass
+            nested.parentOffset = IntOffset.Zero
         }
         for (retained in listOf(root, child, descendant)) {
             retained.laidOut = true

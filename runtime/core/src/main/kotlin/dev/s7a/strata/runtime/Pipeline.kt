@@ -280,7 +280,8 @@ internal class Pipeline(
         if (DirtyPhase.Measure in retained.dirty || retained.measuredConstraints != constraints) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
             retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
-            val measuredChildren = HashSet<Int>()
+            val measurePass = if (0 < retained.effectiveChildCount) Any() else null
+            var measuredAnyChild = false
             val guard = ScopeGuard(ownerGuard)
             val scope =
                 object : MeasureScope {
@@ -296,8 +297,11 @@ internal class Pipeline(
                     ): IntSize {
                         guard.check()
                         require(index in 0 until childCount) { "Child index is outside the measurement scope." }
-                        check(measuredChildren.add(index)) { "A child may be measured only once per pass." }
-                        return measureEntry(retained.effectiveChildAt(index), constraints)
+                        val child = retained.effectiveChildAt(index)
+                        check(child.parentMeasurePass !== measurePass) { "A child may be measured only once per pass." }
+                        child.parentMeasurePass = measurePass
+                        measuredAnyChild = true
+                        return measureEntry(child, constraints)
                     }
 
                     override fun <D : Any> childParentData(
@@ -321,12 +325,12 @@ internal class Pipeline(
                     guard.close()
                 }
             check(constraints.isSatisfiedBy(measured)) { "Node returned a size outside its constraints." }
-            if (measuredChildren.isNotEmpty()) {
+            if (measuredAnyChild) {
                 check(retained.node is LayoutNode) { "A node that measures children must implement LayoutNode." }
             }
             retained.measuredSize = measured
             retained.measuredConstraints = constraints
-            retained.measuredChildren = measuredChildren
+            retained.childMeasurePass = measurePass
             retained.measured = true
         }
         return retained.measuredSize
@@ -339,7 +343,7 @@ internal class Pipeline(
         val mustLayout = retained.laidOut.not() || DirtyPhase.Layout in retained.dirty
         if (mustLayout) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Layout)
-            retained.placements.clear()
+            retained.childLayoutPass = if (0 < retained.effectiveChildCount) Any() else null
             val layoutCapability = retained.node as? LayoutNode
             if (layoutCapability != null) {
                 val scope =
@@ -361,8 +365,9 @@ internal class Pipeline(
                         override fun measuredChildSize(index: Int): IntSize {
                             guard.check()
                             require(index in 0 until childCount) { "Child index is outside the layout scope." }
-                            check(index in retained.measuredChildren) { "The child was not measured in this pass." }
-                            return retained.effectiveChildAt(index).measuredSize
+                            val child = retained.effectiveChildAt(index)
+                            check(retained.measuredChild(child)) { "The child was not measured in this pass." }
+                            return child.measuredSize
                         }
 
                         override fun <D : Any> childParentData(
@@ -380,11 +385,13 @@ internal class Pipeline(
                         ) {
                             guard.check()
                             require(index in 0 until childCount) { "Child index is outside the layout scope." }
-                            check(index in retained.measuredChildren) { "The child was not measured in this pass." }
-                            check(retained.placements.containsKey(index).not()) {
+                            val child = retained.effectiveChildAt(index)
+                            check(retained.measuredChild(child)) { "The child was not measured in this pass." }
+                            check(child.parentLayoutPass !== retained.childLayoutPass) {
                                 "A child may be placed only once per pass."
                             }
-                            retained.placements[index] = offset
+                            child.parentLayoutPass = retained.childLayoutPass
+                            child.parentOffset = offset
                         }
                     }
                 try {
@@ -398,8 +405,8 @@ internal class Pipeline(
         }
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
-            val offset = retained.placements[index]
-            if (offset == null || retained.measuredChildren.contains(index).not()) {
+            val offset = retained.childOffset(child)
+            if (offset == null || retained.measuredChild(child).not()) {
                 child.placed = false
                 child.laidOut = false
             } else {
@@ -464,7 +471,8 @@ internal class Pipeline(
             return true
         }
         for (index in 0 until retained.effectiveChildCount) {
-            if (retained.measuredChildren.contains(index) && pendingMeasure(retained.effectiveChildAt(index))) {
+            val child = retained.effectiveChildAt(index)
+            if (retained.measuredChild(child) && pendingMeasure(child)) {
                 return true
             }
         }
