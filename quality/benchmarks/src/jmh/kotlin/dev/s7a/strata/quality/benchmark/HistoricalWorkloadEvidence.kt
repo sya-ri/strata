@@ -31,6 +31,9 @@ public object HistoricalWorkloadEvidence {
             return
         }
         verifySurface()
+        ModifierCompositionBenchmark.verifyWork()
+        check(JmhWorkloadInventory.capture(listOf(ModifierCompositionBenchmark::class.java), setOf("avgt")).size == 25)
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(ModifierCompositionBenchmark::class.java), setOf("avgt")), listOf("ModifierCompositionBenchmark.*"))
         ChildLayoutBenchmark.verifyWork()
         check(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")).size == 4)
         verifyIncludes(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*"))

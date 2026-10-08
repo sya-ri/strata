@@ -9,12 +9,12 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Composition is value based when its descriptions obey the immutable modifier contract.
  * The runtime reconciles modifier positions by referential [ModifierNodeType] token.
  *
- * @param elements the immutable ordered descriptions owned by this value.
+ * @param elements internally created membership transferred without retaining a mutable alias.
  */
 public class Modifier private constructor(
     elements: List<ModifierElement>,
 ) {
-    private val descriptions: List<ModifierElement> = elements.toList()
+    private val descriptions: List<ModifierElement> = elements
 
     /**
      * Appends one description inside the existing chain.
