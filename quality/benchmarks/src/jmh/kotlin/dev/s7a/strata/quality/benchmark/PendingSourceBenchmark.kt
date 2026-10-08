@@ -207,15 +207,27 @@ public open class PendingSourceBenchmark {
 
         private fun observedSources(): List<StateSource<Value>> =
             when (workload.kind) {
-                Kind.MapEqual -> sources.map { source -> source.map { projected(Presentation.First) } }
-                Kind.MapChanged -> sources.map { source -> source.map { projected(it.presentation) } }
+                Kind.MapEqual -> {
+                    sources.map { source -> source.map { projected(Presentation.First) } }
+                }
+
+                Kind.MapChanged -> {
+                    sources.map { source -> source.map { projected(it.presentation) } }
+                }
+
                 Kind.DeepDerived -> {
                     var source: StateSource<Value> = sources.single()
                     repeat(8) { source = source.map { projected(it.presentation) } }
                     listOf(source)
                 }
-                Kind.FanOut -> List(128) { sources.single() }
-                else -> sources
+
+                Kind.FanOut -> {
+                    List(128) { sources.single() }
+                }
+
+                else -> {
+                    sources
+                }
             }
 
         private fun projected(value: Presentation): Value {
@@ -238,19 +250,32 @@ public open class PendingSourceBenchmark {
             batches += 1
             presentation = presentation.alternate()
             when (workload.kind) {
-                Kind.Idle -> Unit
-                Kind.All -> sources.forEach { it.publish(presentation) }
-                Kind.EqualValue -> sources.forEach { it.publish(Presentation.First) }
+                Kind.Idle -> {
+                    Unit
+                }
+
+                Kind.All -> {
+                    sources.forEach { it.publish(presentation) }
+                }
+
+                Kind.EqualValue -> {
+                    sources.forEach { it.publish(Presentation.First) }
+                }
+
                 Kind.Churn -> {
                     useReplacement = useReplacement.not()
                     checkNotNull(replaceSources)(if (useReplacement) replacements else sources)
                 }
+
                 Kind.DuringEquality -> {
                     sources.first().publish(Presentation.Second)
                     sources.last().publish(Presentation.Second)
                     latePublication = true
                 }
-                else -> sources.last().publish(presentation)
+
+                else -> {
+                    sources.last().publish(presentation)
+                }
             }
             val frame = session.frame(constraints)
             if (workload.kind == Kind.DuringEquality) {
