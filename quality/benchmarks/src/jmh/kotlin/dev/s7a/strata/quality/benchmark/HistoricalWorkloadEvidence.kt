@@ -39,6 +39,8 @@ public object HistoricalWorkloadEvidence {
         check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)
         check(JmhWorkloadInventory.capture(listOf(SampledRasterBenchmark::class.java), setOf("avgt")).size == 12)
         check(JmhWorkloadInventory.capture(listOf(DenseSampledRasterBenchmark::class.java), setOf("avgt")).size == 6)
+        check(JmhWorkloadInventory.capture(listOf(DestinationPaletteBenchmark::class.java), setOf("avgt")).size == 15)
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(DestinationPaletteBenchmark::class.java), setOf("avgt")), listOf("DestinationPaletteBenchmark.*"))
         check(JmhWorkloadInventory.capture(listOf(ColdImageBenchmark::class.java), setOf("avgt")).size == 6)
         verifyIncludes(JmhWorkloadInventory.capture(listOf(ColdImageBenchmark::class.java), setOf("avgt")), listOf("ColdImageBenchmark.*"))
         verifyIncludes(JmhWorkloadInventory.capture(fixtures, setOf("avgt")), listOf("(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"))

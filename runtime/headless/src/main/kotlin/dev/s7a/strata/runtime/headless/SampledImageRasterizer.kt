@@ -243,6 +243,7 @@ internal object SampledImageRasterizer {
         private var blendRowCount = 0
         private var paletteDestination = 0
         private var paletteDestinationKnown = false
+        private var remainingPaletteSamples = 32
 
         // A whole one-texel image always clamps to (0, 0), including fractional sources and flips.
         // Pass the clipped scalar span without allocating a rectangle for each command.
@@ -312,6 +313,7 @@ internal object SampledImageRasterizer {
                 } else {
                     paletteDestination = destination
                     paletteDestinationKnown = true
+                    if (0 < remainingPaletteSamples) remainingPaletteSamples -= 1
                 }
             }
             val sourceRow = weights?.row(source ushr 24)
@@ -373,9 +375,10 @@ internal object SampledImageRasterizer {
             sourceRow: FloatArray?,
         ): Int {
             // A table belongs to this command and one complete destination ARGB. Any unequal destination
-            // permanently drops these rows, so heterogeneous output never requires clearing a large table per pixel.
+            // permanently drops these rows. Observe repeated uniform blends before allocating, so early changes
+            // retain only scalar admission state and never allocate tables that cannot be reused.
             val rows =
-                if (blendTablesAllowed) {
+                if (blendTablesAllowed && remainingPaletteSamples == 0) {
                     blendTables ?: arrayOfNulls<IntArray>(256).also { blendTables = it }
                 } else {
                     null

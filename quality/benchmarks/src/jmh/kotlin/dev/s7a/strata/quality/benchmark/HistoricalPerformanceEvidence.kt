@@ -68,6 +68,7 @@ public object HistoricalPerformanceEvidence {
      */
     private fun corpusFixtures(): List<Class<*>> =
         when {
+            System.getProperty("strata.performance.destinationPalette", "false").toBooleanStrict() -> listOf(DestinationPaletteBenchmark::class.java)
             System.getProperty("strata.performance.childLayout", "false").toBooleanStrict() -> listOf(ChildLayoutBenchmark::class.java)
             System.getProperty("strata.performance.coldImage", "false").toBooleanStrict() -> listOf(ColdImageBenchmark::class.java)
             System.getProperty("strata.performance.denseSampledRaster", "false").toBooleanStrict() -> listOf(DenseSampledRasterBenchmark::class.java)
