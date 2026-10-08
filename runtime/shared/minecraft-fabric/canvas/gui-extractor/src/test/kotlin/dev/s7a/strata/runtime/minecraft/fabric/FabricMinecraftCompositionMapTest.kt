@@ -158,7 +158,10 @@ internal class FabricMinecraftCompositionMapTest {
         assertArrayEquals(rasterizeHeadlessRegion(commands, bounds, scale).copyArgb(), compose(map), "scale=$scale origin=$origin commands=$commands")
     }
 
-    private fun compose(map: FabricMinecraftCompositionMap): IntArray {
+    /**
+     * Independent test-only interpretation of actual wire metadata, without the production writer or native compositor.
+     */
+    internal fun compose(map: FabricMinecraftCompositionMap): IntArray {
         val pixels = IntArray(map.physicalSize.width * map.physicalSize.height)
         map.sources.forEachIndexed { pass, source ->
             val row = pass * 3
