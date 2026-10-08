@@ -875,12 +875,7 @@ private object HeadlessImplementation {
             output.putInt(zlibBytes).putInt(0x49444154)
             output.put(0x78).put(0x01)
             val blocks = StoredBlocks(output.array(), output.position(), scanlineBytes)
-            var source = 0
-            repeat(size.height) {
-                blocks.putByte(0)
-                blocks.putPixels(pixels, source, size.width)
-                source += size.width
-            }
+            blocks.putScanlines(pixels, size.width, size.height)
             output.position(blocks.finish())
             output.finishChunk(zlibBytes)
             output.putInt(0).putInt(0x49454E44)
@@ -908,47 +903,64 @@ private object HeadlessImplementation {
             private var blockRemaining = 0
             private var blockStart = position
 
-            fun putByte(value: Int) {
+            fun putScanlines(
+                pixels: IntArray,
+                width: Int,
+                height: Int,
+            ) {
+                // Keep row positions local; synchronize writer fields for block changes and completion.
+                var source = 0
+                var target = position
+                var remaining = blockRemaining
+                repeat(height) {
+                    if (remaining == 0) {
+                        position = target
+                        startBlock()
+                        target = position
+                        remaining = blockRemaining
+                    }
+                    output[target] = 0
+                    target += 1
+                    remaining -= 1
+                    val end = source + width
+                    while (source < end) {
+                        val count = minOf(end - source, remaining / 4)
+                        if (count == 0) {
+                            // A stored-block boundary may split any channel of a pixel.
+                            val argb = pixels[source]
+                            position = target
+                            blockRemaining = remaining
+                            putByte(argb ushr 16)
+                            putByte(argb ushr 8)
+                            putByte(argb)
+                            putByte(argb ushr 24)
+                            target = position
+                            remaining = blockRemaining
+                            source += 1
+                        } else {
+                            val limit = source + count
+                            while (source < limit) {
+                                val argb = pixels[source]
+                                output[target] = (argb ushr 16).toByte()
+                                output[target + 1] = (argb ushr 8).toByte()
+                                output[target + 2] = argb.toByte()
+                                output[target + 3] = (argb ushr 24).toByte()
+                                source += 1
+                                target += 4
+                            }
+                            remaining -= count * 4
+                        }
+                    }
+                }
+                position = target
+                blockRemaining = remaining
+            }
+
+            private fun putByte(value: Int) {
                 if (blockRemaining == 0) startBlock()
                 output[position] = value.toByte()
                 position += 1
                 blockRemaining -= 1
-            }
-
-            fun putPixels(
-                pixels: IntArray,
-                start: Int,
-                length: Int,
-            ) {
-                var source = start
-                val end = start + length
-                while (source < end) {
-                    val count = minOf(end - source, blockRemaining / 4)
-                    if (count == 0) {
-                        // A stored-block boundary may split any channel of a pixel.
-                        val argb = pixels[source]
-                        putByte(argb ushr 16)
-                        putByte(argb ushr 8)
-                        putByte(argb)
-                        putByte(argb ushr 24)
-                        source += 1
-                    } else {
-                        // Keep the contiguous pixel span on local indices instead of mutating a buffer per channel.
-                        val limit = source + count
-                        var target = position
-                        while (source < limit) {
-                            val argb = pixels[source]
-                            output[target] = (argb ushr 16).toByte()
-                            output[target + 1] = (argb ushr 8).toByte()
-                            output[target + 2] = argb.toByte()
-                            output[target + 3] = (argb ushr 24).toByte()
-                            source += 1
-                            target += 4
-                        }
-                        position = target
-                        blockRemaining -= count * 4
-                    }
-                }
             }
 
             fun finish(): Int {
