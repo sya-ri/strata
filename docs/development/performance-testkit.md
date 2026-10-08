@@ -358,6 +358,19 @@ Applications supply artifact paths, engines, fixture URLs and operations rather 
 Before measurements, each browser verifies that operation and cleanup failures reject the interval and release the fixture exactly once.
 Preparation, assertion, collector cleanup, and evidence writing are outside synchronous action timing.
 
+The independent compiled `WebDomPerformanceFixture` supplements those unchanged controls with localized and full updates at one, 100 and 1,000 current DOM elements and bounded geometry, clip, resize, reorder, button and progress cases.
+Its fixture-owned [adapter](../../tools/web/dom-performance.mjs) reads the loaded compiled inventory and delegates collection to the same browser driver, without extending the shipped dispatcher, default matrix or Gradle flags.
+Supply the built site, actual linked collector artifact, new output file, immutable extra-file manifest and preserved compiled inventory as its five positional arguments.
+The manifest is a JSON object mapping nonempty labels to absolute regular-file paths; include the frozen fixture source and source archive alongside any other controlled input.
+The adapter adds its own executing source as a mandatory input identity.
+The first untimed metadata read creates the inventory file exclusively when absent; later runs require exact equality with that preserved inventory.
+Both runtime variants must compile the same frozen fixture and driver sources, while their separately identified application bundles contain the actual compared runtime implementations.
+The collector hashes and rechecks the executing adapter, manifest, inventory and extra files before accepting evidence.
+State publication precedes the operation clock; synchronous `WebUiHost.render` wall time and host-application-to-next-animation-frame latency remain distinct scopes.
+One untimed application records JavaScript setter attempts and current native element counts, then restores native descriptors before measurement and compares the result with a fresh full render.
+These work counts do not represent native browser mutation, layout, paint, CPU accounting, allocation or GPU completion.
+Unavailable instrumentation or failed work, restoration, parity or cleanup rejects the invocation; no elapsed-time threshold gates correctness.
+
 The Minecraft resource-profile cache probe also uses the shared JVM runner, preserving its two explicit fresh extractions, eight warm opens, first open, and post-reload open.
 Its pixel, reload, native-hook, immutable-ownership, and weak-reference collection checks remain independent correctness requirements.
 Its properties receipt records the loaded collector identity; historical timings collected by another engine are not comparable.

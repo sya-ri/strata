@@ -121,6 +121,7 @@ async function verifyTheme(browser, engine, theme, expected) {
     await page.screenshot({ path: resolve(evidence, `${engine.name()}-${theme}.png`) });
     const receipt = { theme, engine: engine.name(), version: browser.version(), snapshots: observed };
     receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
+    assert.equal(await page.evaluate(() => window.strataDomPerformance.verifyAll()), true, 'Compiled changed-frame workloads match independent full rendering and release ownership');
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
@@ -136,9 +137,11 @@ async function verifyDomUpdates(browser, page, engine, theme, evidence) {
             const prefix = `${engine.name()}-${theme}-${update.count}-${update.phase}`;
             const documentFor = html => `<!doctype html><html><head><style>body { margin: 0; }${styles.join('\n')}</style></head><body>${html}</body></html>`;
             await comparison.setContent(documentFor(update.currentHtml));
+            await comparison.evaluate(() => window.scrollTo(0, 0));
             const actual = await comparison.screenshot({ path: resolve(evidence, `${prefix}-incremental.png`) });
             const actualLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-incremental-last.png`) });
             await comparison.setContent(documentFor(update.referenceHtml));
+            await comparison.evaluate(() => window.scrollTo(0, 0));
             const expected = await comparison.screenshot({ path: resolve(evidence, `${prefix}-fresh.png`) });
             const expectedLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-fresh-last.png`) });
             assert.deepEqual(actual, expected, `Incremental pixels differ from fresh DOM: ${prefix}`);
