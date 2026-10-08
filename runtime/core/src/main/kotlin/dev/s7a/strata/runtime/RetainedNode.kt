@@ -169,10 +169,11 @@ internal class RetainedNode(
                 } else if (previous.getOrNull(matched) === child) {
                     matched += 1
                 } else {
-                    selected = ArrayList<RetainedNode>().also {
-                        for (previousIndex in 0 until matched) it.add(previous[previousIndex])
-                        it.add(child)
-                    }
+                    selected =
+                        ArrayList<RetainedNode>().also {
+                            for (previousIndex in 0 until matched) it.add(previous[previousIndex])
+                            it.add(child)
+                        }
                 }
             }
         }
