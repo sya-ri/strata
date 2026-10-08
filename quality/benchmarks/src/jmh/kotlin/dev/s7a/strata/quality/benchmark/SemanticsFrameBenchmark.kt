@@ -31,8 +31,8 @@ import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 
 /**
- * Isolates rebuilt-frame semantics handoff with one retained node and a cached local payload.
- * Paint invalidation rebuilds the frame while semantic callbacks and geometry remain cached; clean frames are a separate control.
+ * Isolates rebuilt-frame semantics handoff with one retained node and immutable local payloads.
+ * Separates paint invalidation, local/complete semantics replacement, geometry changes and clean-frame controls.
  * This independent corpus measures frame construction, rather than semantics-heavy tree reconciliation or native rendering.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -50,6 +50,24 @@ public open class SemanticsFrameBenchmark {
     public fun cleanFrame(state: Scene): RuntimeUiFrame = state.cleanFrame()
 
     /**
+     * Rebuilds the payload after replacing only its first semantic value.
+     */
+    @Benchmark
+    public fun localizedSemantics(state: Scene): RuntimeUiFrame = state.localizedFrame()
+
+    /**
+     * Rebuilds the payload after replacing every semantic value.
+     */
+    @Benchmark
+    public fun completeSemantics(state: Scene): RuntimeUiFrame = state.completeFrame()
+
+    /**
+     * Changes the bounds of all entries without replacing their semantic values.
+     */
+    @Benchmark
+    public fun changedGeometry(state: Scene): RuntimeUiFrame = state.geometryFrame()
+
+    /**
      * One primed owner-thread session per worker with immutable local values.
      */
     @State(Scope.Thread)
@@ -63,14 +81,27 @@ public open class SemanticsFrameBenchmark {
 
         private lateinit var session: RuntimeUiSession
         private lateinit var node: PayloadNode
+        private lateinit var originalValues: List<Semantics>
+        private lateinit var localizedValues: List<Semantics>
+        private lateinit var completeValues: List<Semantics>
         private val constraints = Constraints.fixed(1, 1)
+        private val widerConstraints = Constraints.fixed(2, 1)
+        private var localized = false
+        private var complete = false
+        private var wider = false
+
+        private val currentConstraints: Constraints
+            get() = if (wider) widerConstraints else constraints
 
         /**
          * Constructs and primes the fixed payload outside measured invocation boundaries.
          */
         @Setup(Level.Trial)
         public fun setUp() {
-            node = PayloadNode(List(semanticsCount) { Semantics(label = UiText.Literal(it.toString())) })
+            originalValues = List(semanticsCount) { Semantics(label = UiText.Literal(it.toString())) }
+            localizedValues = originalValues.mapIndexed { index, value -> if (index == 0) value.copy(label = UiText.Literal("local")) else value }
+            completeValues = originalValues.mapIndexed { index, value -> value.copy(label = UiText.Literal("complete-$index")) }
+            node = PayloadNode(originalValues)
             session = createRuntimeUiSession { PayloadElement(node) }
             session.attach()
             session.frame(constraints)
@@ -82,18 +113,48 @@ public open class SemanticsFrameBenchmark {
          */
         public fun changedFrame(): RuntimeUiFrame {
             node.invalidatePaint()
-            return session.frame(constraints)
+            return session.frame(currentConstraints)
         }
 
         /**
          * Returns the already committed complete frame as the unchanged-path control.
          */
-        public fun cleanFrame(): RuntimeUiFrame = session.frame(constraints)
+        public fun cleanFrame(): RuntimeUiFrame = session.frame(currentConstraints)
+
+        /**
+         * Alternates prebuilt payloads outside any declaration or value construction work.
+         */
+        public fun localizedFrame(): RuntimeUiFrame {
+            localized = localized.not()
+            node.replaceValues(if (localized) localizedValues else originalValues)
+            return session.frame(currentConstraints)
+        }
+
+        /**
+         * Alternates two fully distinct immutable semantic payloads.
+         */
+        public fun completeFrame(): RuntimeUiFrame {
+            complete = complete.not()
+            node.replaceValues(if (complete) completeValues else originalValues)
+            return session.frame(currentConstraints)
+        }
+
+        /**
+         * Alternates fixed root constraints while reusing the local semantic payload.
+         */
+        public fun geometryFrame(): RuntimeUiFrame {
+            wider = wider.not()
+            return session.frame(currentConstraints)
+        }
 
         /**
          * Proves ordered values, bounds, cached callback work and earlier-frame immutability outside timings.
          */
         public fun verifyWork() {
+            localized = false
+            complete = false
+            wider = false
+            node.replaceValues(originalValues)
             val original = cleanFrame()
             val expected = original.semantics.toList()
             check(expected.size == semanticsCount)
@@ -103,10 +164,62 @@ public open class SemanticsFrameBenchmark {
             }
             repeat(10) {
                 val paintCalls = node.paintCalls
+                val semanticsCalls = node.semanticsCalls
+                val measureCalls = node.measureCalls
                 val changed = changedFrame()
-                check(node.paintCalls == paintCalls + 1 && node.semanticsCalls == 1 && node.measureCalls == 1)
+                check(node.paintCalls == paintCalls + 1 && node.semanticsCalls == semanticsCalls && node.measureCalls == measureCalls)
                 check(changed.semantics == expected && original.semantics == expected)
                 check(cleanFrame() === changed)
+
+                for ((changedValues, change) in listOf(localizedValues to ::localizedFrame, completeValues to ::completeFrame)) {
+                    val callbacks = node.semanticsCalls
+                    val changedSemantics = change()
+                    verifyFrame(changedSemantics, changedValues, 1)
+                    check(node.semanticsCalls == callbacks + 1)
+                    check(original.semantics == expected && cleanFrame() === changedSemantics)
+                    verifyFrame(change(), originalValues, 1)
+                }
+                val callbacks = node.semanticsCalls
+                val measures = node.measureCalls
+                val changedGeometry = geometryFrame()
+                verifyFrame(changedGeometry, originalValues, 2)
+                check(node.measureCalls == measures + 1 && node.semanticsCalls == callbacks + 1) {
+                    "Geometry callbacks: measure $measures -> ${node.measureCalls}, semantics $callbacks -> ${node.semanticsCalls}"
+                }
+                check(original.semantics == expected && cleanFrame() === changedGeometry)
+                verifyFrame(geometryFrame(), originalValues, 1)
+            }
+            session.detach()
+            check(original.semantics == expected && node.disposals == 0)
+            session.attach()
+            verifyFrame(cleanFrame(), originalValues, 1)
+            check(original.semantics == expected)
+        }
+
+        /**
+         * Proves a later partial semantics callback failure cannot mutate a committed detached frame.
+         * This terminal check is invoked only by untimed workload verification, never by JMH setup.
+         */
+        public fun verifyFailure() {
+            val original = cleanFrame()
+            val expected = original.semantics.toList()
+            val failure = IllegalStateException("Semantics fixture callback failure")
+            node.semanticsFailure = failure
+            node.replaceValues(completeValues)
+            check(runCatching { cleanFrame() }.exceptionOrNull() === failure)
+            check(original.semantics == expected && node.disposals == 1)
+        }
+
+        private fun verifyFrame(
+            frame: RuntimeUiFrame,
+            values: List<Semantics>,
+            width: Int,
+        ) {
+            check(frame.size == IntSize(width, 1))
+            check(frame.semantics.size == values.size)
+            frame.semantics.forEachIndexed { index, entry ->
+                check(entry.bounds == IntRect(0, 0, width, 1))
+                check(entry.semantics == values[index])
             }
         }
 
@@ -125,7 +238,7 @@ public open class SemanticsFrameBenchmark {
      */
     public companion object {
         /**
-         * Verifies rebuilt output, clean-frame reuse and close for all ten collection cases.
+         * Verifies rebuilt output, clean-frame reuse and close for all twenty-five collection cases.
          */
         public fun verifyWork() {
             for (count in listOf(0, 1, 128, 1_000, 10_000)) {
@@ -134,6 +247,7 @@ public open class SemanticsFrameBenchmark {
                 scene.setUp()
                 try {
                     scene.verifyWork()
+                    scene.verifyFailure()
                 } finally {
                     scene.close()
                 }
@@ -145,7 +259,7 @@ public open class SemanticsFrameBenchmark {
      * Emits one immutable current payload while keeping geometry and local semantics cached.
      */
     private class PayloadNode(
-        private val values: List<Semantics>,
+        private var values: List<Semantics>,
     ) : Node(),
         LifecycleNode,
         MeasureNode,
@@ -155,6 +269,7 @@ public open class SemanticsFrameBenchmark {
         var paintCalls = 0
         var semanticsCalls = 0
         var disposals = 0
+        var semanticsFailure: Throwable? = null
 
         override fun measure(
             scope: MeasureScope,
@@ -171,6 +286,7 @@ public open class SemanticsFrameBenchmark {
         override fun semantics(scope: SemanticsScope) {
             semanticsCalls += 1
             values.forEach(scope::emit)
+            semanticsFailure?.let { throw it }
         }
 
         override fun dispose() {
@@ -186,6 +302,14 @@ public open class SemanticsFrameBenchmark {
          */
         fun invalidatePaint() {
             invalidate(DirtyMask.of(DirtyPhase.Paint))
+        }
+
+        /**
+         * Replaces the immutable local payload and requests semantics collection again.
+         */
+        fun replaceValues(next: List<Semantics>) {
+            values = next
+            invalidate(DirtyMask.of(DirtyPhase.Semantics))
         }
     }
 

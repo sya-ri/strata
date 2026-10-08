@@ -214,7 +214,7 @@ The retained semantics pipeline completes an immutable, detached list before pub
 The session transfers that list directly through an internal ownership path; the general frame factory still snapshots caller-owned collections.
 The transferred list contains only detached semantics entries and retains no builder, node, callback, tree or prior-frame history.
 Order, transformed bounds and immutable values remain identical, and clean frames keep their existing complete-snapshot reuse.
-The separate `SemanticsFrameBenchmark` invalidates paint on one retained node with a cached local semantics payload, separating rebuilt frame construction from clean-frame controls without attributing tree reconciliation or native rendering to the copy removal.
+The separate `SemanticsFrameBenchmark` uses one retained node at 0/1/128/1,000/10,000 semantics entries, separating paint-only rebuilds, localized/complete semantic changes, geometry changes and clean-frame controls without attributing tree reconciliation or native rendering to the copy removal.
 
 ### Current-entry transformed paint
 

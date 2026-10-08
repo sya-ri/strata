@@ -33,7 +33,7 @@ public object HistoricalWorkloadEvidence {
         verifySurface()
         ChildLayoutBenchmark.verifyWork()
         SemanticsFrameBenchmark.verifyWork()
-        check(JmhWorkloadInventory.capture(listOf(SemanticsFrameBenchmark::class.java), setOf("avgt")).size == 10)
+        check(JmhWorkloadInventory.capture(listOf(SemanticsFrameBenchmark::class.java), setOf("avgt")).size == 25)
         verifyIncludes(JmhWorkloadInventory.capture(listOf(SemanticsFrameBenchmark::class.java), setOf("avgt")), listOf("SemanticsFrameBenchmark.*"))
         check(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")).size == 4)
         verifyIncludes(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*"))
