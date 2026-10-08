@@ -40,7 +40,7 @@ internal class RetainedNode(
     fun invalidateDeclarationSnapshot() {
         var current: RetainedNode? = this
         // A cached ancestor requires each child to have its own fixed current snapshot.
-        while (current != null && current.declarationSnapshot != null) {
+        while (current?.declarationSnapshot != null) {
             current.declarationSnapshot = null
             current = current.logicalParent
         }
