@@ -10,6 +10,7 @@ import dev.s7a.strata.performance.PerformanceJson
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
+import org.openjdk.jmh.runner.Runner
 
 /**
  * Immutable supplemental-CPU pairing to one complete JMH run on the same actual JVM and runtime archives.
@@ -29,8 +30,9 @@ internal class RemoteClientStatesCpuPair(
     private val directory = checkNotNull(receiptFile.parent)
     private val resultFile = directory.resolve("results.json")
     private val collectorFile = directory.resolve("collector.jar")
+    private val harnessFile = directory.resolve("harness.jar")
     private val executable = Path.of(ProcessHandle.current().info().command().orElseThrow())
-    private val hashes = listOf(receiptFile, resultFile, collectorFile, sourceFile, executable).associateWith(ArtifactIdentity::file).toMutableMap()
+    private val hashes = listOf(receiptFile, resultFile, collectorFile, harnessFile, sourceFile, executable).associateWith(ArtifactIdentity::file).toMutableMap()
     private val environment = environment()
     private val jvmArguments = Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments)
 
@@ -46,6 +48,7 @@ internal class RemoteClientStatesCpuPair(
         require(receipt.get("collector_identity") == PerformanceJson.collectorIdentity())
         require(hashes.getValue(collectorFile) == PerformanceJson.collectorIdentity().get("code_source_sha256").asString)
         require(receipt.get("results_sha256").asString == hashes.getValue(resultFile))
+        require(receipt.get("harness_sha256").asString == hashes.getValue(harnessFile) && hashes.getValue(harnessFile) == ArtifactIdentity.fullCodeSource(Runner::class.java))
         verifyArchives(receipt, runtime, inputs)
         val fixture = RemoteClientStatesBenchmark::class.java.name
         require(receipt.getAsJsonObject("fixture_identity").get(fixture).asString == fixtureIdentity.getValue(fixture))
@@ -57,6 +60,10 @@ internal class RemoteClientStatesCpuPair(
                 .use { JsonParser.parseReader(it).asJsonArray }
                 .map { it.asJsonObject }
         require(rows.size == expected.size && rows.map(::workload).toSet() == expected)
+        require(rows.all { row ->
+            row.getAsJsonObject("primaryMetric").get("scoreUnit").asString.contentEquals("us/op") &&
+                row.getAsJsonObject("secondaryMetrics").getAsJsonObject("gc.alloc.rate.norm").get("scoreUnit").asString.contentEquals("B/op")
+        })
         val controls = controls(rows.first())
         require(rows.all { controls(it) == controls }) { "Paired JMH controls differ across cases" }
         verifyControls(controls)
@@ -166,6 +173,7 @@ internal class RemoteClientStatesCpuPair(
         JsonObject().apply {
             listOf("java.version", "java.vendor", "java.vm.name", "java.vm.version", "java.home", "os.name", "os.version", "os.arch").forEach { addProperty(it, System.getProperty(it)) }
             addProperty("available_processors", Runtime.getRuntime().availableProcessors().toString())
+            addProperty("host", System.getenv("COMPUTERNAME") ?: System.getenv("HOSTNAME"))
         }
 
     private companion object {

@@ -5,6 +5,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.JmhFixtureSelection
+import dev.s7a.strata.performance.JvmPerformanceInputs
 import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
@@ -34,7 +35,7 @@ public object RemoteClientStatesCpuEvidence {
         LoadedArtifactMetadata.verifyComplete(runtime)
         val fixtures = listOf(RemoteClientStatesBenchmark::class.java, RemoteClientStatesCpuEvidence::class.java)
         val identity = ArtifactIdentity.applicationTrees(fixtures)
-        val inputFiles = JmhFixtureSelection.inputs()
+        val inputFiles = externalInputs()
         val inputs = inputFiles.mapValues { ArtifactIdentity.file(it.value) }
         val pair = RemoteClientStatesCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, identity, inputFiles)
         val plan = PerformancePlan(warmup = 100, samples = 200)
@@ -48,7 +49,7 @@ public object RemoteClientStatesCpuEvidence {
         }
         check(LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys) == runtime)
         check(ArtifactIdentity.applicationTrees(fixtures) == identity)
-        check(JmhFixtureSelection.inputs().mapValues { ArtifactIdentity.file(it.value) } == inputs)
+        check(externalInputs().mapValues { ArtifactIdentity.file(it.value) } == inputs)
         pair.verify()
         PerformanceJson.writeNew(
             Path.of(args[0]),
@@ -70,6 +71,13 @@ public object RemoteClientStatesCpuEvidence {
                 addProperty("fps", "N/A: no frame-rate claim")
             },
         )
+    }
+
+    private fun externalInputs(): Map<String, Path> {
+        val controls = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs"))))
+        val fixture = JmhFixtureSelection.inputs()
+        require(controls.keys.intersect(fixture.keys).isEmpty() && ("remote-api" in controls).not() && ("remote-api" in fixture).not())
+        return controls + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI())) + fixture
     }
 
     private fun measure(
