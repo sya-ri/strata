@@ -1,9 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import com.mojang.blaze3d.GpuFormat
-import com.mojang.blaze3d.PrimitiveTopology
 import com.mojang.blaze3d.pipeline.BindGroupLayout
-import com.mojang.blaze3d.pipeline.ColorTargetState
 import com.mojang.blaze3d.pipeline.RenderPipeline
 import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.shaders.ShaderType
@@ -162,11 +160,7 @@ private val samplingPipeline: RenderPipeline =
                 .withSampler("InSampler")
                 .withSampler("IndexSampler")
                 .build(),
-        ).withDepthStencilState(Optional.empty())
-        .withColorTargetState(ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
-        .withCull(false)
-        .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-        .build()
+        ).portableOutput()
 
 /**
  * Borrows an immutable pipeline description; compiled native programs belong to the device.

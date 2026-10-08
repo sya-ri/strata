@@ -1,12 +1,8 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.GpuFormat
-import com.mojang.blaze3d.PrimitiveTopology
 import com.mojang.blaze3d.pipeline.BindGroupLayout
-import com.mojang.blaze3d.pipeline.ColorTargetState
 import com.mojang.blaze3d.pipeline.RenderPipeline
 import com.mojang.blaze3d.systems.RenderSystem
-import java.util.Optional
 
 /**
  * Admits bounded ordered composition only when every supported metadata and destination axis fits the native device.
@@ -31,11 +27,7 @@ private val compositionPipeline: RenderPipeline =
                 .withSampler("IndexSampler")
                 .withSampler("FactorSampler")
                 .build(),
-        ).withDepthStencilState(Optional.empty())
-        .withColorTargetState(ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
-        .withCull(false)
-        .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-        .build()
+        ).portableOutput()
 
 /**
  * Borrows the immutable four-sampler description; the host device owns compiled pipeline lifetime.

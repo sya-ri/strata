@@ -1,6 +1,5 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
-import com.mojang.blaze3d.platform.NativeImage
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
@@ -19,8 +18,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooGenericExceptionCaught")
 internal class FabricMinecraftPortableTexture private constructor() : NativeGuiResource {
-    private var pixels: NativeImage? = null
-    private var compositionUpload: FabricMinecraftCompositionUpload? = null
+    private val uploadPixels = FabricMinecraftUploadPixels()
     private var borrowed: AbstractTexture? = null
     private var storage: NativeGuiResource? = null
     private var nativeClosed = false
@@ -66,12 +64,10 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         scratch: HeadlessRasterScratch? = null,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
         input.rasterizeInto(argb, scratch)
         val size = input.physicalSize
-        val native = NativeImage(size.width, size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, size) { x, y -> argb[y * size.width + x] }
+        val native = uploadPixels.stage(size) { x, y -> argb[y * size.width + x] }
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
     }
 
@@ -83,10 +79,8 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     @JvmSynthetic
     internal fun initialize(image: DrawImage) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val native = NativeImage(image.size.width, image.size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, image.size, image::argbAt)
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        val native = uploadPixels.stage(image.size, image::argbAt)
         initializeFabricMinecraftPortableTexture(native, ::retainStorage)
     }
 
@@ -100,11 +94,9 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         source: FabricMinecraftPortableTexture,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
         val indices = sampling.indices
-        val native = NativeImage(indices.size.width, indices.size.height, false)
-        pixels = native
-        uploadFabricMinecraftArgbPixels(native, indices.size, indices::argbAt)
+        val native = uploadPixels.stage(indices.size, indices::argbAt)
         inlineSampling = initializeFabricMinecraftSampledTexture(native, sampling.physicalSize, source.texture, ::retainStorage)
     }
 
@@ -134,10 +126,8 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
         sources: List<AbstractTexture?>,
     ) {
         RenderSystem.assertOnRenderThread()
-        check(pixels == null && compositionUpload == null && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        val upload = FabricMinecraftCompositionUpload()
-        compositionUpload = upload
-        upload.initialize(composition, sources, ::retainStorage)
+        check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
+        uploadPixels.initialize(composition, sources, ::retainStorage)
     }
 
     /**
@@ -148,16 +138,7 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     @JvmSynthetic
     internal fun releaseUploadPixels() {
         RenderSystem.assertOnRenderThread()
-        FabricMinecraftFailures.runWithCleanup(
-            {
-                pixels?.close()
-                pixels = null
-            },
-            {
-                compositionUpload?.close()
-                compositionUpload = null
-            },
-        )
+        uploadPixels.close()
     }
 
     @JvmSynthetic

@@ -259,7 +259,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftCompositionInitializationKt",
                 "$packageName.FabricMinecraftCompositionTargets",
                 "$packageName.FabricMinecraftCompositionTargets\$Companion",
-                "$packageName.FabricMinecraftCompositionUpload",
+                "$packageName.FabricMinecraftUploadPixels",
                 "$packageName.FabricMinecraftCompositionTextureFactoryKt",
                 "$packageName.FabricMinecraftUploadWork",
                 "$packageName.FabricMinecraftSamplingBudget",
