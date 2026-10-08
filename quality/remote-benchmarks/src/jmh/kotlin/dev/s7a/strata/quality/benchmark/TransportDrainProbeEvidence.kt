@@ -34,9 +34,9 @@ public object TransportDrainProbeEvidence {
     public fun main(args: Array<String>) {
         require(args.size == 4)
         val sites = listOf(
-            Site("dev.s7a.strata.runtime.remote.RemoteScreenService", "tick", "peer.inbox.poll()"),
-            Site("dev.s7a.strata.runtime.remote.RemotePacketStream", "drain", "pending.remove(nextIncoming)"),
-            Site("dev.s7a.strata.runtime.remote.RemoteConnection", "flush", "pending.firstOrNull()"),
+            Site("dev.s7a.strata.runtime.remote.RemoteScreenService", "peer.inbox.poll()"),
+            Site("dev.s7a.strata.runtime.remote.RemotePacketStream", "pending.remove(nextIncoming)"),
+            Site("dev.s7a.strata.runtime.remote.RemoteConnection", "pending.firstOrNull()"),
         )
         val sourceRoot = Path.of(args[1])
         val lines = sites.associateWith { site ->
@@ -79,7 +79,7 @@ public object TransportDrainProbeEvidence {
                     when (event) {
                         is ClassPrepareEvent -> {
                             val site = sites.single { it.type == event.referenceType().name() }
-                            val locations = event.referenceType().methodsByName(site.method).flatMap { it.locationsOfLine(lines.getValue(site)) }
+                            val locations = event.referenceType().locationsOfLine(lines.getValue(site))
                             check(locations.size == 1) { "Missing or ambiguous compiled drain probe: ${site.type}" }
                             breakpoints.add(manager.createBreakpointRequest(locations.single()).apply {
                                 putProperty("site", site.type)
@@ -135,5 +135,5 @@ public object TransportDrainProbeEvidence {
     /**
      * One source-verified probe expression in the actual runtime, without modified bytecode or queue doubles.
      */
-    private data class Site(val type: String, val method: String, val expression: String)
+    private data class Site(val type: String, val expression: String)
 }

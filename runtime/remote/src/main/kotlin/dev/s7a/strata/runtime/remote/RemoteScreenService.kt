@@ -212,6 +212,33 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         peer: Peer<Owner>,
         now: Long,
     ) {
+        receivePackets(peer, now)
+        if (peer.discovered) {
+            peer.stream.drain(now) { bytes ->
+                peer.connection.receive(bytes, now)?.let { receive(peer, it) }
+                peer.connection.capabilities?.let { peer.stream.limitTo(it.limits) }
+            }
+        }
+
+        peer.sessions.values
+            .toList()
+            .forEach { active -> runCatching(active.session::tick).onFailure(report) }
+        peer.checkNodeBudget()
+        peer.refresh()
+        if (peer.discovered) {
+            peer.connection.tick(now)
+            peer.connection.flush()
+        }
+    }
+
+    /**
+     * Drains bounded authenticated ingress on the service owner before ordered delivery and session work.
+     * All accepted packets use the tick's captured [now]; protocol failures propagate to peer cleanup.
+     */
+    private fun receivePackets(
+        peer: Peer<Owner>,
+        now: Long,
+    ) {
         if (peer.inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
         for (index in 0 until 64) {
             val bytes = peer.inbox.poll() ?: break
@@ -229,22 +256,6 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                     }
                 }
             }
-        }
-        if (peer.discovered) {
-            peer.stream.drain(now) { bytes ->
-                peer.connection.receive(bytes, now)?.let { receive(peer, it) }
-                peer.connection.capabilities?.let { peer.stream.limitTo(it.limits) }
-            }
-        }
-
-        peer.sessions.values
-            .toList()
-            .forEach { active -> runCatching(active.session::tick).onFailure(report) }
-        peer.checkNodeBudget()
-        peer.refresh()
-        if (peer.discovered) {
-            peer.connection.tick(now)
-            peer.connection.flush()
         }
     }
 
