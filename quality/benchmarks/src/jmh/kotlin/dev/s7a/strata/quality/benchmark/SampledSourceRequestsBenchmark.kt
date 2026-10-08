@@ -138,14 +138,19 @@ public open class SampledSourceRequestsBenchmark {
                 retain(
                     Proxy.newProxyInstance(resourceType.classLoader, arrayOf(resourceType)) { _, method, _ ->
                         when (method.name) {
-                            "isDestroyed" -> closed
+                            "isDestroyed" -> {
+                                closed
+                            }
+
                             "close" -> {
                                 check(closed.not())
                                 closed = true
                                 null
                             }
 
-                            else -> error("Unknown fixture resource operation: ${method.name}")
+                            else -> {
+                                error("Unknown fixture resource operation: ${method.name}")
+                            }
                         }
                     },
                 )
@@ -184,7 +189,14 @@ public open class SampledSourceRequestsBenchmark {
         @TearDown(Level.Trial)
         public fun close() {
             invoke("beginShutdown")
+            val driver = member(device, "driver")
+            driver.javaClass
+                .getMethod("finish")
+                .invoke(driver)
             invoke("closeAfterFinish")
+            driver.javaClass
+                .getMethod("drainRetirements")
+                .invoke(driver)
             invoke("acknowledgeAfterDrain")
             check(invoke("retainedResourceCount") == 0)
         }
