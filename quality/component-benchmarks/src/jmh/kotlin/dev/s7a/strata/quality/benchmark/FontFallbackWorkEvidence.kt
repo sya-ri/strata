@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import java.nio.ByteBuffer
@@ -83,7 +84,10 @@ public object FontFallbackWorkEvidence {
                 val retained = owner.retained
                 check(retained[0] <= 64L && retained[1] <= 1024 * 1024L && retained[2] <= 1L)
                 if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) checkNotNull(warm.image) { "Check failed." }
-                if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned, FontFallbackWorkload.AtlasRejected)) check(warm.advance == 6f)
+                if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned)) check(warm.advance == 6f)
+                if (workload == FontFallbackWorkload.AtlasRejected) {
+                    check(warm.advance == 258f && warm.image?.size == IntSize(5, 8) && warm.oversizedRasterSize == null)
+                }
                 if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
                 listOf(
                     record(workload, depth, "warm", warm, listOf(warm)),
