@@ -252,21 +252,27 @@ internal class FabricMinecraftClipPrefixTest {
         viewport: IntSize,
     ): IntRect {
         val rectangles =
-            listOf(IntRect(0, 0, viewport.width, viewport.height)) + clips.map { command ->
-                when (command) {
-                    is DrawCommand.PushClip -> command.bounds
+            listOf(IntRect(0, 0, viewport.width, viewport.height)) +
+                clips.map { command ->
+                    when (command) {
+                        is DrawCommand.PushClip -> {
+                            command.bounds
+                        }
 
-                    is DrawCommand.PushFractionalClip ->
-                        IntRect(
-                            floor(command.bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
-                            floor(command.bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
-                            ceil(command.bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
-                            ceil(command.bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
-                        )
+                        is DrawCommand.PushFractionalClip -> {
+                            IntRect(
+                                floor(command.bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                                floor(command.bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                                ceil(command.bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
+                                ceil(command.bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
+                            )
+                        }
 
-                    else -> error("The clip oracle accepts only push commands.")
+                        else -> {
+                            error("The clip oracle accepts only push commands.")
+                        }
+                    }
                 }
-            }
         val left = rectangles.maxOf { it.left }
         val top = rectangles.maxOf { it.top }
         return IntRect(left, top, maxOf(left, rectangles.minOf { it.right }), maxOf(top, rectangles.minOf { it.bottom }))
@@ -277,19 +283,19 @@ internal class FabricMinecraftClipPrefixTest {
         viewport: IntSize,
     ): List<DrawCommand> {
         val image = createDrawImage(IntSize(4, 4), IntArray(16) { 0xFF112200.toInt() or it })
-        return clips + listOf(
-            DrawCommand.FillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(0xFF102030.toInt())),
-            DrawCommand.BlitImage(image, IntRect(0, 0, 4, 4), IntRect(3, 1, 7, 5)),
-            DrawCommand.BlitImagePixels(image, IntRect(0, 0, 4, 4), IntRect(8, 1, 12, 5)),
-            DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(4f, 5f, 8f, 9f), alphaCutoff = 0f),
-            DrawCommand.FillRectangle(IntRect(10, 5, 14, 9), ArgbColor(0xFF445566.toInt())),
-            DrawCommand.Platform(TestPlatform(ArgbColor(0xFF778899.toInt())), IntRect(3, 6, 4, 8)),
-            DrawCommand.FillRectangle(IntRect(11, 3, 12, 4), ArgbColor(0xFFAABBCC.toInt())),
-        ) + List(clips.size) { DrawCommand.PopClip }
+        return clips +
+            listOf(
+                DrawCommand.FillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(0xFF102030.toInt())),
+                DrawCommand.BlitImage(image, IntRect(0, 0, 4, 4), IntRect(3, 1, 7, 5)),
+                DrawCommand.BlitImagePixels(image, IntRect(0, 0, 4, 4), IntRect(8, 1, 12, 5)),
+                DrawCommand.SampledImage(image, FloatRect(0f, 0f, 4f, 4f), FloatRect(4f, 5f, 8f, 9f), alphaCutoff = 0f),
+                DrawCommand.FillRectangle(IntRect(10, 5, 14, 9), ArgbColor(0xFF445566.toInt())),
+                DrawCommand.Platform(TestPlatform(ArgbColor(0xFF778899.toInt())), IntRect(3, 6, 4, 8)),
+                DrawCommand.FillRectangle(IntRect(11, 3, 12, 4), ArgbColor(0xFFAABBCC.toInt())),
+            ) + List(clips.size) { DrawCommand.PopClip }
     }
 
-    private fun portablePlatform(command: DrawCommand): DrawCommand =
-        if (command is DrawCommand.Platform) DrawCommand.FillRectangle(command.bounds, (command.command as TestPlatform).color) else command
+    private fun portablePlatform(command: DrawCommand): DrawCommand = if (command is DrawCommand.Platform) DrawCommand.FillRectangle(command.bounds, (command.command as TestPlatform).color) else command
 
     private fun reconstruct(layers: List<FabricMinecraftFrameLayer>): List<DrawCommand> =
         buildList {
@@ -315,6 +321,7 @@ internal class FabricMinecraftClipPrefixTest {
                 }
             }
         }
+
     private fun globalCommands(layer: FabricMinecraftFrameLayer.Portable): List<DrawCommand> {
         if (layer.absoluteCoordinates) return layer.commands
         val offset = IntOffset(layer.bounds.left, layer.bounds.top)
@@ -337,6 +344,7 @@ internal class FabricMinecraftClipPrefixTest {
         Mixed,
     }
 
-    private data class TestPlatform(val color: ArgbColor) : PlatformDrawCommand
+    private data class TestPlatform(
+        val color: ArgbColor,
+    ) : PlatformDrawCommand
 }
-
