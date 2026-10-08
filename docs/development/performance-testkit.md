@@ -208,8 +208,8 @@ The JVM tests exercise these contracts against the actual packaged collector rat
 
 The generic `strata.performance.nativeFixture` property selects a compiled `MinecraftNativePerformanceCorpus` implementation from the same verified fixture archive.
 Its own complete case IDs and family are recorded before shared workload selection; it does not change the ordinary component or sampled-image matrices or counts.
-`MinecraftSampledSourceRequestsCorpus` supplies nine source-request cases at all standard GUI scales, separating clean direct drawing, shared composed tiles and prebuilt one-use identity replacement.
-Direct unique-source controls stay within the native owner limit; the independent JVM corpus retains the 4096-identity capacity control without claiming a supported complete native frame for it.
+`MinecraftSampledSourceRequestsCorpus` supplies ten source-request cases at all standard GUI scales, separating clean direct drawing, shared composed tiles and prebuilt one-use identity replacement.
+The 4096-identity control retains the complete original frame: its first 256 sources use the bounded native owner cache and its remaining 3840 placements use the existing ordered portable fallback.
 Process these reports with `NativeComponentPerformanceEvidence` using an `independent_fixture` object containing the exact compiled `family`, fully qualified `class` and ordered `cases` array, plus the ordinary collector, CPU provenance, runs and output fields.
 The processor rejects a changed fixture matrix, duplicate cases, missing scales, changed fixture archive, incomplete frame counts and unbalanced release, and an independent family cannot satisfy canonical native acceptance.
 Three standard baseline and three standard candidate processes must use the same compiled fixture and collector archives and workload selection for each backend.

@@ -4,7 +4,7 @@ import dev.s7a.strata.geometry.IntSize
 
 /**
  * Independent compiled source-request matrix preserving original placements on baseline and candidate runtimes.
- * Direct unique-source controls stay within native owner capacity; the JVM corpus separately measures the 4096-identity capacity control.
+ * The dense unique-source control includes native owner-capacity exhaustion and the complete ordered portable fallback.
  */
 internal class MinecraftSampledSourceRequestsCorpus : MinecraftNativePerformanceCorpus {
     override val family: String = "native-source-requests"
@@ -25,6 +25,7 @@ internal class MinecraftSampledSourceRequestsCorpus : MinecraftNativePerformance
         val identities: Int,
         val composed: Boolean = false,
         val replacement: Boolean = false,
+        val expectedNativeSources: Int = identities,
     ) {
         RequestsOne(1, 1),
         Requests64Shared(64, 1),
@@ -32,6 +33,7 @@ internal class MinecraftSampledSourceRequestsCorpus : MinecraftNativePerformance
         Requests64Unique(64, 64),
         Requests4096Shared(4096, 1),
         Requests4096Sixteen(4096, 16),
+        Requests4096Unique(4096, 4096, expectedNativeSources = 256),
         RequestsComposedShared(64, 1, composed = true),
         RequestsComposedSixteen(64, 16, composed = true),
         RequestsReplacedSixteen(64, 16, replacement = true),

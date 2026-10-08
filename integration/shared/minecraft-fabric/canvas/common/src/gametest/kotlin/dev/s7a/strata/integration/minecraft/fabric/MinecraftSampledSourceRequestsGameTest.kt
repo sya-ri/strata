@@ -27,7 +27,7 @@ internal object MinecraftSampledSourceRequestsGameTest {
         context: MinecraftCanvasTestContext,
         profile: MinecraftUiProfile,
     ) {
-        val cases = listOf(MinecraftSampledSourceRequestsCorpus.Case.Requests4096Shared, MinecraftSampledSourceRequestsCorpus.Case.Requests64Unique, MinecraftSampledSourceRequestsCorpus.Case.RequestsComposedSixteen)
+        val cases = listOf(MinecraftSampledSourceRequestsCorpus.Case.Requests4096Shared, MinecraftSampledSourceRequestsCorpus.Case.Requests64Unique, MinecraftSampledSourceRequestsCorpus.Case.Requests4096Unique, MinecraftSampledSourceRequestsCorpus.Case.RequestsComposedSixteen)
         for (scale in listOf(1, 4)) {
             context.configureViewport(physical, scale)
             cases.forEach { verify(context, profile, scale, it) }
@@ -50,13 +50,16 @@ internal object MinecraftSampledSourceRequestsGameTest {
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
             val before = context.onClient { observe(screen) }
             check(before.images == case.identities.toLong())
-            check(before.uploads == case.identities.toLong())
+            check(before.uploads == case.expectedNativeSources.toLong())
             if (case.composed) check(context.onClient { MinecraftCompositionParityInputs.portable(screen).any { MinecraftCompositionParityInputs.composed(it.first) } })
             MinecraftCanvasFrameFence.awaitCompletedFrame(context, screen, MinecraftCanvasFrameFence.hostFrameCount(context, screen))
             val after = context.onClient { observe(screen) }
             check(before.inputs === after.inputs && before.requests === after.requests)
             check(before.preparations == after.preparations && before.uploads == after.uploads)
-            check(after.hits - before.hits == (after.frames - before.frames) * case.identities)
+            val frames = after.frames - before.frames
+            check(after.hits - before.hits == frames * case.expectedNativeSources)
+            val capacityOccurrences = case.occurrences / case.identities * (case.identities - case.expectedNativeSources)
+            check(after.capacityFallbacks - before.capacityFallbacks == frames * capacityOccurrences)
             val expected = context.onClient { rasterizeHeadless(screen.captureCanvasFrame(), logical, scale).copyArgb() }
             val screenshot = context.takeScreenshot("source-requests-${case.name}-$scale", physical)
             val actual = checkNotNull(ImageIO.read(screenshot.toFile()))
@@ -64,7 +67,7 @@ internal object MinecraftSampledSourceRequestsGameTest {
             for (y in 0 until physical.height) {
                 for (x in 0 until physical.width) check(actual.getRGB(x, y) == expected[y * physical.width + x]) { "Complete native source-request pixels differ at ($x, $y) in $screenshot" }
             }
-            Files.writeString(context.outputDirectory.resolve("source-requests-${case.name}-$scale.properties"), "occurrences=${case.occurrences}\nidentities=${case.identities}\nsourceUploads=${after.uploads}\ntolerance=0\nresult=passed\n")
+            Files.writeString(context.outputDirectory.resolve("source-requests-${case.name}-$scale.properties"), "occurrences=${case.occurrences}\nidentities=${case.identities}\nsourceUploads=${after.uploads}\ncapacityFallbacksPerFrame=$capacityOccurrences\ntolerance=0\nresult=passed\n")
         } catch (caught: Throwable) {
             failure = caught
             throw caught
@@ -91,7 +94,7 @@ internal object MinecraftSampledSourceRequestsGameTest {
         val inputs = MinecraftCompositionParityInputs.member(holder, "preparedInputs")
         val requests = MinecraftCompositionParityInputs.member(inputs, "sampledRequests")
         val images = MinecraftCompositionParityInputs.member(requests, "images") as List<*>
-        return Observation(inputs, requests, images.size.toLong(), counter(holder, "renderExtractionCount"), counter(holder, "sampledImageDirectHitCount"), counter(holder, "sampledImageUploadCount"), counter(holder, "framePreparationCount"))
+        return Observation(inputs, requests, images.size.toLong(), counter(holder, "renderExtractionCount"), counter(holder, "sampledImageDirectHitCount"), counter(holder, "sampledImageUploadCount"), counter(holder, "framePreparationCount"), counter(holder, "sampledImageCapacityFallbackCount"))
     }
 
     private fun counter(
@@ -109,5 +112,6 @@ internal object MinecraftSampledSourceRequestsGameTest {
         val hits: Long,
         val uploads: Long,
         val preparations: Long,
+        val capacityFallbacks: Long,
     )
 }
