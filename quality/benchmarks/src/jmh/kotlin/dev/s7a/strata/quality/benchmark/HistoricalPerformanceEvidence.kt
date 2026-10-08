@@ -69,6 +69,7 @@ public object HistoricalPerformanceEvidence {
     private fun corpusFixtures(): List<Class<*>> =
         when {
             System.getProperty("strata.performance.childLayout", "false").toBooleanStrict() -> listOf(ChildLayoutBenchmark::class.java)
+            System.getProperty("strata.performance.pngEncoding", "false").toBooleanStrict() -> listOf(ColdImageBenchmark::class.java, PngEncodingBenchmark::class.java)
             System.getProperty("strata.performance.coldImage", "false").toBooleanStrict() -> listOf(ColdImageBenchmark::class.java)
             System.getProperty("strata.performance.denseSampledRaster", "false").toBooleanStrict() -> listOf(DenseSampledRasterBenchmark::class.java)
             System.getProperty("strata.performance.sampledRaster", "false").toBooleanStrict() -> listOf(SampledRasterBenchmark::class.java)
