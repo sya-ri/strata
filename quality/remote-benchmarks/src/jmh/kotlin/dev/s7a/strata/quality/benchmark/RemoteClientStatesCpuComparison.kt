@@ -48,5 +48,4 @@ public object RemoteClientStatesCpuComparison {
             }
         PerformanceJson.writeNew(Path.of(args[7]), report)
     }
-
 }

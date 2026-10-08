@@ -85,6 +85,14 @@ public object RemoteBytesCopyEvidence {
             }
             val sources = plan.getAsJsonArray("sources").map { it.asJsonObject }
             require(sources.size == 2 && sources.map { it.get("revision").asString }.distinct().size == 2)
+            val revision = Regex("[0-9a-f]{40}")
+            val hash = Regex("[0-9a-f]{64}")
+            require(plan.get("fixture_revision").asString.matches(revision))
+            sources.forEach { source ->
+                require(source.get("revision").asString.matches(revision))
+                val recorded = source.getAsJsonObject("archives")
+                require(recorded.keySet() == setOf("api", "core", "remote") && recorded.entrySet().all { it.value.asString.matches(hash) })
+            }
             require(plan.get("fixture_tree_sha256") == provenance.getAsJsonObject("fixture_identity").get(RemoteBytesBenchmark::class.java.name))
             val source = sources.single { it.getAsJsonObject("archives") == archives }
             require(ArtifactIdentity.file(planFile) == planHash)

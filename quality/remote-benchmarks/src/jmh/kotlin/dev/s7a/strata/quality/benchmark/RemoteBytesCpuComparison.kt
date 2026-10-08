@@ -48,5 +48,4 @@ public object RemoteBytesCpuComparison {
             }
         PerformanceJson.writeNew(Path.of(args[7]), report)
     }
-
 }
