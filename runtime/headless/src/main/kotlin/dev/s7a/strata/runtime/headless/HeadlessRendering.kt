@@ -222,7 +222,7 @@ private object HeadlessImplementation {
             paintCommands(dimensions, commands, borrowed, scratch)
         }
 
-    @Suppress("CyclomaticComplexMethod") // Explicit command ordering includes materialization before each non-uniform primitive.
+    @Suppress("CyclomaticComplexMethod") // Explicit ordering defers materialization until a primitive can touch physical pixels.
     private fun paintCommands(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
@@ -244,7 +244,9 @@ private object HeadlessImplementation {
                     continue
                 }
             }
-            when (val command = commands[index++]) {
+            val command = commands[index++]
+            if (uniform && doesNotPaint(command, dimensions, clips.lastOrNull())) continue
+            when (command) {
                 is DrawCommand.FillRectangle -> {
                     if ((uniform || command.color.value ushr 24 == 0xFF) && coversViewport(command.bounds, dimensions, clips.lastOrNull())) {
                         uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
@@ -293,6 +295,45 @@ private object HeadlessImplementation {
         }
         if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
         return pixels
+    }
+
+    /**
+     * Preserves a pending uniform color without reading image pixels or changing the clip stack.
+     * Integer primitives use exact scaled intersections; sampled commands share their painter's pixel-center edges.
+     * A zero-alpha integer fill still paints because source-over canonicalizes transparent destinations.
+     */
+    private fun doesNotPaint(
+        command: DrawCommand,
+        dimensions: PhysicalDimensions,
+        clip: IntRect?,
+    ): Boolean =
+        when (command) {
+            is DrawCommand.FillRectangle -> emptyCoverage(command.bounds, dimensions, clip)
+            is DrawCommand.BlitImage -> emptyCoverage(command.destination, dimensions, clip)
+            is DrawCommand.BlitImagePixels -> emptyCoverage(command.destination, dimensions, clip)
+            is DrawCommand.SampledImage -> SampledImageRasterizer.doesNotPaint(command, dimensions.scale, clip ?: dimensions.physicalBounds)
+            else -> false
+        }
+
+    /**
+     * Tests final physical coverage without allocating an outward logical clip or an intermediate rectangle.
+     * Viewport intersection bounds every scaled coordinate before multiplication, including offscreen commands.
+     */
+    private fun emptyCoverage(
+        bounds: IntRect,
+        dimensions: PhysicalDimensions,
+        clip: IntRect?,
+    ): Boolean {
+        val viewport = dimensions.logicalBounds
+        val left = maxOf(bounds.left, viewport.left)
+        val top = maxOf(bounds.top, viewport.top)
+        val right = minOf(bounds.right, viewport.right)
+        val bottom = minOf(bounds.bottom, viewport.bottom)
+        if (right <= left || bottom <= top) return true
+        if (clip == null) return false
+        val scale = dimensions.scale
+        return minOf(right * scale, clip.right) <= maxOf(left * scale, clip.left) ||
+            minOf(bottom * scale, clip.bottom) <= maxOf(top * scale, clip.top)
     }
 
     /**
