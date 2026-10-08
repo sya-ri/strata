@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
-/** Verifies detached lookup association, original validation order and concurrent CPU-only capture without live devices. */
+/**
+ * Verifies detached lookup association, original validation order and concurrent CPU-only capture without live devices.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class NativeCanvasReceiptIndexTest {
     @Test

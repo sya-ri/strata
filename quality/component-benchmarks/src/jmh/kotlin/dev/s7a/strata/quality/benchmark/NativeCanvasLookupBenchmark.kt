@@ -13,40 +13,56 @@ import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 import org.openjdk.jmh.infra.Blackhole
 
-/** Separates real queued token resolution, full CPU protocol, detached capture and portable output rasterization. */
+/**
+ * Separates real queued token resolution, full CPU protocol, detached capture and portable output rasterization.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 public open class NativeCanvasLookupBenchmark {
-    /** Borrows every queued target through the actual device's owner/thread/batch checks. */
+    /**
+     * Borrows every queued target through the actual device's owner/thread/batch checks.
+     */
     @Benchmark
     public fun target(
         state: Scene,
         sink: Blackhole,
     ): Unit = state.fixture.resolveTargets(sink)
 
-    /** Includes preparation/index construction, queueing, all target borrows, consumption and nonblocking cleanup. */
+    /**
+     * Includes preparation/index construction, queueing, all target borrows, consumption and nonblocking cleanup.
+     */
     @Benchmark
     public fun protocol(
         state: Scene,
         sink: Blackhole,
     ): Unit = state.fixture.protocol(sink)
 
-    /** Captures a detached presentation repeatedly without invoking any live native owner. */
+    /**
+     * Captures a detached presentation repeatedly without invoking any live native owner.
+     */
     @Benchmark
     public fun capture(state: Scene): List<DrawCommand> = state.fixture.capture()
 
-    /** Includes detached publication and a single capture, diagnosing cold membership/index construction. */
+    /**
+     * Includes detached publication and a single capture, diagnosing cold membership/index construction.
+     */
     @Benchmark
     public fun captureOneShot(state: Scene): List<DrawCommand> = state.fixture.captureOneShot()
 
-    /** Renders previously captured portable commands, independently controlling output raster cost. */
+    /**
+     * Renders previously captured portable commands, independently controlling output raster cost.
+     */
     @Benchmark
     public fun rasterizePrepared(state: Scene): HeadlessImage = state.fixture.rasterizePrepared()
 
-    /** Includes complete detached capture and portable rasterization, without native GPU claims. */
+    /**
+     * Includes complete detached capture and portable rasterization, without native GPU claims.
+     */
     @Benchmark
     public fun captureAndRasterize(state: Scene): HeadlessImage = state.fixture.captureAndRasterize()
 
-    /** Exact current target membership and repeated command occurrences, independent of surrounding portable commands. */
+    /**
+     * Exact current target membership and repeated command occurrences, independent of surrounding portable commands.
+     */
     public enum class Placement(
         public val targets: Int,
         public val occurrences: Int,
@@ -62,33 +78,45 @@ public open class NativeCanvasLookupBenchmark {
         SixtyFourRepeated4096(64, 4096),
     }
 
-    /** One bounded device and detached current receipt set per worker; no measured result history is retained. */
+    /**
+     * One bounded device and detached current receipt set per worker; no measured result history is retained.
+     */
     @State(Scope.Thread)
     public open class Scene {
-        /** Native membership and occurrence counts. */
+        /**
+         * Native membership and occurrence counts.
+         */
         @JvmField
         @Param
         public var placement: Placement = Placement.None
 
-        /** Surrounding portable fills, with clip and overlay commands counted separately. */
+        /**
+         * Surrounding portable fills, with clip and overlay commands counted separately.
+         */
         @JvmField
         @Param("8", "10000")
         public var portable: Int = 8
 
-        /** Whether complete protocol commits a fresh generation or reuses the initial immutable capture. */
+        /**
+         * Whether complete protocol commits a fresh generation or reuses the initial immutable capture.
+         */
         @JvmField
         @Param("false", "true")
         public var changed: Boolean = false
 
         internal lateinit var fixture: NativeCanvasLookupWorkload
 
-        /** Resolves normal constructor handles and primes actual device/CPU receipts outside collection. */
+        /**
+         * Resolves normal constructor handles and primes actual device/CPU receipts outside collection.
+         */
         @Setup(Level.Trial)
         public fun setup() {
             fixture = NativeCanvasLookupWorkload(placement.targets, placement.occurrences, portable, changed)
         }
 
-        /** Releases all CPU mock target permits and attachment owners outside measurement. */
+        /**
+         * Releases all CPU mock target permits and attachment owners outside measurement.
+         */
         @TearDown(Level.Trial)
         public fun close() {
             fixture.close()
@@ -96,7 +124,9 @@ public open class NativeCanvasLookupBenchmark {
     }
 
     public companion object {
-        /** Checks all fixture input combinations, exact ordered image association and terminal owner release untimed. */
+        /**
+         * Checks all fixture input combinations, exact ordered image association and terminal owner release untimed.
+         */
         @JvmStatic
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(NativeCanvasLookupBenchmark::class.java), setOf("avgt")).size == 216)

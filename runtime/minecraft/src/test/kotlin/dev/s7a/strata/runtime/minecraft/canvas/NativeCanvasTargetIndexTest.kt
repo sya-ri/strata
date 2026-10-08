@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
-/** Verifies actual current-batch resolution, queued lifetime cutoffs and zero/one/many owner isolation. */
+/**
+ * Verifies actual current-batch resolution, queued lifetime cutoffs and zero/one/many owner isolation.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class NativeCanvasTargetIndexTest {
     @Test

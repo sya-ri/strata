@@ -25,7 +25,9 @@ internal class MinecraftCanvasLookupPerformanceScene(
     private val case: MinecraftSampledPerformanceCase,
     private val native: CanvasSource,
 ) {
-    /** Creates exactly the declared target/occurrence matrix with a separate Canvas-free portable control. */
+    /**
+     * Creates exactly the declared target/occurrence matrix with a separate Canvas-free portable control.
+     */
     internal fun definition(): UiDefinition =
         UiDefinition(case.name) {
             Stack {

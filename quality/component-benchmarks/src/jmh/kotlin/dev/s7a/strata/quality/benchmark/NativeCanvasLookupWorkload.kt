@@ -93,14 +93,22 @@ internal class NativeCanvasLookupWorkload(
         queued = initial
     }
 
-    private fun scalar(name: String): Long = NativeCanvasPresentation::class.java.getDeclaredField(name).apply { check(trySetAccessible()) }.getLong(initial)
+    private fun scalar(name: String): Long =
+        NativeCanvasPresentation::class.java
+            .getDeclaredField(name)
+            .apply { check(trySetAccessible()) }
+            .getLong(initial)
 
-    /** Borrows all current queued targets without rebuilding or resolving through current attachment state. */
+    /**
+     * Borrows all current queued targets without rebuilding or resolving through current attachment state.
+     */
     internal fun resolveTargets(sink: Blackhole) {
         tokens.forEach { sink.consume(device.target(checkNotNull(queued), it)) }
     }
 
-    /** Measures full changed/unchanged preparation and queued submission, including index construction and settlement. */
+    /**
+     * Measures full changed/unchanged preparation and queued submission, including index construction and settlement.
+     */
     internal fun protocol(sink: Blackhole) {
         if (targets == 0) {
             sink.consume(commands)
@@ -126,20 +134,29 @@ internal class NativeCanvasLookupWorkload(
         return device.prepare(commands, FrameTime(2L), 1).also(device::queue)
     }
 
-    /** Captures the same old detached membership independently of device state and later generations. */
+    /**
+     * Captures the same old detached membership independently of device state and later generations.
+     */
     internal fun capture(): List<DrawCommand> = initial.capture()
 
-    /** Includes publication of immutable detached lists before exactly one actual capture. */
-    internal fun captureOneShot(): List<DrawCommand> =
-        (presentationConstructor.invoke(deviceId, batchId, initial.drawCommands, receipts, false) as NativeCanvasPresentation).capture()
+    /**
+     * Includes publication of immutable detached lists before exactly one actual capture.
+     */
+    internal fun captureOneShot(): List<DrawCommand> = (presentationConstructor.invoke(deviceId, batchId, initial.drawCommands, receipts, false) as NativeCanvasPresentation).capture()
 
-    /** Returns fresh output pixels from primed portable commands without any receipt lookup. */
+    /**
+     * Returns fresh output pixels from primed portable commands without any receipt lookup.
+     */
     internal fun rasterizePrepared(): HeadlessImage = rasterizeHeadless(captured, viewport)
 
-    /** Returns fresh output pixels after an actual complete detached capture. */
+    /**
+     * Returns fresh output pixels after an actual complete detached capture.
+     */
     internal fun captureAndRasterize(): HeadlessImage = rasterizeHeadless(initial.capture(), viewport)
 
-    /** Checks independent producer/occurrence association, native bounds and detached output after terminal device release. */
+    /**
+     * Checks independent producer/occurrence association, native bounds and detached output after terminal device release.
+     */
     internal fun verify() {
         val native = initial.drawCommands.filterIsInstance<DrawCommand.Platform>()
         val images = capture().filterIsInstance<DrawCommand.BlitImagePixels>()
@@ -186,7 +203,9 @@ internal class NativeCanvasLookupWorkload(
         queued = null
     }
 
-    /** Immediate CPU completions exercise actual lifetime ownership without claiming GPU execution. */
+    /**
+     * Immediate CPU completions exercise actual lifetime ownership without claiming GPU execution.
+     */
     private class Driver : NativeCanvasDriver {
         val created = ArrayList<NativeCanvasTarget>()
         var liveTargets = 0
@@ -216,8 +235,12 @@ internal class NativeCanvasLookupWorkload(
         override fun finish() = Unit
     }
 
-    /** Immutable phase images and fresh lease identities separate unchanged source reuse from changed generation protocol. */
-    private class Producer(index: Int) : NativeCanvasProducer {
+    /**
+     * Immutable phase images and fresh lease identities separate unchanged source reuse from changed generation protocol.
+     */
+    private class Producer(
+        index: Int,
+    ) : NativeCanvasProducer {
         val images = listOf(0xFF336600.toInt() or index, 0xFF884400.toInt() or index).map { color -> createDrawImage(IntSize(2, 2), IntArray(4) { color }) }
         var phase = 0
         var available = true
