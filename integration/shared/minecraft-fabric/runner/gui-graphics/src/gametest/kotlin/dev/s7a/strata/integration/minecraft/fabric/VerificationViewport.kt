@@ -48,7 +48,8 @@ internal fun MinecraftLoadedTestContext.configureVerificationViewport(
                     minecraft.resizeDisplay()
                     guiScaleApplied = true
                 }
-                val scaleMatches = guiScale == 0 || window.guiScale == guiScale.toDouble()
+                val actualGuiScale: Number = window.guiScale
+                val scaleMatches = guiScale == 0 || actualGuiScale.toDouble() == guiScale.toDouble()
                 if (dimensionsMatch && scaleMatches) {
                     consecutiveMatches += 1
                 } else {
