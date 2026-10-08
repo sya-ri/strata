@@ -119,6 +119,7 @@ internal object MinecraftCompositionMetadataGameTest {
             -> check(reused == after.maps.size)
 
             MinecraftCompositionMetadataCorpus.Case.OneDirtyLarge, MinecraftCompositionMetadataCorpus.Case.InsertLarge, MinecraftCompositionMetadataCorpus.Case.RemoveLarge -> check(0 < reused)
+
             MinecraftCompositionMetadataCorpus.Case.TintChangedLarge, MinecraftCompositionMetadataCorpus.Case.CutoffChangedLarge,
             MinecraftCompositionMetadataCorpus.Case.ReplacementLarge, MinecraftCompositionMetadataCorpus.Case.ScrollLarge,
             -> check(reused == 0)
