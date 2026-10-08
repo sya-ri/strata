@@ -71,6 +71,8 @@ Cleanup clears every marker and offset before input or lifecycle callbacks, incl
 
 Common JVM and JavaScript tests cover duplicate operations, unmeasured reads and placement, sparse child changes, layout-only updates, keyed reordering and replacement, effective modifier-parent changes, current paint/input/semantics geometry, and cleanup after disposal failure.
 These markers track existing phase participation; they do not skip required measure or layout callbacks or retain historical child lists.
+`ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
+Its `jmhHistorical -Pstrata.performance.childLayout=true` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
 ### Current-tree frame callbacks
 

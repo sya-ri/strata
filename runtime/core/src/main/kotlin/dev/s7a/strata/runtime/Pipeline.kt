@@ -281,10 +281,11 @@ internal class Pipeline(
             retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
             retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             val measurePass = if (0 < retained.effectiveChildCount) Any() else null
-            var measuredAnyChild = false
             val guard = ScopeGuard(ownerGuard)
             val scope =
                 object : MeasureScope {
+                    var measuredAnyChild = false
+
                     override val childCount: Int
                         get() {
                             guard.check()
@@ -325,7 +326,7 @@ internal class Pipeline(
                     guard.close()
                 }
             check(constraints.isSatisfiedBy(measured)) { "Node returned a size outside its constraints." }
-            if (measuredAnyChild) {
+            if (scope.measuredAnyChild) {
                 check(retained.node is LayoutNode) { "A node that measures children must implement LayoutNode." }
             }
             retained.measuredSize = measured

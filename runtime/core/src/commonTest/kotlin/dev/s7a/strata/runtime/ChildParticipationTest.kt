@@ -56,6 +56,33 @@ internal class ChildParticipationTest {
     }
 
     @Test
+    fun invalidIndicesStayRejectedBeforeParticipation() {
+        val plans =
+            listOf(
+                Plan(listOf(-1), emptyList()),
+                Plan(listOf(2), emptyList()),
+                Plan(listOf(0), listOf(-1), emptyList()),
+                Plan(listOf(0), listOf(2), emptyList()),
+                Plan(listOf(0), emptyList(), listOf(-1)),
+                Plan(listOf(0), emptyList(), listOf(2)),
+            )
+        for (plan in plans) {
+            val probe = TestProbe()
+            val tree = UiTree()
+            try {
+                tree.update(ParticipationElement(plan, children(probe, 2)))
+                assertFailsWith<IllegalArgumentException> {
+                    tree.measure(Constraints(maxWidth = 40, maxHeight = 10))
+                    tree.layout()
+                }
+                assertEquals(TreeState.Poisoned, tree.state)
+            } finally {
+                tree.close()
+            }
+        }
+    }
+
+    @Test
     fun sparseParticipationDoesNotReusePreviouslyMeasuredOrPlacedChildren() {
         val probe = TestProbe()
         val children = children(probe, 4_096)
@@ -128,6 +155,11 @@ internal class ChildParticipationTest {
             assertSame(second, probe.nodeForTag(TestProbe.ProbeId("1")))
             assertEquals(listOf(UiText.Literal("1"), UiText.Literal("2")), tree.semantics().map { it.semantics.label })
             assertGeometry(tree, listOf(0, 1))
+
+            tree.update(ParticipationElement(Plan(listOf(0), listOf(0)), listOf(initial[1])))
+            frame(tree)
+            assertEquals(listOf(UiText.Literal("1")), tree.semantics().map { it.semantics.label })
+            assertGeometry(tree, listOf(0))
         } finally {
             tree.close()
         }
