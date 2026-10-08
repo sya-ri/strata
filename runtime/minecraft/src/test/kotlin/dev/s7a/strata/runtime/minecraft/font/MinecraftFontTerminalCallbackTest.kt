@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.font
 import dev.s7a.strata.resource.ResourceId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -142,6 +143,92 @@ internal class MinecraftFontTerminalCallbackTest {
                 assertEquals(1, backend.closeCalls)
                 FontTerminalTestSupport.assertTerminal(owner)
             }
+        }
+    }
+
+    @Test
+    fun missingCallbackKeepsSpaceFallbackAndLaterFaceClosedFailureDistinct() {
+        for (nativeSibling in listOf(false, true)) {
+            val sibling = if (nativeSibling) """{"type":"ttf","file":"test:second.ttf"}""" else """{"type":"space","advances":{"A":3}}"""
+            val snapshot =
+                FontTestResources.snapshot(
+                    FontTestResources.font("default", """{"type":"ttf","file":"test:first.ttf"},$sibling"""),
+                    "assets/test/font/first.ttf" to byteArrayOf(1),
+                    "assets/test/font/second.ttf" to byteArrayOf(2),
+                )
+            for (original in listOf(false, true)) {
+                lateinit var owner: MinecraftFontEngine
+                var glyphs = 0
+                var closes = 0
+                val backend =
+                    FontTestBackend(
+                        open = { _, _ ->
+                            FontTestFace(
+                                {
+                                    glyphs++
+                                    owner.close()
+                                    null
+                                },
+                                { closes++ },
+                            )
+                        },
+                    )
+                owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 2)
+                if (nativeSibling) {
+                    val failure = assertThrows(IllegalStateException::class.java) { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+                    assertEquals("Font engine is closed.", failure.message)
+                } else {
+                    assertEquals(3f, FontTerminalTestSupport.glyph(snapshot, owner, original).advance)
+                }
+                assertEquals(1, glyphs)
+                assertEquals(if (nativeSibling) 2 else 1, backend.openCalls)
+                assertEquals(backend.openCalls, closes)
+                assertEquals(1, backend.closeCalls)
+                FontTerminalTestSupport.assertTerminal(owner)
+            }
+        }
+    }
+
+    @Test
+    fun glyphReopenEvictionCloseKeepsTheOriginalMissingBackendFailureWithoutAnotherOpen() {
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font("default", """{"type":"ttf","file":"test:first.ttf"}"""),
+                FontTestResources.font("test:pressure", """{"type":"ttf","file":"test:second.ttf"}"""),
+                "assets/test/font/first.ttf" to byteArrayOf(1),
+                "assets/test/font/second.ttf" to byteArrayOf(2),
+            )
+        for (original in listOf(false, true)) {
+            lateinit var owner: MinecraftFontEngine
+            var closes = 0
+            var glyphs = 0
+            val backend =
+                FontTestBackend(
+                    open = { bytes, _ ->
+                        val callbackCloses = bytes.single().toInt() == 2
+                        FontTestFace(
+                            {
+                                glyphs++
+                                MinecraftFontGlyph(7f, 0f, 0f, 0f, 0f, null)
+                            },
+                            {
+                                closes++
+                                if (callbackCloses) owner.close()
+                            },
+                        )
+                    },
+                )
+            owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = 0, maxFaces = 1)
+            assertEquals(7f, FontTerminalTestSupport.glyph(snapshot, owner, original).advance)
+            assertEquals(7f, FontTerminalTestSupport.glyph(snapshot, owner, original, font = ResourceId("test", "pressure")).advance)
+            val failure = assertThrows(IllegalStateException::class.java) { FontTerminalTestSupport.glyph(snapshot, owner, original) }
+            val originalMessage = runCatching { checkNotNull(null) }.exceptionOrNull()?.message
+            assertEquals(originalMessage, failure.message)
+            assertEquals(2, backend.openCalls)
+            assertEquals(2, glyphs)
+            assertEquals(2, closes)
+            assertEquals(1, backend.closeCalls)
+            FontTerminalTestSupport.assertTerminal(owner)
         }
     }
 }

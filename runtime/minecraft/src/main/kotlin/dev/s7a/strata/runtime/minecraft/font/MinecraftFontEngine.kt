@@ -465,7 +465,8 @@ public class MinecraftFontEngine
             provider: FontProvider.TrueType,
             preparing: Boolean = false,
         ): MinecraftTrueTypeFace? {
-            if (closed) return null
+            // A later provider beginning after glyph-driven close keeps the original closed-owner rejection.
+            if (closed) requireSnapshot()
             val key = FontFaceKey(provider.resource, provider.settings)
             faces[key]?.let { return it }
             faceFailures[key]?.raise()
@@ -478,7 +479,11 @@ public class MinecraftFontEngine
                 oldest.remove()
                 faceBytes -= previous.key.resource.size
                 previous.value.close()
-                if (closed) return null
+                if (closed) {
+                    if (preparing) return null
+                    // Glyph reopen previously rejected the already released backend before another native open.
+                    checkNotNull(backend)
+                }
             }
             val face =
                 runCatching {
