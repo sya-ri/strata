@@ -26,14 +26,7 @@ public object HistoricalPerformanceEvidence {
         val requested = System.getProperty("strata.performance.workloads")
         val parameterFile = System.getProperty("strata.performance.parameters")?.let(Path::of)
         require(smoke.not() || (requested == null && parameterFile == null)) { "Smoke and targeted collection are separate scopes" }
-        val registered =
-            when {
-                System.getProperty("strata.performance.coldImage", "false").toBooleanStrict() -> listOf(ColdImageBenchmark::class.java)
-                System.getProperty("strata.performance.denseSampledRaster", "false").toBooleanStrict() -> listOf(DenseSampledRasterBenchmark::class.java)
-                System.getProperty("strata.performance.sampledRaster", "false").toBooleanStrict() -> listOf(SampledRasterBenchmark::class.java)
-                System.getProperty("strata.performance.nonuniformOverlay", "false").toBooleanStrict() -> listOf(NonuniformOverlayBenchmark::class.java)
-                else -> fixtures()
-            }
+        val registered = corpusFixtures()
         val methods = JmhWorkloadInventory.capture(registered, setOf("avgt")).map { JsonParser.parseString(it).asJsonArray[0].asString }.toSet()
         val selection = PerformanceSelection(methods.map { it.substringAfter("dev.s7a.strata.quality.benchmark.") }.toSet(), requested)
         val fixtures = if (smoke) listOf(RenderingBenchmark::class.java) else registered.filter { fixture -> selection.ids.any { it.startsWith("${fixture.simpleName}.") } }
@@ -69,6 +62,19 @@ public object HistoricalPerformanceEvidence {
             JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI())),
         )
     }
+
+    /**
+     * Selects one explicitly requested independent corpus or the unchanged historical fixtures.
+     */
+    private fun corpusFixtures(): List<Class<*>> =
+        when {
+            System.getProperty("strata.performance.childLayout", "false").toBooleanStrict() -> listOf(ChildLayoutBenchmark::class.java)
+            System.getProperty("strata.performance.coldImage", "false").toBooleanStrict() -> listOf(ColdImageBenchmark::class.java)
+            System.getProperty("strata.performance.denseSampledRaster", "false").toBooleanStrict() -> listOf(DenseSampledRasterBenchmark::class.java)
+            System.getProperty("strata.performance.sampledRaster", "false").toBooleanStrict() -> listOf(SampledRasterBenchmark::class.java)
+            System.getProperty("strata.performance.nonuniformOverlay", "false").toBooleanStrict() -> listOf(NonuniformOverlayBenchmark::class.java)
+            else -> fixtures()
+        }
 
     /**
      * Exact historical fixture class registration shared by collection and the untimed completeness check.

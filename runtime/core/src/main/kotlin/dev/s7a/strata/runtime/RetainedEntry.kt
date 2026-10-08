@@ -61,14 +61,43 @@ internal sealed class RetainedEntry(
     var dirty: DirtyMask = DirtyMask.All
 
     /**
-     * Child placement offsets from the most recent layout pass.
+     * Identity of the most recent completed child measurement pass, or null without children.
+     * Markers contain no scope, callback, node, or historical geometry and belong to this entry's owner.
      */
-    val placements: MutableMap<Int, IntOffset> = HashMap()
+    var childMeasurePass: Any? = null
 
     /**
-     * Direct virtual children measured by the most recent measure pass.
+     * Identity of the most recent child placement pass, or null without children.
      */
-    var measuredChildren: Set<Int> = emptySet()
+    var childLayoutPass: Any? = null
+
+    /**
+     * Parent measure pass that admitted this child; unequal markers make old participation irrelevant.
+     */
+    var parentMeasurePass: Any? = null
+
+    /**
+     * Parent layout pass that placed this child; unequal markers make the old offset irrelevant.
+     */
+    var parentLayoutPass: Any? = null
+
+    /**
+     * One parent-local offset borrowed by the current matching placement pass.
+     * Cleanup clears this value and all participation markers before lifecycle callbacks.
+     */
+    var parentOffset: IntOffset? = null
+
+    /**
+     * Returns whether [child] participated in this entry's most recent completed measure pass.
+     * Only current direct children may be supplied, under the retained tree's execution owner.
+     */
+    fun measuredChild(child: RetainedEntry): Boolean = childMeasurePass != null && child.parentMeasurePass === childMeasurePass
+
+    /**
+     * Returns [child]'s offset only when its placement belongs to this entry's current layout pass.
+     * Only current direct children may be supplied, under the retained tree's execution owner.
+     */
+    fun childOffset(child: RetainedEntry): IntOffset? = if (childLayoutPass != null && child.parentLayoutPass === childLayoutPass) child.parentOffset else null
 
     /**
      * Constraints used by the most recent measure pass.

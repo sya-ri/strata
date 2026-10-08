@@ -89,7 +89,10 @@ tasks.register<JavaExec>("jmhHistorical") {
     val nonuniform = providers.gradleProperty("strata.performance.nonuniformOverlay").map(String::toBooleanStrict).getOrElse(false)
     val sampledRaster = providers.gradleProperty("strata.performance.sampledRaster").map(String::toBooleanStrict).getOrElse(false)
     val denseSampledRaster = providers.gradleProperty("strata.performance.denseSampledRaster").map(String::toBooleanStrict).getOrElse(false)
+    val childLayout = providers.gradleProperty("strata.performance.childLayout").map(String::toBooleanStrict).getOrElse(false)
     val coldImage = providers.gradleProperty("strata.performance.coldImage").map(String::toBooleanStrict).getOrElse(false)
+    require(childLayout.not() || (smoke.not() && nonuniform.not() && sampledRaster.not() && denseSampledRaster.not() && coldImage.not())) { "Child geometry is a separate corpus" }
+    if (childLayout) systemProperty("strata.performance.childLayout", true)
     require(coldImage.not() || (smoke.not() && nonuniform.not() && sampledRaster.not() && denseSampledRaster.not())) { "Cold images are a separate corpus" }
     if (coldImage) systemProperty("strata.performance.coldImage", true)
     require(nonuniform.not() || smoke.not()) { "Nonuniform overlays are a separate full-default corpus" }
@@ -99,11 +102,11 @@ tasks.register<JavaExec>("jmhHistorical") {
     systemProperty("strata.performance.sampledRaster", sampledRaster)
     // Keep existing corpus fork arguments identical when the independent dense corpus is absent.
     if (denseSampledRaster) systemProperty("strata.performance.denseSampledRaster", true)
-    val suite = (if (coldImage) "cold-image" else if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (quick) "-quick" else "") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    val suite = (if (childLayout) "child-layout" else if (coldImage) "cold-image" else if (denseSampledRaster) "dense-sampled-raster" else if (sampledRaster) "sampled-raster" else if (nonuniform) "nonuniform-overlay" else if (smoke) "historical-smoke" else "historical") + (if (quick) "-quick" else "") + (if (targeted) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     providers.gradleProperty("strata.performance.workloads").orNull?.let { systemProperty("strata.performance.workloads", it) }
     providers.gradleProperty("strata.performance.parameters").orNull?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
-    val quickSmoke = quick && coldImage.not() && targeted.not() && denseSampledRaster.not() && sampledRaster.not() && nonuniform.not()
-    val includes = if (coldImage) "ColdImageBenchmark.*" else if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke || quickSmoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
+    val quickSmoke = quick && childLayout.not() && coldImage.not() && targeted.not() && denseSampledRaster.not() && sampledRaster.not() && nonuniform.not()
+    val includes = if (childLayout) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*" else if (coldImage) "ColdImageBenchmark.*" else if (denseSampledRaster) "DenseSampledRasterBenchmark.*" else if (sampledRaster) "dev\\.s7a\\.strata\\.quality\\.benchmark\\.SampledRasterBenchmark\\..*" else if (nonuniform) "NonuniformOverlayBenchmark.*" else if (smoke || quickSmoke) "RenderingBenchmark.cleanUiSessionFrame" else "(RenderingBenchmark|ReactiveRenderingBenchmark|OverlayRenderingBenchmark).*"
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })

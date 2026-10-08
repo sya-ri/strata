@@ -31,6 +31,9 @@ public object HistoricalWorkloadEvidence {
             return
         }
         verifySurface()
+        ChildLayoutBenchmark.verifyWork()
+        check(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")).size == 4)
+        verifyIncludes(JmhWorkloadInventory.capture(listOf(ChildLayoutBenchmark::class.java), setOf("avgt")), listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ChildLayoutBenchmark\\..*"))
         val fixtures = HistoricalPerformanceEvidence.fixtures()
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
         check(JmhWorkloadInventory.capture(listOf(NonuniformOverlayBenchmark::class.java), setOf("avgt")).size == 6)

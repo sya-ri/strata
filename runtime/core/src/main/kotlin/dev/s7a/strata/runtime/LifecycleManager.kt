@@ -124,6 +124,11 @@ internal class LifecycleManager(
 
     private fun markCleanupStarted(retained: RetainedEntry) {
         retained.cleanupStarted = true
+        retained.childMeasurePass = null
+        retained.childLayoutPass = null
+        retained.parentMeasurePass = null
+        retained.parentLayoutPass = null
+        retained.parentOffset = null
         retained.paintSnapshot = null
         retained.paintSubtreeDirty = true
         var ancestor = retained.parent
