@@ -611,3 +611,30 @@ Preserve the exact baseline/candidate source refs, archive digests, actual paren
 Keep all 46 CPU and normalized-allocation rows, cold/dense/dirty/clean controls, callback/phase evidence and regressions; never substitute a selected faster subset or a Quick run.
 Preparation and collection use fully qualified tasks with quoted `-Pstrata.jvmOnly=true`; final shared/browser/all-platform checks remain complete.
 This native-free logical corpus provides no native input delivery/latency, source/raster/metadata/output uploads, GPU time or FPS evidence; those metrics are inapplicable.
+
+## Bounded display line corpus
+
+DisplayLineLayoutBenchmark contains 52 fixed public retained cases covering 10,000-scalar wrapped previews, positive maxLines, height zero/one/nine/ten and spacing boundaries, word/character/no wrap, CRLF and every mandatory break, supplementary characters, mixed fonts, signed/zero/native exceptional metrics, display-order probes and first/middle/last ellipsis cuts.
+Initial cases replace keyed components within a primed host/font owner.
+Edit, reflow and height cases include both restoring mutations and both settled frames in CPU and B/op; clean cases include one unchanged frame.
+Unwrapped, unbounded, original single-line and full TextArea layout remain explicit controls.
+Single-line host dimensions contain its complete natural size.
+
+All immutable texts, font split points, keys, sizes, profiles and policies are prepared before collection.
+Independent complete-layout reference rows are temporary untimed inputs and do not borrow candidate scalar arrays or geometry.
+Reference checks cover complete original content/semantics, admitted ranges and nextStart, forward Float/native positions, truncation, natural geometry and independently placed shadow/foreground pixels at densities one through three.
+Pixels are captured within a bounded 64-by-64 window; full scalar/metric checks cover long visible rows and omitted source semantics.
+Restoring opportunities also preserve full window pixels, ordered old frames and detached old line arrays through replacement and terminal release.
+
+A separate untimed adapter invokes the actual private range helper with complete measured advances and reports its produced range count.
+Its original five-argument and bounded six-argument symbols are decoded at the reflection boundary; no production counter, per-input timer or benchmark launcher branch is added.
+This probe is separate helper work evidence, not instrumentation of the timed public callback.
+Complete scalar measurement remains required.
+The reversed whole-line synthetic backend exercises ordering/font provenance; applicable native bidi/shaping correctness is verified by the existing native gates.
+
+Prepare the candidate fixture and generated JMH classes/resources once, keeping the existing TextLineLayoutAssets, TextLineLayoutAccess, TextAreaInputAccess and shared metric/control inputs identical.
+Freeze all fixture/helper/collector/harness/control identities on both sides and vary only the actual Minecraft runtime archive.
+Use the existing fully qualified JVM preparation/collection tasks with quoted -Pstrata.jvmOnly=true; root and all-platform acceptance remain unscoped.
+Collect three independent Standard invocations per side and publish all 52 CPU/allocation rows, actual helper counts, controls and regressions.
+No paired result is accepted until identical prerequisites, archive and actual loaded class-tree/input provenance, complete fixture gates and final current-revision consumers pass.
+Native input latency, uploads, GPU composition/GUI consumption and FPS are inapplicable to this logical CPU corpus and must not be inferred from range counts.
