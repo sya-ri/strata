@@ -166,12 +166,12 @@ public open class RetainedTraversalBenchmark {
         /**
          * Checks live callback work and current ownership outside measured invocations.
          */
-        public fun verify(change: Change) = scene.verify(change)
+        public fun verify(change: Change): Unit = scene.verify(change)
 
         /**
          * Checks every independent subscription and node was released by the measured lifetime.
          */
-        public fun verifyLifetime() = checkNotNull(lifetime).verifyLifetime()
+        public fun verifyLifetime(): Unit = checkNotNull(lifetime).verifyLifetime()
 
         /**
          * Releases all current ownership and requires no subscription or primitive survives.
