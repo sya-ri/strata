@@ -14,7 +14,6 @@ import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.math.BigInteger
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.zip.Adler32
 import java.util.zip.CRC32
 
@@ -875,16 +874,14 @@ private object HeadlessImplementation {
             output.finishChunk(13)
             output.putInt(zlibBytes).putInt(0x49444154)
             output.put(0x78).put(0x01)
-            val blocks = StoredBlocks(output, scanlineBytes)
+            val blocks = StoredBlocks(output.array(), output.position(), scanlineBytes)
             var source = 0
             repeat(size.height) {
                 blocks.putByte(0)
-                repeat(size.width) {
-                    blocks.putPixel(pixels[source])
-                    source += 1
-                }
+                blocks.putPixels(pixels, source, size.width)
+                source += size.width
             }
-            blocks.finish()
+            output.position(blocks.finish())
             output.finishChunk(zlibBytes)
             output.putInt(0).putInt(0x49454E44)
             output.finishChunk(0)
@@ -903,50 +900,84 @@ private object HeadlessImplementation {
          * Writes filter and RGBA bytes directly into the invocation-owned final PNG storage.
          */
         private class StoredBlocks(
-            private val output: ByteBuffer,
+            private val output: ByteArray,
+            private var position: Int,
             private var unwrittenBytes: Int,
         ) {
             private val adler = Adler32()
             private var blockRemaining = 0
-            private var blockStart = output.position()
+            private var blockStart = position
 
             fun putByte(value: Int) {
                 if (blockRemaining == 0) startBlock()
-                output.put(value.toByte())
+                output[position] = value.toByte()
+                position += 1
                 blockRemaining -= 1
             }
 
-            fun putPixel(argb: Int) {
-                if (4 <= blockRemaining) {
-                    output.putInt(Integer.rotateLeft(argb, 8))
-                    blockRemaining -= 4
-                } else {
-                    // A stored-block boundary may split any channel of a pixel.
-                    putByte(argb ushr 16)
-                    putByte(argb ushr 8)
-                    putByte(argb)
-                    putByte(argb ushr 24)
+            fun putPixels(
+                pixels: IntArray,
+                start: Int,
+                length: Int,
+            ) {
+                var source = start
+                val end = start + length
+                while (source < end) {
+                    val count = minOf(end - source, blockRemaining / 4)
+                    if (count == 0) {
+                        // A stored-block boundary may split any channel of a pixel.
+                        val argb = pixels[source]
+                        putByte(argb ushr 16)
+                        putByte(argb ushr 8)
+                        putByte(argb)
+                        putByte(argb ushr 24)
+                        source += 1
+                    } else {
+                        // Keep the contiguous pixel span on local indices instead of mutating a buffer per channel.
+                        val limit = source + count
+                        var target = position
+                        while (source < limit) {
+                            val argb = pixels[source]
+                            output[target] = (argb ushr 16).toByte()
+                            output[target + 1] = (argb ushr 8).toByte()
+                            output[target + 2] = argb.toByte()
+                            output[target + 3] = (argb ushr 24).toByte()
+                            source += 1
+                            target += 4
+                        }
+                        position = target
+                        blockRemaining -= count * 4
+                    }
                 }
             }
 
-            fun finish() {
+            fun finish(): Int {
                 updateAdler()
-                output.putInt(adler.value.toInt())
+                val checksum = adler.value.toInt()
+                output[position] = (checksum ushr 24).toByte()
+                output[position + 1] = (checksum ushr 16).toByte()
+                output[position + 2] = (checksum ushr 8).toByte()
+                output[position + 3] = checksum.toByte()
+                position += 4
+                return position
             }
 
             private fun startBlock() {
                 updateAdler()
                 val length = minOf(unwrittenBytes, MAX_STORED_BLOCK_LENGTH)
                 unwrittenBytes -= length
-                output.put(if (unwrittenBytes == 0) 0x01 else 0x00)
-                output.order(ByteOrder.LITTLE_ENDIAN).putShort(length.toShort()).putShort(length.inv().toShort())
-                output.order(ByteOrder.BIG_ENDIAN)
-                blockStart = output.position()
+                output[position] = if (unwrittenBytes == 0) 0x01 else 0x00
+                output[position + 1] = length.toByte()
+                output[position + 2] = (length ushr 8).toByte()
+                output[position + 3] = length.inv().toByte()
+                output[position + 4] = (length.inv() ushr 8).toByte()
+                position += 5
+                blockStart = position
                 blockRemaining = length
             }
 
             private fun updateAdler() {
-                adler.update(output.array(), blockStart, output.position() - blockStart)
+                adler.update(output, blockStart, position - blockStart)
             }
         }
 
