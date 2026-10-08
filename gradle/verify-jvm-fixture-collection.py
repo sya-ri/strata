@@ -87,7 +87,9 @@ def main():
     parameters.write_text("width=16\n", encoding="utf-8")
     inputs = evidence / "inputs.properties"
     inputs.write_text(f"scoped-model-input={extra.as_posix()}\n", encoding="utf-8")
-    wrapper = [str(root / "gradlew.bat")] if os.name == "nt" else ["bash", str(root / "gradlew")]
+    wrapper = ([str(root / "gradlew.bat")] if os.name == "nt" else ["bash", str(root / "gradlew")]) + [
+        "--no-daemon", "--max-workers=1", "-Pkotlin.compiler.execution.strategy=in-process",
+    ]
     multiplatform = {":api", ":runtime:core", ":performance-testkit"}
     benchmarks = {":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks"}
     projects = multiplatform | benchmarks | {
@@ -101,20 +103,20 @@ def main():
     tasks += [f"{owner}:{task}" for owner in sorted(benchmarks) for task in ("jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses")]
     tasks += [":quality:benchmarks:jmhHistorical", ":quality:component-benchmarks:jmhComponents", ":quality:remote-benchmarks:jmhRemote", ":performance-testkit:processEvidence"]
     init = evidence / "project-model.init.gradle"
-    init.write_text("""gradle.projectsEvaluated {
+    init.write_text("gradle.projectsEvaluated {\n" + f"    if (gradle.rootProject.projectDir.canonicalFile != new File({json.dumps(root.as_posix())}).canonicalFile) return\n" + """
     def paths = gradle.rootProject.allprojects.findAll { it.file('build.gradle.kts').isFile() }.collect { it.path }.findAll { it != ':' }.sort()
     println('EXPLICIT_JVM_PROJECTS=' + paths.join(','))
 }
 """, encoding="utf-8")
     with (evidence / "task-closure.log").open("w", encoding="utf-8") as log:
-        subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "--max-workers=2", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+        subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
     closure_log = (evidence / "task-closure.log").read_text(encoding="utf-8")
     selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
     assert set(selected.split(",")) == projects
     assert "verifyPublishedHostInventory SKIPPED" not in closure_log and "verifyPublishedPerformanceInventory SKIPPED" not in closure_log
     (evidence / "project-model.json").write_text(json.dumps({"explicit_projects": sorted(projects), "explicit_project_count": len(projects), "requested_tasks": tasks}, indent=2), encoding="utf-8")
     arguments = [
-        "-Pstrata.jvmOnly=true", "--max-workers=2",
+        "-Pstrata.jvmOnly=true",
         ":quality:component-benchmarks:jmhComponents",
         "-Pstrata.performance.quick=true",
         "-Pstrata.performance.benchmarks=ScopedModelFixtureBenchmark",

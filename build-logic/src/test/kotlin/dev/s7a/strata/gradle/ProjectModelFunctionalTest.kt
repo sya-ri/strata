@@ -14,8 +14,9 @@ internal class ProjectModelFunctionalTest {
     @TempDir
     lateinit var directory: Path
 
-    private val repository = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-        .first { Files.isRegularFile(it.resolve("gradle/performance-modules.tsv")) }
+    private val repository =
+        generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+            .first { Files.isRegularFile(it.resolve("gradle/performance-modules.tsv")) }
 
     /** Copies the production selection branch and real project inventory into a plugin-free build. */
     @BeforeEach
@@ -25,13 +26,17 @@ internal class ProjectModelFunctionalTest {
             directory.resolve("settings.gradle.kts"),
             "rootProject.name = \"model-fixture\"\n" + settings.substringAfter("rootProject.name = \"strata\""),
         )
-        val common = Regex("\"(:[a-z][a-z0-9:-]*)\"").findAll(settings).map { it.groupValues[1] }
-            .filter { Files.isRegularFile(repository.resolve(it.removePrefix(":").replace(':', '/')).resolve("build.gradle.kts")) }
-        val versioned = listOf("runtime", "integration").flatMap { parent ->
-            Files.newDirectoryStream(repository.resolve(parent), "minecraft-fabric-*").use { projects ->
-                projects.filter { Files.isRegularFile(it.resolve("build.gradle.kts")) }.map { ":$parent:${it.fileName}" }
+        val common =
+            Regex("\"(:[a-z][a-z0-9:-]*)\"")
+                .findAll(settings)
+                .map { it.groupValues[1] }
+                .filter { Files.isRegularFile(repository.resolve(it.removePrefix(":").replace(':', '/')).resolve("build.gradle.kts")) }
+        val versioned =
+            listOf("runtime", "integration").flatMap { parent ->
+                Files.newDirectoryStream(repository.resolve(parent), "minecraft-fabric-*").use { projects ->
+                    projects.filter { Files.isRegularFile(it.resolve("build.gradle.kts")) }.map { ":$parent:${it.fileName}" }
+                }
             }
-        }
         (common.toList() + versioned).distinct().forEach { path ->
             val project = directory.resolve(path.removePrefix(":").replace(':', '/'))
             Files.createDirectories(project)
@@ -74,15 +79,29 @@ internal class ProjectModelFunctionalTest {
     @Test
     fun `JVM model rejects full acceptance and mixed requests before project configuration`() {
         listOf(
-            "check", ":check", ":quality:component-benchmarks:check", ":runtime:minecraft-fonts-lwjgl:check",
-            ":verifyPublishedPerformanceInventory", ":quality:component-benchmarks:verifyPublishedHostInventory",
-            ":quality:component-benchmarks:capturePublishedHostInventory", "publishToMavenLocal",
-            ":performance-testkit:publishToMavenLocal", ":koverHtmlReport", ":koverXmlReport",
-            ":runtime:minecraft-fonts-lwjgl:verifyOfflineFontParity", ":runtime:web:check",
-            ":quality:component-benchmarks:jmhC", ":q:component-benchmarks:jmhComponents", ":ciMinecraftCheck",
-            ":quality:component-benchmarks:jmhHistorical", ":quality:benchmarks:jmhRemote",
-            ":quality:remote-benchmarks:processEvidence", ":quality:detekt-rules:checkKotlinAbi",
-            ":quality:component-benchmarks:updateKotlinAbi", ":api:jar", ":runtime:headless:jvmTest",
+            "check",
+            ":check",
+            ":quality:component-benchmarks:check",
+            ":runtime:minecraft-fonts-lwjgl:check",
+            ":verifyPublishedPerformanceInventory",
+            ":quality:component-benchmarks:verifyPublishedHostInventory",
+            ":quality:component-benchmarks:capturePublishedHostInventory",
+            "publishToMavenLocal",
+            ":performance-testkit:publishToMavenLocal",
+            ":koverHtmlReport",
+            ":koverXmlReport",
+            ":runtime:minecraft-fonts-lwjgl:verifyOfflineFontParity",
+            ":runtime:web:check",
+            ":quality:component-benchmarks:jmhC",
+            ":q:component-benchmarks:jmhComponents",
+            ":ciMinecraftCheck",
+            ":quality:component-benchmarks:jmhHistorical",
+            ":quality:benchmarks:jmhRemote",
+            ":quality:remote-benchmarks:processEvidence",
+            ":quality:detekt-rules:checkKotlinAbi",
+            ":quality:component-benchmarks:updateKotlinAbi",
+            ":api:jar",
+            ":runtime:headless:jvmTest",
         ).forEach { task ->
             rejected("fixture preparation", "-Pstrata.jvmOnly=true", ":quality:component-benchmarks:jmhComponents", task)
         }
@@ -137,7 +156,10 @@ internal class ProjectModelFunctionalTest {
     }
 
     /** Requires settings to reject the request before evaluating even the fixture's root build script. */
-    private fun rejected(reason: String, vararg arguments: String) {
+    private fun rejected(
+        reason: String,
+        vararg arguments: String,
+    ) {
         Files.deleteIfExists(directory.resolve("included-projects.txt"))
         val result = runner(*arguments).buildAndFail()
         assertTrue(result.output.contains(reason), result.output)
@@ -145,11 +167,24 @@ internal class ProjectModelFunctionalTest {
     }
 
     /** Uses the current Gradle distribution with offline, single-worker, plugin-free fixture builds. */
-    private fun runner(vararg arguments: String): GradleRunner = GradleRunner.create().withProjectDir(directory.toFile())
-        .withArguments(*arguments, "--offline", "--max-workers=1", "--stacktrace")
+    private fun runner(vararg arguments: String): GradleRunner =
+        GradleRunner
+            .create()
+            .withProjectDir(directory.toFile())
+            .withArguments(*arguments, "--offline", "--max-workers=1", "--stacktrace")
 
-    private val jvmProjects = setOf(
-        ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
-        ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
-    )
+    private val jvmProjects =
+        setOf(
+            ":api",
+            ":runtime:core",
+            ":runtime:headless",
+            ":runtime:minecraft",
+            ":runtime:minecraft-fonts-lwjgl",
+            ":runtime:remote",
+            ":quality:detekt-rules",
+            ":performance-testkit",
+            ":quality:benchmarks",
+            ":quality:component-benchmarks",
+            ":quality:remote-benchmarks",
+        )
 }
