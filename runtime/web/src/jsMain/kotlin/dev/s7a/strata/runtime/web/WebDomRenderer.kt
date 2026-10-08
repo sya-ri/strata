@@ -58,7 +58,7 @@ internal class WebDomRenderer(
         entries.forEach { entry ->
             val previous = nodes[entry.identity]
             val retained =
-                if ((previous?.entry?.tag ?: previous?.element?.tagName?.lowercase()) == entry.tag) {
+                if (previous != null && (previous.entry?.tag ?: previous.element.tagName.lowercase()) == entry.tag) {
                     previous
                 } else {
                     val element = checkNotNull(root.ownerDocument).createElement(entry.tag) as HTMLElement
