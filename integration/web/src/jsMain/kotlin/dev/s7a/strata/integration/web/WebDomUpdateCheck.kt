@@ -49,7 +49,9 @@ internal object WebDomUpdateCheck {
      */
     fun verify(theme: WebTheme): String = JSON.stringify((listOf(1, 100, 1_000).flatMap { verifySize(it, theme) } + verifyClip(theme)).toTypedArray())
 
-    private fun verifyClip(theme: WebTheme): List<dynamic> {
+    private fun verifyClip(
+        theme: WebTheme,
+    ): List<dynamic> {
         val viewport = IntSize(120, 80)
         val initial = ClipInputs(IntRect(5, 7, 85, 47), IntRect(10, 12, 50, 30), ArgbColor(0x80804020.toInt()))
         val state = mutableStateOf(initial)
@@ -74,7 +76,12 @@ internal object WebDomUpdateCheck {
         }
     }
 
-    private fun compareClip(root: HTMLElement, inputs: ClipInputs, theme: WebTheme, index: Int): dynamic {
+    private fun compareClip(
+        root: HTMLElement,
+        inputs: ClipInputs,
+        theme: WebTheme,
+        index: Int,
+    ): dynamic {
         val reference = document.createElement("div") as HTMLElement
         checkNotNull(document.body).appendChild(reference)
         try {
@@ -89,15 +96,19 @@ internal object WebDomUpdateCheck {
 
     // Keep one mounted owner through the complete transition and failure sequence.
     @Suppress("LongMethod")
-    private fun verifySize(count: Int, theme: WebTheme): List<dynamic> {
+    private fun verifySize(
+        count: Int,
+        theme: WebTheme,
+    ): List<dynamic> {
         val initial = Snapshot((0 until count).toList())
         val scenario = Scenario(initial)
         val root = document.createElement("div") as HTMLElement
-        val container = (document.createElement("div") as HTMLElement).apply {
-            style.position = "absolute"
-            style.left = "0px"
-            style.top = "0px"
-        }
+        val container =
+            (document.createElement("div") as HTMLElement).apply {
+                style.position = "absolute"
+                style.left = "0px"
+                style.top = "0px"
+            }
         checkNotNull(document.body).appendChild(container)
         container.appendChild(root)
         val viewport = IntSize(320, count * 24 + 20)
@@ -188,7 +199,14 @@ internal object WebDomUpdateCheck {
         return evidence
     }
 
-    private fun compare(root: HTMLElement, snapshot: Snapshot, viewport: IntSize, theme: WebTheme, phase: String, mutations: Int): dynamic {
+    private fun compare(
+        root: HTMLElement,
+        snapshot: Snapshot,
+        viewport: IntSize,
+        theme: WebTheme,
+        phase: String,
+        mutations: Int,
+    ): dynamic {
         val count = snapshot.order.size
         val reference = document.createElement("div") as HTMLElement
         checkNotNull(document.body).appendChild(reference)
@@ -224,26 +242,29 @@ internal object WebDomUpdateCheck {
     /**
      * Fixed-size native primitives and one caller-owned revision source, without a renderer cache or measurement code.
      */
-    private class Scenario(initial: Snapshot) {
+    private class Scenario(
+        initial: Snapshot,
+    ) {
         val snapshot = mutableStateOf(initial)
         var activations = 0
 
-        fun definition(): UiDefinition = UiDefinition("DOM updates") {
-            val current = snapshot.value
-            Column(spacing = 4) {
-                for (identity in current.order) {
-                    val changed = identity in current.changed
-                    val label = if (changed) "After!" else "Before"
-                    val modifier = Modifier.Empty.size(if (current.wide) 120 else 100, 20)
-                    val key = ElementKey(identity)
-                    when (Kind.entries[identity % Kind.entries.size]) {
-                        Kind.Button -> Button(label, enabled = current.enabled, modifier = modifier.onActivate { activations += 1 }, key = key)
-                        Kind.Progress -> ProgressBar(if (changed) 0.75 else 0.25, IntSize(100, 20), modifier = modifier, key = key)
-                        Kind.Text -> Text(label, style = if (changed) TextStyle.Inactive else TextStyle.Normal, modifier = modifier, key = key)
+        fun definition(): UiDefinition =
+            UiDefinition("DOM updates") {
+                val current = snapshot.value
+                Column(spacing = 4) {
+                    for (identity in current.order) {
+                        val changed = identity in current.changed
+                        val label = if (changed) "After!" else "Before"
+                        val modifier = Modifier.Empty.size(if (current.wide) 120 else 100, 20)
+                        val key = ElementKey(identity)
+                        when (Kind.entries[identity % Kind.entries.size]) {
+                            Kind.Button -> Button(label, enabled = current.enabled, modifier = modifier.onActivate { activations += 1 }, key = key)
+                            Kind.Progress -> ProgressBar(if (changed) 0.75 else 0.25, IntSize(100, 20), modifier = modifier, key = key)
+                            Kind.Text -> Text(label, style = if (changed) TextStyle.Inactive else TextStyle.Normal, modifier = modifier, key = key)
+                        }
                     }
                 }
             }
-        }
     }
 
     /**
@@ -258,7 +279,9 @@ internal object WebDomUpdateCheck {
     /**
      * Native attribute names decoded at the mutation-record boundary.
      */
-    private enum class UnchangedAttribute(val token: String) {
+    private enum class UnchangedAttribute(
+        val token: String,
+    ) {
         Style("style"),
         Identity("data-strata-node"),
         Theme("data-strata-theme"),
@@ -267,31 +290,47 @@ internal object WebDomUpdateCheck {
     /**
      * Detached decorative geometry, clipping and source color for incremental/full-render parity.
      */
-    private data class ClipInputs(val bounds: IntRect, val clip: IntRect, val color: ArgbColor)
+    private data class ClipInputs(
+        val bounds: IntRect,
+        val clip: IntRect,
+        val color: ArgbColor,
+    )
 
     /**
      * Public extension primitive proving that decorative clipped commands retain their ordinary renderer contract.
      */
-    private class ClipElement(val inputs: ClipInputs) : Element(ElementIdentity.Positional, TYPE) {
-        private class Node(var inputs: ClipInputs) : RetainedNode(), MeasureNode, PaintNode {
-            override fun measure(scope: MeasureScope, constraints: Constraints): IntSize = constraints.constrain(IntSize(120, 80))
+    private class ClipElement(
+        val inputs: ClipInputs,
+    ) : Element(ElementIdentity.Positional, TYPE) {
+        private class Node(
+            var inputs: ClipInputs,
+        ) : RetainedNode(),
+            MeasureNode,
+            PaintNode {
+            override fun measure(
+                scope: MeasureScope,
+                constraints: Constraints,
+            ): IntSize = constraints.constrain(IntSize(120, 80))
 
-            override fun paint(scope: PaintScope) {
+            override fun paint(
+                scope: PaintScope,
+            ) {
                 scope.withClip(inputs.clip) { scope.fillRectangle(inputs.bounds, inputs.color) }
             }
         }
 
         companion object {
-            private val TYPE = ElementType(
-                elementClass = ClipElement::class,
-                nodeClass = Node::class,
-                validateLocal = { _ -> },
-                createNode = { Node(it.inputs) },
-                updateNode = { previous, current, node ->
-                    node.inputs = current.inputs
-                    if (previous.inputs == current.inputs) DirtyMask.None else DirtyMask.of(DirtyPhase.Paint)
-                },
-            )
+            private val TYPE =
+                ElementType(
+                    elementClass = ClipElement::class,
+                    nodeClass = Node::class,
+                    validateLocal = { _ -> },
+                    createNode = { Node(it.inputs) },
+                    updateNode = { previous, current, node ->
+                        node.inputs = current.inputs
+                        if (previous.inputs == current.inputs) DirtyMask.None else DirtyMask.of(DirtyPhase.Paint)
+                    },
+                )
         }
     }
 }
