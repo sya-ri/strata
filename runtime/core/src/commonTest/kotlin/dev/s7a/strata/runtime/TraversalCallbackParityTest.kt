@@ -60,18 +60,19 @@ internal class TraversalCallbackParityTest {
         val tree = UiTree()
         val first = fixture.element(1, Kind.Participant, modifier = fixture.modifier(11))
         val second = fixture.element(2, Kind.Participant)
-        tree.update(fixture.element(0, Kind.Participant, listOf(first, second), fixture.modifier(10)))
+        val rootModifiers = fixture.modifier(10).then(fixture.modifier(20))
+        tree.update(fixture.element(0, Kind.Participant, listOf(first, second), rootModifiers))
         try {
             frame(tree)
-            assertEquals(listOf(10, 0, 11, 1, 2).map { UiText.Literal(it.toString()) }, tree.semantics().map { it.semantics.label })
+            assertEquals(listOf(10, 20, 0, 11, 1, 2).map { UiText.Literal(it.toString()) }, tree.semantics().map { it.semantics.label })
             fixture.events.clear()
             repeat(3) { assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0))) }
-            assertEquals(listOf(0, 10, 11, 1, 2), fixture.events.filter { it.phase == Phase.FocusGained }.map { it.id })
+            assertEquals(listOf(20, 10, 0, 11, 1, 2), fixture.events.filter { it.phase == Phase.FocusGained }.map { it.id })
             tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = true)))
             assertEquals(listOf(11, 1), fixture.events.filter { it.phase == Phase.FocusGained }.takeLast(2).map { it.id })
-            tree.update(fixture.element(0, Kind.Participant, listOf(second, first), fixture.modifier(10)))
+            tree.update(fixture.element(0, Kind.Participant, listOf(second, first), rootModifiers))
             frame(tree)
-            assertEquals(listOf(10, 0, 2, 11, 1).map { UiText.Literal(it.toString()) }, tree.semantics().map { it.semantics.label })
+            assertEquals(listOf(10, 20, 0, 2, 11, 1).map { UiText.Literal(it.toString()) }, tree.semantics().map { it.semantics.label })
         } finally {
             tree.close()
         }
@@ -105,6 +106,33 @@ internal class TraversalCallbackParityTest {
         assertFailsWith<IllegalStateException> { ambiguous.layout() }
         assertEquals(TreeState.Poisoned, ambiguous.state)
         ambiguous.close()
+    }
+
+    @Test
+    fun retainedOwnerWithoutTargetsPreservesReacquisitionAndItsOriginalTabPosition() {
+        for (traverse in listOf(false, true)) {
+            val fixture = TraversalTestFixture()
+            val tree = UiTree()
+            val first = fixture.element(1, Kind.Focus)
+            val last = fixture.element(3, Kind.Focus)
+            tree.update(fixture.element(0, children = listOf(first, fixture.element(2, modifier = fixture.modifier(12, initial = true)), last)))
+            try {
+                frame(tree)
+                tree.update(fixture.element(0, children = listOf(first, fixture.element(2), last)))
+                frame(tree)
+                fixture.events.clear()
+                if (traverse) {
+                    tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0))
+                    assertEquals(listOf(Event(Phase.FocusGained, 3)), fixture.events)
+                } else {
+                    tree.update(fixture.element(0, children = listOf(first, fixture.element(2, modifier = fixture.modifier(22)), last)))
+                    frame(tree)
+                    assertEquals(listOf(Event(Phase.FocusGained, 22)), fixture.events.filter { it.phase == Phase.FocusGained })
+                }
+            } finally {
+                tree.close()
+            }
+        }
     }
 
     @Test

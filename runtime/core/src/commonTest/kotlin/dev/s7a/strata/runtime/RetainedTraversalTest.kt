@@ -5,6 +5,7 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.runtime.TraversalTestFixture.Kind
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -104,6 +105,31 @@ internal class RetainedTraversalTest {
             lifecycle.cleanup(root)
         }
         assertReleased(root)
+    }
+
+    @Test
+    fun terminalCleanupClearsEverySummaryBeforeAnyFailingCallbackAndRejectsAllInvalidation() {
+        val fixture = TraversalTestFixture()
+        val primary = IllegalArgumentException("detach")
+        val later = IllegalStateException("dispose")
+        val tracker = DirtyTracker()
+        var captured: RetainedNode? = null
+        val lifecycle = LifecycleManager(NodeOwnershipRegistry(), OwnerGuard(), tracker) {
+            val root = checkNotNull(captured)
+            assertReleased(root)
+            root.children.forEach(::assertReleased)
+            fixture.nodes.values.forEach { node -> assertFailsWith<IllegalStateException> { node.dirty() } }
+        }
+        val reconciler = Reconciler(lifecycle, tracker)
+        val root = reconciler.reconcileRoot(null, fixture.element(0, children = listOf(fixture.element(1, Kind.Participant), fixture.element(2, Kind.Dynamic))))
+        captured = root
+        reconciler.markInstalled(root)
+        lifecycle.attachPending(root)
+        fixture.callbacks[TraversalTestFixture.Event(TraversalTestFixture.Phase.Detach, 2)] = { throw primary }
+        fixture.callbacks[TraversalTestFixture.Event(TraversalTestFixture.Phase.Dispose, 2)] = { throw later }
+        assertSame(primary, lifecycle.cleanup(root))
+        assertSame(later, primary.suppressedExceptions.single())
+        assertEquals(listOf(2, 1, 0), fixture.events.filter { it.phase == TraversalTestFixture.Phase.Dispose }.map { it.id })
     }
 
     @Test

@@ -242,13 +242,15 @@ internal class FocusedInputPipeline {
     }
 
     private fun logicalOwners(root: RetainedNode): List<RetainedNode> {
-        if (root.hasFocusTargets.not()) return emptyList()
+        // A retained owner can outlive all its targets; preserve its original position until focus changes or placement removes it.
+        val includeAllOwners = focusedOwner?.ownsFocusTargets == false
+        if (root.hasFocusTargets.not() && includeAllOwners.not()) return emptyList()
         val output = ArrayList<RetainedNode>()
 
         fun visit(current: RetainedNode) {
             if (current.effectiveRoot.placed) {
-                if (current.ownsFocusTargets) output += current
-                val children = current.focusChildren
+                if (current.ownsFocusTargets || includeAllOwners) output += current
+                val children = if (includeAllOwners) current.children else current.focusChildren
                 for (index in children.indices) visit(children[index])
             }
         }
