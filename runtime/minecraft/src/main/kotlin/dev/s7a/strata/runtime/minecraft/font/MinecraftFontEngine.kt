@@ -4,7 +4,9 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.SampledImageOrientation
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Owner-thread portable glyph engine for one immutable resource state.
@@ -425,6 +427,7 @@ public class MinecraftFontEngine
             )
         }
 
+        @OptIn(InternalStrataRuntimeApi::class)
         private fun unihexGlyph(
             provider: FontProvider.Unihex,
             codePoint: Int,
@@ -448,7 +451,7 @@ public class MinecraftFontEngine
                 0.0f,
                 width / 2.0f,
                 8.0f,
-                createDrawImage(IntSize(width, 16), pixels),
+                createOwnedDrawImage(IntSize(width, 16), pixels),
                 boldOffset = 0.5f,
                 shadowOffset = 0.5f,
             )
