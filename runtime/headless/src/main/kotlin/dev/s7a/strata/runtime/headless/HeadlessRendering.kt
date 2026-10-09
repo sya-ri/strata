@@ -224,7 +224,7 @@ private object HeadlessImplementation {
             paintCommands(dimensions, commands, borrowed, scratch)
         }
 
-    @Suppress("CyclomaticComplexMethod") // Explicit ordering defers materialization until a primitive can touch physical pixels.
+    @Suppress("CyclomaticComplexMethod", "LongMethod", "LoopWithTooManyJumpStatements") // Keep composition batching and nonpainting rejection in one ordered traversal without capturing mutable raster state.
     private fun paintCommands(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
