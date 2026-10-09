@@ -64,14 +64,15 @@ internal class TraversalObservedParityTest {
         val fixture = TraversalTestFixture()
         val source = Source(0)
         val seen = ArrayList<Int>()
-        val session = createRuntimeUiSession {
-            evaluateComponentTree {
-                Observe(source) { value ->
-                    seen.add(value)
-                    element(fixture.element(1, Kind.Participant))
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    Observe(source) { value ->
+                        seen.add(value)
+                        element(fixture.element(1, Kind.Participant))
+                    }
                 }
             }
-        }
         val event = Event(Phase.Layout, 1)
         fixture.callbacks[event] = {
             source.publish(1)
@@ -98,20 +99,21 @@ internal class TraversalObservedParityTest {
         depth: Int,
         generation: Int,
     ): Element {
-        val children = List(256) { ordinal ->
-            val id = ordinal + 1
-            val kind = if (ordinal < participants) Kind.Participant else Kind.Plain
-            if (ordinal < sources.size) {
-                evaluateComponentTree {
-                    Observe(sources[ordinal]) { value ->
-                        calls[ordinal] += 1
-                        element(fixture.element(id, kind, width = 4 + (value + generation) % 2))
+        val children =
+            List(256) { ordinal ->
+                val id = ordinal + 1
+                val kind = if (ordinal < participants) Kind.Participant else Kind.Plain
+                if (ordinal < sources.size) {
+                    evaluateComponentTree {
+                        Observe(sources[ordinal]) { value ->
+                            calls[ordinal] += 1
+                            element(fixture.element(id, kind, width = 4 + (value + generation) % 2))
+                        }
                     }
+                } else {
+                    fixture.element(id, kind, width = 4 + generation % 2)
                 }
-            } else {
-                fixture.element(id, kind, width = 4 + generation % 2)
             }
-        }
         var root: Element = fixture.element(0, children = children)
         repeat(depth) { root = fixture.element(1000 + it, children = listOf(root, fixture.element(2000 + it))) }
         return root
@@ -120,7 +122,9 @@ internal class TraversalObservedParityTest {
     /**
      * Owner-thread source; callbacks only enqueue immutable revisions into the runtime.
      */
-    private class Source(initial: Int) : StateSource<Int> {
+    private class Source(
+        initial: Int,
+    ) : StateSource<Int> {
         private var snapshot = StateSnapshot(StateRevision(0), initial)
         private var observer: ((StateSnapshot<Int>) -> Unit)? = null
 

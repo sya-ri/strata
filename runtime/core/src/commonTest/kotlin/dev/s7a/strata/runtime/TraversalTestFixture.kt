@@ -112,7 +112,10 @@ internal class TraversalTestFixture {
     /**
      * One callback on one component or modifier.
      */
-    data class Event(val phase: Phase, val id: Int)
+    data class Event(
+        val phase: Phase,
+        val id: Int,
+    )
 
     private fun record(
         phase: Phase,
@@ -171,7 +174,12 @@ internal class TraversalTestFixture {
     /**
      * Shared geometry and lifecycle behavior; it deliberately supplies no focus or semantics capability.
      */
-    open class ProbeNode(var description: ProbeElement) : Node(), MeasureNode, LayoutNode, LifecycleNode {
+    open class ProbeNode(
+        var description: ProbeElement,
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        LifecycleNode {
         /**
          * Publishes phase work through the real owner-confined runtime binding.
          */
@@ -214,7 +222,10 @@ internal class TraversalTestFixture {
     /**
      * Live dynamic declarations let parent callbacks insert and remove descendants before the same traversal reaches them.
      */
-    class DynamicProbe(description: ProbeElement) : ProbeNode(description), DynamicChildrenNode {
+    class DynamicProbe(
+        description: ProbeElement,
+    ) : ProbeNode(description),
+        DynamicChildrenNode {
         /**
          * Current dynamic children, never copied into a traversal summary.
          */
@@ -229,7 +240,10 @@ internal class TraversalTestFixture {
     /**
      * Mutable acceptance remains a live property of the current description.
      */
-    private open class FocusProbe(description: ProbeElement) : ProbeNode(description), FocusTargetNode {
+    private open class FocusProbe(
+        description: ProbeElement,
+    ) : ProbeNode(description),
+        FocusTargetNode {
         override val acceptsFocus: Boolean get() = description.accepting
         override val requestsInitialFocus: Boolean get() = description.initial
 
@@ -239,7 +253,10 @@ internal class TraversalTestFixture {
     /**
      * Emits one unresolved payload through the actual guarded semantics scope.
      */
-    private class SemanticsProbe(description: ProbeElement) : ProbeNode(description), SemanticsNode {
+    private class SemanticsProbe(
+        description: ProbeElement,
+    ) : ProbeNode(description),
+        SemanticsNode {
         override fun semantics(scope: SemanticsScope) {
             record(Phase.Semantics)
             scope.emit(Semantics(label = UiText.Literal(description.id.toString())))
@@ -249,7 +266,10 @@ internal class TraversalTestFixture {
     /**
      * Supplies both independent participant capabilities for dense-tree controls.
      */
-    private class ParticipantProbe(description: ProbeElement) : FocusProbe(description), SemanticsNode {
+    private class ParticipantProbe(
+        description: ProbeElement,
+    ) : FocusProbe(description),
+        SemanticsNode {
         override fun semantics(scope: SemanticsScope) {
             record(Phase.Semantics)
             scope.emit(Semantics(label = UiText.Literal(description.id.toString())))
@@ -273,9 +293,14 @@ internal class TraversalTestFixture {
     /**
      * Ordinary modifier ownership, including detach/dispose ordering on replacement.
      */
-    private open class ProbeModifier(protected val description: ProbeModifierElement) : ModifierNode(), LifecycleNode {
+    private open class ProbeModifier(
+        protected val description: ProbeModifierElement,
+    ) : ModifierNode(),
+        LifecycleNode {
         override fun attach() = record(Phase.Attach)
+
         override fun detach() = record(Phase.Detach)
+
         override fun dispose() = record(Phase.Dispose)
 
         /**
@@ -287,7 +312,11 @@ internal class TraversalTestFixture {
     /**
      * Active modifier ancestry contributes capabilities to its logical owner.
      */
-    private class ParticipantModifier(description: ProbeModifierElement) : ProbeModifier(description), FocusTargetNode, SemanticsNode {
+    private class ParticipantModifier(
+        description: ProbeModifierElement,
+    ) : ProbeModifier(description),
+        FocusTargetNode,
+        SemanticsNode {
         override val acceptsFocus: Boolean get() = true
         override val requestsInitialFocus: Boolean get() = description.initial
 

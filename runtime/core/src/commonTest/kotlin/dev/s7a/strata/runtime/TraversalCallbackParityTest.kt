@@ -69,7 +69,13 @@ internal class TraversalCallbackParityTest {
             repeat(3) { assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0))) }
             assertEquals(listOf(20, 10, 0, 11, 1, 2), fixture.events.filter { it.phase == Phase.FocusGained }.map { it.id })
             tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = true)))
-            assertEquals(listOf(11, 1), fixture.events.filter { it.phase == Phase.FocusGained }.takeLast(2).map { it.id })
+            assertEquals(
+                listOf(11, 1),
+                fixture.events
+                    .filter { it.phase == Phase.FocusGained }
+                    .takeLast(2)
+                    .map { it.id },
+            )
             tree.update(fixture.element(0, Kind.Participant, listOf(second, first), rootModifiers))
             frame(tree)
             assertEquals(listOf(10, 20, 0, 2, 11, 1).map { UiText.Literal(it.toString()) }, tree.semantics().map { it.semantics.label })

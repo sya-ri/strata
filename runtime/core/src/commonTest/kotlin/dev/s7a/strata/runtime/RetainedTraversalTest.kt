@@ -116,12 +116,13 @@ internal class RetainedTraversalTest {
         val later = IllegalStateException("dispose")
         val tracker = DirtyTracker()
         var captured: RetainedNode? = null
-        val lifecycle = LifecycleManager(NodeOwnershipRegistry(), OwnerGuard(), tracker) {
-            val root = checkNotNull(captured)
-            assertReleased(root)
-            root.children.forEach(::assertReleased)
-            fixture.nodes.values.forEach { node -> assertFailsWith<IllegalStateException> { node.dirty() } }
-        }
+        val lifecycle =
+            LifecycleManager(NodeOwnershipRegistry(), OwnerGuard(), tracker) {
+                val root = checkNotNull(captured)
+                assertReleased(root)
+                root.children.forEach(::assertReleased)
+                fixture.nodes.values.forEach { node -> assertFailsWith<IllegalStateException> { node.dirty() } }
+            }
         val reconciler = Reconciler(lifecycle, tracker)
         val root = reconciler.reconcileRoot(null, fixture.element(0, children = listOf(fixture.element(1, Kind.Participant), fixture.element(2, Kind.Dynamic))))
         captured = root
@@ -157,6 +158,7 @@ internal class RetainedTraversalTest {
     private fun assertBound(root: RetainedNode) {
         var references = 0
         var edges = 0
+
         fun visit(current: RetainedNode) {
             val lists = listOf(current.refreshChildren, current.focusChildren, current.semanticsChildren, current.attachmentChildren)
             for (members in lists) {
