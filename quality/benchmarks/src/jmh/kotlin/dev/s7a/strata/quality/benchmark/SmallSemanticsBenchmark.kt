@@ -241,9 +241,10 @@ public open class SmallSemanticsBenchmark {
         }
 
         private fun verifyFrame(frame: RuntimeUiFrame) {
+            val localChange = workload.mode == Mode.Local && alternate
             val expected =
                 ordered(arrangement.value).flatMap { specification ->
-                    if (workload.mode == Mode.Local && alternate && specification.cardinality == Cardinality.One && specification.id == firstSingleton()) {
+                    if (localChange && specification.cardinality == Cardinality.One && specification.id == firstSingleton()) {
                         specification.changed
                     } else {
                         specification.original
