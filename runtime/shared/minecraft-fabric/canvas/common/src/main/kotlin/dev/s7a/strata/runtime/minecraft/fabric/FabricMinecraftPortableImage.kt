@@ -80,7 +80,7 @@ internal class FabricMinecraftPortableImage(
         val indices = sampling
         if (indices != null) return other.sampling?.let(indices::equivalent) == true
         if (other.sampling != null) return false
-        if (origin == other.origin && commands == other.commands) return true
+        if (samePreparedInputs(other)) return true
         return translated(other)
     }
 

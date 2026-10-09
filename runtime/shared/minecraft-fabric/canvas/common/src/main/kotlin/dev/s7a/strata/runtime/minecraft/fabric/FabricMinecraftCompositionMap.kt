@@ -7,7 +7,6 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.render.createOwnedDrawImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -27,6 +26,8 @@ internal class FabricMinecraftCompositionMap private constructor(
     @get:JvmSynthetic internal val sources: List<DrawImage?>,
     @get:JvmSynthetic internal val indices: DrawImage,
     @get:JvmSynthetic internal val factors: DrawImage,
+    @get:JvmSynthetic internal val orderedTints: List<Int>,
+    @get:JvmSynthetic internal val axisEntriesWritten: Long,
 ) {
     /**
      * Complete CPU-to-GPU metadata payload, excluding generated destinations and independently cached sources.
@@ -51,6 +52,7 @@ internal class FabricMinecraftCompositionMap private constructor(
      */
     @JvmSynthetic
     internal fun equivalent(other: FabricMinecraftCompositionMap): Boolean {
+        if (this === other) return true
         if (physicalSize != other.physicalSize || sources.size != other.sources.size) return false
         if (sources.indices.any { sources[it] !== other.sources[it] }) return false
         return samePixels(indices, other.indices) && samePixels(factors, other.factors)
@@ -60,6 +62,7 @@ internal class FabricMinecraftCompositionMap private constructor(
         a: DrawImage,
         b: DrawImage,
     ): Boolean {
+        if (a === b) return true
         if (a.size != b.size) return false
         for (y in 0 until a.size.height) {
             for (x in 0 until a.size.width) if (a.argbAt(x, y) != b.argbAt(x, y)) return false
@@ -104,6 +107,29 @@ internal class FabricMinecraftCompositionMap private constructor(
             val physical = IntSize(Math.multiplyExact(size.width, scale), Math.multiplyExact(size.height, scale))
             if (physical.width !in 1..4096 || physical.height !in 1..4096 || physical.width.toLong() * physical.height < 4096L) return null
             if (commands.none { it is DrawCommand.SampledImage }) return null
+            return create(FabricMinecraftPortableImage(commands, size, scale, origin), budget, FabricMinecraftCompositionFactors())
+        }
+
+        /**
+         * Uses one preparation-local factor workspace after reserving this tile's complete unchanged payload.
+         * [axes] requires the caller's bounded exact original-axis proof; its immutable words are copied into a new owned array.
+         * All current control rows and source references are rebuilt, without mutating or retaining the preceding map.
+         * [axisEntriesWritten] records actual axis-row writes during construction; copied axes perform none.
+         * No native storage or source pixels are read, and unsupported/exhausted tiles retain ordinary CPU fallback.
+         */
+        @JvmSynthetic
+        internal fun create(
+            input: FabricMinecraftPortableImage,
+            budget: FabricMinecraftSamplingBudget,
+            factorTables: FabricMinecraftCompositionFactors,
+            axes: FabricMinecraftCompositionMap? = null,
+        ): FabricMinecraftCompositionMap? {
+            val commands = input.commands
+            val size = input.size
+            val scale = input.scale
+            val origin = input.origin
+            val physical = physicalSize(input) ?: return null
+            if (commands.none { it is DrawCommand.SampledImage }) return null
             val geometry = Geometry(size, scale, origin)
             val plans = geometry.plans(commands) ?: return null
             if (plans.isEmpty()) return null
@@ -112,13 +138,28 @@ internal class FabricMinecraftCompositionMap private constructor(
             val factorSize = IntSize(1536, maxOf(1, tints.size))
             val metadata = indexSize.width.toLong() * indexSize.height + factorSize.width.toLong() * factorSize.height
             if (budget.admitComposition(physical, metadata, plans.size).not()) return null
-            val indices = IntArray(Math.multiplyExact(indexSize.width, indexSize.height))
+            val previous = axes?.takeIf { it.physicalSize == physical && it.indices.size == indexSize }
+            val indices = previous?.indices?.copyArgb() ?: IntArray(Math.multiplyExact(indexSize.width, indexSize.height))
+            var written = 0L
             plans.forEachIndexed { index, plan ->
-                geometry.writeAxes(indices, indexSize.width, index * 3, plan)
+                if (previous == null) {
+                    geometry.writeAxes(indices, indexSize.width, index * 3, plan)
+                    written += plan.coverage.width.toLong() + plan.coverage.height
+                }
                 writeControls(indices, (index * 3 + 2) * indexSize.width, plan.command, tints)
             }
-            val factors = createDrawImage(factorSize) { x, y -> encode(factor(x, tints.getOrNull(y) ?: 0).toRawBits()) }
-            return FabricMinecraftCompositionMap(physical, plans.map { source(it.command) }, createOwnedDrawImage(indexSize, indices), factors)
+            val factors = factorTables.get(tints, previous?.takeIf { it.orderedTints == tints }?.factors)
+            return FabricMinecraftCompositionMap(physical, plans.map { source(it.command) }, createOwnedDrawImage(indexSize, indices), factors, tints, written)
+        }
+
+        private fun physicalSize(input: FabricMinecraftPortableImage): IntSize? {
+            val size = input.size
+            val scale = input.scale
+            val origin = input.origin
+            require(0 < size.width && 0 < size.height && 0 < scale && 0 <= origin.x && 0 <= origin.y)
+            val physical = IntSize(Math.multiplyExact(size.width, scale), Math.multiplyExact(size.height, scale))
+            if (physical.width !in 1..4096 || physical.height !in 1..4096 || physical.width.toLong() * physical.height < 4096L) return null
+            return physical
         }
 
         private fun writeControls(
@@ -148,20 +189,6 @@ internal class FabricMinecraftCompositionMap private constructor(
                 is DrawCommand.SampledImage -> command.image
                 else -> null
             }
-
-        private fun factor(
-            x: Int,
-            tint: Int,
-        ): Float {
-            val normalized = (x and 255).toFloat() / 255f
-            val alpha = (tint ushr 24).toFloat() / 255f
-            return when (x / 256) {
-                0 -> normalized
-                1 -> normalized * alpha
-                2 -> 1f - normalized * alpha
-                else -> normalized * ((tint ushr ((5 - x / 256) * 8) and 255).toFloat() / 255f)
-            }
-        }
 
         /**
          * Encodes a little-endian uint word as ordinary ARGB upload pixels for the nested geometry writer.

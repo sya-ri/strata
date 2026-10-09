@@ -381,6 +381,34 @@ Repeated performance comparisons use one frozen fixture on both revisions and re
 Ordered composition metadata transfers its fresh private index buffer into an immutable image through the opt-in runtime ownership bridge, avoiding a second full index array.
 The bridge validates the complete extent before ownership transfers; callers relinquish every mutable alias, while application image construction and pixel extraction keep their defensive copies.
 
+One synchronous frame preparation shares immutable factor images by the complete ordered distinct ARGB tint sequence, including the empty sequence's one zero-tint fallback row.
+The workspace retains only integer key snapshots and derived images, with at most 256 keys and 1,024 rows; exhaustion generates the ordinary uncached table.
+The fixed and per-pass metadata allowances cover these bounded key/reference records, while each admitted tile still reserves its complete CPU/staging/GPU factor payload conservatively.
+The workspace ends on return or failure and contains no commands, source images, callbacks, native handles or previous-frame owner.
+
+Replacement preparation borrows only the immediately preceding current CPU inputs for linear prefix/suffix/same-index matching before constructing metadata arrays.
+One shared 8,192-unit allowance charges complete-map command comparison and per-input keys; exhaustion selects ordinary construction.
+The key includes logical size, scale, original origin, ordered command kind/value, exact geometry and clips, referential source identity, tint, raw cutoff bits and orientation.
+Image comparisons use reference identity rather than DrawImage pixel-value equality, so an equal-pixel replacement cannot retain the old source ownership.
+Every reused complete map spends the new traversal's output/pass/metadata ledger in display-list order, including direct exact outputs reserved first.
+The new inputs retain current commands and immutable maps without a previous-input chain; callers publish only after successful presentation and retain their existing release-generation guard.
+Direct-source fallback reconstruction uses the same scoped preparation, and every native borrow still rechecks source availability for whole-tile CPU fallback.
+For complete misses, a separate shared 8,192-unit allowance proves same-index axis/coverage keys including ordered primitive kind, source dimensions, original geometry/clips, scale and origin.
+Changed tint, cutoff, fill color or same-extent source identity can copy proven old axis words into a fresh exclusively owned index array, then rebuild current controls, sources and exact ordered factors.
+The immutable factor image can also be borrowed when its complete ordered tint key agrees; neither the previous map nor its source references are stored in the new map.
+The copy keeps the complete index allocation and wire payload; it removes axis generation only, while original-coordinate/clip/orientation/source-dimension changes use ordinary generation.
+Both proofs are bounded to 16,384 comparison units in total, produce transient indexes only, and preserve the independent current admission ledger.
+No old transferred backing array is mutated; each map records the actual axis-row entries written during its construction for untimed diagnostics.
+Identity shortcuts skip scans of reused map/index/factor objects, while nonidentical metadata retains its full exact comparison.
+
+The independent `CompositionMetadataBenchmark` fixture covers 16 cases across cold preparation and current-input replacement, using actual supplied runtime archives and preserved original Float coordinates.
+Its untimed diagnostic reports actual map/image identity changes, image word counts and newly constructed maps' actual axis-row writes when that member exists in the supplied runtime; absence is explicitly unavailable.
+Original Standard JMH receipts establish CPU operation time and normalized allocation separately.
+The compiled `MinecraftCompositionMetadataCorpus` covers the matching native stationary/rebuilt/local/control/source/geometry matrix at every declared GUI scale, including nested clips and small-source fallback.
+Native measurements retain source/raster/metadata/output upload controls and distinct full-presentation and GUI-only GPU boundaries; CPU factor sharing does not share native textures or imply fewer changed-tile uploads or passes.
+The loaded correctness fixture checks complete native pixels for two replacements at GUI scales one and four, preparation identity/invalidation and terminal current-input/native-owner release.
+These fixtures establish acceptance only after execution on the final revision; source-derived removed words or payload bounds establish no CPU/GPU latency or FPS percentage.
+
 Exact GPU output and its axis texture, or the direct GUI index texture alone, belong to the existing current portable generation, with no additional history, identity lookup, or cache.
 One prepared frame admits at most 256 exact outputs, 1,024 passes and 64 MiB of output and metadata storage before deriving metadata or allocating native resources; individual lookup exhaustion selects exact CPU fallback and is counted as capacity fallback.
 Their key includes commands, original sampling origin, logical extent, GUI density, and presentation mode.

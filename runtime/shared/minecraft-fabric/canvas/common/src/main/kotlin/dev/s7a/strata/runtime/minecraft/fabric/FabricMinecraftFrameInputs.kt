@@ -6,7 +6,8 @@ import dev.s7a.strata.render.DrawImage
 /**
  * Derived CPU inputs owned by one prepared display list and GUI scale, without native texture references.
  *
- * Reuse lasts only while the display-list identity, viewport and scale remain unchanged; screen release drops these inputs.
+ * Complete maps may be borrowed from the immediately previous inputs under exact original keys and a new admission ledger.
+ * Preparation-local factor sharing and input matching retain no previous-input chain; screen release drops the current inputs.
  * Texture availability is checked inside every native borrow, so reload and capacity fallback never reuse stale device state.
  * Resolved fallback counts belong to that borrow and distinguish unavailable supported images from unsupported images.
  */
@@ -26,31 +27,7 @@ internal class FabricMinecraftFrameInputs(
      */
     @get:JvmSynthetic
     internal val portable: List<FabricMinecraftPortableImage> =
-        preparedPortable ?: preparePortable()
-
-    private fun preparePortable(): List<FabricMinecraftPortableImage> {
-        val budget = FabricMinecraftSamplingBudget()
-        layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled && it.sampling != null) check(budget.admit(it.command.destination, it.visibleBounds, scale)) }
-        return layers.mapNotNull {
-            when (it) {
-                is FabricMinecraftFrameLayer.Portable -> {
-                    val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
-                    val composition = if (compositionEnabled && FabricMinecraftCompositionMap.shouldCompose(it.commands)) FabricMinecraftCompositionMap.create(it.commands, it.bounds.size, scale, origin, budget) else null
-                    FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin, composition = composition)
-                }
-
-                is FabricMinecraftFrameLayer.Sampled -> {
-                    it.sampling?.let { sampling ->
-                        FabricMinecraftPortableImage(listOf(it.command), it.visibleBounds.size, scale, IntOffset(it.visibleBounds.left, it.visibleBounds.top), sampling)
-                    }
-                }
-
-                is FabricMinecraftFrameLayer.Platform -> {
-                    null
-                }
-            }
-        }
-    }
+        preparedPortable ?: preparePortable(layers, scale, compositionEnabled, emptyList())
 
     private val cpuLayers: List<FabricMinecraftFrameLayer.Portable> =
         buildList {
@@ -149,7 +126,7 @@ internal class FabricMinecraftFrameInputs(
                 replacements?.add(layer)
             }
         }
-        val direct = replacements?.let { FabricMinecraftFrameInputs(it, scale, capacity, ineligible, compositionEnabled) } ?: this
+        val direct = replacements?.let { prepare(it, scale, compositionEnabled, this, capacity, ineligible) } ?: this
         return direct.resolveCompositions(available)
     }
 
@@ -165,5 +142,85 @@ internal class FabricMinecraftFrameInputs(
                 }
             }
         return FabricMinecraftFrameInputs(layers, scale, borrowedCapacity, borrowedIneligible, compositionEnabled, resolved)
+    }
+
+    /**
+     * Builds only the next current CPU descriptions; native source availability remains a separate recurring borrow.
+     */
+    internal companion object {
+        /**
+         * Borrows [previous] synchronously for bounded exact matching, then returns independent current inputs.
+         * Reused complete maps spend the new budget in display-list order; no previous-frame owner is stored.
+         * The original six-argument constructor remains available, and publication occurs only after the caller presents successfully.
+         */
+        @JvmSynthetic
+        internal fun prepare(
+            layers: List<FabricMinecraftFrameLayer>,
+            scale: Int,
+            compositionEnabled: Boolean,
+            previous: FabricMinecraftFrameInputs? = null,
+            capacity: Long = 0L,
+            ineligible: Long = 0L,
+        ): FabricMinecraftFrameInputs =
+            FabricMinecraftFrameInputs(layers, scale, capacity, ineligible, compositionEnabled, preparePortable(layers, scale, compositionEnabled, previous?.portable.orEmpty()))
+
+        /**
+         * Applies this traversal's independent admission and bounded complete/axis proofs to current portable descriptions.
+         * The original constructor also calls this entry; JVM-synthetic visibility avoids a private companion accessor bridge.
+         * [previous] is borrowed only during the call, and no workspace or previous-input owner survives the result.
+         */
+        @JvmSynthetic
+        internal fun preparePortable(
+            layers: List<FabricMinecraftFrameLayer>,
+            scale: Int,
+            enabled: Boolean,
+            previous: List<FabricMinecraftPortableImage>,
+        ): List<FabricMinecraftPortableImage> {
+            val budget = FabricMinecraftSamplingBudget()
+            layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled && it.sampling != null) check(budget.admit(it.command.destination, it.visibleBounds, scale)) }
+            val inputs = layers.mapNotNull { portableInput(it, scale) }
+            if (enabled.not()) return inputs
+            val matches = matchFabricMinecraftPreparedInputs(previous, inputs)
+            val axes = matchFabricMinecraftPreparedAxes(previous, inputs, matches)
+            val factors = FabricMinecraftCompositionFactors()
+            return inputs.mapIndexed { index, input ->
+                val old = previous.getOrNull(matches[index])?.composition
+                val composition =
+                    when {
+                        input.sampling != null -> null
+                        old != null -> {
+                            if (budget.admitComposition(old.physicalSize, old.uploadBytes / 4L, old.sources.size)) {
+                                factors.get(old.orderedTints, old.factors)
+                                old
+                            } else {
+                                null
+                            }
+                        }
+
+                        FabricMinecraftCompositionMap.shouldCompose(input.commands) -> {
+                            FabricMinecraftCompositionMap.create(input, budget, factors, previous.getOrNull(axes[index])?.composition)
+                        }
+                        else -> null
+                    }
+                if (composition == null) input else FabricMinecraftPortableImage(input.commands, input.size, scale, input.origin, composition = composition)
+            }
+        }
+
+        private fun portableInput(
+            layer: FabricMinecraftFrameLayer,
+            scale: Int,
+        ): FabricMinecraftPortableImage? =
+            when (layer) {
+                is FabricMinecraftFrameLayer.Portable -> {
+                    val origin = if (layer.absoluteCoordinates) IntOffset(layer.bounds.left, layer.bounds.top) else IntOffset.Zero
+                    FabricMinecraftPortableImage(layer.commands, layer.bounds.size, scale, origin)
+                }
+
+                is FabricMinecraftFrameLayer.Sampled -> {
+                    layer.sampling?.let { sampling -> FabricMinecraftPortableImage(listOf(layer.command), layer.visibleBounds.size, scale, IntOffset(layer.visibleBounds.left, layer.visibleBounds.top), sampling) }
+                }
+
+                is FabricMinecraftFrameLayer.Platform -> null
+            }
     }
 }
