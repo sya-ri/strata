@@ -5,6 +5,7 @@ import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
@@ -113,7 +114,7 @@ internal class LwjglFontTerminalOwnershipTest {
         rasterizer: MinecraftTrueTypeRasterizer,
         entries: Int,
         snapshot: MinecraftFontSnapshot,
-        expected: DrawImage,
+        expected: HeadlessImage,
     ) {
         lateinit var owner: MinecraftFontEngine
         var decodes = 0
