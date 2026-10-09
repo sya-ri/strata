@@ -33,6 +33,7 @@ internal class FabricMinecraftImageDecodeCache(
      * The caller checks the client thread before invoking this internal helper.
      */
     @Suppress("TooGenericExceptionCaught") // Every source or snapshot failure must release the captured entry before propagation.
+    @JvmSynthetic
     fun load(
         manager: Any,
         open: () -> InputStream,
@@ -69,6 +70,7 @@ internal class FabricMinecraftImageDecodeCache(
     /**
      * Drops the matching entry, or advances an empty active-client generation before resource replacement.
      */
+    @JvmSynthetic
     fun invalidate(
         manager: Any,
         activeClient: Boolean,
@@ -79,6 +81,7 @@ internal class FabricMinecraftImageDecodeCache(
     /**
      * Releases the active client's entry permanently; unrelated manager close can only evict its own entry.
      */
+    @JvmSynthetic
     fun close(
         manager: Any,
         activeClient: Boolean,
@@ -141,12 +144,14 @@ internal class FabricMinecraftImageDecodeCache(
         /**
          * Exact private straight-ARGB payload charge, excluding temporary decoding work.
          */
+        @get:JvmSynthetic
         val payloadBytes: Long
             get() = pixels.size.toLong() * Int.SIZE_BYTES
 
         /**
          * Copies owned pixels without exposing the retained array or retaining the returned image.
          */
+        @JvmSynthetic
         fun snapshot(): DrawImage = createDrawImage(size, pixels)
     }
 

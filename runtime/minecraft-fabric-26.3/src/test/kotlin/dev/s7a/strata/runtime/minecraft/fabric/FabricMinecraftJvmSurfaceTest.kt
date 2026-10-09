@@ -250,6 +250,8 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftCanvasPresentation",
                 "$packageName.FabricMinecraftPortableFrames",
                 "$packageName.FabricMinecraftPortableImage",
+                "$packageName.FabricMinecraftImageDecodeCache",
+                "$packageName.FabricMinecraftImageDecodeCache\$Decoded",
                 "$packageName.FabricMinecraftImageUploadKt",
                 "$packageName.FabricMinecraftSourceSamplingKt",
                 "$packageName.FabricMinecraftSamplingMap",
