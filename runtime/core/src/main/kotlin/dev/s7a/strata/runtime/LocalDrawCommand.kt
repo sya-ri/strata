@@ -57,7 +57,7 @@ internal sealed interface LocalDrawCommand {
 
     /**
      * Retains a bounded dense blit grid and its original sampling commands.
-     * Integer translation uses bounded repeating templates; other transforms use [original].
+     * Integer translation uses bounded repeating templates or explicit singleton-axis spans; other transforms use [original].
      * The retained display list owns both and releases them on repaint or terminal disposal.
      */
     class ComposedBlits(

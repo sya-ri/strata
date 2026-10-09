@@ -160,6 +160,11 @@ internal class LifecycleManager(
         retained: RetainedEntry,
         failures: FailureAccumulator,
     ) {
+        retained.localCommands = null
+        retained.localOverlayCommands = null
+        retained.rootOverlayCommands = null
+        retained.rootOverlayAnchor = null
+        retained.rootOverlayViewport = null
         retained.transformedPaint = null
         retained.paintSnapshot = null
         failures.capture { beforeEntryCleanup(retained) }

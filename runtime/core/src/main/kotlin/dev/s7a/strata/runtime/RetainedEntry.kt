@@ -140,7 +140,8 @@ internal sealed class RetainedEntry(
     var placed: Boolean = false
 
     /**
-     * Cached local commands, or null before the first paint.
+     * Cached local commands, or null before the first paint and after terminal cleanup.
+     * The owning entry retains only its current paint; cleanup drops descriptors before lifecycle callbacks.
      */
     var localCommands: List<LocalDrawCommand>? = null
 

@@ -10,10 +10,13 @@ import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.runtime.paintSingleTexelImageTiles
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Internal active modifier that paints arbitrary immutable image pixels behind content.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 private object MinecraftImageBackgroundModifier {
     /**
      * Immutable background image description.
@@ -71,6 +74,7 @@ private object MinecraftImageBackgroundModifier {
         }
 
         private fun paintTiles(scope: PaintScope) {
+            if (paintSingleTexelImageTiles(scope, image)) return
             var top = 0
             while (top < scope.size.height) {
                 var left = 0

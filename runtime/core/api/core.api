@@ -1,3 +1,7 @@
+public final class dev/s7a/strata/runtime/PaintPipelineKt {
+	public static final synthetic fun paintSingleTexelImageTiles (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;)Z
+}
+
 public abstract interface class dev/s7a/strata/runtime/TreeState {
 }
 

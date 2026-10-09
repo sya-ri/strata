@@ -107,6 +107,25 @@ This is command coalescing without an additional cache or a change to input, sem
 The regression suite compares pixels across integer, reduced and fractional viewport scales, GUI densities, transparent and translucent texels and incomplete tiles, and checks retained clean-frame identity.
 Downstream benchmarks must preserve their fixed input workload and loaded class/JAR provenance, compare repeated runs on the same Java and host, and distinguish headless CPU/raster costs from native extraction and GPU completion.
 
+### Ordinary single-texel image backgrounds
+
+Ordinary Minecraft `ImageScale.Tile` backgrounds whose source width or height is exactly one retain an immutable indexed description of the original row-major cells.
+The current local paint list owns that description, including source identity, local bounds and checked grid size, without retaining one command and rectangle pair per original cell.
+Exact integer translations lazily stretch each constant source axis while retaining the other axis's original phase and cropped final segment.
+Fractional or scaled tree transforms instead recreate the original scalar cells, preserving their Double-to-Float geometry, clipping, alpha rounding and validation failures even when an ancestor changes without repainting the background.
+Multi-texel sources, including equal-valued pixels, retain ordinary tiling; Stretch and NineSlice keep their existing producers.
+
+Admission checks the original terminal stride increments and representable list size before recording the description.
+Unrepresentable grids and foreign paint scopes use the original producer; the core collector still checks callback lifetime and owner context first.
+Repaint replaces the current list, and terminal cleanup clears local, overlay and transformed presentation references before lifecycle callbacks.
+Published immutable frames remain valid for their callers.
+No global cache, source pixel copy or native resource pool is added.
+
+The independent scalar and pixel reference is shared by JVM tests, the separate `SingleAxisImageBackgroundBenchmark` fixture and loaded native mosaic tests.
+The JVM corpus separates actual guarded collection, dense admission, declaration, dirty source, geometry and clean frame boundaries across sixteen fixed workloads.
+Untimed diagnostics distinguish eager callback blits, virtual original cells, materialized originals, integer spans and derived template payload.
+These counts establish their actual representation boundary; native extraction, composition, upload and GUI consumption require separate loaded evidence.
+
 ### Bounded repeating blit templates
 
 Dense image-only local paint retains its original immutable commands and lazily compacts tile-aligned patterns for exact integer translations.

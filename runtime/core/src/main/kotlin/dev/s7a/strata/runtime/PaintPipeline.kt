@@ -132,13 +132,13 @@ internal class PaintPipeline(
         if (callback == null) {
             return emptyList()
         }
-        val collector = LocalPaintScope(ownerGuard, retained.measuredSize)
+        val collector = createLocalPaintScope(ownerGuard, retained.measuredSize)
         return try {
             monitoring.record(metric, retained)
             callback(collector)
-            composeDenseBlits(collector.snapshot())
+            composeDenseBlits(snapshotLocalPaintScope(collector))
         } finally {
-            collector.close()
+            closeLocalPaintScope(collector)
         }
     }
 
@@ -161,6 +161,8 @@ internal class PaintPipeline(
         command: LocalDrawCommand,
         transform: TreeTransform,
     ): DrawCommand? {
+        fun IntRect.toFloatRect(): FloatRect = FloatRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
+
         val translation = transform.integerTranslationOrNull()
         if (translation != null) {
             return translate(command, translation.x, translation.y)
@@ -281,106 +283,6 @@ internal class PaintPipeline(
             }
         }
 
-    private fun IntRect.toFloatRect(): FloatRect = FloatRect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
-
-    /**
-     * Collects local commands for one retained node.
-     */
-    private class LocalPaintScope(
-        ownerGuard: OwnerGuard,
-        private val nodeSize: IntSize,
-    ) : PaintScope {
-        private val guard = ScopeGuard(ownerGuard)
-
-        /**
-         * Commands collected during one local paint call.
-         */
-        val commands: MutableList<LocalDrawCommand> = ArrayList()
-
-        override val size: IntSize
-            get() {
-                guard.check()
-                return nodeSize
-            }
-
-        override fun withClip(
-            localBounds: IntRect,
-            content: () -> Unit,
-        ) {
-            guard.check()
-            commands.add(LocalDrawCommand.PushClip(localBounds))
-            val failures = FailureAccumulator()
-            try {
-                failures.capture(content)
-            } finally {
-                failures.capture { commands.add(LocalDrawCommand.PopClip) }
-            }
-            failures.throwIfPresent()
-        }
-
-        override fun fillRectangle(
-            localBounds: IntRect,
-            color: ArgbColor,
-        ) {
-            guard.check()
-            commands.add(LocalDrawCommand.FillRectangle(localBounds, color))
-        }
-
-        override fun blitImage(
-            image: DrawImage,
-            source: IntRect,
-            localDestination: IntRect,
-        ) {
-            guard.check()
-            commands.add(LocalDrawCommand.BlitImage(image, source, localDestination))
-        }
-
-        override fun sampledImage(
-            image: DrawImage,
-            source: FloatRect,
-            localDestination: FloatRect,
-            tint: ArgbColor,
-            alphaCutoff: Float,
-        ) {
-            sampledImage(image, source, localDestination, SampledImageOrientation.Normal, tint, alphaCutoff)
-        }
-
-        override fun sampledImage(
-            image: DrawImage,
-            source: FloatRect,
-            localDestination: FloatRect,
-            orientation: SampledImageOrientation,
-            tint: ArgbColor,
-            alphaCutoff: Float,
-        ) {
-            guard.check()
-            commands.add(LocalDrawCommand.SampledImage(image, source, localDestination, tint, alphaCutoff, orientation))
-        }
-
-        override fun drawPlatform(
-            command: PlatformDrawCommand,
-            localBounds: IntRect,
-        ) {
-            guard.check()
-            commands.add(LocalDrawCommand.Platform(command, localBounds))
-        }
-
-        /**
-         * Snapshots commands while the callback scope remains active.
-         */
-        fun snapshot(): List<LocalDrawCommand> {
-            guard.check()
-            return commands.toList()
-        }
-
-        /**
-         * Closes this local collector after the paint callback.
-         */
-        fun close() {
-            guard.close()
-        }
-    }
-
     /**
      * Collects one root overlay in root coordinates.
      */
@@ -389,7 +291,7 @@ internal class PaintPipeline(
         viewport: IntSize,
         private val anchor: IntRect,
     ) : RootOverlayPaintScope {
-        private val delegate = LocalPaintScope(ownerGuard, viewport)
+        private val delegate = createLocalPaintScope(ownerGuard, viewport)
 
         override val size: IntSize
             get() = delegate.size
@@ -447,10 +349,10 @@ internal class PaintPipeline(
             delegate.drawPlatform(command, localBounds)
         }
 
-        fun snapshot(): List<LocalDrawCommand> = delegate.snapshot()
+        fun snapshot(): List<LocalDrawCommand> = snapshotLocalPaintScope(delegate)
 
         fun close() {
-            delegate.close()
+            closeLocalPaintScope(delegate)
         }
     }
 
@@ -458,6 +360,6 @@ internal class PaintPipeline(
         val SOLID_IMAGE: DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val SOLID_SOURCE: FloatRect = FloatRect(0f, 0f, 1f, 1f)
     }
-}
 
-private inline fun FloatRect.drawCommandOrNull(create: (FloatRect) -> DrawCommand): DrawCommand? = if (width <= 0f || height <= 0f) null else create(this)
+    private inline fun FloatRect.drawCommandOrNull(create: (FloatRect) -> DrawCommand): DrawCommand? = if (width <= 0f || height <= 0f) null else create(this)
+}
