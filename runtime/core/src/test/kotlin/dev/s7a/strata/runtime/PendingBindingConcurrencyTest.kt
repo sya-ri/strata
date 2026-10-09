@@ -91,8 +91,8 @@ internal class PendingBindingConcurrencyTest {
             assertTrue(peak.toLong() <= pending.size.toLong() * 2)
         }
         queue.clear()
-        assertEquals(emptySet(), pendingField.get(queue))
-        assertEquals(emptyList(), capturedField.get(queue))
+        assertEquals(emptySet<Any>(), pendingField.get(queue))
+        assertEquals(emptyList<Any>(), capturedField.get(queue))
         assertEquals(0, peakField.getInt(queue))
         bindings.forEach { it.enqueue(StateSnapshot(StateRevision(2), 2)) }
         queue.capture(UiSessionBinding<*>::capturePending)
