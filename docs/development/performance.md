@@ -59,6 +59,24 @@ Constant translucent images use the same exact destination comparison, while opa
 The independent pixel reference covers transparent, translucent and opaque patterned rows, fractional sampling, flips, cutoffs and destination changes at both ends of a row.
 The sampled and dense sampled JMH corpora measure this CPU fallback separately from native texture upload.
 
+### Exact integer-blit columns
+
+Logical `BlitImage` and physical `BlitImagePixels` reuse one command-local Int array of exact horizontal source coordinates when clipped coverage has at least four rows and 4,096 evaluated cells.
+Logical sampling counts logical cells; physical sampling counts final physical pixels.
+At most 16,384 clipped columns are admitted, bounding primitive payload to 64 KiB; smaller, one-row and wider cases retain scalar mapping without allocating a map.
+The array expires with the command invocation and retains no image, output, callback or frame history.
+One-texel fill delegation and the unscaled logical identity shortcut run before admission.
+Each source coordinate uses the original checked integer equation or exact BigInteger fallback, while every source read, destination write and ordered blend remains.
+Validated source crops and destination coverage bound each selected coordinate to its original image, so moving eligible horizontal evaluations before the first row moves no legal arithmetic failure.
+Borrowed-storage preflight, fractional physical clips, nonzero origins and independent subpixel destinations keep their existing contracts.
+
+The separate `IntegerBlitBenchmark` corpus fixes 42 scenes for both command paths, including every normal density 1–4 for upscale, downscale, small, one-physical-row, identity and one-texel controls.
+It retains all source-alpha/background combinations, tall/narrow coverage, admission boundaries, maximum and over-limit widths, crop/clip/origin cases, mostly offscreen extreme coordinates and a compact complete-raster BigInteger control at headless density 256.
+That extra density is independent of native GUI scales.
+Its generated-source inputs are resident before collection, and its untimed verifier compares complete pixels against independent unbounded rational coordinates and Long source-over arithmetic.
+Run it through the existing `jmhHistorical` task with `strata.performance.benchmarks=IntegerBlitBenchmark` and `strata.performance.suite=integer-blit`; the historical 54-case corpus and shared collector are unchanged.
+Source-level mapping work and storage bounds do not establish surviving allocation, CPU or complete-presentation improvement; controlled baseline/candidate measurements must retain every affected and scalar control row.
+
 ### Immutable modifier membership construction
 
 Modifier values accept only internally created empty, singleton or concatenated membership through their private constructor.
