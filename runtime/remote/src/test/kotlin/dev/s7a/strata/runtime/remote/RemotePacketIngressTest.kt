@@ -101,9 +101,10 @@ internal class RemotePacketIngressTest {
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target
-        .javaClass
-        .getDeclaredField(name)
-        .apply { isAccessible = true }
-        .get(target)
+    ): Any? =
+        target
+            .javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(target)
 }

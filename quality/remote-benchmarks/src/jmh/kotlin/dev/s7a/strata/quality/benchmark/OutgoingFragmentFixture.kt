@@ -161,11 +161,12 @@ public class OutgoingFragmentFixture(
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target
-        .javaClass
-        .getDeclaredField(name)
-        .apply { isAccessible = true }
-        .get(target)
+    ): Any? =
+        target
+            .javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(target)
 
     /**
      * Current invocation state; no probe arrays or historical outputs survive close.
@@ -367,10 +368,11 @@ public class OutgoingFragmentFixture(
         private fun serverMethod(
             name: String,
             retained: Any,
-        ): Method = checkNotNull(service)
-            .javaClass
-            .getDeclaredMethod(name, retained.javaClass, Long::class.javaPrimitiveType)
-            .apply { isAccessible = true }
+        ): Method =
+            checkNotNull(service)
+                .javaClass
+                .getDeclaredMethod(name, retained.javaClass, Long::class.javaPrimitiveType)
+                .apply { isAccessible = true }
 
         private fun invoke(method: Method?) {
             try {
@@ -435,13 +437,14 @@ public class OutgoingFragmentFixture(
     private fun envelope(
         bytes: ByteArray,
         sequence: Long,
-    ): ByteArray = ByteBuffer
-        .allocate(26 + bytes.size)
-        .put(1.toByte())
-        .put(0.toByte())
-        .putLong(0)
-        .putLong(1)
-        .putLong(sequence)
-        .put(bytes)
-        .array()
+    ): ByteArray =
+        ByteBuffer
+            .allocate(26 + bytes.size)
+            .put(1.toByte())
+            .put(0.toByte())
+            .putLong(0)
+            .putLong(1)
+            .putLong(sequence)
+            .put(bytes)
+            .array()
 }
