@@ -192,21 +192,35 @@ internal class TextProvenanceFixture(
 
     private fun mutate() {
         when (case.operation) {
-            Operation.Initial -> owner.value = opposite(owner.value)
+            Operation.Initial -> {
+                owner.value = opposite(owner.value)
+            }
+
             Operation.Edit -> {
                 selectedText.value = opposite(selectedText.value)
                 states[owner.value.ordinal].value = assets.values[selectedText.value.ordinal]
             }
 
-            Operation.Reflow -> size.value = if (size.value == firstSize) secondSize else firstSize
-            Operation.FontChange -> selectedFont.value = opposite(selectedFont.value)
-            Operation.Redeclaration -> declaration.value = opposite(declaration.value)
+            Operation.Reflow -> {
+                size.value = if (size.value == firstSize) secondSize else firstSize
+            }
+
+            Operation.FontChange -> {
+                selectedFont.value = opposite(selectedFont.value)
+            }
+
+            Operation.Redeclaration -> {
+                declaration.value = opposite(declaration.value)
+            }
+
             Operation.Preedit -> {
                 composed = composed.not()
                 host.dispatchTextInput(if (composed) composition else clearComposition)
             }
 
-            else -> error("Only declared restoring retained operations mutate the public fixture.")
+            else -> {
+                error("Only declared restoring retained operations mutate the public fixture.")
+            }
         }
     }
 
@@ -322,7 +336,15 @@ internal class TextProvenanceFixture(
             check(semantic.label == assets.texts[if (selectedFont.value === Side.Second) 2 else selectedText.value.ordinal])
             check(host.textInputFocus == null)
         }
-        expected.verifyFrame(frame(), currentOwner(), states[owner.value.ordinal].scrollState.metrics.offset.toInt(), committedCaret, composed)
+        expected.verifyFrame(
+            frame(),
+            currentOwner(),
+            states[owner.value.ordinal]
+                .scrollState.metrics.offset
+                .toInt(),
+            committedCaret,
+            composed,
+        )
     }
 
     private fun verifyDetach() {

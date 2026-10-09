@@ -176,17 +176,26 @@ internal class TextProvenanceAssets(
         scalar: Int,
     ): Float =
         when (shape) {
-            Shape.Signed -> if (scalar == 'B'.code) -family.advance else family.advance
-            Shape.Zero -> 0f
-            Shape.Exceptional ->
+            Shape.Signed -> {
+                if (scalar == 'B'.code) -family.advance else family.advance
+            }
+
+            Shape.Zero -> {
+                0f
+            }
+
+            Shape.Exceptional -> {
                 when (scalar) {
                     'B'.code -> Float.NaN
                     'C'.code -> Float.POSITIVE_INFINITY
                     'D'.code -> Float.NEGATIVE_INFINITY
                     else -> family.advance
                 }
+            }
 
-            else -> family.advance
+            else -> {
+                family.advance
+            }
         }
 
     private fun sourceValue(): String =

@@ -268,7 +268,7 @@ public open class TextProvenanceBenchmark {
         RedeclarationSingleLineTextSingle16384(Shape.Single16384, Operation.Redeclaration, Consumer.SingleLineText),
         RedeclarationSingleLineTextSparse16384(Shape.Sparse16384, Operation.Redeclaration, Consumer.SingleLineText),
         RedeclarationSingleLineTextDense16384(Shape.Dense16384, Operation.Redeclaration, Consumer.SingleLineText),
-        RedeclarationTextAreaSingle16384(Shape.Single16384, Operation.Redeclaration, Consumer.TextArea);
+        RedeclarationTextAreaSingle16384(Shape.Single16384, Operation.Redeclaration, Consumer.TextArea),
     }
 
     /**

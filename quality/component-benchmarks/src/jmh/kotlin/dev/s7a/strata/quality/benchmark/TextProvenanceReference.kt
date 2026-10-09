@@ -9,8 +9,8 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
-import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextLayout
@@ -189,18 +189,33 @@ internal class TextProvenanceReference(
         expected.size == actual.size &&
             expected.zip(actual).all { (before, after) ->
                 when (before) {
-                    is DrawCommand.SampledImage ->
+                    is DrawCommand.SampledImage -> {
                         after is DrawCommand.SampledImage &&
                             before.source == after.source && before.destination == after.destination &&
                             before.tint == after.tint && before.alphaCutoff == after.alphaCutoff && before.orientation == after.orientation &&
                             matchingImages(before.image, after.image)
-                    is DrawCommand.BlitImage ->
+                    }
+
+                    is DrawCommand.BlitImage -> {
                         after is DrawCommand.BlitImage && before.source == after.source && before.destination == after.destination &&
                             matchingImages(before.image, after.image)
-                    is DrawCommand.FillRectangle -> after is DrawCommand.FillRectangle && before.bounds == after.bounds && before.color == after.color
-                    is DrawCommand.PushClip -> after is DrawCommand.PushClip && before.bounds == after.bounds
-                    DrawCommand.PopClip -> after === DrawCommand.PopClip
-                    else -> false
+                    }
+
+                    is DrawCommand.FillRectangle -> {
+                        after is DrawCommand.FillRectangle && before.bounds == after.bounds && before.color == after.color
+                    }
+
+                    is DrawCommand.PushClip -> {
+                        after is DrawCommand.PushClip && before.bounds == after.bounds
+                    }
+
+                    DrawCommand.PopClip -> {
+                        after === DrawCommand.PopClip
+                    }
+
+                    else -> {
+                        false
+                    }
                 }
             }
 
@@ -357,7 +372,14 @@ internal class TextProvenanceReference(
                     val right = (originX + cursor + 1f) + offset
                     val bottom = (originY + 1f) + offset
                     if (left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite() && left < right && top < bottom && (right - left).isFinite() && (bottom - top).isFinite()) {
-                        val tint = if (shadow) 0xff383838.toInt() else if (consumer === Consumer.TextArea) 0xffe0e0e0.toInt() else 0xff404040.toInt()
+                        val tint =
+                            if (shadow) {
+                                0xff383838.toInt()
+                            } else if (consumer === Consumer.TextArea) {
+                                0xffe0e0e0.toInt()
+                            } else {
+                                0xff404040.toInt()
+                            }
                         add(DrawCommand.SampledImage(assets.image, FloatRect(0.01f, 0.01f, 0.99f, 0.99f), FloatRect(left, top, right, bottom), ArgbColor(tint)))
                     }
                 }
