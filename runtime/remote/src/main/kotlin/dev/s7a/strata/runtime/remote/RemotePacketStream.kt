@@ -30,17 +30,17 @@ public class RemotePacketStream(
      * Bootstrap greetings retain the fixed native bound even when peer negotiation has already tightened incoming admission.
      */
     public fun send(bytes: ByteArray) {
-        checkOwner()
+        checkExecutionOwner()
         require(bytes.size in 17..RemotePacket.limits.frameBytes) { "Invalid routed fragment length." }
         check(nextOutgoing < Long.MAX_VALUE) { "Remote packet identity space is exhausted." }
         checkNotNull(outgoing) { "Remote packet stream is closed." }(RemotePacket.encode(RemotePacket.Frame(address, nextOutgoing++, bytes)))
     }
 
     /**
-     * Requires the constructing execution owner before a private native connection can bind this stream.
+     * Requires the constructing execution owner for stream operations and private native connection binding.
      */
     internal fun checkExecutionOwner() {
-        checkOwner()
+        check(RuntimeExecutionOwner.current() == owner) { "Remote packet stream belongs to another execution owner." }
     }
 
     /**
@@ -48,7 +48,7 @@ public class RemotePacketStream(
      * A taken array leaves runtime storage before validation or callback failure, and is never modified after publication.
      */
     internal fun sendNative(transfer: RemoteNativeTransfer) {
-        checkOwner()
+        checkExecutionOwner()
         val bytes = transfer.takeFirst()
         require(bytes.size - RemotePacket.envelopeBytes in 17..RemotePacket.limits.frameBytes) { "Invalid routed fragment length." }
         check(nextOutgoing < Long.MAX_VALUE) { "Remote packet identity space is exhausted." }
@@ -60,7 +60,7 @@ public class RemotePacketStream(
      * Tightens admission after negotiation, rejecting already queued work that exceeds the negotiated bounds.
      */
     public fun limitTo(negotiated: RemoteLimits) {
-        checkOwner()
+        checkExecutionOwner()
         check(outgoing != null) { "Remote packet stream is closed." }
         if (limits == negotiated) return
         limits = limits.intersect(negotiated)
@@ -90,7 +90,7 @@ public class RemotePacketStream(
         packet: RemotePacketAdmission,
         nowMillis: Long,
     ) {
-        checkOwner()
+        checkExecutionOwner()
         offer(packet.takeFrame(), nowMillis, PayloadOwnership.Transfer)
     }
 
@@ -102,7 +102,7 @@ public class RemotePacketStream(
         nowMillis: Long,
         ownership: PayloadOwnership,
     ) {
-        checkOwner()
+        checkExecutionOwner()
         check(outgoing != null) { "Remote packet stream is closed." }
         if (packet.address != address) return
         require(packet.sequence in 1 until Long.MAX_VALUE && packet.bytes.size in 17..limits.frameBytes) { "Invalid routed fragment." }
@@ -134,7 +134,7 @@ public class RemotePacketStream(
         maxFrames: Int = 64,
         receive: (ByteArray) -> Unit,
     ) {
-        checkOwner()
+        checkExecutionOwner()
         check(outgoing != null) { "Remote packet stream is closed." }
         require(0 < maxFrames)
         expire(nowMillis)
@@ -148,7 +148,7 @@ public class RemotePacketStream(
     }
 
     override fun close() {
-        checkOwner()
+        checkExecutionOwner()
         outgoing = null
         pending.clear()
         pendingBytes = 0
@@ -170,9 +170,5 @@ public class RemotePacketStream(
     private enum class PayloadOwnership {
         Snapshot,
         Transfer,
-    }
-
-    private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() == owner) { "Remote packet stream belongs to another execution owner." }
     }
 }

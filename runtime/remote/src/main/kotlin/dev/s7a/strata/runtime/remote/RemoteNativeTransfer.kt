@@ -108,7 +108,7 @@ internal class RemoteNativeTransfer private constructor(
             require(bytes.isNotEmpty() && bytes.size <= limits.messageBytes) { "Invalid logical message length." }
             require(identity in 1 until Long.MAX_VALUE) { "Invalid logical message identity." }
             val frames = ArrayDeque<ByteArray>()
-            try {
+            return runCatching {
                 var offset = 0
                 while (offset < bytes.size) {
                     val count = minOf(limits.frameBytes - 16, bytes.size - offset)
@@ -124,8 +124,8 @@ internal class RemoteNativeTransfer private constructor(
                     frames.addLast(frame)
                     offset += count
                 }
-                return RemoteNativeTransfer(frames)
-            } catch (failure: Throwable) {
+                RemoteNativeTransfer(frames)
+            }.getOrElse { failure ->
                 frames.clear()
                 throw failure
             }

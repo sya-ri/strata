@@ -3,6 +3,7 @@
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionType
+import dev.s7a.strata.spi.ExecutionOwnerId
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
 
@@ -37,7 +38,7 @@ public class RemoteConnection(
      * Sends the one bootstrap greeting once the underlying play connection can carry custom payloads.
      */
     public fun start() {
-        checkOwner()
+        checkOwner(owner)
         check(greeted.not()) { "Remote greeting was already sent." }
         greeted = true
         guarded { write(RemoteMessage.Hello(PROTOCOL_VERSION, limits, supported)) }
@@ -51,7 +52,7 @@ public class RemoteConnection(
         bytes: ByteArray,
         nowMillis: Long,
     ): RemoteMessage? {
-        checkOwner()
+        checkOwner(owner)
         check(outgoing != null) { "Remote connection is closed." }
         return guarded {
             val assembled = framing.receive(bytes, nowMillis) ?: return@guarded null
@@ -71,7 +72,7 @@ public class RemoteConnection(
      * Queue exhaustion fails the connection explicitly; actions are never dropped silently.
      */
     public fun send(message: RemoteMessage) {
-        checkOwner()
+        checkOwner(owner)
         check(capabilities != null) { "Remote negotiation is incomplete." }
         require((message is RemoteMessage.Hello).not()) { "Use start to send a greeting." }
         if (message is RemoteMessage.Close) discardSession(message.session)
@@ -82,7 +83,7 @@ public class RemoteConnection(
      * Applies assembly and negotiation deadlines even when the peer sends no more fragments.
      */
     public fun tick(nowMillis: Long) {
-        checkOwner()
+        checkOwner(owner)
         guarded {
             framing.expire(nowMillis)
             val started = firstTickMillis ?: nowMillis.also { firstTickMillis = it }
@@ -97,7 +98,7 @@ public class RemoteConnection(
      * Bounds transport pressure per adapter tick and releases the write guard after success or failure.
      */
     public fun flush(maxFrames: Int = 8) {
-        checkOwner()
+        checkOwner(owner)
         require(0 < maxFrames) { "The frame budget must be positive." }
         check(sending.not()) { "Remote transport writes cannot reenter." }
         val transport = checkNotNull(outgoing) { "Remote connection is closed." }
@@ -124,7 +125,7 @@ public class RemoteConnection(
      * Callers must separately send its typed Close notification; active business actions are never coalesced.
      */
     public fun discardSession(identity: Long) {
-        checkOwner()
+        checkOwner(owner)
         check(sending.not()) { "Remote transport writes cannot reenter." }
         val retained = ArrayDeque<Transfer>()
         pending.forEach { transfer ->
@@ -144,7 +145,7 @@ public class RemoteConnection(
     }
 
     override fun close() {
-        checkOwner()
+        checkOwner(owner)
         outgoing = null
         capabilities = null
         nativeStream = null
@@ -207,7 +208,7 @@ public class RemoteConnection(
      */
     internal val retainedNativeHeadroom: Long
         get() {
-            checkOwner()
+            checkOwner(owner)
             return if (nativeStream == null) 0 else Math.multiplyExact(RemotePacket.envelopeBytes.toLong(), queuedFrames.toLong())
         }
 
@@ -289,14 +290,17 @@ public class RemoteConnection(
             throw failure
         }
 
-    private fun checkOwner() {
-        check(RuntimeExecutionOwner.current() == owner) { "Remote connection belongs to another execution owner." }
-    }
-
     /**
      * Stable channel and wire-version identifiers shared by platform adapters.
      */
     public companion object {
+        /**
+         * Requires the captured connection owner before any guarded read or mutation.
+         */
+        private fun checkOwner(owner: ExecutionOwnerId) {
+            check(RuntimeExecutionOwner.current() == owner) { "Remote connection belongs to another execution owner." }
+        }
+
         /**
          * Constructs the opt-in private native envelope path under the packet stream's execution owner.
          * Public constructors still deliver detached inner fragments; callers separately own and close [stream].
