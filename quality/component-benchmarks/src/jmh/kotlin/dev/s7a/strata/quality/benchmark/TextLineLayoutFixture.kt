@@ -42,7 +42,7 @@ import dev.s7a.strata.ui.UiDefinition
  * Initial cycles replace a keyed component; content edits and width changes reuse its current owner.
  * Only untimed validation keeps temporary old layouts or raster snapshots, and close releases every owned face.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "TooGenericExceptionCaught") // Constructor failures release all owned resources and preserve the original throwable.
 @OptIn(InternalStrataRuntimeApi::class)
 internal class TextLineLayoutFixture(
     private val consumer: Consumer,
@@ -258,7 +258,7 @@ internal class TextLineLayoutFixture(
         val semantic = frame().semantics.single { it.semantics.role === role }.semantics
         if (consumer === Consumer.TextArea) {
             check(semantic.value == UiText.Literal(values[content.value.ordinal]))
-            check(host.textInputFocus != null)
+            checkNotNull(host.textInputFocus)
             check(TextAreaInputAccess.field(TextAreaInputAccess.field(owner(), "cursor"), "offset") == 0)
         } else {
             check(semantic.label == texts[content.value.ordinal])
