@@ -5959,6 +5959,8 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public static synthetic fun flush$default (Ldev/s7a/strata/runtime/remote/RemoteConnection;IILjava/lang/Object;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public synthetic fun <init> (Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public final class dev/s7a/strata/runtime/remote/RemoteConnection$Companion {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public final fun native (Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public static synthetic fun native$default (Ldev/s7a/strata/runtime/remote/RemoteConnection$Companion;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final class dev/s7a/strata/runtime/remote/RemoteDeclaration {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final fun component1 ()J
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final fun component2 ()Ldev/s7a/strata/projection/ProjectionType;
