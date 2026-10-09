@@ -22,6 +22,10 @@ No message supplies a class name, executable body, function, or server model.
 A connection routes one foreground Screen and multiple HUDs by stable session ID; switching does not allocate a new ID.
 `Update` carries a base revision, replacement/removal records, and the next revision.
 Every component and active modifier has a unique retained identity; repeated child references, missing children, cycles, excessive depth, and duplicate identities fail validation.
+The public `RemoteTree` collection constructor takes an independent snapshot.
+Patch application clones the previous immutable index, updates only that private candidate, then transfers it to the same complete tree validator.
+The owned route accepts a previous tree and immutable patch rather than arbitrary caller-owned map storage.
+Ownership never replaces validation: stable patches still enforce newly tightened limits, and failed candidates cannot change or publish the previous tree.
 The client decodes registered properties and prepares state before replacing its declaration source.
 A mismatched base revision requests `Resynchronize` without applying any patch prefix or replaying actions.
 
