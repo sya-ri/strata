@@ -103,24 +103,28 @@ internal class MinecraftCompositionTargetsScene(
         } else {
             scope.fillRectangle(area, ArgbColor(0x40213759 xor (group * 7919)))
         }
-        val count = when (case) {
-            MinecraftCompositionTargetsCorpus.Case.DenseOddLarge -> 3
-            MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge, MinecraftCompositionTargetsCorpus.Case.CutoffHeavyLarge -> 8
-            MinecraftCompositionTargetsCorpus.Case.MixedPassesLarge -> group % 17 + 1
-            else -> 4
-        }
+        val count =
+            when (case) {
+                MinecraftCompositionTargetsCorpus.Case.DenseOddLarge -> 3
+                MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge, MinecraftCompositionTargetsCorpus.Case.CutoffHeavyLarge -> 8
+                MinecraftCompositionTargetsCorpus.Case.MixedPassesLarge -> group % 17 + 1
+                else -> 4
+            }
         val scroll = if (case == MinecraftCompositionTargetsCorpus.Case.ScrollLarge) phase * 0.25f else 0f
         val source = FloatRect(0.125f, 0.375f, image.size.width - 0.125f, image.size.height - 0.25f)
         repeat(count) { pass ->
             val sparse = case == MinecraftCompositionTargetsCorpus.Case.SparseLarge && pass % 2 == 0
-            val destination = FloatRect(
-                area.left + scroll + if (sparse) area.width * 0.25f + 0.125f else 0.25f,
-                area.top + if (sparse) area.height * 0.25f + 0.125f else 0.125f,
-                area.right + scroll - if (sparse) area.width * 0.25f + 0.125f else 0.125f,
-                area.bottom - if (sparse) area.height * 0.25f + 0.125f else 0.375f,
-            )
+            val destination =
+                FloatRect(
+                    area.left + scroll + if (sparse) area.width * 0.25f + 0.125f else 0.25f,
+                    area.top + if (sparse) area.height * 0.25f + 0.125f else 0.125f,
+                    area.right + scroll - if (sparse) area.width * 0.25f + 0.125f else 0.125f,
+                    area.bottom - if (sparse) area.height * 0.25f + 0.125f else 0.375f,
+                )
             val tint =
-                if (case == MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge && pass < 6) 0x00ABCDEF else {
+                if (case == MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge && pass < 6) {
+                    0x00ABCDEF
+                } else {
                     val stable =
                         when (case) {
                             MinecraftCompositionTargetsCorpus.Case.ReplacementLarge, MinecraftCompositionTargetsCorpus.Case.SourceChurnLarge, MinecraftCompositionTargetsCorpus.Case.ScrollLarge, MinecraftCompositionTargetsCorpus.Case.ActivePassSwapLarge -> true

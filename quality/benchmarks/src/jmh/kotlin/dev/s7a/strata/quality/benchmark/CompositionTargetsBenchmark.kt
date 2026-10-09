@@ -74,7 +74,6 @@ public open class CompositionTargetsBenchmark {
         MixedSizesLarge(IntSize(1903, 1067)),
         SingleTileControl(IntSize(64, 64)),
         SmallSourceFallback(IntSize(64, 64), sourceExtent = 16),
-        ;
     }
 
     /**

@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
  * A borrowed native view retains no source or command, and partial initialization stays owned through physical destruction.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("unused") // Synthetic workspace calls initialize and borrow this native owner within its reserved generation.
 internal class FabricMinecraftCompositionScratch : NativeGuiResource {
     private var storage: NativeGuiResource? = null
     private var borrowed: AbstractTexture? = null

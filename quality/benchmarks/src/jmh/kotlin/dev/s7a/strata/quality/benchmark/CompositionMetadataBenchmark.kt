@@ -75,7 +75,6 @@ public open class CompositionMetadataBenchmark {
         UniqueTintsLarge,
         FractionalClipsLarge,
         SmallSourceFallback(IntSize(64, 64), sourceExtent = 16),
-        ;
     }
 
     /**

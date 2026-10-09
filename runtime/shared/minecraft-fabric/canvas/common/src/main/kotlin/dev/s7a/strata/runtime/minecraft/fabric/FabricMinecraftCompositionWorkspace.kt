@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture
  * The workspace itself transfers before native allocation and closes only after initialization and GUI-consumption retirement.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-@Suppress("TooGenericExceptionCaught") // Each independent partial allocation must close even when a preceding close fails.
+@Suppress("unused", "TooGenericExceptionCaught") // Synthetic native factories borrow this owner; independent partial allocations must close after failures.
 internal class FabricMinecraftCompositionWorkspace(
     private val plan: FabricMinecraftCompositionTargetPlan,
 ) : NativeGuiResource {

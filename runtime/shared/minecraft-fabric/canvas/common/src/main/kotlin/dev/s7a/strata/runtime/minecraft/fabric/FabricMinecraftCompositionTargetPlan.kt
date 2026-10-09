@@ -8,6 +8,7 @@ import dev.s7a.strata.geometry.IntSize
  * Only extents and reservation values survive planning, with at most 128 shared shapes for 256 outputs.
  * A plan is discarded when rounded native reservations would exceed the original complete reservation.
  */
+@Suppress("unused") // Synthetic preparation callers and remapped tests consume this bounded native reservation plan.
 internal class FabricMinecraftCompositionTargetPlan private constructor(
     @get:JvmSynthetic internal val shapes: Set<IntSize>,
     @get:JvmSynthetic internal val reservations: List<IntSize>,
@@ -42,9 +43,8 @@ internal class FabricMinecraftCompositionTargetPlan private constructor(
             val reservations = ArrayList<IntSize>(images.size + 1)
             reservations.add(workspace)
             images.forEachIndexed { index, image ->
-                val composition = image.composition
-                val shared = (matches?.get(index) ?: -1) < 0 && composition != null && composition.physicalSize in shapes
-                reservations.add(if (shared) checkNotNull(composition).singleOutputReservationSize else existingReservations[index])
+                val shared = image.composition?.takeIf { (matches?.get(index) ?: -1) < 0 && it.physicalSize in shapes }
+                reservations.add(shared?.singleOutputReservationSize ?: existingReservations[index])
             }
             val original = existingReservations.fold(0L) { total, size -> Math.addExact(total, payload(size)) }
             val planned = reservations.fold(0L) { total, size -> Math.addExact(total, payload(size)) }

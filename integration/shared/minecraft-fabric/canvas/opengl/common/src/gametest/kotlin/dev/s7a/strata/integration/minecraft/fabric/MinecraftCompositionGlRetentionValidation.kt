@@ -86,14 +86,15 @@ internal object MinecraftCompositionGlRetentionValidation : MinecraftCanvasInput
         try {
             val before = bindings()
             var sourceCalls = 0
-            val source = borrowedTexture {
-                sourceCalls++
-                val index = MinecraftCompositionParityInputs.member(storage, "borrowedOutput") as Int
-                val framebuffers = MinecraftCompositionParityInputs.member(storage, "framebuffers") as IntArray
-                check(framebuffers.size == 2 && framebuffers.all { it != 0 && GL30.glIsFramebuffer(it) })
-                check(attachment(framebuffers[index], GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME) == scratch)
-                throw primary
-            }
+            val source =
+                borrowedTexture {
+                    sourceCalls++
+                    val index = MinecraftCompositionParityInputs.member(storage, "borrowedOutput") as Int
+                    val framebuffers = MinecraftCompositionParityInputs.member(storage, "framebuffers") as IntArray
+                    check(framebuffers.size == 2 && framebuffers.all { it != 0 && GL30.glIsFramebuffer(it) })
+                    check(attachment(framebuffers[index], GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME) == scratch)
+                    throw primary
+                }
             NativeImage(1, 1, true).use { indices ->
                 NativeImage(1, 1, true).use { factors ->
                     val initialize = type.declaredMethods.single { it.name.startsWith("initialize") && it.parameterCount == 5 }

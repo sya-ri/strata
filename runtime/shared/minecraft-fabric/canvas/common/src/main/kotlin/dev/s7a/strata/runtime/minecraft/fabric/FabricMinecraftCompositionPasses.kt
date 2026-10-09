@@ -9,6 +9,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
  * This does not replace ordered clip/geometry validation or remove individual partially covered source pixels.
  */
 @JvmSynthetic
+@Suppress("unused") // Synthetic geometry and axis-proof visitors call this exact no-op classification.
 internal fun DrawCommand.isFabricMinecraftCompositionNoOp(): Boolean =
     when (this) {
         is DrawCommand.FillRectangle -> color.value ushr 24 == 0
