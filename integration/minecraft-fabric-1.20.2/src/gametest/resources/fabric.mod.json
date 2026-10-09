@@ -6,6 +6,7 @@
   "environment": "client",
   "mixins": [
     "strata.canvas.tests.mixins.json",
+    "strata.native.performance.mixins.json",
     "strata.remote.tests.mixins.json"
   ],
   "entrypoints": {

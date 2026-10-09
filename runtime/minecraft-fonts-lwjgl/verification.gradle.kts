@@ -204,7 +204,12 @@ fun fontRuntime(contract: FontTestContract) {
             outputs.upToDateWhen { false }
             outputs.cacheIf { false }
         }
-        val nativeOutput = nativeProject.layout.buildDirectory.dir("${oracle.outputDirectory}/font-parity")
+        // Resolve the selected runner's declared output after every integration project has been configured.
+        val nativeOutput = layout.dir(providers.provider {
+            val declared = nativeProject.tasks.named("runClientGameTest").get().inputs.properties["strataMinecraftParityOutput"]
+            val directory = if (declared == null) nativeProject.layout.buildDirectory.dir(oracle.outputDirectory).get().asFile else nativeProject.file(declared)
+            directory.resolve("font-parity")
+        })
         val comparisonOutput = layout.buildDirectory.dir("font-offline-parity/$minecraftVersion")
         val comparison = tasks.register<Test>("compareOfflineFont${contract.name}") {
             group = "verification"
@@ -221,7 +226,9 @@ fun fontRuntime(contract: FontTestContract) {
             outputs.cacheIf { false }
             systemProperty("strata.minecraftVersion", minecraftVersion)
             systemProperty("strata.fontOfflineOutput", offlineOutput.get().asFile.absolutePath)
-            systemProperty("strata.fontNativeOutput", nativeOutput.get().asFile.absolutePath)
+            doFirst {
+                systemProperty("strata.fontNativeOutput", nativeOutput.get().asFile.absolutePath)
+            }
             systemProperty("strata.fontComparisonOutput", comparisonOutput.get().asFile.absolutePath)
             javaLauncher.set(workerLauncher)
             if (contract.requiresNativeAccess()) jvmArgs("--enable-native-access=ALL-UNNAMED")

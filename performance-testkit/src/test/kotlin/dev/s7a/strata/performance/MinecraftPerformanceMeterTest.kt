@@ -86,6 +86,47 @@ class MinecraftPerformanceMeterTest {
     }
 
     @Test
+    fun settledSamplesValidateTheirInitialAndEveryCompleteFrameBoundaryExactlyOnce() {
+        val screen = NativeMeterFixture()
+        val plan = PerformanceProfile.Standard.plan()
+        val settleFrames = 8
+        var baseline: Long? = null
+        val completedFrameBoundaries = mutableListOf<Long>()
+        MinecraftPerformanceMeter(screen).use { meter ->
+            try {
+                meter.begin(
+                    "boundary-order",
+                    plan,
+                    fixture =
+                        NativePerformanceFixture(
+                            settleFrames = settleFrames,
+                            beforeSamples = { baseline = screen.renderExtractionCount },
+                            validateFrame = { baseline?.let { completedFrameBoundaries.add(screen.renderExtractionCount - it) } },
+                            afterSamples = { assertEquals((0..plan.samples).map(Int::toLong), completedFrameBoundaries) },
+                        ),
+                )
+                repeat(plan.warmup + settleFrames + plan.samples) {
+                    ScreenEvents.beforeExtract(screen).fire()
+                    screen.renderExtractionCount += 1
+                    screen.hostFrameCount += 1
+                    ScreenEvents.afterExtract(screen).fire()
+                }
+                assertFalse(meter.completed)
+                assertEquals(plan.samples, completedFrameBoundaries.size)
+                ScreenEvents.beforeExtract(screen).fire()
+                assertTrue(meter.completed)
+                assertEquals((0..plan.samples).map(Int::toLong), completedFrameBoundaries)
+                val report = meter.result()
+                assertEquals(plan.samples, report.get("samples").asInt)
+                assertEquals(plan.samples, report.getAsJsonObject("frame_interval").get("samples").asInt)
+                assertTrue(screen.monitorClosed)
+            } finally {
+                ScreenEvents.release(screen)
+            }
+        }
+    }
+
+    @Test
     fun minimizedWindowFailsBeforeAnyApplicationActionOrTiming() {
         val screen = NativeMeterFixture()
         var invoked = false

@@ -101,7 +101,7 @@ internal object MinecraftCanvasGameTest {
         MinecraftCanvasConsumptionGameTest.run(context, profile)
         MinecraftCanvasGenerationGameTest.run(context, profile)
         MinecraftCanvasPointerGameTest.run(context, profile)
-        MinecraftCanvasFailureGameTest.run(context, profile)
+        MinecraftNativePerformancePacingGameTest.run(context) { MinecraftCanvasFailureGameTest.run(context, profile) }
     }
 
     private fun verify(

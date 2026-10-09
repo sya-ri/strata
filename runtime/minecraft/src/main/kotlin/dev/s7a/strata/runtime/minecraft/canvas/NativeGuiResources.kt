@@ -71,7 +71,7 @@ public class NativeGuiResources internal constructor(
                 Math.multiplyExact(size.width, size.height)
             }
             pollInternal()
-            check(sets.size < 64 && sets.values.count { it.owner == ownerId.value } < 3) { "Portable GUI resource-set capacity is exhausted before presentation." }
+            requireCapacity(ownerId)
             nextSet = Math.incrementExact(nextSet)
             NativeGuiResourceSet(deviceId, nextSet).also { token ->
                 sets[token.value] = ResourceSet(token, ownerId.value, copied)
@@ -459,6 +459,45 @@ public class NativeGuiResources internal constructor(
         }
         if (record.referencesReleased && record.resources.all { 0 < it.references || it.release == Release.Destroyed }) sets.remove(record.token.value)
         failures.throwIfPresent()
+    }
+
+    /**
+     * Captures bounded scalar ownership state only on an actual failed reservation.
+     * No native callback, extra poll, resource query, source handle, or historical timeline is retained.
+     * The existing capacity exception stays primary with its original message.
+     */
+    private fun requireCapacity(ownerId: NativeGuiResourceOwnerId) {
+        val ownerCount = sets.values.count { it.owner == ownerId.value }
+        if (sets.size < 64 && ownerCount < 3) return
+        val primary = IllegalStateException("Portable GUI resource-set capacity is exhausted before presentation.")
+        try {
+            val diagnostic = buildString {
+                append("Portable GUI reservation state: device=").append(deviceId)
+                append(", owner=").append(ownerId.value)
+                append(", ownerSets=").append(ownerCount).append("/3")
+                append(", deviceSets=").append(sets.size).append("/64")
+                sets.values.forEach { record ->
+                    append("\nset=").append(record.token.value).append(", owner=").append(record.owner)
+                    append(", sealed=").append(record.sealed).append(", retired=").append(record.retired)
+                    append(", pins=").append(record.pins).append(", pendingGui=").append(record.pendingGui)
+                    append(", initializationOutstanding=").append(record.initializationFence != null)
+                    append(", guiCompletionOutstanding=").append(record.guiCompletion != null)
+                    append(", quarantined=").append(record.quarantined)
+                    append(", referencesReleased=").append(record.referencesReleased)
+                    append(", layers=").append(record.extents.size).append(", resourceReferences=").append(record.resources.size)
+                    val sampledResources = record.resources.take(8)
+                    sampledResources.forEachIndexed { index, resource ->
+                        append(", resourceSample").append(index).append("Release=").append(resource.release)
+                        append(", resourceSample").append(index).append("References=").append(resource.references)
+                    }
+                    append(", unsampledResourceReferences=").append(record.resources.size - sampledResources.size)
+                }
+            }
+            primary.addSuppressed(IllegalStateException(diagnostic))
+        } catch (failure: Throwable) {
+            primary.addSuppressed(failure)
+        }
+        throw primary
     }
 
     private fun requireSet(set: NativeGuiResourceSet): ResourceSet {

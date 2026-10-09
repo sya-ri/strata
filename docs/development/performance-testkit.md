@@ -145,22 +145,46 @@ Run the entry as a standalone task; it rejects other requested tasks and the qui
 Invoke it three times with independent directories and the same selection for each baseline and candidate, with no other builds or performance workloads running during sampling.
 The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
-It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
+It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a configured 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
 Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
 The 108-phase corpus measures settled presentation; it does not measure input, mutation, resize, release latency or GPU completion.
 Terminal native resource release is a correctness assertion outside timing.
-The ordinary Canvas acceptance path remains unchanged when the property is absent.
+
+Native performance collection borrows `MINIMIZED` where the loaded client exposes an inactivity option, preserving native menu and iconification policy.
+The fixture captures all borrowed values without mutation, applies them inside its protected client-owner lifetime, and attempts every independent restoration even after partial application or later failure.
+It reads back each restored option and publishes successful `report.json` only after native cleanup and option restoration pass.
+Versions without an inactivity option record `UNAVAILABLE`; their actual native selector remains unchanged.
+
+Each phase waits for agreement between the actual selected limit and the applied limiter input before the existing warm-up begins.
+The initial pre-sample boundary and every completed sampled boundary record the native option, throttle reason and availability, selected limit, applied limit, applied-limit source and iconification state outside extraction.
+Direct selectors explicitly identify their applied-limit observation as `DIRECT_SELECTOR`; only extracted game render state identifies it as `GAME_RENDER_STATE`.
+A configured limit does not prove that the native selector chose it: native menu caps remain valid observations.
+Formal collection rejects iconification, safety throttling, AFK reasons and any option, reason, observation-source or cap change after readiness.
+The bounded observations belong to the invocation's client owner and are cleared at phase replacement and terminal close.
+Failed phase receipts retain the last actual observation and completed boundaries without publishing partial timings as success.
+
+Use `-Pstrata.performance.inactivity=afk` only for a separate causal diagnostic on targets that expose the native option.
+It preserves actual AFK cap transitions without synthesizing input or changing the native clock, and still rejects iconification and window safety throttling.
+Its controlled conditions differ from the formal default, so it cannot supply a comparable baseline/candidate group with `MINIMIZED` evidence.
+
+Live pacing and restoration receipts use the `*-paced-presented-v2` native fixture identity; selected and quick profiles retain their distinct suffixes and original counts.
+Historical `*-presented-v1` receipts keep their original contract and cannot be mixed with the new epoch in a repetition group.
+Recollect both sides using the same frozen fixture archive; the processor requires the requested inactivity mode, complete pacing boundaries, restoration success and identical phase pacing observations within each group.
+Without the property, ordinary Canvas acceptance checks the compiled pacing family, nonmutating capture, owner rejection and restoration after partial native application, viewport validation, PNG storage and native producer failures.
+Targets with compiled GPU query support also reject incomplete query publication and restore borrowed settings after query cleanup.
+These correctness checks collect no performance samples.
 Each invocation keeps a separate client directory beneath its integration project's `build/run/native-performance/`, preserving the actual processed-mod code sources needed for later archive/class-tree verification and satisfying the existing client-run containment contract.
 Do not delete these client directories before processing or replace their origins with standalone Maven files.
 For legacy production clients, window validation resolves intermediary client/window owners and descriptors through the actual Fabric mapping resolver; development-only class names are not assumed in a remapped client.
 Missing mappings, missing host members, dead handles and iconified windows reject collection rather than producing a valid zero-cost interval.
 
 Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
-The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report or current JMH `receipt.json` with the same runtime binaries).
 For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
 Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
-That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
-The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
+That JVM report or receipt supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+The adapter reads exactly one legacy `strata` or current `runtime_metadata` inventory without rewriting the raw receipt, requires a successful invocation and current per-iteration fork verification, and preserves strict file/resource/class-tree checks.
+The adapter selects the five shared API/core/headless/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
 Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
@@ -229,9 +253,14 @@ The other category includes unsupported mapping, clips and adapter/source limits
 Older measured runtimes expose unavailable payload values as null rather than zero.
 
 GPU queries are opt-in through `strata.performance.gpuQueries=true`, recorded in the controlled report conditions.
-The compiled RenderPearl fixture records timestamp pairs immediately around the real native GUI consumer and uses the actual device's timestamp period to convert ticks to nanoseconds.
-`GpuPerformanceMeter` requires every requested pair to complete before publishing p50, p95 and p99 GPU distributions.
-The GPU scope includes all host commands between those timestamps; it excludes CPU preparation, uploads and sampled-target passes recorded before GUI consumption.
+The compiled RenderPearl fixture records two timestamp pairs and uses the actual device's timestamp period to convert ticks to nanoseconds.
+The GUI-only pair surrounds the real native GUI consumer and excludes uploads and sampled-target passes recorded before GUI consumption.
+The full presentation pair starts before owner-thread frame preparation and ends after GUI consumption, covering intervening source/metadata uploads and ordered offscreen composition.
+Its GPU duration does not measure CPU preparation time; the timestamps bound commands on the native device timeline.
+`GpuPerformanceMeter` requires every requested pair to complete before publishing separate p50, p95 and p99 GPU distributions.
+The native processor requires both complete scopes when GUI queries are available and rejects using the GUI-only scope as full presentation evidence.
+Older unsupported adapters may omit the full-scope ancestor while their GUI queries are explicitly unavailable; the adapter registers no missing-path projection and preserves full GPU metrics as null with a reason.
+Mixed ancestor presence or GUI/full-scope measurement availability across one complete raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.
@@ -419,7 +448,7 @@ Class and method selection also apply to the font fixtures; their declared param
 The same option selects loaded native cases such as `TextField,NativeCanvas` at all four GUI scales.
 The native performance entry prepares the actual resource profile and then collects directly, without running ordinary profile-reload, input, inventory and pixel-regression scenes on every measurement invocation.
 Omitting the option retains the full 108-interval matrix and its existing acceptance contract.
-A proper subset uses the distinct `native-components-selected-presented-v1` workload ID; pass the same comma-separated IDs as `workloads` in the native summary request.
+A proper subset uses the distinct `native-components-selected-paced-presented-v2` workload ID; pass the same comma-separated IDs as `workloads` in the native summary request.
 The processor rejects missing scales, duplicates, leaked native ownership and a selection that disagrees with the request; targeted evidence cannot satisfy full-suite acceptance.
 
 During optimization, run only affected workload phases and the deterministic parity/invalidation checks needed by that change.

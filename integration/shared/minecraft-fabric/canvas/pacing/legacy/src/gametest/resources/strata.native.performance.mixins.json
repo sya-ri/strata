@@ -1,0 +1,8 @@
+{
+  "minVersion": "0.8",
+  "required": true,
+  "package": "dev.s7a.strata.integration.minecraft.fabric.mixin.pacing",
+  "compatibilityLevel": "JAVA_17",
+  "client": ["MinecraftNativePerformanceClientAccess"],
+  "injectors": {"defaultRequire": 1}
+}
