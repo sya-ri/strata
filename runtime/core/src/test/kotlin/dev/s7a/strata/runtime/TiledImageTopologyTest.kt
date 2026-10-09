@@ -68,7 +68,7 @@ internal class TiledImageTopologyTest {
         assertFrame(source, state, size, policy, zoomed)
         assertEquals(previousDestinations, samples(first).map(DrawCommand.SampledImage::destination))
 
-        val changed = source.active.keys.first { id -> id.level == 0 }
+        val changed = TiledImageTopologyOracle.plan(source, state.metrics, size, policy).painted.first { id -> id.level == 0 }
         val replacement = createDrawImage(source.levels[changed.level].tilePixelSize, IntArray(64) { 0xFFABCDEF.toInt() })
         source.publish(changed, TiledImageTile.Ready(replacement))
         val revised = session.frame(constraints(size))
@@ -204,7 +204,7 @@ internal class TiledImageTopologyTest {
 
     @Test
     fun smallBytePolicyAndManyLevelsKeepOriginalAdmissionWithoutRetainingOversizedKeys() {
-        val source = Source(LongRect(0, 0, 1, 1), (1L..24L).map { units -> TiledImageLevel(IntSize(1, 1), units) })
+        val source = Source(LongRect(0, 0, 1, 1), List(24) { index -> TiledImageLevel(IntSize(1, 1), 1L shl index) })
         val state = PanZoomState(initialCenter = DoubleOffset(0.5, 0.5))
         val size = IntSize(1, 1)
         val policy = TiledImageCachePolicy(24, 96, 0)
@@ -222,8 +222,9 @@ internal class TiledImageTopologyTest {
         assertEquals(24, source.events.size)
         session.close()
 
-        val many = Source(LongRect(0, 0, 1, 1), (1L..10_000L).map { units -> TiledImageLevel(IntSize(1, 1), units) })
-        val zoom = PanZoomState(initialZoom = 0.0001, minimumZoom = 0.00001)
+        val many = Source(LongRect(0, 0, 1, 1), alignedManyLevels())
+        val initialZoom = 1.0 / many.levels.last().contentUnitsPerPixel
+        val zoom = PanZoomState(initialCenter = DoubleOffset(0.5, 0.5), initialZoom = initialZoom, minimumZoom = initialZoom / 4.0)
         val bounded = session(many, zoom, size, TiledImageCachePolicy(1, 32, 0))
         bounded.attach()
         bounded.frame(constraints(size))
@@ -462,6 +463,23 @@ internal class TiledImageTopologyTest {
     ): UiSession = UiSession(TestOwnerDispatcher()) { evaluateComponentTree { TiledImage(source, state, size, cachePolicy = policy) } }
 
     private fun constraints(size: IntSize): Constraints = Constraints.fixed(size.width, size.height)
+
+    /**
+     * Keeps 10,000 resolutions on one aligned tile envelope without relaxing public geometry validation.
+     * Divisors of 18! give distinct pixel sizes with identical integral content extents; the one-entry policy admits only the final 1x1 level.
+     */
+    private fun alignedManyLevels(): List<TiledImageLevel> {
+        val factors = listOf(2L to 16, 3L to 8, 5L to 3, 7L to 2, 11L to 1, 13L to 1, 17L to 1)
+        val divisors =
+            factors.fold(listOf(1L)) { previous, (prime, exponent) ->
+                val powers = generateSequence(1L) { value -> value * prime }.take(exponent + 1).toList()
+                previous.flatMap { divisor -> powers.map { power -> divisor * power } }
+            }
+        val extent = divisors.max()
+        val pixels = divisors.filter { divisor -> divisor <= Int.MAX_VALUE }.sorted().take(10_000)
+        check(pixels.size == 10_000)
+        return pixels.asReversed().map { width -> TiledImageLevel(IntSize(width.toInt(), width.toInt()), extent / width) }
+    }
 
     private fun standardLevels(): List<TiledImageLevel> = listOf(1L, 2L, 4L).map { units -> TiledImageLevel(IntSize(8, 8), units) }
 

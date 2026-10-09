@@ -19,6 +19,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.StateRevision
 import dev.s7a.strata.state.StateSnapshot
 import dev.s7a.strata.state.StateSource
@@ -48,7 +49,7 @@ public class TiledImageBenchmarkInput(
         PanZoomState(
             initialCenter = geometry.center,
             initialZoom = geometry.zoom,
-            minimumZoom = 0.00001,
+            minimumZoom = minOf(0.00001, geometry.zoom / 4.0),
             maximumZoom = 4_096.0,
         )
 
@@ -137,6 +138,7 @@ public class TiledImageBenchmarkInput(
     /**
      * Full public TiledImage with an ordinary positioned overlay; no retained-node fixture replaces its implementation.
      */
+    @OptIn(InternalStrataRuntimeApi::class)
     public fun element(): Element =
         evaluateComponentTree {
             redeclaration.value
@@ -286,6 +288,23 @@ public class TiledImageBenchmarkInput(
 
     private fun lodFactor(): Double = if (case == Case.Dense) 4.0 else 0.25
 
+    /**
+     * Keeps 10,000 resolutions on one aligned tile envelope without relaxing public geometry validation.
+     * Divisors of 18! give distinct pixel sizes with identical integral content extents; the one-entry policy admits only the final 1x1 level.
+     */
+    private fun alignedManyLevels(): List<TiledImageLevel> {
+        val factors = listOf(2L to 16, 3L to 8, 5L to 3, 7L to 2, 11L to 1, 13L to 1, 17L to 1)
+        val divisors =
+            factors.fold(listOf(1L)) { previous, (prime, exponent) ->
+                val powers = generateSequence(1L) { value -> value * prime }.take(exponent + 1).toList()
+                previous.flatMap { divisor -> powers.map { power -> divisor * power } }
+            }
+        val extent = divisors.max()
+        val pixels = divisors.filter { divisor -> divisor <= Int.MAX_VALUE }.sorted().take(10_000)
+        check(pixels.size == 10_000)
+        return pixels.asReversed().map { width -> TiledImageLevel(IntSize(width.toInt(), width.toInt()), extent / width) }
+    }
+
     private fun geometry(case: Case): Geometry {
         val ordinary = LongRect(-48, -48, 48, 48)
         val levels = listOf(1L, 2L, 4L).map { units -> TiledImageLevel(IntSize(8, 8), units) }
@@ -316,11 +335,12 @@ public class TiledImageBenchmarkInput(
             }
 
             Case.TinyKeyBudget -> {
-                Geometry(LongRect(0, 0, 1, 1), (1L..24L).map { units -> TiledImageLevel(IntSize(1, 1), units) }, IntSize(1, 1), TiledImageCachePolicy(24, 96, 0), DoubleOffset(0.5, 0.5), 1.0, 1.0)
+                Geometry(LongRect(0, 0, 1, 1), List(24) { index -> TiledImageLevel(IntSize(1, 1), 1L shl index) }, IntSize(1, 1), TiledImageCachePolicy(24, 96, 0), DoubleOffset(0.5, 0.5), 1.0, 1.0)
             }
 
             Case.ManyLevels -> {
-                Geometry(LongRect(0, 0, 1, 1), (1L..10_000L).map { units -> TiledImageLevel(IntSize(1, 1), units) }, IntSize(1, 1), TiledImageCachePolicy(1, 32, 0), DoubleOffset(0.5, 0.5), 0.00004, 1.0)
+                val many = alignedManyLevels()
+                Geometry(LongRect(0, 0, 1, 1), many, IntSize(1, 1), TiledImageCachePolicy(1, 32, 0), DoubleOffset(0.5, 0.5), 1.0 / many.last().contentUnitsPerPixel, 1.0)
             }
 
             Case.LargeCoordinates -> {
