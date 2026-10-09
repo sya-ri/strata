@@ -499,3 +499,18 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+The separate logical provenance corpus is selected with `-Pstrata.performance.benchmarks=TextProvenanceBenchmark -Pstrata.performance.suite=text-font-provenance` on `:quality:component-benchmarks:jmhComponents`.
+Its 149 declared cases must match the actual generated inventory before collection and remain complete on both measured runtime variants.
+`operate` names one complete declared opportunity: lookup returns a folded 512-query trace, slice returns all 32 detached results, and restoring retained changes include both changed and restored public frames.
+Report these batch cases in microseconds per operation with their declared query/slice counts; do not relabel them as a per-scalar measurement or subtract timer/bridge overhead.
+Unicode structures, scalar-safe traces, synthetic font/profile assets and exact method handles are prepared outside sampling.
+Dense reference construction, field inspection, work counts, pixels and release assertions run only during independent verification.
+
+Use the same candidate-compiled Kotlin/Java bridge, generated JMH classes/resources, collector, harness, external control inputs and unchanged API/core/headless archives on both sides.
+Only the actually loaded Minecraft runtime archive changes between the preserved original dense source and the run-based source.
+Record archive hashes and actual child-loaded class trees for both variants; source hashes are preparation records and cannot substitute for those receipts.
+Collect three independent Standard AverageTime repetitions per side, with three one-second warm-ups, five one-second measurements, one fork/thread, microsecond units and the GC profiler.
+The complete six matrices require at least 7,152 seconds of declared warm-up/measurement time, excluding compilation, verification, fork startup and evidence processing.
+Preserve every CPU/allocation/control row and regression; quick, smoke and selected subsets do not satisfy the paired admission.
+Synthetic CPU fonts make native engine timing inapplicable to this corpus; current full JVM/browser/shared and all 22 supported Minecraft/native parity jobs still gate final correctness.
