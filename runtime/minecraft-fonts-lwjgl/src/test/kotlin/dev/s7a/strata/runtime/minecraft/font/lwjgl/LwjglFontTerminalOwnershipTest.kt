@@ -174,7 +174,11 @@ internal class LwjglFontTerminalOwnershipTest {
     private fun field(
         owner: Any,
         name: String,
-    ): Any? = owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner)
+    ): Any? =
+        owner.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(owner)
 
     private fun snapshot(
         selected: MinecraftFontCompatibility,
