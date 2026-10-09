@@ -1592,11 +1592,15 @@
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Absent#public fun toString ()Ljava/lang/String;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Absent#public static final field INSTANCE Ldev/s7a/strata/projection/ProjectionValue$Absent;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public final class dev/s7a/strata/projection/ProjectionValue$Bytes : dev/s7a/strata/projection/ProjectionValue {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public final fun copyInto ([BI)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public final fun getSize ()I
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public final fun toByteArray ()[B
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public fun <init> ([B)V
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public fun equals (Ljava/lang/Object;)Z
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public fun hashCode ()I
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes#public static final field Companion Ldev/s7a/strata/projection/ProjectionValue$Bytes$Companion;
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes$Companion#public final class dev/s7a/strata/projection/ProjectionValue$Bytes$Companion {
+:api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Bytes$Companion#public final fun fromOwned ([B)Ldev/s7a/strata/projection/ProjectionValue$Bytes;
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Flag#public final class dev/s7a/strata/projection/ProjectionValue$Flag : dev/s7a/strata/projection/ProjectionValue {
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Flag#public final fun component1 ()Z
 :api@Jvm	:api@Jvm	jvm:dev/s7a/strata/projection/ProjectionValue$Flag#public final fun copy (Z)Ldev/s7a/strata/projection/ProjectionValue$Flag;
@@ -3815,6 +3819,9 @@
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Absent.toString|toString(){}[0]#final fun toString(): kotlin/String
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Absent|null[0]#final object Absent : dev.s7a.strata.projection/ProjectionValue {
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.<init>|<init>(kotlin.ByteArray){}[0]#constructor <init>(kotlin/ByteArray)
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.Companion.fromOwned|fromOwned(kotlin.ByteArray){}[0]#final fun fromOwned(kotlin/ByteArray): dev.s7a.strata.projection/ProjectionValue.Bytes
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.Companion|null[0]#final object Companion {
+:api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.copyInto|copyInto(kotlin.ByteArray;kotlin.Int){}[0]#final fun copyInto(kotlin/ByteArray, kotlin/Int)
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.equals|equals(kotlin.Any?){}[0]#final fun equals(kotlin/Any?): kotlin/Boolean
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.hashCode|hashCode(){}[0]#final fun hashCode(): kotlin/Int
 :api@Web	:api@Web	klib:dev.s7a.strata.projection/ProjectionValue.Bytes.size.<get-size>|<get-size>(){}[0]#final fun <get-size>(): kotlin/Int

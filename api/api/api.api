@@ -2000,11 +2000,17 @@ public final class dev/s7a/strata/projection/ProjectionValue$Absent : dev/s7a/st
 }
 
 public final class dev/s7a/strata/projection/ProjectionValue$Bytes : dev/s7a/strata/projection/ProjectionValue {
+	public static final field Companion Ldev/s7a/strata/projection/ProjectionValue$Bytes$Companion;
 	public fun <init> ([B)V
+	public final fun copyInto ([BI)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getSize ()I
 	public fun hashCode ()I
 	public final fun toByteArray ()[B
+}
+
+public final class dev/s7a/strata/projection/ProjectionValue$Bytes$Companion {
+	public final fun fromOwned ([B)Ldev/s7a/strata/projection/ProjectionValue$Bytes;
 }
 
 public final class dev/s7a/strata/projection/ProjectionValue$Flag : dev/s7a/strata/projection/ProjectionValue {

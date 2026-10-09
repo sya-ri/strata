@@ -7,10 +7,10 @@ import dev.s7a.strata.performance.PerformanceReportMetric
 import java.nio.file.Path
 
 /**
- * Retains every editable-state CPU case, control and regression through the shared three-plus-three comparison engine.
+ * Retains every byte-codec CPU case, control and regression through the shared three-plus-three comparison engine.
  * Collector-bound run receipts have already validated their paired JMH launch and immutable source/archive plan.
  */
-public object RemoteClientStatesCpuComparison {
+public object RemoteBytesCpuComparison {
     /**
      * Accepts three baseline receipts, three candidate receipts, the frozen collector JAR and a fresh output path.
      * Run on the same frozen fixture/collector classpath as collection; missing or changed case controls fail explicitly.
@@ -20,11 +20,11 @@ public object RemoteClientStatesCpuComparison {
         require(args.size == 8)
         val contract =
             PerformanceReportContract(
-                workloadId = "current-client-editable-states-v1",
-                phaseKeys = listOf("entries", "membership", "operation"),
-                phaseCount = 45,
+                workloadId = "remote-bytes-codec-v1",
+                phaseKeys = listOf("corpus", "operation"),
+                phaseCount = 64,
                 reportConditions = setOf("fixture_identity", "inputs", "environment", "jvm_arguments", "native_uploads", "gpu_time", "fps"),
-                phaseConditions = setOf("operations_per_sample", "measured_operations", "processed_operations", "samples", "warmup", "last_result"),
+                phaseConditions = setOf("operations_per_sample", "measured_operations", "processed_operations", "samples", "warmup"),
                 variantReportFields = setOf("runtime_metadata"),
             )
         val metrics =

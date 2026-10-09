@@ -1,6 +1,9 @@
+@file:OptIn(InternalStrataRuntimeApi::class)
+
 package dev.s7a.strata.runtime.remote
 
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -88,7 +91,7 @@ public class RemoteValueCodec(
             is ProjectionValue.Bytes -> {
                 require(value.size <= limits.messageBytes) { "Remote bytes exceed their limit." }
                 output.writeByte(Tag.Bytes.code)
-                writeBytes(output, value.toByteArray())
+                output.writeBytes(value)
             }
 
             is ProjectionValue.Sequence -> {
@@ -134,7 +137,7 @@ public class RemoteValueCodec(
             }
 
             Tag.Bytes -> {
-                ProjectionValue.Bytes(readBytes(input))
+                ProjectionValue.Bytes.fromOwned(readBytes(input))
             }
 
             Tag.Sequence -> {
@@ -176,12 +179,21 @@ public class RemoteValueCodec(
     }
 
     /**
-     * Uses ordinary JDK primitives while packing admitted ASCII into the same bounded output buffer.
-     * A text payload reserves once, creates no temporary encoder buffer, and preserves the inherited byte count.
+     * Uses ordinary JDK primitives while packing admitted ASCII and immutable bytes into the bounded output.
+     * Each payload reserves once and preserves the inherited byte count without an extraction array.
      */
     private class EncodingOutput(
         private val bytes: BoundedOutput,
     ) : DataOutputStream(bytes) {
+        /**
+         * Copies an immutable payload directly into this invocation's bounded stream storage.
+         */
+        fun writeBytes(value: ProjectionValue.Bytes) {
+            writeInt(value.size)
+            bytes.appendBytes(value)
+            written = Math.addExact(written, value.size)
+        }
+
         fun writeAscii(value: String) {
             writeInt(value.length)
             bytes.appendAscii(value)
@@ -197,6 +209,17 @@ public class RemoteValueCodec(
     private class BoundedOutput(
         private val limit: Int,
     ) : ByteArrayOutputStream() {
+        /**
+         * Validates complete growth before copying from a read-only value into invocation-owned storage.
+         */
+        fun appendBytes(value: ProjectionValue.Bytes) {
+            require(value.size <= limit - count) { "Remote message exceeds its byte limit." }
+            val end = count + value.size
+            reserve(end)
+            value.copyInto(buf, count)
+            count = end
+        }
+
         /**
          * Packs only caller-admitted ASCII after checking complete growth, without per-byte stream dispatch.
          * This buffer belongs exclusively to one encode invocation and is copied before being returned.
