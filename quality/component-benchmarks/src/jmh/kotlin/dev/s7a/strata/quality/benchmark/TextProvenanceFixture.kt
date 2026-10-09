@@ -1,6 +1,5 @@
 package dev.s7a.strata.quality.benchmark
 
-import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextArea
 import dev.s7a.strata.component.TextAreaState
@@ -72,6 +71,7 @@ internal class TextProvenanceFixture(
         }
     private val policy = TextLayout.Multiline(TextWrap.Character, maxLines = if (case.shape === Shape.Wrapped) 3 else Int.MAX_VALUE, overflow = if (case.shape === Shape.Wrapped) TextOverflow.Ellipsis else TextOverflow.Clip)
     private val firstSize = IntSize(if (case.consumer === Consumer.SingleLineText) Math.addExact(Math.multiplyExact(assets.values.maxOf(String::length), 5), 32) else 128, if (case.consumer === Consumer.SingleLineText) 9 else 40)
+    private val singleViewports = if (case.consumer === Consumer.SingleLineText) assets.texts.map(::naturalViewport) else emptyList()
     private val secondSize = IntSize(firstSize.width + 11, firstSize.height)
     private val size = mutableStateOf(firstSize)
     private val owner = mutableStateOf(Side.First)
@@ -116,13 +116,7 @@ internal class TextProvenanceFixture(
                                 if (case.consumer === Consumer.TextArea) {
                                     TextArea(states[owner.value.ordinal], TextAreaViewport.Size(size.value), font(), wrap = TextWrap.Character, modifier = Modifier.Empty.initialFocus(), key = keys[owner.value.ordinal])
                                 } else {
-                                    if (case.consumer === Consumer.SingleLineText) {
-                                        Stack {
-                                            Text(assets.texts[textIndex], TextLayout.SingleLine, TextStyle.ContainerLabel, key = keys[owner.value.ordinal])
-                                        }
-                                    } else {
-                                        Text(assets.texts[textIndex], policy, TextStyle.ContainerLabel, key = keys[owner.value.ordinal])
-                                    }
+                                    Text(assets.texts[textIndex], if (case.consumer === Consumer.SingleLineText) TextLayout.SingleLine else policy, TextStyle.ContainerLabel, key = keys[owner.value.ordinal])
                                 }
                             }
                         }
@@ -374,7 +368,31 @@ internal class TextProvenanceFixture(
 
     private fun presentation(): Any = TextProvenanceOwnerAccess.presentation(currentOwner(), case.consumer)
 
-    private fun frame(): RuntimeUiFrame = host.frame(size.value, time)
+    /**
+     * Prepares exact fixed-host dimensions from the independent original logical scalar widths.
+     * The three immutable text/font variants are resolved before sampling, with no target metric or layout reads.
+     */
+    private fun naturalViewport(text: UiText): IntSize {
+        val original = TextProvenanceDenseReference.create(text, Family.First.id, false)
+        var width = 0f
+        var offset = 0
+        while (offset < original.value.length) {
+            val scalar = original.value.codePointAt(offset)
+            width += assets.advance(original.fontAt(offset), scalar)
+            offset += Character.charCount(scalar)
+        }
+        return IntSize(maxOf(0, assets.compatibility.roundedWidth(width)), 9)
+    }
+
+    private fun frame(): RuntimeUiFrame {
+        val viewport =
+            if (case.consumer === Consumer.SingleLineText) {
+                singleViewports[if (selectedFont.value === Side.Second) 2 else selectedText.value.ordinal]
+            } else {
+                size.value
+            }
+        return host.frame(viewport, time)
+    }
 
     private fun pixels(frame: RuntimeUiFrame): IntArray = rasterizeHeadless(frame.drawCommands, IntSize(minOf(64, size.value.width), minOf(40, size.value.height))).copyArgb()
 

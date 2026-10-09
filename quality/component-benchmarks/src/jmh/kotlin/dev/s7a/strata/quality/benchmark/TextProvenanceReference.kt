@@ -77,6 +77,8 @@ internal class TextProvenanceReference(
         committedCaret: Int,
         composed: Boolean,
     ) {
+        val expectedSize = if (consumer === Consumer.SingleLineText) IntSize(maxOf(0, nativeWidth(rows.single())), 9) else viewport
+        check(frame.size == expectedSize)
         val editor = consumer === Consumer.TextArea
         if (editor) check(field(field(owner, "viewport"), "horizontalOffset") == 0)
         val bounds = if (editor) IntRect(4, 4, viewport.width - 4, viewport.height - 4) else IntRect(0, 0, viewport.width, viewport.height)
