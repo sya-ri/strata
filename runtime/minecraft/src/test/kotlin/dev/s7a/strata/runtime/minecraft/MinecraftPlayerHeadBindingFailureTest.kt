@@ -59,12 +59,23 @@ internal class MinecraftPlayerHeadBindingFailureTest {
                 val other = IllegalStateException("Binding")
                 val second =
                     when (graph) {
-                        FailureGraph.Same -> first
-                        FailureGraph.PrimaryContainsSecondary -> other.also(first::initCause)
-                        FailureGraph.SecondaryContainsPrimary -> other.also { it.initCause(first) }
-                        FailureGraph.ExistingCycle -> other.also {
-                            first.initCause(it)
-                            it.initCause(first)
+                        FailureGraph.Same -> {
+                            first
+                        }
+
+                        FailureGraph.PrimaryContainsSecondary -> {
+                            other.also(first::initCause)
+                        }
+
+                        FailureGraph.SecondaryContainsPrimary -> {
+                            other.also { it.initCause(first) }
+                        }
+
+                        FailureGraph.ExistingCycle -> {
+                            other.also {
+                                first.initCause(it)
+                                it.initCause(first)
+                            }
                         }
                     }
                 val binding = fixture.platform.binding

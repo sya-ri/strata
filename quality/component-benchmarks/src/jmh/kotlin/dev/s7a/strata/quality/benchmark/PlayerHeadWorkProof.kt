@@ -125,19 +125,25 @@ internal object PlayerHeadWorkProof {
         }
         val frame =
             when (operation) {
-                Operation.ColdHidden, Operation.ColdVisible, Operation.CleanFrame -> fixture.frame()
+                Operation.ColdHidden, Operation.ColdVisible, Operation.CleanFrame -> {
+                    fixture.frame()
+                }
+
                 Operation.ReplaceHiddenSkin, Operation.ReplaceVisibleSkin -> {
                     fixture.replace(operation == Operation.ReplaceVisibleSkin)
                     fixture.frame()
                 }
+
                 Operation.ReplaceSize -> {
                     fixture.resize()
                     fixture.frame()
                 }
+
                 Operation.EnableHat -> {
                     fixture.hat(true)
                     fixture.frame()
                 }
+
                 Operation.ToggleCycle -> {
                     fixture.hat(false)
                     fixture.frame()
@@ -146,8 +152,14 @@ internal object PlayerHeadWorkProof {
                     fixture.hat(false)
                     fixture.frame()
                 }
-                Operation.PreparedDirtyRepaint -> fixture.dirty()
-                Operation.HiddenLifetime, Operation.VisibleLifetime -> error("Lifetime handled before retained operations.")
+
+                Operation.PreparedDirtyRepaint -> {
+                    fixture.dirty()
+                }
+
+                Operation.HiddenLifetime, Operation.VisibleLifetime -> {
+                    error("Lifetime handled before retained operations.")
+                }
             }
         return Result(frame, fixture, caches)
     }
@@ -193,16 +205,24 @@ internal object PlayerHeadWorkProof {
         val filtered = fixture.workload.size % 8 != 0
         if (filtered.not()) check(retained == 0L)
         when (operation) {
-            Operation.EnableHat, Operation.ToggleCycle, Operation.PreparedDirtyRepaint, Operation.CleanFrame ->
+            Operation.EnableHat, Operation.ToggleCycle, Operation.PreparedDirtyRepaint, Operation.CleanFrame -> {
                 result.caches.zip(previous.faces).forEach { (cache, face) -> check(cache.face === face) }
-            Operation.ReplaceHiddenSkin, Operation.ReplaceVisibleSkin, Operation.ReplaceSize ->
+            }
+
+            Operation.ReplaceHiddenSkin, Operation.ReplaceVisibleSkin, Operation.ReplaceSize -> {
                 if (filtered) {
                     result.caches.zip(previous.faces).forEach { (cache, face) -> check(cache.face !== face) }
                     result.caches.zip(previous.hats).forEach { (cache, hat) -> check(cache.hat == null || cache.hat !== hat) }
                 }
-            else -> Unit
+            }
+
+            else -> {}
         }
         if (operation == Operation.CleanFrame) check(result.frame === previous.frame)
+        verifyPreviousPixels(previous)
+    }
+
+    private fun verifyPreviousPixels(previous: Previous) {
         val oldFrame = previous.frame
         val pixels = previous.pixels
         if (oldFrame != null && pixels != null) {

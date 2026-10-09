@@ -316,6 +316,31 @@ internal class MinecraftPlayerHeadLayerOwnershipTest {
         }
     }
 
+    @Test
+    fun detachmentBeforeFirstFrameResumesOneBindingAndKeepsTheRetainedPainter() {
+        PlayerHeadLayerFixture.Mode.entries.forEach { mode ->
+            PlayerHeadLayerFixture(mode, showHat = true).use { fixture ->
+                val perAttachment = if (mode == PlayerHeadLayerFixture.Mode.Async) 1 else 0
+                fixture.attach()
+                val painter = PlayerHeadCacheProbe.painters(fixture.host).single()
+                assertEquals(perAttachment, fixture.platform.acquisitions)
+                assertEmpty(painter)
+                fixture.detach()
+                assertEmpty(painter)
+                assertEquals(0, fixture.platform.activeCount)
+                assertEquals(perAttachment, fixture.platform.releases)
+                fixture.attach()
+                assertSame(painter, PlayerHeadCacheProbe.painters(fixture.host).single())
+                assertEquals(2 * perAttachment, fixture.platform.acquisitions)
+                val frame = fixture.frame()
+                PlayerHeadPixelReference.verify(frame.drawCommands, fixture.skin, fixture.size, true)
+                fixture.close()
+                assertEmpty(painter)
+                assertEquals(fixture.platform.acquisitions, fixture.platform.releases)
+            }
+        }
+    }
+
     private fun assertEmpty(painter: MinecraftPlayerHeadPainter) {
         val cache = PlayerHeadCacheProbe.snapshot(painter)
         assertNull(cache.skin)

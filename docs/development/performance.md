@@ -510,6 +510,20 @@ Equal pixels with a distinct image identity invalidate both layers on synchronou
 Previously returned commands retain their independent immutable images after replacement or terminal release.
 Deterministic runtime tests cover independent ordered pixel references, hidden and visible cold preparation, delayed hat construction, stable identity reuse, source/size invalidation, bounded history, invalid sizes and owner-isolated lifecycle/failure release.
 
+### Resource-font raster ownership
+
+Cold PNG, STB, FreeType, bitmap-cell and Unihex construction transfers fresh private ARGB arrays through the existing internal image ownership bridge.
+The caller completes each original pixel loop before transfer and retains no mutable alias afterward; public array construction and pixel extraction still copy their inputs or outputs.
+PNG conversion keeps straight alpha and hidden RGB, native grayscale conversion keeps signed row pitch, bitmap metrics inspect each source pixel once, and Unihex keeps inclusive padding and override order.
+Native buffer cleanup, face ownership, load ceilings and cache policies remain unchanged.
+
+`FontRasterOwnershipBenchmark` is an independent 22-case corpus: three already encoded PNG sizes, four predecoded bitmap-cell sizes including atlas rejection, three loaded Unihex widths, four native TrueType raster cases, and eight unchanged provider warm/lifecycle controls.
+The original 42-case font corpus remains unchanged.
+PNG encoding, source loading and face opening are outside raster measurements; decode and TrueType operations still include their native conversion or raster work.
+The untimed `verifyWork()` hook checks the generated matrix, complete input-derived pixels, original provider controls, terminal owners and paired image/metric fingerprints.
+Frozen external PNG inputs can be prepared once by `FontRasterWorkEvidence` and reused through the generic `strata.performance.fixtureInputs` manifest with labels `font-raster-png-32`, `font-raster-png-256` and `font-raster-png-1024`; each accepted paired run must retain those exact bytes and the registered CC0 font alongside actual fixture and runtime provenance.
+A removed image copy is a construction/allocation opportunity, while warm hits and atlas-rejected cells remain controls; it is not a native upload or frame-rate claim.
+
 ### Resource-font caches
 
 Each common host owns one font engine for its immutable profile snapshot and captured font options.

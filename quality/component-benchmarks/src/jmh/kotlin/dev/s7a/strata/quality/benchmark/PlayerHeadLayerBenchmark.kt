@@ -105,7 +105,7 @@ public open class PlayerHeadLayerBenchmark {
          * Builds assets and prepares both layers outside timing.
          */
         @Setup(Level.Trial)
-        public fun setup(): Unit {
+        public fun setup() {
             assets = PlayerHeadFixture.Assets()
             fixture = PlayerHeadFixture(workload, assets, true)
             fixture.attach()
@@ -185,7 +185,7 @@ public open class PlayerHeadLayerBenchmark {
          * Creates identical immutable inputs outside timing.
          */
         @Setup(Level.Trial)
-        public fun setup(): Unit {
+        public fun setup() {
             assets = PlayerHeadFixture.Assets()
         }
 
@@ -193,7 +193,7 @@ public open class PlayerHeadLayerBenchmark {
          * Attaches one fresh host outside timing.
          */
         @Setup(Level.Invocation)
-        public fun begin(): Unit {
+        public fun begin() {
             fixture = PlayerHeadFixture(workload, assets, false)
             fixture.attach()
         }
@@ -201,9 +201,7 @@ public open class PlayerHeadLayerBenchmark {
         /**
          * Times only the first actual frame.
          */
-        public fun frame(): RuntimeUiFrame {
-            return fixture.frame()
-        }
+        public fun frame(): RuntimeUiFrame = fixture.frame()
 
         /**
          * Releases the fresh host outside cold-frame timing.
@@ -231,7 +229,7 @@ public open class PlayerHeadLayerBenchmark {
          * Creates identical immutable inputs outside timing.
          */
         @Setup(Level.Trial)
-        public fun setup(): Unit {
+        public fun setup() {
             assets = PlayerHeadFixture.Assets()
         }
 
@@ -239,7 +237,7 @@ public open class PlayerHeadLayerBenchmark {
          * Attaches one fresh host outside timing.
          */
         @Setup(Level.Invocation)
-        public fun begin(): Unit {
+        public fun begin() {
             fixture = PlayerHeadFixture(workload, assets, true)
             fixture.attach()
         }
@@ -247,9 +245,7 @@ public open class PlayerHeadLayerBenchmark {
         /**
          * Times only the first actual frame.
          */
-        public fun frame(): RuntimeUiFrame {
-            return fixture.frame()
-        }
+        public fun frame(): RuntimeUiFrame = fixture.frame()
 
         /**
          * Releases the fresh host outside cold-frame timing.
@@ -277,7 +273,7 @@ public open class PlayerHeadLayerBenchmark {
          * Creates identical immutable inputs outside timing.
          */
         @Setup(Level.Trial)
-        public fun setup(): Unit {
+        public fun setup() {
             assets = PlayerHeadFixture.Assets()
         }
 
@@ -285,7 +281,7 @@ public open class PlayerHeadLayerBenchmark {
          * Attaches one fresh host and prepares only the hidden request outside timing.
          */
         @Setup(Level.Invocation)
-        public fun begin(): Unit {
+        public fun begin() {
             fixture = PlayerHeadFixture(workload, assets, false)
             fixture.attach()
             fixture.frame()
@@ -315,7 +311,7 @@ public open class PlayerHeadLayerBenchmark {
          * Temporary source is owned by this invocation and is removed without recursive deletion.
          */
         @JvmStatic
-        public fun verifyWork(): Unit {
+        public fun verifyWork() {
             val directory = Files.createTempDirectory("strata-player-head-probe-")
             val source = directory.resolve("PlayerHeadReadProbe.java")
             try {

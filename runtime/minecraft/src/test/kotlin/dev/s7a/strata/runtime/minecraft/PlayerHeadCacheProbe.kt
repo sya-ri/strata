@@ -26,7 +26,9 @@ internal object PlayerHeadCacheProbe {
      * Finds current painters without following borrowed authority or retaining graph history.
      */
     internal fun painters(host: MinecraftUiHost): List<MinecraftPlayerHeadPainter> {
-        val origins = setOf(host.javaClass.protectionDomain.codeSource.location, UiTree::class.java.protectionDomain.codeSource.location)
+        val hostOrigin = host.javaClass.protectionDomain.codeSource.location
+        val coreClass = UiTree::class.java
+        val origins = setOf(hostOrigin, coreClass.protectionDomain.codeSource.location)
         val visited = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
         val pending = ArrayDeque<Any>()
         val result = ArrayList<MinecraftPlayerHeadPainter>()
@@ -35,15 +37,27 @@ internal object PlayerHeadCacheProbe {
             val current = pending.removeFirst()
             if (visited.add(current).not()) continue
             when {
-                current is MinecraftPlayerHeadPainter -> result.add(current)
-                current is MinecraftUiPlatform -> Unit
-                current is Collection<*> -> current.filterNotNull().forEach(pending::add)
+                current is MinecraftPlayerHeadPainter -> {
+                    result.add(current)
+                }
+
+                current is MinecraftUiPlatform -> {}
+
+                current is Collection<*> -> {
+                    current.filterNotNull().forEach(pending::add)
+                }
+
                 current is Map<*, *> -> {
                     current.keys.filterNotNull().forEach(pending::add)
                     current.values.filterNotNull().forEach(pending::add)
                 }
-                current is Array<*> -> current.filterNotNull().forEach(pending::add)
-                current.javaClass.protectionDomain.codeSource?.location in origins -> {
+
+                current is Array<*> -> {
+                    current.filterNotNull().forEach(pending::add)
+                }
+
+                current.javaClass.protectionDomain.codeSource
+                    ?.location in origins -> {
                     var type: Class<*>? = current.javaClass
                     while (type != null && type.protectionDomain.codeSource?.location in origins) {
                         type.declaredFields.filter { ReflectionModifier.isStatic(it.modifiers).not() }.forEach { field ->
@@ -61,8 +75,7 @@ internal object PlayerHeadCacheProbe {
     /**
      * Reads only the existing private source/face/hat fields; tests never mutate runtime state.
      */
-    internal fun snapshot(painter: MinecraftPlayerHeadPainter): Snapshot =
-        Snapshot(read(painter, Slot.Skin), read(painter, Slot.Face), read(painter, Slot.Hat))
+    internal fun snapshot(painter: MinecraftPlayerHeadPainter): Snapshot = Snapshot(read(painter, Slot.Skin), read(painter, Slot.Face), read(painter, Slot.Hat))
 
     private fun read(
         painter: MinecraftPlayerHeadPainter,

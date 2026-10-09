@@ -10,9 +10,9 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
-import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
+import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.node.Node as RetainedNode
@@ -39,6 +39,7 @@ private class MinecraftPlayerHeadElement private constructor(
     ) {
     /**
      * Retained node that measures one square and emits face then optional hat blits.
+     * Session detachment clears derived images; reattachment invalidates paint.
      *
      * @param skin initial immutable skin pixels.
      * @param size initial logical square extent.
@@ -51,7 +52,7 @@ private class MinecraftPlayerHeadElement private constructor(
     ) : RetainedNode(),
         MeasureNode,
         PaintNode,
-        LifecycleNode {
+        SessionAttachmentNode {
         private val painter = MinecraftPlayerHeadPainter()
 
         override fun measure(
@@ -71,9 +72,15 @@ private class MinecraftPlayerHeadElement private constructor(
             painter.clear()
         }
 
-        override fun detach() {
+        override fun sessionAttached() {
+            invalidate(DirtyMask.of(DirtyPhase.Paint))
+        }
+
+        override fun sessionDetached() {
             painter.clear()
         }
+
+        override fun detach() = sessionDetached()
 
         override fun dispose() {
             painter.clear()

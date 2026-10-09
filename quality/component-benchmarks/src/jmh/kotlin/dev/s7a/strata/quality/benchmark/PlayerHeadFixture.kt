@@ -153,7 +153,9 @@ internal class PlayerHeadFixture(
      * Borrows current painter handles outside timing; callers must not keep history between measurements.
      */
     internal fun caches(): List<Cache> {
-        val origins = setOf(host.javaClass.protectionDomain.codeSource.location, UiTree::class.java.protectionDomain.codeSource.location)
+        val hostOrigin = host.javaClass.protectionDomain.codeSource.location
+        val coreClass = UiTree::class.java
+        val origins = setOf(hostOrigin, coreClass.protectionDomain.codeSource.location)
         val visited = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
         val pending = ArrayDeque<Any>()
         val result = ArrayList<Cache>()
@@ -163,15 +165,27 @@ internal class PlayerHeadFixture(
             val current = pending.removeFirst()
             if (visited.add(current).not()) continue
             when {
-                painterType.isInstance(current) -> result.add(Cache(current))
-                current is MinecraftUiPlatform -> Unit
-                current is Collection<*> -> current.filterNotNull().forEach(pending::add)
+                painterType.isInstance(current) -> {
+                    result.add(Cache(current))
+                }
+
+                current is MinecraftUiPlatform -> {}
+
+                current is Collection<*> -> {
+                    current.filterNotNull().forEach(pending::add)
+                }
+
                 current is Map<*, *> -> {
                     current.keys.filterNotNull().forEach(pending::add)
                     current.values.filterNotNull().forEach(pending::add)
                 }
-                current is Array<*> -> current.filterNotNull().forEach(pending::add)
-                current.javaClass.protectionDomain.codeSource?.location in origins -> {
+
+                current is Array<*> -> {
+                    current.filterNotNull().forEach(pending::add)
+                }
+
+                current.javaClass.protectionDomain.codeSource
+                    ?.location in origins -> {
                     var type: Class<*>? = current.javaClass
                     while (type != null && type.protectionDomain.codeSource?.location in origins) {
                         type.declaredFields.filter { ReflectionModifier.isStatic(it.modifiers).not() }.forEach { field ->
