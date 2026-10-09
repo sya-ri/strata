@@ -48,6 +48,26 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Current Canvas token lookup
+
+A native GUI batch keeps its original ordered target set and, for more than one target, an identity index over the same current records.
+The key is the exact immutable token reference, the bound is the batch's selected membership (at most 64), and access remains device-thread-only after the existing batch/queue/device checks.
+Queued detachment and reload preserve those pinned records until GUI consumption, GUI failure or terminal shutdown settles the batch.
+Cancellation releases an unqueued prepared batch through the existing owner boundary.
+No index follows live attachment state, previous generations or detached presentations; zero/one-target batches use the scalar path.
+
+Portable capture builds its receipt index only inside that capture call, only for multiple snapshots when platform commands exist.
+Its key is exact token reference identity and its size is bounded by current snapshot membership.
+Duplicate membership marks a token ambiguous without throwing until command-order validation requests it; unrelated duplicate receipts remain ignored.
+Each invocation owns its mutable lookup table, retains only immutable CPU receipts, and releases the table on return or failure, preserving capture from any thread.
+Zero/one-receipt and no-platform cases keep their existing scalar behavior, and native presentation pays no detached capture-index cost.
+
+Independent ordered producer/receipt tables verify association, repeated destinations, scalar-identical foreign tokens, first-error order, physical texels, queued detachment/reload and terminal release.
+The separate `NativeCanvasLookupBenchmark` fixture measures queued target lookup, complete prepare/queue/borrow/consume protocol, repeated and one-shot detached capture, prepared portable rasterization and capture with rasterization.
+Its 216 rows cover current membership 0/1/16/64, unique or 64/4,096 occurrences, small/large surrounding portable commands and changed/unchanged generations.
+Nine native `CanvasLookup` cases use real source bindings and the shared native meter for no-Canvas, one/many targets and repeated placements at every standard GUI scale.
+All draws, captures, producer work, pinning, fences and upload/GPU work remain; fewer source predicates alone do not establish measured submission or native savings.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

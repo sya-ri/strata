@@ -3,6 +3,7 @@ package dev.s7a.strata.runtime.minecraft.canvas
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.util.IdentityHashMap
 
 /**
  * Detached read-only result of final native canvas preparation for one GUI batch.
@@ -34,6 +35,9 @@ public class NativeCanvasPresentation internal constructor(
      * The entire list is validated before a result is returned.
      * Uncommitted Canvas requests, missing snapshots, mismatched extents or generations, and other platform commands fail explicitly.
      * This method never resolves a live token, performs readback, or invents replacement pixels.
+     * When needed, exact-token receipt lookup is indexed only within this capture call, bounded by current snapshot membership.
+     * Duplicate receipts are marked ambiguous without validation until the original command order requests that token.
+     * The local index retains only immutable CPU receipts and is released on return or failure; concurrent captures share no mutable lookup state.
      * Native snapshots become output-pixel image commands so rendering at the presentation's GUI scale preserves every physical texel.
      *
      * @return a detached read-only portable list preserving drawing order, destinations, and clips.
@@ -41,11 +45,22 @@ public class NativeCanvasPresentation internal constructor(
      */
     public fun capture(): List<DrawCommand> {
         check(hasUncommittedCanvases.not()) { "Portable capture requires a committed generation for every requested canvas." }
+        val platform = drawCommands.filterIsInstance<DrawCommand.Platform>()
+        val indexedReceipts =
+            if (platform.isNotEmpty() && 1 < snapshots.size) {
+                IdentityHashMap<NativeCanvasToken, NativeCanvasSnapshot?>(snapshots.size).apply {
+                    snapshots.forEach { receipt ->
+                        put(receipt.token, if (containsKey(receipt.token)) null else receipt)
+                    }
+                }
+            } else {
+                null
+            }
         val replacements =
-            drawCommands.filterIsInstance<DrawCommand.Platform>().associateWith { command ->
+            platform.associateWith { command ->
                 val token = command.command as? NativeCanvasToken
                 checkNotNull(token) { "Portable capture requires a committed native canvas token and its snapshot." }
-                val receipt = snapshots.singleOrNull { it.token === token }
+                val receipt = if (indexedReceipts == null) snapshots.singleOrNull { it.token === token } else indexedReceipts[token]
                 checkNotNull(receipt) { "Native canvas generation has no unique matching immutable snapshot." }
                 check(receipt.image.size == token.physicalSize) { "Native canvas snapshot extent does not match its generation." }
                 DrawCommand.BlitImagePixels(
