@@ -34,7 +34,7 @@ internal class MinecraftStatefulControlUpdateTest {
         for (kind in Kind.entries) {
             val input = Input()
             withNode(kind, input) { previous, node, _ ->
-                val fresh = input.element(kind)
+                val fresh = input.copy(normalGlyph = glyph(), inactiveGlyph = glyph()).element(kind)
                 val dirty = previous.type.updateErased(previous, fresh, node)
                 assertFalse(DirtyPhase.Paint in dirty, kind.name)
                 assertFalse(DirtyPhase.Measure in dirty, kind.name)
@@ -61,8 +61,9 @@ internal class MinecraftStatefulControlUpdateTest {
                     assertPaint(kind, input, input.copy(buttonSprites = sprites))
                 }
             }
-            assertPaint(kind, input, input.copy(normalGlyph = glyph()))
-            assertPaint(kind, input, input.copy(inactiveGlyph = glyph()))
+            val changedGlyph = createDrawImage(IntSize(8, 8)) { _, _ -> 0xFF987654.toInt() }
+            assertPaint(kind, input, input.copy(normalGlyph = changedGlyph))
+            assertPaint(kind, input, input.copy(inactiveGlyph = changedGlyph))
             assertPaint(kind, input, input.copy(normalAdvance = 2))
             assertPaint(kind, input, input.copy(inactiveAdvance = 2))
         }
