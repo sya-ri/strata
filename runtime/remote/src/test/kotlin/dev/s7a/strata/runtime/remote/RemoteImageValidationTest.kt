@@ -51,10 +51,11 @@ internal class RemoteImageValidationTest {
     fun smallerNegotiatedLimitsStillRejectAtDeferredProjectionAfterValidConstruction() {
         val source = ImageSource.Pixels(createDrawImage(IntSize(6, 6), IntArray(36)))
         val runtime = RemoteComponentRuntime()
-        val backgrounds = listOf(
-            runtime.imageBackground(Modifier.Empty, source, ImageScale.Stretch),
-            runtime.imageBackground(Modifier.Empty, source, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled),
-        )
+        val backgrounds =
+            listOf(
+                runtime.imageBackground(Modifier.Empty, source, ImageScale.Stretch),
+                runtime.imageBackground(Modifier.Empty, source, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled),
+            )
         backgrounds.forEach { background ->
             val scope = ImageScope(128)
             assertThrows(IllegalArgumentException::class.java) { requireNotNull(background.elements().single().projection).encode(scope) }
@@ -66,32 +67,38 @@ internal class RemoteImageValidationTest {
     fun unusedOversizedBackgroundConstructionFailsBeforeDeclarationsAndReleasesTheSession() {
         val source = oversizedSource()
         val expected = requireNotNull(runCatching { RemoteImageCodec().encode(source) }.exceptionOrNull())
-        val constructors: List<(RemoteComponentRuntime, ImageSource) -> Modifier> = listOf(
-            { runtime, value -> runtime.imageBackground(Modifier.Empty, value, ImageScale.Stretch) },
-            { runtime, value -> runtime.imageBackground(Modifier.Empty, value, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) },
-        )
+        val constructors: List<(RemoteComponentRuntime, ImageSource) -> Modifier> =
+            listOf(
+                { runtime, value -> runtime.imageBackground(Modifier.Empty, value, ImageScale.Stretch) },
+                { runtime, value -> runtime.imageBackground(Modifier.Empty, value, Insets(0, 0, 0, 0), NineSliceCenterMode.Tiled) },
+            )
         constructors.forEach { construct ->
             val runtime = RemoteComponentRuntime()
             var contentFinished = false
             var snapshots = 0
             var closes = 0
             lateinit var server: RemoteServerSession
-            server = RemoteServerSession(1, ProjectionValue.Absent, RemoteRegistry().also(RemoteBuiltins::register).types, send = { message ->
-                when (message) {
-                    is RemoteMessage.Snapshot -> snapshots++
-                    is RemoteMessage.Close -> {
-                        closes++
-                        assertTrue(server.status is RemoteSessionStatus.Closed)
-                        assertEquals(0, server.nodeCount)
-                        assertTrue(server.requiredTypes.isEmpty())
+            server =
+                RemoteServerSession(1, ProjectionValue.Absent, RemoteRegistry().also(RemoteBuiltins::register).types, send = { message ->
+                    when (message) {
+                        is RemoteMessage.Snapshot -> {
+                            snapshots++
+                        }
+
+                        is RemoteMessage.Close -> {
+                            closes++
+                            assertTrue(server.status is RemoteSessionStatus.Closed)
+                            assertEquals(0, server.nodeCount)
+                            assertTrue(server.requiredTypes.isEmpty())
+                        }
+
+                        else -> {}
                     }
-                    else -> Unit
+                }) {
+                    construct(runtime, source)
+                    contentFinished = true
+                    runtime.evaluate { Spacer() }
                 }
-            }) {
-                construct(runtime, source)
-                contentFinished = true
-                runtime.evaluate { Spacer() }
-            }
             val actual = assertThrows(IllegalArgumentException::class.java, server::tick)
             assertEquals(expected.javaClass, actual.javaClass)
             assertEquals(expected.message, actual.message)
@@ -109,7 +116,9 @@ internal class RemoteImageValidationTest {
         return ImageSource.Pixels(createDrawImage(IntSize(area, 1), IntArray(area)))
     }
 
-    private class ImageScope(maximumBytes: Int) : ProjectionScope {
+    private class ImageScope(
+        maximumBytes: Int,
+    ) : ProjectionScope {
         private val codec = RemoteImageCodec(maximumBytes)
         var imageCalls = 0
             private set
@@ -120,8 +129,14 @@ internal class RemoteImageValidationTest {
         }
 
         override fun text(text: UiText): ProjectionValue = error("Unused text")
+
         override fun requireType(type: ProjectionType): Unit = error("Unused type")
-        override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = error("Unused action")
+
+        override fun action(
+            action: ProjectionAction<*>,
+            key: ProjectionValue,
+        ): Long = error("Unused action")
+
         override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
     }
 }

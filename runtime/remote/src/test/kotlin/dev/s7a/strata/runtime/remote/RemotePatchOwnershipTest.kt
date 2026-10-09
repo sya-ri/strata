@@ -99,14 +99,21 @@ internal class RemotePatchOwnershipTest {
         val original = before.nodes.toMap()
         val executor = Executors.newFixedThreadPool(4)
         try {
-            val tasks = (2L..9L).map { identity ->
-                Callable {
-                    val result = RemotePatch(1, listOf(node(identity, value = identity)), emptyList()).apply(before)
-                    assertEquals(ProjectionValue.Integer(identity), result.nodes.getValue(identity).declaration.value)
-                    assertEquals(original, before.nodes)
-                    assertEquals(before.nodes.keys.toList(), result.nodes.keys.toList())
+            val tasks =
+                (2L..9L).map { identity ->
+                    Callable {
+                        val result = RemotePatch(1, listOf(node(identity, value = identity)), emptyList()).apply(before)
+                        assertEquals(
+                            ProjectionValue.Integer(identity),
+                            result.nodes
+                                .getValue(identity)
+                                .declaration
+                                .value,
+                        )
+                        assertEquals(original, before.nodes)
+                        assertEquals(before.nodes.keys.toList(), result.nodes.keys.toList())
+                    }
                 }
-            }
             executor.invokeAll(tasks).forEach { it.get() }
         } finally {
             executor.shutdownNow()

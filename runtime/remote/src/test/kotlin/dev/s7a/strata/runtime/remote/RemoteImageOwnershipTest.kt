@@ -164,21 +164,27 @@ internal class RemoteImageOwnershipTest {
             val failure = IllegalStateException("image owner failure")
             lateinit var server: RemoteServerSession
             var terminal = 0
-            val root = RemoteProfileElement(RemoteProfileComponent.Image, Modifier.Empty, null) { scope ->
-                val pixels = scope.image(image)
-                if (failInProjection) throw failure
-                RemoteProperties.record(pixels, ProjectionValue.Absent, ProjectionValue.Absent)
-            }
-            server = RemoteServerSession(1, ProjectionValue.Absent, setOf(RemoteProfileComponent.Image.type), send = { message ->
-                when (message) {
-                    is RemoteMessage.Snapshot -> throw failure
-                    is RemoteMessage.Close -> {
-                        terminal++
-                        assertTrue(retained(field(server, "images") as RemoteServerImages).all { it.isEmpty() })
-                    }
-                    else -> Unit
+            val root =
+                RemoteProfileElement(RemoteProfileComponent.Image, Modifier.Empty, null) { scope ->
+                    val pixels = scope.image(image)
+                    if (failInProjection) throw failure
+                    RemoteProperties.record(pixels, ProjectionValue.Absent, ProjectionValue.Absent)
                 }
-            }) { root }
+            server =
+                RemoteServerSession(1, ProjectionValue.Absent, setOf(RemoteProfileComponent.Image.type), send = { message ->
+                    when (message) {
+                        is RemoteMessage.Snapshot -> {
+                            throw failure
+                        }
+
+                        is RemoteMessage.Close -> {
+                            terminal++
+                            assertTrue(retained(field(server, "images") as RemoteServerImages).all { it.isEmpty() })
+                        }
+
+                        else -> {}
+                    }
+                }) { root }
             assertSame(failure, assertThrows(IllegalStateException::class.java, server::tick))
             assertEquals(1, terminal)
             assertTrue(server.status is RemoteSessionStatus.Closed)
@@ -193,17 +199,25 @@ internal class RemoteImageOwnershipTest {
         val runtime = RemoteComponentRuntime()
         var encoded: ProjectionValue? = null
         var scopeCalls = 0
-        val scope = object : ProjectionScope {
-            override fun image(image: DrawImage): ProjectionValue {
-                assertSame(pixels, image)
-                scopeCalls++
-                return RemoteImageCodec().encode(ImageSource.Pixels(image)).also { encoded = it }
+        val scope =
+            object : ProjectionScope {
+                override fun image(image: DrawImage): ProjectionValue {
+                    assertSame(pixels, image)
+                    scopeCalls++
+                    return RemoteImageCodec().encode(ImageSource.Pixels(image)).also { encoded = it }
+                }
+
+                override fun text(text: UiText): ProjectionValue = error("Unused text")
+
+                override fun requireType(type: ProjectionType): Unit = error("Unused type")
+
+                override fun action(
+                    action: ProjectionAction<*>,
+                    key: ProjectionValue,
+                ): Long = error("Unused action")
+
+                override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
             }
-            override fun text(text: UiText): ProjectionValue = error("Unused text")
-            override fun requireType(type: ProjectionType): Unit = error("Unused type")
-            override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = error("Unused action")
-            override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
-        }
         val source = ImageSource.Pixels(pixels)
         val image = runtime.image(source, null, null, Modifier.Empty, null)
         val record = requireNotNull(image.projection).encode(scope) as ProjectionValue.Sequence
@@ -251,11 +265,12 @@ internal class RemoteImageOwnershipTest {
         val codec = RemoteImageCodec(16)
         val record = codec.encode(ImageSource.Pixels(image(4))) as ProjectionValue.Sequence
         val fields = record.values
-        val invalid = listOf(
-            ProjectionValue.Sequence(fields.dropLast(1) + ProjectionValue.Bytes(byteArrayOf())),
-            ProjectionValue.Sequence(listOf(fields[0], ProjectionValue.Integer(Int.MAX_VALUE.toLong()), ProjectionValue.Integer(Int.MAX_VALUE.toLong()), fields[3])),
-            ProjectionValue.Sequence(fields + ProjectionValue.Absent),
-        )
+        val invalid =
+            listOf(
+                ProjectionValue.Sequence(fields.dropLast(1) + ProjectionValue.Bytes(byteArrayOf())),
+                ProjectionValue.Sequence(listOf(fields[0], ProjectionValue.Integer(Int.MAX_VALUE.toLong()), ProjectionValue.Integer(Int.MAX_VALUE.toLong()), fields[3])),
+                ProjectionValue.Sequence(fields + ProjectionValue.Absent),
+            )
         invalid.forEach {
             assertThrows(IllegalArgumentException::class.java) { codec.decode(it) }
             assertEquals(ImageSource.Pixels(image(4)), codec.decode(record))
@@ -269,5 +284,12 @@ internal class RemoteImageOwnershipTest {
 
     private fun retained(images: RemoteServerImages): List<Map<*, *>> = listOf("current", "pending").map { field(images, it) as Map<*, *> }
 
-    private fun field(owner: Any, name: String): Any = owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner)
+    private fun field(
+        owner: Any,
+        name: String,
+    ): Any =
+        owner.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(owner)
 }
