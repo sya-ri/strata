@@ -49,18 +49,20 @@ internal class StateObservationOperationIsolationTest {
         val executor = Executors.newSingleThreadExecutor()
         try {
             repeat(10) { index ->
-                executor.submit {
-                    owner.run {
-                        assertReleased(observation)
-                        observation.enterOperation()
-                        try {
-                            state.value = index * 2 + 1
-                        } finally {
-                            observation.leaveOperation()
+                val execution =
+                    executor.submit {
+                        owner.run {
+                            assertReleased(observation)
+                            observation.enterOperation()
+                            try {
+                                state.value = index * 2 + 1
+                            } finally {
+                                observation.leaveOperation()
+                            }
+                            assertReleased(observation)
                         }
-                        assertReleased(observation)
                     }
-                }.get(5, TimeUnit.SECONDS)
+                execution.get(5, TimeUnit.SECONDS)
                 owner.run {
                     observation.enterOperation()
                     try {
@@ -105,10 +107,11 @@ internal class StateObservationOperationIsolationTest {
         val failure = IllegalStateException("This owner rejects mutation")
         val state = mutableStateOf(0)
         var validations = 0
-        val observation = StateObservation({}, {}, {}, {
-            validations += 1
-            if (reject) throw failure
-        })
+        val observation =
+            StateObservation({}, {}, {}, {
+                validations += 1
+                if (reject) throw failure
+            })
         observation.enterOperation()
         try {
             ready.countDown()
