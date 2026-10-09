@@ -139,7 +139,7 @@ internal class VirtualWindowFixture(
         val oldSemantics = original.semantics.toList()
         val monitor = session.startRenderMonitoring()
         try {
-            repeat(4) {
+            repeat(4) { _ ->
                 val previous = indices()
                 val before = counts.factories
                 val beforeCreated = counts.created
@@ -227,16 +227,14 @@ internal class VirtualWindowFixture(
         return maxOf(0, first - 1)..minOf(models.lastIndex, last + 1)
     }
 
-    private fun currentValue(): Int =
-        definition.value + presentation +
-            when (factory) {
-                VirtualWindowBenchmark.Factory.DirectState -> direct.value
-                VirtualWindowBenchmark.Factory.Observed -> sourceValue
-                else -> 0
-            }
-
     private fun verifyFrame(frame: RuntimeUiFrame) {
-        val value = currentValue()
+        val value =
+            definition.value + presentation +
+                when (factory) {
+                    VirtualWindowBenchmark.Factory.DirectState -> direct.value
+                    VirtualWindowBenchmark.Factory.Observed -> sourceValue
+                    else -> 0
+                }
         val offset =
             state.scrollState.metrics.offset
                 .toInt()
