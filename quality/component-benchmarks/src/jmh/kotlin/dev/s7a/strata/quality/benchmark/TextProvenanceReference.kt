@@ -85,16 +85,7 @@ internal class TextProvenanceReference(
         val originX = if (editor) 4 else 0
         val originY = if (editor) 4 - scrollCell else 0
         val allGlyphs = rows.flatMapIndexed { index, row -> glyphs(row, originX, Math.addExact(originY, Math.multiplyExact(index, 9))) }
-        val submitted =
-            if (consumer === Consumer.SingleLineText) {
-                allGlyphs
-            } else {
-                allGlyphs.filter { command ->
-                    val rectangle = command.destination
-                    bounds.left.toDouble() < rectangle.right && rectangle.left.toDouble() < bounds.right &&
-                        bounds.top.toDouble() < rectangle.bottom && rectangle.top.toDouble() < bounds.bottom
-                }
-            }
+        val submitted = submittedGlyphs(allGlyphs, bounds)
         val expectedFrame =
             buildList {
                 if (editor) addAll(editorFrame())
@@ -122,6 +113,20 @@ internal class TextProvenanceReference(
             check(rasterizeHeadless(expected, window, density).copyArgb().contentEquals(rasterizeHeadless(actual, window, density).copyArgb()))
         }
     }
+
+    private fun submittedGlyphs(
+        glyphs: List<DrawCommand.SampledImage>,
+        bounds: IntRect,
+    ): List<DrawCommand.SampledImage> =
+        if (consumer === Consumer.SingleLineText) {
+            glyphs
+        } else {
+            glyphs.filter { command ->
+                val rectangle = command.destination
+                bounds.left.toDouble() < rectangle.right && rectangle.left.toDouble() < bounds.right &&
+                    bounds.top.toDouble() < rectangle.bottom && rectangle.top.toDouble() < bounds.bottom
+            }
+        }
 
     private fun editorFrame(): List<DrawCommand.BlitImage> {
         val image = createDrawImage(IntSize(200, 20), IntArray(4000) { 0xff426789.toInt() })
@@ -177,10 +182,12 @@ internal class TextProvenanceReference(
             val position = row.positions[row.offsets.indexOf(caret.coerceIn(row.offsets.first(), row.offsets.last()))]
             val left = if (position == viewport.width - 8) position + 3 else position + 4
             val top = Math.addExact(originY, Math.multiplyExact(index, 9))
-            if (4 <= left && left < viewport.width - 4 && top < viewport.height - 4 && 4 < top + 9) {
+            if (withinEditorHorizontalBounds(left) && top < viewport.height - 4 && 4 < top + 9) {
                 add(DrawCommand.FillRectangle(IntRect(left, maxOf(4, top), left + 1, minOf(viewport.height - 4, top + 9)), ArgbColor(-1)))
             }
         }
+
+    private fun withinEditorHorizontalBounds(left: Int): Boolean = 4 <= left && left < viewport.width - 4
 
     private fun matchingCommands(
         expected: List<DrawCommand>,
@@ -190,15 +197,11 @@ internal class TextProvenanceReference(
             expected.zip(actual).all { (before, after) ->
                 when (before) {
                     is DrawCommand.SampledImage -> {
-                        after is DrawCommand.SampledImage &&
-                            before.source == after.source && before.destination == after.destination &&
-                            before.tint == after.tint && before.alphaCutoff == after.alphaCutoff && before.orientation == after.orientation &&
-                            matchingImages(before.image, after.image)
+                        matchingSampledImageCommand(before, after)
                     }
 
                     is DrawCommand.BlitImage -> {
-                        after is DrawCommand.BlitImage && before.source == after.source && before.destination == after.destination &&
-                            matchingImages(before.image, after.image)
+                        matchingBlitImageCommand(before, after)
                     }
 
                     is DrawCommand.FillRectangle -> {
@@ -218,6 +221,22 @@ internal class TextProvenanceReference(
                     }
                 }
             }
+
+    private fun matchingSampledImageCommand(
+        before: DrawCommand.SampledImage,
+        after: DrawCommand,
+    ): Boolean =
+        after is DrawCommand.SampledImage &&
+            before.source == after.source && before.destination == after.destination &&
+            before.tint == after.tint && before.alphaCutoff == after.alphaCutoff && before.orientation == after.orientation &&
+            matchingImages(before.image, after.image)
+
+    private fun matchingBlitImageCommand(
+        before: DrawCommand.BlitImage,
+        after: DrawCommand,
+    ): Boolean =
+        after is DrawCommand.BlitImage && before.source == after.source && before.destination == after.destination &&
+            matchingImages(before.image, after.image)
 
     private fun matchingImages(
         expected: DrawImage,
@@ -273,10 +292,16 @@ internal class TextProvenanceReference(
             while (offset < end) {
                 val scalar = content.value.codePointAt(offset)
                 val nextWidth = advance + assets.advance(content.fontAt(offset), scalar)
-                if (width < assets.compatibility.roundedWidth(nextWidth) && first < offset) break
-                advance = nextWidth
-                offset += Character.charCount(scalar)
-                if (width < assets.compatibility.roundedWidth(nextWidth)) break
+                // Keep both original width checks around the same scalar admission and offset updates.
+                val finished =
+                    if (width < assets.compatibility.roundedWidth(nextWidth) && first < offset) {
+                        true
+                    } else {
+                        advance = nextWidth
+                        offset += Character.charCount(scalar)
+                        width < assets.compatibility.roundedWidth(nextWidth)
+                    }
+                if (finished) break
             }
             output.add(row(first, offset, if (offset == end) nextStart else offset))
             first = offset
@@ -371,7 +396,7 @@ internal class TextProvenanceReference(
                     val top = originY + offset
                     val right = (originX + cursor + 1f) + offset
                     val bottom = (originY + 1f) + offset
-                    if (left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite() && left < right && top < bottom && (right - left).isFinite() && (bottom - top).isFinite()) {
+                    if (drawableGlyphRectangle(left, top, right, bottom)) {
                         val tint =
                             if (shadow) {
                                 0xff383838.toInt()
@@ -387,6 +412,15 @@ internal class TextProvenanceReference(
             }
         }
     }
+
+    private fun drawableGlyphRectangle(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+    ): Boolean =
+        left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite() &&
+            left < right && top < bottom && (right - left).isFinite() && (bottom - top).isFinite()
 
     private fun field(
         owner: Any,

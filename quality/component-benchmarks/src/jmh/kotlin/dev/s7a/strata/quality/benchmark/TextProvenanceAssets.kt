@@ -220,21 +220,33 @@ internal class TextProvenanceAssets(
         consumer: Consumer,
     ): UiText {
         if (consumer === Consumer.TextArea) return UiText.Literal(value)
-        if (shape === Shape.Single128 || shape === Shape.Single16384 || shape === Shape.Empty || shape === Shape.Short || shape === Shape.Exceptional) {
-            return UiText.Literal(value).withFont(selected(Family.First, flipped).id)
+        return when (shape) {
+            Shape.Single128, Shape.Single16384, Shape.Empty, Shape.Short, Shape.Exceptional -> UiText.Literal(value).withFont(selected(Family.First, flipped).id)
+            Shape.Sparse128, Shape.Sparse16384 -> sparseStyled(value, flipped)
+            else -> scalarStyled(value, flipped)
         }
-        if (shape === Shape.Sparse128 || shape === Shape.Sparse16384) {
-            val spans = ArrayList<UiText>()
-            var first = 0
-            while (first < value.length) {
-                val within = first % 512
-                val family = if (within < 64) Family.Second else Family.First
-                val end = minOf(value.length, first + if (within < 64) 64 - within else 512 - within)
-                spans.add(UiText.Literal(value.substring(first, end)).withFont(selected(family, flipped).id))
-                first = end
-            }
-            return UiText.Concatenated(spans)
+    }
+
+    private fun sparseStyled(
+        value: String,
+        flipped: Boolean,
+    ): UiText {
+        val spans = ArrayList<UiText>()
+        var first = 0
+        while (first < value.length) {
+            val within = first % 512
+            val family = if (within < 64) Family.Second else Family.First
+            val end = minOf(value.length, first + if (within < 64) 64 - within else 512 - within)
+            spans.add(UiText.Literal(value.substring(first, end)).withFont(selected(family, flipped).id))
+            first = end
         }
+        return UiText.Concatenated(spans)
+    }
+
+    private fun scalarStyled(
+        value: String,
+        flipped: Boolean,
+    ): UiText {
         val parts = ArrayList<UiText>()
         if (shape === Shape.NestedEmpty) parts.add(UiText.Literal("").withFont(selected(Family.Second, flipped).id))
         var offset = 0
@@ -242,13 +254,7 @@ internal class TextProvenanceAssets(
         while (offset < value.length) {
             val scalar = value.codePointAt(offset)
             val next = offset + Character.charCount(scalar)
-            val family =
-                when (shape) {
-                    Shape.Dense128, Shape.Dense16384, Shape.NestedEmpty, Shape.DisplayIndices -> if (scalarIndex % 2 == 0) Family.First else Family.Second
-                    Shape.Sparse128, Shape.Sparse16384 -> if (scalarIndex % 512 < 64) Family.Second else Family.First
-                    Shape.EqualAdjacent -> Family.First
-                    else -> if (scalarIndex % 128 == 0) Family.Second else Family.First
-                }
+            val family = scalarFamily(scalarIndex)
             val id = selected(family, flipped).id
             val identifier = if (shape === Shape.EqualAdjacent) ResourceId(id.namespace, id.path) else id
             val part = UiText.Literal(value.substring(offset, next)).withFont(identifier)
@@ -259,6 +265,14 @@ internal class TextProvenanceAssets(
         if (parts.isEmpty()) return UiText.Literal("").withFont(selected(Family.First, flipped).id)
         return UiText.Concatenated(parts)
     }
+
+    private fun scalarFamily(scalarIndex: Int): Family =
+        when (shape) {
+            Shape.Dense128, Shape.Dense16384, Shape.NestedEmpty, Shape.DisplayIndices -> if (scalarIndex % 2 == 0) Family.First else Family.Second
+            Shape.Sparse128, Shape.Sparse16384 -> if (scalarIndex % 512 < 64) Family.Second else Family.First
+            Shape.EqualAdjacent -> Family.First
+            else -> if (scalarIndex % 128 == 0) Family.Second else Family.First
+        }
 
     private fun selected(
         family: Family,

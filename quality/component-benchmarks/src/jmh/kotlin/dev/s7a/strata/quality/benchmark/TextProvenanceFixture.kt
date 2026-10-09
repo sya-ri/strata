@@ -264,20 +264,7 @@ internal class TextProvenanceFixture(
         check(access.retainedBoundarySlots(content) == if (access.usesRunStarts()) (runs - 1).coerceAtLeast(0) else 0)
         val actualStarts = access.retainedStarts(content)
         check(actualStarts.contentEquals(if (access.usesRunStarts()) expectedStarts.toIntArray() else IntArray(0)))
-        var lookupComparisons = 0
-        for (offset in lookups) {
-            if (access.usesRunStarts()) {
-                var first = 0
-                var last = expectedStarts.size
-                while (first < last) {
-                    val middle = first + (last - first) / 2
-                    lookupComparisons++
-                    if (offset < expectedStarts[middle]) last = middle else first = middle + 1
-                }
-            } else if (reference.value.isNotEmpty()) {
-                lookupComparisons++
-            }
-        }
+        val lookupComparisons = lookupComparisonCount(reference, expectedStarts)
         val boundaryCount = (runs - 1).coerceAtLeast(0)
         var boundaryCapacity = 0L
         var boundaryGrowthCopied = 0L
@@ -292,6 +279,27 @@ internal class TextProvenanceFixture(
         val sourceSliceScalars = slices.sumOf { (first, last) -> reference.value.codePointCount(first, last) }
         val sourceSliceRuns = slices.sumOf { (first, last) -> if (first == last) 0 else 1 + expectedStarts.count { first < it && it < last } }
         println("text-provenance-work=" + case.name + ",codeUnitMembership=" + reference.value.length + ",runMembership=" + runs + ",boundaryMembership=" + expectedStarts.size + ",lookupTrace=" + lookups.size + ",independentLookupComparisons=" + lookupComparisons + ",denseSliceScalars=" + sourceSliceScalars + ",intersectedSliceRuns=" + sourceSliceRuns + ",temporaryAllocation=requires-gc-profiler")
+    }
+
+    private fun lookupComparisonCount(
+        reference: TextProvenanceDenseReference,
+        expectedStarts: ArrayList<Int>,
+    ): Int {
+        var lookupComparisons = 0
+        for (offset in lookups) {
+            if (access.usesRunStarts()) {
+                var first = 0
+                var last = expectedStarts.size
+                while (first < last) {
+                    val middle = first + (last - first) / 2
+                    lookupComparisons++
+                    if (offset < expectedStarts[middle]) last = middle else first = middle + 1
+                }
+            } else if (reference.value.isNotEmpty()) {
+                lookupComparisons++
+            }
+        }
+        return lookupComparisons
     }
 
     private fun nonemptyLiteralCount(text: UiText): Int =
