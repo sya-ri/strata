@@ -1,12 +1,12 @@
 package dev.s7a.strata.runtime.headless
 
-import java.lang.reflect.InvocationTargetException
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.lang.reflect.InvocationTargetException
 
 /**
  * Checks exact callback work, the clipped-storage bound and failure isolation of the production map helper.
@@ -54,19 +54,22 @@ internal class IntegerBlitColumnsTest {
     fun failedConstructionPublishesNothingAndCannotPolluteAnotherInvocation() {
         val failure = IllegalStateException("sample failure")
         var evaluations = 0
-        val thrown = assertThrows<IllegalStateException> {
-            create(0, 64, 64) { x ->
-                evaluations += 1
-                if (x == 7) throw failure
-                x
+        val thrown =
+            assertThrows<IllegalStateException> {
+                create(0, 64, 64) { x ->
+                    evaluations += 1
+                    if (x == 7) throw failure
+                    x
+                }
             }
-        }
         assertTrue(thrown === failure)
         assertEquals(8, evaluations)
         assertArrayEquals(IntArray(64) { 100 - it }, create(0, 64, 64) { 100 - it })
     }
 
-    /** Invokes the private production admission helper outside any measured raster operation. */
+    /**
+     * Invokes the private production admission helper outside any measured raster operation.
+     */
     private fun create(
         left: Int,
         right: Int,
@@ -82,7 +85,8 @@ internal class IntegerBlitColumnsTest {
         return try {
             method.invoke(singleton.get(null), left, right, rows, sourceAt) as IntArray?
         } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
+            val cause = checkNotNull(failure.cause)
+            throw cause
         }
     }
 }

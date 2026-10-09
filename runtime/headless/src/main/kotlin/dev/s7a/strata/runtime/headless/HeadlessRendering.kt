@@ -560,7 +560,8 @@ private object HeadlessImplementation {
         sourceAt: (Int) -> Int,
     ): IntArray? {
         val width = right - left
-        if (rows < 4 || width <= 0 || 16384 < width || width.toLong() * rows < 4096L) return null
+        if (rows < 4 || width <= 0 || 16384 < width) return null
+        if (width.toLong() * rows < 4096L) return null
         return IntArray(width) { offset -> sourceAt(left + offset) }
     }
 

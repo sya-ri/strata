@@ -42,7 +42,13 @@ internal class IntegerBlitScene private constructor(
      * Materializes sources once, including one private generated array for the compact overflow control.
      */
     companion object {
-        fun create(path: Path, scenario: Scenario): IntegerBlitScene {
+        /**
+         * Builds the immutable background, clip ancestry and integer command for one declared corpus case.
+         */
+        fun create(
+            path: Path,
+            scenario: Scenario,
+        ): IntegerBlitScene {
             val bounds =
                 if (scenario == Scenario.NonzeroOrigin) IntRect(19, 13, 83, 77) else IntRect(0, 0, scenario.width, scenario.height)
             val sourceSize = IntSize(scenario.sourceWidth, scenario.sourceHeight)
@@ -70,23 +76,39 @@ internal class IntegerBlitScene private constructor(
             return IntegerBlitScene(bounds, scenario.density, commands)
         }
 
-        private fun sourceColor(index: Int, scenario: Scenario): Int {
+        private fun sourceColor(
+            index: Int,
+            scenario: Scenario,
+        ): Int {
             val alpha =
                 when (scenario) {
-                    Scenario.OpaqueUniform, Scenario.OpaqueHeterogeneous -> 255
-                    Scenario.TranslucentUniform, Scenario.TranslucentHeterogeneous, Scenario.BigInteger, Scenario.BigIntegerOneRow -> 128
-                    Scenario.TransparentUniform, Scenario.TransparentHeterogeneous -> 0
-                    else ->
+                    Scenario.OpaqueUniform, Scenario.OpaqueHeterogeneous -> {
+                        255
+                    }
+
+                    Scenario.TranslucentUniform, Scenario.TranslucentHeterogeneous, Scenario.BigInteger, Scenario.BigIntegerOneRow -> {
+                        128
+                    }
+
+                    Scenario.TransparentUniform, Scenario.TransparentHeterogeneous -> {
+                        0
+                    }
+
+                    else -> {
                         when (index % 3) {
                             0 -> 255
                             1 -> 128
                             else -> 0
                         }
+                    }
                 }
             return (alpha shl 24) or (index * 73471 and 0xFFFFFF)
         }
 
-        private fun background(scenario: Scenario, bounds: IntRect): List<DrawCommand> =
+        private fun background(
+            scenario: Scenario,
+            bounds: IntRect,
+        ): List<DrawCommand> =
             when (scenario) {
                 Scenario.OpaqueHeterogeneous, Scenario.TranslucentHeterogeneous, Scenario.TransparentHeterogeneous -> {
                     val size = IntSize(bounds.width * scenario.density, bounds.height * scenario.density)
@@ -94,23 +116,43 @@ internal class IntegerBlitScene private constructor(
                     listOf(DrawCommand.BlitImagePixels(image, IntRect(0, 0, size.width, size.height), bounds))
                 }
 
-                else -> listOf(DrawCommand.FillRectangle(bounds, ArgbColor(0x804A6789.toInt())))
+                else -> {
+                    listOf(DrawCommand.FillRectangle(bounds, ArgbColor(0x804A6789.toInt())))
+                }
             }
 
-        private fun clips(scenario: Scenario, bounds: IntRect): List<DrawCommand> =
+        private fun clips(
+            scenario: Scenario,
+            bounds: IntRect,
+        ): List<DrawCommand> =
             when (scenario) {
-                Scenario.OneRow1, Scenario.OneRow2, Scenario.OneRow3, Scenario.OneRow4 ->
+                Scenario.OneRow1, Scenario.OneRow2, Scenario.OneRow3, Scenario.OneRow4 -> {
                     listOf(DrawCommand.PushFractionalClip(FloatRect(0f, 0f, bounds.right.toFloat(), 1f / scenario.density)))
-                Scenario.CroppedClip ->
+                }
+
+                Scenario.CroppedClip -> {
                     listOf(DrawCommand.PushClip(IntRect(13, 7, 85, 70)), DrawCommand.PushFractionalClip(FloatRect(13.25f, 7.5f, 84.5f, 69.25f)))
-                Scenario.NonzeroOrigin ->
+                }
+
+                Scenario.NonzeroOrigin -> {
                     listOf(DrawCommand.PushClip(IntRect(21, 15, 81, 75)), DrawCommand.PushFractionalClip(FloatRect(21.125f, 15.375f, 80.625f, 74.875f)))
-                Scenario.BigInteger ->
+                }
+
+                Scenario.BigInteger -> {
                     listOf(DrawCommand.PushClip(bounds), DrawCommand.PushFractionalClip(FloatRect(0f, 0f, 0.25f, 0.25f)))
-                Scenario.BigIntegerOneRow ->
+                }
+
+                Scenario.BigIntegerOneRow -> {
                     listOf(DrawCommand.PushClip(bounds), DrawCommand.PushFractionalClip(FloatRect(0f, 0f, 0.25f, 1f / scenario.density)))
-                Scenario.EmptyClip -> listOf(DrawCommand.PushClip(IntRect(0, 0, 0, 0)))
-                else -> emptyList()
+                }
+
+                Scenario.EmptyClip -> {
+                    listOf(DrawCommand.PushClip(IntRect(0, 0, 0, 0)))
+                }
+
+                else -> {
+                    emptyList()
+                }
             }
     }
 }

@@ -207,7 +207,7 @@ public open class IntegerBlitBenchmark {
 
         BigIntegerOneRow(1, 1, 8388609, 1, 256),
 
-        EmptyClip(96, 64, 67, 43, 2);
+        EmptyClip(96, 64, 67, 43, 2),
     }
 
     /**

@@ -15,7 +15,11 @@ internal object IntegerBlitReference {
     /**
      * Applies the complete fixed integer corpus in order within absolute region coordinates.
      */
-    fun paint(commands: List<DrawCommand>, bounds: IntRect, density: Int): IntArray {
+    fun paint(
+        commands: List<DrawCommand>,
+        bounds: IntRect,
+        density: Int,
+    ): IntArray {
         val target = Target(bounds, density)
         val clips = ArrayList<DrawCommand>()
         for (command in commands) {
@@ -45,16 +49,27 @@ internal object IntegerBlitReference {
     ): Int {
         val two = BigInteger.valueOf(2)
         val origin = BigInteger.valueOf(destination.first.toLong()).multiply(BigInteger.valueOf(density.toLong()))
-        val center = BigInteger.valueOf(position.toLong()).subtract(origin).multiply(two).add(BigInteger.ONE)
+        val center =
+            BigInteger
+                .valueOf(position.toLong())
+                .subtract(origin)
+                .multiply(two)
+                .add(BigInteger.ONE)
         val numerator = center.multiply(BigInteger.valueOf(sourceExtent.toLong()))
         val denominator = BigInteger.valueOf(destination.last.toLong() - destination.first + 1).multiply(BigInteger.valueOf(density.toLong())).multiply(two)
-        return numerator.divide(denominator).add(BigInteger.valueOf(sourceStart.toLong())).intValueExact()
+        return numerator
+            .divide(denominator)
+            .add(BigInteger.valueOf(sourceStart.toLong()))
+            .intValueExact()
     }
 
     /**
      * Computes ordered straight-ARGB composition independently with full Long numerators and half-up division.
      */
-    fun blend(source: Int, destination: Int): Int {
+    fun blend(
+        source: Int,
+        destination: Int,
+    ): Int {
         val sa = (source ushr 24).toLong()
         val da = (destination ushr 24).toLong()
         val alpha = sa * 255 + da * (255 - sa)
@@ -69,14 +84,25 @@ internal object IntegerBlitReference {
         return result
     }
 
-    private data class Blit(val image: DrawImage, val source: IntRect, val destination: IntRect, val physical: Boolean)
+    private data class Blit(
+        val image: DrawImage,
+        val source: IntRect,
+        val destination: IntRect,
+        val physical: Boolean,
+    )
 
-    private class Target(val bounds: IntRect, val density: Int) {
+    private class Target(
+        val bounds: IntRect,
+        val density: Int,
+    ) {
         private val width = bounds.width * density
         private val height = bounds.height * density
         val pixels = IntArray(width * height)
 
-        fun fill(command: DrawCommand.FillRectangle, clips: List<DrawCommand>) {
+        fun fill(
+            command: DrawCommand.FillRectangle,
+            clips: List<DrawCommand>,
+        ) {
             for (y in 0 until height) {
                 for (x in 0 until width) {
                     val absoluteX = x + bounds.left * density
@@ -89,7 +115,10 @@ internal object IntegerBlitReference {
             }
         }
 
-        fun blit(command: Blit, clips: List<DrawCommand>) {
+        fun blit(
+            command: Blit,
+            clips: List<DrawCommand>,
+        ) {
             val source = command.source
             val destination = command.destination
             val sampleDensity = if (command.physical) density else 1
@@ -116,13 +145,22 @@ internal object IntegerBlitReference {
             }
         }
 
-        private fun inside(rect: IntRect, x: Int, y: Int): Boolean =
-            rect.left <= x / density && x / density < rect.right && rect.top <= y / density && y / density < rect.bottom
+        private fun inside(
+            rect: IntRect,
+            x: Int,
+            y: Int,
+        ): Boolean = rect.left <= x / density && x / density < rect.right && rect.top <= y / density && y / density < rect.bottom
 
-        private fun clipped(clips: List<DrawCommand>, x: Int, y: Int): Boolean =
+        private fun clipped(
+            clips: List<DrawCommand>,
+            x: Int,
+            y: Int,
+        ): Boolean =
             clips.all { clip ->
                 when (clip) {
-                    is DrawCommand.PushClip -> inside(clip.bounds, x, y)
+                    is DrawCommand.PushClip -> {
+                        inside(clip.bounds, x, y)
+                    }
 
                     is DrawCommand.PushFractionalClip -> {
                         val centerX = (x.toDouble() + 0.5) / density
@@ -130,7 +168,9 @@ internal object IntegerBlitReference {
                         clip.bounds.left <= centerX && centerX < clip.bounds.right && clip.bounds.top <= centerY && centerY < clip.bounds.bottom
                     }
 
-                    else -> error("Expected a clip ancestor.")
+                    else -> {
+                        error("Expected a clip ancestor.")
+                    }
                 }
             }
     }

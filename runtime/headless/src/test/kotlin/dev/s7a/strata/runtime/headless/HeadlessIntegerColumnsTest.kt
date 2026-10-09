@@ -69,7 +69,12 @@ internal class HeadlessIntegerColumnsTest {
         val commands = listOf(DrawCommand.FillRectangle(IntRect(0, 0, 1, 1), ArgbColor(background))) + clips + command + listOf(DrawCommand.PopClip, DrawCommand.PopClip)
         val expected = IntArray(256 * 256) { background }
         for (x in 0 until 64) {
-            val center = BigInteger.valueOf(x.toLong()).subtract(BigInteger.valueOf(destination.left.toLong()).multiply(BigInteger.valueOf(256))).multiply(BigInteger.TWO).add(BigInteger.ONE)
+            val center =
+                BigInteger
+                    .valueOf(x.toLong())
+                    .subtract(BigInteger.valueOf(destination.left.toLong()).multiply(BigInteger.valueOf(256)))
+                    .multiply(BigInteger.TWO)
+                    .add(BigInteger.ONE)
             val numerator = center.multiply(BigInteger.valueOf(8_388_609))
             if (x == 0) {
                 assertEquals(BigInteger("1099511626753"), center)
@@ -104,7 +109,10 @@ internal class HeadlessIntegerColumnsTest {
         assertArrayEquals(original, storage)
     }
 
-    private fun verify(scene: Scene, flipped: Boolean = false) {
+    private fun verify(
+        scene: Scene,
+        flipped: Boolean = false,
+    ) {
         val size = IntSize(scene.bounds.width * scene.density, scene.bounds.height * scene.density)
         val background =
             createDrawImage(size) { x, y ->
@@ -144,7 +152,12 @@ internal class HeadlessIntegerColumnsTest {
         assertArrayEquals(expected, first.copyArgb())
     }
 
-    private fun reference(scene: Scene, background: DrawImage, clip: FloatRect, flipped: Boolean): IntArray {
+    private fun reference(
+        scene: Scene,
+        background: DrawImage,
+        clip: FloatRect,
+        flipped: Boolean,
+    ): IntArray {
         val width = background.size.width
         return IntArray(width * background.size.height) { index ->
             val x = index % width + scene.bounds.left * scene.density
@@ -164,7 +177,12 @@ internal class HeadlessIntegerColumnsTest {
         }
     }
 
-    private fun covered(scene: Scene, clip: FloatRect, x: Int, y: Int): Boolean {
+    private fun covered(
+        scene: Scene,
+        clip: FloatRect,
+        x: Int,
+        y: Int,
+    ): Boolean {
         val centerX = (x.toDouble() + 0.5) / scene.density
         val centerY = (y.toDouble() + 0.5) / scene.density
         val destination = scene.destination
@@ -173,15 +191,31 @@ internal class HeadlessIntegerColumnsTest {
             destination.top <= y / scene.density && y / scene.density < destination.bottom
     }
 
-    private fun coordinate(position: Int, density: Int, source: IntRange, destination: IntRange): Int {
+    private fun coordinate(
+        position: Int,
+        density: Int,
+        source: IntRange,
+        destination: IntRange,
+    ): Int {
         val origin = BigInteger.valueOf(destination.first.toLong()).multiply(BigInteger.valueOf(density.toLong()))
-        val center = BigInteger.valueOf(position.toLong()).subtract(origin).multiply(BigInteger.TWO).add(BigInteger.ONE)
+        val center =
+            BigInteger
+                .valueOf(position.toLong())
+                .subtract(origin)
+                .multiply(BigInteger.TWO)
+                .add(BigInteger.ONE)
         val numerator = center.multiply(BigInteger.valueOf(source.last.toLong() - source.first + 1))
         val denominator = BigInteger.valueOf(destination.last.toLong() - destination.first + 1).multiply(BigInteger.valueOf(density.toLong())).multiply(BigInteger.TWO)
-        return numerator.divide(denominator).add(BigInteger.valueOf(source.first.toLong())).intValueExact()
+        return numerator
+            .divide(denominator)
+            .add(BigInteger.valueOf(source.first.toLong()))
+            .intValueExact()
     }
 
-    private fun blend(source: Int, destination: Int): Int {
+    private fun blend(
+        source: Int,
+        destination: Int,
+    ): Int {
         val sa = (source ushr 24).toLong()
         val da = (destination ushr 24).toLong()
         val alpha = sa * 255 + da * (255 - sa)
@@ -195,5 +229,12 @@ internal class HeadlessIntegerColumnsTest {
         return result
     }
 
-    private data class Scene(val bounds: IntRect, val density: Int, val image: DrawImage, val source: IntRect, val destination: IntRect, val physical: Boolean)
+    private data class Scene(
+        val bounds: IntRect,
+        val density: Int,
+        val image: DrawImage,
+        val source: IntRect,
+        val destination: IntRect,
+        val physical: Boolean,
+    )
 }
