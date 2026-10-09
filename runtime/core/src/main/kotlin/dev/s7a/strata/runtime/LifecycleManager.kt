@@ -90,6 +90,7 @@ internal class LifecycleManager(
      * @return the first cleanup failure, with later distinct failures suppressed on it.
      */
     fun cleanup(retained: RetainedNode): Throwable? {
+        retained.invalidateDeclarationSnapshot()
         prepareCleanup(retained)
         val failures = FailureAccumulator()
         cleanupNode(retained, failures)
@@ -117,6 +118,7 @@ internal class LifecycleManager(
      * @param retained subtree whose node ownership is entering cleanup.
      */
     fun prepareCleanup(retained: RetainedNode) {
+        retained.declarationSnapshot = null
         markCleanupStarted(retained)
         retained.modifiers.forEach(::markCleanupStarted)
         retained.children.forEach(::prepareCleanup)

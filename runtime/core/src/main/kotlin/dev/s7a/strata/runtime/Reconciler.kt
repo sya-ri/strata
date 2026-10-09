@@ -247,6 +247,7 @@ internal class Reconciler(
     ) {
         val previous = retained.element
         if (previous === description) return
+        retained.invalidateDeclarationSnapshot()
         monitoring.record(UiRenderMetric.NodeUpdate, retained)
         val mask = description.type.updateErased(previous, description, retained.node)
         if (retained.node is DeferredContentNode) pendingContent = true
@@ -360,6 +361,7 @@ internal class Reconciler(
         descriptions.forEachIndexed { index, childDescription ->
             val candidate = findCandidate(oldChildren, keyed, used, childDescription, index)
             if (candidate == null) {
+                parent.invalidateDeclarationSnapshot()
                 val created = createDetached(childDescription)
                 newlyCreated.add(created)
                 nextChildren.add(created)
@@ -383,6 +385,7 @@ internal class Reconciler(
             failures.throwFirst()
         }
         val changed = sameChildren(oldChildren, nextChildren).not()
+        if (changed) parent.invalidateDeclarationSnapshot()
         parent.children.clear()
         parent.children.addAll(nextChildren)
         newlyCreated.forEach { created ->

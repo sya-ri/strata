@@ -10,7 +10,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Identities survive compatible reconciliation and are never reused within the owning tree.
  * The snapshot retains descriptions, including their local callbacks, and must never be sent as an object graph.
  * A remote adapter projects it to detached data inside [RuntimeUiSession.projectDeclarations].
- * The internal constructor takes exclusive ownership of fresh modifier and child snapshot lists.
+ * Modifier and child lists are fresh tree-owned snapshots or immutable current snapshots shared by this tree.
+ * The internal constructor never accepts a caller-owned mutable list.
  */
 @InternalStrataRuntimeApi
 public class RuntimeDeclaration internal constructor(
@@ -19,6 +20,12 @@ public class RuntimeDeclaration internal constructor(
     public val projection: DeclarationProjection<*>?,
     public val modifiers: List<Modifier>,
     public val children: List<RuntimeDeclaration>,
+    /**
+     * Positive owner-tree projection revision, separate from declaration identity and remote wire revision.
+     * Equal root revisions prove the complete current fixed subtree is unchanged after preparation and reconciliation.
+     * An arbitrary projection encoder always receives a fresh revision, regardless of its previous detached output.
+     */
+    public val revision: Long,
 ) {
     /**
      * A stable active modifier identity and its current immutable description.

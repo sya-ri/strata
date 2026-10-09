@@ -13,6 +13,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -47,6 +48,7 @@ internal class RuntimeDeclarationTest {
             val first = session.projectDeclarations { it }
             session.dispatchAction { visible.value = false }
             val empty = session.projectDeclarations { it }
+            assertNotSame(first, empty)
             assertEquals(first.identity, empty.identity)
             assertEquals(0, empty.children.size)
             session.dispatchAction { visible.value = true }

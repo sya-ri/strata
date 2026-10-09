@@ -74,6 +74,7 @@ public class RemoteServerSession(
     private var slots: Map<ActionSlot, Long> = emptyMap()
     private var nextAction: Long = 1
     private var revision: Long = 0
+    private var projectedDeclarationRevision: Long = 0
     private var processedSequence: Long = 0
     private var executingSequence: Long = 0
     private val bindings = RemoteServerBindings(limits) { executingSequence }
@@ -232,6 +233,8 @@ public class RemoteServerSession(
     }
 
     private fun project(root: RuntimeDeclaration): RemoteTree {
+        val current = previous
+        if (root.revision == projectedDeclarationRevision && current != null) return current
         bindings.begin()
         images.begin()
         projectingTypes.clear()
@@ -280,6 +283,7 @@ public class RemoteServerSession(
         bindings.commit()
         requiredTypes = Collections.unmodifiableSet(projectingTypes.toSet())
         projectingTypes.clear()
+        projectedDeclarationRevision = root.revision
         return tree
     }
 
@@ -327,6 +331,7 @@ public class RemoteServerSession(
         val notify = outgoing
         outgoing = null
         status = RemoteSessionStatus.Closed(reason)
+        projectedDeclarationRevision = 0
         images.close()
         val controlCleanup = runCatching { controls.terminate(reason.uiReason) }
         lastControl = null

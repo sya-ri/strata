@@ -1,6 +1,7 @@
 package dev.s7a.strata.projection
 
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Stable schemas for standard declaration projections.
@@ -59,5 +60,6 @@ public enum class BuiltinProjection(
     /**
      * Creates a detached positional property snapshot without a server event endpoint.
      */
-    public fun properties(vararg values: ProjectionValue): DeclarationProjection<ProjectionValue.Sequence> = DeclarationProjection(type, ProjectionValue.Sequence(values.toList())) { value, _ -> value }
+    @OptIn(InternalStrataRuntimeApi::class)
+    public fun properties(vararg values: ProjectionValue): DeclarationProjection<ProjectionValue.Sequence> = DeclarationProjection.fixed(type, ProjectionValue.Sequence(values.toList()))
 }
