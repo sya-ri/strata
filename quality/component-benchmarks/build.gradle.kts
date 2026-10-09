@@ -31,8 +31,7 @@ dependencies {
     add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
     // Reflective fixtures use the actual adapter JAR and its normal Minecraft runtime dependencies.
     rootProject.findProject(":runtime:minecraft-fabric-26.3")?.let { adapter ->
-        add("jmhRuntimeOnly", project(adapter.path))
-        add("jmhRuntimeOnly", files(adapter.configurations.named("runtimeClasspath")))
+        add("jmhRuntimeOnly", project(path = adapter.path, configuration = "developmentRuntimeElements"))
     }
 }
 
