@@ -76,6 +76,9 @@ enum class FontTestContract(
     /** Existing loaded test output roots that contain the independent native provider and Text oracle. */
     enum class NativeOracle(val outputDirectory: String) { Legacy("minecraft-verification"), Current("minecraft-parity") }
 
+    /** Explicit native backend values accepted at the loaded Canvas verification boundary. */
+    enum class NativeBackend(val argument: String) { OpenGl("opengl"), Vulkan("vulkan") }
+
     /** Returns every CPU binding used by this contract, including STB image decoding. */
     fun bindings(): List<Binding> =
         when (rasterizer) {
@@ -204,7 +207,15 @@ fun fontRuntime(contract: FontTestContract) {
             outputs.upToDateWhen { false }
             outputs.cacheIf { false }
         }
-        val nativeOutput = nativeProject.layout.buildDirectory.dir("${oracle.outputDirectory}/font-parity")
+        val nativeDirectory = when (oracle) {
+            FontTestContract.NativeOracle.Legacy -> providers.provider { oracle.outputDirectory }
+            FontTestContract.NativeOracle.Current -> providers.gradleProperty("strata.canvas.backend").map { value ->
+                requireNotNull(FontTestContract.NativeBackend.entries.singleOrNull { backend -> backend.argument == value }) {
+                    "strata.canvas.backend must be opengl or vulkan."
+                }
+            }.map { backend -> "${oracle.outputDirectory}-${backend.argument}" }.orElse(oracle.outputDirectory)
+        }
+        val nativeOutput = nativeProject.layout.buildDirectory.dir(nativeDirectory.map { directory -> "$directory/font-parity" })
         val comparisonOutput = layout.buildDirectory.dir("font-offline-parity/$minecraftVersion")
         val comparison = tasks.register<Test>("compareOfflineFont${contract.name}") {
             group = "verification"
@@ -214,7 +225,7 @@ fun fontRuntime(contract: FontTestContract) {
             testClassesDirs = fontSourceSets.named("test").get().output.classesDirs
             classpath = workerClasspath
             maxParallelForks = 1
-            inputs.dir(nativeOutput)
+            inputs.dir(nativeOutput).withPropertyName("strataFontNativeOutput")
             inputs.dir(offlineOutput)
             outputs.dir(comparisonOutput)
             outputs.upToDateWhen { false }
