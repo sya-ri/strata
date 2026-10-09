@@ -131,16 +131,26 @@ internal class NativeRoutingTest {
             val actor = fixture.actors.single()
             val executor = Executors.newFixedThreadPool(4)
             try {
-                val packets = (1L..64L).map { identity ->
-                    ByteBuffer.allocate(43).put(1.toByte()).put(RemoteEndpoint.Server.ordinal.toByte()).putLong(0).putLong(identity).putLong(identity).put(ByteArray(17)).array()
-                }
-                val calls = packets.map { bytes ->
-                    executor.submit {
-                        val event = PluginMessageEvent(actor.player, actor.backend, VelocityScreenService.CHANNEL, bytes)
-                        fixture.plugin.message(event)
-                        assertFalse(event.result.isAllowed)
+                val packets =
+                    (1L..64L).map { identity ->
+                        ByteBuffer
+                            .allocate(43)
+                            .put(1.toByte())
+                            .put(RemoteEndpoint.Server.ordinal.toByte())
+                            .putLong(0)
+                            .putLong(identity)
+                            .putLong(identity)
+                            .put(ByteArray(17))
+                            .array()
                     }
-                }
+                val calls =
+                    packets.map { bytes ->
+                        executor.submit {
+                            val event = PluginMessageEvent(actor.player, actor.backend, VelocityScreenService.CHANNEL, bytes)
+                            fixture.plugin.message(event)
+                            assertFalse(event.result.isAllowed)
+                        }
+                    }
                 calls.forEach { it.get(5, TimeUnit.SECONDS) }
                 assertEquals(packets.size, actor.backendWrites.size)
                 val identities = actor.backendWrites.map { ByteBuffer.wrap(it).getLong(10) }.toSet()

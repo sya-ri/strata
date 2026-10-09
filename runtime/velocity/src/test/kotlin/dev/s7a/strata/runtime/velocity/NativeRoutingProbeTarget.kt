@@ -30,14 +30,22 @@ internal object NativeRoutingProbeTarget {
             }
         }
         check(NativeRoutingCpuEvidence.runtime() == runtime)
-        PerformanceJson.writeNew(Path.of(args[0]), JsonObject().apply {
-            add("runtime_metadata", runtime)
-            add("fixture_identity", Gson().toJsonTree(NativeRoutingCpuEvidence.identity()))
-            add("rows", rows)
-        })
+        PerformanceJson.writeNew(
+            Path.of(args[0]),
+            JsonObject().apply {
+                add("runtime_metadata", runtime)
+                add("fixture_identity", Gson().toJsonTree(NativeRoutingCpuEvidence.identity()))
+                add("rows", rows)
+            },
+        )
     }
 
-    private fun collect(players: Int, workload: NativeRoutingWorkload, direction: NativeRoutingDirection, phase: NativeRoutingPhase): JsonObject =
+    private fun collect(
+        players: Int,
+        workload: NativeRoutingWorkload,
+        direction: NativeRoutingDirection,
+        phase: NativeRoutingPhase,
+    ): JsonObject =
         NativeRoutingFixture(players, workload, direction).use { fixture ->
             fixture.prepare()
             val work = fixture.inputCounts().toMutableMap()
@@ -47,25 +55,27 @@ internal object NativeRoutingProbeTarget {
             }
             val operation = {
                 begin(players, workload.name, direction.name, phase.name)
-                val value = when (phase) {
-                    NativeRoutingPhase.Callback -> fixture.callback()
-                    NativeRoutingPhase.PublicDecode -> fixture.decodePublic()
-                    NativeRoutingPhase.OwnerProcessing -> fixture.processOwner()
-                }
+                val value =
+                    when (phase) {
+                        NativeRoutingPhase.Callback -> fixture.callback()
+                        NativeRoutingPhase.PublicDecode -> fixture.decodePublic()
+                        NativeRoutingPhase.OwnerProcessing -> fixture.processOwner()
+                    }
                 end(if (phase == NativeRoutingPhase.Callback) fixture.snapshotArrays() else emptyArray())
                 value
             }
             val value = if (phase == NativeRoutingPhase.OwnerProcessing) fixture.onOwner(operation) else operation()
             if (phase == NativeRoutingPhase.Callback) work.putAll(fixture.verifyCallback())
             if (phase == NativeRoutingPhase.OwnerProcessing) work.putAll(fixture.verifyOwnerProcessing())
-            val row = JsonObject().apply {
-                addProperty("players", players)
-                addProperty("workload", workload.name)
-                addProperty("direction", direction.name)
-                addProperty("phase", phase.name)
-                addProperty("operation_result", value)
-                add("work", Gson().toJsonTree(work))
-            }
+            val row =
+                JsonObject().apply {
+                    addProperty("players", players)
+                    addProperty("workload", workload.name)
+                    addProperty("direction", direction.name)
+                    addProperty("phase", phase.name)
+                    addProperty("operation_result", value)
+                    add("work", Gson().toJsonTree(work))
+                }
             fixture.finish()
             row
         }
@@ -74,7 +84,12 @@ internal object NativeRoutingProbeTarget {
      * Marker arguments identify one actual callback, public decoding or UI-owner interval to the external debugger.
      */
     @Suppress("UnusedParameter") // JDI reads actual argument values at method entry.
-    fun begin(players: Int, workload: String, direction: String, phase: String) = Unit
+    fun begin(
+        players: Int,
+        workload: String,
+        direction: String,
+        phase: String,
+    ) = Unit
 
     /**
      * Transfers only debugger-visible actual queued arrays for untimed defensive-snapshot identity checks.

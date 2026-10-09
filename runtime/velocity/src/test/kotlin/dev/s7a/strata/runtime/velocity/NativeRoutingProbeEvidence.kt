@@ -57,16 +57,23 @@ internal object NativeRoutingProbeEvidence {
                 setSuspendPolicy(EventRequest.SUSPEND_ALL)
                 enable()
             }
-            val observations = listOf(
-                "dev.s7a.strata.runtime.remote.RemotePacket\$Companion",
-                "dev.s7a.strata.runtime.remote.RemoteFraming",
-                "com.velocitypowered.api.event.connection.PluginMessageEvent",
-            ).map { type -> manager.createMethodExitRequest().apply { addClassFilter(type)
-                    setSuspendPolicy(EventRequest.SUSPEND_ALL) } } +
-                listOf("dev.s7a.strata.runtime.remote.RemoteFrameInbox", NativeRoutingPlayer::class.java.name).map { type ->
-                    manager.createMethodEntryRequest().apply { addClassFilter(type)
-                    setSuspendPolicy(EventRequest.SUSPEND_ALL) }
-                }
+            val observations =
+                listOf(
+                    "dev.s7a.strata.runtime.remote.RemotePacket\$Companion",
+                    "dev.s7a.strata.runtime.remote.RemoteFraming",
+                    "com.velocitypowered.api.event.connection.PluginMessageEvent",
+                ).map { type ->
+                    manager.createMethodExitRequest().apply {
+                        addClassFilter(type)
+                        setSuspendPolicy(EventRequest.SUSPEND_ALL)
+                    }
+                } +
+                    listOf("dev.s7a.strata.runtime.remote.RemoteFrameInbox", NativeRoutingPlayer::class.java.name).map { type ->
+                        manager.createMethodEntryRequest().apply {
+                            addClassFilter(type)
+                            setSuspendPolicy(EventRequest.SUSPEND_ALL)
+                        }
+                    }
             val probes = mutableMapOf<List<String>, JsonObject>()
             var finished = false
             while (finished.not()) {
@@ -86,11 +93,17 @@ internal object NativeRoutingProbeEvidence {
                                         active = Row(key, event.thread().uniqueID())
                                         observations.forEach { it.enable() }
                                     }
+
                                     "end" -> {
                                         val row = checkNotNull(active)
                                         check(row.thread == event.thread().uniqueID())
                                         observations.forEach { it.disable() }
-                                        val arrays = event.thread().frame(0).getArgumentValues().single() as ArrayReference
+                                        val arrays =
+                                            event
+                                                .thread()
+                                                .frame(0)
+                                                .getArgumentValues()
+                                                .single() as ArrayReference
                                         probes[row.key] = row.complete(arrays)
                                         row.release()
                                         active = null
@@ -100,8 +113,14 @@ internal object NativeRoutingProbeEvidence {
                                 active?.takeIf { it.thread == event.thread().uniqueID() }?.enter(event)
                             }
                         }
-                        is MethodExitEvent -> active?.takeIf { it.thread == event.thread().uniqueID() }?.exit(event)
-                        is VMDeathEvent, is VMDisconnectEvent -> finished = true
+
+                        is MethodExitEvent -> {
+                            active?.takeIf { it.thread == event.thread().uniqueID() }?.exit(event)
+                        }
+
+                        is VMDeathEvent, is VMDisconnectEvent -> {
+                            finished = true
+                        }
                     }
                 }
                 if (finished.not()) events.resume()
@@ -153,7 +172,10 @@ internal object NativeRoutingProbeEvidence {
     /**
      * One bounded interval's scalar counters and temporarily protected actual arrays; no row history retains mirrors.
      */
-    private class Row(val key: List<String>, val thread: Long) {
+    private class Row(
+        val key: List<String>,
+        val thread: Long,
+    ) {
         private val phase = NativeRoutingPhase.valueOf(key[3])
         private val getters = mutableMapOf<Long, Int>()
         private val offered = mutableMapOf<Long, Int>()
@@ -180,6 +202,7 @@ internal object NativeRoutingProbeEvidence {
                     inboxOffers++
                     if (0 < array.length()) offered[array.uniqueID()] = array.length()
                 }
+
                 "write" -> {
                     val arguments = values[1] as ArrayReference
                     val array = arguments.getValue(1) as ArrayReference
@@ -189,11 +212,15 @@ internal object NativeRoutingProbeEvidence {
                             forwardedPackets++
                             forwardedBytes += array.length()
                         }
+
                         NativeRoutingPhase.OwnerProcessing -> {
                             endpointPackets++
                             endpointBytes += array.length()
                         }
-                        NativeRoutingPhase.PublicDecode -> error("Public decoder control cannot invoke an endpoint writer")
+
+                        NativeRoutingPhase.PublicDecode -> {
+                            error("Public decoder control cannot invoke an endpoint writer")
+                        }
                     }
                 }
             }
@@ -212,6 +239,7 @@ internal object NativeRoutingProbeEvidence {
                     retained.add(array)
                     check(getters.put(array.uniqueID(), array.length()) == null)
                 }
+
                 type == "dev.s7a.strata.runtime.remote.RemotePacket\$Companion" && event.method().name() == "decode" -> {
                     val packet = value as ObjectReference
                     if (packet.referenceType().name() == "dev.s7a.strata.runtime.remote.RemotePacket\$Frame") {
@@ -220,6 +248,7 @@ internal object NativeRoutingProbeEvidence {
                         decodedBytes += array.length()
                     }
                 }
+
                 type == "dev.s7a.strata.runtime.remote.RemotePacket\$Companion" && event.method().name() == "inspect" -> {
                     val packet = value as ObjectReference
                     if (packet.referenceType().name() == "dev.s7a.strata.runtime.remote.RemotePacketRoute\$Frame") {
@@ -228,6 +257,7 @@ internal object NativeRoutingProbeEvidence {
                         metadataFrames++
                     }
                 }
+
                 type == "dev.s7a.strata.runtime.remote.RemoteFraming" && event.method().name() == "receive" && value is ArrayReference -> {
                     assembledArrays++
                     assembledBytes += value.length()

@@ -45,6 +45,7 @@ internal class NativeRoutingFixture(
     private val service = field(plugin.javaClass, "screens").get(plugin) as VelocityScreenService
     private val executor = field(service.javaClass, "executor").get(service) as ScheduledExecutorService
     private val worker = field(service.javaClass, "owner").get(service) as Thread
+
     @Suppress("UNCHECKED_CAST") // The actual Velocity service owns RemoteScreenService<Player, Any>.
     private val host = field(service.javaClass, "host").get(service) as RemoteScreenService<Player, Any>
     private var events = emptyList<PluginMessageEvent>()
@@ -103,11 +104,12 @@ internal class NativeRoutingFixture(
             }
             ticker.run()
             actors.forEach { checkNotNull(host.capabilities(it.player)) }
-            initialIncoming = peers.map { peer ->
-                val connection = field(peer.javaClass, "connection").get(peer) as RemoteConnection
-                val framing = checkNotNull(field(connection.javaClass, "framing").get(connection))
-                field(framing.javaClass, "lastIncoming").getLong(framing)
-            }
+            initialIncoming =
+                peers.map { peer ->
+                    val connection = field(peer.javaClass, "connection").get(peer) as RemoteConnection
+                    val framing = checkNotNull(field(connection.javaClass, "framing").get(connection))
+                    field(framing.javaClass, "lastIncoming").getLong(framing)
+                }
         }
         actors.forEach { actor ->
             actor.clear()
@@ -124,14 +126,22 @@ internal class NativeRoutingFixture(
     private fun prepareEvents() {
         val channel = if (workload == NativeRoutingWorkload.WrongChannel) MinecraftChannelIdentifier.from("other:channel") else VelocityScreenService.CHANNEL
         val unknown = object : ChannelMessageSource { }
-        events = actors.flatMapIndexed { index, actor ->
-            packets[index].map { bytes ->
-                val source: ChannelMessageSource = if (workload == NativeRoutingWorkload.UnknownSender) unknown else if (direction == NativeRoutingDirection.BackendClient) actor.backend else actor.player
-                PluginMessageEvent(source, actor.player, channel, bytes).also { event ->
-                    if (workload == NativeRoutingWorkload.AlreadyHandled) event.result = PluginMessageEvent.ForwardResult.handled()
+        events =
+            actors.flatMapIndexed { index, actor ->
+                packets[index].map { bytes ->
+                    val source: ChannelMessageSource =
+                        if (workload == NativeRoutingWorkload.UnknownSender) {
+                            unknown
+                        } else if (direction == NativeRoutingDirection.BackendClient) {
+                            actor.backend
+                        } else {
+                            actor.player
+                        }
+                    PluginMessageEvent(source, actor.player, channel, bytes).also { event ->
+                        if (workload == NativeRoutingWorkload.AlreadyHandled) event.result = PluginMessageEvent.ForwardResult.handled()
+                    }
                 }
             }
-        }
     }
 
     /**
@@ -195,8 +205,7 @@ internal class NativeRoutingFixture(
     /**
      * Runs inline on the existing owner or dispatches from the coordinator; dispatch/wait stays outside owner samples.
      */
-    fun <T> onOwner(operation: () -> T): T =
-        if (Thread.currentThread() === worker) operation() else executor.submit(Callable(operation)).get(5, TimeUnit.MINUTES)
+    fun <T> onOwner(operation: () -> T): T = if (Thread.currentThread() === worker) operation() else executor.submit(Callable(operation)).get(5, TimeUnit.MINUTES)
 
     /**
      * Independent expected output/handled/inbox matrix before any asynchronous owned work is allowed to run.
@@ -214,7 +223,10 @@ internal class NativeRoutingFixture(
         return mapOf("callback_packets" to events.size.toLong()) + fields.associateWith { key -> observations.sumOf { it.getValue(key) } }
     }
 
-    private fun verifyActor(index: Int, actor: NativeRoutingPlayer): Map<String, Long> {
+    private fun verifyActor(
+        index: Int,
+        actor: NativeRoutingPlayer,
+    ): Map<String, Long> {
         val proxy = direction == NativeRoutingDirection.ClientProxy || workload == NativeRoutingWorkload.ProxyImpersonation
         val client = direction == NativeRoutingDirection.BackendClient
         val retired = workload in setOf(NativeRoutingWorkload.StaleBackend, NativeRoutingWorkload.AbsentBackend)
@@ -297,11 +309,12 @@ internal class NativeRoutingFixture(
      */
     fun snapshotArrays(): Array<ByteArray> =
         onOwner {
-            peers.flatMap { peer ->
-                val inbox = field(peer.javaClass, "inbox").get(peer) as RemoteFrameInbox
-                val stored = field(inbox.javaClass, "frames").get(inbox) as Collection<*>
-                stored.map { it as ByteArray }
-            }.toTypedArray()
+            peers
+                .flatMap { peer ->
+                    val inbox = field(peer.javaClass, "inbox").get(peer) as RemoteFrameInbox
+                    val stored = field(inbox.javaClass, "frames").get(inbox) as Collection<*>
+                    stored.map { it as ByteArray }
+                }.toTypedArray()
         }
 
     override fun close() {
@@ -326,5 +339,8 @@ internal class NativeRoutingFixture(
         actual.indices.forEach { index -> check(actual[index].contentEquals(expected[index])) }
     }
 
-    private fun field(type: Class<*>, name: String): Field = type.getDeclaredField(name).apply { isAccessible = true }
+    private fun field(
+        type: Class<*>,
+        name: String,
+    ): Field = type.getDeclaredField(name).apply { isAccessible = true }
 }

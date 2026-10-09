@@ -23,13 +23,14 @@ import java.util.UUID
  * Setup, events, assertions, dispatch/waits, debugger probes and terminal release stay outside sampled operations.
  */
 internal object NativeRoutingCpuEvidence {
-    private val targets = mapOf(
-        "api" to "dev.s7a.strata.projection.ProjectionValue",
-        "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
-        "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
-        "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
-        "velocity" to "dev.s7a.strata.runtime.velocity.StrataVelocityPlugin",
-    )
+    private val targets =
+        mapOf(
+            "api" to "dev.s7a.strata.projection.ProjectionValue",
+            "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",
+            "remote" to "dev.s7a.strata.runtime.remote.RemoteTree",
+            "velocity-api" to "dev.s7a.strata.velocity.VelocityUi",
+            "velocity" to "dev.s7a.strata.runtime.velocity.StrataVelocityPlugin",
+        )
 
     /**
      * Accepts a fresh report path and independent repetition0/1/2 on the frozen fixture/control/runtime classpath.
@@ -58,22 +59,25 @@ internal object NativeRoutingCpuEvidence {
         check(runtime() == runtime && identity() == identity)
         check(inputs().mapValues { ArtifactIdentity.file(it.value) } == inputs)
         check(JvmApiInventory.capture(javaClass.classLoader, targets.filterKeys { it in setOf("remote", "velocity") }) == surface)
-        PerformanceJson.writeNew(Path.of(args[0]), JsonObject().apply {
-            addProperty("schema_version", 1)
-            addProperty("workload_id", "native-envelope-routing-v1")
-            addProperty("status", "passed")
-            addProperty("run_id", UUID.randomUUID().toString())
-            addProperty("repetition", repetition)
-            add("runtime_metadata", runtime)
-            add("runtime_api_symbols", Gson().toJsonTree(surface))
-            add("fixture_identity", Gson().toJsonTree(identity))
-            add("inputs", Gson().toJsonTree(inputs))
-            add("environment", environment())
-            add("phases", phases)
-            addProperty("native_uploads", "N/A: native routing has no presentation uploads")
-            addProperty("gpu_time", "N/A: no native presentation")
-            addProperty("fps", "N/A: no frame-rate claim")
-        })
+        PerformanceJson.writeNew(
+            Path.of(args[0]),
+            JsonObject().apply {
+                addProperty("schema_version", 1)
+                addProperty("workload_id", "native-envelope-routing-v1")
+                addProperty("status", "passed")
+                addProperty("run_id", UUID.randomUUID().toString())
+                addProperty("repetition", repetition)
+                add("runtime_metadata", runtime)
+                add("runtime_api_symbols", Gson().toJsonTree(surface))
+                add("fixture_identity", Gson().toJsonTree(identity))
+                add("inputs", Gson().toJsonTree(inputs))
+                add("environment", environment())
+                add("phases", phases)
+                addProperty("native_uploads", "N/A: native routing has no presentation uploads")
+                addProperty("gpu_time", "N/A: no native presentation")
+                addProperty("fps", "N/A: no frame-rate claim")
+            },
+        )
     }
 
     /**
@@ -86,17 +90,17 @@ internal object NativeRoutingCpuEvidence {
      */
     fun identity() = ArtifactIdentity.applicationTrees(listOf(NativeRoutingFixture::class.java, VelocityScreensTest.Harness::class.java, javaClass))
 
-    private fun collect(players: Int, workload: NativeRoutingWorkload, direction: NativeRoutingDirection, phase: NativeRoutingPhase, row: JsonObject, plan: PerformancePlan): JsonObject =
+    private fun collect(
+        players: Int,
+        workload: NativeRoutingWorkload,
+        direction: NativeRoutingDirection,
+        phase: NativeRoutingPhase,
+        row: JsonObject,
+        plan: PerformancePlan,
+    ): JsonObject =
         NativeRoutingFixture(players, workload, direction).use { fixture ->
             val expected = row.getAsJsonObject("work")
-            val prepare = {
-                fixture.prepare()
-                check(Gson().toJsonTree(fixture.inputCounts()).asJsonObject.entrySet().all { (key, value) -> expected.get(key) == value })
-                if (phase == NativeRoutingPhase.OwnerProcessing) {
-                    fixture.callback()
-                    verifyCounts(fixture.verifyCallback(), expected)
-                }
-            }
+            val prepare = { prepareSample(fixture, phase, expected) }
             val verify = {
                 if (phase == NativeRoutingPhase.Callback) verifyCounts(fixture.verifyCallback(), expected)
                 if (phase == NativeRoutingPhase.OwnerProcessing) verifyCounts(fixture.verifyOwnerProcessing(), expected)
@@ -111,26 +115,30 @@ internal object NativeRoutingCpuEvidence {
             }
             val measure = {
                 var measured = false
-                val sample = JvmPerformanceRunner.measure(
-                    "$players/$workload/$direction/$phase", plan,
-                    beforeSample = {
-                        prepare()
-                        measured = true
-                    },
-                    afterOperation = { _, value ->
-                        check(value == row.get("operation_result").asInt)
-                        verify()
-                    },
-                    afterSample = { measured = false },
-                ) {
-                    if (measured) operation() else {
-                        prepare()
-                        val result = operation()
-                        check(result == row.get("operation_result").asInt)
-                        verify()
-                        result
+                val sample =
+                    JvmPerformanceRunner.measure(
+                        "$players/$workload/$direction/$phase",
+                        plan,
+                        beforeSample = {
+                            prepare()
+                            measured = true
+                        },
+                        afterOperation = { _, value ->
+                            check(value == row.get("operation_result").asInt)
+                            verify()
+                        },
+                        afterSample = { measured = false },
+                    ) {
+                        if (measured) {
+                            operation()
+                        } else {
+                            prepare()
+                            val result = operation()
+                            check(result == row.get("operation_result").asInt)
+                            verify()
+                            result
+                        }
                     }
-                }
                 sample.evidence.apply {
                     addProperty("players", players)
                     addProperty("workload", workload.name)
@@ -147,28 +155,59 @@ internal object NativeRoutingCpuEvidence {
             if (phase == NativeRoutingPhase.OwnerProcessing) fixture.onOwner(measure) else measure()
         }
 
-    private fun verifyCounts(actual: Map<String, Long>, expected: JsonObject) {
+    private fun prepareSample(
+        fixture: NativeRoutingFixture,
+        phase: NativeRoutingPhase,
+        expected: JsonObject,
+    ) {
+        fixture.prepare()
+        check(
+            Gson()
+                .toJsonTree(fixture.inputCounts())
+                .asJsonObject
+                .entrySet()
+                .all { (key, value) -> expected.get(key) == value },
+        )
+        if (phase == NativeRoutingPhase.OwnerProcessing) {
+            fixture.callback()
+            verifyCounts(fixture.verifyCallback(), expected)
+        }
+    }
+
+    private fun verifyCounts(
+        actual: Map<String, Long>,
+        expected: JsonObject,
+    ) {
         actual.forEach { (key, value) -> check(expected.get(key).asLong == value) }
     }
 
     @Suppress("StringLiteralComparison") // Decodes the external frozen probe contract before matching the actual runtime.
     private fun probes(runtime: JsonObject, identity: Any): JsonObject {
-        val matches = JmhFixtureSelection.inputs().values.mapNotNull { path ->
-            if (path.fileName.toString().endsWith(".json").not()) return@mapNotNull null
-            val report = Files.newBufferedReader(path).use { JsonParser.parseReader(it).asJsonObject }
-            if (report.get("contract")?.asString == "native-routing-return-arrays-v1" && report.get("runtime_metadata") == runtime) report else null
-        }
+        val matches =
+            JmhFixtureSelection.inputs().values.mapNotNull { path ->
+                if (path.fileName
+                        .toString()
+                        .endsWith(".json")
+                        .not()
+                ) {
+                    return@mapNotNull null
+                }
+                val report = Files.newBufferedReader(path).use { JsonParser.parseReader(it).asJsonObject }
+                if (report.get("contract")?.asString == "native-routing-return-arrays-v1" && report.get("runtime_metadata") == runtime) report else null
+            }
         require(matches.size == 1) { "Exactly one immutable actual-runtime native routing probe must match; freeze both variants as identical fixture inputs" }
         val report = matches.single()
         require(report.get("status").asString == "passed" && report.get("fixture_identity") == Gson().toJsonTree(identity))
         val rows = report.getAsJsonArray("rows")
-        val expected = listOf(1, 8).flatMap { players ->
-            NativeRoutingWorkload.entries.flatMap { workload ->
-                NativeRoutingDirection.entries.flatMap { direction ->
-                    NativeRoutingPhase.entries.filter { it != NativeRoutingPhase.OwnerProcessing || direction == NativeRoutingDirection.ClientProxy }.map { phase -> listOf(players.toString(), workload.name, direction.name, phase.name) }
-                }
-            }
-        }.toSet()
+        val expected =
+            listOf(1, 8)
+                .flatMap { players ->
+                    NativeRoutingWorkload.entries.flatMap { workload ->
+                        NativeRoutingDirection.entries.flatMap { direction ->
+                            NativeRoutingPhase.entries.filter { it != NativeRoutingPhase.OwnerProcessing || direction == NativeRoutingDirection.ClientProxy }.map { phase -> listOf(players.toString(), workload.name, direction.name, phase.name) }
+                        }
+                    }
+                }.toSet()
         val actual = rows.map { row -> listOf("players", "workload", "direction", "phase").map { row.asJsonObject.get(it).asString } }
         require(actual.size == expected.size && actual.toSet() == expected) { "Incomplete or duplicate native routing probe matrix" }
         return report
@@ -181,8 +220,10 @@ internal object NativeRoutingCpuEvidence {
         return libraries + fixtures
     }
 
-    private fun environment(): JsonObject = Gson().toJsonTree(
-        listOf("java.version", "java.vendor", "java.vm.name", "os.name", "os.version", "os.arch").associateWith(System::getProperty) +
-            mapOf("available_processors" to Runtime.getRuntime().availableProcessors().toString(), "host" to System.getenv("COMPUTERNAME"), "jvm_arguments" to ManagementFactory.getRuntimeMXBean().inputArguments),
-    ).asJsonObject
+    private fun environment(): JsonObject =
+        Gson()
+            .toJsonTree(
+                listOf("java.version", "java.vendor", "java.vm.name", "os.name", "os.version", "os.arch").associateWith(System::getProperty) +
+                    mapOf("available_processors" to Runtime.getRuntime().availableProcessors().toString(), "host" to System.getenv("COMPUTERNAME"), "jvm_arguments" to ManagementFactory.getRuntimeMXBean().inputArguments),
+            ).asJsonObject
 }
