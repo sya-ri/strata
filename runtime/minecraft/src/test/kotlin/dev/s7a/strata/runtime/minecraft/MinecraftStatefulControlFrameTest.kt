@@ -29,11 +29,11 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiDefinition
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /**
  * Uses public profile-backed hosts to prove retained paint reuse and current input callback ownership.
@@ -47,17 +47,18 @@ internal class MinecraftStatefulControlFrameTest {
             val checkbox = CheckboxState()
             val slider = SliderState(0.0)
             val cycle = CycleButtonState(listOf(0, 1, 2))
-            val host = createMinecraftUiHost(
-                UiDefinition("control") {
-                    val version = revision.value
-                    when (kind) {
-                        Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { calls.add(version) })
-                        Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { calls.add(version) })
-                        Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { calls.add(version) })
-                    }
-                },
-                MinecraftProfileFixture.create(),
-            )
+            val host =
+                createMinecraftUiHost(
+                    UiDefinition("control") {
+                        val version = revision.value
+                        when (kind) {
+                            Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { calls.add(version) })
+                            Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { calls.add(version) })
+                            Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { calls.add(version) })
+                        }
+                    },
+                    MinecraftProfileFixture.create(),
+                    )
             host.use {
                 host.attach()
                 val original = host.frame(IntSize(150, 20))
@@ -100,13 +101,14 @@ internal class MinecraftStatefulControlFrameTest {
     fun pendingStateInvalidationSurvivesAFreshEquivalentDescription() {
         val revision = mutableStateOf(0)
         val checked = CheckboxState()
-        val host = createMinecraftUiHost(
-            UiDefinition("pending") {
-                revision.value
-                Checkbox("A", checked)
-            },
-            MinecraftProfileFixture.create(),
-        )
+        val host =
+            createMinecraftUiHost(
+                UiDefinition("pending") {
+                    revision.value
+                    Checkbox("A", checked)
+                },
+                MinecraftProfileFixture.create(),
+                )
         host.use {
             host.attach()
             val original = host.frame(IntSize(150, 20))
@@ -132,13 +134,14 @@ internal class MinecraftStatefulControlFrameTest {
         val enabled = mutableStateOf(true)
         val value = SliderState(0.0)
         val calls = ArrayList<Int>()
-        val host = createMinecraftUiHost(
-            UiDefinition("drag") {
-                val version = revision.value
-                Slider("A", value, enabled = enabled.value, modifier = Modifier.Empty.onSliderChange { calls.add(version) })
-            },
-            MinecraftProfileFixture.create(),
-        )
+        val host =
+            createMinecraftUiHost(
+                UiDefinition("drag") {
+                    val version = revision.value
+                    Slider("A", value, enabled = enabled.value, modifier = Modifier.Empty.onSliderChange { calls.add(version) })
+                },
+                MinecraftProfileFixture.create(),
+                )
         host.use {
             host.attach()
             host.frame(IntSize(150, 20))
@@ -161,14 +164,15 @@ internal class MinecraftStatefulControlFrameTest {
     fun keyedReorderAndRemovalKeepCorrectStatesAndOldFrames() {
         val order = mutableStateOf(listOf(0, 1, 2))
         val states = listOf(CheckboxState(false), CheckboxState(true), CheckboxState(false))
-        val host = createMinecraftUiHost(
-            UiDefinition("keyed controls") {
-                Column {
-                    for (index in order.value) Checkbox("$index", states[index], key = ElementKey(index))
-                }
-            },
-            MinecraftProfileFixture.create(),
-        )
+        val host =
+            createMinecraftUiHost(
+                UiDefinition("keyed controls") {
+                    Column {
+                        for (index in order.value) Checkbox("$index", states[index], key = ElementKey(index))
+                    }
+                },
+                MinecraftProfileFixture.create(),
+                )
         host.use {
             host.attach()
             val original = host.frame(IntSize(150, 60))
@@ -198,12 +202,13 @@ internal class MinecraftStatefulControlFrameTest {
     fun structuralPaddingPreservesTheControlAndMovesOnlyItsEffectiveGeometry() {
         val padded = mutableStateOf(false)
         val checked = CheckboxState()
-        val host = createMinecraftUiHost(
-            UiDefinition("padding") {
-                Checkbox("A", checked, modifier = if (padded.value) Modifier.Empty.padding(2) else Modifier.Empty)
-            },
-            MinecraftProfileFixture.create(),
-        )
+        val host =
+            createMinecraftUiHost(
+                UiDefinition("padding") {
+                    Checkbox("A", checked, modifier = if (padded.value) Modifier.Empty.padding(2) else Modifier.Empty)
+                },
+                MinecraftProfileFixture.create(),
+                )
         host.use {
             host.attach()
             val original = host.frame(IntSize(150, 20))
@@ -227,17 +232,18 @@ internal class MinecraftStatefulControlFrameTest {
             val checkbox = CheckboxState()
             val slider = SliderState(0.0)
             val cycle = CycleButtonState(listOf(0, 1, 2))
-            val host = createMinecraftUiHost(
-                UiDefinition("failure") {
-                    val version = revision.value
-                    when (kind) {
-                        Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { if (version == 1) throw failure })
-                        Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { if (version == 1) throw failure })
-                        Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { if (version == 1) throw failure })
-                    }
-                },
-                MinecraftProfileFixture.create(),
-            )
+            val host =
+                createMinecraftUiHost(
+                    UiDefinition("failure") {
+                        val version = revision.value
+                        when (kind) {
+                            Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { if (version == 1) throw failure })
+                            Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { if (version == 1) throw failure })
+                            Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { if (version == 1) throw failure })
+                        }
+                    },
+                    MinecraftProfileFixture.create(),
+                    )
             try {
                 host.attach()
                 val original = host.frame(IntSize(150, 20))
@@ -245,7 +251,7 @@ internal class MinecraftStatefulControlFrameTest {
                 revision.value = 1
                 host.frame(IntSize(150, 20))
                 val x = if (kind == Kind.Slider) 149 else 1
-                assertSame(failure, assertFailsWith<IllegalStateException> { host.dispatchPointer(PointerEvent.Press(IntOffset(x, 1), PointerButton.Primary)) })
+                assertSame(failure, assertThrows(IllegalStateException::class.java) { host.dispatchPointer(PointerEvent.Press(IntOffset(x, 1), PointerButton.Primary)) })
                 val evaluator = host.javaClass.getDeclaredField("evaluator")
                 evaluator.isAccessible = true
                 assertEquals(null, evaluator.get(host))

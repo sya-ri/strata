@@ -20,10 +20,10 @@ import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 /**
  * Classifies complete immutable presentation changes independently of the retained paint cache.
@@ -163,17 +163,29 @@ internal class MinecraftStatefulControlUpdateTest {
         }
     }
 
-    private fun assertPaint(kind: Kind, previous: Input, current: Input) {
+    private fun assertPaint(
+        kind: Kind,
+        previous: Input,
+        current: Input,
+    ) {
         assertTrue(DirtyPhase.Paint in update(kind, previous, current), kind.name)
     }
 
-    private fun update(kind: Kind, previous: Input, current: Input): DirtyMask {
+    private fun update(
+        kind: Kind,
+        previous: Input,
+        current: Input,
+    ): DirtyMask {
         var result = DirtyMask.None
         withNode(kind, previous) { element, node, _ -> result = element.type.updateErased(element, current.element(kind), node) }
         return result
     }
 
-    private fun withNode(kind: Kind, input: Input, action: (Element, Node, MutableList<DirtyMask>) -> Unit) {
+    private fun withNode(
+        kind: Kind,
+        input: Input,
+        action: (Element, Node, MutableList<DirtyMask>) -> Unit,
+    ) {
         val element = input.element(kind)
         val node = element.type.createErased(element)
         val dirty = ArrayList<DirtyMask>()
@@ -189,7 +201,10 @@ internal class MinecraftStatefulControlUpdateTest {
         }
     }
 
-    private fun field(instance: Any, name: String): Any? {
+    private fun field(
+        instance: Any,
+        name: String,
+    ): Any? {
         val field = instance.javaClass.getDeclaredField(name)
         field.isAccessible = true
         return field.get(instance)
@@ -256,27 +271,38 @@ internal class MinecraftStatefulControlUpdateTest {
      * Synthetic immutable pixel assets; no game or native resource is opened.
      */
     private companion object {
-        fun copyRun(run: MinecraftTextRun, nativeWidth: Int = run.nativeWidth, changePolicy: Boolean = false): MinecraftTextRun {
+        fun copyRun(
+            run: MinecraftTextRun,
+            nativeWidth: Int = run.nativeWidth,
+            changePolicy: Boolean = false,
+        ): MinecraftTextRun {
             fun value(name: String): Any? {
                 val field = run.javaClass.getDeclaredField(name)
                 field.isAccessible = true
                 return field.get(run)
             }
             val originalPolicy = checkNotNull(value("paintPolicy"))
-            val policy = if (changePolicy) {
-                val constructor = originalPolicy.javaClass.declaredConstructors.single { it.parameterCount == 3 }
-                constructor.isAccessible = true
-                constructor.newInstance(true, true, false)
-            } else {
-                originalPolicy
-            }
+            val policy =
+                if (changePolicy) {
+                    val constructor = originalPolicy.javaClass.declaredConstructors.single { it.parameterCount == 3 }
+                    constructor.isAccessible = true
+                    constructor.newInstance(true, true, false)
+                } else {
+                    originalPolicy
+                }
             val constructor = run.javaClass.declaredConstructors.single { it.parameterCount == 7 }
             constructor.isAccessible = true
             return constructor.newInstance(run.text, value("glyphs"), run.size, value("sampledGlyphs"), nativeWidth, policy, run.verticalMetrics) as MinecraftTextRun
         }
 
-        fun image(width: Int, height: Int): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { 0xFF426789.toInt() })
+        fun image(
+            width: Int,
+            height: Int,
+        ): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { 0xFF426789.toInt() })
         fun glyph(): DrawImage = image(8, 8)
-        fun snapshot(image: DrawImage, advance: Int): MinecraftGlyphSnapshot = MinecraftGlyphSnapshot.create(advance, image, image, image, image, image, image, image, image, image)
+        fun snapshot(
+            image: DrawImage,
+            advance: Int,
+        ): MinecraftGlyphSnapshot = MinecraftGlyphSnapshot.create(advance, image, image, image, image, image, image, image, image, image)
     }
 }
