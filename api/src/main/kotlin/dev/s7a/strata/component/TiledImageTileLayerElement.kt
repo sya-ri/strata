@@ -217,7 +217,8 @@ internal class TiledImageTileLayerElement(
             val stateChanged = state !== current.state
             val sizeChanged = destinationSize != current.destinationSize
             val policyChanged = cachePolicy != current.cachePolicy
-            if (sourceChanged || geometryChanged || stateChanged || sizeChanged || policyChanged) plan = TilePlan.Empty
+            val bindingChanged = sourceChanged || geometryChanged || stateChanged
+            if (bindingChanged || sizeChanged || policyChanged) plan = TilePlan.Empty
             check(sourceChanged || geometryChanged.not()) {
                 "Tiled image geometry cannot change without replacing its source identity."
             }
@@ -241,7 +242,7 @@ internal class TiledImageTileLayerElement(
             }
             return when {
                 sizeChanged -> DirtyMask.of(DirtyPhase.Measure)
-                sourceChanged || geometryChanged || stateChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
+                bindingChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
                 else -> DirtyMask.None
             }
         }
