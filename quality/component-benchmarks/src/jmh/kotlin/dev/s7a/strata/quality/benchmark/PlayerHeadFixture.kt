@@ -173,7 +173,7 @@ internal class PlayerHeadFixture(
                 current is Array<*> -> current.filterNotNull().forEach(pending::add)
                 current.javaClass.protectionDomain.codeSource?.location in origins -> {
                     var type: Class<*>? = current.javaClass
-                    while (type != null && type != Any::class.java) {
+                    while (type != null && type.protectionDomain.codeSource?.location in origins) {
                         type.declaredFields.filter { ReflectionModifier.isStatic(it.modifiers).not() }.forEach { field ->
                             field.isAccessible = true
                             field.get(current)?.let(pending::add)
