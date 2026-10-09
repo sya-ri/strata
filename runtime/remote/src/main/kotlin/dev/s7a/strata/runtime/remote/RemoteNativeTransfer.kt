@@ -71,7 +71,13 @@ internal class RemoteNativeTransfer private constructor(
         val source = frames.first()
         val identity = ByteBuffer.wrap(source, RemotePacket.envelopeBytes, source.size - RemotePacket.envelopeBytes).long
         val frame = ByteArray(Math.addExact(RemotePacket.envelopeBytes, 17))
-        ByteBuffer.wrap(frame).position(RemotePacket.envelopeBytes).putLong(identity).putInt(0).putInt(0).put(0)
+        ByteBuffer
+            .wrap(frame)
+            .position(RemotePacket.envelopeBytes)
+            .putLong(identity)
+            .putInt(0)
+            .putInt(0)
+            .put(0)
         return RemoteNativeTransfer(ArrayDeque(listOf(frame)))
     }
 
@@ -114,7 +120,8 @@ internal class RemoteNativeTransfer private constructor(
                     val count = minOf(limits.frameBytes - 16, bytes.size - offset)
                     val innerBytes = Math.addExact(16, count)
                     val frame = ByteArray(Math.addExact(RemotePacket.envelopeBytes, innerBytes))
-                    ByteBuffer.wrap(frame)
+                    ByteBuffer
+                        .wrap(frame)
                         .position(RemotePacket.envelopeBytes)
                         .putLong(identity)
                         .putInt(bytes.size)

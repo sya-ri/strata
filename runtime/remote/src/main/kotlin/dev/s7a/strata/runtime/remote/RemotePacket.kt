@@ -161,7 +161,8 @@ public sealed interface RemotePacket {
             address: RemoteAddress,
             sequence: Long,
         ): ByteBuffer =
-            buffer.put(Kind.Frame.ordinal.toByte())
+            buffer
+                .put(Kind.Frame.ordinal.toByte())
                 .put(address.endpoint.ordinal.toByte())
                 .putLong(address.incarnation.mostSignificantBits)
                 .putLong(address.incarnation.leastSignificantBits)
