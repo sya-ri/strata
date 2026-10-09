@@ -15,6 +15,7 @@ import java.util.Collections
 public class RemoteRegistry {
     private val elements = mutableMapOf<ProjectionType, (ProjectionValue) -> RemotePreparedTree.Component>()
     private val modifiers = mutableMapOf<ProjectionType, (ProjectionValue) -> RemotePreparedTree.ActiveModifier>()
+    private val preparationIdentity = Any()
     private var frozen: Boolean = false
     private val roles = mutableMapOf<ProjectionType, SemanticsRole>()
 
@@ -33,14 +34,14 @@ public class RemoteRegistry {
     public fun <P : Any> element(
         type: ProjectionType,
         decode: (ProjectionValue) -> P,
-        prepare: (P, RemotePreparationContext) -> Unit = { _, _ -> },
+        prepare: (P, RemotePreparationContext) -> Unit = NO_PREPARATION,
         phase: RemotePreparationPhase = RemotePreparationPhase.Owners,
         create: (P, RemoteElementContext) -> Element,
     ) {
         requireRegistration(type)
         elements[type] = { value ->
             val properties = decode(value)
-            RemotePreparedTree.Component(phase, { context -> prepare(properties, context) }, { context -> create(properties, context) })
+            RemotePreparedTree.Component(phase, { context -> prepare(properties, context) }, { context -> create(properties, context) }, prepare !== NO_PREPARATION)
         }
     }
 
@@ -62,14 +63,14 @@ public class RemoteRegistry {
     public fun <P : Any> statefulModifier(
         type: ProjectionType,
         decode: (ProjectionValue) -> P,
-        prepare: (P, RemotePreparationContext) -> Unit = { _, _ -> },
+        prepare: (P, RemotePreparationContext) -> Unit = NO_PREPARATION,
         phase: RemotePreparationPhase = RemotePreparationPhase.References,
         create: (P, RemoteModifierContext) -> Modifier,
     ) {
         requireRegistration(type)
         modifiers[type] = { value ->
             val properties = decode(value)
-            RemotePreparedTree.ActiveModifier(phase, { context -> prepare(properties, context) }, { context -> create(properties, context) })
+            RemotePreparedTree.ActiveModifier(phase, { context -> prepare(properties, context) }, { context -> create(properties, context) }, prepare !== NO_PREPARATION)
         }
     }
 
@@ -109,24 +110,47 @@ public class RemoteRegistry {
     ): RemotePreparedTree {
         val budget = RemoteWorkBudget(limits)
         validateTypes(tree)
+        // Only this frozen registry can certify old decoded factory captures.
+        val trusted = previous?.takeIf { it.registryIdentity === preparationIdentity }
         val decoded =
             tree.nodes.mapValues { (identity, node) ->
                 budget.visit()
-                val old = previous?.tree?.nodes?.get(identity)
-                val cached = previous?.decoded?.get(identity)
-                RemotePreparedTree.Node(
-                    cached?.component?.takeIf { old?.declaration == node.declaration }
-                        ?: elements.getValue(node.declaration.type)(node.declaration.value),
-                    node.modifiers.map {
+                val old = trusted?.tree?.nodes?.get(identity)
+                val cached = trusted?.decoded?.get(identity)
+                val component = cached?.component?.takeIf { old?.declaration == node.declaration }
+                    ?: elements.getValue(node.declaration.type)(node.declaration.value)
+                val active = if (old?.modifiers == node.modifiers && cached != null) {
+                    repeat(node.modifiers.size) { budget.visit() }
+                    cached.modifiers
+                } else {
+                    val indices = old?.modifiers?.withIndex()?.associate { it.value.identity to it.index }.orEmpty()
+                    node.modifiers.map { declaration ->
                         budget.visit()
-                        val index = old?.modifiers?.indexOfFirst { modifier -> modifier.identity == it.identity } ?: -1
-                        cached?.modifiers?.getOrNull(index)?.takeIf { _ -> old?.modifiers?.get(index) == it }
-                            ?: modifiers.getValue(it.type)(it.value)
-                    },
-                )
+                        val index = indices[declaration.identity]
+                        val retained = index?.let { cached?.modifiers?.getOrNull(it) }
+                        val previousDeclaration = index?.let { old?.modifiers?.get(it) }
+                        retained?.takeIf { _ -> previousDeclaration == declaration }
+                            ?: modifiers.getValue(declaration.type)(declaration.value)
+                    }
+                }
+                if (cached != null && component === cached.component && active === cached.modifiers) {
+                    cached
+                } else {
+                    RemotePreparedTree.Node(
+                        component,
+                        active,
+                    )
+                }
             }
         budget.checkTime()
-        return RemotePreparedTree(tree, decoded)
+        return RemotePreparedTree(tree, decoded, preparationIdentity)
+    }
+
+    /**
+     * Shared pure default recognized only by reference; a caller callback remains observable even when it does nothing.
+     */
+    private companion object {
+        val NO_PREPARATION: (Any, RemotePreparationContext) -> Unit = { _, _ -> }
     }
 
     private fun requireRegistration(type: ProjectionType) {
