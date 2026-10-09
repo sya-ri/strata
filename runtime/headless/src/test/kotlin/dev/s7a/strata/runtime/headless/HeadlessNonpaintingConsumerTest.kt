@@ -161,8 +161,7 @@ internal class HeadlessNonpaintingConsumerTest {
     private class Retained(
         private val image: DrawImage,
         private val onPaint: () -> Unit,
-    ) :
-        Node(),
+    ) : Node(),
         MeasureNode,
         PaintNode,
         SemanticsNode {
