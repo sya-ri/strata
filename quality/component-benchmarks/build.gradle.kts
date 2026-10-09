@@ -23,6 +23,10 @@ dependencies {
     add("jmh", project(":runtime:headless"))
     add("jmh", project(":runtime:minecraft"))
     add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
+    // Sampled lifetime verification loads the real adapter JAR; scoped JVM preparation only compiles that reflective fixture.
+    if (rootProject.findProject(":runtime:minecraft-fabric-26.3") != null) {
+        add("jmhRuntimeOnly", project(mapOf("path" to ":runtime:minecraft-fabric-26.3", "configuration" to "namedElements")))
+    }
 }
 
 // The separate component corpus uses one isolated native generation, matching the shipped modern showcase.
