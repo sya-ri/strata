@@ -2,7 +2,8 @@ package dev.s7a.strata.runtime.minecraft.font
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Detached alpha-bound observation and optional pixels for one bitmap cell.
@@ -32,6 +33,7 @@ internal class FontBitmapCell private constructor(
          * @return detached alpha metrics and at most one atlas-sized copied image.
          * @throws Throwable when dimensions are empty or source pixel access fails.
          */
+        @OptIn(InternalStrataRuntimeApi::class)
         fun read(
             size: IntSize,
             pixelAt: (Int, Int) -> Int,
@@ -47,7 +49,7 @@ internal class FontBitmapCell private constructor(
                     if (pixel ushr 24 != 0) rightmost = maxOf(rightmost, x)
                 }
             }
-            return FontBitmapCell(rightmost, size, pixels?.let { createDrawImage(size, it) }, size.takeIf { oversized })
+            return FontBitmapCell(rightmost, size, pixels?.let { createOwnedDrawImage(size, it) }, size.takeIf { oversized })
         }
     }
 }
