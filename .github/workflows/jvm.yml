@@ -262,6 +262,18 @@ jobs:
       env:
         COMMON_CHECKS: ${{ needs.plan.outputs.common }}
         MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Verify dedicated Fabric server UI
+      run: python3 integration/fabric/run_acceptance.py "$MINECRAFT_VERSION" --development-only
+      env:
+        MINECRAFT_VERSION: ${{ matrix.version }}
+    - name: Upload dedicated Fabric server evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: fabric-server-evidence-${{ matrix.id }}
+        path: build/fabric-acceptance/${{ matrix.version }}/
+        if-no-files-found: ignore
+        retention-days: 7
     - name: Upload native showcase comparison
       if: success() && matrix.documentation
       uses: actions/upload-artifact@v7
