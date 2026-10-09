@@ -105,45 +105,52 @@ internal class LwjglFontTerminalOwnershipTest {
             val selected = compatibility(rasterizer)
             val expected = rasterizeHeadless(listOf(DrawCommand.FillRectangle(IntRect(0, 0, 8, 8), ArgbColor(0x8055aaff.toInt()))), IntSize(8, 8))
             val snapshot = snapshot(selected, """{"type":"bitmap","file":"test:face.png","ascent":7,"chars":["A"]}""", "assets/test/textures/face.png" to expected.encodePng())
-            for (entries in listOf(0, 2, 4_096)) {
-                lateinit var owner: MinecraftFontEngine
-                var decodes = 0
-                var closes = 0
-                var retained: DrawImage? = null
-                LwjglMinecraftFontBackend(rasterizer).use { native ->
-                    val delegated =
-                        object : MinecraftBoundedFontBackend by native {
-                            override fun decodePng(
-                                bytes: ByteArray,
-                                limits: MinecraftFontLoadLimits,
-                            ): DrawImage {
-                                decodes++
-                                val image = native.decodePng(bytes, limits)
-                                retained = image
-                                owner.close()
-                                return image
-                            }
+            for (entries in listOf(0, 2, 4_096)) verifyNativePng(rasterizer, entries, snapshot, expected)
+        }
+    }
 
-                            override fun close() {
-                                closes++
-                                owner.close()
-                                native.close()
-                            }
-                        }
-                    owner = MinecraftFontEngine(snapshot, { delegated }, cacheEntries = entries)
-                    val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
-                    assertEquals(missing, owner.glyph(ResourceId("minecraft", "default"), 'A'.code))
-                    assertTerminal(owner)
-                    assertEquals(1, decodes)
-                    assertEquals(1, closes)
-                    val image = checkNotNull(retained)
-                    assertEquals(expected.size, image.size)
-                    for (y in 0 until 8) {
-                        for (x in 0 until 8) assertEquals(expected.argbAt(x, y), image.argbAt(x, y))
+    private fun verifyNativePng(
+        rasterizer: MinecraftTrueTypeRasterizer,
+        entries: Int,
+        snapshot: MinecraftFontSnapshot,
+        expected: DrawImage,
+    ) {
+        lateinit var owner: MinecraftFontEngine
+        var decodes = 0
+        var closes = 0
+        var retained: DrawImage? = null
+        LwjglMinecraftFontBackend(rasterizer).use { native ->
+            val delegated =
+                object : MinecraftBoundedFontBackend by native {
+                    override fun decodePng(
+                        bytes: ByteArray,
+                        limits: MinecraftFontLoadLimits,
+                    ): DrawImage {
+                        decodes++
+                        val image = native.decodePng(bytes, limits)
+                        retained = image
+                        owner.close()
+                        return image
                     }
-                    assertEquals(0, (field(native, "faces") as Set<*>).size)
+
+                    override fun close() {
+                        closes++
+                        owner.close()
+                        native.close()
+                    }
                 }
+            owner = MinecraftFontEngine(snapshot, { delegated }, cacheEntries = entries)
+            val missing = owner.glyph(ResourceId("unknown", "terminal"), 'A'.code)
+            assertEquals(missing, owner.glyph(ResourceId("minecraft", "default"), 'A'.code))
+            assertTerminal(owner)
+            assertEquals(1, decodes)
+            assertEquals(1, closes)
+            val image = checkNotNull(retained)
+            assertEquals(expected.size, image.size)
+            for (y in 0 until 8) {
+                for (x in 0 until 8) assertEquals(expected.argbAt(x, y), image.argbAt(x, y))
             }
+            assertEquals(0, (field(native, "faces") as Set<*>).size)
         }
     }
 

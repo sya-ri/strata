@@ -495,17 +495,23 @@ public class MinecraftFontEngine
                     throw failure
                 }
             if (closed) {
-                val failure = runCatching(face::close).exceptionOrNull()
-                if (failure != null) {
-                    if (preparing) throw TerminalFaceCloseException(failure)
-                    throw failure
-                }
+                closeUnadmittedFace(face, preparing)
                 return null
             }
             faces[key] = face
             faceBytes += weight
             validatedFaces.add(key)
             return face
+        }
+
+        /** Releases a late face without changing its original cleanup failure or preflight diagnostic boundary. */
+        private fun closeUnadmittedFace(
+            face: MinecraftTrueTypeFace,
+            preparing: Boolean,
+        ) {
+            val failure = runCatching(face::close).exceptionOrNull() ?: return
+            if (preparing) throw TerminalFaceCloseException(failure)
+            throw failure
         }
 
         private fun putRaster(

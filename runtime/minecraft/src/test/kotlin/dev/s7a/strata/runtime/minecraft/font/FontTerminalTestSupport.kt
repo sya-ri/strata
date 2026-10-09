@@ -76,6 +76,8 @@ internal object FontTerminalTestSupport {
         name: String,
     ): Any? = MinecraftFontEngine::class.java.getDeclaredField(name).apply { isAccessible = true }.get(engine)
 
+    // Reflection only transports the native failure; preserve its exact identity without attaching the wrapper.
+    @Suppress("SwallowedException")
     private fun invoke(
         engine: MinecraftFontEngine,
         name: String,

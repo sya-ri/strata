@@ -374,11 +374,7 @@ internal class MinecraftFontTerminalOwnershipTest {
                 open = { _, _ ->
                     FontTestFace(
                         {
-                            val task = FutureTask { runCatching { owner.close() }.exceptionOrNull() }
-                            Thread(task).start()
-                            val failure = task.get(5, TimeUnit.SECONDS)
-                            assertTrue(failure is IllegalStateException)
-                            assertEquals("Font engine requires its owner thread.", failure?.message)
+                            assertForeignThreadCloseRejected(owner)
                             raster(1)
                         },
                         { closes++ },
@@ -427,6 +423,14 @@ internal class MinecraftFontTerminalOwnershipTest {
         assertEquals(candidateBackend.openCalls, referenceBackend.openCalls)
         assertEquals(1, candidateBackend.closeCalls)
         assertEquals(candidateBackend.closeCalls, referenceBackend.closeCalls)
+    }
+
+    private fun assertForeignThreadCloseRejected(owner: MinecraftFontEngine) {
+        val task = FutureTask { runCatching { owner.close() }.exceptionOrNull() }
+        Thread(task).start()
+        val failure = task.get(5, TimeUnit.SECONDS)
+        assertTrue(failure is IllegalStateException)
+        assertEquals("Font engine requires its owner thread.", failure?.message)
     }
 
     private fun failures(): List<Throwable?> = listOf(null, IllegalStateException("terminal callback failure"), MinecraftFontLoadLimitException("terminal callback limit"), AssertionError("terminal callback fatal"))
