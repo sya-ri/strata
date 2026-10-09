@@ -143,16 +143,18 @@ internal class TextLineLayoutReference(
         nextStart: Int,
     ): List<Row> {
         val result = ArrayList<Row>()
-        var offsets = arrayListOf(start)
-        var prefixes = arrayListOf(0f)
+        val offsets = arrayListOf(start)
+        val prefixes = arrayListOf(0f)
         var offset = start
         while (offset < end) {
             val scalar = value.codePointAt(offset)
             var nextWidth = prefixes.last() + assets.advance(scalar, fontAt(offset))
             if (shape === Shape.Wrapped && width < assets.compatibility.roundedWidth(nextWidth) && 1 < offsets.size) {
                 result.add(row(offsets, prefixes, offset))
-                offsets = arrayListOf(offset)
-                prefixes = arrayListOf(0f)
+                offsets.clear()
+                offsets.add(offset)
+                prefixes.clear()
+                prefixes.add(0f)
                 nextWidth = assets.advance(scalar, fontAt(offset))
             }
             offset += Character.charCount(scalar)
