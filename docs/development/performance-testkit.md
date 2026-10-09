@@ -43,6 +43,8 @@ It contains no timing or sampling loop and uses the consumer's existing JMH depe
 `JmhWorkloadInventory` expands the actual JMH-generated benchmark registry into the complete expected parameter/mode matrix; consumers do not implement another annotation-discovery engine.
 Unknown parameter names or values, missing generated fixtures and oversized matrices fail before collection.
 Each repetition owns a new output directory; failed raw output remains diagnostic evidence and cannot produce a success receipt.
+For complete CPU scheduling across independently controlled executors, follow the [frozen plan and whole-attempt contract](cpu-executors.md).
+The generic opt-in plan retains this strict selected-run validation and adds separate complete-attempt evidence rather than concatenating subset receipts into a full-matrix receipt.
 The exact registered benchmark/mode/parameter matrix must complete, and each successful invocation preserves its actual collector, JMH harness and target JARs alongside the raw results.
 The adapter requires the standard application/context classloader used by JMH forks; custom fixture loaders fail before execution rather than certifying targets from another loader.
 Consumers register external fixture files through `inputs`; the kit bounds, hashes and preserves those files outside measurement, and rejects changed or missing inputs.
@@ -422,7 +424,9 @@ The processor rejects missing scales, duplicates, leaked native ownership and a 
 During optimization, run only affected workload phases and the deterministic parity/invalidation checks needed by that change.
 Reuse completed unchanged evidence rather than restarting unrelated suites after each edit.
 Common changes with unknown impact need a broader representative matrix; explicit selection must record that limited scope.
-After the candidate is stable, collect the final required performance matrix serially and run the full ordinary GameTest acceptance once.
+After the candidate is stable, collect the final required performance matrix with the original serial contract or the qualified whole-plan CPU JMH contract and run the full ordinary GameTest acceptance once.
+CPU JMH may use a qualified [complete executor plan](cpu-executors.md) with serial timed occupancy within every fixed executor and validated whole-attempt completeness.
+Native performance collection and its original physical-backend gates remain serial and separate.
 Automatic correctness-client concurrency does not apply to performance collection.
 
 Retained remote collection also accepts workload IDs such as `Shared16At512` with `strata.performance.remoteSessions=true`.

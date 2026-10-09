@@ -1,0 +1,124 @@
+{
+  "contract": "strata-fixed-hosted-blit45-v1",
+  "original353Preserved": true,
+  "currentQualifiedExecutors": 0,
+  "actualFormalExecution": false,
+  "runtime_revisions": {
+    "baseline": "5b0bc358d6dc8346fad091be6347036e96a55dfd",
+    "candidate": "5e85538ed12dc71388e6ceeaa5e6a4c001df8d12"
+  },
+  "fixture": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/BlitTemplateBenchmark.kt",
+  "fixture_sha256": "25d0ffa5392593e0212cfb8248a306bf1518121cfa3f6affe27eeeeb85345c50",
+  "shards": [
+    {
+      "id": "shard-1",
+      "executor": "executor-1",
+      "selectors": {
+        "owned-blit": {
+          "parameters": {
+            "case": [
+              "Small",
+              "Moderate",
+              "Large",
+              "PartialEdges"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "shard-2",
+      "executor": "executor-2",
+      "selectors": {
+        "owned-blit": {
+          "parameters": {
+            "case": [
+              "LargeSource",
+              "Atlas4",
+              "Atlas32",
+              "Sparse"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "shard-3",
+      "executor": "executor-3",
+      "selectors": {
+        "owned-blit": {
+          "parameters": {
+            "case": [
+              "Overlapping",
+              "Reversed",
+              "Stretched",
+              "OversizedSource"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "shard-4",
+      "executor": "executor-4",
+      "selectors": {
+        "owned-blit": {
+          "parameters": {
+            "case": [
+              "MixedImages",
+              "Clipped",
+              "FractionalTransform"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "interleaving": [
+    [
+      "baseline",
+      0
+    ],
+    [
+      "candidate",
+      0
+    ],
+    [
+      "baseline",
+      1
+    ],
+    [
+      "candidate",
+      1
+    ],
+    [
+      "baseline",
+      2
+    ],
+    [
+      "candidate",
+      2
+    ]
+  ],
+  "required_settings": {
+    "modes": [
+      "avgt",
+      "sample"
+    ],
+    "warmup_iterations": 3,
+    "warmup_duration_seconds": 1,
+    "measurement_iterations": 5,
+    "measurement_duration_seconds": 1,
+    "forks": 1,
+    "threads": 1,
+    "units": "us",
+    "fail_on_error": true,
+    "profilers": [
+      "gc"
+    ],
+    "quick": false,
+    "smoke": false
+  },
+  "max_whole_attempts": 2,
+  "wall_pairs": 3
+}

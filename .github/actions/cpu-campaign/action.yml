@@ -1,0 +1,12 @@
+name: Retained complete CPU campaign job
+description: Holds one fixed coordinator or worker job and uses the existing CPU plan driver
+inputs:
+  role:
+    description: Fixed role in the five-job campaign matrix
+    required: true
+  qualification-issue:
+    description: Read-only location of the independently reviewed actual job qualification
+    required: true
+runs:
+  using: node24
+  main: run.mjs

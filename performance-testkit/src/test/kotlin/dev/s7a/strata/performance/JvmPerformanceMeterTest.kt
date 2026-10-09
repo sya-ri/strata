@@ -1,6 +1,8 @@
 package dev.s7a.strata.performance
 
 import org.junit.jupiter.api.Test
+import java.lang.management.ManagementFactory
+import javax.management.ObjectName
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -9,6 +11,29 @@ import kotlin.test.assertTrue
  * Regression coverage for the shared collection and evidence contract.
  */
 class JvmPerformanceMeterTest {
+    @Test
+    fun aggregateAllocationPreservesUnavailableOrIncludesTerminatedThreads() {
+        val meter = JvmPerformanceMeter("aggregate", 1)
+        val aggregateAvailable =
+            runCatching {
+                val value = ManagementFactory.getPlatformMBeanServer().getAttribute(ObjectName("java.lang:type=Threading"), "TotalThreadAllocatedBytes")
+                value is Long && 0 <= value
+            }.getOrDefault(false)
+        var retained = ByteArray(0)
+        val worker = Thread { retained = ByteArray(8 * 1024 * 1024) }
+        meter.sample {
+            worker.start()
+            worker.join()
+        }
+        assertEquals(8 * 1024 * 1024, retained.size)
+        val aggregate = meter.result().get("all_threads_allocated_bytes")
+        if (aggregateAvailable) {
+            assertTrue(retained.size.toLong() <= aggregate.asLong)
+        } else {
+            assertTrue(aggregate.isJsonNull)
+        }
+    }
+
     @Test
     fun requiresAllSuccessfulSamplesAndDetachedEvidence() {
         val meter = JvmPerformanceMeter("bounded", 2)

@@ -18,6 +18,10 @@ public object RemotePerformanceEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(2 < args.size)
+        if (System.getProperty("strata.performance.benchmarks") != null) {
+            SelectedRemotePerformanceEvidence.main(args)
+            return
+        }
         RemoteWorkEvidence.verifySurface()
         val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
         val fixtures = if (sessions) listOf(RemoteSessionBenchmark::class.java) else listOf(RemoteProtocolBenchmark::class.java)

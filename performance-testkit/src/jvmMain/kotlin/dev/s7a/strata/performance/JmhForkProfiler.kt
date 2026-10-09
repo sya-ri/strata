@@ -22,11 +22,17 @@ import java.nio.file.Path
 public class JmhForkProfiler(
     options: String,
 ) : InternalProfiler {
+    private val expected =
+        runCatching {
+            require(options.toByteArray(Charsets.UTF_8).size <= 8 * 1024 * 1024)
+            checkNotNull(Gson().fromJson(options, JsonObject::class.java))
+        }
+    private val cpuEvidence = runCatching { expected.getOrThrow().takeIf { it.has("cpu") }?.let(::JmhCpuForkEvidence) }
+
     // JMH discovery ignores constructor failures; retain any failure and throw it from its mandatory iteration hook.
     private val identityCheck =
         runCatching {
-            require(options.toByteArray(Charsets.UTF_8).size <= 8 * 1024 * 1024)
-            val expected = checkNotNull(Gson().fromJson(options, JsonObject::class.java))
+            val expected = expected.getOrThrow()
             val loader = ClassLoader.getSystemClassLoader()
             check(JmhForkProfiler::class.java.classLoader === loader && Thread.currentThread().contextClassLoader === loader)
             val targets = expected.getAsJsonObject("representatives").entrySet().associate { it.key to it.value.asString }
@@ -51,11 +57,23 @@ public class JmhForkProfiler(
         iterationParams: IterationParams,
     ) {
         identityCheck.getOrThrow()
+        cpuEvidence.getOrThrow()?.ready()
     }
 
     override fun afterIteration(
         benchmarkParams: BenchmarkParams,
         iterationParams: IterationParams,
         result: IterationResult,
-    ): Collection<Result<*>> = listOf(ScalarResult("strata.provenance", 1.0, "verified", AggregationPolicy.MIN))
+    ): Collection<Result<*>> {
+        identityCheck.getOrThrow()
+        val cpu = cpuEvidence.getOrThrow()
+        cpu?.record(benchmarkParams, iterationParams, result)
+        return buildList {
+            add(ScalarResult("strata.provenance", 1.0, "verified", AggregationPolicy.MIN))
+            if (cpu != null) {
+                require(result.metadata.allOps in 0..9_007_199_254_740_992L) { "JMH operation count is not exactly representable" }
+                add(ScalarResult("strata.all_operations", result.metadata.allOps.toDouble(), "operations", AggregationPolicy.SUM))
+            }
+        }
+    }
 }

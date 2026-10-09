@@ -6,8 +6,8 @@ import org.openjdk.jmh.results.RunResult
 import org.openjdk.jmh.results.format.ResultFormatType
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.CommandLineOptions
+import org.openjdk.jmh.runner.options.Options
 import org.openjdk.jmh.runner.options.OptionsBuilder
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -34,18 +34,27 @@ public object JmhPerformanceRunner {
         expectedWorkloads: Set<String>,
         inputs: Map<String, Path> = emptyMap(),
     ) {
+        val cpuCosts = if (System.getProperty("strata.performance.cpuContext") != null) JmhCpuCosts() else null
         require(fixtures.isNotEmpty() && targets.isNotEmpty() && expectedWorkloads.isNotEmpty() && 0 <= repetition)
         val inputArguments = arguments.copyOf()
         val inputFixtures = fixtures.toList()
         val inputTargets = targets.toMap()
         val inputWorkloads = expectedWorkloads.toSet()
-        val inputFiles = fixtureInputs(inputs)
+        val cpuContext = System.getProperty("strata.performance.cpuContext")?.let { JvmEvidenceFiles.document(Path.of(it)) }
+        val (probe, inputFiles) = cpuInputs(inputs, cpuContext)
+        require(System.getProperty("strata.performance.cpuAdmission") == null || System.getProperty("strata.performance.cpuContext") == null) { "CPU admission and measurement are separate invocations" }
+        System.getProperty("strata.performance.cpuAdmission")?.let { directory ->
+            JmhCpuAdmission.capture(Path.of(directory), inputArguments, inputFixtures, inputTargets, inputWorkloads, inputFiles)
+            return
+        }
         val inputHashes = inputFiles.mapValues { ArtifactIdentity.file(it.value) }
         val destination = output.toAbsolutePath().normalize()
         require(Files.exists(destination).not()) { "JMH evidence already exists: $destination" }
         val loader = forkLoader(inputFixtures)
         val cli = CommandLineOptions(*inputArguments)
         val forkIdentity = JmhForkConfiguration.capture(cli, inputFixtures, inputTargets, inputFiles)
+        val runId = UUID.randomUUID().toString()
+        attachCpuIdentity(forkIdentity, cpuContext, probe, destination, runId)
         val runtime = forkIdentity.getAsJsonObject("runtime")
         val fixtureIdentity = forkIdentity.getAsJsonObject("fixtures").entrySet().associate { it.key to it.value.asString }
         val certifiedClasses = fixtureIdentity.keys.map { Class.forName(it, false, loader) }
@@ -55,33 +64,24 @@ public object JmhPerformanceRunner {
         val options =
             OptionsBuilder()
                 .parent(cli)
+                // Own profilers precede the parent CLI's GC profiler; reverse completion closes GC before CPU journals.
                 .addProfiler(JmhForkProfiler::class.java, forkIdentity.toString())
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)
                 .result(destination.resolve("results.json").toString())
                 .build()
-        Files.createDirectories(checkNotNull(destination.parent))
-        Files.createDirectory(destination)
-        val results = Runner(options).run()
-        verifyMatrix(results, inputWorkloads)
+        executeHarness(destination, options, cpuCosts, inputWorkloads)
         check(ArtifactIdentity.applicationTrees(certifiedClasses) == fixtureIdentity) { "Benchmark fixture changed during JMH execution" }
         check(ArtifactIdentity.fullCodeSource(Runner::class.java) == harnessIdentity) { "JMH harness changed during execution" }
         check(PerformanceJson.collectorIdentity() == collectorIdentity) { "Collector changed during JMH execution" }
         check(LoadedArtifactMetadata.capture(loader, inputTargets, inputTargets.keys) == runtime) { "Measured runtime changed during JMH execution" }
-        val archivedInputs = archiveInputs(inputFiles, inputHashes, destination)
-        val archivedTargets = archiveTargets(runtime, destination)
-        archive(sourceUrl(Runner::class.java), destination.resolve("harness.jar"), harnessIdentity)
-        archive(sourceUrl(JvmPerformanceMeter::class.java), destination.resolve("collector.jar"), collectorIdentity.get("code_source_sha256").asString)
+        val archivedInputs = JmhEvidenceArchives.inputs(inputFiles, inputHashes, destination)
+        val archivedTargets = JmhEvidenceArchives.targets(runtime, destination)
+        JmhEvidenceArchives.copy(sourceUrl(Runner::class.java), destination.resolve("harness.jar"), harnessIdentity)
+        JmhEvidenceArchives.copy(sourceUrl(JvmPerformanceMeter::class.java), destination.resolve("collector.jar"), collectorIdentity.get("code_source_sha256").asString)
         PerformanceJson.writeNew(
             destination.resolve("receipt.json"),
-            JsonObject().apply {
-                addProperty("contract", "strata-jmh-v1")
-                addProperty("status", "passed")
-                addProperty("run_id", UUID.randomUUID().toString())
-                addProperty("repetition", repetition)
-                addProperty("fork_verification", "loaded-artifacts-per-iteration-v1")
-                addProperty("results_sha256", ArtifactIdentity.file(destination.resolve("results.json")))
-                addProperty("harness_sha256", harnessIdentity)
+            receiptHeader(destination, runId, repetition, cpuContext, harnessIdentity).apply {
                 add("arguments", gson.toJsonTree(inputArguments))
                 add("registered_workloads", gson.toJsonTree(inputWorkloads.sorted()))
                 add("fixture_identity", gson.toJsonTree(fixtureIdentity))
@@ -91,7 +91,71 @@ public object JmhPerformanceRunner {
                 add("environment", environment())
             },
         )
+        if (cpuContext != null) cpuCosts?.publish(destination, runId, cpuContext)
     }
+
+    private fun executeHarness(
+        destination: Path,
+        options: Options,
+        costs: JmhCpuCosts?,
+        workloads: Set<String>,
+    ) {
+        Files.createDirectories(checkNotNull(destination.parent))
+        Files.createDirectory(destination)
+        costs?.startHarness()
+        val results = Runner(options).run()
+        costs?.finishHarness()
+        verifyMatrix(results, workloads)
+    }
+
+    private fun cpuInputs(
+        inputs: Map<String, Path>,
+        context: JsonObject?,
+    ): Pair<Path?, Map<String, Path>> {
+        val cpu = System.getProperty("strata.performance.cpuAdmission") != null || context != null
+        val probe = if (cpu) Path.of(checkNotNull(System.getProperty("strata.performance.cpuProbe")) { "CPU plans require their frozen host probe" }) else null
+        val probeInput = probe?.let { mapOf("cpu-executor-probe" to it) }.orEmpty()
+        require(inputs.keys.intersect(probeInput.keys).isEmpty()) { "CPU probe input label overlaps fixture controls" }
+        return probe to fixtureInputs(inputs + probeInput)
+    }
+
+    private fun attachCpuIdentity(
+        identity: JsonObject,
+        context: JsonObject?,
+        probe: Path?,
+        destination: Path,
+        runId: String,
+    ) {
+        if (context != null) {
+            check(ArtifactIdentity.file(checkNotNull(probe)) == context.textField("executor_probe_sha256")) { "Actual CPU probe bytes differ" }
+            identity.add(
+                "cpu",
+                JsonObject().apply {
+                    addProperty("run_id", runId)
+                    addProperty("directory", destination.resolve("cpu-forks").toString())
+                    add("context", context)
+                },
+            )
+        }
+    }
+
+    private fun receiptHeader(
+        destination: Path,
+        runId: String,
+        repetition: Int,
+        context: JsonObject?,
+        harnessIdentity: String,
+    ): JsonObject =
+        JsonObject().apply {
+            addProperty("contract", "strata-jmh-v1")
+            addProperty("status", "passed")
+            addProperty("run_id", runId)
+            context?.let { add("cpu_context", it) }
+            addProperty("repetition", repetition)
+            addProperty("fork_verification", "loaded-artifacts-per-iteration-v1")
+            addProperty("results_sha256", ArtifactIdentity.file(destination.resolve("results.json")))
+            addProperty("harness_sha256", harnessIdentity)
+        }
 
     private fun environment(): JsonObject =
         Gson()
@@ -148,40 +212,6 @@ public object JmhPerformanceRunner {
         return files
     }
 
-    private fun archiveInputs(
-        files: Map<String, Path>,
-        hashes: Map<String, String>,
-        destination: Path,
-    ): JsonObject =
-        JsonObject().apply {
-            files.entries.forEachIndexed { index, (name, path) ->
-                val filename = "input-$index.bin"
-                val hash = hashes.getValue(name)
-                archive(path.toUri().toString(), destination.resolve(filename), hash)
-                add(
-                    name,
-                    JsonObject().apply {
-                        addProperty("archive", filename)
-                        addProperty("sha256", hash)
-                    },
-                )
-            }
-        }
-
-    private fun archiveTargets(
-        runtime: JsonObject,
-        destination: Path,
-    ): JsonObject =
-        JsonObject().apply {
-            runtime.getAsJsonArray("modules").forEachIndexed { index, entry ->
-                val module = entry.asJsonObject
-                val archiveName = "target-$index.jar"
-                val origin = module.getAsJsonObject("codeSource")
-                archive(origin.get("url").asString, destination.resolve(archiveName), origin.get("sha256").asString)
-                addProperty(module.get("module").asString, archiveName)
-            }
-        }
-
     /**
      * Constructs an exact benchmark/mode/parameter identity for a consumer's expected executable matrix.
      * JMH method discovery and real input values remain consumer-owned; the runner rejects missing or duplicate results.
@@ -193,19 +223,5 @@ public object JmhPerformanceRunner {
     ): String {
         require(benchmark.isNotBlank() && mode.isNotBlank() && parameters.keys.all(String::isNotBlank))
         return Gson().toJson(listOf(benchmark, mode, parameters.toSortedMap()))
-    }
-
-    private fun archive(
-        source: String,
-        destination: Path,
-        expectedHash: String,
-    ) {
-        val location = URI(source)
-        require(LocalResourceProtocol.decode(location.scheme) == LocalResourceProtocol.File && location.rawAuthority == null)
-        val path = Path.of(location)
-        require(Files.isRegularFile(path) && Files.size(path) <= 64L * 1024 * 1024) { "JMH provenance requires an actual bounded, separate JAR: $path" }
-        require(ArtifactIdentity.file(path) == expectedHash) { "JMH loaded archive changed before preservation" }
-        Files.copy(path, destination)
-        require(ArtifactIdentity.file(destination) == expectedHash) { "JMH archive snapshot differs from loaded bytes" }
     }
 }
