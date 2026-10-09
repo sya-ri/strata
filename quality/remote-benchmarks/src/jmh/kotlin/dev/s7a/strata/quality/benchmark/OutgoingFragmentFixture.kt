@@ -5,6 +5,7 @@ package dev.s7a.strata.quality.benchmark
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.runtime.remote.RemoteAddress
+import dev.s7a.strata.runtime.remote.RemoteBuiltins
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteEndpoint
 import dev.s7a.strata.runtime.remote.RemoteFailure
@@ -14,6 +15,7 @@ import dev.s7a.strata.runtime.remote.RemoteMessageCodec
 import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.runtime.remote.RemotePacketStream
 import dev.s7a.strata.runtime.remote.RemoteProtocolException
+import dev.s7a.strata.runtime.remote.RemoteRegistry
 import dev.s7a.strata.runtime.remote.RemoteScreenService
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
@@ -46,7 +48,15 @@ public class OutgoingFragmentFixture(
     private val codec = RemoteMessageCodec()
     private val messages = source()
     private val encoded = messages.map(codec::encode)
-    private val referenceOutput = expected(if (workload == OutgoingFragmentWorkload.Hello) 1 else 2)
+    private val serverEncoded =
+        if (workload == OutgoingFragmentWorkload.Hello) {
+            val types = RemoteRegistry().also(RemoteBuiltins::register).types
+            listOf(codec.encode(RemoteMessage.Hello(RemoteConnection.PROTOCOL_VERSION, limits, types)))
+        } else {
+            encoded
+        }
+    private val referenceOutput = expected(if (workload == OutgoingFragmentWorkload.Hello) 1 else 2, encoded)
+    private val serverReferenceOutput = if (workload == OutgoingFragmentWorkload.Hello) expected(1, serverEncoded) else referenceOutput
     private var active = emptyList<TransferOwner>()
     private var phase = OutgoingFragmentPhase.Cycle
 
@@ -178,6 +188,8 @@ public class OutgoingFragmentFixture(
         val owner = RuntimeExecutionOwner()
         val output = mutableListOf<ByteArray>()
         private val server = selected == OutgoingFragmentPhase.ServerCycle
+        private val logicalMessages = if (server) serverEncoded else encoded
+        private val expectedOutput = if (server) serverReferenceOutput else referenceOutput
         private val service = owner.run { if (server) RemoteScreenService<Unit, Unit>(RemoteEndpoint.Server, { _, bytes -> output.add(bytes) }, { throw it }) else null }
         private val peer =
             owner.run {
@@ -273,8 +285,8 @@ public class OutgoingFragmentFixture(
         }
 
         fun verify() {
-            check(output.size == referenceOutput.size)
-            output.indices.forEach { index -> check(output[index].contentEquals(referenceOutput[index])) }
+            check(output.size == expectedOutput.size)
+            output.indices.forEach { index -> check(output[index].contentEquals(expectedOutput[index])) }
             check(field(connection, "queuedFrames") == 0)
             check(field(connection, "queuedBytes") == 0)
             check((field(connection, "pending") as Collection<*>).isEmpty())
@@ -298,8 +310,8 @@ public class OutgoingFragmentFixture(
             val scopedCopies = if (route == OutgoingFragmentRoute.Public) emptyList() else scoped.filter { array -> observed.none { it === array } }
             val copied = if (route == OutgoingFragmentRoute.Public) 0L else output.filter { array -> observed.none { it === array } }.sumOf { (it.size - 26).toLong() }
             return mapOf(
-                "logical_codec_bytes" to encoded.take(attempts).sumOf { it.size.toLong() },
-                "timed_logical_codec_bytes" to if (selected == OutgoingFragmentPhase.Flush) 0L else encoded.take(attempts).sumOf { it.size.toLong() },
+                "logical_codec_bytes" to logicalMessages.take(attempts).sumOf { it.size.toLong() },
+                "timed_logical_codec_bytes" to if (selected == OutgoingFragmentPhase.Flush) 0L else logicalMessages.take(attempts).sumOf { it.size.toLong() },
                 "scoped_delivered_fragments" to scoped.size.toLong(),
                 "timed_native_fragment_copy_bytes" to scopedCopies.sumOf { (it.size - 26).toLong() },
                 "timed_native_fragment_copy_arrays" to scopedCopies.size.toLong(),
@@ -383,10 +395,13 @@ public class OutgoingFragmentFixture(
         }
     }
 
-    private fun expected(firstSequence: Long): List<ByteArray> {
+    private fun expected(
+        firstSequence: Long,
+        inputs: List<ByteArray>,
+    ): List<ByteArray> {
         if (workload in setOf(OutgoingFragmentWorkload.EntryCapacity, OutgoingFragmentWorkload.ByteCapacity)) return emptyList()
         val native = route == OutgoingFragmentRoute.Production
-        val all = encoded.mapIndexed { index, bytes -> reference(bytes, index + 1L, 1, if (workload == OutgoingFragmentWorkload.Hello) RemotePacket.limits else limits, false) }
+        val all = inputs.mapIndexed { index, bytes -> reference(bytes, index + 1L, 1, if (workload == OutgoingFragmentWorkload.Hello) RemotePacket.limits else limits, false) }
         val inner =
             when (workload) {
                 OutgoingFragmentWorkload.UnsentCancellation -> {
