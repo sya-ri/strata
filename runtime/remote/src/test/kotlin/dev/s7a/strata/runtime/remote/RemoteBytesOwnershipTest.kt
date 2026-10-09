@@ -107,18 +107,19 @@ internal class RemoteBytesOwnershipTest {
         val codec = RemoteValueCodec()
         val executor = Executors.newFixedThreadPool(4)
         try {
-            val tasks = List(8) {
-                Callable {
-                    repeat(16) {
-                        val encoded = codec.encode(value)
-                        assertArrayEquals(expected, encoded)
-                        val decoded = codec.decode(encoded)
-                        encoded.fill(0)
-                        assertEquals(value, decoded)
-                        assertArrayEquals(expected, RemoteValueCodec().encode(decoded))
+            val tasks =
+                List(8) {
+                    Callable {
+                        repeat(16) {
+                            val encoded = codec.encode(value)
+                            assertArrayEquals(expected, encoded)
+                            val decoded = codec.decode(encoded)
+                            encoded.fill(0)
+                            assertEquals(value, decoded)
+                            assertArrayEquals(expected, RemoteValueCodec().encode(decoded))
+                        }
                     }
                 }
-            }
             executor.invokeAll(tasks).forEach { it.get() }
         } finally {
             executor.shutdownNow()
@@ -152,31 +153,39 @@ internal class RemoteBytesOwnershipTest {
         value: ProjectionValue,
     ) {
         when (value) {
-            ProjectionValue.Absent -> output.writeByte(0)
+            ProjectionValue.Absent -> {
+                output.writeByte(0)
+            }
+
             is ProjectionValue.Flag -> {
                 output.writeByte(1)
                 output.writeBoolean(value.value)
             }
+
             is ProjectionValue.Integer -> {
                 output.writeByte(2)
                 output.writeLong(value.value)
             }
+
             is ProjectionValue.Real -> {
                 output.writeByte(3)
                 output.writeDouble(value.value)
             }
+
             is ProjectionValue.Text -> {
                 val payload = value.value.encodeToByteArray(throwOnInvalidSequence = true)
                 output.writeByte(4)
                 output.writeInt(payload.size)
                 output.write(payload)
             }
+
             is ProjectionValue.Bytes -> {
                 val payload = value.toByteArray()
                 output.writeByte(5)
                 output.writeInt(payload.size)
                 output.write(payload)
             }
+
             is ProjectionValue.Sequence -> {
                 output.writeByte(6)
                 output.writeInt(value.values.size)
