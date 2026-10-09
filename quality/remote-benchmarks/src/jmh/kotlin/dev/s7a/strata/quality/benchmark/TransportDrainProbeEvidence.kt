@@ -30,7 +30,7 @@ public object TransportDrainProbeEvidence {
      * Accepts a fresh report, source archive root, peer count and workload on the same frozen measurement classpath.
      */
     @JvmStatic
-    @Suppress("LongMethod", "CyclomaticComplexMethod") // Keeps debugger setup, interval boundaries and teardown in one untimed transaction.
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth") // Keeps debugger setup, interval boundaries and teardown in one untimed transaction.
     public fun main(args: Array<String>) {
         require(args.size == 4)
         val sites =
@@ -40,13 +40,14 @@ public object TransportDrainProbeEvidence {
                 Site("dev.s7a.strata.runtime.remote.RemoteConnection", "pending.firstOrNull()"),
             )
         val sourceRoot = Path.of(args[1])
-        val lines = sites.associateWith { site ->
-            val type = Class.forName(site.type)
-            val source = sourceRoot.resolve(ArtifactIdentity.fullCodeSource(type)).resolve("${type.simpleName}.kt")
-            val matches = Files.readAllLines(source).withIndex().filter { it.value.contains(site.expression) }
-            check(matches.size == 1) { "Missing or ambiguous probe source: $source" }
-            matches.single().index + 1
-        }
+        val lines =
+            sites.associateWith { site ->
+                val type = Class.forName(site.type)
+                val source = sourceRoot.resolve(ArtifactIdentity.fullCodeSource(type)).resolve("${type.simpleName}.kt")
+                val matches = Files.readAllLines(source).withIndex().filter { it.value.contains(site.expression) }
+                check(matches.size == 1) { "Missing or ambiguous probe source: $source" }
+                matches.single().index + 1
+            }
         val connector = Bootstrap.virtualMachineManager().defaultConnector()
         val arguments = connector.defaultArguments()
         arguments.getValue("main").setValue("${TransportDrainProbeTarget::class.java.name} ${args[2]} ${args[3]}")
@@ -82,45 +83,60 @@ public object TransportDrainProbeEvidence {
                             val site = sites.single { it.type == event.referenceType().name() }
                             val locations = event.referenceType().locationsOfLine(lines.getValue(site))
                             check(locations.size == 1) { "Missing or ambiguous compiled drain probe: ${site.type}" }
-                            breakpoints.add(manager.createBreakpointRequest(locations.single()).apply {
-                                putProperty("site", site.type)
-                                setSuspendPolicy(EventRequest.SUSPEND_ALL)
-                            })
+                            breakpoints.add(
+                                manager.createBreakpointRequest(locations.single()).apply {
+                                    putProperty("site", site.type)
+                                    setSuspendPolicy(EventRequest.SUSPEND_ALL)
+                                },
+                            )
                             installed.add(site.type)
                         }
-                        is MethodEntryEvent -> when (event.method().name()) {
-                            "begin" -> {
-                                check(installed.size == sites.size)
-                                active = true
-                                breakpoints.forEach { it.enable() }
-                            }
-                            "end" -> {
-                                check(active)
-                                active = false
-                                breakpoints.forEach { it.disable() }
-                                complete = true
+
+                        is MethodEntryEvent -> {
+                            when (event.method().name()) {
+                                "begin" -> {
+                                    check(installed.size == sites.size)
+                                    active = true
+                                    breakpoints.forEach { it.enable() }
+                                }
+
+                                "end" -> {
+                                    check(active)
+                                    active = false
+                                    breakpoints.forEach { it.disable() }
+                                    complete = true
+                                }
                             }
                         }
-                        is BreakpointEvent -> if (active) {
-                            val site = event.request().getProperty("site") as String
-                            probes[site] = probes.getValue(site) + 1
+
+                        is BreakpointEvent -> {
+                            if (active) {
+                                val site = event.request().getProperty("site") as String
+                                probes[site] = probes.getValue(site) + 1
+                            }
                         }
-                        is VMDeathEvent, is VMDisconnectEvent -> finished = true
+
+                        is VMDeathEvent, is VMDisconnectEvent -> {
+                            finished = true
+                        }
                     }
                 }
                 if (finished.not()) events.resume()
             }
             check(complete && vm.process().waitFor(10, TimeUnit.SECONDS) && vm.process().exitValue() == 0)
             val logs = readers.map { it.get(10, TimeUnit.SECONDS) }
-            PerformanceJson.writeNew(Path.of(args[0]), JsonObject().apply {
-                addProperty("contract", "bounded-transport-probes-v1")
-                addProperty("status", "passed")
-                addProperty("peers", args[2].toInt())
-                addProperty("workload", TransportDrainWorkload.valueOf(args[3]).name)
-                add("probes", Gson().toJsonTree(probes))
-                add("runtime_metadata", LoadedArtifactMetadata.capture(javaClass.classLoader, mapOf("remote" to sites.first().type), setOf("remote")))
-                add("logs", Gson().toJsonTree(logs))
-            })
+            PerformanceJson.writeNew(
+                Path.of(args[0]),
+                JsonObject().apply {
+                    addProperty("contract", "bounded-transport-probes-v1")
+                    addProperty("status", "passed")
+                    addProperty("peers", args[2].toInt())
+                    addProperty("workload", TransportDrainWorkload.valueOf(args[3]).name)
+                    add("probes", Gson().toJsonTree(probes))
+                    add("runtime_metadata", LoadedArtifactMetadata.capture(javaClass.classLoader, mapOf("remote" to sites.first().type), setOf("remote")))
+                    add("logs", Gson().toJsonTree(logs))
+                },
+            )
         } finally {
             try {
                 vm.dispose()

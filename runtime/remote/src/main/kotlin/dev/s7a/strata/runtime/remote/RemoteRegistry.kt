@@ -119,10 +119,9 @@ public class RemoteRegistry {
                 val cached = trusted?.decoded?.get(identity)
                 val component = cached?.component?.takeIf { old?.declaration == node.declaration }
                     ?: elements.getValue(node.declaration.type)(node.declaration.value)
-                val unchangedModifiers = old?.modifiers == node.modifiers && cached != null
-                val active = if (unchangedModifiers) {
-                    node.modifiers.forEach { budget.visit() }
-                    checkNotNull(cached).modifiers
+                val active = if (old?.modifiers == node.modifiers && cached != null) {
+                    repeat(node.modifiers.size) { budget.visit() }
+                    cached.modifiers
                 } else {
                     val indices = old?.modifiers?.withIndex()?.associate { it.value.identity to it.index }.orEmpty()
                     node.modifiers.map { declaration ->
