@@ -82,6 +82,11 @@ It accepts a fresh output directory, repetition index and ordinary JMH settings,
 `SampledSourceRequestsBenchmark` has eighteen preparation/borrow rows over its nine compiled direct and composed cases, including C=1/64/4096, U=1/16/C controls and six-tile source sharing.
 Use standard three one-second warmups, five one-second measurements, one independent fork, one thread, microsecond units and the GC profiler, with three independent invocations per runtime.
 Its signalled native-free resource fixture measures the actual device CPU path and normalized allocation; it reports no native pixels, real source uploads or GPU interval.
+`SamplingCompositionBenchmark` supplies twenty proof/partition rows over ten complete original command streams, covering ordinary large frames, one/many masks with few/many fills, disjoint/touching/overlapping bounds, repeated command objects and early/late global blockers.
+Its setup checks every positive actual-runtime proof against an independent conservative full-list oracle; baseline exhaustion is recorded rather than removed from the fixture.
+The optional fixture verifier also checks literal mask and distant-translucent rounding pixels outside timing.
+Its standalone main writes separate untimed work diagnostics from the supplied actual Fabric archive, with real charged work/admissions and null diagnostics for fields absent from an older implementation.
+That diagnostic has no timing receipt or successful CPU provenance contract; use the original shared JMH receipts for CPU/native binary agreement.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
 Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
@@ -226,6 +231,11 @@ Process these reports with `NativeComponentPerformanceEvidence` using an `indepe
 The processor rejects a changed fixture matrix, duplicate cases, missing scales, changed fixture archive, incomplete frame counts and unbalanced release, and an independent family cannot satisfy canonical native acceptance.
 Three standard baseline and three standard candidate processes must use the same compiled fixture and collector archives and workload selection for each backend.
 The ordinary loaded suite also checks complete dense/direct/composed pixels, current request identity reuse and reference release at GUI densities one and four.
+`MinecraftSamplingCompositionCorpus` supplies ten independent full-presentation cases at all standard GUI scales, including one/many masks, few/many fills, a clean dense control, ordinary drawing, touching/overlapping masks and early/late translucent blockers.
+Changed scenes alternate two prebuilt destinations through ordinary source capture/commit; one full background and the remaining one-pixel fills preserve the complete command-count control without thousands of full-area raster fills.
+The loaded suite compares complete 1920-by-1080 native frames with original ordered pixels for two revisions at GUI densities 1–4, checks literal discarded/opaque mask pixels and the distant rounding counterexample, and checks newly admitted layer counts only where the actual loaded adapter provides exact sampling.
+Screen close must drop prepared inputs and release all target, GUI resource-set and managed resource counts/bytes before another scene starts.
+Additional native masks can increase passes, metadata/output work and GPU duration; compare full presentation CPU, actual upload/draw/fallback counters and both GPU scopes alongside proof/partition CPU and normalized allocation.
 Full presentation and GUI-only GPU scopes remain distinct under the strict paired-scope contract below.
 An adapter that cannot record complete full presentation pairs must preserve consistently unavailable GPU measurements; available GUI-only pairs cannot certify that missing scope.
 

@@ -58,6 +58,22 @@ Per-command fallback counts, GUI draws, source-over quantization and consumption
 The independent sampled-source JMH fixture measures full preparation separately from primed borrowing, including distinct equal-pixel sources, unique-source controls and sources repeated across six composition tiles.
 Loaded-client acceptance remains necessary for actual native pixels, uploads and GPU work; a native-free device fixture supplies none of those measurements.
 
+### Current-frame sampling composition proofs
+
+The exact-mask composition proof lazily classifies the complete committed command list on the first supported extended-effect query.
+Its key is that one borrowed immutable list and its original occurrence indexes; the synchronous render-thread partition owns the classification, and return or failure releases the owner without frame history.
+Classification retains only current mask occurrence indexes and immutable logical bounds, with at most 8192 records and no image, command, callback or native handle in those records.
+Opaque fills and clip markers are classified once; integer blits, physical blits, platform commands, unsupported effects and potentially translucent primitives remain global blockers even outside the queried mask.
+Zero-alpha other samples remain irrelevant, and every retained nonzero mask must have an opaque channel-mask tint and cutoff 1.
+Logical half-open overlap remains conservative across clips and native barriers; equal or repeated command objects use distinct occurrence indexes.
+
+One shared budget of 8192 units covers candidate validation, each command classification with its amortized bounds append, and each mask occurrence visit with the complete constant-size geometry check.
+Ordinary frames perform no classification; early global rejection avoids subsequent list reads.
+Global rejection, incomplete classification and exhaustion retain no mask records, and exhaustion selects the existing exact fallback without resetting the budget for another candidate.
+For 4096 opaque fills and 32 disjoint masks, deterministic tests require 4128 classifications, 32 validations and 1024 mask visits, including 992 overlap checks, for 5184 total charged units.
+This proof remains independent of source availability, output/pass/byte capacity and native ownership; greater safe admission can still increase full presentation CPU or GPU work.
+Accept a performance conclusion only from identical frozen proof/partition and complete native presentation controls, including small, ordinary, overlapping and early/late-blocked frames.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
