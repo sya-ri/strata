@@ -48,6 +48,18 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Current web DOM presentation
+
+Each browser renderer retains one last-applied detached presentation entry per current DOM element, keyed by presentation identity and native element kind.
+Bounds, effective clip, background, label, enabled state, progress and text style form the complete value comparison; the renderer's theme is immutable.
+Equal entries skip element setters while every changed frame still validates its commands and applies paint order.
+Changed entries compare each setter's inputs, and root dimensions change only with the current frame size.
+Adopted initial HTML has no trusted style snapshot and receives a complete first update after hydration validation.
+The mounted host exclusively owns child attributes, inline styles, text and native control properties and the root's position, dimensions and theme attribute, as defined by `WebUiHost`; focus and interaction state remain browser-owned.
+Snapshots belong to one renderer on the browser agent, retain no binding, callback, node or authoritative model, and are bounded by current elements.
+Removal or native-kind replacement releases the previous snapshot; terminal close clears snapshots and pending new elements before attempting all DOM cleanup, including after rendering failure.
+Browser checks cover localized updates at one, 100 and 1,000 elements, geometry and clip changes, both themes, native controls, adoption, keyed ordering, focus, owner isolation and terminal cleanup.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

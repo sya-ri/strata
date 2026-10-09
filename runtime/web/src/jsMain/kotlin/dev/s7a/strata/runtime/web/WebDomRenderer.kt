@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime.web
 
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -9,66 +10,108 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLProgressElement
 import org.w3c.dom.Text
+import org.w3c.dom.css.CSSStyleDeclaration
 
 /**
  * Owns DOM nodes for exactly the current frame, indexed by retained presentation identity or decorative command position.
  * Render validates the full command stream before mutating the root; close removes and releases owned children while retaining the caller-owned root.
  * All calls require the browser's owning agent. Caller text is assigned as textContent and is never parsed as markup.
+ * Each current element retains only its last applied detached entry; theme and static DOM properties belong exclusively to this renderer.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class WebDomRenderer(
     private val root: HTMLElement,
     private val theme: WebTheme = WebTheme.Native,
 ) : AutoCloseable {
-    private var nodes = emptyMap<String, HTMLElement>()
+    private var nodes = emptyMap<String, RetainedElement>()
+    private var size: IntSize? = null
+    private var uncommitted: MutableList<HTMLElement>? = null
     private var initialized = false
+    private var closed = false
     private var stylesheet: HTMLElement? = null
     private val originalTheme = root.getAttribute("data-strata-theme-root")
+
+    /**
+     * Number of current DOM owners, including adopted elements awaiting their first complete update.
+     */
+    internal val retainedElementCount: Int get() = nodes.size
 
     /**
      * Applies one detached frame in paint order, preserving matching native element identity across reordering.
      */
     fun render(frame: RuntimeUiFrame) {
+        check(closed.not()) { "The web renderer is closed." }
         val entries = entries(frame)
+        val firstRender = initialized.not()
         if (initialized.not()) {
             adoptInitialDom(entries)
             stylesheet = installWebTheme(root, theme)
+            root.style.position = "relative"
             initialized = true
         }
-        val next = LinkedHashMap<String, HTMLElement>()
-        root.style.position = "relative"
-        root.style.width = "${frame.size.width}px"
-        root.style.height = "${frame.size.height}px"
-        root.setAttribute("data-strata-theme-root", theme.token)
+        val next = LinkedHashMap<String, RetainedElement>()
+        if (size?.width != frame.size.width) root.style.width = "${frame.size.width}px"
+        if (size?.height != frame.size.height) root.style.height = "${frame.size.height}px"
+        if (firstRender) root.setAttribute("data-strata-theme-root", theme.token)
+        size = frame.size
         var cursor = root.firstChild
         entries.forEach { entry ->
             val previous = nodes[entry.identity]
-            val element =
-                if (previous?.tagName?.lowercase() == entry.tag) {
+            val retained =
+                if (previous != null && previous.matches(entry.tag)) {
                     previous
                 } else {
-                    root.ownerDocument?.createElement(entry.tag) as HTMLElement
+                    val element = checkNotNull(root.ownerDocument).createElement(entry.tag) as HTMLElement
+                    (uncommitted ?: ArrayList<HTMLElement>().also { uncommitted = it }).add(element)
+                    RetainedElement(element)
                 }
-            element.setAttribute("data-strata-node", entry.identity)
-            element.setAttribute("data-strata-theme", theme.token)
-            update(element, entry)
+            val element = retained.element
+            if (retained.entry != entry) update(element, entry, retained.entry)
+            retained.entry = entry
             if (element !== cursor) root.insertBefore(element, cursor) else cursor = cursor.nextSibling
-            next[entry.identity] = element
+            next[entry.identity] = retained
         }
-        nodes.forEach { (identity, element) ->
-            if (next[identity] !== element) element.parentNode?.removeChild(element)
+        nodes.forEach { (identity, retained) ->
+            if (next[identity] !== retained) {
+                val element = retained.element
+                element.parentNode?.removeChild(element)
+            }
         }
         nodes = next
+        uncommitted = null
     }
 
     override fun close() {
-        nodes.values.forEach { element -> element.parentNode?.removeChild(element) }
+        if (closed) return
+        closed = true
+        val previous = nodes
+        val pending = uncommitted
+        val previousStylesheet = stylesheet
         nodes = emptyMap()
-        stylesheet?.let { it.parentNode?.removeChild(it) }
+        size = null
+        uncommitted = null
         stylesheet = null
-        if (initialized) {
-            if (originalTheme == null) root.removeAttribute("data-strata-theme-root") else root.setAttribute("data-strata-theme-root", originalTheme)
+        var failure: Throwable? = null
+
+        fun release(action: () -> Unit) {
+            runCatching(action).exceptionOrNull()?.let { caught ->
+                val primary = failure
+                if (primary == null) {
+                    failure = caught
+                } else if (primary !== caught) {
+                    primary.addSuppressed(caught)
+                }
+            }
         }
+        previous.values.forEach { retained -> release { retained.element.let { it.parentNode?.removeChild(it) } } }
+        pending?.forEach { element -> release { element.parentNode?.removeChild(element) } }
+        previousStylesheet?.let { release { it.parentNode?.removeChild(it) } }
+        if (initialized) {
+            release {
+                if (originalTheme == null) root.removeAttribute("data-strata-theme-root") else root.setAttribute("data-strata-theme-root", originalTheme)
+            }
+        }
+        failure?.let { throw it }
     }
 
     private fun adoptInitialDom(entries: List<Entry>) {
@@ -80,7 +123,7 @@ internal class WebDomRenderer(
             "Initial web HTML contains unexpected text outside retained elements."
         }
         check(elements.size == entries.size) { "Initial web HTML does not match the screen's element count." }
-        val adopted = LinkedHashMap<String, HTMLElement>()
+        val adopted = LinkedHashMap<String, RetainedElement>()
         entries.zip(elements).forEach { (entry, element) ->
             check((element.getAttribute("data-strata-theme") ?: WebTheme.Native.token) == theme.token) {
                 "Initial web HTML does not match the requested theme."
@@ -104,7 +147,7 @@ internal class WebDomRenderer(
                     "Initial web HTML does not match the screen's initial progress."
                 }
             }
-            adopted[entry.identity] = element
+            adopted[entry.identity] = RetainedElement(element)
         }
         initial.filter { (it is HTMLElement).not() }.forEach { root.removeChild(it) }
         nodes = adopted
@@ -113,40 +156,72 @@ internal class WebDomRenderer(
     private fun update(
         element: HTMLElement,
         entry: Entry,
+        previous: Entry?,
     ) {
         val bounds = entry.bounds
         val style = element.style
-        style.position = "absolute"
-        style.boxSizing = "border-box"
-        style.left = "${bounds.left}px"
-        style.top = "${bounds.top}px"
-        style.width = "${bounds.width}px"
-        style.height = "${bounds.height}px"
-        style.font = theme.font
-        style.whiteSpace = "pre"
-        style.setProperty("clip-path", clipPath(bounds, entry.clip))
-        style.backgroundColor = entry.background
+        if (previous == null) {
+            element.setAttribute("data-strata-node", entry.identity)
+            element.setAttribute("data-strata-theme", theme.token)
+            style.position = "absolute"
+            style.boxSizing = "border-box"
+        }
+        val previousBounds = previous?.bounds
+        if (previousBounds?.left != bounds.left) style.left = "${bounds.left}px"
+        if (previousBounds?.top != bounds.top) style.top = "${bounds.top}px"
+        if (previousBounds?.width != bounds.width) style.width = "${bounds.width}px"
+        if (previousBounds?.height != bounds.height) style.height = "${bounds.height}px"
+        if (previous == null) {
+            style.font = theme.font
+            style.whiteSpace = "pre"
+        }
+        updateClip(style, entry, previous)
+        if (previous?.background != entry.background) style.backgroundColor = entry.background
         val presentation = entry.presentation
-        style.color =
-            if (theme == WebTheme.Minecraft && presentation?.kind == WebPresentation.Kind.Text) {
-                when (presentation.style) {
-                    TextStyle.Inactive -> "#a0a0a0"
-                    TextStyle.ContainerLabel -> "#404040"
-                    else -> "#ffffff"
-                }
-            } else {
-                ""
-            }
-        style.textShadow = if (presentation?.style == TextStyle.ContainerLabel) "none" else ""
-        style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
+        updateTextStyle(style, presentation, previous?.presentation, previous == null)
+        if (previous == null || (previous.presentation == null) != (presentation == null)) style.setProperty("pointer-events", if (presentation == null) "none" else "auto")
         if (element.textContent != presentation?.label.orEmpty()) element.textContent = presentation?.label.orEmpty()
+        updateNativeControl(element, presentation, previous?.presentation, previous == null)
+    }
+
+    private fun updateClip(
+        style: CSSStyleDeclaration,
+        entry: Entry,
+        previous: Entry?,
+    ) {
+        val boundsAffectClip = entry.clip != null && previous?.bounds != entry.bounds
+        if (previous == null || previous.clip != entry.clip || boundsAffectClip) {
+            val clip = clipPath(entry.bounds, entry.clip)
+            if (previous == null || clipPath(previous.bounds, previous.clip) != clip) style.setProperty("clip-path", clip)
+        }
+    }
+
+    private fun updateTextStyle(
+        style: CSSStyleDeclaration,
+        presentation: WebPresentation?,
+        previous: WebPresentation?,
+        initial: Boolean,
+    ) {
+        val color = textColor(presentation)
+        if (initial || textColor(previous) != color) style.color = color
+        if (initial || (previous?.style == TextStyle.ContainerLabel) != (presentation?.style == TextStyle.ContainerLabel)) {
+            style.textShadow = if (presentation?.style == TextStyle.ContainerLabel) "none" else ""
+        }
+    }
+
+    private fun updateNativeControl(
+        element: HTMLElement,
+        presentation: WebPresentation?,
+        previous: WebPresentation?,
+        initial: Boolean,
+    ) {
         if (element is HTMLButtonElement) {
-            element.type = "button"
-            element.disabled = presentation?.enabled != true
+            if (initial) element.type = "button"
+            if (initial || previous?.enabled != presentation?.enabled) element.disabled = presentation?.enabled != true
         }
         if (element is HTMLProgressElement) {
-            element.max = 1.0
-            element.value = checkNotNull(presentation?.progress)
+            if (initial) element.max = 1.0
+            if (initial || previous?.progress != presentation?.progress) element.value = checkNotNull(presentation?.progress)
         }
     }
 
@@ -186,6 +261,17 @@ internal class WebDomRenderer(
         return entries
     }
 
+    private fun textColor(presentation: WebPresentation?): String =
+        if (theme == WebTheme.Minecraft && presentation?.kind == WebPresentation.Kind.Text) {
+            when (presentation.style) {
+                TextStyle.Inactive -> "#a0a0a0"
+                TextStyle.ContainerLabel -> "#404040"
+                else -> "#ffffff"
+            }
+        } else {
+            ""
+        }
+
     private fun intersect(
         left: IntRect,
         right: IntRect,
@@ -215,4 +301,17 @@ internal class WebDomRenderer(
         val background: String,
         val presentation: WebPresentation?,
     )
+
+    /**
+     * One current native identity and its last applied immutable value; adoption starts without a trusted style snapshot.
+     */
+    private class RetainedElement(
+        val element: HTMLElement,
+        var entry: Entry? = null,
+    ) {
+        /**
+         * Checks native kind against the current snapshot, reading the actual tag only for uninitialized adoption.
+         */
+        fun matches(tag: String): Boolean = (entry?.tag ?: element.tagName.lowercase()) == tag
+    }
 }

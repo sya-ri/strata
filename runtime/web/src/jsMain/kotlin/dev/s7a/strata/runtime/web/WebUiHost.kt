@@ -32,6 +32,8 @@ import kotlin.math.floor
  * The host polls frames through requestAnimationFrame; unchanged frames reuse the current DOM without rebuilding it.
  * Closing cancels the animation request, removes listeners and owned children, and releases application content through core cleanup.
  * The caller owns the root itself and must not independently mutate its children while mounted.
+ * Child attributes, inline styles, text and native control properties are host-owned; the browser still owns focus and interaction state.
+ * Root position, width, height and the theme attribute are also host-owned until close; other root properties remain caller-owned.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public class WebUiHost internal constructor(
@@ -149,7 +151,7 @@ public class WebUiHost internal constructor(
 
 /**
  * Transfers one screen definition into an independently owned browser host and immediately renders its initial DOM.
- * Runs synchronously on the browser agent and requires exclusive ownership of the root's children until host close.
+ * Runs synchronously on the browser agent with the DOM ownership contract of [WebUiHost] until host close.
  * The returned host retains application content through the shared core session, allowing ordinary Kotlin conditionals to reevaluate.
  * Existing generated children are validated and reused; mismatched initial content fails before modifying that HTML.
  * Build and browser must create independent definitions from the same deterministic initial values.

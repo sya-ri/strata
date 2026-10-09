@@ -10,6 +10,7 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.url.URLSearchParams
 import kotlin.js.Promise
+import kotlin.js.json
 
 /**
  * Selects build rendering or interactive startup before creating any application state.
@@ -17,6 +18,14 @@ import kotlin.js.Promise
 public fun main() {
     val theme = mapOf("minecraft.html" to WebTheme.Minecraft)[window.location.pathname.substringAfterLast('/')] ?: WebTheme.Native
     window.asDynamic().strataPerformanceInventory = { WebComponentPerformanceContract.inventory() }
+    window.asDynamic().strataVerifyDomUpdates = {
+        // Native JavaScript error serialization loses minified Kotlin exception messages.
+        runCatching { WebDomUpdateCheck.verify(theme) }.fold(
+            onSuccess = { json("receipts" to it) },
+            onFailure = { json("error" to it.stackTraceToString()) },
+        )
+    }
+    window.asDynamic().strataDomPerformance = WebDomPerformanceFixture.protocol(theme)
     if (WebLaunchMode.decode(window.location.search) == WebLaunchMode.Prerender) {
         val html = renderWebDocument(ReactiveScenario().definition(), ReactiveScenario.viewport, "Strata runtime parity", "application.js", theme)
         window.asDynamic().strataInitialDocument = html

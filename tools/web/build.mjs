@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { installDomPerformanceBridge } from './dom-performance-browser.mjs';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -120,7 +121,58 @@ async function verifyTheme(browser, engine, theme, expected) {
     await mkdir(evidence, { recursive: true });
     await page.screenshot({ path: resolve(evidence, `${engine.name()}-${theme}.png`) });
     const receipt = { theme, engine: engine.name(), version: browser.version(), snapshots: observed };
+    receipt.domUpdates = await verifyDomUpdates(browser, page, engine, theme, evidence);
+    assert.equal(await page.evaluate(() => window.strataDomPerformance.verifyAll()), true, 'Compiled changed-frame workloads match independent full rendering and release ownership');
+    receipt.domWork = await verifyDomWork(browser, page, address);
     console.log(`Verified initial HTML, adoption, conditionals, native actions and keyed reorder: ${engine.name()} / ${theme}`);
     await page.close();
     return receipt;
+}
+
+async function verifyDomWork(browser, page, address) {
+    const inventory = JSON.parse(await page.evaluate(() => window.strataDomPerformance.inventory()));
+    const receipts = [];
+    for (const item of inventory.cases) {
+        const probe = await browser.newPage({ viewport: { width: 640, height: 480 } });
+        try {
+            await probe.addInitScript(installDomPerformanceBridge);
+            const parameters = new URLSearchParams({ 'strata-dom-mode': item.mode, 'strata-dom-count': String(item.count) });
+            await probe.goto(`${address}?${parameters}`);
+            assert.equal(await probe.evaluate(() => window.strataVerifyPerformanceCollector()), true, 'Untimed native work, descriptor restoration, parity and cleanup');
+            const work = await probe.evaluate(() => window.strataDomWorkCounts());
+            assert.ok(Object.values(work).every(value => Number.isSafeInteger(value) && 0 <= value));
+            assert.equal(work.rendered_elements, item.count, 'The native work probe must cover every compiled element');
+            assert.equal(work.elements_with_setters, item.changed_elements, 'Equal native presentations must receive no property setters');
+            assert.equal(work.root_setter_attempts, item.changed_root_properties, 'Only changed viewport properties may be assigned on the root');
+            receipts.push({ ...item, work });
+        } finally { await probe.close(); }
+    }
+    return receipts;
+}
+
+async function verifyDomUpdates(browser, page, engine, theme, evidence) {
+    const result = await page.evaluate(() => window.strataVerifyDomUpdates());
+    assert.equal(result.error, undefined, `Compiled DOM update verification failed: ${result.error}`);
+    assert.equal(typeof result.receipts, 'string', 'Compiled DOM update verification must return serialized receipts');
+    const updates = JSON.parse(result.receipts);
+    assert.equal(updates.length, 15, 'Three sizes retain localized/full/geometry/disabled controls, plus three clip/background controls');
+    const styles = await page.locator('head > style').allTextContents();
+    const comparison = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 640, height: 480 } });
+    try {
+        for (const update of updates) {
+            const prefix = `${engine.name()}-${theme}-${update.count}-${update.phase}`;
+            const documentFor = html => `<!doctype html><html><head><style>body { margin: 0; }${styles.join('\n')}</style></head><body>${html}</body></html>`;
+            await comparison.setContent(documentFor(update.currentHtml));
+            await comparison.evaluate(() => window.scrollTo(0, 0));
+            const actual = await comparison.screenshot({ path: resolve(evidence, `${prefix}-incremental.png`) });
+            const actualLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-incremental-last.png`) });
+            await comparison.setContent(documentFor(update.referenceHtml));
+            await comparison.evaluate(() => window.scrollTo(0, 0));
+            const expected = await comparison.screenshot({ path: resolve(evidence, `${prefix}-fresh.png`) });
+            const expectedLast = await comparison.locator('body > div > :last-child').screenshot({ path: resolve(evidence, `${prefix}-fresh-last.png`) });
+            assert.deepEqual(actual, expected, `Incremental pixels differ from fresh DOM: ${prefix}`);
+            assert.deepEqual(actualLast, expectedLast, `Changed last-element pixels differ from fresh DOM: ${prefix}`);
+        }
+    } finally { await comparison.close(); }
+    return updates.map(({ count, phase, mutations, checks }) => ({ count, phase, mutations, checks }));
 }
