@@ -89,6 +89,7 @@ internal object MinecraftCanvasGameTest {
         }
         verifyPortableOwners(context, profile)
         MinecraftOrderedCompositionGameTest.run(context, profile)
+        MinecraftSingleAxisImageBackgroundGameTest.run(context, profile)
     }
 
     private fun verifyPortableOwners(

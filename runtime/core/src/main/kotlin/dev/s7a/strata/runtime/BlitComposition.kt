@@ -4,6 +4,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.render.createDrawImage
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Retains dense image-only paint for lazy owner-thread pattern compaction.
@@ -31,6 +32,7 @@ internal fun compactBlitPatterns(
     commands: List<LocalDrawCommand.BlitImage>,
     bounds: IntRect,
 ): List<LocalDrawCommand.BlitImage> {
+    if (commands is SingleTexelImageTiles) return commands.collapsed()
     val groups = linkedMapOf<IntRect, MutableList<LocalDrawCommand.BlitImage>>()
     for (command in commands) {
         groups.getOrPut(command.source) { mutableListOf() }.add(command)
@@ -176,4 +178,93 @@ private fun repeatedBlitImage(
         }
     }
     return createDrawImage(size, pixels)
+}
+
+/**
+ * Builds an immutable singleton-axis tile description, declining the original producer's arithmetic rejection paths.
+ * The descriptor belongs only to the current local paint list and recreates scalar cells for fractional presentation.
+ */
+@JvmSynthetic
+internal fun createSingleTexelImageTiles(
+    image: DrawImage,
+    bounds: IntRect,
+): LocalDrawCommand.ComposedBlits? = SingleTexelImageTiles.create(image, bounds)?.let { LocalDrawCommand.ComposedBlits(it, bounds) }
+
+/**
+ * Immutable scalar tile description owned by one retained local paint list.
+ * Indexed reads recreate the original row-major blits without retaining their command or rectangle objects.
+ * Only checked grids whose original terminal increments fit Int coordinates are admitted.
+ * These bounds also make every indexed/collapsed origin and edge representable by ordinary Int arithmetic.
+ * Fractional presentation reads these original cells, preserving Float/Double validation and sampling.
+ */
+private class SingleTexelImageTiles private constructor(
+    private val image: DrawImage,
+    private val bounds: IntRect,
+    private val columns: Int,
+    override val size: Int,
+) : AbstractList<LocalDrawCommand.BlitImage>() {
+    override fun get(index: Int): LocalDrawCommand.BlitImage {
+        require(index in indices) { "Tile index must be inside the original grid." }
+        val left = (index % columns) * image.size.width
+        val top = (index / columns) * image.size.height
+        val width = minOf(image.size.width, bounds.right - left)
+        val height = minOf(image.size.height, bounds.bottom - top)
+        return LocalDrawCommand.BlitImage(
+            image,
+            IntRect(0, 0, width, height),
+            IntRect(left, top, left + width, top + height),
+        )
+    }
+
+    /**
+     * Builds only the integer-presentation blits, stretching each provably constant source axis.
+     * Other axes retain their tile phase and cropped final source segment.
+     */
+    fun collapsed(): List<LocalDrawCommand.BlitImage> {
+        val tileWidth = if (image.size.width == 1) bounds.width else image.size.width
+        val tileHeight = if (image.size.height == 1) bounds.height else image.size.height
+        return buildList {
+            var top = 0
+            while (top < bounds.height) {
+                var left = 0
+                while (left < bounds.width) {
+                    val width = minOf(tileWidth, bounds.width - left)
+                    val height = minOf(tileHeight, bounds.height - top)
+                    add(
+                        LocalDrawCommand.BlitImage(
+                            image,
+                            IntRect(0, 0, minOf(image.size.width, width), minOf(image.size.height, height)),
+                            IntRect(left, top, left + width, top + height),
+                        ),
+                    )
+                    left += tileWidth
+                }
+                top += tileHeight
+            }
+        }
+    }
+
+    /**
+     * Validated construction boundary; rejected grids use the existing scalar producer.
+     */
+    companion object {
+        /**
+         * Admits positive singleton-axis grids with representable list size and original terminal increments.
+         * No source pixels are read or copied, and no global state or history is retained.
+         */
+        fun create(
+            image: DrawImage,
+            bounds: IntRect,
+        ): SingleTexelImageTiles? {
+            if (bounds.left != 0 || bounds.top != 0) return null
+            if (bounds.width == 0 || bounds.height == 0) return null
+            if (image.size.width == 0 || image.size.height == 0) return null
+            if (image.size.width != 1 && image.size.height != 1) return null
+            val columns = (bounds.width.toLong() + image.size.width - 1L) / image.size.width
+            val rows = (bounds.height.toLong() + image.size.height - 1L) / image.size.height
+            val count = columns * rows
+            if (Int.MAX_VALUE < count || Int.MAX_VALUE < columns * image.size.width || Int.MAX_VALUE < rows * image.size.height) return null
+            return SingleTexelImageTiles(image, bounds, columns.toInt(), count.toInt())
+        }
+    }
 }

@@ -443,3 +443,4 @@ final value class dev.s7a.strata.runtime.diagnostics/UiRenderNodeId { // dev.s7a
 }
 
 final fun dev.s7a.strata.runtime.spi/createRuntimeUiSession(dev.s7a.strata.ui/UiSession? = ..., kotlin/Function0<dev.s7a.strata.element/Element>): dev.s7a.strata.runtime.spi/RuntimeUiSession // dev.s7a.strata.runtime.spi/createRuntimeUiSession|createRuntimeUiSession(dev.s7a.strata.ui.UiSession?;kotlin.Function0<dev.s7a.strata.element.Element>){}[0]
+final fun dev.s7a.strata.runtime/paintSingleTexelImageTiles(dev.s7a.strata.render/PaintScope, dev.s7a.strata.render/DrawImage): kotlin/Boolean // dev.s7a.strata.runtime/paintSingleTexelImageTiles|paintSingleTexelImageTiles(dev.s7a.strata.render.PaintScope;dev.s7a.strata.render.DrawImage){}[0]
