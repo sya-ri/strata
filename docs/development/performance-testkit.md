@@ -240,6 +240,12 @@ It measures opening a fresh input stream, PNG decoding and immutable pixel acqui
 The encoded input is resident before measurement, and PNG encoding returns fresh bytes without filesystem persistence; these boundaries do not claim an operating-system file-cache or network-cold workload.
 The historical, sampled-raster and native steady-presentation definitions and defaults remain unchanged.
 
+Select `strata.performance.benchmarks=ColdImageBenchmark,PngEncodingBenchmark` and `strata.performance.workloads=ColdImageBenchmark.encodePng,PngEncodingBenchmark.encodePng` on the same task for a 15-case encoding corpus: the three existing cold-image resolutions plus full-HD and stored-block boundary dimensions, each with transparent, opaque and varying partial alpha.
+The boundary cases contain 65,534, 65,535 and 65,537 filter-zero RGBA bytes; no positive RGBA image can produce exactly 65,536 scanline bytes.
+Source construction and independent image decoding remain outside timing, and every operation returns fresh output storage.
+This selection preserves the six cold-image cases and every historical default; it uses the same standard JMH settings, controlled runtime selection and shared-kit provenance.
+The optional `PngEncodingBenchmark.verifyWork` hook checks all twelve generated supplemental cases against an independent canonical byte encoder before timing.
+
 The independent `PortableTextBenchmark` corpus is selected with `strata.performance.benchmarks=PortableTextBenchmark` on `:quality:component-benchmarks:jmhComponents`.
 Its twelve phases separate fresh host/layout/glyph extraction from CPU composition of prepared detached glyph commands over alternating opaque destinations.
 The existing multilingual bitmap source and original geometric TrueType fixture at 64 and 256 logical pixels run at densities one and four with fixed full-HD output.
