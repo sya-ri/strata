@@ -34,6 +34,7 @@ public class TiledImageBenchmarkInput(
     public val case: Case,
 ) {
     private val geometry = geometry(case)
+    private val lodFactor = if (case == Case.Dense) 4.0 else 0.25
     private var alternate = false
     private val redeclaration = mutableStateOf(false)
     private val fit = mutableStateOf(PanZoomFit.Contain)
@@ -162,7 +163,7 @@ public class TiledImageBenchmarkInput(
             Change.SameRangePan -> navigation.centerOn(geometry.center + DoubleOffset(if (alternate) 0.125 else 0.0, 0.0))
             Change.SameRangeZoom -> navigation.zoomTo(geometry.zoom * if (alternate) 1.001 else 1.0)
             Change.BoundaryPan -> navigation.centerOn(geometry.center + DoubleOffset(if (alternate) geometry.boundary else 0.0, 0.0))
-            Change.LodZoom -> navigation.zoomTo(geometry.zoom * if (alternate) lodFactor() else 1.0)
+            Change.LodZoom -> navigation.zoomTo(geometry.zoom * if (alternate) lodFactor else 1.0)
         }
     }
 
@@ -224,7 +225,8 @@ public class TiledImageBenchmarkInput(
     }
 
     private fun initialTile(id: TiledImageTileId): TiledImageTile {
-        if (case == Case.EmptyTiles || (case == Case.MixedTiles && id.level == 0 && (id.column + id.row).mod(3L) == 0L)) return TiledImageTile.Empty
+        if (case == Case.EmptyTiles) return TiledImageTile.Empty
+        if (case == Case.MixedTiles && id.level == 0 && (id.column + id.row).mod(3L) == 0L) return TiledImageTile.Empty
         val size = geometry.levels[id.level].tilePixelSize
         val color = 0xFF000000.toInt() or ((id.level + 1) shl 20) or ((id.column.toInt() and 255) shl 8) or (id.row.toInt() and 255)
         return TiledImageTile.Ready(createDrawImage(size, IntArray(size.width * size.height) { color }))
@@ -285,8 +287,6 @@ public class TiledImageBenchmarkInput(
         val zoom: Double,
         val boundary: Double,
     )
-
-    private fun lodFactor(): Double = if (case == Case.Dense) 4.0 else 0.25
 
     /**
      * Keeps 10,000 resolutions on one aligned tile envelope without relaxing public geometry validation.
