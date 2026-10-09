@@ -115,8 +115,7 @@ public class TransportDrainFleet(
                     .submit {
                         peer.incoming.forEach { service.enqueue(peer.index, it) }
                         peer.incoming.clear()
-                    }
-                    .get(10, TimeUnit.SECONDS)
+                    }.get(10, TimeUnit.SECONDS)
             }
             peer.server.send(RemoteMessage.Resynchronize(generation))
         }
