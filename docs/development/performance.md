@@ -525,6 +525,12 @@ Each common host owns one font engine for its immutable profile snapshot and cap
 Decoded bitmap sheets use detached resource identity; scanned cells use that resource, grid dimensions, and cell index, retaining only the cell's current height/ascent result.
 TrueType faces and glyphs use resource identity and exact size, oversampling, and shift settings, with provider-specific skips checked before lookup.
 Other glyph results use snapshot-local provider identity and Unicode scalar keys.
+An independent engine-local resolution map keys the selected font identifier and scalar within that captured snapshot and its options.
+Each entry retains only the selected provider or a complete-chain missing result and the preceding cached-miss raster keys; hits touch those keys in their original order before using the ordinary selected-provider cache.
+This preserves raster LRU pressure and subsequent native face reopening or failure instead of treating selection as a detached final-glyph cache.
+Resolution entries and all retained prefix keys share a combined access-ordered limit of `min(cacheEntries, 4096)` units, so zero disables reuse and long chains cannot multiply the scalar-history bound.
+Raster replacement or eviction, permanent face poisoning and face-opening failure clear all resolutions; a fallback walk that changes that raster epoch is not admitted.
+Every known font still preflights every provider before resolution lookup, unknown identifiers create no entries, and owner-thread close clears every selection and key.
 The access-ordered raster cache has a combined default limit of 4,096 entries and 16 MiB of retained pixel payload; oversized values bypass retention, and a separate default 8 MiB input ceiling bounds bitmap sheets in every cache mode.
 Native faces use an independent access-ordered cache limited to 16 entries and combined encoded input no larger than the snapshot's `maxAssetBytes`, 32 MiB by default.
 Eviction removes accounting and closes the previous face before opening its replacement.
@@ -541,6 +547,13 @@ Detachment preserves common host ownership for reattachment but releases Fabric 
 Tests compare enabled and disabled raster caches, assert entry and payload bounds, churn face keys and weighted input limits, exercise duplicate-provider preflight and permanent poisoned-face rejection, isolate engines sharing one snapshot, and verify terminal counters and backend release after failures.
 The raster byte bound covers cache-owned pixels; the face byte bound covers retained encoded native inputs, not arbitrary native bookkeeping or total heap usage.
 Neither includes glyphs in current caller-owned runs or immutable source-file bytes in a shared snapshot.
+
+The separate `FontFallbackBenchmark` corpus contains 48 generated cases: first, late, complete missing, filtered late, STB, FreeType, atlas-rejected and disabled malformed-provider inputs at chain depths one and ten, each with repeated lookup, 64-scalar pressure and complete engine-lifetime operations.
+Select it through `:quality:component-benchmarks:jmhComponents -Pstrata.performance.benchmarks=FontFallbackBenchmark -Pstrata.performance.suite=font-fallback` using the unchanged Standard settings and collector.
+Its untimed verifier compares complete cached/uncached metric bits and pixels, checks actual decode/raster/open/close observations and terminal retention, and retains the original font corpora.
+Formal paired collection freezes the registered original CC0 font and a separate rejected 257-square PNG under the `font-raster-png-257` input label, alongside actual fixture and runtime archives.
+The original ten-to-one lookup forecast does not apply to this implementation because preceding raster LRU touches remain; paired CPU/allocation evidence must determine any benefit from avoiding repeated filter, descriptor and key construction and preserve all controls and regressions.
+These CPU operations perform no native presentation, so upload bytes, complete offscreen-through-GUI GPU time and GUI-only consumption are unavailable for this corpus; loaded native font comparisons remain separate acceptance evidence.
 Native font acceptance separately compares standard Minecraft rendering at each tested GUI scale; sharing the portable rasterizer cannot by itself establish native equality.
 
 ### Visible glyph submission
