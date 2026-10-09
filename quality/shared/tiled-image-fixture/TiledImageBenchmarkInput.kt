@@ -237,9 +237,9 @@ public class TiledImageBenchmarkInput(
         private val listeners = ArrayList<(StateSnapshot<DoubleOffset>) -> Unit>()
         val active: Int get() = listeners.size
 
-        override fun subscribe(listener: (StateSnapshot<DoubleOffset>) -> Unit): StateSubscription<DoubleOffset> {
-            listeners.add(listener)
-            return StateSubscription(current) { listeners.remove(listener) }
+        override fun subscribe(observer: (StateSnapshot<DoubleOffset>) -> Unit): StateSubscription<DoubleOffset> {
+            listeners.add(observer)
+            return StateSubscription(current) { listeners.remove(observer) }
         }
 
         fun publish(value: DoubleOffset) {
