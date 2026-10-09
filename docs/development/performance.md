@@ -531,6 +531,15 @@ This preserves raster LRU pressure and subsequent native face reopening or failu
 Resolution entries and all retained prefix keys share a combined access-ordered limit of `min(cacheEntries, 4096)` units, so zero disables reuse and long chains cannot multiply the scalar-history bound.
 Raster replacement or eviction, permanent face poisoning and face-opening failure clear all resolutions; a fallback walk that changes that raster epoch is not admitted.
 Every known font still preflights every provider before resolution lookup, unknown identifiers create no entries, and owner-thread close clears every selection and key.
+Unihex width selection uses immutable first-declaration intervals keyed by snapshot-local declaration identity inside one engine.
+Reference aliases share that declaration's index; different declarations, engines and replacement snapshots never share derived ownership.
+An absent sparse glyph or a match in the first range creates no index, and fewer than 16 or more than 8,192 ranges use the original ordered loop.
+Eligible first use lazily sweeps sorted scalar endpoints while independently preserving original declaration priority, without reading selected pixel widths.
+Two primitive arrays reserve twice the override count; all admitted providers share a 65,536-boundary-slot ceiling, or 512 KiB of primitive payload excluding headers and maps.
+Construction temporaries are bounded by the per-provider ceiling even with increased snapshot input limits; aggregate admission exhaustion uses the original loop and retains no denied-provider or scalar-request history.
+Pixel bounds, checked width arithmetic, image limits, baked-glyph rejection and provider fallback remain in the selected glyph path.
+Indexes survive raster eviction because the snapshot is immutable, and owner-thread close clears them before native cleanup, including a failing backend close.
+These admission constants describe the candidate implementation; whole-operation measurements must establish any useful reuse and disclose its construction and retention costs.
 The access-ordered raster cache has a combined default limit of 4,096 entries and 16 MiB of retained pixel payload; oversized values bypass retention, and a separate default 8 MiB input ceiling bounds bitmap sheets in every cache mode.
 Native faces use an independent access-ordered cache limited to 16 entries and combined encoded input no larger than the snapshot's `maxAssetBytes`, 32 MiB by default.
 Eviction removes accounting and closes the previous face before opening its replacement.

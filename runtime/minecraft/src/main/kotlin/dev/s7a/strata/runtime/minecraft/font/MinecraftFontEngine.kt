@@ -26,6 +26,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state.
  * Preallocation-limit failures occupy ordinary bounded glyph-cache entries and retain only a message.
  * A backend returning an image beyond its allocation contract permanently disables that face descriptor and closes its live face.
+ * Unihex width selection lazily indexes 16 through 8,192 overrides after a present glyph misses the first range.
+ * Declaration aliases share an engine-local index; at most 65,536 boundary slots retain 512 KiB of primitive payload.
+ * Small, first-range and unadmitted selections use the original ordered loop; pixel bounds remain lazy.
  * Closing clears snapshot, cache, and native references and never invalidates returned glyphs.
  * Glyph selection, cache eviction, and terminal cleanup share this owner to preserve resource lifetime boundaries.
  *
@@ -64,6 +67,8 @@ public class MinecraftFontEngine
         private val faceFailures = HashMap<FontFaceKey, FaceFailure>()
         private val providerStatus = HashMap<Int, LoadStatus>()
         private val fontStatus = HashMap<ResourceId, LoadStatus>()
+        private val unihexIndexes = HashMap<Int, FontUnihexWidthIndex>()
+        private var unihexIndexUnits = 0
         private val loadDiagnostics = ArrayList(snapshot.diagnostics)
         private var closed = false
 
@@ -246,6 +251,8 @@ public class MinecraftFontEngine
             resolutionUnits = 0
             providerStatus.clear()
             fontStatus.clear()
+            unihexIndexes.clear()
+            unihexIndexUnits = 0
             bitmapSizes.clear()
             bitmapFailures.clear()
             faceFailures.clear()
@@ -337,7 +344,7 @@ public class MinecraftFontEngine
             if (cached is RasterValue.GlyphFailure) throw MinecraftFontLoadLimitException(cached.message)
             val glyph =
                 try {
-                    resolveGlyph(provider, codePoint)?.let { resolved -> checkedGlyph(provider, resolved) }
+                    resolveGlyph(entry, codePoint)?.let { resolved -> checkedGlyph(provider, resolved) }
                 } catch (failure: MinecraftFontLoadLimitException) {
                     putRaster(key, RasterValue.GlyphFailure(failure.message ?: "Font glyph allocation limit exceeded."))
                     throw failure
@@ -376,13 +383,13 @@ public class MinecraftFontEngine
         }
 
         private fun resolveGlyph(
-            provider: FontProvider,
+            entry: FontProviderEntry,
             codePoint: Int,
         ): MinecraftFontGlyph? =
-            when (provider) {
+            when (val provider = entry.provider) {
                 is FontProvider.Bitmap -> error("Bitmap glyph lookup requires its shared cell cache.")
                 is FontProvider.Space -> provider.advances[codePoint]?.let { advance -> spacingGlyph(advance) }
-                is FontProvider.Unihex -> unihexGlyph(provider, codePoint)
+                is FontProvider.Unihex -> unihexGlyph(entry.identity, provider, codePoint)
                 is FontProvider.TrueType -> face(provider).glyph(codePoint)
                 is FontProvider.Failed, is FontProvider.Reference -> error("Unresolved provider reached glyph lookup.")
             }
@@ -478,11 +485,12 @@ public class MinecraftFontEngine
 
         @OptIn(InternalStrataRuntimeApi::class)
         private fun unihexGlyph(
+            identity: Int,
             provider: FontProvider.Unihex,
             codePoint: Int,
         ): MinecraftFontGlyph? {
             val glyph = provider.glyphs.glyph(codePoint) ?: return null
-            val override = provider.overrides.firstOrNull { bounds -> codePoint in bounds.first..bounds.last }
+            val override = unihexOverride(identity, provider.overrides, codePoint)
             val bounds = override?.let { it.left..it.right } ?: glyph.bounds()
             val width = Math.addExact(Math.subtractExact(bounds.last, bounds.first), 1)
             requireSnapshot().limits.requireImageSize(width, 16)
@@ -504,6 +512,28 @@ public class MinecraftFontEngine
                 boldOffset = 0.5f,
                 shadowOffset = 0.5f,
             )
+        }
+
+        private fun unihexOverride(
+            identity: Int,
+            overrides: List<FontProvider.WidthOverride>,
+            codePoint: Int,
+        ): FontProvider.WidthOverride? {
+            // A previous provider can close this owner; preserve original width failures without terminal admission.
+            if (closed || overrides.size < 16 || FontUnihexWidthIndex.MAX_OVERRIDES < overrides.size) {
+                return overrides.firstOrNull { bounds -> codePoint in bounds.first..bounds.last }
+            }
+            val first = overrides.first()
+            if (codePoint in first.first..first.last) return first
+            unihexIndexes[identity]?.let { return it.lookup(codePoint) }
+            val units = Math.multiplyExact(overrides.size, 2)
+            if (65_536 - unihexIndexUnits < units) {
+                return overrides.firstOrNull { bounds -> codePoint in bounds.first..bounds.last }
+            }
+            val index = FontUnihexWidthIndex.build(overrides)
+            unihexIndexes[identity] = index
+            unihexIndexUnits += units
+            return index.lookup(codePoint)
         }
 
         private fun face(provider: FontProvider.TrueType): MinecraftTrueTypeFace {
