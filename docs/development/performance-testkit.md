@@ -78,6 +78,7 @@ The collector archives these files alongside resolved control libraries and reje
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
+For fixed installed JDK inputs, use [controlled JVM preparation](build.md#controlled-jvm-preparation) at the existing launcher boundary.
 This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
 Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
 The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
