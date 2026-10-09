@@ -309,7 +309,7 @@ internal class FabricMinecraftSamplingCompositionTest {
                 }
 
                 is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
-                    Unit
+                    continue
                 }
 
                 is DrawCommand.SampledImage -> {
