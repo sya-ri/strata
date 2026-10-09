@@ -73,8 +73,14 @@ public class OutgoingFragmentFixture(
         active.forEach { holder ->
             holder.owner.run {
                 when (phase) {
-                    OutgoingFragmentPhase.Queue -> holder.produce()
-                    OutgoingFragmentPhase.Flush -> holder.flush()
+                    OutgoingFragmentPhase.Queue -> {
+                        holder.produce()
+                    }
+
+                    OutgoingFragmentPhase.Flush -> {
+                        holder.flush()
+                    }
+
                     OutgoingFragmentPhase.Cycle, OutgoingFragmentPhase.ServerCycle -> {
                         holder.produce()
                         holder.flush()
@@ -129,9 +135,13 @@ public class OutgoingFragmentFixture(
     }
 
     private fun source(): List<RemoteMessage> {
-        fun action(session: Long, bytes: Int): RemoteMessage.Action =
-            RemoteMessage.Action(session, 1, 1, BuiltinProjection.PointerPress.type, ProjectionValue.Bytes(ByteArray(bytes) { (it * 31 + 7).toByte() }))
+        fun action(
+            session: Long,
+            bytes: Int,
+        ): RemoteMessage.Action = RemoteMessage.Action(session, 1, 1, BuiltinProjection.PointerPress.type, ProjectionValue.Bytes(ByteArray(bytes) { (it * 31 + 7).toByte() }))
+
         val overhead = codec.encode(action(1, 0)).size
+
         fun sized(bytes: Int): RemoteMessage.Action = action(1, bytes - overhead)
         return when (workload) {
             OutgoingFragmentWorkload.Hello -> listOf(RemoteMessage.Hello(RemoteConnection.PROTOCOL_VERSION, limits, emptySet()))
@@ -151,7 +161,11 @@ public class OutgoingFragmentFixture(
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+    ): Any? = target
+        .javaClass
+        .getDeclaredField(name)
+        .apply { isAccessible = true }
+        .get(target)
 
     /**
      * Current invocation state; no probe arrays or historical outputs survive close.
@@ -169,9 +183,17 @@ public class OutgoingFragmentFixture(
                 service?.let { host ->
                     host.join(Unit)
                     checkNotNull((field(host, "peers") as Map<*, *>)[Unit]).also { retained ->
-                        retained.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retained, address)
+                        retained
+                            .javaClass
+                            .getDeclaredField("address")
+                            .apply { isAccessible = true }
+                            .set(retained, address)
                         val retainedStream = field(retained, "stream") as RemotePacketStream
-                        retainedStream.javaClass.getDeclaredField("address").apply { isAccessible = true }.set(retainedStream, address)
+                        retainedStream
+                            .javaClass
+                            .getDeclaredField("address")
+                            .apply { isAccessible = true }
+                            .set(retainedStream, address)
                     }
                 }
             }
@@ -262,7 +284,10 @@ public class OutgoingFragmentFixture(
             if (probe) observed.forEach { array -> if (output.any { delivered(array, it) }) transferred.add(array) }
         }
 
-        fun counts(selected: OutgoingFragmentPhase, queueDelivered: Int): Map<String, Long> {
+        fun counts(
+            selected: OutgoingFragmentPhase,
+            queueDelivered: Int,
+        ): Map<String, Long> {
             val scoped =
                 when (selected) {
                     OutgoingFragmentPhase.Queue -> output.take(queueDelivered)
@@ -308,16 +333,20 @@ public class OutgoingFragmentFixture(
 
         private fun observe() {
             if (probe.not()) return
-            val queued = (field(connection, "pending") as Collection<*>).flatMap { transfer ->
-                val storage = checkNotNull(field(checkNotNull(transfer), "frames"))
-                val arrays = if (storage is Collection<*>) storage else field(storage, "frames") as Collection<*>
-                arrays.map { it as ByteArray }
-            }
+            val queued =
+                (field(connection, "pending") as Collection<*>).flatMap { transfer ->
+                    val storage = checkNotNull(field(checkNotNull(transfer), "frames"))
+                    val arrays = if (storage is Collection<*>) storage else field(storage, "frames") as Collection<*>
+                    arrays.map { it as ByteArray }
+                }
             peakFrames = maxOf(peakFrames, queued.size.toLong())
             queued.forEach { array -> if (observed.none { it === array }) observed.add(array) }
         }
 
-        private fun delivered(queued: ByteArray, bytes: ByteArray): Boolean {
+        private fun delivered(
+            queued: ByteArray,
+            bytes: ByteArray,
+        ): Boolean {
             if (queued === bytes) return true
             if (route == OutgoingFragmentRoute.Public || privateNative) return false
             return queued.size == bytes.size - 26 && queued.indices.all { index -> queued[index] == bytes[index + 26] }
@@ -335,8 +364,13 @@ public class OutgoingFragmentFixture(
                 false
             }
 
-        private fun serverMethod(name: String, retained: Any): Method =
-            checkNotNull(service).javaClass.getDeclaredMethod(name, retained.javaClass, Long::class.javaPrimitiveType).apply { isAccessible = true }
+        private fun serverMethod(
+            name: String,
+            retained: Any,
+        ): Method = checkNotNull(service)
+            .javaClass
+            .getDeclaredMethod(name, retained.javaClass, Long::class.javaPrimitiveType)
+            .apply { isAccessible = true }
 
         private fun invoke(method: Method?) {
             try {
@@ -353,9 +387,26 @@ public class OutgoingFragmentFixture(
         val all = encoded.mapIndexed { index, bytes -> reference(bytes, index + 1L, 1, if (workload == OutgoingFragmentWorkload.Hello) RemotePacket.limits else limits, false) }
         val inner =
             when (workload) {
-                OutgoingFragmentWorkload.UnsentCancellation -> all[1]
-                OutgoingFragmentWorkload.PartialCancellation -> listOf(all[0].first(), ByteBuffer.allocate(17).putLong(1).putInt(0).putInt(0).put(0).array()) + all[1]
-                else -> all.flatten()
+                OutgoingFragmentWorkload.UnsentCancellation -> {
+                    all[1]
+                }
+
+                OutgoingFragmentWorkload.PartialCancellation -> {
+                    listOf(
+                        all[0].first(),
+                        ByteBuffer
+                            .allocate(17)
+                            .putLong(1)
+                            .putInt(0)
+                            .putInt(0)
+                            .put(0)
+                            .array(),
+                    ) + all[1]
+                }
+
+                else -> {
+                    all.flatten()
+                }
             }
         return if (native) inner.mapIndexed { index, bytes -> envelope(bytes, firstSequence + index) } else inner
     }
@@ -370,10 +421,27 @@ public class OutgoingFragmentFixture(
         (0 until (bytes.size - 1) / (bounds.frameBytes - 16) + 1).map { index ->
             val offset = index * (bounds.frameBytes - 16)
             val count = minOf(bounds.frameBytes - 16, bytes.size - offset)
-            val inner = ByteBuffer.allocate(16 + count).putLong(identity).putInt(bytes.size).putInt(offset).put(bytes, offset, count).array()
+            val inner =
+                ByteBuffer
+                    .allocate(16 + count)
+                    .putLong(identity)
+                    .putInt(bytes.size)
+                    .putInt(offset)
+                    .put(bytes, offset, count)
+                    .array()
             if (native) envelope(inner, sequence + index) else inner
         }
 
-    private fun envelope(bytes: ByteArray, sequence: Long): ByteArray =
-        ByteBuffer.allocate(26 + bytes.size).put(1.toByte()).put(0.toByte()).putLong(0).putLong(1).putLong(sequence).put(bytes).array()
+    private fun envelope(
+        bytes: ByteArray,
+        sequence: Long,
+    ): ByteArray = ByteBuffer
+        .allocate(26 + bytes.size)
+        .put(1.toByte())
+        .put(0.toByte())
+        .putLong(0)
+        .putLong(1)
+        .putLong(sequence)
+        .put(bytes)
+        .array()
 }

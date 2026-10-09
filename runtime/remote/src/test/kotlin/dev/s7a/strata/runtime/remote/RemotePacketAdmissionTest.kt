@@ -214,13 +214,14 @@ internal class RemotePacketAdmissionTest {
             first.run { assertEquals(17, frame(admission).bytes.size) }
             val executor = Executors.newSingleThreadExecutor()
             try {
-                executor.submit {
-                    first.run {
-                        stream.offer(admission, 0)
-                        assertReleased(admission)
-                        stream.drain(1) { assertEquals(17, it.size) }
-                    }
-                }.get(5, TimeUnit.SECONDS)
+                executor
+                    .submit {
+                        first.run {
+                            stream.offer(admission, 0)
+                            assertReleased(admission)
+                            stream.drain(1) { assertEquals(17, it.size) }
+                        }
+                    }.get(5, TimeUnit.SECONDS)
             } finally {
                 executor.shutdownNow()
                 assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
@@ -273,7 +274,8 @@ internal class RemotePacketAdmissionTest {
         sequence: Long = 1,
         target: RemoteAddress = address,
     ): ByteArray =
-        ByteBuffer.allocate(26 + payload.size)
+        ByteBuffer
+            .allocate(26 + payload.size)
             .put(1.toByte())
             .put(target.endpoint.ordinal.toByte())
             .putLong(target.incarnation.mostSignificantBits)
@@ -295,5 +297,9 @@ internal class RemotePacketAdmissionTest {
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+    ): Any? = target
+        .javaClass
+        .getDeclaredField(name)
+        .apply { isAccessible = true }
+        .get(target)
 }
