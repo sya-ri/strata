@@ -77,6 +77,14 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+`BlitTemplateBenchmark` supplies 45 separate initial-frame, paint-rebuild and retained-clean boundaries across 15 compiled dense and ineligible controls.
+Atlas cases use multiple source rectangles from one immutable source image; the distinct-image case deliberately retains the original command path.
+Small/large sources and templates, cropped edges, one/four/32 groups, sparse/overlapping/reversed/stretched/oversized inputs, clips and fractional child transforms retain complete original geometry and straight ARGB.
+Prepared source pairs are outside timing, while initial frames include actual session creation, attach, first paint and close; rebuilds change the source at its ordinary capture/commit cutoff.
+The optional verifier compares original and actual presented pixels at physical densities one and two, immutable old frames, public copy/equality/hash, clean identity, bounded templates and balanced bindings.
+Use the existing historical shared-kit selectors and controlled API/core/headless runtime archives; the fixture adds no central registry or selector and reports no native uploads, GPU duration or FPS.
+Private-copy payload removed by owned transfer is a source-derived count from each accepted template's pixel area, separate from measured CPU time and normalized allocation.
+
 Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
 This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules without versioned Fabric projects or Web applications.
 It accepts `formatKotlin` (including the native font backend), JVM tests and archives, ABI checks, `jmhClasses`, `jmhRunBytecodeGenerator`, `jmhCompileGeneratedClasses`, `jmhHistorical`, `jmhComponents`, `jmhRemote` and `processEvidence`.

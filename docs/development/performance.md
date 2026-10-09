@@ -116,7 +116,9 @@ Grid validation uses sequential edges without per-tile division or a coverage ar
 Clips, mixed images or primitives, overlaps, gaps, and invalid grids preserve the original commands.
 
 Each admitted unstretched pattern uses one immutable template of at most 64 by 64 pixels, repeated with tile-aligned offsets and cropped final chunks.
-Template admission also bounds its two pixel arrays against the removed command allocation; larger or stretched source groups retain their original blits.
+Template admission retains its existing two-array allowance against the removed command allocation; larger or stretched source groups retain their original blits.
+The fully initialized private repeating buffer transfers directly through the existing owned-image bridge, with no mutable alias used after transfer.
+Public image construction still defensively copies application buffers, and extracted pixel arrays remain detached.
 Templates preserve unblended source ARGB, including transparent RGB, and use no source-sized snapshot or global cache.
 The original commands remain the sampling oracle for all fractional, scaled, or reflected tree transforms.
 
