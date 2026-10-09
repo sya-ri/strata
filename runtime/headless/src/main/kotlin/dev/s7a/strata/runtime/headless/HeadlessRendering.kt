@@ -4,6 +4,7 @@ package dev.s7a.strata.runtime.headless
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.Constraints
+import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
@@ -16,6 +17,7 @@ import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.util.zip.Adler32
 import java.util.zip.CRC32
+import kotlin.math.ceil
 
 /**
  * Rasterizes ordered portable commands into an immutable physical ARGB image.
@@ -221,7 +223,7 @@ private object HeadlessImplementation {
             paintCommands(dimensions, commands, borrowed, scratch)
         }
 
-    @Suppress("CyclomaticComplexMethod") // Explicit command ordering includes materialization before each non-uniform primitive.
+    @Suppress("CyclomaticComplexMethod", "LongMethod", "LoopWithTooManyJumpStatements") // Keep composition batching and nonpainting rejection in one ordered traversal without capturing mutable raster state.
     private fun paintCommands(
         dimensions: PhysicalDimensions,
         commands: List<DrawCommand>,
@@ -243,7 +245,9 @@ private object HeadlessImplementation {
                     continue
                 }
             }
-            when (val command = commands[index++]) {
+            val command = commands[index++]
+            if (uniform && doesNotPaint(command, dimensions, clips.lastOrNull())) continue
+            when (command) {
                 is DrawCommand.FillRectangle -> {
                     if ((uniform || command.color.value ushr 24 == 0xFF) && coversViewport(command.bounds, dimensions, clips.lastOrNull())) {
                         uniformColor = if (uniform) RasterMath.blend(command.color.value, uniformColor) else command.color.value
@@ -292,6 +296,59 @@ private object HeadlessImplementation {
         }
         if (uniform) pixels.fill(uniformColor, 0, dimensions.area)
         return pixels
+    }
+
+    /**
+     * Preserves a pending uniform color without reading image pixels or changing the clip stack.
+     * Integer primitives use exact scaled intersections; sampled commands share their painter's pixel-center edges.
+     * A zero-alpha integer fill still paints because source-over canonicalizes transparent destinations.
+     */
+    private fun doesNotPaint(
+        command: DrawCommand,
+        dimensions: PhysicalDimensions,
+        clip: IntRect?,
+    ): Boolean =
+        when (command) {
+            is DrawCommand.FillRectangle -> emptyCoverage(command.bounds, dimensions, clip)
+            is DrawCommand.BlitImage -> emptyCoverage(command.destination, dimensions, clip)
+            is DrawCommand.BlitImagePixels -> emptyCoverage(command.destination, dimensions, clip)
+            is DrawCommand.SampledImage -> command.tint.value ushr 24 == 0 || emptyCoverage(command.destination, dimensions.scale, clip ?: dimensions.physicalBounds)
+            else -> false
+        }
+
+    /**
+     * Tests fractional coverage with the painter's exact Double, ceil and saturated Int pixel-center edges.
+     * This dispatch-only predicate reads no image pixels and allocates no intermediate rectangle.
+     */
+    private fun emptyCoverage(
+        bounds: FloatRect,
+        scale: Int,
+        clip: IntRect,
+    ): Boolean {
+        fun firstPixel(edge: Float): Int = ceil(edge.toDouble() * scale.toDouble() - 0.5).toInt()
+        return minOf(firstPixel(bounds.right), clip.right) <= maxOf(firstPixel(bounds.left), clip.left) ||
+            minOf(firstPixel(bounds.bottom), clip.bottom) <= maxOf(firstPixel(bounds.top), clip.top)
+    }
+
+    /**
+     * Tests final physical coverage without allocating an outward logical clip or an intermediate rectangle.
+     * Viewport intersection bounds every scaled coordinate before multiplication, including offscreen commands.
+     */
+    private fun emptyCoverage(
+        bounds: IntRect,
+        dimensions: PhysicalDimensions,
+        clip: IntRect?,
+    ): Boolean {
+        val viewport = dimensions.logicalBounds
+        val left = maxOf(bounds.left, viewport.left)
+        val top = maxOf(bounds.top, viewport.top)
+        val right = minOf(bounds.right, viewport.right)
+        val bottom = minOf(bounds.bottom, viewport.bottom)
+        if (right <= left || bottom <= top) return true
+        if (clip == null) return false
+        val scale = dimensions.scale
+        return minOf(right * scale, clip.right) <= maxOf(left * scale, clip.left) ||
+            minOf(bottom * scale, clip.bottom) <= maxOf(top * scale, clip.top)
     }
 
     /**

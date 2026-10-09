@@ -148,7 +148,13 @@ An exact equality check on every covered palette result can restore the invocati
 Partial coverage never establishes this state; subsequent ordered fills retain each intermediate rounding and materialize before reading primitives.
 This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
 When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
-Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Before a partial fill or image materializes the pending color, the dispatcher tests whether it can touch any physical pixel.
+Integer fill and both integer-image commands intersect their destination with the output region and current physical clip without allocating coverage storage or inspecting source pixels.
+Fractional sampled commands use their painter's original final-density pixel-center edges and exact zero-alpha-tint rejection.
+Positive fractional clips or destinations containing no physical centers preserve the pending uniform color; an outward logical rectangle is insufficient for this decision.
+Visible partial fills and images materialize before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Zero-alpha integer fills and transparent images retain source-over normalization and are not admitted by the sampled zero-tint proof.
+Every required output pixel is initialized before return, including all-nonpainting lists and reused dirty borrowed storage, while excess borrowed capacity remains untouched.
 Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
 This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
 For a nonuniform output of at least 262,144 physical pixels, two or more consecutive full-viewport translucent fills use an exact channel lookup table keyed by the initial alpha and channel value.

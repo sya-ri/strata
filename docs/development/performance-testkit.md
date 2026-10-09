@@ -102,6 +102,22 @@ It uses the same JMH defaults, controlled-runtime selection and shared evidence 
 Source preparation is outside measurement; each operation allocates a fresh output and preserves every ordered blend.
 This family does not change the historical 54-case matrix or satisfy its acceptance.
 
+The independent `-Pstrata.performance.benchmarks=NonpaintingRasterBenchmark -Pstrata.performance.suite=nonpainting-raster` corpus fixes 36 scenarios and two output-ownership methods, for 72 AverageTime cases.
+It covers all four portable primitives, offscreen destinations, empty integer clips, nested fractional clips containing no physical centers, subpixel sampled destinations and exact zero-alpha sampled tint.
+Empty and mixed lists, subsequent opaque or ordered translucent fills, densities one through four, original-coordinate regions, preexisting patterned destinations and visible/one-pixel controls remain separate cases.
+Nine skinny physical extents test immediately below, at and above the 4,096, 262,144 and 1,048,576-pixel palette/full-fill admissions.
+`verifyWork()` and trial setup compare complete pixels with an independent ordered scalar reference and verify immutable source ownership and the borrowed sentinel tail before collection.
+
+`immutable` includes fresh result storage and image ownership without a returned-pixel copy; `borrowed` reuses one caller-owned array and includes required prefix initialization.
+Invocation setup restores dirty borrowed storage without allocation outside the declared raster operation, warming that prefix; disclose this condition rather than interpreting ownership differences as one end-to-end presentation result.
+Prepare and freeze one compiled fixture and collector for both runtime sides, preserve actual loaded archive receipts, collect three Standard repetitions per side and report every case and visible control with operation time and normalized allocation.
+
+For a uniform output of N pixels, an invisible primitive before a full opaque fill conditionally removes one N-pixel intermediate materialization; final N-pixel initialization is still required.
+At the 1,048,576-pixel single-translucent-fill admission, that invisible primitive also prevents entry to the 196,864-byte full-fill table path and its 65,536 initial alpha/channel combinations, leaving one scalar blend and final materialization.
+The bounded palette path can restore uniform state and cause a later final materialization, so work accounting must include that pass rather than applying the large-table model to every extent.
+Report these exact source-derived materialization, table and covered-pixel operations separately from measured JVM allocation and elapsed operation time; they are not measurements of compiler optimization or memory traffic.
+Native upload, GPU completion and FPS are inapplicable to these isolated headless operations; any native fallback evidence requires its own actual collection.
+
 The separate `-Pstrata.performance.benchmarks=SampledRasterBenchmark -Pstrata.performance.suite=sampled-raster` family measures fractional portable image generation with solid opaque, solid translucent and 64×64 patterned sources, each with an opaque non-identity RGB tint.
 Its 12 cases keep physical output at 320×180 or 1920×1080 while varying final density between one and four.
 Prepared immutable inputs exclude resource decoding; each operation allocates a fresh raster.
