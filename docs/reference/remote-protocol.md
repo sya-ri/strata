@@ -64,6 +64,10 @@ Stateful modifier registrations prepare shared native state outside declaration 
 
 Each routed fragment has an independent strictly increasing envelope sequence.
 The receiver restores order across asynchronous proxy events using a queue bounded by bytes, entries, and gap timeout, and drains a bounded number per owner tick.
+Ingress, consecutive-sequence delivery, outgoing transport, and Velocity commands stop their drain at the first empty result or missing next sequence.
+An ingress or command arrival after that observation remains queued for a subsequent tick; arrivals before it may still use the remaining budget.
+The ingress poll observes emptiness under the queue lock, without a separate emptiness check.
+Ending a drain still permits session state cutoffs, gap and assembly checks, negotiation deadlines, and bounded outgoing flush for that tick.
 Duplicate sequences are ignored; conflicting queued duplicates fail validation.
 The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.

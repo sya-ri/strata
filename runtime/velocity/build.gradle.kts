@@ -6,8 +6,14 @@ dependencies {
     api(project(":runtime:remote"))
     compileOnly(libs.velocity.api)
     testImplementation(libs.velocity.api)
+    testImplementation(project(":performance-testkit"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    // The untimed drain fixture captures the actual JDK scheduled Runnable instead of copying the worker loop.
+    jvmArgs("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED")
 }
 
 tasks.processResources {
