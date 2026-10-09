@@ -42,7 +42,7 @@ internal class PortablePointerCapabilityTest {
         pipeline.layoutCommitted(scene.root)
         assertEquals(InputResult.Ignored, pipeline.dispatch(scene.root, PointerEvent.Move(inside)))
         assertEquals(
-            listOf(Trace.Hover(4, true), Trace.Hover(2, true), Trace.Hover(0, true), Trace.Input(4, PointerEvent.Move(inside), inside), Trace.Input(2, PointerEvent.Move(inside), inside), Trace.Input(0, PointerEvent.Move(inside), inside)),
+            listOf<Trace>(Trace.Hover(4, true), Trace.Hover(2, true), Trace.Hover(0, true), Trace.Input(4, PointerEvent.Move(inside), inside), Trace.Input(2, PointerEvent.Move(inside), inside), Trace.Input(0, PointerEvent.Move(inside), inside)),
             scene.trace,
         )
     }
@@ -59,14 +59,14 @@ internal class PortablePointerCapabilityTest {
         pipeline.layoutCommitted(root)
         val move = PointerEvent.Move(inside)
         assertEquals(InputResult.Ignored, pipeline.dispatch(root, move))
-        assertEquals(listOf(Trace.Hover(2, true), Trace.Hover(1, true), Trace.Input(2, move, inside), Trace.Input(0, move, inside)), trace)
+        assertEquals(listOf<Trace>(Trace.Hover(2, true), Trace.Hover(1, true), Trace.Input(2, move, inside), Trace.Input(0, move, inside)), trace)
         trace.clear()
         val press = PointerEvent.Press(inside, PointerButton.Primary)
         assertEquals(InputResult.Consumed, pipeline.dispatch(root, press))
-        assertEquals(listOf(Trace.Input(2, press, inside), Trace.Input(0, press, inside)), trace)
+        assertEquals(listOf<Trace>(Trace.Input(2, press, inside), Trace.Input(0, press, inside)), trace)
         trace.clear()
         assertEquals(InputResult.Ignored, pipeline.dispatch(root, PointerEvent.Drag(outside, PointerButton.Primary, 1.0, 1.0)))
-        assertEquals(listOf(Trace.Hover(2, false), Trace.Hover(1, false)), trace)
+        assertEquals(listOf<Trace>(Trace.Hover(2, false), Trace.Hover(1, false)), trace)
     }
 
     @Test
@@ -125,7 +125,7 @@ internal class PortablePointerCapabilityTest {
         expected.root.children.single().placed = false
         pipeline.layoutCommitted(actual.root)
         oracle.layoutCommitted()
-        assertEquals(listOf(Trace.Cancelled(4, PointerButton.Primary)), actual.trace)
+        assertEquals(listOf<Trace>(Trace.Cancelled(4, PointerButton.Primary)), actual.trace)
         assertEquals(expected.trace, actual.trace)
         actual.trace.clear()
         expected.trace.clear()
@@ -133,10 +133,10 @@ internal class PortablePointerCapabilityTest {
         assertEquals(emptyList(), actual.trace)
         pipeline.clearHover(actual.root)
         oracle.clearHover()
-        assertEquals(listOf(Trace.Hover(4, false)), actual.trace)
+        assertEquals(listOf<Trace>(Trace.Hover(4, false)), actual.trace)
         assertEquals(expected.trace, actual.trace)
         pipeline.cancelCapture()
-        assertEquals(listOf(Trace.Hover(4, false)), actual.trace)
+        assertEquals(listOf<Trace>(Trace.Hover(4, false)), actual.trace)
     }
 
     @Test
@@ -163,7 +163,7 @@ internal class PortablePointerCapabilityTest {
         second.root.children.removeAt(2)
         firstPipeline.layoutCommitted(second.root)
         firstPipeline.dispatch(second.root, PointerEvent.Move(inside))
-        assertEquals(listOf(Trace.Hover(1, true), Trace.Hover(0, true), Trace.Input(1, PointerEvent.Move(inside), inside), Trace.Input(0, PointerEvent.Move(inside), inside)), second.trace)
+        assertEquals(listOf<Trace>(Trace.Hover(1, true), Trace.Hover(0, true), Trace.Input(1, PointerEvent.Move(inside), inside), Trace.Input(0, PointerEvent.Move(inside), inside)), second.trace)
     }
 
     @Test
@@ -182,7 +182,7 @@ internal class PortablePointerCapabilityTest {
         pipeline.layoutCommitted(scene.root)
         scene.trace.clear()
         assertEquals(InputResult.Ignored, pipeline.dispatch(scene.root, PointerEvent.Move(inside)))
-        assertEquals(listOf(Trace.Hover(0, false)), scene.trace)
+        assertEquals(listOf<Trace>(Trace.Hover(0, false)), scene.trace)
     }
 
     @Test
@@ -224,13 +224,13 @@ internal class PortablePointerCapabilityTest {
         pipeline.layoutCommitted(root)
         val entered = PointerEvent.Move(IntOffset(6, 6))
         assertEquals(InputResult.Consumed, pipeline.dispatch(root, entered))
-        assertEquals(listOf(Trace.Hover(0, true), Trace.Input(0, entered, IntOffset(2, 2))), trace)
+        assertEquals(listOf<Trace>(Trace.Hover(0, true), Trace.Input(0, entered, IntOffset(2, 2))), trace)
         trace.clear()
         assertEquals(InputResult.Ignored, pipeline.dispatch(root, PointerEvent.Move(IntOffset(8, 8))))
-        assertEquals(listOf(Trace.Hover(0, false)), trace)
+        assertEquals(listOf<Trace>(Trace.Hover(0, false)), trace)
         trace.clear()
         assertEquals(InputResult.Ignored, pipeline.dispatch(root, PointerEvent.Move(IntOffset(14, 14))))
-        assertEquals(listOf(Trace.Hover(0, false)), trace)
+        assertEquals(listOf<Trace>(Trace.Hover(0, false)), trace)
         pipeline.cancelCapture()
     }
 
@@ -244,7 +244,7 @@ internal class PortablePointerCapabilityTest {
         val pipeline = InputPipeline(FocusedInputPipeline())
         pipeline.layoutCommitted(scene.root)
         assertSame(first, assertFailsWith<IllegalArgumentException> { pipeline.clearHover(scene.root) })
-        assertEquals(listOf(Trace.Hover(2, false), Trace.Hover(1, false), Trace.Hover(0, false)), scene.trace)
+        assertEquals(listOf<Trace>(Trace.Hover(2, false), Trace.Hover(1, false), Trace.Hover(0, false)), scene.trace)
         assertEquals(listOf(second), first.suppressedExceptions)
         pipeline.cancelCapture()
     }
