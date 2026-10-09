@@ -96,9 +96,9 @@ internal data class ModrinthManifest(
             "changelog" to changelog,
             "loader" to Loader.FABRIC.wireValue,
             "versionType" to ReleaseType.RELEASE.wireValue,
-            "environment" to VersionEnvironment.CLIENT_ONLY.wireValue,
+            "environment" to VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL.wireValue,
             "featured" to FEATURED,
-            "requiredProjectDependencies" to listOf(FABRIC_LANGUAGE_KOTLIN_PROJECT_ID),
+            "requiredProjectDependencies" to REQUIRED_PROJECT_DEPENDENCIES,
             "artifacts" to artifacts.map { artifact -> artifact.toMap() },
         )
 
@@ -163,6 +163,16 @@ internal data class ModrinthManifest(
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
         const val FABRIC_LANGUAGE_KOTLIN_PROJECT_ID: String = "Ha28R6CL"
+
+        /**
+         * Official Fabric API project, required in both physical environments.
+         */
+        const val FABRIC_API_PROJECT_ID: String = "P7dR8mSH"
+
+        /**
+         * Ordered dependencies emitted by release upload and verification.
+         */
+        val REQUIRED_PROJECT_DEPENDENCIES: List<String> = listOf(FABRIC_LANGUAGE_KOTLIN_PROJECT_ID, FABRIC_API_PROJECT_ID)
         const val FEATURED: Boolean = true
         const val AI_DISCLOSURE_NOTE: String =
             "Generative AI substantially assisted implementation, review, tests, documentation, and release-page text. The maintainer directed the design and validates release artifacts through the public test suite."
@@ -196,12 +206,12 @@ internal data class ModrinthManifest(
             check(ReleaseType.decode(root.requiredString("versionType")) == ReleaseType.RELEASE) {
                 "The Modrinth manifest version type must be ${ReleaseType.RELEASE.wireValue}."
             }
-            check(VersionEnvironment.decode(root.requiredString("environment")) == VersionEnvironment.CLIENT_ONLY) {
-                "The Modrinth manifest environment must be ${VersionEnvironment.CLIENT_ONLY.wireValue}."
+            check(VersionEnvironment.decode(root.requiredString("environment")) == VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL) {
+                "The Modrinth manifest environment must be ${VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL.wireValue}."
             }
             check(root["featured"] == FEATURED) { "Every supported release must be featured." }
-            check(root["requiredProjectDependencies"] == listOf(FABRIC_LANGUAGE_KOTLIN_PROJECT_ID)) {
-                "The Modrinth manifest must require Fabric Language Kotlin."
+            check(root["requiredProjectDependencies"] == REQUIRED_PROJECT_DEPENDENCIES) {
+                "The Modrinth manifest must require Fabric Language Kotlin and Fabric API."
             }
             val artifacts =
                 (root["artifacts"] as? List<*>)?.map { item ->
@@ -365,8 +375,8 @@ internal data class ModrinthManifest(
         }
         check(project.categories == setOf("library")) { "The canonical Modrinth category must be library." }
         check(project.licenseId == CANONICAL_PROJECT_IDENTITY.licenseId) { "The canonical Modrinth license must be MIT." }
-        check(project.clientSide == SideSupport.REQUIRED && project.serverSide == SideSupport.UNSUPPORTED) {
-            "The canonical Modrinth side metadata must describe a client-only mod."
+        check(project.clientSide == SideSupport.REQUIRED && project.serverSide == SideSupport.OPTIONAL) {
+            "The canonical Modrinth side metadata must describe a client and optional server mod."
         }
         check(project.additionalCategories == setOf("utility")) {
             "The canonical Modrinth additional category must be utility."

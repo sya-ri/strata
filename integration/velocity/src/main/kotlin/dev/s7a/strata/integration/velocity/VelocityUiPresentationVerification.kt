@@ -11,7 +11,7 @@ import dev.s7a.strata.ui.UiOperationResult
 import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
 import dev.s7a.strata.velocity.event.StrataUiPresentationChangedEvent
@@ -37,24 +37,24 @@ internal class VelocityUiPresentationVerification(
      */
     fun start(): CompletableFuture<Unit> {
         proxy.eventManager.register(plugin, this)
-        return VelocityUi
+        return Strata
             .open(plugin, player) {
                 UiDefinition("Strata proxy HUD", presentation = UiPresentation.Hud) { Column { Text("Proxy HUD") } }
             }.thenCompose { session ->
                 handle.complete(session)
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     check(session.status !is UiSessionStatus.Closed) { "Proxy HUD admission failed: ${session.status}" }
                 }
             }.thenCompose { opened }
             .thenCompose { event ->
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     check(event.presentation == UiPresentation.Hud && event.session.presentation == UiPresentation.Hud)
                     check(event.session.switch(UiPresentation.Screen) == UiOperationResult.Accepted)
                     check(event.session.presentation == UiPresentation.Hud)
                 }
             }.thenCompose { screen }
             .thenCompose { event ->
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     check(event.identity == opened.getNow(null)?.identity && event.previous == UiPresentation.Hud)
                     check(event.session.presentation == UiPresentation.Screen)
                     check(event.session.switch(UiPresentation.Hud) == UiOperationResult.Accepted)
@@ -62,7 +62,7 @@ internal class VelocityUiPresentationVerification(
                 }
             }.thenCompose { hud }
             .thenCompose { event ->
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     check(event.identity == opened.getNow(null)?.identity && event.previous == UiPresentation.Screen)
                     check(event.session.presentation == UiPresentation.Hud)
                     event.session.close()
@@ -70,7 +70,7 @@ internal class VelocityUiPresentationVerification(
                 }
             }.thenCompose { closed }
             .thenCompose { event ->
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     check(event.identity == opened.getNow(null)?.identity)
                     check(event.reason == UiCloseReason.Closed && event.presentation == UiPresentation.Hud)
                     check(event.session.status == UiSessionStatus.Closed(UiCloseReason.Closed))
@@ -111,6 +111,6 @@ internal class VelocityUiPresentationVerification(
 
     override fun close() {
         proxy.eventManager.unregisterListener(plugin, this)
-        handle.thenAccept { session -> VelocityUi.execute(plugin, session::close) }
+        handle.thenAccept { session -> Strata.execute(plugin, session::close) }
     }
 }

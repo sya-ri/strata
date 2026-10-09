@@ -40,21 +40,23 @@ $openExample
     }
 
     private fun fabricInstallation(releaseVersion: String): String =
-        """### Fabric client
+        """### Fabric client and server
 
-Players need the Strata Fabric runtime and Fabric Language Kotlin for both client-defined and server-driven UIs.
+Players need the Strata Fabric runtime, Fabric API, and Fabric Language Kotlin for both client-defined and server-driven UIs.
 Client Mod UI source needs only `strata-api` on its compile classpath.
-Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
+Install exactly one version-matched runtime as a separate Fabric Mod together with Fabric API and Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
 
 ```kotlin
 dependencies {
     compileOnly("dev.s7a.strata:strata-api:$releaseVersion")
     modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:$releaseVersion")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
 ```
 
 The version-matched runtimes are also available from [Modrinth](https://modrinth.com/mod/strata-ui).
+For Fabric servers, install the same runtime and dependencies on the server and follow the [server guide](docs/guides/fabric-server.md).
 Declare it as a required dependency in the consuming Mod so `UiDefinition.open()` always has a presenter in production:
 
 ```json

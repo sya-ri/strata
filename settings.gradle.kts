@@ -136,8 +136,13 @@ val documentationChecksOnly = completeIdeaModel.not() && requestedTasks.isNotEmp
 val nativeBenchmarkOnly = requestedTasks.size == 1 &&
     requestedTasks.single().removePrefix(":") in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") &&
     completeIdeaModel.not()
+val fabricAcceptanceTask = Regex("^:integration:minecraft-fabric-([0-9.]+):(runProductionServerUiTest|runClientGameTest|runProductionClientGameTest)$")
+val fabricAcceptanceVersion = requestedTasks.singleOrNull()?.let(fabricAcceptanceTask::matchEntire)?.groupValues?.get(1)
+    ?.takeIf { providers.gradleProperty("strata.fabric.run").isPresent && completeIdeaModel.not() }
 val minecraftCheckVersions =
-    if (minecraftChecksOnly || documentationChecksOnly || nativeBenchmarkOnly) {
+    if (fabricAcceptanceVersion != null) {
+        setOf(fabricAcceptanceVersion)
+    } else if (minecraftChecksOnly || documentationChecksOnly || nativeBenchmarkOnly) {
         providers.gradleProperty("strata.minecraftVersions").getOrElse("").split(',').map(String::trim).filter(String::isNotEmpty).toSet()
     } else {
         emptySet()

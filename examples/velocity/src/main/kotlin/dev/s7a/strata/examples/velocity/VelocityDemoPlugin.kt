@@ -8,7 +8,7 @@ import com.velocitypowered.api.plugin.Dependency
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import net.kyori.adventure.text.Component
 import org.slf4j.Logger
@@ -43,7 +43,7 @@ public class VelocityDemoPlugin
                 object : SimpleCommand {
                     override fun execute(invocation: SimpleCommand.Invocation) {
                         val player = invocation.source() as? Player ?: return
-                        VelocityUi.open(this@VelocityDemoPlugin, player, VelocityDemoScreens::counter).whenComplete { _, failure ->
+                        Strata.open(this@VelocityDemoPlugin, player, VelocityDemoScreens::counter).whenComplete { _, failure ->
                             if (failure != null) {
                                 logger.warn("The example screen could not open", failure)
                             }

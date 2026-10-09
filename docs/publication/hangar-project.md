@@ -19,7 +19,7 @@ Plugin code owns screen state and handles player actions, while the matching Str
 ## Installation
 
 Choose the Paper download for Paper or Folia servers, or the Velocity download for a proxy, and place it in that platform's `plugins` directory.
-Players need the Strata Fabric runtime for their exact Minecraft version and Fabric Language Kotlin.
+Players need the Strata Fabric runtime for their exact Minecraft version, Fabric API, and Fabric Language Kotlin.
 Use the same Strata release on the client and server or proxy.
 Vanilla clients cannot render Strata screens.
 

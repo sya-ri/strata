@@ -50,6 +50,7 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.named<ProcessResources>("processResources") {
     inputs.property("version", project.version)
+    inputs.property("fabricApiVersion", libs.versions.fabric.api1214)
     inputs.property("fabricLoaderVersion", libs.versions.fabric.loader)
     inputs.property("minecraftVersion", libs.versions.minecraft1214)
     inputs.property("fabricLanguageKotlinVersion", libs.versions.fabric.language.kotlin)
@@ -57,6 +58,7 @@ tasks.named<ProcessResources>("processResources") {
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
+            "fabricApi" to ">=${libs.versions.fabric.api1214.get()}",
             "fabricLoader" to libs.versions.fabric.loader.get(),
             "minecraft" to libs.versions.minecraft1214.get(),
             "fabricLanguageKotlin" to libs.versions.fabric.language.kotlin.get(),
@@ -114,13 +116,13 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             check(metadata["version"] == project.version.toString()) {
                 "Fabric metadata must contain the expanded project version."
             }
-            check(metadata["environment"] == "client") {
-                "Fabric metadata must remain client-only."
+            check(metadata["environment"] == "*") {
+                "Fabric metadata must support both environments."
             }
             check(metadata["name"] == "Strata") {
                 "Fabric metadata must use the stable project name."
             }
-            check(metadata["description"] == "A declarative Minecraft UI library with a separately installed Fabric client runtime.") {
+            check(metadata["description"] == "A declarative Minecraft UI library for Fabric clients and servers.") {
                 "Fabric metadata must contain the shared project description."
             }
             check(metadata["authors"] == listOf("sya-ri")) {
@@ -142,6 +144,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             check(
                 metadata["entrypoints"] ==
                     mapOf(
+                        "main" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabric"),
                         "client" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"),
                     ),
             ) {
@@ -164,6 +167,7 @@ val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
             check(
                 metadata["depends"] ==
                     mapOf(
+                        "fabric-api" to ">=${libs.versions.fabric.api1214.get()}",
                         "fabricloader" to ">=${libs.versions.fabric.loader.get()}",
                         "minecraft" to libs.versions.minecraft1214.get(),
                         "fabric-language-kotlin" to ">=${libs.versions.fabric.language.kotlin.get()}",
@@ -181,6 +185,7 @@ tasks.named("check") {
 }
 
 dependencies {
+    modImplementation(libs.fabric.api1214)
     compileOnly(project(":runtime:remote"))
     compileOnly(project(":runtime:minecraft"))
     compileOnly(project(":runtime:minecraft-fonts-lwjgl"))

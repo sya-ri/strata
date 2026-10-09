@@ -15,6 +15,7 @@ This scope accepts only fully qualified module `check` and `jsTest` tasks; publi
 An invocation containing only `:ciMinecraftCheck` includes the Minecraft versions selected by `strata.minecraftVersions` and omits the documentation project.
 Adding `:integration:docs:checkMinecraftShowcaseParity` retains that project for the native showcase comparison without loading other Minecraft versions.
 The separate documentation job includes every runtime for Dokka and only the integration project supplying its assets.
+Paired dedicated Fabric acceptance launches select their exact target from the requested integration task and invocation identity.
 Other task combinations retain the complete project inventory.
 Integration projects evaluate their paired runtime before reading compiled output; documentation launchers inherit dependencies from their runtime classpath.
 Full verification selects every required target through task dependencies.
@@ -85,6 +86,9 @@ Independent Minecraft jobs read Gradle dependency caches but do not each save an
 Loom project caches use the OS, selected projects, and build-model hash; successful misses save their regenerated inputs.
 These caches contain dependencies and build intermediates, not test worlds, screenshots, parity receipts, or reports.
 Acceptance evidence is generated for the selected revision.
+Each Minecraft matrix job also runs `integration/fabric/run_acceptance.py` against a fresh loopback Fabric server using the production runtime and test Mod archives.
+The paired client confirms server-owned input, visible revisions, and two independent connections; the server confirms both closures and clean shutdown.
+Fresh logs and receipts are uploaded separately from build caches.
 A signed release's prepared artifacts are immutable publication inputs, as defined in [release publication](release.md).
 Superseded JVM and Qodana runs on the same ref are cancelled.
 

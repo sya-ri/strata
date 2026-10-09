@@ -64,8 +64,8 @@ class CurseForgeReleaseTest(unittest.TestCase):
         self.upload_failure = None
         self.hidden_ids = set()
         self.catalog = [{"type": 1, "versions": [{"id": i + 1, "name": name}
-                                                for i, name in enumerate(["Fabric", "Client", "1.20", "26.2"])]}]
-        self.minecraft = [{"versionString": name, "approved": True, "gameVersionId": i + 3, "gameVersionTypeId": 1}
+                                                for i, name in enumerate(["Fabric", "Client", "Server", "1.20", "26.2"])]}]
+        self.minecraft = [{"versionString": name, "approved": True, "gameVersionId": i + 4, "gameVersionTypeId": 1}
                           for i, name in enumerate(["1.20", "26.2"])]
         self.environment = patch.dict(os.environ, {"CURSEFORGE_API_KEY": "read-secret", "CURSEFORGE_TOKEN": "upload-secret"})
         self.environment.start()
@@ -85,8 +85,8 @@ class CurseForgeReleaseTest(unittest.TestCase):
         artifact = self.manifest["artifacts"][index]
         return {"id": 100 + index, "modId": 123, "gameId": 432, "fileName": artifact["fileName"],
                 "displayName": artifact["versionName"], "fileLength": artifact["size"], "releaseType": 1,
-                "gameVersions": [artifact["gameVersion"], "Fabric", "Client"],
-                "dependencies": [{"modId": 308769, "relationType": 3}], "fileStatus": status.value,
+                "gameVersions": [artifact["gameVersion"], "Fabric", "Client", "Server"],
+                "dependencies": [{"modId": 308769, "relationType": 3}, {"modId": 306612, "relationType": 3}], "fileStatus": status.value,
                 "isAvailable": status is Release.FileStatus.RELEASED,
                 "downloadUrl": "https://mediafilez.forgecdn.net/files/1/2/" + artifact["fileName"]}
 
@@ -124,8 +124,9 @@ class CurseForgeReleaseTest(unittest.TestCase):
             path = url.removeprefix(Release.API)
             if path == "/v1/mods/123":
                 body = {"data": {"id": 123, "slug": "strata-ui", "name": "Strata UI", "gameId": 432, "classId": 6}}
-            elif path == "/v1/mods/308769":
-                body = {"data": {"id": 308769, "slug": "fabric-language-kotlin", "gameId": 432}}
+            elif path in {"/v1/mods/308769", "/v1/mods/306612"}:
+                identifier = int(path.rsplit("/", 1)[1])
+                body = {"data": {"id": identifier, "slug": "fabric-language-kotlin" if identifier == 308769 else "fabric-api", "gameId": 432}}
             elif path == "/v2/games/432/versions":
                 body = {"data": self.catalog}
             elif path == "/v1/minecraft/version":
@@ -158,8 +159,8 @@ class CurseForgeReleaseTest(unittest.TestCase):
         for index, (_, metadata) in enumerate(self.uploads):
             self.assertEqual(self.manifest["changelog"], metadata["changelog"])
             self.assertEqual("release", metadata["releaseType"])
-            self.assertEqual([index + 3, 1, 2], metadata["gameVersions"])
-            self.assertEqual({"projects": [{"slug": "fabric-language-kotlin", "projectID": 308769, "type": "requiredDependency"}]}, metadata["relations"])
+            self.assertEqual([index + 4, 1, 2, 3], metadata["gameVersions"])
+            self.assertEqual({"projects": [{"slug": "fabric-language-kotlin", "projectID": 308769, "type": "requiredDependency"}, {"slug": "fabric-api", "projectID": 306612, "type": "requiredDependency"}]}, metadata["relations"])
 
     def test_hidden_accepted_files_are_not_uploaded_again(self):
         self.run_phase(Release.Operation.STAGE)
@@ -222,7 +223,7 @@ class CurseForgeReleaseTest(unittest.TestCase):
             with self.subTest(change=change):
                 self.remotes = [self.remote(0)]
                 if change == "tags":
-                    self.remotes[0]["gameVersions"].append("Server")
+                    self.remotes[0]["gameVersions"].append("Unsupported")
                 elif change == "duplicate":
                     other = copy.deepcopy(self.remotes[0])
                     other["id"] = 200
@@ -270,7 +271,7 @@ class CurseForgeReleaseTest(unittest.TestCase):
     def test_same_named_non_java_version_is_not_selected(self):
         self.catalog.append({"type": 99, "versions": [{"id": 50, "name": "26.2"}]})
         self.run_phase(Release.Operation.STAGE)
-        self.assertEqual([4, 1, 2], self.uploads[1][1]["gameVersions"])
+        self.assertEqual([5, 1, 2, 3], self.uploads[1][1]["gameVersions"])
 
     def test_all_inventory_pages_are_read(self):
         self.remotes = [{"id": i + 1} for i in range(101)]
@@ -301,7 +302,7 @@ class CurseForgeReleaseTest(unittest.TestCase):
             self.run_phase(Release.Operation.STAGE, may_upload=False)
         self.assertEqual(2, len(self.uploads))
         for index, (_, metadata) in enumerate(self.uploads):
-            self.assertEqual([self.manifest["artifacts"][index]["gameVersion"], "Fabric", "Client"], metadata["gameVersionNames"])
+            self.assertEqual([self.manifest["artifacts"][index]["gameVersion"], "Fabric", "Client", "Server"], metadata["gameVersionNames"])
             self.assertNotIn("gameVersions", metadata)
         self.assertTrue(all(method == "POST" and url == Release.UPLOAD_API + "/projects/123/upload-file"
                             for method, url, _ in self.requests))
@@ -326,7 +327,7 @@ class CurseForgeReleaseTest(unittest.TestCase):
             self.run_phase(Release.Operation.PREFLIGHT)
             self.assertEqual([], self.requests)
             self.run_phase(Release.Operation.STAGE)
-        self.assertEqual(["26.2", "Fabric", "Client"], self.uploads[1][1]["gameVersionNames"])
+        self.assertEqual(["26.2", "Fabric", "Client", "Server"], self.uploads[1][1]["gameVersionNames"])
 
     def test_token_only_rejected_names_are_not_retried(self):
         self.upload_failure = HTTPError("unused", 400, "secret response", {}, None)

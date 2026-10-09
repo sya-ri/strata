@@ -22,13 +22,15 @@ Browse the [component catalog](https://github.com/sya-ri/strata/blob/master/docs
 
 ## Install and open a screen
 
-Compile ordinary Mod source against the API only, then install the runtime matching the active Minecraft version together with Fabric Language Kotlin.
+Compile ordinary Mod source against the API only, then install the runtime matching the active Minecraft version together with Fabric Language Kotlin and Fabric API.
+Install the same runtime and dependencies on a Fabric server to use `Strata`; see the [Fabric server guide](https://github.com/sya-ri/strata/blob/master/docs/guides/fabric-server.md).
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.2.2")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.2")
+    compileOnly("dev.s7a.strata:strata-api:0.3.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.3.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
 ```
 

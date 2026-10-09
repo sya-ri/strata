@@ -228,15 +228,16 @@ class CurseForgeRelease:
         self.require(project.get("id") == self.project_id and project.get("slug") == self.project["slug"]
                      and project.get("name") == self.project["title"] and project.get("gameId") == 432
                      and project.get("classId") == 6, "CurseForge project identity or Minecraft Mods class differs.")
-        dependency = self.api("/v1/mods/308769")["data"]
-        self.require(dependency.get("id") == 308769 and dependency.get("slug") == "fabric-language-kotlin"
-                     and dependency.get("gameId") == 432, "Fabric Language Kotlin dependency identity differs.")
+        for identifier, slug in ((308769, "fabric-language-kotlin"), (306612, "fabric-api")):
+            dependency = self.api(f"/v1/mods/{identifier}")["data"]
+            self.require(dependency.get("id") == identifier and dependency.get("slug") == slug
+                         and dependency.get("gameId") == 432, f"{slug} dependency identity differs.")
         catalog = self.api("/v2/games/432/versions")["data"]
         minecraft = self.api("/v1/minecraft/version")["data"]
         tags = {}
-        for name in {"Fabric", "Client"} | {a["gameVersion"] for a in self.artifacts}:
+        for name in {"Fabric", "Client", "Server"} | {a["gameVersion"] for a in self.artifacts}:
             matches = [item for group in catalog for item in group["versions"] if item.get("name") == name]
-            if name not in {"Fabric", "Client"}:
+            if name not in {"Fabric", "Client", "Server"}:
                 native = [item for item in minecraft if item.get("versionString") == name and item.get("approved") is True]
                 self.require(len(native) == 1, f"Missing or ambiguous Java Minecraft version: {name}")
                 matches = [item for group in catalog if group["type"] == native[0]["gameVersionTypeId"]
@@ -276,11 +277,11 @@ class CurseForgeRelease:
                      and remote.get("fileLength") == artifact["size"]
                      and self.ReleaseType(remote.get("releaseType")) is self.ReleaseType.RELEASE,
                      f"Existing file metadata differs: {artifact['fileName']}")
-        self.require(set(remote.get("gameVersions", [])) == {artifact["gameVersion"], "Fabric", "Client"},
+        self.require(set(remote.get("gameVersions", [])) == {artifact["gameVersion"], "Fabric", "Client", "Server"},
                      f"Existing file version tags differ: {artifact['fileName']}")
         dependencies = remote.get("dependencies", [])
-        self.require(len(dependencies) == 1 and dependencies[0].get("modId") == 308769
-                     and self.RelationType(dependencies[0].get("relationType")) is self.RelationType.REQUIRED,
+        self.require(len(dependencies) == 2 and {dependency.get("modId") for dependency in dependencies} == {308769, 306612}
+                     and all(self.RelationType(dependency.get("relationType")) is self.RelationType.REQUIRED for dependency in dependencies),
                      "Required dependency differs.")
         status = self.FileStatus(remote["fileStatus"])
         self.require(status not in {self.FileStatus.CHANGES_REQUIRED, self.FileStatus.REJECTED,
@@ -319,12 +320,13 @@ class CurseForgeRelease:
             "changelog": self.manifest["changelog"], "changelogType": "markdown",
             "displayName": artifact["versionName"], "releaseType": "release",
             "isMarkedForManualRelease": False,
-            "relations": {"projects": [{"slug": "fabric-language-kotlin", "projectID": 308769, "type": "requiredDependency"}]},
+            "relations": {"projects": [{"slug": slug, "projectID": identifier, "type": "requiredDependency"}
+                                       for identifier, slug in ((308769, "fabric-language-kotlin"), (306612, "fabric-api"))]},
         }
         if tags is None:
-            metadata["gameVersionNames"] = [artifact["gameVersion"], "Fabric", "Client"]
+            metadata["gameVersionNames"] = [artifact["gameVersion"], "Fabric", "Client", "Server"]
         else:
-            metadata["gameVersions"] = [tags[artifact["gameVersion"]], tags["Fabric"], tags["Client"]]
+            metadata["gameVersions"] = [tags[artifact["gameVersion"]], tags["Fabric"], tags["Client"], tags["Server"]]
         boundary = "strata-" + uuid.uuid4().hex
         body = (
             f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\nContent-Type: application/json\r\n\r\n'.encode()

@@ -12,7 +12,7 @@
   ],
   "licenseId": "MIT",
   "clientSide": "required",
-  "serverSide": "unsupported",
+  "serverSide": "optional",
   "sourceUrl": "https://github.com/sya-ri/strata",
   "issuesUrl": "https://github.com/sya-ri/strata/issues",
   "documentationUrl": "https://gh.s7a.dev/strata/",

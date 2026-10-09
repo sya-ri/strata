@@ -103,12 +103,12 @@ internal class ModrinthApiClient(
                 "version_number" to artifact.versionNumber,
                 "changelog" to manifest.changelog,
                 "dependencies" to
-                    listOf(
+                    ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES.map { projectId ->
                         linkedMapOf(
-                            "project_id" to ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID,
+                            "project_id" to projectId,
                             "dependency_type" to DependencyType.REQUIRED.wireValue,
-                        ),
-                    ),
+                        )
+                    },
                 "game_versions" to listOf(artifact.gameVersion),
                 "version_type" to ReleaseType.RELEASE.wireValue,
                 "loaders" to listOf(Loader.FABRIC.wireValue),
@@ -117,7 +117,7 @@ internal class ModrinthApiClient(
                 "project_id" to manifest.projectId,
                 "file_parts" to listOf("primary"),
                 "primary_file" to "primary",
-                "environment" to VersionEnvironment.CLIENT_ONLY.wireValue,
+                "environment" to VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL.wireValue,
             )
         writeOnce(
             method = "POST",

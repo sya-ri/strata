@@ -1,4 +1,4 @@
-# Paper, Folia, and Velocity lifecycle events
+# Platform lifecycle events
 
 The platform API modules publish lifecycle notifications without exposing the transport implementation.
 Paper event classes live in `dev.s7a.strata.paper.event`; Velocity classes live in `dev.s7a.strata.velocity.event`.
@@ -38,15 +38,23 @@ Paper and Folia use ordinary Bukkit events with a separate handler list for each
 Paper delivers them on the primary server thread; Folia ordinarily delivers them on the player's entity region inside that player's UI execution owner.
 A Folia region migration preserves UI ownership without preserving a physical thread.
 Terminal notifications can occur during entity retirement or shutdown, where native world access is restricted; read event snapshots and do not assume the callback grants region ownership.
-External Folia state or session access must first reach the player's region and then enter `PaperUi.execute(player) { ... }`.
+External Folia state or session access must first reach the player's region and then enter `Strata.execute(player) { ... }`.
 Compile against `strata-paper-api`, declare the installed Strata plugin dependency, and register normal Bukkit listeners.
 
 Velocity submits ordinary event objects through its event manager without waiting for listeners on the UI worker.
 The order above describes submission order; asynchronous listener completion can overlap and must not be used as an ordering barrier.
 Player, owner, identity, presentation, category, capabilities, and reason describe the notification's snapshot.
-The `session` is a live execution-owner-confined handle: queue its property reads and operations through `VelocityUi.execute(ownerPlugin) { ... }`.
+The `session` is a live execution-owner-confined handle: queue its property reads and operations through `Strata.execute(ownerPlugin) { ... }`.
 Never block the UI worker waiting for an event listener or a returned future.
 Compile against `strata-velocity-api` and declare the installed `strata` plugin dependency.
 
 The [Paper guide](../guides/paper.md), [Velocity guide](../guides/velocity.md), and their compiled plugins show installation and public API use.
 The [remote protocol](remote-protocol.md) owns negotiation and acknowledgement details; [screens and state](../guides/screens-and-state.md) owns session controls and event-receiver lifetime.
+
+## Fabric servers
+
+`Strata.listen(server, ownerMod, listener)` publishes the same five committed transitions as `StrataUiEvent` variants with the authenticated `ServerPlayer`.
+Callbacks and live session access require the server execution owner.
+Subscriptions are closed explicitly, by owner release, or at server shutdown; listener failures do not undo transitions.
+Each logical server owns an independent connection/session lifetime.
+See the [Fabric server guide](../guides/fabric-server.md) for dependency and registration details.

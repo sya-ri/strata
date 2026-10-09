@@ -50,27 +50,29 @@ A confirmation screen combines text, buttons, and layout components into a reusa
 ## Installation
 
 <!-- strata-installation:start -->
-### Fabric client
+### Fabric client and server
 
-Players need the Strata Fabric runtime and Fabric Language Kotlin for both client-defined and server-driven UIs.
+Players need the Strata Fabric runtime, Fabric API, and Fabric Language Kotlin for both client-defined and server-driven UIs.
 Client Mod UI source needs only `strata-api` on its compile classpath.
-Install exactly one version-matched runtime as a separate client Fabric Mod together with Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
+Install exactly one version-matched runtime as a separate Fabric Mod together with Fabric API and Fabric Language Kotlin; do not bundle multiple versioned Strata runtimes.
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-api:0.2.2")
-    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.2.2")
+    compileOnly("dev.s7a.strata:strata-api:0.3.0")
+    modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:0.3.0")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
 ```
 
 The version-matched runtimes are also available from [Modrinth](https://modrinth.com/mod/strata-ui).
+For Fabric servers, install the same runtime and dependencies on the server and follow the [server guide](docs/guides/fabric-server.md).
 Declare it as a required dependency in the consuming Mod so `UiDefinition.open()` always has a presenter in production:
 
 ```json
 {
   "depends": {
-    "strata": ">=0.2.2"
+    "strata": ">=0.3.0"
   }
 }
 ```
@@ -83,8 +85,8 @@ The matching Fabric client Mod is required for every player using the UI.
 
 | Platform | Installed Strata plugin | Consumer dependency (`compileOnly`) |
 | --- | --- | --- |
-| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.2.2` |
-| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.2.2` |
+| [Paper / Folia](docs/guides/paper.md) | `strata-runtime-paper` | `dev.s7a.strata:strata-paper-api:0.3.0` |
+| [Velocity](docs/guides/velocity.md) | `strata-runtime-velocity` | `dev.s7a.strata:strata-velocity-api:0.3.0` |
 
 Add these repositories to either plugin's `build.gradle.kts`:
 
@@ -99,7 +101,7 @@ Paper / Folia dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-paper-api:0.2.2")
+    compileOnly("dev.s7a.strata:strata-paper-api:0.3.0")
     compileOnly("io.papermc.paper:paper-api:<paper-api-version>")
 }
 ```
@@ -108,7 +110,7 @@ Velocity dependencies:
 
 ```kotlin
 dependencies {
-    compileOnly("dev.s7a.strata:strata-velocity-api:0.2.2")
+    compileOnly("dev.s7a.strata:strata-velocity-api:0.3.0")
     compileOnly("com.velocitypowered:velocity-api:<velocity-api-version>")
 }
 ```
@@ -219,7 +221,7 @@ Apply Detekt with the compatible version from [Strata's version catalog](gradle/
 
 ```kotlin
 dependencies {
-    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.2.2")
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.3.0")
 }
 ```
 

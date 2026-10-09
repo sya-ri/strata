@@ -158,7 +158,8 @@ Review the guide's per-rule examples and detection limits alongside the actual c
 
 ## Local Fabric installation
 
-Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
+Install exactly one matching Strata Fabric runtime as a separate Mod together with Fabric API and Fabric Language Kotlin.
+The same runtime also supports dedicated and integrated servers; see [the Fabric server guide](https://github.com/sya-ri/strata/blob/master/docs/guides/fabric-server.md) for `Strata`.
 Use the component catalog for available primitives and the guides for composition and resource ownership.
 
 ```kotlin
@@ -166,6 +167,7 @@ dependencies {
     compileOnly("dev.s7a.strata:strata-api:$releaseVersion")
     modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:$releaseVersion")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
 ```
 
@@ -322,8 +324,8 @@ Read [remote extensions](remote-extensions.md) only when sharing custom projecti
         """| Host | Public opening API | State and handler owner |
 | --- | --- | --- |
 | Fabric | `UiDefinition.open()` | Client thread |
-| Paper / Folia | `PaperUi.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
-| Velocity | `VelocityUi.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
+| Paper / Folia | `Strata.open(ownerPlugin, player) { definition }` | Paper primary thread or the player's Folia region |
+| Velocity | `Strata.open(ownerPlugin, player) { definition }` | Strata's dedicated proxy UI thread |
 """
 
     private const val REMOTE_SETUP: String =
@@ -332,7 +334,7 @@ Read [remote extensions](remote-extensions.md) only when sharing custom projecti
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
 Consumer plugins compile against `dev.s7a.strata:strata-paper-api:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-velocity-api:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
-Players still install their matching Fabric runtime and Fabric Language Kotlin.
+Players install their matching Fabric runtime, Fabric API, and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
 Custom retained renderers, modifiers, or synchronous input implementations need their registered client extension in addition to Strata.
 Velocity can own screens without Strata on its backends; install the Paper plugin as well when a backend also owns screens.
@@ -342,10 +344,10 @@ The Paper guide includes a compiled typed-input screen; use these examples when 
 
 ### Opening, state, and lifecycle
 
-- On Paper's primary thread or the player's Folia region, inspect `PaperUi.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `PaperUi.open(ownerPlugin, player) { ... }`. On Folia, enter `PaperUi.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
-- On Velocity, inspect the future from `VelocityUi.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `VelocityUi.open`. Its future returns the session handle. Queue external state access with `VelocityUi.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
+- On Paper's primary thread or the player's Folia region, inspect `Strata.capabilities(player)` and create mutable state and a fresh definition inside the factory passed to `Strata.open(ownerPlugin, player) { ... }`. On Folia, enter `Strata.execute(player) { ... }` for external state access after scheduling onto that player. Do not share owner-confined state between players. Consuming plugins also declare `folia-supported: true`.
+- On Velocity, inspect the future from `Strata.capabilities(player)` and construct the definition and owner-thread state inside the factory passed to `Strata.open`. Its future returns the session handle. Queue external state access with `Strata.execute(ownerPlugin) { ... }`; never join another UI future from a handler or completion callback.
 - A null capability result means negotiation is incomplete or unavailable. Opening with an unsupported declaration returns a terminal session reason; do not silently omit missing components or extensions.
-- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties inside its execution owner, using `PaperUi.execute` on Folia; Velocity listeners use detached platform event fields or queue access through `VelocityUi.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `VelocityUi.release(ownerPlugin)`.
+- Retain the returned `UiSession` when status inspection or explicit `close()` is needed. Read live handle properties inside its execution owner, using `Strata.execute` on Folia; Velocity listeners use detached platform event fields or queue access through `Strata.execute`. Replacement, disconnect, and failures release its handlers, observations, and transfers. Paper plugin disable releases its owners; a Velocity consumer stopping early calls `Strata.release(ownerPlugin)`.
 - Keep database and network work off the UI owner thread. Publish asynchronous results through state sources or the host's state-update boundary; source notifications are queued and committed at the next session cutoff.
 
 ### Remote resources and client behavior

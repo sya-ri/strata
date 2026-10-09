@@ -26,7 +26,7 @@ internal enum class PaperPerformanceWorkload(
         val representatives: Map<String, String> =
             mapOf(
                 "host-api" to "org.bukkit.Bukkit",
-                "paper-api" to "dev.s7a.strata.paper.PaperUi",
+                "paper-api" to "dev.s7a.strata.paper.Strata",
                 "paper-runtime" to "dev.s7a.strata.runtime.paper.PaperScreens",
                 "api" to "dev.s7a.strata.ui.UiDefinition",
                 "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession",

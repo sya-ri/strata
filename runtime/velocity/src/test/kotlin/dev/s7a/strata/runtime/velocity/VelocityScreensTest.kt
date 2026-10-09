@@ -38,7 +38,7 @@ import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiPresentation
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataClientReadyEvent
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
@@ -69,14 +69,14 @@ internal class VelocityScreensTest {
         Harness().use { fixture ->
             fixture.negotiate()
             assertTrue(fixture.events.poll(5, TimeUnit.SECONDS) is StrataClientReadyEvent)
-            val handle = VelocityUi.open(fixture.owner, fixture.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }.get(5, TimeUnit.SECONDS)
+            val handle = Strata.open(fixture.owner, fixture.player) { UiDefinition(presentation = UiPresentation.Hud) { Spacer() } }.get(5, TimeUnit.SECONDS)
             val snapshot = fixture.nextMessage() as RemoteMessage.Snapshot
             assertTrue(fixture.events.isEmpty())
             fixture.acknowledge(snapshot)
             val opened = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiOpenedEvent
             assertEquals(handle, opened.session)
             assertEquals(UiPresentation.Hud, opened.presentation)
-            VelocityUi.execute(fixture.owner) { opened.session.close() }.get(5, TimeUnit.SECONDS)
+            Strata.execute(fixture.owner) { opened.session.close() }.get(5, TimeUnit.SECONDS)
             val closed = fixture.events.poll(5, TimeUnit.SECONDS) as StrataUiClosedEvent
             assertEquals(opened.identity, closed.identity)
             assertEquals(opened.ownerPlugin, closed.ownerPlugin)

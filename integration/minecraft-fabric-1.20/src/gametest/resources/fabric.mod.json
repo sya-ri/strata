@@ -4,13 +4,13 @@
   "version": "${version}",
   "name": "Strata Minecraft Fabric 1.20 Integration",
   "description": "Loaded-client integration verification for Strata on Minecraft 1.20.",
-  "environment": "client",
+  "environment": "*",
   "accessWidener": "strata-font-parity.accesswidener",
   "mixins": [
-    "strata.canvas.tests.mixins.json",
-    "strata.remote.tests.mixins.json"
+    "strata.canvas.tests.mixins.json"
   ],
   "entrypoints": {
+    "main": ["dev.s7a.strata.integration.minecraft.fabric.FabricServerUiAcceptance"],
     "client": [
       "dev.s7a.strata.integration.minecraft.fabric.RemoteNativeCanvasFixture",
       "dev.s7a.strata.integration.minecraft.fabric.PaperRemoteExtensionClient",

@@ -214,6 +214,7 @@ exclude:
       - runtime/minecraft-fabric-1.20.4/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftSkinBridge.java
       - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
+      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport.java
   # Qodana treats the Strata minecraft module as a runtime class source and reports its Kotlin and annotation dependencies as classpath overrides.
   # Exact loaded-client tests exercise these inventory bridges with the owning Minecraft runtime and dependency set.
   # The flattened remote module likewise misattributes the native payloads' compile-time nullability annotations; published remote JARs contain no annotation classes.
@@ -222,20 +223,18 @@ exclude:
     paths:
       - runtime/shared/minecraft-fabric/screen/gui-graphics/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
       - runtime/shared/minecraft-fabric/screen/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricMinecraftInventoryBridge.java
-      - runtime/shared/minecraft-fabric/transport/custom-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
-      - runtime/shared/minecraft-fabric/transport/custom-payload/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
       - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemotePayload.java
-      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistration.java
-      - runtime/shared/minecraft-fabric/transport/stream-codec/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteRegistrationCodec.java
-      - runtime/shared/minecraft-fabric/hud/float-delta/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/shared/minecraft-fabric/hud/delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/shared/minecraft-fabric/hud/gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
-      - runtime/shared/minecraft-fabric/hud/hud-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricHudMixin.java
+      - runtime/shared/minecraft-fabric/hud/float-delta/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
+      - runtime/shared/minecraft-fabric/hud/delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
+      - runtime/shared/minecraft-fabric/hud/layer-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
+      - runtime/shared/minecraft-fabric/hud/registry-delta-tracker/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
+      - runtime/shared/minecraft-fabric/hud/registry-gui-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
+      - runtime/shared/minecraft-fabric/hud/registry-hud-extractor/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/FabricHud.java
   # Mixin target self-casts are valid only after bytecode transformation, which Qodana deliberately does not execute.
   - name: DataFlowIssue
     paths:
       - runtime/shared/minecraft-fabric/lifecycle/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftLifetimeMixin.java
-      - runtime/shared/minecraft-fabric/transport/identifier-buffer/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/remote/FabricRemoteReceiveMixin.java
+      - runtime/shared/minecraft-fabric/server/common/src/main/java/dev/s7a/strata/runtime/minecraft/fabric/mixin/server/FabricServerMenuMixin.java
   # Native focus callbacks retain defensive initialization guards across all linked Minecraft owners despite their annotated non-null facade.
   - name: ConstantValue
     paths:
@@ -265,6 +264,11 @@ exclude:
   # Canonical Canvas and sampled-image roots are compiled into multiple exact-version source sets; calls resolved in another assigned owner or driver family therefore appear unused.
   - name: UnusedSymbol
     paths:
+      # Fabric metadata, callbacks, and compiled consumers exercise these shared server roots across exact-version IDEA owners.
+      - runtime/shared/minecraft-fabric/server/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/Strata.kt
+      - runtime/shared/minecraft-fabric/server/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/StrataFabric.kt
+      - runtime/shared/minecraft-fabric/server/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiService.kt
+      - runtime/shared/minecraft-fabric/server/common/src/main/kotlin/dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiServices.kt
       # Paper invokes annotated event handlers reflectively; the external example plugin exercises the public registration API across linked roots.
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/StrataPlugin.kt
       - runtime/paper/src/main/kotlin/dev/s7a/strata/runtime/paper/PaperScreens.kt

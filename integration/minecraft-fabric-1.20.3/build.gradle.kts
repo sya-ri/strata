@@ -97,6 +97,8 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
     description = "Runs standalone loaded-client verification from the actual remapped integration and runtime mod jars."
     providers.gradleProperty("strata.paper.address").orNull?.let { jvmArgs.add("-Dstrata.paper.address=$it") }
     providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { jvmArgs.add("-Dstrata.fabric.address=$it") }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { jvmArgs.add("-Dstrata.fabric.run=$it") }
     dependsOn(deleteProductionGameTestRunDir, ":runtime:minecraft-fabric-1.20.3:remapJar")
     mods.from(runtimeRemappedJar)
     runDir.set(productionRunDirectory)
@@ -116,6 +118,8 @@ tasks.matching { task -> task.name == "koverGenerateArtifact" }.configureEach {
 tasks.named<JavaExec>("runClientGameTest") {
     providers.gradleProperty("strata.paper.address").orNull?.let { systemProperty("strata.paper.address", it) }
     providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { systemProperty("strata.fabric.address", it) }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { systemProperty("strata.fabric.run", it) }
     val verificationOutput = layout.buildDirectory.dir("minecraft-verification")
     inputs.property("strataMinecraftLegacyOutput", verificationOutput.map { it.asFile.absolutePath })
     doFirst {
