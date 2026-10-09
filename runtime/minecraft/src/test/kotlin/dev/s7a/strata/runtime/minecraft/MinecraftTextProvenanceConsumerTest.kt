@@ -128,7 +128,14 @@ internal class MinecraftTextProvenanceConsumerTest {
                     var width = 0f
                     for (advance in values) width += advance
                     val truncated = width.toInt()
-                    val expected = if (saturating) ceil(width.toDouble()).toInt() else if (truncated.toFloat() < width) truncated + 1 else truncated
+                    val expected =
+                        if (saturating) {
+                            ceil(width.toDouble()).toInt()
+                        } else if (truncated.toFloat() < width) {
+                            truncated + 1
+                        } else {
+                            truncated
+                        }
                     assertEquals(expected, run.nativeWidth)
                     assertEquals(IntSize(maxOf(0, expected), 9), run.size)
                     assertEquals(scalars + scalars, fixture.calls.map { it.second })
@@ -177,12 +184,30 @@ internal class MinecraftTextProvenanceConsumerTest {
                     first.update(description(fixture, replacement, policy))
                     val new = frame(first, 32)
                     assertNotEquals(old, new)
-                    assertEquals(replacement, first.semantics().single().semantics.label)
-                    assertEquals(initial, second.semantics().single().semantics.label)
+                    assertEquals(
+                        replacement,
+                        first
+                            .semantics()
+                            .single()
+                            .semantics.label,
+                    )
+                    assertEquals(
+                        initial,
+                        second
+                            .semantics()
+                            .single()
+                            .semantics.label,
+                    )
                     assertEquals(independent, frame(second, 32))
                     assertArrayEquals(oldPixels, rasterizeHeadless(old, IntSize(32, 32)).copyArgb())
                     frame(first, 7)
-                    assertEquals(replacement, first.semantics().single().semantics.label)
+                    assertEquals(
+                        replacement,
+                        first
+                            .semantics()
+                            .single()
+                            .semantics.label,
+                    )
                     first.close()
                     assertEquals(independent, frame(second, 32))
                     second.close()
@@ -210,12 +235,11 @@ internal class MinecraftTextProvenanceConsumerTest {
         fixture: MinecraftTextProvenanceFontFixture,
         text: UiText,
         policy: TextLayout.Multiline,
-    ) =
-        MinecraftProfileImplementation.createEvaluator(
-            fixture.profile,
-            { Text(text, policy, TextStyle.ContainerLabel, Modifier.Empty, key = ElementKey(Unit)) },
-            textRenderer = fixture.renderer,
-        )()
+    ) = MinecraftProfileImplementation.createEvaluator(
+        fixture.profile,
+        { Text(text, policy, TextStyle.ContainerLabel, Modifier.Empty, key = ElementKey(Unit)) },
+        textRenderer = fixture.renderer,
+    )()
 
     private fun frame(
         tree: UiTree,

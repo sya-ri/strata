@@ -38,7 +38,13 @@ internal class MinecraftTextProvenanceEditingTest {
                 caret(fixture.key(tree, KeyCode.Left), 7, 4)
                 val committed = fixture.input(tree, TextInputEvent.Character('日'.code))
                 assertEquals("A日🙂B", state.value)
-                assertEquals(UiText.Literal("A日🙂B"), tree.semantics().single().semantics.value)
+                assertEquals(
+                    UiText.Literal("A日🙂B"),
+                    tree
+                        .semantics()
+                        .single()
+                        .semantics.value,
+                )
                 val oldPixels = rasterizeHeadless(committed, IntSize(32, 26)).copyArgb()
                 val preedit = fixture.input(tree, TextInputEvent.Preedit("한🙂", 1, listOf("한", "🙂"), 0))
                 assertEquals("A日🙂B", state.value)
@@ -78,7 +84,13 @@ internal class MinecraftTextProvenanceEditingTest {
                 fixture.frame(tree, wide)
                 state.scrollState.scrollTo(9.0)
                 val scrolled = fixture.frame(tree, wide)
-                assertEquals(UiText.Literal(state.value), tree.semantics().single().semantics.value)
+                assertEquals(
+                    UiText.Literal(state.value),
+                    tree
+                        .semantics()
+                        .single()
+                        .semantics.value,
+                )
                 assertFalse(scrolled == old)
                 assertArrayEquals(pixels, rasterizeHeadless(old, narrow).copyArgb())
                 state.scrollState.scrollTo(0.0)
