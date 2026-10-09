@@ -9,6 +9,7 @@ internal object NativePacingEvidence {
     /**
      * Actual supported native options; unavailable selectors can only satisfy the formal default fixture.
      */
+    @Suppress("unused") // Receipt-boundary decoding enumerates every serialized native option.
     private enum class Inactivity {
         MINIMIZED,
         AFK,
@@ -18,6 +19,7 @@ internal object NativePacingEvidence {
     /**
      * Actual compiled native reasons; a missing reason is explicit rather than inferred from frame duration.
      */
+    @Suppress("unused") // Receipt-boundary decoding enumerates every serialized native reason.
     private enum class Reason {
         NONE,
         WINDOW_ICONIFIED,
