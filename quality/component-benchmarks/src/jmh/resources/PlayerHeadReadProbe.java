@@ -137,7 +137,12 @@ public final class PlayerHeadReadProbe {
                         }
                         builder.with(element);
                     });
-                byte[] instrumented = classFile.transformClass(model, readTransform.andThen(constructorTransform));
+                // JDK 25 intersects chained method filters, so apply these disjoint filters in separate passes.
+                byte[] readInstrumented = classFile.transformClass(model, readTransform);
+                byte[] instrumented = classFile.transformClass(classFile.parse(readInstrumented), constructorTransform);
+                if (Arrays.equals(original, readInstrumented) || Arrays.equals(readInstrumented, instrumented)) {
+                    throw new IllegalStateException("Both image read and construction instrumentation must change the actual bytecode.");
+                }
                 transformed++;
                 System.out.println("playerHeadReadProbe,imageOrigin=" + resource + ",originalSha256=" + digest(original) + ",instrumentedSha256=" + digest(instrumented));
                 return defineClass(name, instrumented, 0, instrumented.length);
