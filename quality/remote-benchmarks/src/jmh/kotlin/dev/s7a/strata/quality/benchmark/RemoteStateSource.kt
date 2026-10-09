@@ -10,6 +10,7 @@ import dev.s7a.strata.state.StateSubscription
  */
 internal class RemoteStateSource<T>(
     initial: T,
+    private val released: () -> Unit = {},
 ) : StateSource<T> {
     private var snapshot = StateSnapshot(StateRevision(0), initial)
     private val observers = linkedMapOf<Any, (StateSnapshot<T>) -> Unit>()
@@ -19,10 +20,18 @@ internal class RemoteStateSource<T>(
      */
     internal val subscriptions: Int get() = observers.size
 
+    /**
+     * Current real value, used to publish a changed fixture declaration on every update.
+     */
+    internal val value: T get() = snapshot.value
+
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
         val token = Any()
         observers[token] = observer
-        return StateSubscription(snapshot) { observers.remove(token).let { removed -> check(removed == null || removed === observer) } }
+        return StateSubscription(snapshot) {
+            observers.remove(token).let { removed -> check(removed == null || removed === observer) }
+            released()
+        }
     }
 
     /**

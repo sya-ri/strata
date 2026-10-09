@@ -645,6 +645,33 @@ Decoding uses one invocation-local JDK ByteBuffer with explicit big-endian order
 Truncated primitives still fail as malformed values, and trailing bytes remain rejected.
 Primitive output uses the standard DataOutputStream format over exclusively owned bounded storage, with checked bulk copies and no per-byte monitor acquisition.
 
+### Operation-local remote membership
+
+Each per-peer service tick owns its necessary immutable session membership capture and lends it once to that same invocation's refresh.
+Input dispatch precedes the capture; all originally captured sessions tick in order, the node budget reads live membership, and Ready runs before refresh decides eligibility.
+A reference-identity generation changes after every successful insertion, replacement or removal and before callbacks can reenter.
+The generation retains no payload or owner and introduces no counter overflow.
+Unchanged membership shares the capture; invalidation releases optional reuse ownership before the ordinary current capture is created.
+Refresh always reads current session, handle and applied presentation values, and later callbacks do not replace its in-flight iteration.
+Independent open, receive and nested refresh operations capture their own membership.
+
+The borrow belongs only to the active tick and its existing logical execution owner, including allowed serial thread migration.
+It is released on normal, exceptional and terminal unwind and is never stored on a service or Peer field.
+Shrink and reentry may overlap original and current captures, so the bound is the sum of unique payloads across active invocations rather than the current map size.
+The identity marker's mutation cost, the invocation holder and the longer capture lifetime belong in allocation, churn, lifecycle and retention review.
+This is operation-local ownership of authoritative membership, with no persistent membership cache or traversal history.
+
+`RemoteServiceBenchmark` uses the actual service discovery, negotiation, public definitions and authenticated acknowledgements.
+Its separate stable, one-source, all-source, distinct-peer churn and lifecycle operations preserve empty, singleton and many-session controls.
+The production eight-frame flush budget fixes delivery to one, two or three ticks per phase for up to eight, sixteen or seventeen sessions, without readiness retries or a raised production limit.
+Churn therefore includes five, six or seven complete ticks and lifecycle includes six, seven or eight; every extra tick and its real work belongs to the operation.
+Select its five methods through the existing remote `strata.performance.workloads` option and collect both modes three times per actual runtime side with the shared kit.
+Its generated 116-case timed registry and independent finite callback/failure/release registry are separate admission gates.
+Untimed verification records actual messages, packet attempts, lifecycle events and failures in their combined encounter order for every topology, including failed prefixes.
+Public handle/subscription phases use replayable detached deltas, so repeated open phases do not store a full copy of every unchanged handle.
+JMH fleets keep these inspectors absent; an emitted prefix is not a passing process or parity receipt.
+JMH elapsed time, normalized allocation and logical membership positions describe different costs; elapsed scores do not supply actual thread CPU.
+
 ### Player-skin lifecycle
 
 The asynchronous skin completion path must retain only its detached lifecycle target and must not capture the screen, platform bridge, or binding owner after close.

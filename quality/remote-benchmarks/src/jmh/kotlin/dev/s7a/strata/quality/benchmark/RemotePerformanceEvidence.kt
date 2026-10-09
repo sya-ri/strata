@@ -1,10 +1,10 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmPerformanceInputs
 import dev.s7a.strata.performance.PerformanceSelection
-import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Mode
 import java.nio.file.Path
 
@@ -20,9 +20,16 @@ public object RemotePerformanceEvidence {
         require(2 < args.size)
         RemoteWorkEvidence.verifySurface()
         val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
-        val fixtures = if (sessions) listOf(RemoteSessionBenchmark::class.java) else listOf(RemoteProtocolBenchmark::class.java)
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
         val requested = System.getProperty("strata.performance.workloads")
+        val methods = if (sessions.not() && requested != null) JmhFixtureSelection.methods(JmhFixtureSelection.all(), requested) else null
+        val fixtures =
+            when {
+                sessions -> listOf(RemoteSessionBenchmark::class.java)
+                methods != null -> JmhFixtureSelection.all().filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
+                else -> listOf(RemoteProtocolBenchmark::class.java)
+            }
+        JmhFixtureSelection.verifyWork(fixtures)
         val parameters =
             if (sessions) {
                 val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
@@ -34,18 +41,13 @@ public object RemotePerformanceEvidence {
             }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val includes =
-            if (sessions || requested == null) {
+            if (methods == null) {
                 listOf(args[2])
             } else {
-                val fixture = RemoteProtocolBenchmark::class.java
-                val methods =
-                    fixture.declaredMethods
-                        .filter { it.isAnnotationPresent(Benchmark::class.java) }
-                        .map { "${fixture.simpleName}.${it.name}" }
-                        .sorted()
-                        .toSet()
-                PerformanceSelection(methods, requested).ids.map { Regex.escape("${fixture.packageName}.$it") }
+                methods.map { "^${Regex.escape(it)}$" }
             }
+        val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
+        JmhFixtureSelection.verifyIncludes(expected, includes)
         val options = includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
         JmhPerformanceRunner.run(
             options.toTypedArray(),
@@ -53,7 +55,7 @@ public object RemotePerformanceEvidence {
             mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteTree"),
             Path.of(args[0]),
             args[1].toInt(),
-            JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes),
+            expected,
             JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI())),
         )
     }
