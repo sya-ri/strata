@@ -398,7 +398,8 @@ internal object SampledImageRasterizer {
                 val cached = row[index]
                 if (0 <= cached) return cached
             }
-            val contribution = contribution(source, shift, sourceAlpha, sourceRow)
+            val contribution =
+                if (sourceRow != null) sourceRow[index] else contribution(source, shift, sourceAlpha)
             val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
             if (row != null) row[index] = result
             return result
@@ -408,9 +409,7 @@ internal object SampledImageRasterizer {
             source: Int,
             shift: Int,
             sourceAlpha: Float,
-            sourceRow: FloatArray?,
         ): Float {
-            sourceRow?.let { return it[(2 - shift / 8) * 256 + (source ushr shift and 255)] }
             val channelTint =
                 when (shift) {
                     16 -> red
