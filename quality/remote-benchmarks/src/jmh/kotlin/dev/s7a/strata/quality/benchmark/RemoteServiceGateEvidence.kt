@@ -15,6 +15,7 @@ import dev.s7a.strata.runtime.remote.RemoteSessionStatus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.ui.UiPresentation
+import java.lang.ref.Reference
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -30,6 +31,7 @@ internal object RemoteServiceGateEvidence {
      * Runs the finite registry before formal collection, independently of the timed case count.
      */
     fun verify() {
+        verifyTerminalOracleControls()
         val cases = RemoteServiceGate.cases()
         check(cases.size == 44 && cases.toSet().size == cases.size)
         check(cases.map { it.gate }.toSet() == RemoteServiceGate.entries.toSet())
@@ -57,7 +59,7 @@ internal object RemoteServiceGateEvidence {
                             fleet.listener = { player, event -> trace.event(player, event) }
                             fleet.close()
                             fleet.verifyClosed()
-                            inspectTerminalFields(fleet)
+                            inspectTerminalFields(fleet.service)
                             trace.phase(fleet)
                         }
                         ownership.verifyReleased()
@@ -580,16 +582,120 @@ internal object RemoteServiceGateEvidence {
         return WeakReference(owner)
     }
 
-    private fun inspectTerminalFields(fleet: RemoteServiceFleet) {
-        val field = fleet.service.javaClass.getDeclaredField("peers")
+    /**
+     * Exercises the same terminal predicate with bounded probes before the unchanged real-protocol registry.
+     * Negative controls require the exact rejection reason so unrelated reflection or lifecycle failures cannot pass.
+     */
+    private fun verifyTerminalOracleControls() {
+        val empty =
+            object {
+                val peers = emptyMap<Int, Any>()
+                val transitions = ArrayDeque<() -> Unit>()
+            }
+        check(empty.peers.isEmpty() && empty.transitions.isEmpty())
+        inspectTerminalFields(empty)
+        empty.transitions.addLast({})
+        check(empty.transitions.size == 1)
+        expectTerminalRejection("Terminal dispatch queue retains callbacks.") { inspectTerminalFields(empty) }
+
+        val wrongQueue =
+            object {
+                val peers = emptyMap<Int, Any>()
+                val transitions = mutableListOf<Any>()
+            }
+        check(wrongQueue.peers.isEmpty() && wrongQueue.transitions.isEmpty())
+        expectTerminalRejection("Terminal dispatch queue type changed.") { inspectTerminalFields(wrongQueue) }
+
+        val list =
+            object {
+                val peers = emptyMap<Int, Any>()
+                val transitions = ArrayDeque<() -> Unit>()
+                val snapshot = emptyList<Any>()
+            }
+        check(list.peers.isEmpty() && list.transitions.isEmpty() && list.snapshot.isEmpty())
+        expectTerminalRejection("Terminal service retains membership storage.") { inspectTerminalFields(list) }
+
+        val holder = TerminalHolderControl()
+        check(holder.peers.isEmpty() && holder.transitions.isEmpty())
+        check(holder.retained.owner === holder.owner)
+        expectTerminalRejection("Terminal service retains membership storage.") { inspectTerminalFields(holder) }
+        verifyRetainedOwnerControl()
+        println(Gson().toJson(mapOf("terminalOracleControls" to "Passed", "positiveControls" to 1, "negativeControls" to 5)))
+    }
+
+    private fun verifyRetainedOwnerControl() {
+        val owner = RuntimeExecutionOwner()
+        val pluginOwner = Any()
+        val ownership = RemoteServiceOwnershipAudit()
+        val fleet = owner.run { RemoteServiceFleet(RemoteServiceShape(1, 0, 0)) }
+        try {
+            owner.run {
+                fleet.establish()
+                fleet.open(0, UiPresentation.Hud, owner = pluginOwner)
+                check(fleet.handles.size == 1)
+                ownership.capture(fleet)
+                check(ownership.observedCount == 3)
+                fleet.close()
+                fleet.verifyClosed()
+                inspectTerminalFields(fleet.service)
+            }
+            expectTerminalRejection("A retired production Peer, Active or plugin owner remains reachable") {
+                ownership.verifyReleased()
+            }
+        } finally {
+            try {
+                owner.run(fleet::close)
+            } finally {
+                // Keep the actual captured plugin owner alive throughout the unchanged weak-release audit.
+                Reference.reachabilityFence(pluginOwner)
+            }
+        }
+    }
+
+    private fun expectTerminalRejection(
+        reason: String,
+        action: () -> Unit,
+    ) {
+        val failure = runCatching(action).exceptionOrNull()
+        check(failure is IllegalStateException && failure.message == reason) { "Terminal control did not reject for the expected reason: $reason" }
+    }
+
+    /**
+     * Rejects membership retention while permitting only the existing exact, empty dispatch deque.
+     * Reflection reads production fields without injecting, replacing or draining their contents.
+     */
+    private fun inspectTerminalFields(service: Any) {
+        val field = service.javaClass.getDeclaredField("peers")
         field.isAccessible = true
-        check((field.get(fleet.service) as Map<*, *>).isEmpty())
+        check((field.get(service) as Map<*, *>).isEmpty()) { "Terminal service retains peers." }
+        // Kotlin's dispatch deque implements List, so inspect its terminal contents separately from snapshot fields.
+        val transitions = service.javaClass.getDeclaredField("transitions")
+        check(transitions.type == ArrayDeque::class.java) { "Terminal dispatch queue type changed." }
+        transitions.isAccessible = true
+        check((transitions.get(service) as ArrayDeque<*>).isEmpty()) { "Terminal dispatch queue retains callbacks." }
         val nested =
-            fleet.service.javaClass.declaredClasses
+            service.javaClass.declaredClasses
                 .toSet()
         check(
-            fleet.service.javaClass.declaredFields
-                .none { it.type in nested || List::class.java.isAssignableFrom(it.type) },
+            service.javaClass.declaredFields
+                .none { it.type in nested || (it != transitions && List::class.java.isAssignableFrom(it.type)) },
+        ) { "Terminal service retains membership storage." }
+    }
+
+    /**
+     * A deliberate nested owner holder that the production structural predicate must reject.
+     */
+    private class TerminalHolderControl {
+        val peers = emptyMap<Int, Any>()
+        val transitions = ArrayDeque<() -> Unit>()
+        val owner = Any()
+        val retained = Holder(owner)
+
+        /**
+         * Retains one deliberate strong owner for the structural rejection control.
+         */
+        class Holder(
+            val owner: Any,
         )
     }
 }
