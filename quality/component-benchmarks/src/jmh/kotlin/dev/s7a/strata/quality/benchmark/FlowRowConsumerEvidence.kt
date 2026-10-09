@@ -72,4 +72,3 @@ internal object FlowRowConsumerEvidence {
         check(expected.size == actual.size && expected.copyArgb().contentEquals(actual.copyArgb()))
     }
 }
-

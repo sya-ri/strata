@@ -18,4 +18,3 @@ internal object FlowMeasurementCorpus {
         check(FlowMeasurementCase.entries.size == 70)
     }
 }
-
