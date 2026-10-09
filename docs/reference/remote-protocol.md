@@ -70,6 +70,13 @@ The ingress poll observes emptiness under the queue lock, without a separate emp
 Ending a drain still permits session state cutoffs, gap and assembly checks, negotiation deadlines, and bounded outgoing flush for that tick.
 Duplicate sequences are ignored; conflicting queued duplicates fail validation.
 Public `RemotePacket.decode` detaches its inner fragment, and `RemotePacketStream.offer(Frame, nowMillis)` snapshots arbitrary public frame storage before queue admission.
+Velocity's public native-message callback uses opt-in `RemotePacket.inspect` to obtain typed kind/address metadata without an unused owned inner fragment.
+Inspection and public decoding share one canonical outer-header validator, including exact length/tag/endpoint/sequence checks and failure order; inner bytes remain opaque at this boundary.
+The routing result contains only immutable address metadata and retains no native array, buffer, event, player, backend or service.
+The handler keeps its existing channel and handled transitions, authentication, routing lock and current-backend reference check.
+Relay writes use the original accessor-returned native bytes; proxy ingress keeps the existing defensive inbox snapshot and defers endpoint decoding to its UI owner.
+Malformed client input retains the empty-frame inbox failure path; malformed backend input is handled and dropped.
+Public full decoding continues producing a detached complete fragment for consumers that need its payload.
 The common server and shared Fabric owner decoders use the opt-in `RemotePacketAdmission` handle for a fresh private fragment instead.
 Only decoding native bytes creates that handle; no public Frame or externally aliased payload can become a transferable handle.
 The decoder still copies out of the native envelope, and the asynchronous ingress inbox still snapshots producer input.

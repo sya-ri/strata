@@ -503,6 +503,7 @@ dev.s7a.strata.runtime.remote.RemotePacket$Companion#method:17:decode:([B)Ldev/s
 dev.s7a.strata.runtime.remote.RemotePacket$Companion#method:17:encode:(Ldev/s7a/strata/runtime/remote/RemotePacket;)[B
 dev.s7a.strata.runtime.remote.RemotePacket$Companion#method:17:getEnvelopeBytes$dev_s7a_strata_remote:()I
 dev.s7a.strata.runtime.remote.RemotePacket$Companion#method:17:getLimits:()Ldev/s7a/strata/runtime/remote/RemoteLimits;
+dev.s7a.strata.runtime.remote.RemotePacket$Companion#method:17:inspect:([B)Ldev/s7a/strata/runtime/remote/RemotePacketRoute;
 dev.s7a.strata.runtime.remote.RemotePacket$Companion#type:25:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemotePacket$Companion$WhenMappings#type:4121:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemotePacket$Discovery#field:25:INSTANCE:Ldev/s7a/strata/runtime/remote/RemotePacket$Discovery;
@@ -529,6 +530,15 @@ dev.s7a.strata.runtime.remote.RemotePacketAdmission$Kind#method:9:getEntries:()L
 dev.s7a.strata.runtime.remote.RemotePacketAdmission$Kind#method:9:valueOf:(Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
 dev.s7a.strata.runtime.remote.RemotePacketAdmission$Kind#method:9:values:()[Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
 dev.s7a.strata.runtime.remote.RemotePacketAdmission$Kind#type:16409:java.lang.Enum:
+dev.s7a.strata.runtime.remote.RemotePacketRoute#type:1537::
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Discovery#field:25:INSTANCE:Ldev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery;
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Discovery#method:1:equals:(Ljava/lang/Object;)Z
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Discovery#method:1:hashCode:()I
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Discovery#method:1:toString:()Ljava/lang/String;
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Discovery#type:25:java.lang.Object:dev.s7a.strata.runtime.remote.RemotePacketRoute
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Frame#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteAddress;)V
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Frame#method:17:getAddress:()Ldev/s7a/strata/runtime/remote/RemoteAddress;
+dev.s7a.strata.runtime.remote.RemotePacketRoute$Frame#type:25:java.lang.Object:dev.s7a.strata.runtime.remote.RemotePacketRoute
 dev.s7a.strata.runtime.remote.RemotePacketStream#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteAddress;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;)V
 dev.s7a.strata.runtime.remote.RemotePacketStream#method:17:checkExecutionOwner$dev_s7a_strata_remote:()V
 dev.s7a.strata.runtime.remote.RemotePacketStream#method:17:drain:(JILkotlin/jvm/functions/Function1;)V

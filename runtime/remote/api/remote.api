@@ -579,6 +579,7 @@ public final class dev/s7a/strata/runtime/remote/RemotePacket$Companion {
 	public final fun decode ([B)Ldev/s7a/strata/runtime/remote/RemotePacket;
 	public final fun encode (Ldev/s7a/strata/runtime/remote/RemotePacket;)[B
 	public final fun getLimits ()Ldev/s7a/strata/runtime/remote/RemoteLimits;
+	public final fun inspect ([B)Ldev/s7a/strata/runtime/remote/RemotePacketRoute;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemotePacket$Discovery : dev/s7a/strata/runtime/remote/RemotePacket {
@@ -612,6 +613,20 @@ public final class dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind : ja
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
 	public static fun values ()[Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+}
+
+public abstract interface class dev/s7a/strata/runtime/remote/RemotePacketRoute {
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery : dev/s7a/strata/runtime/remote/RemotePacketRoute {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/remote/RemotePacketRoute$Frame : dev/s7a/strata/runtime/remote/RemotePacketRoute {
+	public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
 }
 
 public final class dev/s7a/strata/runtime/remote/RemotePacketStream : java/lang/AutoCloseable {

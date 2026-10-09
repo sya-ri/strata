@@ -6326,6 +6326,7 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Companion#public final fun decode ([B)Ldev/s7a/strata/runtime/remote/RemotePacket;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Companion#public final fun encode (Ldev/s7a/strata/runtime/remote/RemotePacket;)[B
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Companion#public final fun getLimits ()Ldev/s7a/strata/runtime/remote/RemoteLimits;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Companion#public final fun inspect ([B)Ldev/s7a/strata/runtime/remote/RemotePacketRoute;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Discovery#public final class dev/s7a/strata/runtime/remote/RemotePacket$Discovery : dev/s7a/strata/runtime/remote/RemotePacket {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Discovery#public fun equals (Ljava/lang/Object;)Z
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Discovery#public fun hashCode ()I
@@ -6349,6 +6350,14 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun getEntries ()Lkotlin/enums/EnumEntries;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun values ()[Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute#public abstract interface class dev/s7a/strata/runtime/remote/RemotePacketRoute {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery#public final class dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery : dev/s7a/strata/runtime/remote/RemotePacketRoute {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery#public fun equals (Ljava/lang/Object;)Z
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery#public fun hashCode ()I
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery#public fun toString ()Ljava/lang/String;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery#public static final field INSTANCE Ldev/s7a/strata/runtime/remote/RemotePacketRoute$Discovery;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Frame#public final class dev/s7a/strata/runtime/remote/RemotePacketRoute$Frame : dev/s7a/strata/runtime/remote/RemotePacketRoute {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketRoute$Frame#public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final class dev/s7a/strata/runtime/remote/RemotePacketStream : java/lang/AutoCloseable {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun drain (JILkotlin/jvm/functions/Function1;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
