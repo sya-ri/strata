@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.file.Files
@@ -93,10 +94,12 @@ internal object JvmEvidenceFiles {
 
     /**
      * Recomputes the same unsigned-UTF-8 class tree used by loaded-origin verification.
+     * This traversal owns bounded read scratch and verifies complete actual bytes against each declared entry size.
      */
     internal fun classTree(path: Path): JsonObject {
         val entries = ClassArchiveInventory.entries(path, 16_384, 8L * 1024 * 1024)
         val tree = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var total = 0L
         ZipFile(path.toFile()).use { archive ->
             entries.forEach { name ->
@@ -104,9 +107,7 @@ internal object JvmEvidenceFiles {
                 require(0 <= entry.size)
                 total = Math.addExact(total, entry.size)
                 require(total <= 64L * 1024 * 1024) { "Oversized preserved class tree" }
-                val bytes = archive.getInputStream(entry).use { it.readNBytes(8 * 1024 * 1024 + 1) }
-                require(bytes.size.toLong() == entry.size && bytes.size <= 8 * 1024 * 1024) { "Invalid preserved class resource size" }
-                val hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
+                val hash = archive.getInputStream(entry).use { classHash(it, entry.size, buffer) }
                 tree.update("$name=$hash\n".toByteArray(Charsets.UTF_8))
             }
         }
@@ -117,5 +118,21 @@ internal object JvmEvidenceFiles {
             addProperty("bytes", total)
             addProperty("sha256", HexFormat.of().formatHex(tree.digest()))
         }
+    }
+
+    private fun classHash(input: InputStream, expectedBytes: Long, buffer: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val maximum = 8 * 1024 * 1024
+        var bytes = 0L
+        while (true) {
+            val remaining = maximum + 1L - bytes
+            val count = input.readNBytes(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
+            if (count == 0) break
+            bytes += count
+            require(bytes <= maximum) { "Invalid preserved class resource size" }
+            digest.update(buffer, 0, count)
+        }
+        require(bytes == expectedBytes) { "Invalid preserved class resource size" }
+        return HexFormat.of().formatHex(digest.digest())
     }
 }

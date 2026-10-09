@@ -193,6 +193,10 @@ Historical evidence keeps its original collector and workload contract; field-na
 
 Evidence processing uses Java and the JVM testkit; Python is not a requirement and no Python compatibility package is shipped.
 CPU and native reports use `LoadedArtifactMetadata` directly; historical field-name projections and distribution adapters are removed.
+Each synchronous entry traversal and loaded class-tree capture owns one bounded read buffer; nested or concurrent calls own independent scratch and independent resource digests.
+Preserved class-tree verification streams every entry to EOF under the existing maximum-plus-one, declared-size, per-entry, total-byte and entry-count gates instead of materializing each complete class.
+Digest framing, canonical ordering, lower-case SHA-256 encoding, origin checks and unavailable/error behavior remain unchanged.
+These traversal helpers retain no input, archive, class loader or scratch for a later invocation.
 Consumers preserve the kit's distribution fields and unavailable values without translating them into an older schema.
 `JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
 Phase indexing returns canonical JSON text tuples, independent of parsed versus constructed number types and object property order.
@@ -508,3 +512,27 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+## Artifact provenance hashing workload
+
+The provenance consumer keeps the measured library separate from the outer collector because the testkit itself is the optimization target.
+`performanceFixtureJar` packages compiled consumer classes without embedding their measured libraries or controls. The generic `runPerformanceEvidence` task selects `strata.performance.evidenceMain` and reads `strata.performance.evidenceArguments` as UTF-8, one literal argument per line. New consumer mains do not require another build-script or CI registration. Run `dev.s7a.strata.quality.benchmark.ProvenanceHashingCorpus` with one fresh output directory to construct this corpus outside measurement.
+The corpus records independent digest framing, physical input identities, 55 measured rows and three untimed rejected controls.
+The four traversal boundaries retain N=1/32/1024/4096 short, mixed and exact 8,191/8,192/8,193-byte distributions plus a large-entry control.
+Single-file and resource-selection controls are separate operations.
+Empty directories and empty loaded/preserved class archives are rejected by their actual consumer boundaries; the internal empty-entry golden is a correctness test, not an admitted public directory measurement.
+Executable class templates are JDK-compiled and their same-width names are replaced during construction; the consumer defines every resulting class without initialization before timing.
+
+Freeze the fixture JAR, one outer testkit JAR, the external control-library properties manifest and complete corpus before either side runs.
+Frozen execution uses `strata.performance.evidenceFixture`, `evidenceCollector` and `evidenceControls` under the `strata.performance` prefix. Select `dev.s7a.strata.quality.benchmark.ProvenanceHashingEvidence`; its collection argument file contains `collect`, target JAR, control properties manifest, corpus manifest, fresh output JSON and repetition index 0/1/2 on separate lines.
+It loads only those frozen outer archives and controls, invokes the target through a platform-parent isolated loader, and certifies the actual target helpers, full archive and complete class tree before and after collection.
+Each complete operation uses the existing phase engine's 30 warmups and 60 samples; construction, input checks, golden assertions, stream probes and serialization remain outside its interval.
+A separate shared-meter interval reports complete preparation, collection and verification together, including all measured operations; it is not an isolated setup-cost estimate.
+Rendering, upload and both GPU scopes remain N/A.
+
+Comparison uses that same generic task and frozen inputs. Its argument file contains `compare`, frozen collector JAR, fresh output JSON, three baseline report paths and three candidate report paths on separate lines.
+The existing report processor rejects copied runs, changed case matrices, missing samples, changed controls or fixture bytes, and different collectors.
+Actual read-array identities are observed through the entry traversal's real stream-opening callback outside timing, and loaded/preserved reports expose their actual complete entry and byte counters.
+These observations do not prove every allocation, class materialization or digest encoding; opaque scopes retain explicit null counts and a pending work-proof gate.
+Compilation, real frozen-input certification, complete three-plus-three evidence, independent work observations and whole-project acceptance are required before an improvement claim or Ready status.
+A numerical comparison alone does not satisfy those gates.

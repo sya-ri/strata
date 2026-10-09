@@ -181,3 +181,42 @@ tasks.register<JavaExec>("captureHeadlessInventory") {
     mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalWorkloadEvidence")
     args(layout.buildDirectory.file("performance/headless-api.tsv").get().asFile.absolutePath)
 }
+
+val performanceFixtureJar by tasks.registering(Jar::class) {
+    group = "verification"
+    description = "Packages compiled performance consumers without embedding their measured libraries or controls."
+    dependsOn(tasks.named("jmhClasses"))
+    archiveClassifier.set("performance-fixture")
+    from(sourceSets.named("jmh").map { it.output })
+}
+
+tasks.register<JavaExec>("runPerformanceEvidence") {
+    group = "verification"
+    description = "Runs a compiled performance consumer selected by main class and a UTF-8 argument file."
+    javaLauncher.set(historicalLauncher)
+    mainClass.set(providers.gradleProperty("strata.performance.evidenceMain"))
+    val frozenFixture = providers.gradleProperty("strata.performance.evidenceFixture")
+    if (frozenFixture.isPresent.not()) {
+        dependsOn(tasks.named("jmhClasses"))
+        classpath = sourceSets.named("jmh").get().runtimeClasspath
+    }
+    doFirst {
+        val arguments = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.evidenceArguments").orNull)).canonicalFile
+        require(arguments.isFile && arguments.length() <= 4L * 1024 * 1024)
+        val values = arguments.readLines(Charsets.UTF_8)
+        require(values.size <= 16_384)
+        setArgs(values)
+        frozenFixture.orNull?.let { path ->
+            val fixture = rootProject.file(path).canonicalFile
+            val collector = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.evidenceCollector").orNull)).canonicalFile
+            val manifest = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.evidenceControls").orNull)).canonicalFile
+            require(fixture.isFile && collector.isFile && fixture != collector && manifest.isFile)
+            val controls = Properties()
+            manifest.bufferedReader(Charsets.UTF_8).use(controls::load)
+            require(controls.isNotEmpty())
+            val archives = controls.stringPropertyNames().sorted().map { rootProject.file(controls.getProperty(it)).canonicalFile }
+            require(archives.all { it.isFile && it != fixture && it != collector })
+            classpath = files(fixture, collector) + files(archives)
+        }
+    }
+}

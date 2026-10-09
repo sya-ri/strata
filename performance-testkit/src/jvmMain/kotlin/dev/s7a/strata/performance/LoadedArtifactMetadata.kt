@@ -14,6 +14,7 @@ import java.util.HexFormat
 /**
  * Bounded provenance from the actual loaded classes, without substituting standalone distribution JARs.
  * Missing locations remain explicit failures rather than inferred hashes.
+ * Each complete loaded class tree owns one bounded read buffer; resource digests remain independent.
  */
 public object LoadedArtifactMetadata {
     // Evidence preparation must not scan accidentally selected oversized archives without a bound.
@@ -132,13 +133,14 @@ public object LoadedArtifactMetadata {
                 val entries = ClassArchiveInventory.entries(archivePath, MAX_CLASS_ENTRIES, MAX_CLASS_ENTRY_BYTES)
                 val classLoader = checkNotNull(representative.classLoader) { "The Strata class has no class loader" }
                 val treeDigest = MessageDigest.getInstance("SHA-256")
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 var totalBytes = 0L
                 entries.forEach { entry ->
                     val resource = checkNotNull(classLoader.getResource(entry)) { "Missing classpath resource: $entry" }
                     requireLocalClassResource(resource, entry, archivePath)
                     val connection = resource.openConnection().apply { useCaches = false }
                     val (entryHash, entryBytes) =
-                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES) }
+                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES, buffer) }
                     require(0 < entryBytes) { "Empty classpath resource: $entry" }
                     totalBytes = Math.addExact(totalBytes, entryBytes)
                     require(totalBytes <= MAX_CLASS_TREE_BYTES) { "The class tree exceeds the metadata byte limit" }
@@ -233,9 +235,9 @@ public object LoadedArtifactMetadata {
     private fun sha256(
         input: InputStream,
         maxBytes: Long = MAX_HASH_BYTES,
+        buffer: ByteArray = ByteArray(DEFAULT_BUFFER_SIZE),
     ): Pair<String, Long> {
         val digest = MessageDigest.getInstance("SHA-256")
-        val buffer = ByteArray(8192)
         var bytes = 0L
         while (true) {
             val count = input.read(buffer)
@@ -244,6 +246,6 @@ public object LoadedArtifactMetadata {
             require(bytes <= maxBytes) { "The artifact entry exceeds the metadata hash limit" }
             digest.update(buffer, 0, count)
         }
-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } to bytes
+        return HexFormat.of().formatHex(digest.digest()) to bytes
     }
 }
