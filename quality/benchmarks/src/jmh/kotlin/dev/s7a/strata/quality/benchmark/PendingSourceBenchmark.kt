@@ -217,7 +217,7 @@ public open class PendingSourceBenchmark {
 
                 Kind.DeepDerived -> {
                     var source: StateSource<Value> = sources.single()
-                    repeat(8) { source = source.map { projected(it.presentation) } }
+                    repeat(8) { source = source.map { value -> projected(value.presentation) } }
                     listOf(source)
                 }
 
@@ -361,16 +361,18 @@ public open class PendingSourceBenchmark {
                 else -> 1
             }
 
+        private fun expectedPresentations(): List<Presentation> =
+            when (workload.kind) {
+                Kind.MapEqual, Kind.Idle, Kind.EqualValue -> List(workload.roots) { Presentation.First }
+                Kind.All -> List(workload.roots) { presentation }
+                Kind.FanOut -> List(128) { presentation }
+                Kind.Churn -> List(workload.roots) { if (useReplacement) Presentation.Second else Presentation.First }
+                Kind.DuringEquality -> List(workload.roots) { index -> if (index == 0 || index == workload.roots - 1) Presentation.Second else Presentation.First }
+                else -> List(workload.roots) { index -> if (index == workload.roots - 1) presentation else Presentation.First }
+            }
+
         private fun verifyOutput(frame: RuntimeUiFrame) {
-            val expected =
-                when (workload.kind) {
-                    Kind.MapEqual, Kind.Idle, Kind.EqualValue -> List(workload.roots) { Presentation.First }
-                    Kind.All -> List(workload.roots) { presentation }
-                    Kind.FanOut -> List(128) { presentation }
-                    Kind.Churn -> List(workload.roots) { if (useReplacement) Presentation.Second else Presentation.First }
-                    Kind.DuringEquality -> List(workload.roots) { index -> if (index == 0 || index == workload.roots - 1) Presentation.Second else Presentation.First }
-                    else -> List(workload.roots) { index -> if (index == workload.roots - 1) presentation else Presentation.First }
-                }
+            val expected = expectedPresentations()
             verifyFrame(frame, expected)
             if (workload.kind == Kind.Idle || workload.kind == Kind.EqualValue || workload.kind == Kind.MapEqual) check(frame === initial)
             if (workload.kind == Kind.DuringEquality) {
