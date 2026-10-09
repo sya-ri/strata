@@ -10,7 +10,7 @@ import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import org.slf4j.Logger
 import java.nio.file.Path
 import java.util.UUID
@@ -36,21 +36,21 @@ public class VelocityAcceptancePlugin
         @Suppress("UnusedParameter") // Velocity requires the event argument to register this listener.
         public fun initialize(event: ProxyInitializeEvent) {
             register("strata-proxy-verify") { player ->
-                VelocityUi
+                Strata
                     .open(this, player) {
                         sessions.remove(player.uniqueId)?.close()
                         VelocityAcceptanceSession(this, proxy, player, directory).also { sessions[player.uniqueId] = it }.controls()
                     }.thenCompose { handle ->
-                        VelocityUi.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
+                        Strata.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
                     }.exceptionally {
                         logger.error("Velocity acceptance could not start", it)
                     }
             }
             register("strata-proxy-resume") { player ->
-                VelocityUi
+                Strata
                     .open(this, player) { checkNotNull(sessions[player.uniqueId]).resume() }
                     .thenCompose { handle ->
-                        VelocityUi.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
+                        Strata.execute(this) { checkNotNull(sessions[player.uniqueId]).bind(handle) }
                     }.exceptionally {
                         logger.error("Velocity acceptance could not resume", it)
                     }
@@ -62,7 +62,7 @@ public class VelocityAcceptancePlugin
          */
         @Subscribe
         public fun disconnected(event: DisconnectEvent) {
-            VelocityUi.execute(this) { sessions.remove(event.player.uniqueId)?.close() }
+            Strata.execute(this) { sessions.remove(event.player.uniqueId)?.close() }
         }
 
         private fun register(

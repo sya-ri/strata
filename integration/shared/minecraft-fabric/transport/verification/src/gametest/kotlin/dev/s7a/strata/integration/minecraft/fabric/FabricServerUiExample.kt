@@ -5,7 +5,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.onActivate
-import dev.s7a.strata.runtime.minecraft.fabric.FabricServerUi
+import dev.s7a.strata.runtime.minecraft.fabric.Strata
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiSession
@@ -23,7 +23,7 @@ public object FabricServerUiExample {
         owner: ModContainer,
         player: ServerPlayer,
     ): UiSession =
-        FabricServerUi.open(owner, player) {
+        Strata.open(owner, player) {
             val count = mutableStateOf(0)
             UiDefinition("Server counter") {
                 Column(spacing = 4) {

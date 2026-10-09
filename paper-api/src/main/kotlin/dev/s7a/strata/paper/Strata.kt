@@ -15,7 +15,7 @@ import org.bukkit.plugin.Plugin
  * On Folia, create state inside [open] and enter [execute] for subsequent state or session access.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-public object PaperUi {
+public object Strata {
     @Volatile
     private var provider: PaperUiProvider? = null
 

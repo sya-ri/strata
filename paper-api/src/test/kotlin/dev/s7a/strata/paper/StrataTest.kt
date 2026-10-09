@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Exercises the public facade with only platform and Strata API dependencies.
  */
-internal class PaperUiTest {
+internal class StrataTest {
     @Test
     @Suppress("StringLiteralComparison") // Java proxy dispatch decodes reflected method names at this test adapter boundary.
     fun registrationLifetimeCannotRemoveAReinstalledProvider() {
@@ -66,22 +66,22 @@ internal class PaperUiTest {
                     registered = type
                 }
             }
-        assertNull(PaperUi.capabilities(player))
-        val first = PaperUi.install(provider)
+        assertNull(Strata.capabilities(player))
+        val first = Strata.install(provider)
         first.close()
-        PaperUi.install(provider).use {
+        Strata.install(provider).use {
             first.close()
-            assertSame(support, PaperUi.capabilities(player))
-            assertEquals(7, PaperUi.execute(player) { 7 })
-            PaperUi.register(plugin, type)
+            assertSame(support, Strata.capabilities(player))
+            assertEquals(7, Strata.execute(player) { 7 })
+            Strata.register(plugin, type)
             assertEquals(type, registered)
-            assertThrows(IllegalStateException::class.java) { PaperUi.install(provider) }
+            assertThrows(IllegalStateException::class.java) { Strata.install(provider) }
             CompletableFuture
                 .runAsync {
-                    assertThrows(IllegalStateException::class.java) { PaperUi.capabilities(player) }
+                    assertThrows(IllegalStateException::class.java) { Strata.capabilities(player) }
                 }.join()
         }
-        assertNull(PaperUi.capabilities(player))
+        assertNull(Strata.capabilities(player))
     }
 
     private inline fun <reified T> proxy(crossinline result: (String) -> Any?): T = T::class.java.cast(Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, _ -> result(method.name) })

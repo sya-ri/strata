@@ -7,9 +7,9 @@ import java.util.concurrent.CompletableFuture
 
 /**
  * Queues an available definition through the installed Strata Velocity runtime.
- * Create state inside [VelocityUi.open] or [VelocityUi.execute]; constructing mutable state on an event thread is unsupported.
+ * Create state inside [Strata.open] or [Strata.execute]; constructing mutable state on an event thread is unsupported.
  */
 public fun UiDefinition.open(
     ownerPlugin: Any,
     player: Player,
-): CompletableFuture<UiSession> = VelocityUi.open(ownerPlugin, player) { this }
+): CompletableFuture<UiSession> = Strata.open(ownerPlugin, player) { this }

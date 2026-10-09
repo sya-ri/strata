@@ -17,7 +17,7 @@ import net.minecraft.server.level.ServerPlayer
  * Operations require the server thread after Fabric emits SERVER_STARTED; async callers must schedule there first.
  * Create mutable state inside [open]'s factory and keep it on that server's execution owner.
  */
-public object FabricServerUi {
+public object Strata {
     /**
      * Creates state and a definition on the server owner, returning its presentation handle.
      */
@@ -82,6 +82,6 @@ public object FabricServerUi {
     public fun listen(
         server: MinecraftServer,
         ownerMod: ModContainer,
-        listener: (FabricServerUiEvent) -> Unit,
+        listener: (StrataUiEvent) -> Unit,
     ): AutoCloseable = FabricServerUiServices.active(server).listen(ownerMod, listener)
 }

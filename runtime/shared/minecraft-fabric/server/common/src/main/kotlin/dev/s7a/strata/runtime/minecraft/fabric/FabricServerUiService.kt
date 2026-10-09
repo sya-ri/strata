@@ -86,7 +86,7 @@ internal class FabricServerUiService(
     @JvmSynthetic
     fun listen(
         owner: ModContainer,
-        listener: (FabricServerUiEvent) -> Unit,
+        listener: (StrataUiEvent) -> Unit,
     ): AutoCloseable {
         checkThread()
         val subscription =
@@ -130,11 +130,11 @@ internal class FabricServerUiService(
     ) {
         val notification =
             when (event) {
-                is RemoteLifecycleEvent.Ready -> FabricServerUiEvent.Ready(player.player, event.capabilities)
-                is RemoteLifecycleEvent.Disconnected -> FabricServerUiEvent.Disconnected(player.player, event.reason)
-                is RemoteLifecycleEvent.Opened -> FabricServerUiEvent.Opened(player.player, event.owner, event.identity, event.session, event.presentation, event.category)
-                is RemoteLifecycleEvent.PresentationChanged -> FabricServerUiEvent.PresentationChanged(player.player, event.owner, event.identity, event.session, event.previous, event.presentation, event.category)
-                is RemoteLifecycleEvent.Closed -> FabricServerUiEvent.Closed(player.player, event.owner, event.identity, event.session, event.presentation, event.category, event.reason)
+                is RemoteLifecycleEvent.Ready -> StrataUiEvent.Ready(player.player, event.capabilities)
+                is RemoteLifecycleEvent.Disconnected -> StrataUiEvent.Disconnected(player.player, event.reason)
+                is RemoteLifecycleEvent.Opened -> StrataUiEvent.Opened(player.player, event.owner, event.identity, event.session, event.presentation, event.category)
+                is RemoteLifecycleEvent.PresentationChanged -> StrataUiEvent.PresentationChanged(player.player, event.owner, event.identity, event.session, event.previous, event.presentation, event.category)
+                is RemoteLifecycleEvent.Closed -> StrataUiEvent.Closed(player.player, event.owner, event.identity, event.session, event.presentation, event.category, event.reason)
             }
         listeners.toList().forEach { subscription ->
             if (subscription in listeners) runCatching { subscription.listener?.invoke(notification) }.onFailure { logger.warn("Strata server UI listener failed", it) }
@@ -146,7 +146,7 @@ internal class FabricServerUiService(
      */
     private class Subscription(
         val owner: ModContainer,
-        var listener: ((FabricServerUiEvent) -> Unit)?,
+        var listener: ((StrataUiEvent) -> Unit)?,
         private var remove: ((Subscription) -> Unit)?,
     ) : AutoCloseable {
         override fun close() {

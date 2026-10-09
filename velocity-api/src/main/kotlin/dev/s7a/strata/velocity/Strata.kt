@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture
  * Never block the UI thread on returned futures. Plugin events contain snapshots and do not block UI processing.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-public object VelocityUi {
+public object Strata {
     @Volatile
     private var provider: VelocityUiProvider? = null
 

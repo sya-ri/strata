@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Verifies public scheduling delegation and installation lifetime without the remote engine.
  */
-internal class VelocityUiTest {
+internal class StrataTest {
     @Test
     fun repeatedCloseDoesNotRemoveTheNextInstallation() {
         val owner = Any()
@@ -50,15 +50,15 @@ internal class VelocityUiTest {
                     return CompletableFuture.completedFuture(Unit)
                 }
             }
-        val first = VelocityUi.install(provider)
+        val first = Strata.install(provider)
         first.close()
-        VelocityUi.install(provider).use {
+        Strata.install(provider).use {
             first.close()
-            assertEquals(42, VelocityUi.execute(owner) { 42 }.join())
-            assertThrows(IllegalStateException::class.java) { VelocityUi.install(provider) }
-            VelocityUi.release(owner).join()
+            assertEquals(42, Strata.execute(owner) { 42 }.join())
+            assertThrows(IllegalStateException::class.java) { Strata.install(provider) }
+            Strata.release(owner).join()
             assertEquals(listOf(owner), released)
         }
-        assertThrows(IllegalStateException::class.java) { VelocityUi.execute(owner) { 0 } }
+        assertThrows(IllegalStateException::class.java) { Strata.execute(owner) { 0 } }
     }
 }

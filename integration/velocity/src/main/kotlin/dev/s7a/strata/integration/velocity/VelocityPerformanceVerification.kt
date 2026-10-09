@@ -12,7 +12,7 @@ import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiPresentation
 import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
-import dev.s7a.strata.velocity.VelocityUi
+import dev.s7a.strata.velocity.Strata
 import dev.s7a.strata.velocity.event.StrataUiClosedEvent
 import dev.s7a.strata.velocity.event.StrataUiOpenedEvent
 import java.nio.file.Path
@@ -56,14 +56,14 @@ internal class VelocityPerformanceVerification(
         val readiness =
             runCatching {
                 proxy.eventManager.register(plugin, this)
-                VelocityUi.capabilities(player).orTimeout(30, TimeUnit.SECONDS)
+                Strata.capabilities(player).orTimeout(30, TimeUnit.SECONDS)
             }.getOrElse { failure ->
                 runCatching(::close).exceptionOrNull()?.let(failure::addSuppressed)
                 return CompletableFuture.failedFuture(failure)
             }
         return readiness
             .thenCompose { negotiated ->
-                VelocityUi.execute(plugin) {
+                Strata.execute(plugin) {
                     checkOwner()
                     check(2 <= checkNotNull(negotiated).hudLimit) { "The proxy fixture requires two negotiated HUD slots" }
                     interval = createInterval()
@@ -73,7 +73,7 @@ internal class VelocityPerformanceVerification(
                 if (failure == null) {
                     CompletableFuture.completedFuture(Unit)
                 } else {
-                    VelocityUi.execute(plugin, ::close).handle<Unit> { _, cleanupFailure ->
+                    Strata.execute(plugin, ::close).handle<Unit> { _, cleanupFailure ->
                         if (cleanupFailure != null && cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
                         throw CompletionException(failure)
                     }
@@ -83,14 +83,14 @@ internal class VelocityPerformanceVerification(
 
     private fun advance(): CompletableFuture<Unit> =
         prepare().thenCompose {
-            VelocityUi
+            Strata
                 .execute(plugin) {
                     checkOwner()
                     check(player.isActive) { "The measured player disconnected" }
                     checkNotNull(interval).advance()
                 }.thenCompose { complete ->
                     checkNotNull(pending).orTimeout(30, TimeUnit.SECONDS).thenCompose {
-                        VelocityUi.execute(plugin) {
+                        Strata.execute(plugin) {
                             checkOwner()
                             verify()
                             if (complete) {
@@ -126,7 +126,7 @@ internal class VelocityPerformanceVerification(
     }
 
     private fun openHud(): CompletableFuture<Unit> =
-        VelocityUi
+        Strata
             .open(plugin, player) {
                 checkOwner()
                 UiDefinition("Performance HUD", presentation = UiPresentation.Hud) {
@@ -156,11 +156,11 @@ internal class VelocityPerformanceVerification(
         pending =
             when (workload) {
                 VelocityPerformanceWorkload.OwnerEntrySubmission -> {
-                    VelocityUi.execute(plugin) { checkOwner() }
+                    Strata.execute(plugin) { checkOwner() }
                 }
 
                 VelocityPerformanceWorkload.CapabilitiesSubmission -> {
-                    VelocityUi.capabilities(player).also { submitted -> capabilities = submitted }
+                    Strata.capabilities(player).also { submitted -> capabilities = submitted }
                 }
 
                 VelocityPerformanceWorkload.HudClose, VelocityPerformanceWorkload.HudPairClose -> {
@@ -189,7 +189,7 @@ internal class VelocityPerformanceVerification(
     @Suppress("unused") // Velocity invokes the registered listener through its event dispatcher.
     fun opened(event: StrataUiOpenedEvent) {
         if (event.player === player && event.ownerPlugin === plugin) {
-            VelocityUi.execute(plugin) {
+            Strata.execute(plugin) {
                 if (closed) return@execute
                 checkOwner()
                 opened.remove(event.session)?.let { readiness ->
@@ -210,7 +210,7 @@ internal class VelocityPerformanceVerification(
     @Suppress("unused") // Velocity invokes the registered listener through its event dispatcher.
     fun terminated(event: StrataUiClosedEvent) {
         if (event.player === player && event.ownerPlugin === plugin) {
-            VelocityUi.execute(plugin) {
+            Strata.execute(plugin) {
                 if (closed) return@execute
                 checkOwner()
                 terminated.remove(event.session)?.let { completion ->

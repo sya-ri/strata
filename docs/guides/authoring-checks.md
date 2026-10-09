@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.2.2")
+    detektPlugins("dev.s7a.strata:strata-detekt-rules:0.3.0")
 }
 ```
 

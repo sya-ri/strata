@@ -60,7 +60,7 @@ internal object RemoteNativeGameTest {
                 waitOnServer(context, world, RemoteNativeServerFixture::closed)
                 context.waitFor { RemoteNativeCanvasFixture.released() }
                 context.computeOnClient { RemoteNativeCanvasFixture.close() }
-                Files.writeString(output.resolve("native-remote.properties"), "runId=${UUID.randomUUID()}\nversion=${System.getProperty("strata.minecraftVersion")}\ntransport=fabric-api\ninput=confirmed\nupdate=visible\nclose=acknowledged\nserver=integrated\napi=FabricServerUi\n")
+                Files.writeString(output.resolve("native-remote.properties"), "runId=${UUID.randomUUID()}\nversion=${System.getProperty("strata.minecraftVersion")}\ntransport=fabric-api\ninput=confirmed\nupdate=visible\nclose=acknowledged\nserver=integrated\napi=Strata\n")
             }
         } finally {
             context.computeOnClient { it.options.pauseOnLostFocus = pauseOnLostFocus }

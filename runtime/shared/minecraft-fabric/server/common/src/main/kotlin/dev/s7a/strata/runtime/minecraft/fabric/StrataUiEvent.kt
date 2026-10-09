@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer
  * UI identity is scoped to the service and connection.
  * Capability and presentation values are snapshots; player, owner Mod, and session references retain their native ownership.
  */
-public sealed interface FabricServerUiEvent {
+public sealed interface StrataUiEvent {
     /**
      * Authenticated native player belonging to this notification.
      */
@@ -26,7 +26,7 @@ public sealed interface FabricServerUiEvent {
     public data class Ready(
         override val player: ServerPlayer,
         public val capabilities: UiClientCapabilities,
-    ) : FabricServerUiEvent
+    ) : StrataUiEvent
 
     /**
      * Retirement of a previously ready connection after every UI has closed.
@@ -34,7 +34,7 @@ public sealed interface FabricServerUiEvent {
     public data class Disconnected(
         override val player: ServerPlayer,
         public val reason: UiCloseReason,
-    ) : FabricServerUiEvent
+    ) : StrataUiEvent
 
     /**
      * First acknowledged native presentation, including initially hidden HUDs.
@@ -46,7 +46,7 @@ public sealed interface FabricServerUiEvent {
         public val session: UiSession,
         public val presentation: UiPresentation,
         public val category: UiCategory?,
-    ) : FabricServerUiEvent
+    ) : StrataUiEvent
 
     /**
      * Acknowledged transition between distinct presentations of one retained session.
@@ -59,7 +59,7 @@ public sealed interface FabricServerUiEvent {
         public val previous: UiPresentation,
         public val presentation: UiPresentation,
         public val category: UiCategory?,
-    ) : FabricServerUiEvent
+    ) : StrataUiEvent
 
     /**
      * Terminal ownership, including rejected openings that never emitted [Opened].
@@ -72,5 +72,5 @@ public sealed interface FabricServerUiEvent {
         public val presentation: UiPresentation?,
         public val category: UiCategory?,
         public val reason: UiCloseReason,
-    ) : FabricServerUiEvent
+    ) : StrataUiEvent
 }

@@ -3,6 +3,12 @@
 Each version below summarizes the release and links to its detailed changes and upgrade notes.
 Keep all Strata artifacts on the same release version.
 
+## 0.3.0 - Unreleased
+
+Fabric server-owned screens and HUDs, official Fabric API networking and lifecycle integration, and a `Strata` entry point in each platform package. Rebuild Paper and Velocity consumers with the new imports and install Fabric API alongside the exact-version runtime.
+
+[Detailed changes and upgrade notes](docs/releases/v0.3.0.md)
+
 ## 0.2.2 - 2026-10-06
 
 Shared performance testkit, lower retained-frame and text-editing costs, bounded repeated-pattern templates, faster CPU composition, and exact GPU sampled-image presentation on supported adapters. Existing screen and communication contracts remain unchanged; the release notes compare measured results with public 0.2.1 and track remaining performance work.

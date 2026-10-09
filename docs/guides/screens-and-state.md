@@ -18,7 +18,7 @@ Once ownership transfers, the runtime handles cleanup, including opening failure
 Closing an untransferred definition releases its captures; after opening, call the returned `UiSession.close()` to end the UI.
 Paper uses the same definition and handle through the `paper-api` extension `definition.open(plugin, player)`; the plugin owns cleanup on disable.
 Do not retain the callback's `UiScope` beyond that invocation.
-On Folia, use `PaperUi.open` to create state inside the player's owner, and `PaperUi.execute` for later external state or session access from that player's region.
+On Folia, use `Strata.open` to create state inside the player's owner, and `Strata.execute` for later external state or session access from that player's region.
 Use the host-specific opening boundary for [Paper and Folia](paper.md), [Velocity](velocity.md), or the [browser runtime](../../README.md#build-a-web-screen-from-source).
 
 ## Switch presentation and close

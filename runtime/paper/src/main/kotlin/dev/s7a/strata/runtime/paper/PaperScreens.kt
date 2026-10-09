@@ -43,7 +43,7 @@ public object PaperScreens {
      * Call on the player's region (or Paper's primary thread), and construct mutable UI state inside [definition].
      * The factory runs synchronously once, before retained screen evaluation; handlers run on that player's region.
      */
-    @Deprecated("Use PaperUi.open(ownerPlugin, player) with a UiDefinition factory.")
+    @Deprecated("Use Strata.open(ownerPlugin, player) with a UiDefinition factory.")
     public fun open(
         ownerPlugin: Plugin,
         player: Player,

@@ -88,113 +88,6 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricRemoteTransport
 	public static fun send (Lnet/minecraft/class_634;[B)V
 }
 
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUi {
-	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUi;
-	public final fun capabilities (Lnet/minecraft/class_3222;)Ldev/s7a/strata/ui/UiClientCapabilities;
-	public final fun execute (Lnet/minecraft/server/MinecraftServer;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public final fun listen (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
-	public final fun open (Lnet/fabricmc/loader/api/ModContainer;Lnet/minecraft/class_3222;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/ui/UiSession;
-	public final fun register (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;Ldev/s7a/strata/projection/ProjectionType;)V
-	public final fun release (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;)V
-}
-
-public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public abstract fun getPlayer ()Lnet/minecraft/class_3222;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Closed : dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)V
-	public final fun component1 ()Lnet/minecraft/class_3222;
-	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
-	public final fun component3 ()J
-	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
-	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun component6 ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun component7 ()Ldev/s7a/strata/ui/UiCloseReason;
-	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Closed;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Closed;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Closed;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun getIdentity ()J
-	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
-	public fun getPlayer ()Lnet/minecraft/class_3222;
-	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
-	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Disconnected : dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public fun <init> (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;)V
-	public final fun component1 ()Lnet/minecraft/class_3222;
-	public final fun component2 ()Ldev/s7a/strata/ui/UiCloseReason;
-	public final fun copy (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Disconnected;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Disconnected;Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Disconnected;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getPlayer ()Lnet/minecraft/class_3222;
-	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Opened : dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
-	public final fun component1 ()Lnet/minecraft/class_3222;
-	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
-	public final fun component3 ()J
-	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
-	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun component6 ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Opened;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Opened;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Opened;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun getIdentity ()J
-	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
-	public fun getPlayer ()Lnet/minecraft/class_3222;
-	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$PresentationChanged : dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
-	public final fun component1 ()Lnet/minecraft/class_3222;
-	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
-	public final fun component3 ()J
-	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
-	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun component6 ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun component7 ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$PresentationChanged;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$PresentationChanged;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$PresentationChanged;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
-	public final fun getIdentity ()J
-	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
-	public fun getPlayer ()Lnet/minecraft/class_3222;
-	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
-	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Ready : dev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent {
-	public fun <init> (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;)V
-	public final fun component1 ()Lnet/minecraft/class_3222;
-	public final fun component2 ()Ldev/s7a/strata/ui/UiClientCapabilities;
-	public final fun copy (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Ready;
-	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Ready;Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/FabricServerUiEvent$Ready;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCapabilities ()Ldev/s7a/strata/ui/UiClientCapabilities;
-	public fun getPlayer ()Lnet/minecraft/class_3222;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class dev/s7a/strata/runtime/minecraft/fabric/FabricUiInput {
 	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiInput;
 	public final fun attackDelay (I)I
@@ -260,6 +153,16 @@ public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/Minecraf
 	public abstract fun acquire ()Ldev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasTextureLease;
 }
 
+public final class dev/s7a/strata/runtime/minecraft/fabric/Strata {
+	public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/Strata;
+	public final fun capabilities (Lnet/minecraft/class_3222;)Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun execute (Lnet/minecraft/server/MinecraftServer;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public final fun listen (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
+	public final fun open (Lnet/fabricmc/loader/api/ModContainer;Lnet/minecraft/class_3222;Lkotlin/jvm/functions/Function0;)Ldev/s7a/strata/ui/UiSession;
+	public final fun register (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;Ldev/s7a/strata/projection/ProjectionType;)V
+	public final fun release (Lnet/minecraft/server/MinecraftServer;Lnet/fabricmc/loader/api/ModContainer;)V
+}
+
 public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabric : net/fabricmc/api/ModInitializer {
 	public fun <init> ()V
 	public fun onInitialize ()V
@@ -268,6 +171,103 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabric : net/fa
 public final class dev/s7a/strata/runtime/minecraft/fabric/StrataFabricClient : net/fabricmc/api/ClientModInitializer {
 	public fun <init> ()V
 	public fun onInitializeClient ()V
+}
+
+public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public abstract fun getPlayer ()Lnet/minecraft/class_3222;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Closed : dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun component1 ()Lnet/minecraft/class_3222;
+	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
+	public final fun component3 ()J
+	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component6 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun component7 ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Closed;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Closed;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Closed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
+	public fun getPlayer ()Lnet/minecraft/class_3222;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Disconnected : dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public fun <init> (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;)V
+	public final fun component1 ()Lnet/minecraft/class_3222;
+	public final fun component2 ()Ldev/s7a/strata/ui/UiCloseReason;
+	public final fun copy (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Disconnected;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Disconnected;Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiCloseReason;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Disconnected;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPlayer ()Lnet/minecraft/class_3222;
+	public final fun getReason ()Ldev/s7a/strata/ui/UiCloseReason;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Opened : dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun component1 ()Lnet/minecraft/class_3222;
+	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
+	public final fun component3 ()J
+	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component6 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Opened;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Opened;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Opened;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
+	public fun getPlayer ()Lnet/minecraft/class_3222;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$PresentationChanged : dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public fun <init> (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+	public final fun component1 ()Lnet/minecraft/class_3222;
+	public final fun component2 ()Lnet/fabricmc/loader/api/ModContainer;
+	public final fun component3 ()J
+	public final fun component4 ()Ldev/s7a/strata/ui/UiSession;
+	public final fun component5 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component6 ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun component7 ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun copy (Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$PresentationChanged;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$PresentationChanged;Lnet/minecraft/class_3222;Lnet/fabricmc/loader/api/ModContainer;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$PresentationChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCategory ()Ldev/s7a/strata/ui/UiCategory;
+	public final fun getIdentity ()J
+	public final fun getOwner ()Lnet/fabricmc/loader/api/ModContainer;
+	public fun getPlayer ()Lnet/minecraft/class_3222;
+	public final fun getPresentation ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
+	public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Ready : dev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent {
+	public fun <init> (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;)V
+	public final fun component1 ()Lnet/minecraft/class_3222;
+	public final fun component2 ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public final fun copy (Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Ready;
+	public static synthetic fun copy$default (Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Ready;Lnet/minecraft/class_3222;Ldev/s7a/strata/ui/UiClientCapabilities;ILjava/lang/Object;)Ldev/s7a/strata/runtime/minecraft/fabric/StrataUiEvent$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapabilities ()Ldev/s7a/strata/ui/UiClientCapabilities;
+	public fun getPlayer ()Lnet/minecraft/class_3222;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/mixin/lifecycle/FabricMinecraftNativeImageAccess {

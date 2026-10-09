@@ -3,7 +3,7 @@ package dev.s7a.strata.integration.paper
 import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.integration.performance.ServerPerformanceInterval
-import dev.s7a.strata.paper.PaperUi
+import dev.s7a.strata.paper.Strata
 import dev.s7a.strata.paper.open
 import dev.s7a.strata.ui.UiCloseReason
 import dev.s7a.strata.ui.UiDefinition
@@ -63,11 +63,11 @@ internal class PaperPerformanceVerification(
                 when (workload) {
                     PaperPerformanceWorkload.OwnerEntry -> {
                         entered = false
-                        PaperUi.execute(player) { entered = true }
+                        Strata.execute(player) { entered = true }
                     }
 
                     PaperPerformanceWorkload.Capabilities -> {
-                        capabilities = checkNotNull(PaperUi.capabilities(player)).types.size
+                        capabilities = checkNotNull(Strata.capabilities(player)).types.size
                     }
 
                     PaperPerformanceWorkload.HudLifetime -> {

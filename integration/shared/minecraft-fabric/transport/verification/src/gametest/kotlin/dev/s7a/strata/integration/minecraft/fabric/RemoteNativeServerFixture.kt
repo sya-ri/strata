@@ -14,8 +14,8 @@ import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.runtime.minecraft.fabric.FabricServerUi
-import dev.s7a.strata.runtime.minecraft.fabric.FabricServerUiEvent
+import dev.s7a.strata.runtime.minecraft.fabric.Strata
+import dev.s7a.strata.runtime.minecraft.fabric.StrataUiEvent
 import dev.s7a.strata.runtime.remote.RemoteCanvas
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.ui.UiDefinition
@@ -51,7 +51,7 @@ public object RemoteNativeServerFixture {
     public fun initialize() {
         ServerLifecycleEvents.SERVER_STARTED.register { server ->
             serverPlayers[server] = mutableSetOf()
-            FabricServerUi.register(server, owner, type)
+            Strata.register(server, owner, type)
         }
         ServerPlayConnectionEvents.JOIN.register { handler, _, server -> serverPlayers.getValue(server).add(handler.player) }
         ServerTickEvents.END_SERVER_TICK.register { server ->
@@ -74,19 +74,19 @@ public object RemoteNativeServerFixture {
         ServerLifecycleEvents.SERVER_STARTED.register { server ->
             if (server.isDedicatedServer.not()) return@register
             val run = System.getProperty("strata.fabric.run") ?: return@register
-            FabricServerUi.listen(server, owner) { event ->
+            Strata.listen(server, owner) { event ->
                 check(server.isSameThread)
                 when (event) {
-                    is FabricServerUiEvent.Ready -> {
+                    is StrataUiEvent.Ready -> {
                         dedicatedConnections++
                         open(event.player)
                     }
 
-                    is FabricServerUiEvent.Closed -> {
+                    is StrataUiEvent.Closed -> {
                         check(peers[event.player]?.accepted == true)
                         dedicatedCompletions++
                         val output = Path.of(requireNotNull(System.getProperty("strata.fabric.receipt")))
-                        Files.writeString(output, "runId=$run\nconnections=$dedicatedConnections\ncompletions=$dedicatedCompletions\ninput=confirmed\napi=FabricServerUi\nserver=dedicated\n")
+                        Files.writeString(output, "runId=$run\nconnections=$dedicatedConnections\ncompletions=$dedicatedCompletions\ninput=confirmed\napi=Strata\nserver=dedicated\n")
                     }
 
                     else -> {}
@@ -100,14 +100,14 @@ public object RemoteNativeServerFixture {
      */
     public fun open(player: ServerPlayer) {
         check(peers.containsKey(player).not())
-        val session = FabricServerUi.open(owner, player) { Verification().also { peers[player] = it }.definition() }
+        val session = Strata.open(owner, player) { Verification().also { peers[player] = it }.definition() }
         checkNotNull(peers[player]).session = session
     }
 
     /**
      * Reports the production runtime's successful capability negotiation.
      */
-    public fun ready(player: ServerPlayer): Boolean = FabricServerUi.capabilities(player) != null
+    public fun ready(player: ServerPlayer): Boolean = Strata.capabilities(player) != null
 
     /**
      * Reports business input and acknowledged presentation on the server thread.

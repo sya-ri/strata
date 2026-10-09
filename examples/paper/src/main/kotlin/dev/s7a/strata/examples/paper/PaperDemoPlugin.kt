@@ -1,6 +1,6 @@
 package dev.s7a.strata.examples.paper
 
-import dev.s7a.strata.paper.PaperUi
+import dev.s7a.strata.paper.Strata
 import dev.s7a.strata.ui.UiDefinition
 import dev.s7a.strata.ui.UiSessionStatus
 import org.bukkit.command.Command
@@ -14,7 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 public class PaperDemoPlugin : JavaPlugin() {
     override fun onEnable() {
-        DemoRemoteExtensions.types.forEach { PaperUi.register(this, it) }
+        DemoRemoteExtensions.types.forEach { Strata.register(this, it) }
         requireNotNull(getCommand("strata-input-demo")) { "The input demo command must be registered in plugin.yml." }
             .setExecutor { sender, _, _, _ -> openScreen(sender, PaperInputScreens::editor) }
     }
@@ -31,12 +31,12 @@ public class PaperDemoPlugin : JavaPlugin() {
         definition: () -> UiDefinition,
     ): Boolean {
         val player = sender as? Player ?: return false
-        if (PaperUi.capabilities(player) == null) {
+        if (Strata.capabilities(player) == null) {
             player.sendMessage("Install the matching Strata Fabric runtime and reconnect before opening this screen.")
             return true
         }
-        val session = PaperUi.open(this, player, definition = definition)
-        val status = PaperUi.execute(player) { session.status }
+        val session = Strata.open(this, player, definition = definition)
+        val status = Strata.execute(player) { session.status }
         if (status is UiSessionStatus.Closed) player.sendMessage("The screen could not open: ${status.reason}.")
         return true
     }

@@ -85,7 +85,7 @@ internal object RemoteNativeGameTest {
             waitOnServer(context, server, RemoteNativeServerFixture::closed)
             context.waitFor(Predicate { RemoteNativeCanvasFixture.released() })
             context.runOnClient(FailableConsumer<Minecraft, RuntimeException> { RemoteNativeCanvasFixture.close() })
-            Files.writeString(output.resolve("native-remote.properties"), "runId=${UUID.randomUUID()}\nversion=${System.getProperty("strata.minecraftVersion")}\ntransport=fabric-api\ninput=confirmed\nupdate=visible\nclose=acknowledged\nserver=integrated\napi=FabricServerUi\n")
+            Files.writeString(output.resolve("native-remote.properties"), "runId=${UUID.randomUUID()}\nversion=${System.getProperty("strata.minecraftVersion")}\ntransport=fabric-api\ninput=confirmed\nupdate=visible\nclose=acknowledged\nserver=integrated\napi=Strata\n")
         }
     }
 
