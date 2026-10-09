@@ -151,18 +151,27 @@ public open class OutgoingFragmentBenchmark {
                     OutgoingFragmentPhase.entries.forEach { phase ->
                         val routes = if (phase == OutgoingFragmentPhase.ServerCycle) listOf(OutgoingFragmentRoute.Production) else OutgoingFragmentRoute.entries
                         routes.forEach { route ->
-                            OutgoingFragmentFixture(owners, workload, route).use { fixture ->
-                                val counts = fixture.workCounts(phase)
-                                repeat(2) {
-                                    fixture.prepare(phase)
-                                    fixture.transfer()
-                                    fixture.verifyAndClose()
-                                }
-                                println("Outgoing fragments $owners/$workload/$phase/$route: $counts")
-                            }
+                            verifyCombination(owners, workload, phase, route)
                         }
                     }
                 }
+            }
+        }
+
+        private fun verifyCombination(
+            owners: Int,
+            workload: OutgoingFragmentWorkload,
+            phase: OutgoingFragmentPhase,
+            route: OutgoingFragmentRoute,
+        ) {
+            OutgoingFragmentFixture(owners, workload, route).use { fixture ->
+                val counts = fixture.workCounts(phase)
+                repeat(2) {
+                    fixture.prepare(phase)
+                    fixture.transfer()
+                    fixture.verifyAndClose()
+                }
+                println("Outgoing fragments $owners/$workload/$phase/$route: $counts")
             }
         }
     }

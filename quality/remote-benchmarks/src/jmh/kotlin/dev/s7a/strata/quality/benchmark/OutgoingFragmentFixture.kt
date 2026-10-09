@@ -47,7 +47,7 @@ public class OutgoingFragmentFixture(
     private val messages = source()
     private val encoded = messages.map(codec::encode)
     private val referenceOutput = expected(if (workload == OutgoingFragmentWorkload.Hello) 1 else 2)
-    private var active = emptyList<Owner>()
+    private var active = emptyList<TransferOwner>()
     private var phase = OutgoingFragmentPhase.Cycle
 
     init {
@@ -61,7 +61,7 @@ public class OutgoingFragmentFixture(
         check(active.isEmpty())
         require(selected != OutgoingFragmentPhase.ServerCycle || route == OutgoingFragmentRoute.Production)
         phase = selected
-        active = (0 until owners).map { Owner(selected, false) }
+        active = (0 until owners).map { TransferOwner(selected, false) }
         if (phase == OutgoingFragmentPhase.Flush) active.forEach { it.owner.run { it.produce() } }
     }
 
@@ -108,7 +108,7 @@ public class OutgoingFragmentFixture(
      */
     public fun workCounts(selected: OutgoingFragmentPhase): Map<String, Long> {
         check(active.isEmpty())
-        val holder = Owner(selected, true)
+        val holder = TransferOwner(selected, true)
         return holder.owner.run {
             try {
                 holder.produce()
@@ -156,7 +156,7 @@ public class OutgoingFragmentFixture(
     /**
      * Current invocation state; no probe arrays or historical outputs survive close.
      */
-    private inner class Owner(
+    private inner class TransferOwner(
         selected: OutgoingFragmentPhase,
         private val probe: Boolean,
     ) : AutoCloseable {
@@ -330,7 +330,7 @@ public class OutgoingFragmentFixture(
             } catch (failure: RemoteProtocolException) {
                 check(workload in setOf(OutgoingFragmentWorkload.EntryCapacity, OutgoingFragmentWorkload.ByteCapacity))
                 check(failure.reason == RemoteFailure.ResourceLimit)
-                check(failure.message == "Remote send queue is full.")
+                check(failure.message.orEmpty().contentEquals("Remote send queue is full."))
                 failed = true
                 false
             }
