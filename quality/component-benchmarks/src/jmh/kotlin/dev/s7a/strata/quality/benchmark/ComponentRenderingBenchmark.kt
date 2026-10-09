@@ -1,9 +1,12 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.PointerEvent
+import dev.s7a.strata.layout.Arrangement
+import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
@@ -61,6 +64,9 @@ public open class ComponentRenderingBenchmark {
         @JvmField
         @Param
         public var component: ComponentWorkload = ComponentWorkload.Row
+
+        /** Untimed original FlowRow adapter; the generated timed corpus always keeps its default false. */
+        internal var originalFlow: Boolean = false
 
         private lateinit var profile: MinecraftUiProfile
         private lateinit var host: MinecraftUiHost
@@ -127,7 +133,24 @@ public open class ComponentRenderingBenchmark {
 
         private inline fun measured(crossinline operation: () -> RuntimeUiFrame): RuntimeUiFrame = monitor?.sample { operation() } ?: operation()
 
-        private fun definition(): UiDefinition = component.uiDefinition()
+        private fun definition(): UiDefinition {
+            val shipped = component.uiDefinition()
+            if (originalFlow.not()) return shipped
+            check(component == ComponentWorkload.FlowRow)
+            val payload = shipped.transfer()
+            return UiDefinition(
+                title = payload.title,
+                presentation = payload.presentation,
+                category = payload.category,
+                inputPolicy = payload.inputPolicy,
+                visibility = payload.visibility,
+                hudOrder = payload.hudOrder,
+                pausesGame = payload.pausesGame,
+            ) {
+                val root = evaluateComponentTree(payload.content)
+                element(FlowComponentReferenceElement(4, 4, Arrangement.Center, VerticalAlignment.Center, root.children, modifier = root.modifier))
+            }
+        }
 
         /**
          * Closes monitoring and the retained host on its owner worker, including assertion failure paths.
@@ -138,8 +161,15 @@ public open class ComponentRenderingBenchmark {
                 monitor?.close()
             } finally {
                 monitor = null
-                host.close()
+                if (::host.isInitialized) host.close()
             }
         }
+    }
+
+    /** Untimed shipped consumer admission through the ordinary generated fixture selector. */
+    public companion object {
+        /** Checks all four unchanged shipped FlowRow operations against the complete frozen original node. */
+        @JvmStatic
+        public fun verifyWork(): Unit = FlowRowConsumerEvidence.verify()
     }
 }

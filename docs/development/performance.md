@@ -71,6 +71,19 @@ The separate `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=
 It also measures an actual 128-child declaration rebuild separately from construction-only operations; no retained frame, rasterization, upload or GPU consumption occurs inside these boundaries.
 It uses the existing receipt collector, runtime manifest replacement and standard sampling settings without changing the historical corpus.
 
+### Invocation-local FlowRow measurement
+
+FlowRow captures every measured child size before deriving row geometry.
+Measurement and layout use one checked greedy row scanner; measurement aggregates primitive extents without constructing placement rows, while layout still captures all child sizes and constructs its ordinary row plan before any placement.
+Each emitted row width is checked at the original boundary, and aggregate height is checked only after the complete partition, including every vertical gap.
+The node retains only current immutable policies, with no row, size, scope, source or operation-history cache.
+
+`FlowMeasurementBenchmark` contributes 70 complete resize/source/lifecycle operations and idle/layout-only controls over 14 frozen topologies.
+Select it with the unchanged `ReactiveRenderingBenchmark` through the ordinary generated selector for 88 cases and 176 average/sample rows.
+Independent original-node gates compare actual target phase work, full ordered painted geometry, retained ownership, scope failures and terminal release.
+The four shipped FlowRow component operations additionally compare the original retained node, complete commands, semantics and raster output at three densities.
+Source elimination of the measurement-only list and row records does not establish surviving allocation or whole-operation benefit; acceptance requires paired Standard receipts through the existing testkit.
+
 ### Current-child geometry participation
 
 Each retained entry owns its current measure and layout pass identities; direct children record only their last participating parent pass and one placement offset.

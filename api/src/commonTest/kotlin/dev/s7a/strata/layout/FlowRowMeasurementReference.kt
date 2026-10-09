@@ -19,7 +19,9 @@ import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Immutable description for horizontal children that wrap into rows under a bounded width.
+ * Frozen complete FlowRow reference from master 5b0bc358d6dc8346fad091be6347036e96a55dfd.
+ * Original FlowRowElement blob: 143f3cccfe16f1f9cc0ea47db275e1af8024bed2.
+ * Keep original measure/layout partition and failure order independent from the candidate.
  *
  * The base [Element] snapshots the direct children without introducing intermediate row parents.
  * Row membership is derived presentation geometry and never changes logical child identity.
@@ -34,7 +36,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param modifier active behavior applied around the retained component.
  * @throws IllegalArgumentException when either spacing value is negative.
  */
-internal class FlowRowElement(
+internal class FlowRowMeasurementReference(
     val horizontalSpacing: Int,
     val verticalSpacing: Int,
     val horizontalArrangement: Arrangement,
@@ -85,7 +87,7 @@ internal class FlowRowElement(
                     maxHeight = constraints.maxHeight,
                 )
             val childSizes = List(scope.childCount) { index -> scope.measureChild(index, childConstraints) }
-            return constraints.constrain(naturalSize(childSizes, constraints.maxWidth))
+            return constraints.constrain(naturalSize(rows(childSizes, constraints.maxWidth)))
         }
 
         override fun layout(scope: LayoutScope) {
@@ -112,8 +114,8 @@ internal class FlowRowElement(
          * @return measurement invalidation for gaps or layout invalidation for arrangement and default alignment.
          */
         internal fun update(
-            previous: FlowRowElement,
-            current: FlowRowElement,
+            previous: FlowRowMeasurementReference,
+            current: FlowRowMeasurementReference,
         ): DirtyMask {
             var dirty = DirtyMask.None
             if (
@@ -139,18 +141,6 @@ internal class FlowRowElement(
             maximumWidth: Int,
         ): List<Row> {
             val rows = ArrayList<Row>()
-            forEachRow(childSizes, maximumWidth) { start, end, width, height ->
-                rows += Row(start, end, width, height)
-            }
-            return rows
-        }
-
-        // Both consumers use the same checked greedy emissions; measure needs no placement records.
-        private inline fun forEachRow(
-            childSizes: List<IntSize>,
-            maximumWidth: Int,
-            emit: (start: Int, end: Int, width: Int, height: Int) -> Unit,
-        ) {
             var start = 0
             var width = 0L
             var height = 0
@@ -163,7 +153,7 @@ internal class FlowRowElement(
                         width + horizontalSpacing + child.width
                     }
                 if (start < index && maximumWidth != Int.MAX_VALUE && maximumWidth.toLong() < nextWidth) {
-                    emit(start, index, width.toIntExact(), height)
+                    rows += Row(start, index, width.toIntExact(), height)
                     start = index
                     width = child.width.toLong()
                     height = child.height
@@ -173,24 +163,21 @@ internal class FlowRowElement(
                 }
             }
             if (start < childSizes.size) {
-                emit(start, childSizes.size, width.toIntExact(), height)
+                rows += Row(start, childSizes.size, width.toIntExact(), height)
             }
+            return rows
         }
 
-        private fun naturalSize(
-            childSizes: List<IntSize>,
-            maximumWidth: Int,
-        ): IntSize {
+        private fun naturalSize(rows: List<Row>): IntSize {
             var width = 0
             var height = 0L
-            var rowCount = 0
-            forEachRow(childSizes, maximumWidth) { _, _, rowWidth, rowHeight ->
-                width = maxOf(width, rowWidth)
-                height += rowHeight
-                rowCount += 1
-            }
-            if (1 < rowCount) {
-                height += verticalSpacing.toLong() * (rowCount - 1)
+            for (index in rows.indices) {
+                val row = rows[index]
+                width = maxOf(width, row.width)
+                height += row.height
+                if (index < rows.lastIndex) {
+                    height += verticalSpacing
+                }
             }
             return IntSize(width, height.toIntExact())
         }
@@ -246,9 +233,9 @@ internal class FlowRowElement(
      * Stable token and validation boundary for the wrapping horizontal layout.
      */
     companion object {
-        internal val TYPE: ElementType<FlowRowElement, Node> =
+        internal val TYPE: ElementType<FlowRowMeasurementReference, Node> =
             ElementType(
-                elementClass = FlowRowElement::class,
+                elementClass = FlowRowMeasurementReference::class,
                 nodeClass = Node::class,
                 validateLocal = { element -> validate(element.horizontalSpacing, element.verticalSpacing) },
                 createNode = { element ->
