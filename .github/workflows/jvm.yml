@@ -90,6 +90,11 @@ jobs:
         fetch-depth: 0
     - name: Check GitHub Actions workflows
       uses: docker://rhysd/actionlint:1.7.12
+    - name: Check CPU campaign transport controls
+      run: |
+        node --check .github/actions/cpu-campaign/run.mjs
+        node --check .github/actions/cpu-campaign/transfer.mjs
+        node .github/actions/cpu-campaign/test_reviewer_role.mjs
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle for release fixtures

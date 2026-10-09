@@ -1,0 +1,52 @@
+name: Complete CPU executor campaign
+on:
+  workflow_dispatch:
+    inputs:
+      qualification_issue:
+        description: Issue containing the reviewed qualification for these actual jobs
+        type: number
+        required: true
+        default: 249
+permissions:
+  contents: read
+  actions: read
+  issues: read
+jobs:
+  campaign:
+    name: CPU campaign ${{ matrix.role }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        role: [coordinator, worker-1, worker-2, worker-3, worker-4]
+    steps:
+      - name: Check out the reviewed campaign source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install declared Java toolchains
+        uses: ./.github/actions/setup-strata-java
+      - name: Preserve the official artifact uploader
+        uses: actions/checkout@v7
+        with:
+          repository: actions/upload-artifact
+          ref: v7
+          path: .cpu-sdk/upload
+          persist-credentials: false
+      - name: Preserve the official artifact downloader
+        uses: actions/checkout@v7
+        with:
+          repository: actions/download-artifact
+          ref: v8
+          path: .cpu-sdk/download
+          persist-credentials: false
+      - name: Hold this job through all three serial and parallel collections
+        uses: ./.github/actions/cpu-campaign
+        with:
+          role: ${{ matrix.role }}
+          qualification-issue: ${{ inputs.qualification_issue }}
+        env:
+          GH_TOKEN: ${{ github.token }}
