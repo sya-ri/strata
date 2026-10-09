@@ -91,6 +91,13 @@ internal class TextProvenanceFixture(
     private lateinit var host: MinecraftUiHost
 
     init {
+        initialize()
+    }
+
+    /**
+     * Acquires owners outside sampling and rolls back each initialized owner if construction fails.
+     */
+    private fun initialize() {
         try {
             renderer = access.renderer(assets.profile, MinecraftFontBackendFactory { assets.backend() })
             description =
