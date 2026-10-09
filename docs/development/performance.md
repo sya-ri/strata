@@ -774,3 +774,19 @@ Portable old-recursion parity tests cover broad/deep sparse and dense trees, het
 JVM reflection tests separately prove clean identity reuse, sparse/dense descriptor bounds, generation and root replacement, paint-only reuse, owner isolation, revision rollover and reference release before failing cancellation callbacks, actual tree failure and close.
 The separate 46-case public retained corpus described in [the testkit contract](performance-testkit.md#pointer-capability-input-corpus) includes cold construction, geometry/index rebuild, input-triggered invalidation, paint-only, detach and clean controls.
 These source contracts and bounds do not establish surviving allocation or measured CPU benefit; every control and any regression remains in the paired acceptance table.
+
+## Bounded display line ranges
+
+Multiline display Text constructs at most the visible line limit plus one additional range proving truncation.
+The visible limit is the minimum of the positive public maxLines and the existing height-to-line-box rule; zero height still admits one proof range so empty-source truncation remains unchanged.
+The cap saturates at Int.MAX_VALUE, and editable logical-order layout retains complete range construction.
+No cache or retained source history is added.
+
+Measurement still visits every original non-break scalar in its original font.
+Hidden compatibility, font and glyph failures must retain their existing order and identity.
+Paragraph discovery may still scan the full current paragraph; unwrapped text, unbounded layout and editable geometry retain their required complete work.
+The narrower optimization removes unused range allocations and repeated wrapping after the proof range, not all hidden glyph measurement or a claimed general text/frame percentage.
+
+Forward Float prefixes, native width conversion, first-overflow behavior with signed/nonfinite advances, word whitespace retention, Unicode scalar and CRLF boundaries, whole-line display shaping, ellipsis font selection, current geometry and full original semantics remain unchanged.
+The frozen complete-layout test reference independently checks visible scalar arrays, signed metrics, ordered commands and pixels.
+The actual public corpus and separate untimed private-range probe are defined by the [testkit contract](performance-testkit.md#bounded-display-line-corpus).

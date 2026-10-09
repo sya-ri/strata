@@ -9,15 +9,13 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
 /**
- * Stateless scalar-safe hard-break and wrapping engine for both display and editable text.
+ * Frozen complete-layout reference from f938e5c275791d0f237f9c70e119fd14228c165c.
  *
- * Each call borrows its owner-thread renderer, measures the original font-selected scalars once, and produces only a current-value layout.
- * Display ranges stop after the visible limit plus one overflow proof; measurement still validates every original scalar.
- * Editable layouts retain complete range construction.
+ * Retains the original full measurement and all-range construction before applying display limits.
  * Word wrapping prefers whitespace boundaries, preserves that whitespace, and falls back to scalar boundaries for words or scripts without spaces.
  * Explicit breaks recognize CRLF as one break and LF, CR, VT, FF, NEL, LS, and PS individually.
  */
-internal object MinecraftTextLineBreaker {
+internal object MinecraftCompleteTextLineLayoutReference {
     /**
      * Lays out one immutable value against structural width and optional display-height constraints.
      *
@@ -48,16 +46,14 @@ internal object MinecraftTextLineBreaker {
         require(0 <= maxWidth && 0 <= maxHeight) { "Text layout dimensions must be non-negative." }
         val step = Math.addExact(9, policy.lineSpacing)
         val advances = measure(content, renderer)
+        val ranges = breakLines(content.value, advances, renderer, maxWidth, policy.wrap)
         val heightLines =
             when (maxHeight) {
                 Int.MAX_VALUE -> Int.MAX_VALUE
                 0 -> 0
                 else -> 1 + (maxHeight - 1) / step
             }
-        val visibleLimit = minOf(policy.maxLines, heightLines)
-        val rangeLimit = if (logicalOrder || visibleLimit == Int.MAX_VALUE) Int.MAX_VALUE else visibleLimit + 1
-        val ranges = breakLines(content.value, advances, renderer, maxWidth, policy.wrap, rangeLimit)
-        val count = minOf(ranges.size, visibleLimit)
+        val count = minOf(ranges.size, policy.maxLines, heightLines)
         var truncated = count < ranges.size
         val lines = ArrayList<MinecraftTextLine>(count)
         for (index in 0 until count) {
@@ -93,7 +89,6 @@ internal object MinecraftTextLineBreaker {
         renderer: MinecraftTextRenderer,
         maxWidth: Int,
         wrap: TextWrap,
-        rangeLimit: Int,
     ): List<Range> {
         val lines = ArrayList<Range>()
         var start = 0
@@ -102,15 +97,14 @@ internal object MinecraftTextLineBreaker {
             val codePoint = value.codePointAt(offset)
             if (MinecraftTextContent.isHardBreak(codePoint)) {
                 val next = if (codePoint == 0x0D && offset + 1 < value.length && value[offset + 1] == '\n') offset + 2 else offset + 1
-                wrapParagraph(value, start, offset, next, advances, renderer, maxWidth, wrap, lines, rangeLimit)
-                if (rangeLimit <= lines.size) return lines
+                wrapParagraph(value, start, offset, next, advances, renderer, maxWidth, wrap, lines)
                 start = next
                 offset = next
             } else {
                 offset += Character.charCount(codePoint)
             }
         }
-        wrapParagraph(value, start, value.length, value.length, advances, renderer, maxWidth, wrap, lines, rangeLimit)
+        wrapParagraph(value, start, value.length, value.length, advances, renderer, maxWidth, wrap, lines)
         return lines
     }
 
@@ -124,14 +118,13 @@ internal object MinecraftTextLineBreaker {
         maxWidth: Int,
         wrap: TextWrap,
         output: MutableList<Range>,
-        rangeLimit: Int,
     ) {
         if (start == end || wrap == TextWrap.None || maxWidth == Int.MAX_VALUE) {
             output.add(Range(start, end, nextStart))
             return
         }
         var first = start
-        while (first < end && output.size < rangeLimit) {
+        while (first < end) {
             val last = wrapEnd(value, first, end, advances, renderer, maxWidth, wrap)
             output.add(Range(first, last, if (last == end) nextStart else last))
             first = last
