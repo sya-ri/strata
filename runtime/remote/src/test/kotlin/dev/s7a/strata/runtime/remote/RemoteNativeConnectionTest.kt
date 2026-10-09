@@ -175,12 +175,13 @@ internal class RemoteNativeConnectionTest {
             }
             val executor = Executors.newSingleThreadExecutor()
             try {
-                executor.submit {
-                    first.run {
-                        fixture.connection.flush(100)
-                        assertEquals(0L, fixture.connection.retainedNativeHeadroom)
-                    }
-                }.get(5, TimeUnit.SECONDS)
+                executor
+                    .submit {
+                        first.run {
+                            fixture.connection.flush(100)
+                            assertEquals(0L, fixture.connection.retainedNativeHeadroom)
+                        }
+                    }.get(5, TimeUnit.SECONDS)
             } finally {
                 executor.shutdownNow()
                 assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
@@ -210,7 +211,10 @@ internal class RemoteNativeConnectionTest {
     fun exhaustedInnerOrOuterIdentityAndClosedStreamsClearAllPendingNativeGroups() {
         negotiated(true, RemotePacket.limits) { }.use { fixture ->
             val framing = checkNotNull(field(fixture.connection, "framing"))
-            framing.javaClass.getDeclaredField("nextOutgoing").apply { isAccessible = true }.setLong(framing, Long.MAX_VALUE - 1)
+            framing.javaClass
+                .getDeclaredField("nextOutgoing")
+                .apply { isAccessible = true }
+                .setLong(framing, Long.MAX_VALUE - 1)
             fixture.connection.send(RemoteMessage.Resynchronize(1))
             val last = nativeGroups(fixture.connection)
             assertThrows(IllegalStateException::class.java) { fixture.connection.send(RemoteMessage.Resynchronize(2)) }
@@ -226,7 +230,10 @@ internal class RemoteNativeConnectionTest {
                 if (closeStream) {
                     fixture.stream.close()
                 } else {
-                    fixture.stream.javaClass.getDeclaredField("nextOutgoing").apply { isAccessible = true }.setLong(fixture.stream, Long.MAX_VALUE)
+                    fixture.stream.javaClass
+                        .getDeclaredField("nextOutgoing")
+                        .apply { isAccessible = true }
+                        .setLong(fixture.stream, Long.MAX_VALUE)
                 }
                 assertThrows(IllegalStateException::class.java) { fixture.connection.flush() }
                 retained.forEach(::assertReleased)
@@ -397,8 +404,7 @@ internal class RemoteNativeConnectionTest {
         return Fixture(stream, connection)
     }
 
-    private fun nativeGroups(connection: RemoteConnection): List<RemoteNativeTransfer> =
-        (field(connection, "pending") as Collection<*>).map { transfer -> field(checkNotNull(transfer), "frames") as RemoteNativeTransfer }
+    private fun nativeGroups(connection: RemoteConnection): List<RemoteNativeTransfer> = (field(connection, "pending") as Collection<*>).map { transfer -> field(checkNotNull(transfer), "frames") as RemoteNativeTransfer }
 
     private fun assertReleased(transfer: RemoteNativeTransfer) {
         assertEquals(0, transfer.frameCount)
@@ -409,7 +415,11 @@ internal class RemoteNativeConnectionTest {
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+    ): Any? =
+        target.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(target)
 
     /**
      * One independently owned packet stream and connection with deterministic terminal release.

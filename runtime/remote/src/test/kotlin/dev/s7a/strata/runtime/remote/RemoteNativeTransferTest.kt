@@ -77,7 +77,19 @@ internal class RemoteNativeTransferTest {
                 stream.sendNative(cancellation)
                 assertEquals(3L, field(stream, "nextOutgoing"))
                 assertArrayEquals(retainedFirst, published.first())
-                val expected = ByteBuffer.allocate(43).put(1.toByte()).put(1.toByte()).putLong(0).putLong(1).putLong(2).putLong(2).putInt(0).putInt(0).put(0).array()
+                val expected =
+                    ByteBuffer
+                        .allocate(43)
+                        .put(1.toByte())
+                        .put(1.toByte())
+                        .putLong(0)
+                        .putLong(1)
+                        .putLong(2)
+                        .putLong(2)
+                        .putInt(0)
+                        .putInt(0)
+                        .put(0)
+                        .array()
                 assertArrayEquals(expected, published.last())
                 assertNull(field(cancellation, "owner"))
                 RemoteFraming(RemotePacket.limits).use { receiver ->
@@ -108,7 +120,10 @@ internal class RemoteNativeTransferTest {
             }
             val exhausted = RemoteFraming(RemotePacket.limits).use { it.nativeTransfer(byteArrayOf(1)) { } }
             RemotePacketStream(address, send = { error("No exhausted output") }).use { stream ->
-                stream.javaClass.getDeclaredField("nextOutgoing").apply { isAccessible = true }.setLong(stream, Long.MAX_VALUE)
+                stream.javaClass
+                    .getDeclaredField("nextOutgoing")
+                    .apply { isAccessible = true }
+                    .setLong(stream, Long.MAX_VALUE)
                 assertThrows(IllegalStateException::class.java) { stream.sendNative(exhausted) }
                 assertTrue(frames(exhausted).isEmpty())
                 assertNull(field(exhausted, "owner"))
@@ -132,13 +147,15 @@ internal class RemoteNativeTransferTest {
             val admitted = mutableListOf<Int>()
             val failure = RemoteProtocolException(RemoteFailure.ResourceLimit, "One fragment admission")
             RemoteFraming(limits).use { framing ->
-                val admit: (Int) -> Unit = { bytes ->
-                    admitted.add(bytes)
-                    if (limits.collectionEntries < admitted.size) throw failure
-                }
-                val thrown = assertThrows(RemoteProtocolException::class.java) {
-                    if (native) framing.nativeTransfer(ByteArray(49) { 3 }, admit).close() else framing.send(ByteArray(49) { 3 }) { admit(it.size) }
-                }
+                val admit: (Int) -> Unit =
+                    { bytes ->
+                        admitted.add(bytes)
+                        if (limits.collectionEntries < admitted.size) throw failure
+                    }
+                val thrown =
+                    assertThrows(RemoteProtocolException::class.java) {
+                        if (native) framing.nativeTransfer(ByteArray(49) { 3 }, admit).close() else framing.send(ByteArray(49) { 3 }) { admit(it.size) }
+                    }
                 assertSame(failure, thrown)
                 assertEquals(listOf(64, 17), admitted)
             }
@@ -169,9 +186,18 @@ internal class RemoteNativeTransferTest {
     ): ByteArray {
         val offset = index * 24534
         val count = minOf(24534, logical.size - offset)
-        return ByteBuffer.allocate(42 + count)
-            .put(1.toByte()).put(1.toByte()).putLong(0).putLong(1).putLong(index + 1L)
-            .putLong(1).putInt(logical.size).putInt(offset).put(logical, offset, count).array()
+        return ByteBuffer
+            .allocate(42 + count)
+            .put(1.toByte())
+            .put(1.toByte())
+            .putLong(0)
+            .putLong(1)
+            .putLong(index + 1L)
+            .putLong(1)
+            .putInt(logical.size)
+            .putInt(offset)
+            .put(logical, offset, count)
+            .array()
     }
 
     @Suppress("UNCHECKED_CAST") // The private transfer owns exactly an ArrayDeque<ByteArray>.
@@ -180,5 +206,9 @@ internal class RemoteNativeTransferTest {
     private fun field(
         target: Any,
         name: String,
-    ): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+    ): Any? =
+        target.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(target)
 }
