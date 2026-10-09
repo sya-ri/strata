@@ -178,21 +178,7 @@ internal class FabricMinecraftFrameInputs(
         ): List<FabricMinecraftPortableImage> {
             val budget = FabricMinecraftSamplingBudget()
             layers.forEach { if (it is FabricMinecraftFrameLayer.Sampled && it.sampling != null) check(budget.admit(it.command.destination, it.visibleBounds, scale)) }
-            val inputs =
-                layers.mapNotNull {
-                    when (it) {
-                        is FabricMinecraftFrameLayer.Portable -> {
-                            val origin = if (it.absoluteCoordinates) IntOffset(it.bounds.left, it.bounds.top) else IntOffset.Zero
-                            FabricMinecraftPortableImage(it.commands, it.bounds.size, scale, origin)
-                        }
-
-                        is FabricMinecraftFrameLayer.Sampled -> {
-                            it.sampling?.let { sampling -> FabricMinecraftPortableImage(listOf(it.command), it.visibleBounds.size, scale, IntOffset(it.visibleBounds.left, it.visibleBounds.top), sampling) }
-                        }
-
-                        is FabricMinecraftFrameLayer.Platform -> null
-                    }
-                }
+            val inputs = layers.mapNotNull { portableInput(it, scale) }
             if (enabled.not()) return inputs
             val matches = matchFabricMinecraftPreparedInputs(previous, inputs)
             val axes = matchFabricMinecraftPreparedAxes(previous, inputs, matches)
@@ -219,5 +205,22 @@ internal class FabricMinecraftFrameInputs(
                 if (composition == null) input else FabricMinecraftPortableImage(input.commands, input.size, scale, input.origin, composition = composition)
             }
         }
+
+        private fun portableInput(
+            layer: FabricMinecraftFrameLayer,
+            scale: Int,
+        ): FabricMinecraftPortableImage? =
+            when (layer) {
+                is FabricMinecraftFrameLayer.Portable -> {
+                    val origin = if (layer.absoluteCoordinates) IntOffset(layer.bounds.left, layer.bounds.top) else IntOffset.Zero
+                    FabricMinecraftPortableImage(layer.commands, layer.bounds.size, scale, origin)
+                }
+
+                is FabricMinecraftFrameLayer.Sampled -> {
+                    layer.sampling?.let { sampling -> FabricMinecraftPortableImage(listOf(layer.command), layer.visibleBounds.size, scale, IntOffset(layer.visibleBounds.left, layer.visibleBounds.top), sampling) }
+                }
+
+                is FabricMinecraftFrameLayer.Platform -> null
+            }
     }
 }

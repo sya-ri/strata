@@ -128,9 +128,7 @@ internal class FabricMinecraftCompositionMap private constructor(
             val size = input.size
             val scale = input.scale
             val origin = input.origin
-            require(0 < size.width && 0 < size.height && 0 < scale && 0 <= origin.x && 0 <= origin.y)
-            val physical = IntSize(Math.multiplyExact(size.width, scale), Math.multiplyExact(size.height, scale))
-            if (physical.width !in 1..4096 || physical.height !in 1..4096 || physical.width.toLong() * physical.height < 4096L) return null
+            val physical = physicalSize(input) ?: return null
             if (commands.none { it is DrawCommand.SampledImage }) return null
             val geometry = Geometry(size, scale, origin)
             val plans = geometry.plans(commands) ?: return null
@@ -152,6 +150,16 @@ internal class FabricMinecraftCompositionMap private constructor(
             }
             val factors = factorTables.get(tints, previous?.takeIf { it.orderedTints == tints }?.factors)
             return FabricMinecraftCompositionMap(physical, plans.map { source(it.command) }, createOwnedDrawImage(indexSize, indices), factors, tints, written)
+        }
+
+        private fun physicalSize(input: FabricMinecraftPortableImage): IntSize? {
+            val size = input.size
+            val scale = input.scale
+            val origin = input.origin
+            require(0 < size.width && 0 < size.height && 0 < scale && 0 <= origin.x && 0 <= origin.y)
+            val physical = IntSize(Math.multiplyExact(size.width, scale), Math.multiplyExact(size.height, scale))
+            if (physical.width !in 1..4096 || physical.height !in 1..4096 || physical.width.toLong() * physical.height < 4096L) return null
+            return physical
         }
 
         private fun writeControls(
