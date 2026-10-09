@@ -131,16 +131,22 @@ internal class FabricMinecraftImageDecodeCacheTest {
                 assertThrows(IOException::class.java) {
                     cache.load(manager) {
                         when (kind) {
-                            FailureKind.Open -> throw failure
+                            FailureKind.Open -> {
+                                throw failure
+                            }
 
-                            FailureKind.Read -> Source(bytes, events, readFailure = failure)
+                            FailureKind.Read -> {
+                                Source(bytes, events, readFailure = failure)
+                            }
 
                             FailureKind.Decode -> {
                                 decodeFailure = failure
                                 Source(byteArrayOf(7, 8), events)
                             }
 
-                            FailureKind.Close -> Source(bytes, events, outerCloseFailure = failure)
+                            FailureKind.Close -> {
+                                Source(bytes, events, outerCloseFailure = failure)
+                            }
                         }
                     }
                 }
@@ -245,8 +251,16 @@ internal class FabricMinecraftImageDecodeCacheTest {
                 .apply { isAccessible = true }
                 .get(cache) as AtomicReference<*>
         val state = current.get()
-        assertEquals(setOf("entry", "terminal"), state.javaClass.declaredFields.map { it.name }.toSet())
-        return state.javaClass.getDeclaredField("entry").apply { isAccessible = true }.get(state)
+        assertEquals(
+            setOf("entry", "terminal"),
+            state.javaClass.declaredFields
+                .map { it.name }
+                .toSet(),
+        )
+        return state.javaClass
+            .getDeclaredField("entry")
+            .apply { isAccessible = true }
+            .get(state)
     }
 
     private fun assertRetained(
@@ -255,12 +269,29 @@ internal class FabricMinecraftImageDecodeCacheTest {
         payloadBytes: Int,
     ) {
         val retained = checkNotNull(entry(cache))
-        val encoded = retained.javaClass.getDeclaredField("encoded").apply { isAccessible = true }.get(retained) as ByteArray
-        val decoded = retained.javaClass.getDeclaredField("decoded").apply { isAccessible = true }.get(retained)
-        val pixels = decoded.javaClass.getDeclaredField("pixels").apply { isAccessible = true }.get(decoded) as IntArray
+        val encoded =
+            retained.javaClass
+                .getDeclaredField("encoded")
+                .apply { isAccessible = true }
+                .get(retained) as ByteArray
+        val decoded =
+            retained.javaClass
+                .getDeclaredField("decoded")
+                .apply { isAccessible = true }
+                .get(retained)
+        val pixels =
+            decoded.javaClass
+                .getDeclaredField("pixels")
+                .apply { isAccessible = true }
+                .get(decoded) as IntArray
         assertEquals(encodedBytes, encoded.size)
         assertEquals(payloadBytes, pixels.size * Int.SIZE_BYTES)
-        assertEquals(setOf("manager", "encoded", "decoded", "owner"), retained.javaClass.declaredFields.map { it.name }.toSet())
+        assertEquals(
+            setOf("manager", "encoded", "decoded", "owner"),
+            retained.javaClass.declaredFields
+                .map { it.name }
+                .toSet(),
+        )
     }
 
     private class Source(
@@ -293,9 +324,13 @@ internal class FabricMinecraftImageDecodeCacheTest {
     private enum class FailureKind { Open, Read, Decode, Close }
 
     private sealed interface Event {
-        data class Read(val bytes: List<Byte>) : Event
+        data class Read(
+            val bytes: List<Byte>,
+        ) : Event
 
-        data class Decode(val bytes: List<Byte>) : Event
+        data class Decode(
+            val bytes: List<Byte>,
+        ) : Event
 
         data object Close : Event
     }
