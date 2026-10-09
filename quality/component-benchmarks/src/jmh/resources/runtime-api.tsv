@@ -4398,6 +4398,14 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexData#type:17
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexData$Companion#method:17:load:(Ljava/io/InputStream;Ldev/s7a/strata/runtime/minecraft/font/FontLoadBudget;)Ldev/s7a/strata/runtime/minecraft/font/FontUnihexData;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexData$Companion#method:17:load:([BLdev/s7a/strata/runtime/minecraft/font/FontLoadBudget;)Ldev/s7a/strata/runtime/minecraft/font/FontUnihexData;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexData$Companion#type:25:java.lang.Object:
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/font/FontUnihexWidthIndex$Companion;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#field:25:MAX_OVERRIDES:I
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#method:17:getBytes:()I
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#method:17:getSegmentCount:()I
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#method:17:lookup:(I)Ldev/s7a/strata/runtime/minecraft/font/FontProvider$WidthOverride;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex#type:17:java.lang.Object:
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex$Companion#method:17:build:(Ljava/util/List;)Ldev/s7a/strata/runtime/minecraft/font/FontUnihexWidthIndex;
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.FontUnihexWidthIndex$Companion#type:25:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.MinecraftArchiveFontAssetSource#constructor:1:(Ljava/nio/file/Path;Ljava/lang/String;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.MinecraftArchiveFontAssetSource#method:1:getName:()Ljava/lang/String;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.font.MinecraftArchiveFontAssetSource#method:1:paths:()Ljava/util/Set;
