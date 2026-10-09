@@ -89,7 +89,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Check GitHub Actions workflows
-      uses: docker://rhysd/actionlint:1.7.12
+      run: bash .github/check-workflows.sh
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle for release fixtures
