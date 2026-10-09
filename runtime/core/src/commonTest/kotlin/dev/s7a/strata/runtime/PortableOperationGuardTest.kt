@@ -21,12 +21,13 @@ internal class PortableOperationGuardTest {
         val state = mutableStateOf(0)
         val probes = List(128) { TestProbe() }
         var evaluations = 0
-        val sessions = probes.map { probe ->
-            createRuntimeUiSession {
-                evaluations += 1
-                probe.root(emptyList())
+        val sessions =
+            probes.map { probe ->
+                createRuntimeUiSession {
+                    evaluations += 1
+                    probe.root(emptyList())
+                }
             }
-        }
         val constraints = Constraints.fixed(2, 1)
         try {
             sessions.forEach { it.attach() }
