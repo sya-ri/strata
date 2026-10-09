@@ -26,8 +26,14 @@ internal class RemotePacketInspectionTest {
                     assertEquals(RemotePacket.Discovery, RemotePacket.decode(discovery))
                     assertEquals(RemotePacketRoute.Discovery, RemotePacket.inspect(discovery))
                 }
-                1 -> reject(discovery, "Truncated routed fragment.")
-                else -> reject(discovery, "Unknown remote packet kind.")
+
+                1 -> {
+                    reject(discovery, "Truncated routed fragment.")
+                }
+
+                else -> {
+                    reject(discovery, "Unknown remote packet kind.")
+                }
             }
             val frame = native(43, kind = kind)
             when (kind) {
@@ -80,7 +86,13 @@ internal class RemotePacketInspectionTest {
             }
         }
         val cancellation = native(43)
-        ByteBuffer.wrap(cancellation).position(26).putLong(777).putInt(0).putInt(0).put(0)
+        ByteBuffer
+            .wrap(cancellation)
+            .position(26)
+            .putLong(777)
+            .putInt(0)
+            .putInt(0)
+            .put(0)
         accept(cancellation, RemoteEndpoint.Server)
         listOf(0.toByte(), 127.toByte(), (-128).toByte(), (-1).toByte()).forEach { value ->
             val bytes = native(43)
@@ -109,11 +121,19 @@ internal class RemotePacketInspectionTest {
             member.isAccessible = true
             assertTrue(member.get(route) is RemoteAddress)
         }
-        assertEquals(listOf(RemoteEndpoint::class.java, UUID::class.java), address.javaClass.declaredFields.filter { Modifier.isStatic(it.modifiers).not() }.map { it.type })
+        assertEquals(
+            listOf(RemoteEndpoint::class.java, UUID::class.java),
+            address.javaClass.declaredFields
+                .filter { Modifier.isStatic(it.modifiers).not() }
+                .map { it.type },
+        )
         assertNull(bytes.firstOrNull { it != 0.toByte() })
     }
 
-    private fun accept(bytes: ByteArray, endpoint: RemoteEndpoint) {
+    private fun accept(
+        bytes: ByteArray,
+        endpoint: RemoteEndpoint,
+    ) {
         val packet = RemotePacket.decode(bytes) as RemotePacket.Frame
         val route = RemotePacket.inspect(bytes) as RemotePacketRoute.Frame
         assertEquals(endpoint, route.address.endpoint)
@@ -121,7 +141,10 @@ internal class RemotePacketInspectionTest {
         assertArrayEquals(bytes.copyOfRange(26, bytes.size), packet.bytes)
     }
 
-    private fun reject(bytes: ByteArray, message: String) {
+    private fun reject(
+        bytes: ByteArray,
+        message: String,
+    ) {
         assertEquals(message, assertThrows(IllegalArgumentException::class.java) { RemotePacket.decode(bytes) }.message)
         assertEquals(message, assertThrows(IllegalArgumentException::class.java) { RemotePacket.inspect(bytes) }.message)
     }
@@ -137,7 +160,14 @@ internal class RemotePacketInspectionTest {
         val bytes = ByteArray(size)
         if (0 < size) bytes[0] = kind.toByte()
         if (1 < size) bytes[1] = endpoint.toByte()
-        if (26 <= size) ByteBuffer.wrap(bytes).position(2).putLong(most).putLong(least).putLong(sequence)
+        if (26 <= size) {
+            ByteBuffer
+                .wrap(bytes)
+                .position(2)
+                .putLong(most)
+                .putLong(least)
+                .putLong(sequence)
+        }
         return bytes
     }
 }
