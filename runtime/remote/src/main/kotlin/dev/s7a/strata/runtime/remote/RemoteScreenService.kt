@@ -127,7 +127,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                 RemoteServerSession(handle.identity, RemoteTextCodec.encode(content.title), capabilities.types.intersect(types + extensions.keys), capabilities.limits, peer.connection::send, content.pausesGame, eventSession = handle.uiSession, controller = handle.controls, settings = settings) {
                     runtime.evaluate(content.content)
                 }
-            peer.sessions[handle.identity] = Active(owner, handle, session, settings.presentation, settings.category)
+            peer.addSession(Active(owner, handle, session, settings.presentation, settings.category))
             handle.bindControls { request ->
                 val active = peer.sessions[handle.identity]
                 if (active != null) {
@@ -237,11 +237,14 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             }
         }
 
-        peer.sessions.values
-            .toList()
-            .forEach { active -> runCatching(active.session::tick).onFailure(report) }
-        peer.checkNodeBudget()
-        peer.refresh()
+        val membership = peer.captureTickMembership()
+        try {
+            membership.tick(report)
+            peer.checkNodeBudget()
+            peer.refresh(membership)
+        } finally {
+            membership.release()
+        }
         if (peer.discovered) {
             peer.connection.tick(now)
             peer.connection.flush()
@@ -364,6 +367,20 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         var discovered = false
         val inbox = RemoteFrameInbox()
         val sessions = linkedMapOf<Long, Active<Owner>>()
+        private var membership = Any()
+
+        /**
+         * Invalidates the identity-only generation before any callback can observe an admitted owner.
+         */
+        fun addSession(active: Active<Owner>) {
+            sessions[active.handle.identity] = active
+            membership = Any()
+        }
+
+        /**
+         * Captures only this peer's current encounter order for one owner-confined tick.
+         */
+        fun captureTickMembership(): TickMembership<Owner> = TickMembership(membership, sessions.values.toList())
 
         fun checkNodeBudget() {
             val limits = connection.capabilities?.limits ?: return
@@ -372,14 +389,16 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
 
         fun hudCount(except: Long? = null): Int = sessions.values.count { it.handle.identity != except && it.presentation == UiPresentation.Hud }
 
-        fun refresh() {
+        fun refresh(tickMembership: TickMembership<Owner>? = null) {
             if (ready.not()) {
                 connection.capabilities?.let {
                     ready = true
                     notify(RemoteLifecycleEvent.Ready(it.toUiCapabilities()))
                 }
             }
-            sessions.values.toList().forEach { active ->
+            // Ready callbacks may change membership; independent open/receive refreshes always capture afresh.
+            val current = tickMembership?.take(membership) ?: sessions.values.toList()
+            current.forEach { active ->
                 active.handle.update(active.session.status)
                 val status = active.session.status
                 val applied = active.handle.uiSession.presentation
@@ -398,6 +417,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                     applied?.let { active.presentation = it }
                 }
                 if (status is RemoteSessionStatus.Closed && sessions.remove(active.handle.identity) != null) {
+                    membership = Any()
                     closed(active, status.reason)
                 }
             }
@@ -426,6 +446,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
             notify: Boolean = true,
         ) {
             val active = sessions.remove(identity) ?: return
+            membership = Any()
             active.handle.update(RemoteSessionStatus.Closed(reason))
             try {
                 connection.discardSession(identity)
@@ -459,6 +480,41 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
                 }
             }
             failure?.let { throw it }
+        }
+    }
+
+    /**
+     * Owns the necessary tick snapshot and lends it once to the same peer's refresh.
+     * The execution owner may migrate threads, but the invocation remains serialized by its existing contract.
+     * A generation contains no owner references; invalidation and every unwind drop optional reuse ownership.
+     * Nested operations capture independently, so active payloads are bounded by their invocation stack.
+     */
+    private class TickMembership<Owner>(
+        private var generation: Any?,
+        private var captured: List<Active<Owner>>?,
+    ) {
+        /**
+         * Ticks the original membership in encounter order even if callbacks replace current owners.
+         */
+        fun tick(report: (Throwable) -> Unit) {
+            checkNotNull(captured).forEach { active -> runCatching(active.session::tick).onFailure(report) }
+        }
+
+        /**
+         * Transfers eligible membership after Ready, clearing the optional reference before any fallback capture.
+         */
+        fun take(currentGeneration: Any): List<Active<Owner>>? {
+            val result = if (generation === currentGeneration) captured else null
+            release()
+            return result
+        }
+
+        /**
+         * Releases references on normal, exceptional and terminal unwind without retaining history.
+         */
+        fun release() {
+            captured = null
+            generation = null
         }
     }
 

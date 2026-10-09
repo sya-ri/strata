@@ -66,6 +66,9 @@ Nested fixtures accept either Java source names (`Outer.Inner`) or JVM binary na
 Use exact qualified names or unambiguous simple names; empty, duplicate, unknown and ambiguous names fail before timing.
 Omitting this option preserves each task's original default corpus.
 Class selection uses anchored JMH include filters and checks the complete generated method/parameter matrix, so similarly named supplemental fixtures cannot enter a selected corpus implicitly.
+The remote task also resolves `strata.performance.workloads` method selections through the generated registry and the same shared selector.
+Omitting a selection preserves its protocol corpus, and `strata.performance.remoteSessions=true` preserves its direct retained-session workload names.
+The ordinary remote work check discovers every generated fixture's optional verifier before accepting its protocol surface.
 `strata.performance.suite=<name>` chooses a separate output label without adding a corpus-specific build flag.
 Quick collection retains explicitly selected classes, methods and parameters; ordinary quick runs keep their existing default smoke subset.
 
