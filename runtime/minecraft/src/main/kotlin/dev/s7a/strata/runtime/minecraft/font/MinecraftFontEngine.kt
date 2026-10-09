@@ -504,7 +504,9 @@ public class MinecraftFontEngine
             return face
         }
 
-        /** Releases a late face without changing its original cleanup failure or preflight diagnostic boundary. */
+        /**
+         * Releases a late face without changing its original cleanup failure or preflight diagnostic boundary.
+         */
         private fun closeUnadmittedFace(
             face: MinecraftTrueTypeFace,
             preparing: Boolean,

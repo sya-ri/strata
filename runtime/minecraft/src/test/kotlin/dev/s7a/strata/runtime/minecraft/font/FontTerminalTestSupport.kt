@@ -74,7 +74,11 @@ internal object FontTerminalTestSupport {
     private fun field(
         engine: MinecraftFontEngine,
         name: String,
-    ): Any? = MinecraftFontEngine::class.java.getDeclaredField(name).apply { isAccessible = true }.get(engine)
+    ): Any? =
+        MinecraftFontEngine::class.java
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(engine)
 
     // Reflection only transports the native failure; preserve its exact identity without attaching the wrapper.
     @Suppress("SwallowedException")
@@ -85,7 +89,10 @@ internal object FontTerminalTestSupport {
         vararg args: Any,
     ): Any? =
         try {
-            MinecraftFontEngine::class.java.getDeclaredMethod(name, *types).apply { isAccessible = true }.invoke(engine, *args)
+            MinecraftFontEngine::class.java
+                .getDeclaredMethod(name, *types)
+                .apply { isAccessible = true }
+                .invoke(engine, *args)
         } catch (failure: InvocationTargetException) {
             throw checkNotNull(failure.targetException)
         }
