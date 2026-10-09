@@ -13,6 +13,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Test-thread synthetic fonts with independently selected advances and counted uncached glyph calls.
@@ -122,6 +123,7 @@ internal class MinecraftTextProvenanceFontFixture(
     /**
      * Profile and borrowed renderer share immutable resource inputs but no presentation or mutable provenance.
      */
+    @OptIn(InternalStrataRuntimeApi::class)
     internal val profile: MinecraftUiProfile = MinecraftProfileFixture.create(fontSnapshot = snapshot)
 
     /**
