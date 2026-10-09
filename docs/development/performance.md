@@ -675,6 +675,21 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Current text-line array ownership
+
+`MinecraftTextLineBreaker` exclusively transfers its completed original scalar-offset and rounded-position arrays into each current detached line.
+Untruncated lines transfer the original offsets directly; an ellipsis cut first trims offsets to exactly the admitted visible boundaries.
+Positions are constructed at their final visible length, and neither array is mutated or retained by the producer after transfer.
+The privileged factory exposes no array or mutable view; the existing six-argument constructor still snapshots arbitrary caller arrays.
+The private ownership discriminator controls construction only and is not retained as line state.
+
+Every line keeps only its detached run, private current metrics and derived admission/ink data.
+Layout replacement releases the owner's old reference; editor detach clears current composition/layout, and terminal component disposal clears borrowed input/service references.
+The handoff introduces no string, renderer, backend, source-state or historical-layout cache.
+Scalar offsets, forward Float accumulation, native signed rounding, nearest-boundary ties, range extrema and glyph ordering remain defined by their existing contracts.
+The `TextLineLayoutBenchmark` corpus exercises actual construction and clean/editing controls with independent boundaries, bounded reference pixels and release checks; its complete frozen paired evidence is defined by [the testkit contract](performance-testkit.md).
+Removed source copy sites are separate from normalized VM allocation and do not establish measured CPU, native input or FPS gains.
+
 ### Logical multiline insertion lookup
 
 Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
