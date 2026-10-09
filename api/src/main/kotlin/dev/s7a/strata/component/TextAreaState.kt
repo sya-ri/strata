@@ -102,6 +102,7 @@ public class TextAreaState(
         while (offset < value.length) {
             val codePoint = value.scalarAt(offset)
             require((codePoint in 0xD800..0xDFFF).not()) { "Text area value contains an isolated surrogate." }
+            val scalarLength = if (codePoint < 0x10000) 1 else 2
             when (codePoint) {
                 0x0A -> {
                     result?.append('\n')
@@ -121,11 +122,11 @@ public class TextAreaState(
                         "Text area value contains a control character or formatting marker."
                     }
                     result?.appendScalar(codePoint)
-                    length += (if (codePoint < 0x10000) 1 else 2)
+                    length += scalarLength
                 }
             }
             require(length <= maxLength) { "Text area value exceeds its maximum length after newline normalization." }
-            offset += (if (codePoint < 0x10000) 1 else 2)
+            offset += scalarLength
         }
         return result?.toString() ?: value
     }
