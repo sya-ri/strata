@@ -194,7 +194,9 @@ public open class PointerCapabilityBenchmark {
         val children: List<Specification> = emptyList(),
     )
 
-    private class Events(position: IntOffset) {
+    private class Events(
+        position: IntOffset,
+    ) {
         val move = PointerEvent.Move(position)
         val drag = PointerEvent.Drag(position, PointerButton.Primary, 8.0, 12.0)
         val scroll = PointerEvent.Scroll(position, 0.25, -0.5)
@@ -374,7 +376,10 @@ public open class PointerCapabilityBenchmark {
             verifyFrame(frame)
         }
 
-        private fun verifyEvents(sequence: List<PointerEvent>, oracle: OriginalPointer) {
+        private fun verifyEvents(
+            sequence: List<PointerEvent>,
+            oracle: OriginalPointer,
+        ) {
             counters.trace.clear()
             oracle.trace.clear()
             sequence.forEach { event -> check(session.dispatchPointer(event) === oracle.dispatch(event)) }
@@ -444,7 +449,9 @@ public open class PointerCapabilityBenchmark {
         }
     }
 
-    private class Counters(var record: Boolean) {
+    private class Counters(
+        var record: Boolean,
+    ) {
         var invalidate: () -> Unit = {}
         var invalidateNext = false
         var measures = 0
@@ -466,8 +473,14 @@ public open class PointerCapabilityBenchmark {
     private open class BaseNode(
         protected val specification: Specification,
         protected val counters: Counters,
-    ) : Node(), MeasureNode, LayoutNode, LifecycleNode {
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        LifecycleNode {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             if (counters.record) counters.measures += 1
             repeat(scope.childCount) { scope.measureChild(it, childConstraints) }
             return constraints.constrain(IntSize(specification.size, specification.size))
@@ -490,12 +503,15 @@ public open class PointerCapabilityBenchmark {
     private class ClippedNode(
         spec: Specification,
         counters: Counters,
-    ) : BaseNode(spec, counters), ClipChildrenNode
+    ) : BaseNode(spec, counters),
+        ClipChildrenNode
 
     private open class RootNode(
         spec: Specification,
         counters: Counters,
-    ) : BaseNode(spec, counters), PaintNode, SemanticsNode {
+    ) : BaseNode(spec, counters),
+        PaintNode,
+        SemanticsNode {
         fun invalidateGeometry() = invalidate(DirtyMask.of(DirtyPhase.Layout))
 
         fun invalidatePresentation() = invalidate(DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics))
@@ -514,7 +530,8 @@ public open class PointerCapabilityBenchmark {
     private class ClippedRoot(
         spec: Specification,
         counters: Counters,
-    ) : RootNode(spec, counters), ClipChildrenNode
+    ) : RootNode(spec, counters),
+        ClipChildrenNode
 
     private class PointerNode(
         spec: Specification,
@@ -522,8 +539,13 @@ public open class PointerCapabilityBenchmark {
         private val workload: Workload,
         private val topmost: Int?,
         private val last: Int?,
-    ) : BaseNode(spec, counters), PointerCaptureNode, PointerHoverNode {
-        override fun onPointerEvent(event: PointerEvent, localPosition: IntOffset): InputResult {
+    ) : BaseNode(spec, counters),
+        PointerCaptureNode,
+        PointerHoverNode {
+        override fun onPointerEvent(
+            event: PointerEvent,
+            localPosition: IntOffset,
+        ): InputResult {
             if (counters.record) counters.trace += Trace.Input(specification.id, event, localPosition)
             if (counters.invalidateNext) {
                 counters.invalidateNext = false
@@ -617,13 +639,25 @@ public open class PointerCapabilityBenchmark {
             if (spec.role === Role.Participant) trace += Trace.Hover(spec.id, false)
         }
 
-        private fun hover(spec: Specification, position: IntOffset, x: Double, y: Double, allowed: Boolean) {
+        private fun hover(
+            spec: Specification,
+            position: IntOffset,
+            x: Double,
+            y: Double,
+            allowed: Boolean,
+        ) {
             val descendants = allowed && (spec.clipped.not() || contains(spec, position, x, y))
             for (child in spec.children.asReversed()) hover(child, position, x + child.offset.x * scale, y + child.offset.y * scale, descendants)
             if (spec.role === Role.Participant) trace += Trace.Hover(spec.id, allowed && contains(spec, position, x, y))
         }
 
-        private fun visit(spec: Specification, event: PointerEvent, x: Double, y: Double, allowed: Boolean): InputResult {
+        private fun visit(
+            spec: Specification,
+            event: PointerEvent,
+            x: Double,
+            y: Double,
+            allowed: Boolean,
+        ): InputResult {
             val descendants = allowed && (spec.clipped.not() || contains(spec, event.position, x, y))
             if (descendants) {
                 for (child in spec.children.asReversed()) {
@@ -644,7 +678,10 @@ public open class PointerCapabilityBenchmark {
             return InputResult.Ignored
         }
 
-        private fun deliver(hit: Hit, event: PointerEvent): InputResult {
+        private fun deliver(
+            hit: Hit,
+            event: PointerEvent,
+        ): InputResult {
             val local = IntOffset(floor((event.position.x - hit.x) / scale).toInt(), floor((event.position.y - hit.y) / scale).toInt())
             val delivered = if (event is PointerEvent.Drag && scale != 1.0) PointerEvent.Drag(event.position, event.button, event.deltaX / scale, event.deltaY / scale) else event
             trace += Trace.Input(hit.specification.id, delivered, local)
@@ -656,8 +693,12 @@ public open class PointerCapabilityBenchmark {
             }
         }
 
-        private fun contains(spec: Specification, position: IntOffset, x: Double, y: Double): Boolean =
-            x <= position.x && position.x < x + spec.size * scale && y <= position.y && position.y < y + spec.size * scale
+        private fun contains(
+            spec: Specification,
+            position: IntOffset,
+            x: Double,
+            y: Double,
+        ): Boolean = x <= position.x && position.x < x + spec.size * scale && y <= position.y && position.y < y + spec.size * scale
 
         private class Hit(
             val specification: Specification,
@@ -700,7 +741,10 @@ public open class PointerCapabilityBenchmark {
             }
         }
 
-        private fun releaseAfterFailure(fixture: Fixture, failure: Throwable): Nothing {
+        private fun releaseAfterFailure(
+            fixture: Fixture,
+            failure: Throwable,
+        ): Nothing {
             try {
                 fixture.closeVerified()
             } catch (cleanup: Throwable) {
@@ -709,7 +753,13 @@ public open class PointerCapabilityBenchmark {
             throw failure
         }
 
-        private fun consumption(workload: Workload, id: Int, topmost: Int?, last: Int?, event: PointerEvent): InputResult =
+        private fun consumption(
+            workload: Workload,
+            id: Int,
+            topmost: Int?,
+            last: Int?,
+            event: PointerEvent,
+        ): InputResult =
             when (workload.consumption) {
                 Consumption.None -> InputResult.Ignored
                 Consumption.Topmost -> if (id == topmost) InputResult.Consumed else InputResult.Ignored
@@ -739,7 +789,7 @@ public open class PointerCapabilityBenchmark {
                 when (workload.shape) {
                     Shape.Broad -> {
                         List(workload.count) { id ->
-                            val participant = workload.distribution === Distribution.Dense || workload.distribution === Distribution.Sparse && id % 100 == 0
+                            val participant = workload.distribution === Distribution.Dense || (workload.distribution === Distribution.Sparse && id % 100 == 0)
                             Specification(id, if (participant) Role.Participant else Role.Passive)
                         }
                     }
@@ -747,7 +797,7 @@ public open class PointerCapabilityBenchmark {
                     Shape.Deep -> {
                         var descendants = emptyList<Specification>()
                         for (id in (0 until workload.count).reversed()) {
-                            val participant = workload.distribution === Distribution.Dense || workload.distribution === Distribution.Sparse && id == workload.count - 1
+                            val participant = workload.distribution === Distribution.Dense || (workload.distribution === Distribution.Sparse && id == workload.count - 1)
                             descendants = listOf(Specification(id, if (participant) Role.Participant else Role.Passive, children = descendants))
                         }
                         descendants
