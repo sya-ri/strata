@@ -63,7 +63,7 @@ public class TransportDrainFleet(
         tick()
         val retained = field(service.javaClass, "peers").get(service) as Map<*, *>
         peers.forEach { peer ->
-            check(service.capabilities(peer.index) != null)
+            checkNotNull(service.capabilities(peer.index))
             val owner = checkNotNull(retained[peer.index])
             peer.server = field(owner.javaClass, "connection").get(owner) as RemoteConnection
             peer.stream = field(owner.javaClass, "stream").get(owner) as RemotePacketStream
@@ -111,10 +111,12 @@ public class TransportDrainFleet(
     private fun drainBusy() {
         peers.forEach { peer ->
             peer.afterWrite = {
-                checkNotNull(producer).submit {
-                    peer.incoming.forEach { service.enqueue(peer.index, it) }
-                    peer.incoming.clear()
-                }.get(10, TimeUnit.SECONDS)
+                checkNotNull(producer)
+                    .submit {
+                        peer.incoming.forEach { service.enqueue(peer.index, it) }
+                        peer.incoming.clear()
+                    }
+                    .get(10, TimeUnit.SECONDS)
             }
             peer.server.send(RemoteMessage.Resynchronize(generation))
         }
@@ -143,7 +145,7 @@ public class TransportDrainFleet(
             check((field(RemoteConnection::class.java, "pending").get(peer.server) as Collection<*>).isEmpty())
             val expected = generation * if (workload == TransportDrainWorkload.BusyProducer) 1 else workload.frames
             check(peer.delivered == expected)
-            check(peer.server.capabilities != null)
+            checkNotNull(peer.server.capabilities)
         }
     }
 
@@ -178,7 +180,7 @@ public class TransportDrainFleet(
             try {
                 tickMethod.invoke(service, peer.retained, logicalMillis)
             } catch (failure: InvocationTargetException) {
-                throw checkNotNull(failure.cause)
+                throw failure.cause ?: failure
             }
         }
     }
