@@ -136,22 +136,30 @@ internal class MinecraftFontResolutionTest {
         for (filtered in listOf(false, true)) {
             for (uniform in listOf(false, true)) {
                 for (advance in listOf(7, 11)) {
-                    val snapshot =
-                        FontTestResources.snapshot(
-                            FontTestResources.font("default", """{"type":"space","advances":{"A":3},"filter":{"uniform":false}},{"type":"space","advances":{"A":$advance},"filter":{"uniform":true}}"""),
-                            FontTestResources.font("uniform", """{"type":"space","advances":{"A":$advance}}"""),
-                            options = MinecraftFontOptions(uniform = uniform),
-                            capabilities = FontTestResources.compatibility.copy(providerFilters = filtered),
-                        )
-                    MinecraftFontEngine(snapshot, { FontTestBackend() }).use { candidate ->
-                        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { reference ->
-                            repeat(3) { assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code) }
-                            assertEquals(if (uniform) advance.toFloat() else 3f, candidate.glyph(FontTestResources.defaultFont, 'A'.code).advance)
-                            assertEquals(1, resolutionEntries(candidate))
-                            assertEquals(0, resolutionEntries(reference))
-                        }
-                    }
+                    verifyFilteredOptions(filtered, uniform, advance)
                 }
+            }
+        }
+    }
+
+    private fun verifyFilteredOptions(
+        filtered: Boolean,
+        uniform: Boolean,
+        advance: Int,
+    ) {
+        val snapshot =
+            FontTestResources.snapshot(
+                FontTestResources.font("default", """{"type":"space","advances":{"A":3},"filter":{"uniform":false}},{"type":"space","advances":{"A":$advance},"filter":{"uniform":true}}"""),
+                FontTestResources.font("uniform", """{"type":"space","advances":{"A":$advance}}"""),
+                options = MinecraftFontOptions(uniform = uniform),
+                capabilities = FontTestResources.compatibility.copy(providerFilters = filtered),
+            )
+        MinecraftFontEngine(snapshot, { FontTestBackend() }).use { candidate ->
+            MinecraftFontEngine(snapshot, { FontTestBackend() }).use { reference ->
+                repeat(3) { assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code) }
+                assertEquals(if (uniform) advance.toFloat() else 3f, candidate.glyph(FontTestResources.defaultFont, 'A'.code).advance)
+                assertEquals(1, resolutionEntries(candidate))
+                assertEquals(0, resolutionEntries(reference))
             }
         }
     }
@@ -271,53 +279,64 @@ internal class MinecraftFontResolutionTest {
             for (missing in listOf(false, true)) {
                 for (releaseFailure in listOf(null, IllegalStateException("terminal backend failure"), MinecraftFontLoadLimitException("terminal limit failure"))) {
                     for (original in listOf(false, true)) {
-                        lateinit var owner: MinecraftFontEngine
-                        var faceCloses = 0
-                        val backend =
-                            FontTestBackend(
-                                open = { _, _ ->
-                                    FontTestFace(
-                                        {
-                                            owner.close()
-                                            if (missing) null else detached
-                                        },
-                                        {
-                                            faceCloses++
-                                            owner.close()
-                                        },
-                                    )
-                                },
-                                release = {
-                                    owner.close()
-                                    if (releaseFailure != null) throw releaseFailure
-                                },
-                            )
-                        owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
-                        val expected = if (missing) owner.glyph(ResourceId("unknown", "terminal"), 'A'.code) else detached
-                        try {
-                            val result =
-                                runCatching {
-                                    if (original) originalGlyph(snapshot, owner, FontTestResources.defaultFont, 'A'.code) else owner.glyph(FontTestResources.defaultFont, 'A'.code)
-                                }
-                            if (releaseFailure == null) {
-                                assertEquals(expected, result.getOrThrow())
-                            } else {
-                                assertTrue(result.exceptionOrNull() === releaseFailure)
-                            }
-                            assertTerminalState(owner)
-                            val rejected = assertThrows(IllegalStateException::class.java) { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
-                            assertEquals("Font engine is closed.", rejected.message)
-                            owner.close()
-                            assertTerminalState(owner)
-                            assertEquals(1, faceCloses)
-                            assertEquals(1, backend.openCalls)
-                            assertEquals(1, backend.closeCalls)
-                        } finally {
-                            owner.close()
-                        }
+                        verifyTerminalClose(snapshot, detached, entries, missing, releaseFailure, original)
                     }
                 }
             }
+        }
+    }
+
+    private fun verifyTerminalClose(
+        snapshot: MinecraftFontSnapshot,
+        detached: MinecraftFontGlyph,
+        entries: Int,
+        missing: Boolean,
+        releaseFailure: Throwable?,
+        original: Boolean,
+    ) {
+        lateinit var owner: MinecraftFontEngine
+        var faceCloses = 0
+        val backend =
+            FontTestBackend(
+                open = { _, _ ->
+                    FontTestFace(
+                        {
+                            owner.close()
+                            if (missing) null else detached
+                        },
+                        {
+                            faceCloses++
+                            owner.close()
+                        },
+                    )
+                },
+                release = {
+                    owner.close()
+                    if (releaseFailure != null) throw releaseFailure
+                },
+            )
+        owner = MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries, maxFaces = 1)
+        val expected = if (missing) owner.glyph(ResourceId("unknown", "terminal"), 'A'.code) else detached
+        try {
+            val result =
+                runCatching {
+                    if (original) originalGlyph(snapshot, owner, FontTestResources.defaultFont, 'A'.code) else owner.glyph(FontTestResources.defaultFont, 'A'.code)
+                }
+            if (releaseFailure == null) {
+                assertEquals(expected, result.getOrThrow())
+            } else {
+                assertTrue(result.exceptionOrNull() === releaseFailure)
+            }
+            assertTerminalState(owner)
+            val rejected = assertThrows(IllegalStateException::class.java) { owner.glyph(FontTestResources.defaultFont, 'A'.code) }
+            assertEquals("Font engine is closed.", rejected.message)
+            owner.close()
+            assertTerminalState(owner)
+            assertEquals(1, faceCloses)
+            assertEquals(1, backend.openCalls)
+            assertEquals(1, backend.closeCalls)
+        } finally {
+            owner.close()
         }
     }
 
@@ -402,6 +421,8 @@ internal class MinecraftFontResolutionTest {
         return missing
     }
 
+    // Reflection preserves the exact target throwable rather than wrapping the independent provider loop.
+    @Suppress("SwallowedException")
     private fun invoke(
         engine: MinecraftFontEngine,
         name: String,

@@ -152,11 +152,35 @@ public class MinecraftFontEngine
                 if (current.compatibility.providerFilters.not() && current.options.uniform && font == defaultFont) uniformFont else font
             val providers = current.fonts[selected] ?: return missingGlyph
             if (prepareFont(selected, providers).not()) return missingGlyph
+            return preparedGlyph(selected, codePoint, providers, current)
+        }
+
+        /**
+         * Resolves the prepared provider sequence with epoch-bound metadata while preserving earlier miss touches.
+         */
+        private fun preparedGlyph(
+            selected: ResourceId,
+            codePoint: Int,
+            providers: List<FontProviderEntry>,
+            current: MinecraftFontSnapshot,
+        ): MinecraftFontGlyph {
             val key = if (resolutionLimit == 0) null else ResolutionKey(selected, codePoint)
             key?.let { resolutions[it] }?.let { resolution ->
                 resolution.misses.forEach { rasters[it] }
                 return resolution.provider?.let { cachedGlyph(it, codePoint) } ?: missingGlyph
             }
+            return walkGlyph(key, codePoint, providers, current)
+        }
+
+        /**
+         * Walks applicable providers in original order and admits only epoch-current, bounded resolution metadata.
+         */
+        private fun walkGlyph(
+            key: ResolutionKey?,
+            codePoint: Int,
+            providers: List<FontProviderEntry>,
+            current: MinecraftFontSnapshot,
+        ): MinecraftFontGlyph {
             val epoch = rasterEpoch
             val misses = if (key == null) null else ArrayList<RasterKey>()
             for (entry in providers) {
