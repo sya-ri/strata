@@ -5959,6 +5959,8 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public static synthetic fun flush$default (Ldev/s7a/strata/runtime/remote/RemoteConnection;IILjava/lang/Object;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection#public synthetic fun <init> (Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public final class dev/s7a/strata/runtime/remote/RemoteConnection$Companion {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public final fun native (Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteConnection$Companion#public static synthetic fun native$default (Ldev/s7a/strata/runtime/remote/RemoteConnection$Companion;Ljava/util/Set;Ldev/s7a/strata/runtime/remote/RemoteLimits;Ldev/s7a/strata/runtime/remote/RemotePacketStream;ILjava/lang/Object;)Ldev/s7a/strata/runtime/remote/RemoteConnection;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final class dev/s7a/strata/runtime/remote/RemoteDeclaration {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final fun component1 ()J
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteDeclaration#public final fun component2 ()Ldev/s7a/strata/projection/ProjectionType;
@@ -6334,11 +6336,25 @@
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Frame#public final fun getBytes ()[B
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Frame#public final fun getSequence ()J
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacket$Frame#public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteAddress;J[B)V
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission#public final class dev/s7a/strata/runtime/remote/RemotePacketAdmission : java/lang/AutoCloseable {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission#public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission#public final fun getKind ()Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission#public fun close ()V
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission#public static final field Companion Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Companion;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Companion#public final class dev/s7a/strata/runtime/remote/RemotePacketAdmission$Companion {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Companion#public final fun decode ([B)Ldev/s7a/strata/runtime/remote/RemotePacketAdmission;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public final class dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind : java/lang/Enum {
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static final field Discovery Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static final field Frame Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun getEntries ()Lkotlin/enums/EnumEntries;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun valueOf (Ljava/lang/String;)Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind#public static fun values ()[Ldev/s7a/strata/runtime/remote/RemotePacketAdmission$Kind;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final class dev/s7a/strata/runtime/remote/RemotePacketStream : java/lang/AutoCloseable {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun drain (JILkotlin/jvm/functions/Function1;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun getAddress ()Ldev/s7a/strata/runtime/remote/RemoteAddress;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun limitTo (Ldev/s7a/strata/runtime/remote/RemoteLimits;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun offer (Ldev/s7a/strata/runtime/remote/RemotePacket$Frame;J)V
+:runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun offer (Ldev/s7a/strata/runtime/remote/RemotePacketAdmission;J)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public final fun send ([B)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public fun <init> (Ldev/s7a/strata/runtime/remote/RemoteAddress;Ldev/s7a/strata/runtime/remote/RemoteLimits;Lkotlin/jvm/functions/Function1;)V
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemotePacketStream#public fun close ()V

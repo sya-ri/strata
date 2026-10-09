@@ -127,6 +127,5 @@ public object IncomingFragmentCpuEvidence {
             .toJsonTree(
                 listOf("java.version", "java.vendor", "java.vm.name", "os.name", "os.version", "os.arch").associateWith(System::getProperty) +
                     mapOf("available_processors" to Runtime.getRuntime().availableProcessors().toString(), "host" to System.getenv("COMPUTERNAME"), "jvm_arguments" to ManagementFactory.getRuntimeMXBean().inputArguments),
-            )
-            .asJsonObject
+            ).asJsonObject
 }
