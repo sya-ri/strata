@@ -2,7 +2,6 @@
 
 package dev.s7a.strata.runtime.remote
 
-import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
@@ -78,6 +77,7 @@ public class RemoteServerSession(
     private var processedSequence: Long = 0
     private var executingSequence: Long = 0
     private val bindings = RemoteServerBindings(limits) { executingSequence }
+    private val images = RemoteServerImages(limits)
     private var acknowledgedSequence: Long = 0
     private var started: Boolean = false
     private var busy: Boolean = false
@@ -233,6 +233,7 @@ public class RemoteServerSession(
 
     private fun project(root: RuntimeDeclaration): RemoteTree {
         bindings.begin()
+        images.begin()
         projectingTypes.clear()
         val nextSlots = mutableMapOf<ActionSlot, Long>()
         val nextActions = mutableMapOf<Long, Endpoint>()
@@ -273,6 +274,7 @@ public class RemoteServerSession(
         }
         visit(root, 0, true)
         val tree = RemoteTree(root.identity, nodes, limits)
+        images.commit()
         slots = nextSlots
         actions = nextActions
         bindings.commit()
@@ -325,6 +327,7 @@ public class RemoteServerSession(
         val notify = outgoing
         outgoing = null
         status = RemoteSessionStatus.Closed(reason)
+        images.close()
         val controlCleanup = runCatching { controls.terminate(reason.uiReason) }
         lastControl = null
         previous = null
@@ -393,8 +396,9 @@ public class RemoteServerSession(
         }
 
         override fun image(image: DrawImage): ProjectionValue {
+            checkOwner()
             check(active) { "Projection scope is no longer active." }
-            return RemoteImageCodec(limits.messageBytes).encode(ImageSource.Pixels(image))
+            return images.project(image)
         }
 
         var active: Boolean = true

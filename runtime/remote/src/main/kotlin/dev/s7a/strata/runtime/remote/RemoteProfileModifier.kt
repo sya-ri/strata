@@ -5,6 +5,7 @@ import dev.s7a.strata.modifier.ModifierNodeType
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.projection.DeclarationProjection
+import dev.s7a.strata.projection.ProjectionScope
 import dev.s7a.strata.projection.ProjectionValue
 
 /**
@@ -13,10 +14,15 @@ import dev.s7a.strata.projection.ProjectionValue
  */
 internal class RemoteProfileModifier(
     kind: RemoteProfileComponent,
-    properties: ProjectionValue,
+    properties: (ProjectionScope) -> ProjectionValue,
 ) : ModifierElement {
     override val type: ModifierNodeType<*, *> = TYPES.getValue(kind)
-    override val projection = DeclarationProjection(kind.type, properties) { value, _ -> value }
+    override val projection = DeclarationProjection(kind.type, properties) { encode, scope -> encode(scope) }
+
+    /**
+     * Retains ordinary precomputed property records without changing their callback-lifetime projection contract.
+     */
+    constructor(kind: RemoteProfileComponent, properties: ProjectionValue) : this(kind, { properties })
 
     private class ServerNode : ModifierNode()
 

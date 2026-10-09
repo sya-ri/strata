@@ -14,6 +14,7 @@ import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.projection.ProjectionFields
+import dev.s7a.strata.projection.ProjectionScope
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.resource.ResourceId
@@ -98,6 +99,28 @@ internal object RemoteProperties {
     fun encode(value: ImageSource): ProjectionValue = images.encode(value)
 
     /**
+     * Preserves structural resource references while projecting immutable pixels through the current session owner.
+     */
+    fun encode(
+        value: ImageSource,
+        scope: ProjectionScope,
+    ): ProjectionValue {
+        images.validate(value)
+        return when (value) {
+            is ImageSource.Resource -> encode(value)
+            is ImageSource.Pixels -> scope.image(value.image)
+        }
+    }
+
+    /**
+     * Preserves the profile source's standalone byte bound before a deferred modifier projection is installed.
+     * Validation reads only immutable dimensions and leaves both pixel snapshots and negotiated limits untouched.
+     */
+    fun validateImage(value: ImageSource) {
+        images.validate(value)
+    }
+
+    /**
      * Encodes the portable player-skin source without performing a lookup.
      */
     fun encode(value: PlayerSkinSource): ProjectionValue =
@@ -106,6 +129,18 @@ internal object RemoteProperties {
             is PlayerSkinSource.Pixels -> record(encode(SkinKind.Pixels), encode(ImageSource.Pixels(value.skin)))
             is PlayerSkinSource.Name -> record(encode(SkinKind.Name), ProjectionValue.Text(value.value))
             is PlayerSkinSource.Uuid -> record(encode(SkinKind.Uuid), ProjectionValue.Text(value.value.toString()))
+        }
+
+    /**
+     * Uses the current image owner only for a detached pixel skin; lookup sources retain their existing wire schema.
+     */
+    fun encode(
+        value: PlayerSkinSource,
+        scope: ProjectionScope,
+    ): ProjectionValue =
+        when (value) {
+            is PlayerSkinSource.Pixels -> record(encode(SkinKind.Pixels), encode(ImageSource.Pixels(value.skin), scope))
+            else -> encode(value)
         }
 
     /**
