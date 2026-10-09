@@ -229,7 +229,7 @@ tasks.named<ProcessResources>("processGametestResources") {
         into("assets/strata_font_test/font")
     }
     val gameTestEntrypoint = "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftCanvasTerminalClientGameTest"
-    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json", "strata.remote.tests.mixins.json")
+    val gameTestMixins = listOf("strata.canvas.tests.mixins.json", "strata.canvas.terminal.tests.mixins.json")
     inputs.property("version", project.version)
     inputs.property("minecraftVersion", libs.versions.minecraft263)
     inputs.property("integrationModId", "strata-integration-minecraft-fabric-26-3")
@@ -338,6 +338,8 @@ val runProductionClientGameTest = tasks.register<ClientProductionRunTask>("runPr
         jvmArgs.add("-Dstrata.paper.address=$it")
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { jvmArgs.add("-Dstrata.paper.run=$it") }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { jvmArgs.add("-Dstrata.fabric.address=$it") }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { jvmArgs.add("-Dstrata.fabric.run=$it") }
     jvmArgs.addAll(canvasBackend.map { backend -> listOf("-Dstrata.canvas.expectedBackend=${backend.argument}") }.orElse(emptyList<String>()))
     val verificationOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
@@ -402,6 +404,8 @@ tasks.named<JavaExec>("runClientGameTest") {
         systemProperty("strata.paper.address", it)
     }
     providers.gradleProperty("strata.paper.run").orNull?.let { systemProperty("strata.paper.run", it) }
+    providers.gradleProperty("strata.fabric.address").orNull?.let { systemProperty("strata.fabric.address", it) }
+    providers.gradleProperty("strata.fabric.run").orNull?.let { systemProperty("strata.fabric.run", it) }
     val parityOutput = layout.buildDirectory.dir(
         canvasScope.map { scope ->
             when (scope) {

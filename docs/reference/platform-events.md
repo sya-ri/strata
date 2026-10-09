@@ -1,4 +1,4 @@
-# Paper, Folia, and Velocity lifecycle events
+# Platform lifecycle events
 
 The platform API modules publish lifecycle notifications without exposing the transport implementation.
 Paper event classes live in `dev.s7a.strata.paper.event`; Velocity classes live in `dev.s7a.strata.velocity.event`.
@@ -50,3 +50,11 @@ Compile against `strata-velocity-api` and declare the installed `strata` plugin 
 
 The [Paper guide](../guides/paper.md), [Velocity guide](../guides/velocity.md), and their compiled plugins show installation and public API use.
 The [remote protocol](remote-protocol.md) owns negotiation and acknowledgement details; [screens and state](../guides/screens-and-state.md) owns session controls and event-receiver lifetime.
+
+## Fabric servers
+
+`FabricServerUi.listen(server, ownerMod, listener)` publishes the same five committed transitions as `FabricServerUiEvent` variants with the authenticated `ServerPlayer`.
+Callbacks and live session access require the server execution owner.
+Subscriptions are closed explicitly, by owner release, or at server shutdown; listener failures do not undo transitions.
+Each logical server owns an independent connection/session lifetime.
+See the [Fabric server guide](../guides/fabric-server.md) for dependency and registration details.

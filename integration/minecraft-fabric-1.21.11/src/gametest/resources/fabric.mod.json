@@ -3,12 +3,12 @@
   "id": "${integrationModId}",
   "version": "${version}",
   "name": "Strata Minecraft ${minecraftVersion} integration verification",
-  "environment": "client",
+  "environment": "*",
   "mixins": [
-    "strata.canvas.tests.mixins.json",
-    "strata.remote.tests.mixins.json"
+    "strata.canvas.tests.mixins.json"
   ],
   "entrypoints": {
+    "main": ["dev.s7a.strata.integration.minecraft.fabric.FabricServerUiAcceptance"],
     "fabric-client-gametest": [
       "dev.s7a.strata.integration.minecraft.fabric.StrataMinecraftLegacyClientGameTest"
     ],

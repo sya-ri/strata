@@ -5,7 +5,7 @@ This guide covers the development sources; use the [matching release documentati
 ## Installation
 
 Install `strata-runtime-paper` with the `plugin` classifier in the server's `plugins` directory.
-Players need the exact Minecraft version's Strata Fabric runtime and Fabric Language Kotlin; vanilla clients cannot render these screens.
+Players need the exact Minecraft version's Strata Fabric runtime, Fabric API, and Fabric Language Kotlin; vanilla clients cannot render these screens.
 Use the same Strata release on both ends, or build both from the same revision using the [build guide](../development/build.md#loaded-client-verification).
 The [compatibility reference](../reference/compatibility.md) lists available client artifacts and Paper distributions.
 

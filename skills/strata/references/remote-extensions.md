@@ -31,7 +31,7 @@ Target-specific component adapters may differ while preserving the property/acti
 ## Remote extensions
 
 Composition from supported standard components needs no new wire schema.
-For remote screens built only from those components and compositions, the client needs Strata and Fabric Language Kotlin, with no application-specific client Mod.
+For remote screens built only from those components and compositions, the client needs Strata, Fabric API, and Fabric Language Kotlin, with no application-specific client Mod.
 A custom retained component or modifier used remotely must provide a typed declaration projection; a local `Node` implementation alone is insufficient.
 Read the [declaration projection SPI](https://github.com/sya-ri/strata/blob/master/docs/reference/declaration-projection.md) for `DeclarationProjection`, `ProjectionType`, detached properties, `ProjectionAction`, and `ProjectionBinding`.
 Transfer properties and typed action endpoints, keeping application models, functions, and native handles on their owning host.

@@ -374,7 +374,7 @@ internal class ModrinthReleaseCoordinator(
                         projectId = manifest.projectId,
                         categories = manifest.project.categories.takeIf { plan.projectPatch.categoriesMissing },
                         additionalCategories = manifest.project.additionalCategories.takeIf { plan.projectPatch.additionalCategoriesMissing },
-                        environment = VersionEnvironment.CLIENT_ONLY.takeIf { plan.projectPatch.environmentMissing },
+                        environment = VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL.takeIf { plan.projectPatch.environmentMissing },
                     )
                 },
                 readExact = ::projectClassificationIsExactDuringBootstrap,

@@ -8,8 +8,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Keeps native gameplay dispatch separate from native screen ticking and rendering. */
 @Mixin(Minecraft.class)
@@ -17,11 +15,6 @@ abstract class FabricUiGameplayMixin {
     @ModifyConstant(method = "tick", constant = @Constant(intValue = 10000))
     private int strataScreenAttackDelay(int original) {
         return FabricUiInput.INSTANCE.attackDelay(original);
-    }
-
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void strataDispatchInput(CallbackInfo callback) {
-        FabricUiInput.INSTANCE.tick();
     }
 
     @ModifyExpressionValue(method = "handleKeybinds", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;screen()Lnet/minecraft/client/gui/screens/Screen;"))

@@ -5,7 +5,7 @@ This guide covers the development sources; use the [matching release documentati
 ## Installation
 
 Install `strata-runtime-velocity` with the `plugin` classifier in Velocity's `plugins` directory.
-Players need their Minecraft version's Strata Fabric runtime and Fabric Language Kotlin.
+Players need their Minecraft version's Strata Fabric runtime, Fabric API, and Fabric Language Kotlin.
 Use the same Strata release on both ends, or build both from the same revision using the [build guide](../development/build.md#loaded-client-verification).
 Backends need the [Paper runtime](paper.md) only when they also own screens.
 

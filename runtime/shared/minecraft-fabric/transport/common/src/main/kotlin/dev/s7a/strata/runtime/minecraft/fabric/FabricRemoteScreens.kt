@@ -24,6 +24,7 @@ import dev.s7a.strata.ui.UiSession
 import dev.s7a.strata.ui.UiSessionStatus
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.network.Connection
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -39,7 +40,7 @@ public object FabricRemoteScreens {
     private val logger = LoggerFactory.getLogger(FabricRemoteScreens::class.java)
     private val inboxes = ConcurrentHashMap<Connection, RemoteFrameInbox>()
     private val peers = mutableMapOf<RemoteEndpoint, Peer>()
-    private var nativeConnection: Connection? = null
+    private var nativeListener: ClientPacketListener? = null
     private var failed = false
 
     @Volatile
@@ -67,7 +68,7 @@ public object FabricRemoteScreens {
     public fun shutdown() {
         val previous = peers.values.toList()
         peers.clear()
-        nativeConnection = null
+        nativeListener = null
         synchronized(inboxes) {
             stopping = true
             inboxes.values.forEach(RemoteFrameInbox::close)
@@ -77,31 +78,38 @@ public object FabricRemoteScreens {
     }
 
     /**
-     * Reconciles the native connection lifetime and drains bounded protocol work on the client thread.
+     * Begins a fresh play generation after Fabric has installed and advertised channel receivers.
+     */
+    public fun joined(listener: ClientPacketListener) {
+        if (stopping) return
+        nativeListener?.let(::disconnected)
+        nativeListener = listener
+        failed = false
+        FabricRemoteTransport.send(listener, RemotePacket.encode(RemotePacket.Discovery))
+    }
+
+    /**
+     * Retires the matching play generation on the client owner without sending after disconnect.
+     */
+    public fun disconnected(listener: ClientPacketListener) {
+        if (nativeListener !== listener) return
+        val previous = peers.values.toList()
+        peers.clear()
+        nativeListener = null
+        synchronized(inboxes) {
+            inboxes.values.forEach(RemoteFrameInbox::close)
+            inboxes.clear()
+        }
+        previous.forEach { peer -> runCatching { peer.close(RemoteFailure.Disconnected, false) }.onFailure { logger.warn("Strata remote disconnect failed", it) } }
+    }
+
+    /**
+     * Drains bounded protocol work on the client owner while the play generation is active.
      */
     public fun tick() {
         if (stopping) return
-        val minecraft = Minecraft.getInstance()
-        val listener = minecraft.connection
-        val native = listener?.connection
-        if (listener == null && nativeConnection?.isConnected == true) {
-            // Configuration changes replace the play listener while the authenticated transport remains connected.
-            peers.values.filter { it.isClosed.not() }.forEach { peer -> guard(peer) { peer.pausePlay() } }
-            return
-        }
-        if (nativeConnection !== native) {
-            val previous = peers.values.toList()
-            peers.clear()
-            previous.forEach { peer -> runCatching { peer.close(RemoteFailure.Disconnected) }.onFailure { logger.warn("Strata remote disconnect failed", it) } }
-            nativeConnection = native
-            failed = false
-            listener?.let { endpoint ->
-                FabricRemoteTransport.register(endpoint)
-                FabricRemoteTransport.send(endpoint, RemotePacket.encode(RemotePacket.Discovery))
-            }
-        }
-        inboxes.keys.filter { it !== native }.forEach { inboxes.remove(it)?.close() }
-        if (native == null || failed) return
+        val native = nativeListener?.connection ?: return
+        if (failed) return
         runCatching {
             val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
             if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
@@ -213,12 +221,6 @@ public object FabricRemoteScreens {
             reason: RemoteFailure,
         ) {
             sessions.values.find { it.screen === view }?.let { closeSession(it.session.identity, reason, true) }
-        }
-
-        fun pausePlay() {
-            sessions.values.toList().filter { it.handle.presentation == UiPresentation.Screen || it.screen.boundContainer() != null }.forEach {
-                closeSession(it.session.identity, RemoteFailure.ContainerChanged, notify = true, navigate = false)
-            }
         }
 
         fun receive(message: RemoteMessage) {

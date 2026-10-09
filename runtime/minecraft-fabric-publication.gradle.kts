@@ -8,7 +8,7 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
-// Why: the outer Fabric artifact nests every Strata common module and must publish only the separately installed Kotlin runtime mod.
+// Why: the outer Fabric artifact nests every Strata common module and publishes only the separately installed Fabric API and Kotlin runtime mods.
 listOf("api", "implementation").forEach { configurationName ->
     configurations.named(configurationName) {
         withDependencies {
@@ -28,10 +28,13 @@ val fabricLanguageKotlinVersion =
         .findVersion("fabric-language-kotlin")
         .orElseThrow { IllegalStateException("The version catalog must define fabric-language-kotlin.") }
         .requiredVersion
+val fabricApiDependency = configurations.named(if (configurations.findByName("modImplementation") == null) "implementation" else "modImplementation").map { configuration ->
+    configuration.dependencies.single { dependency -> dependency.group == "net.fabricmc.fabric-api" && dependency.name == "fabric-api" }
+}
 val verifyFabricPublicationMetadata =
     tasks.register("verifyFabricPublicationMetadata") {
         group = "verification"
-        description = "Verifies that published Fabric metadata exposes only Fabric Language Kotlin at runtime."
+        description = "Verifies that published Fabric metadata exposes Fabric API and Fabric Language Kotlin at runtime."
         dependsOn(generatedFabricPom, generatedFabricModuleMetadata)
         inputs.file(generatedFabricPom.map { task -> task.destination })
         inputs.file(generatedFabricModuleMetadata.flatMap { task -> task.outputFile })
@@ -56,8 +59,10 @@ val verifyFabricPublicationMetadata =
                                 .text()
                         listOf(value("groupId"), value("artifactId"), value("version"), value("scope"))
                     }.orEmpty()
-            check(pomDependencies == listOf(listOf(expectedGroup, expectedModule, expectedVersion, "runtime"))) {
-                "Fabric POM must expose only Fabric Language Kotlin at runtime: $pomDependencies"
+            val apiDependency = fabricApiDependency.get()
+            val expectedDependencies = listOf(listOf(expectedGroup, expectedModule, expectedVersion), listOf(apiDependency.group, apiDependency.name, apiDependency.version))
+            check(pomDependencies.toSet() == expectedDependencies.map { it + "runtime" }.toSet()) {
+                "Fabric POM must expose Fabric API and Fabric Language Kotlin at runtime: $pomDependencies"
             }
 
             val module = JsonSlurper().parse(generatedFabricModuleMetadata.get().outputFile.get().asFile) as Map<*, *>
@@ -76,14 +81,13 @@ val verifyFabricPublicationMetadata =
                             }
                     name to dependencies
                 }
-            check(dependenciesByVariant["apiElements"].orEmpty().isEmpty()) {
+            check(dependenciesByVariant["apiElements"].orEmpty().all { it == listOf(apiDependency.group, apiDependency.name, apiDependency.version) }) {
                 "Fabric API metadata must not expose nested dependencies: ${dependenciesByVariant["apiElements"]}"
             }
             check(
-                dependenciesByVariant["runtimeElements"] ==
-                    listOf(listOf(expectedGroup, expectedModule, expectedVersion)),
+                dependenciesByVariant["runtimeElements"].orEmpty().toSet() == expectedDependencies.toSet(),
             ) {
-                "Fabric runtime metadata must expose only Fabric Language Kotlin: ${dependenciesByVariant["runtimeElements"]}"
+                "Fabric runtime metadata must expose Fabric API and Fabric Language Kotlin: ${dependenciesByVariant["runtimeElements"]}"
             }
         }
     }

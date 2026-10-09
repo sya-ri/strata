@@ -20,6 +20,7 @@ import dev.s7a.strata.gradle.release.StrataReleaseExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.AbstractRunTask
+import net.fabricmc.loom.task.prod.ServerProductionRunTask
 import net.fabricmc.loom.task.prod.ClientProductionRunTask
 import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.api.JavaVersion
@@ -97,6 +98,7 @@ private data class MinecraftFabricTarget(
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
     val sourceLinkPaths: List<String>,
+    val hudApi: HudApi = HudApi.Callback,
     val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
     val canvasTestExtraction: CanvasTestExtraction =
@@ -122,8 +124,10 @@ private data class MinecraftFabricTarget(
         (listOf("common") + canvasFamily.sourceRoots).map { suffix -> "runtime/shared/minecraft-fabric/canvas/$suffix" }
     val inputSourcePaths: List<String> = listOf("runtime/shared/minecraft-fabric/input/${if (canvasFamily == CanvasFamily.RenderPearl) "sdl" else "glfw"}")
     val uiInputSourcePath: String = "runtime/shared/minecraft-fabric/input/${if (uiFamily == UiFamily.ExtractHud) "gui-holder" else "screen-field"}"
+    val hudSourcePath: String = "runtime/shared/minecraft-fabric/hud/${hudApi.sourcePrefix}${uiFamily.sourceRoot}"
+    val networkingDirectionSourcePath: List<String> = if (remoteNetworkFamily == RemoteNetworkFamily.StreamCodec) listOf("runtime/shared/minecraft-fabric/transport/${if (remapped) "typed-directions" else "named-directions"}") else emptyList()
     val allSourceLinkPaths: List<String> =
-        (sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${uiFamily.sourceRoot}" + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
+        (sourceLinkPaths + networkingDirectionSourcePath + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/server/common" + hudSourcePath + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
@@ -136,6 +140,11 @@ private data class MinecraftFabricTarget(
                 CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/consumption/vertex-buffer"
             },
         )
+
+    /** Official HUD API generations, selected explicitly by each target. */
+    enum class HudApi(val sourcePrefix: String) {
+        Callback(""), Layer("layer-"), Registry("registry-"),
+    }
 
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
@@ -351,6 +360,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -364,6 +374,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Layer,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
@@ -377,6 +388,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -391,6 +403,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -405,6 +418,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -419,6 +433,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -432,6 +447,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -445,6 +461,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
@@ -459,6 +476,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
@@ -475,6 +493,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
@@ -490,6 +509,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            hudApi = MinecraftFabricTarget.HudApi.Registry,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
@@ -675,8 +695,8 @@ val compatibilityMarkdown = providers.provider {
         appendLine()
         appendLine("# Minecraft compatibility")
         appendLine()
-        appendLine("Choose the Strata runtime that matches the Minecraft version of your client.")
-        appendLine("Install exactly one versioned runtime together with Fabric Language Kotlin; each runtime includes the common Strata libraries.")
+        appendLine("Choose the Strata runtime that matches the Minecraft version of your client or Fabric server.")
+        appendLine("Install exactly one versioned runtime together with Fabric API and Fabric Language Kotlin; each runtime includes the common Strata libraries.")
         appendLine("The table is generated from the build's target matrix and describes supported artifacts and Java requirements.")
         appendLine()
         appendLine("| Minecraft | Fabric runtime artifact | Required Java | Paper distribution |")
@@ -692,7 +712,7 @@ val compatibilityMarkdown = providers.provider {
         appendLine()
         appendLine("See [adapter development](../development/minecraft-versions.md) for native boundaries and [verification](../development/build.md) for the executable checks.")
         appendLine("This table does not record a test run or replace release acceptance evidence.")
-        appendLine("All listed clients compile the native Strata remote transport without requiring Fabric API.")
+        appendLine("All listed runtimes require Fabric API and support both Fabric clients and logical servers.")
         appendLine("Paper acceptance uses an exact Minecraft version from the [official distribution inventory](https://fill.papermc.io/v3/projects/paper); distribution availability alone is not a successful test receipt.")
         appendLine("See [Paper screens](../guides/paper.md) and [Velocity screens](../guides/velocity.md) for installation, and [remote protocol](remote-protocol.md) for connection and extension contracts.")
     }
@@ -1276,7 +1296,7 @@ subprojects {
     minecraftFabricTargets.firstOrNull { target -> path == target.runtimeProjectPath }?.let { target ->
         dependencies.add("compileOnly", canvasMixinDependency)
         dependencies.add("compileOnly", canvasMixinExtrasDependency)
-        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${target.uiFamily.sourceRoot}").map { sourcePath -> rootProject.file("$sourcePath/src/main") }
+        val nativeRoots = (target.canvasSourcePaths + target.inputSourcePaths + target.uiInputSourcePath + "runtime/shared/minecraft-fabric/server/common" + target.hudSourcePath).map { sourcePath -> rootProject.file("$sourcePath/src/main") }
         extensions.configure<SourceSetContainer> {
             named("main") {
                 java.srcDirs(nativeRoots.map { sourceRoot -> sourceRoot.resolve("java") })
@@ -1479,6 +1499,25 @@ subprojects {
         // Why: Loom otherwise selects native library upgrades using the Gradle daemon's Java instead of this game's toolchain.
         extensions.extraProperties["fabric.loom.runtimeJavaCompatibilityVersion"] = target.javaVersion
         if (path == target.integrationProjectPath) {
+            tasks.register<ServerProductionRunTask>("runProductionServerUiTest") {
+                group = "verification"
+                description = "Starts an isolated production Fabric server for paired public UI acceptance."
+                mods.from(project(target.runtimeProjectPath).tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar"))
+                runDir.set(layout.dir(providers.gradleProperty("strata.fabric.serverDirectory").map(::File)))
+                jvmArgs.add(providers.gradleProperty("strata.fabric.run").map { "-Dstrata.fabric.run=$it" })
+                jvmArgs.add(providers.gradleProperty("strata.fabric.serverReceipt").map { "-Dstrata.fabric.receipt=$it" })
+                jvmArgs.add(providers.gradleProperty("strata.fabric.serverStop").map { "-Dstrata.fabric.stop=$it" })
+                val settingsDirectory = providers.gradleProperty("strata.fabric.serverSettings").map(::File)
+                inputs.dir(settingsDirectory)
+                outputs.upToDateWhen { false }
+                doFirst {
+                    val destination = runDir.get().asFile
+                    destination.mkdirs()
+                    listOf("eula.txt", "server.properties").forEach { name ->
+                        settingsDirectory.get().resolve(name).copyTo(destination.resolve(name), overwrite = true)
+                    }
+                }
+            }
             tasks.withType<LibraryClientProductionRunTask>().configureEach {
                 dependsOn(":performance-testkit:jvmJar")
                 verificationLibraries.from(
@@ -1705,8 +1744,10 @@ subprojects {
             extensions.configure<KotlinJvmProjectExtension> {
                 sourceSets.named("main") { kotlin.srcDir(remoteNetworkingRuntime.resolve("kotlin")) }
             }
+            val directions = if (target.remapped) "typed-directions" else "named-directions"
             extensions.configure<SourceSetContainer> {
                 named("main") {
+                    if (target.remoteNetworkFamily == MinecraftFabricTarget.RemoteNetworkFamily.StreamCodec) java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/transport/$directions/src/main/java"))
                     resources.srcDir(rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/resources"))
                     resources.srcDir(remoteNetworkingRuntime.resolve("resources"))
                     java.srcDir(remoteNetworkingRuntime.resolve("java"))

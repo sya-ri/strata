@@ -30,7 +30,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Verifies release reconciliation against an in-process Modrinth-compatible HTTP server. */
+/**
+ * Verifies release reconciliation against an in-process Modrinth-compatible HTTP server.
+ */
 internal class ModrinthReleaseCoordinatorTest {
     @TempDir
     lateinit var temporaryDirectory: Path
@@ -896,7 +898,7 @@ internal class ModrinthReleaseCoordinatorTest {
                         additionalCategories = setOf("utility"),
                         licenseId = "MIT",
                         clientSide = SideSupport.REQUIRED,
-                        serverSide = SideSupport.UNSUPPORTED,
+                        serverSide = SideSupport.OPTIONAL,
                         sourceUrl = "https://github.com/sya-ri/strata",
                         issuesUrl = "https://github.com/sya-ri/strata/issues",
                         documentationUrl = "https://gh.s7a.dev/strata/",
@@ -957,7 +959,7 @@ internal class ModrinthReleaseCoordinatorTest {
         private var historicalVersionCount: Int = 0
         private var remoteCategories: Set<String> = fixture.manifest.project.categories
         private var remoteAdditionalCategories: Set<String> = fixture.manifest.project.additionalCategories
-        private var remoteEnvironments: Set<VersionEnvironment> = setOf(VersionEnvironment.CLIENT_ONLY)
+        private var remoteEnvironments: Set<VersionEnvironment> = setOf(VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL)
         private var remoteClientSide: SideSupport = fixture.manifest.project.clientSide
         private var remoteServerSide: SideSupport = fixture.manifest.project.serverSide
         var remoteProjectBody: String = fixture.manifest.project.body
@@ -1025,7 +1027,7 @@ internal class ModrinthReleaseCoordinatorTest {
             get() =
                 remoteCategories == fixture.manifest.project.categories &&
                     remoteAdditionalCategories == fixture.manifest.project.additionalCategories &&
-                    remoteEnvironments == setOf(VersionEnvironment.CLIENT_ONLY) &&
+                    remoteEnvironments == setOf(VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL) &&
                     remoteClientSide == fixture.manifest.project.clientSide &&
                     remoteServerSide == fixture.manifest.project.serverSide
         val disclosureBootstrapIsExact: Boolean
@@ -1241,11 +1243,11 @@ internal class ModrinthReleaseCoordinatorTest {
                 expectedPayload["additional_categories"] = project.additionalCategories.toList()
             }
             if (
-                remoteEnvironments != setOf(VersionEnvironment.CLIENT_ONLY) ||
+                remoteEnvironments != setOf(VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL) ||
                 remoteClientSide != project.clientSide ||
                 remoteServerSide != project.serverSide
             ) {
-                expectedPayload["environment"] = VersionEnvironment.CLIENT_ONLY.wireValue
+                expectedPayload["environment"] = VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL.wireValue
             }
             check(expectedPayload.isNotEmpty())
             check(payload == expectedPayload)
@@ -1256,7 +1258,7 @@ internal class ModrinthReleaseCoordinatorTest {
             }
             remoteCategories = project.categories
             remoteAdditionalCategories = project.additionalCategories
-            remoteEnvironments = setOf(VersionEnvironment.CLIENT_ONLY)
+            remoteEnvironments = setOf(VersionEnvironment.CLIENT_ONLY_SERVER_OPTIONAL)
             remoteClientSide = project.clientSide
             remoteServerSide = project.serverSide
             respond(exchange, 204, "")
@@ -1482,14 +1484,17 @@ internal class ModrinthReleaseCoordinatorTest {
         }
 
         private fun version(artifact: ModrinthManifest.Artifact): Map<String, Any?> {
-            val dependency =
-                linkedMapOf<String, Any?>(
-                    "project_id" to ModrinthManifest.FABRIC_LANGUAGE_KOTLIN_PROJECT_ID,
-                    "version_id" to null,
-                    "file_name" to null,
-                    "dependency_type" to "required",
-                )
-            dependencyResponseMutation(dependency)
+            val dependencies =
+                ModrinthManifest.REQUIRED_PROJECT_DEPENDENCIES.map { projectId ->
+                    linkedMapOf<String, Any?>(
+                        "project_id" to projectId,
+                        "version_id" to null,
+                        "file_name" to null,
+                        "dependency_type" to "required",
+                    ).also {
+                        dependencyResponseMutation(it)
+                    }
+                }
             val hashes =
                 linkedMapOf<String, Any?>(
                     "sha256" to artifact.sha256,
@@ -1516,13 +1521,13 @@ internal class ModrinthReleaseCoordinatorTest {
                     },
                 "version_number" to artifact.versionNumber,
                 "changelog" to fixture.manifest.changelog,
-                "dependencies" to listOf(dependency),
+                "dependencies" to dependencies,
                 "game_versions" to listOf(artifact.gameVersion),
                 "version_type" to "release",
                 "loaders" to listOf("fabric"),
                 "featured" to true,
                 "status" to "listed",
-                "environment" to "client_only",
+                "environment" to "client_only_server_optional",
                 "files" to listOf(file),
             )
         }

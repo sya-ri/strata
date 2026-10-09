@@ -158,7 +158,8 @@ Review the guide's per-rule examples and detection limits alongside the actual c
 
 ## Local Fabric installation
 
-Install exactly one matching Strata Fabric runtime as a separate client Mod together with Fabric Language Kotlin.
+Install exactly one matching Strata Fabric runtime as a separate Mod together with Fabric API and Fabric Language Kotlin.
+The same runtime also supports dedicated and integrated servers; see [the Fabric server guide](https://github.com/sya-ri/strata/blob/master/docs/guides/fabric-server.md) for `FabricServerUi`.
 Use the component catalog for available primitives and the guides for composition and resource ownership.
 
 ```kotlin
@@ -166,6 +167,7 @@ dependencies {
     compileOnly("dev.s7a.strata:strata-api:$releaseVersion")
     modRuntimeOnly("dev.s7a.strata:strata-runtime-minecraft-fabric-<minecraft-version>:$releaseVersion")
     modRuntimeOnly("net.fabricmc:fabric-language-kotlin:<compatible-version>")
+    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:<compatible-version>")
 }
 ```
 
@@ -332,7 +334,7 @@ Read [remote extensions](remote-extensions.md) only when sharing custom projecti
 Install the chosen host's `plugin` classifier JAR in its `plugins` directory.
 Consumer plugins compile against `dev.s7a.strata:strata-paper-api:$RELEASE_VERSION_PLACEHOLDER` or `dev.s7a.strata:strata-velocity-api:$RELEASE_VERSION_PLACEHOLDER` and the host API with `compileOnly` dependencies.
 Declare `depend: [Strata]` for Paper or a required dependency on plugin ID `strata` for Velocity; do not package another Strata runtime in the consumer.
-Players still install their matching Fabric runtime and Fabric Language Kotlin.
+Players install their matching Fabric runtime, Fabric API, and Fabric Language Kotlin.
 If the screen only uses standard components or custom compositions of them, those client dependencies are sufficient; no application-specific client Mod is needed.
 Custom retained renderers, modifiers, or synchronous input implementations need their registered client extension in addition to Strata.
 Velocity can own screens without Strata on its backends; install the Paper plugin as well when a backend also owns screens.

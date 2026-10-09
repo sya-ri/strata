@@ -99,7 +99,7 @@ The [release procedure](release.md) defines external publication and credentials
 Each versioned Fabric artifact packages the `api`, `runtime:core`, `runtime:remote`, `runtime:headless`, `runtime:minecraft`, and `runtime:minecraft-fonts-lwjgl` jars under `META-INF/jars` exactly once.
 Its Java toolchain and distribution mapping follow the typed target matrix summarized in the [compatibility reference](../reference/compatibility.md).
 Unobfuscated clients use the catalog-selected Fabric Loom plugin in no-remap mode; remapped clients compile against official Mojang mappings and remap their distribution jars with the catalog-selected remap plugin.
-Every versioned Fabric runtime module declares an exact Minecraft requirement and catalog-derived Loader, Fabric Language Kotlin, and Java lower bounds; none uses Fabric API at runtime.
+Every versioned Fabric runtime module declares an exact Minecraft requirement and catalog-derived Loader, Fabric Language Kotlin, and Java lower bounds; Fabric API is a required externally installed runtime dependency.
 Remapped runtimes declare Loader through Loom's `modCompileOnly` configuration so their own installer metadata and Mixin libraries are resolved even when no integration project is configured.
 Unobfuscated runtimes use `compileOnly`, which their Loom dependency pipeline processes directly.
 The shared artifact verifier requires exact catalog-derived Loader and Mixin identities in the final JAR manifest, rejecting missing, unresolved, or mismatched build metadata without rewriting the archive; every Maven publication runs the artifact and publication-metadata verifiers before uploading or installing files.
