@@ -3,6 +3,7 @@ package dev.s7a.strata.quality.benchmark
 import dev.s7a.strata.quality.benchmark.TextProvenanceAssets.Family
 import dev.s7a.strata.quality.benchmark.TextProvenanceBenchmark.Consumer
 import dev.s7a.strata.quality.benchmark.TextProvenanceBenchmark.Shape
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.PlatformText
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
@@ -15,6 +16,7 @@ internal object TextProvenanceFailures {
     /**
      * Requires failure parity before publication and before any glyph provider sees an invalid logical value.
      */
+    @OptIn(InternalStrataRuntimeApi::class)
     internal fun verify() {
         val access = TextProvenanceAccess()
         val assets = TextProvenanceAssets(Shape.Single16384, Consumer.MultilineText)

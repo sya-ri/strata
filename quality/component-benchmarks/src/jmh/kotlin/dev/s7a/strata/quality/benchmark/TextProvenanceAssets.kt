@@ -16,6 +16,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
 import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
 import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
@@ -90,6 +91,7 @@ internal class TextProvenanceAssets(
     /**
      * Complete real profile with all inherited public component resources.
      */
+    @OptIn(InternalStrataRuntimeApi::class)
     internal val profile: MinecraftUiProfile = ComponentProfile.create(snapshot)
 
     /**
