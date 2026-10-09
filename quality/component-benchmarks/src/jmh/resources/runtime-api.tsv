@@ -1423,8 +1423,10 @@ api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:measure:(Ldev/s7a
 api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:onPointerEvent:(Ldev/s7a/strata/input/PointerEvent;Ldev/s7a/strata/geometry/IntOffset;)Ldev/s7a/strata/input/InputResult;
 api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:prepareDeclaration:()V
 api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:refresh:()V
+api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:sessionAttached:()V
+api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:sessionDetached:()V
 api	Api	dev.s7a.strata.layout.VirtualListElement$Node#method:1:setContentWorkObserver:(Lkotlin/jvm/functions/Function1;)V
-api	Api	dev.s7a.strata.layout.VirtualListElement$Node#type:25:dev.s7a.strata.node.Node:dev.s7a.strata.component.VirtualListController,dev.s7a.strata.node.ClipChildrenNode,dev.s7a.strata.node.ContentWorkNode,dev.s7a.strata.node.DeclarationProjectionNode,dev.s7a.strata.node.DynamicChildrenNode,dev.s7a.strata.node.LayoutNode,dev.s7a.strata.node.LifecycleNode,dev.s7a.strata.node.MeasureNode,dev.s7a.strata.node.PointerInputNode
+api	Api	dev.s7a.strata.layout.VirtualListElement$Node#type:25:dev.s7a.strata.node.Node:dev.s7a.strata.component.VirtualListController,dev.s7a.strata.node.ClipChildrenNode,dev.s7a.strata.node.ContentWorkNode,dev.s7a.strata.node.DeclarationProjectionNode,dev.s7a.strata.node.DynamicChildrenNode,dev.s7a.strata.node.LayoutNode,dev.s7a.strata.node.MeasureNode,dev.s7a.strata.node.PointerInputNode,dev.s7a.strata.node.SessionAttachmentNode
 api	Api	dev.s7a.strata.layout.WeightParentData#field:25:INSTANCE:Ldev/s7a/strata/layout/WeightParentData;
 api	Api	dev.s7a.strata.layout.WeightParentData#method:17:decode:(Ldev/s7a/strata/projection/ProjectionValue;)Ldev/s7a/strata/modifier/ModifierElement;
 api	Api	dev.s7a.strata.layout.WeightParentData#method:17:getKEY$dev_s7a_strata_api:()Ldev/s7a/strata/layout/ParentDataKey;

@@ -173,7 +173,8 @@ internal class VirtualWindowFixture(
         verifyObservation()
         val beforeDetach = session.frame(constraints)
         session.detach()
-        check(source.subscribed.not())
+        // Observe bindings remain session-owned while detached; terminal close releases them.
+        check(source.subscribed == (factory == VirtualWindowBenchmark.Factory.Observed))
         session.attach()
         val reattached = session.frame(constraints)
         check(reattached.drawCommands == beforeDetach.drawCommands && reattached.semantics == beforeDetach.semantics)
