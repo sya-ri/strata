@@ -70,6 +70,18 @@ internal class HeadlessDestinationPaletteTest {
     }
 
     @Test
+    fun scalarSpansAndOpaqueSourcesKeepAdmissionDormant() {
+        val scalar = PaletteProbe(useChannelTables = false)
+        repeat(1024) { scalar.blend(source(it), 0xFF234567.toInt()) }
+        assertEquals(32, scalar.remainingSamples())
+        assertNull(scalar.rows())
+        val opaque = PaletteProbe(tint = 0xFFFFFFFF.toInt())
+        repeat(1024) { opaque.blend(0xFF000000.toInt() or (it * 73471 and 0xFFFFFF), 0xFF234567.toInt()) }
+        assertEquals(32, opaque.remainingSamples())
+        assertNull(opaque.rows())
+    }
+
+    @Test
     fun frameFailureClosesSharedScratchAfterUniformPaletteAdmission() {
         val size = IntSize(96, 64)
         val image = createDrawImage(size, IntArray(size.width * size.height, ::source))
@@ -93,6 +105,7 @@ internal class HeadlessDestinationPaletteTest {
     private class PaletteProbe(
         tint: Int = 0x80A4C6E8.toInt(),
         cutoff: Float = 0f,
+        useChannelTables: Boolean = true,
     ) {
         // This literal names a reflected JVM implementation class, rather than a domain discriminator.
         @Suppress("StringLiteralComparison")
@@ -102,10 +115,10 @@ internal class HeadlessDestinationPaletteTest {
             type
                 .getDeclaredConstructor(integer, checkNotNull(Float::class.javaPrimitiveType), checkNotNull(Boolean::class.javaPrimitiveType), SampledSourceWeights::class.java)
                 .apply { isAccessible = true }
-                .newInstance(tint, cutoff, true, null)
+                .newInstance(tint, cutoff, useChannelTables, null)
         private val blend = type.getDeclaredMethod("blend", integer, integer).apply { isAccessible = true }
         private val tables = type.getDeclaredField("blendTables").apply { isAccessible = true }
-        private val remaining = type.getDeclaredField("remainingPaletteSamples").apply { isAccessible = true }
+        private val count = type.getDeclaredField("blendRowCount").apply { isAccessible = true }
 
         /**
          * Drives the real command-local color state without creating diagnostic public contracts.
@@ -126,6 +139,6 @@ internal class HeadlessDestinationPaletteTest {
         /**
          * Reports bounded scalar admission state for skipped-work checks.
          */
-        fun remainingSamples(): Int = remaining.getInt(color)
+        fun remainingSamples(): Int = maxOf(0, -count.getInt(color))
     }
 }
