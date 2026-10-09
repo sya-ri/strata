@@ -97,6 +97,13 @@ tasks.register<JavaExec>("captureComponentInventory") {
 }
 
 tasks.register<JavaExec>("jmhComponents") {
+    providers.gradleProperty("strata.performance.quick").orNull?.let { systemProperty("strata.performance.quick", it) }
+    listOf("cpuAdmission", "cpuContext").forEach { name ->
+        providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", rootProject.file(it).absolutePath) }
+    }
+    if (providers.gradleProperty("strata.performance.cpuAdmission").isPresent || providers.gradleProperty("strata.performance.cpuContext").isPresent) {
+        systemProperty("strata.performance.cpuProbe", rootProject.file(providers.gradleProperty("strata.performance.cpuProbe").getOrElse("performance-testkit/tools/cpu_host.py")).absolutePath)
+    }
     group = "verification"
     description = "Runs the independent component corpus with JMH; the historical suite has a separate dependency graph."
     val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")

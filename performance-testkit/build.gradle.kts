@@ -50,3 +50,11 @@ val verifyBrowserPerformanceDriver = tasks.register<Exec>("verifyBrowserPerforma
 }
 
 tasks.named("check") { dependsOn(verifyBrowserPerformanceDriver) }
+
+val verifyCpuExecutorPlan = tasks.register<Exec>("verifyCpuExecutorPlan") {
+    group = "verification"
+    description = "Checks complete CPU executor plans and fail-closed whole-attempt adoption with synthetic sources."
+    commandLine("python", "-B", "-m", "unittest", "discover", "-s", layout.projectDirectory.dir("tools/tests").asFile)
+}
+
+tasks.named("check") { dependsOn(verifyCpuExecutorPlan) }

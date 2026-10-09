@@ -10,6 +10,8 @@ import java.lang.management.ManagementFactory
  * Owner-thread JDK timing, allocation, heap-boundary, and process-GC collector.
  * Setup, assertions, and evidence serialization belong outside sample boundaries.
  * Unsupported metrics remain null and failed samples cannot publish successful evidence.
+ * All-thread allocation uses the loaded VM's aggregate counter when available; otherwise it is null.
+ * It is distinct from owner-thread allocation and required JMH GC-profiler allocation evidence.
  *
  * @param name stable interval identity.
  * @param capacity exact number of required successful samples.
@@ -20,6 +22,9 @@ public class JvmPerformanceMeter(
 ) {
     private val thread = ManagementFactory.getThreadMXBean()
     private val allocation = thread as? ThreadMXBean
+
+    // Resolve the newer getter once through its public interface, preserving baseline compilation.
+    private val totalAllocationCounter = runCatching { ThreadMXBean::class.java.getMethod("getTotalThreadAllocatedBytes") }.getOrNull()
     private val process = ManagementFactory.getOperatingSystemMXBean() as? OperatingSystemMXBean
     private val memory = ManagementFactory.getMemoryMXBean()
     private val collectors = ManagementFactory.getGarbageCollectorMXBeans()
@@ -152,10 +157,9 @@ public class JvmPerformanceMeter(
     private fun allocated(allThreads: Boolean): Long {
         val allocation = this.allocation ?: return -1
         if (allocation.isThreadAllocatedMemorySupported.not() || allocation.isThreadAllocatedMemoryEnabled.not()) return -1
-        return runCatching { if (allThreads) allocation.totalThreadAllocatedBytes else allocation.currentThreadAllocatedBytes }
-            .getOrDefault(
-                -1,
-            )
+        return runCatching {
+            if (allThreads) (totalAllocationCounter?.invoke(allocation) as? Long) ?: -1 else allocation.currentThreadAllocatedBytes
+        }.getOrDefault(-1)
     }
 
     private fun currentCpu(): Long = if (thread.isCurrentThreadCpuTimeSupported && thread.isThreadCpuTimeEnabled) thread.currentThreadCpuTime else -1
