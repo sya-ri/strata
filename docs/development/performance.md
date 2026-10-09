@@ -749,3 +749,28 @@ Record the measured revision, configuration, and environment with each temporary
 Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.
 Historical measurements in Git history do not establish performance on the current revision.
 Promote a verified architectural conclusion into this contract instead of accumulating host-specific result tables in it.
+
+### Current pointer-capability enumeration
+
+Each core input pipeline owns one derived pointer index keyed by the logical root's referential identity and the latest completed placement revision.
+Every layout commit evicts the previous index before capture validation, and every component or modifier cleanup evicts it before lifecycle callbacks.
+Root replacement is also checked at lookup; explicit input reset, detach, failure and terminal close use the existing capture-cancellation path, which evicts membership even when no capture exists.
+The revision may wrap because each commit first releases the preceding generation; no historical revision is retained or looked up.
+Paint and semantics invalidation alone preserve committed membership, while geometry input synchronization completes the next layout before ordinary input uses it.
+
+The index contains only currently placed input/hover participants and clip ancestors needed by those participants.
+Inert unclipped ancestry is flattened without changing reverse sibling/deepest callback order, overflow hit testing or accumulated transformations.
+There is at most one descriptor per retained participant or required clip, with a single-parent forest whose edges are bounded by that descriptor count.
+Construction still walks the complete current effective tree once per committed geometry generation; it does not keep an index per historical tree, copy geometry, retain callbacks separately or cache authoritative source values.
+All access belongs to the tree's existing synchronous execution owner.
+
+Moves and drags deliver every required hover transition before input, including false notifications below clips.
+Captured input remains exclusive and uses the owner's current transform; captured release bypasses ordinary candidate enumeration.
+Capture validation follows the owner's placed effective-parent chain and cancels exactly once when an ancestor stops participating.
+Explicit hover reset intentionally retains the original full traversal, including previously hovered unplaced observers and complete failure accumulation.
+Core geometry-validity scans are still present; their independent traversal opportunity is not claimed as removed by this index.
+
+Portable old-recursion parity tests cover broad/deep sparse and dense trees, heterogeneous capabilities, nested clips, overflow, transformed capture, ancestor unplacement, replacement, invalidation and callback failures on JVM and JavaScript.
+JVM reflection tests separately prove clean identity reuse, sparse/dense descriptor bounds, generation and root replacement, paint-only reuse, owner isolation, revision rollover and reference release before failing cancellation callbacks, actual tree failure and close.
+The separate 46-case public retained corpus described in [the testkit contract](performance-testkit.md#pointer-capability-input-corpus) includes cold construction, geometry/index rebuild, input-triggered invalidation, paint-only, detach and clean controls.
+These source contracts and bounds do not establish surviving allocation or measured CPU benefit; every control and any regression remains in the paired acceptance table.
