@@ -187,8 +187,8 @@ public open class MutableStateRoutingBenchmark {
         val color: ArgbColor,
         val label: UiText,
     ) {
-        First(16, ArgbColor(0xff234567.toInt()), UiText.literal("First")),
-        Second(17, ArgbColor(0xff789abc.toInt()), UiText.literal("Second")),
+        First(16, ArgbColor(0xff234567.toInt()), UiText.Literal("First")),
+        Second(17, ArgbColor(0xff789abc.toInt()), UiText.Literal("Second")),
     }
 
     /**
@@ -444,8 +444,7 @@ public open class MutableStateRoutingBenchmark {
                 Membership.ReversedOwners -> index != 0
             }
 
-        private fun isComponent(): Boolean =
-            workload.kind == Kind.ComponentEqual || workload.kind == Kind.ComponentUnequal || workload.kind == Kind.ComponentFrame
+        private fun isComponent(): Boolean = workload.kind == Kind.ComponentEqual || workload.kind == Kind.ComponentUnequal || workload.kind == Kind.ComponentFrame
 
         private fun openScreens() {
             check(sessions.isEmpty())
@@ -542,9 +541,18 @@ public open class MutableStateRoutingBenchmark {
         @Suppress("CyclomaticComplexMethod", "LongMethod") // The fixed row inventory has one explicit operation dispatcher.
         public fun step(): Long {
             when (workload.kind) {
-                Kind.EqualAlias -> repeat(64) { assign(first) }
-                Kind.DistinctEqual -> repeat(64) { assign(equal) }
-                Kind.Unequal -> repeat(64) { alternate() }
+                Kind.EqualAlias -> {
+                    repeat(64) { assign(first) }
+                }
+
+                Kind.DistinctEqual -> {
+                    repeat(64) { assign(equal) }
+                }
+
+                Kind.Unequal -> {
+                    repeat(64) { alternate() }
+                }
+
                 Kind.FrameAlias -> {
                     assign(first)
                     completeFrames()
@@ -566,9 +574,11 @@ public open class MutableStateRoutingBenchmark {
                     completeFrames()
                 }
 
-                Kind.Cycles -> repeat(64) {
-                    alternate()
-                    completeFrames()
+                Kind.Cycles -> {
+                    repeat(64) {
+                        alternate()
+                        completeFrames()
+                    }
                 }
 
                 Kind.ColdAdmission -> {
@@ -628,14 +638,18 @@ public open class MutableStateRoutingBenchmark {
                     }
                 }
 
-                Kind.ComponentEqual -> repeat(64) {
-                    writes += 1
-                    slider.value = 2.0
+                Kind.ComponentEqual -> {
+                    repeat(64) {
+                        writes += 1
+                        slider.value = 2.0
+                    }
                 }
 
-                Kind.ComponentUnequal -> repeat(64) {
-                    writes += 1
-                    slider.value = if (slider.value == 0.0) 2.0 else -1.0
+                Kind.ComponentUnequal -> {
+                    repeat(64) {
+                        writes += 1
+                        slider.value = if (slider.value == 0.0) 2.0 else -1.0
+                    }
                 }
 
                 Kind.ComponentFrame -> {
@@ -645,13 +659,14 @@ public open class MutableStateRoutingBenchmark {
                     completeFrames()
                 }
 
-                Kind.CleanFrame -> completeFrames()
+                Kind.CleanFrame -> {
+                    completeFrames()
+                }
             }
             return comparisons + evaluations + notifications + invalidations + frames.sumOf { it.drawCommands.size.toLong() } + state.value.tone.ordinal
         }
 
-        private fun counters(): LongArray =
-            longArrayOf(writes, comparisons, roots, evaluations, completedFrames, source.acquired, source.released, notifications, begins, ends, invalidations, controlWrites)
+        private fun counters(): LongArray = longArrayOf(writes, comparisons, roots, evaluations, completedFrames, source.acquired, source.released, notifications, begins, ends, invalidations, controlWrites)
 
         /**
          * Checks two complete operations against literal independent work counts and full frame/pixel expectations.
@@ -720,17 +735,34 @@ public open class MutableStateRoutingBenchmark {
                 }
             val evaluated =
                 when (workload.kind) {
-                    Kind.FrameUnequal, Kind.Coalesced, Kind.ComponentFrame -> n
-                    Kind.Cycles -> n * 64
-                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.Replacement -> n * 2
-                    Kind.LastCloseReuse -> n
+                    Kind.FrameUnequal, Kind.Coalesced, Kind.ComponentFrame -> {
+                        n
+                    }
+
+                    Kind.Cycles -> {
+                        n * 64
+                    }
+
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.Replacement -> {
+                        n * 2
+                    }
+
+                    Kind.LastCloseReuse -> {
+                        n
+                    }
+
                     Kind.SparseRemoval -> {
                         val selected = if (previousMembership == Membership.Full) Membership.Sparse else Membership.Full
                         n + (0 until workload.regions).count { active(it, selected) }
                     }
 
-                    Kind.OwnerReversal -> 11L
-                    else -> 0L
+                    Kind.OwnerReversal -> {
+                        11L
+                    }
+
+                    else -> {
+                        0L
+                    }
                 }
             val frames =
                 when (workload.kind) {
@@ -757,7 +789,7 @@ public open class MutableStateRoutingBenchmark {
                     else -> 0L
                 }
             check(actual == listOf(writes, comparisons, roots, evaluated, frames, sourceChanges, sourceChanges, notified, guardBegins, guardEnds, 0L, controllerWrites)) {
-                "Independent operation counts differ for ${workload}: actual=$actual"
+                "Independent operation counts differ for $workload: actual=$actual"
             }
         }
 

@@ -31,7 +31,7 @@ internal class MutableStateSessionRetentionTest {
             val state = mutableStateOf(0)
             val retired = retireSession(state, termination)
             assertNull(field(state, "observationPlan"))
-            assertEquals(emptySet(), field(state, "observations"))
+            assertEquals(emptySet<Any>(), field(state, "observations"))
             for (attempt in 0 until 12) {
                 System.gc()
                 if (retired.all { it.get() == null }) break
@@ -77,7 +77,7 @@ internal class MutableStateSessionRetentionTest {
         assertEquals(1, payload.calls)
         assertNull(source.observer)
         assertNull(field(state, "observationPlan"))
-        assertEquals(emptySet(), field(state, "observations"))
+        assertEquals(emptySet<Any>(), field(state, "observations"))
         return listOf(WeakReference(session), WeakReference(probe), WeakReference(source), WeakReference(payload))
     }
 

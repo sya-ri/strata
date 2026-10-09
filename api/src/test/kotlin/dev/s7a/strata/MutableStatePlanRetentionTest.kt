@@ -50,7 +50,7 @@ internal class MutableStatePlanRetentionTest {
             observer.close()
         }
         assertNull(plan(state))
-        assertEquals(emptySet(), field(state, "observations"))
+        assertEquals(emptySet<Any>(), field(state, "observations"))
         state.value = 1
         assertEquals(1, state.value)
         assertNull(plan(state))
@@ -92,7 +92,7 @@ internal class MutableStatePlanRetentionTest {
                 root.close()
             }
             assertNull(plan(state))
-            assertEquals(emptySet(), field(state, "observations"))
+            assertEquals(emptySet<Any>(), field(state, "observations"))
         }
     }
 
@@ -138,7 +138,7 @@ internal class MutableStatePlanRetentionTest {
             assertEquals(1, listField(admitted, "owners").size)
             root.close()
             assertNull(plan(state))
-            assertEquals(emptySet(), field(state, "observations"))
+            assertEquals(emptySet<Any>(), field(state, "observations"))
         }
         assertNull(plan(state))
     }
@@ -180,7 +180,7 @@ internal class MutableStatePlanRetentionTest {
         val state = mutableStateOf(0)
         val retired = retireObservedOwner(state)
         assertNull(plan(state))
-        assertEquals(emptySet(), field(state, "observations"))
+        assertEquals(emptySet<Any>(), field(state, "observations"))
         repeat(12) {
             System.gc()
             if (retired.all { it.get() == null }) {

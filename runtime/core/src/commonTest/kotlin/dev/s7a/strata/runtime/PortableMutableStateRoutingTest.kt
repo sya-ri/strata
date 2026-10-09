@@ -272,8 +272,8 @@ internal class PortableMutableStateRoutingTest {
         val color: ArgbColor,
         val label: UiText,
     ) {
-        First(16, ArgbColor(0xff234567.toInt()), UiText.literal("First")),
-        Second(17, ArgbColor(0xff789abc.toInt()), UiText.literal("Second")),
+        First(16, ArgbColor(0xff234567.toInt()), UiText.Literal("First")),
+        Second(17, ArgbColor(0xff789abc.toInt()), UiText.Literal("Second")),
     }
 
     /**
