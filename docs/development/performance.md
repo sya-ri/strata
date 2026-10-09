@@ -183,6 +183,8 @@ The pixel traversal reuses an exactly matching source/destination pair before ca
 This reuses repeated magnified texels without retaining any image reference.
 For the same large-span admission, an opaque nonwhite RGB tint may use 768 exact normalized channel products, bounded to three 256-entry primitive tables.
 Translucent composition lazily records rounded channel results by source alpha and source channel only while every admitted destination has the same complete ARGB value.
+Destination-result tables are admitted only after 32 qualifying blends have observed that same destination; earlier pixels keep the original scalar composition and early destination changes allocate no tables.
+Adjacent identical source/destination pairs and discarded or zero-byte-alpha results do not advance admission, since they already avoid channel work.
 The first unequal destination permanently disables and releases these blend tables for the command; subsequent pixels use the original Float equations, so a heterogeneous destination never triggers repeated table clearing or assumes uniformity.
 Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primitive values plus the 256 row references); other source alpha values use the original Float equations without allocating or replacing a row.
 The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
@@ -207,6 +209,11 @@ Compiled JMH include filters must select exactly the registered method names bef
 Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
+
+`DestinationPaletteBenchmark` is a separate 15-case corpus of transparent, translucent and opaque uniform backgrounds, per-pixel heterogeneity and an ARGB change after the first 16 destinations, each with 1, 16 or 256 source alpha bytes.
+Run `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DestinationPaletteBenchmark -Pstrata.performance.suite=destination-palette`; source and background construction stay outside measurement, and each operation owns a fresh 128 by 64 raster and its scratch.
+Its one-to-one sampling prevents magnified spans and repeated source rows from hiding destination-table allocation; it leaves the historical and other independent matrices unchanged.
+Its fixture-owned untimed verifier requires all 15 compiled cases, fixed command and input work, independent scalar Float pixels, fresh output and unchanged inputs.
 
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
