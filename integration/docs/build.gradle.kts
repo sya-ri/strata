@@ -114,7 +114,7 @@ tasks.withType<Test>().configureEach {
     doFirst { systemProperty("strata.test.apiClasses", apiKotlinClasses.get().asFile.absolutePath) }
 }
 val showcaseSources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin")
-val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources")
+val showcaseFixtureResources = rootProject.layout.projectDirectory.dir("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/gametest/resources")
 val showcaseExampleSources = objects.sourceDirectorySet("showcaseExamples", "API-only showcase examples").apply {
     srcDir(showcaseSources)
     include("**/*Example.kt")
