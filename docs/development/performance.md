@@ -675,6 +675,27 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Logical text font provenance
+
+`TextProvenanceBenchmark` separates complete content construction, 512 prepared original-offset queries, 32 prepared scalar-aligned slices, semantic-equivalence controls, public description evaluation, complete layout, restoring retained changes and clean frames.
+Its 149 declared cases include empty and short values, 128 and 16,384 UTF-16 units, one/sparse/dense fonts, equal adjacent identifiers, nested empty wrappers, supplementary and mixed-script text, all hard breaks, wrapped text and signed or exceptional metrics.
+The generated JMH inventory must confirm the actual matrix before collection; source enumeration alone does not establish compilation or acceptance.
+TextArea admits one inherited editor font, while mixed spans exercise both display Text policies.
+The independent original dense builder and scalar slicer determine fonts, inherited empty selection, canonical slice structure and complete semantic equality without consulting candidate run boundaries.
+Independent forward Float accumulation, original-index shaping traces and public consumer checks cover logical widths, wrapping, ellipsis, editing/preedit, semantics, pixels at densities 1..3 and immutable old presentations.
+Complete malformed, formatting and unresolved tails must fail before hidden lines or glyph preparation can conceal them.
+Replacement, independent owners and terminal release must preserve returned content, slices, runs and frames while releasing current renderer and observer ownership.
+
+The proposed current-value representation stores R font references and R-1 scalar-aligned starts for R nonempty coalesced runs.
+The first start and final end are implicit, and empty values retain only their original inherited selection.
+Construction buffers and published arrays are independent, with no mutable query cursor, history cache, renderer or native owner.
+Full Unicode validation remains scalar based, and the representation adds no maximum text length or dense-input rejection.
+Actual retained font/start membership is checked separately from independent source-work counts for construction, binary lookup and intersected slices.
+GC measurements must include temporary builder capacity, growth copies, final snapshots, boundary/index storage and all remaining text/run work.
+Dense font changes can increase primitive membership and lookup cost compared with the original per-code-unit list; this control and every slower result remain visible.
+Admit the implementation only after three independent Standard repetitions per side with the same frozen fixture, collector, harness, assets and actual class-tree/archive provenance.
+The CPU corpus uses synthetic font metrics; loaded-client/native parity is a separate correctness gate, and these results establish no native frame-rate claim.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.

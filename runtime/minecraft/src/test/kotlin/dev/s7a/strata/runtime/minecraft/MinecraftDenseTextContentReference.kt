@@ -5,26 +5,20 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.text.withFont
 
 /**
- * Immutable logical Unicode text and original UTF-16 font provenance shared by line layout and glyph shaping.
+ * Frozen original dense provenance and scalar-slice oracle from 7059cf82075cf4639c833cc0ef447d8db1491c6b.
  *
  * Construction resolves only literal composition, never translations or platform payloads.
  * Every scalar keeps its innermost font selection; slicing cannot split a surrogate pair or change that selection.
- * Equal adjacent selections share one run, with scalar-aligned starts for all runs after the first.
- * At most one font per nonempty run and one fewer start offsets belong to this immutable current value.
- * Lookups use invocation-local binary search; independent readers share no mutable cursor.
- * Private construction buffers are copied before publication and are not retained by the content.
- * Replacement and node disposal release their current references; previously returned values remain independent.
  * The value owns no renderer, profile, native resource, or historical text.
  *
  * @property text complete original value retained for semantics, including hard breaks and omitted lines.
  * @property value flattened logical text before shaping or hard-break normalization.
  */
-internal class MinecraftTextContent private constructor(
+internal class MinecraftDenseTextContentReference private constructor(
     @get:JvmSynthetic
     internal val text: UiText,
     @get:JvmSynthetic
     internal val value: String,
-    private val runStarts: IntArray,
     private val fonts: List<ResourceId>,
     private val inheritedFont: ResourceId,
 ) {
@@ -41,7 +35,7 @@ internal class MinecraftTextContent private constructor(
         require(offset == scalarBoundary(offset) && (offset < value.length || value.isEmpty())) {
             "A font offset must identify an original Unicode scalar."
         }
-        return if (value.isEmpty()) inheritedFont else fonts[runIndex(offset)]
+        return if (value.isEmpty()) inheritedFont else fonts[offset]
     }
 
     /**
@@ -51,7 +45,7 @@ internal class MinecraftTextContent private constructor(
      * @return true when reusing measured presentation and semantics is safe.
      */
     @JvmSynthetic
-    internal fun equivalentTo(other: MinecraftTextContent): Boolean = text == other.text && value == other.value && runStarts.contentEquals(other.runStarts) && fonts == other.fonts && inheritedFont == other.inheritedFont
+    internal fun equivalentTo(other: MinecraftDenseTextContentReference): Boolean = text == other.text && value == other.value && fonts == other.fonts && inheritedFont == other.inheritedFont
 
     /**
      * Clamps an offset to the preceding scalar boundary of this logical value.
@@ -87,26 +81,15 @@ internal class MinecraftTextContent private constructor(
         }
         val parts = ArrayList<UiText>()
         var first = start
-        var run = runIndex(start)
         while (first < end) {
-            val font = fonts[run]
-            val last = if (run < runStarts.size) minOf(end, runStarts[run]) else end
+            val font = fonts[first]
+            var last = first + Character.charCount(value.codePointAt(first))
+            while (last < end && fonts[last] == font) last += Character.charCount(value.codePointAt(last))
             val literal = UiText.Literal(value.substring(first, last))
             parts.add(if (font == MinecraftTextRenderer.defaultFont) literal else literal.withFont(font))
             first = last
-            run++
         }
         return if (parts.size == 1) parts[0] else UiText.Concatenated(parts)
-    }
-
-    private fun runIndex(offset: Int): Int {
-        var first = 0
-        var last = runStarts.size
-        while (first < last) {
-            val middle = first + (last - first) / 2
-            if (offset < runStarts[middle]) last = middle else first = middle + 1
-        }
-        return first
     }
 
     /**
@@ -127,11 +110,11 @@ internal class MinecraftTextContent private constructor(
             text: UiText,
             font: ResourceId = MinecraftTextRenderer.defaultFont,
             multiline: Boolean = false,
-        ): MinecraftTextContent {
+        ): MinecraftDenseTextContentReference {
             val value = StringBuilder()
-            val fonts = FontRuns()
+            val fonts = ArrayList<ResourceId>()
             append(text, font, multiline, value, fonts)
-            return fonts.content(text, value.toString(), emptyFont(text, font))
+            return MinecraftDenseTextContentReference(text, value.toString(), fonts.toList(), emptyFont(text, font))
         }
 
         /**
@@ -162,11 +145,10 @@ internal class MinecraftTextContent private constructor(
             font: ResourceId,
             multiline: Boolean,
             value: StringBuilder,
-            fonts: FontRuns,
+            fonts: MutableList<ResourceId>,
         ) {
             when (text) {
                 is UiText.Literal -> {
-                    val first = value.length
                     var offset = 0
                     while (offset < text.value.length) {
                         val codePoint = text.value.codePointAt(offset)
@@ -175,9 +157,9 @@ internal class MinecraftTextContent private constructor(
                         }
                         val count = Character.charCount(codePoint)
                         value.appendCodePoint(codePoint)
+                        repeat(count) { fonts.add(font) }
                         offset += count
                     }
-                    if (first < value.length) fonts.add(font, first)
                 }
 
                 is UiText.WithFont -> {
@@ -192,42 +174,6 @@ internal class MinecraftTextContent private constructor(
                     throw IllegalArgumentException("Common Minecraft text requires resolved literal text.")
                 }
             }
-        }
-
-        /**
-         * Construction-local run buffers; no mutable array or list escapes into published content.
-         */
-        private class FontRuns {
-            private val fonts = ArrayList<ResourceId>()
-            private var starts = IntArray(0)
-
-            /**
-             * Coalesces one validated nonempty literal with its predecessor using resource identifier value equality.
-             */
-            fun add(
-                font: ResourceId,
-                start: Int,
-            ) {
-                if (fonts.isNotEmpty() && fonts.last() == font) return
-                if (fonts.isNotEmpty()) {
-                    val index = fonts.size - 1
-                    if (starts.size == index) {
-                        val capacity = maxOf(8L, starts.size.toLong() * 2L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-                        starts = starts.copyOf(capacity)
-                    }
-                    starts[index] = start
-                }
-                fonts.add(font)
-            }
-
-            /**
-             * Transfers exact-sized independent snapshots; unused builder capacity is never retained.
-             */
-            fun content(
-                text: UiText,
-                value: String,
-                inherited: ResourceId,
-            ): MinecraftTextContent = MinecraftTextContent(text, value, starts.copyOf((fonts.size - 1).coerceAtLeast(0)), fonts.toList(), inherited)
         }
     }
 }
