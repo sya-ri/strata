@@ -77,11 +77,14 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
-Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
-This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules without versioned Fabric projects or Web applications.
-It accepts `formatKotlin` (including the native font backend), JVM tests and archives, ABI checks, `jmhClasses`, `jmhRunBytecodeGenerator`, `jmhCompileGeneratedClasses`, `jmhHistorical`, `jmhComponents`, `jmhRemote` and `processEvidence`.
+Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
+This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
+Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
+The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
 Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
-The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and fail at settings when combined with the flag.
+The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and are rejected when combined with the flag.
+The guard inspects the actual resolved task graph, so an option value cannot be mistaken for a complete-acceptance task.
+Complete-acceptance tasks opt out of configuration caching in the scoped model, so later requests reconfigure and are refused before any task executes.
 Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
 Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
 
