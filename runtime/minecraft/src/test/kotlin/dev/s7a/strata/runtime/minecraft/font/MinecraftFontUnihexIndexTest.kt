@@ -235,7 +235,12 @@ internal class MinecraftFontUnihexIndexTest {
         engine.close()
         assertTrue(indexes(engine).isEmpty())
         assertEquals(0, units(engine))
-        assertNull(MinecraftFontEngine::class.java.getDeclaredField("snapshot").apply { isAccessible = true }.get(engine))
+        assertNull(
+            MinecraftFontEngine::class.java
+                .getDeclaredField("snapshot")
+                .apply { isAccessible = true }
+                .get(engine),
+        )
         assertEquals(0, engine.retainedRasterEntries)
         assertEquals(expected(ranges, 65, true), old)
         assertEquals(1, backend.closeCalls)
@@ -281,14 +286,26 @@ internal class MinecraftFontUnihexIndexTest {
                 assertEquals(reference.exceptionOrNull()?.javaClass, candidate.exceptionOrNull()?.javaClass)
                 assertEquals(reference.exceptionOrNull()?.message, candidate.exceptionOrNull()?.message)
                 when {
-                    control.cleanup == ContinuationCleanup.PropagatedFailure -> assertSame(cleanupFailure, candidate.exceptionOrNull())
-                    control.imageNull -> assertEquals(7f, candidate.getOrThrow().advance)
+                    control.cleanup == ContinuationCleanup.PropagatedFailure -> {
+                        assertSame(cleanupFailure, candidate.exceptionOrNull())
+                    }
+
+                    control.imageNull -> {
+                        assertEquals(7f, candidate.getOrThrow().advance)
+                    }
+
                     case == ContinuationCase.Absent -> {
                         assertEquals(6f, candidate.getOrThrow().advance)
                         assertEquals(IntSize(5, 8), checkNotNull(candidate.getOrThrow().image).size)
                     }
-                    case == ContinuationCase.Overflow -> assertTrue(candidate.exceptionOrNull() is ArithmeticException)
-                    else -> assertEquals("Font engine is closed.", checkNotNull(candidate.exceptionOrNull()).message)
+
+                    case == ContinuationCase.Overflow -> {
+                        assertTrue(candidate.exceptionOrNull() is ArithmeticException)
+                    }
+
+                    else -> {
+                        assertEquals("Font engine is closed.", checkNotNull(candidate.exceptionOrNull()).message)
+                    }
                 }
             }
         }
@@ -396,10 +413,7 @@ internal class MinecraftFontUnihexIndexTest {
             val scalar = if (case == ContinuationCase.Absent) 80 else 65
             val result = runCatching { if (original) originalContinuation(state, engine, scalar) else engine.glyph(FontTestResources.defaultFont, scalar) }
             if (control.cleanup == ContinuationCleanup.CaughtFailure) assertSame(cleanupFailure, observedCloseFailure)
-            if (control.cleanup != ContinuationCleanup.PropagatedFailure) {
-                if (control.imageNull) assertSame(detachedGlyph, result.getOrThrow())
-                if (control.imageNull.not() && case == ContinuationCase.Absent) assertSame(missing, result.getOrThrow())
-            }
+            assertClosedContinuationResult(case, control, detachedGlyph, missing, result)
             assertEquals(if (control.primed) 2 else 1, glyphCalls)
             assertEquals(1, backend.openCalls)
             assertEquals(1, faceCloses)
@@ -408,6 +422,22 @@ internal class MinecraftFontUnihexIndexTest {
             return result
         } finally {
             engine.close()
+        }
+    }
+
+    /**
+     * Checks original detached or absent results before the ordered call-count and terminal assertions.
+     */
+    private fun assertClosedContinuationResult(
+        case: ContinuationCase,
+        control: ContinuationControl,
+        detachedGlyph: MinecraftFontGlyph,
+        missing: MinecraftFontGlyph,
+        result: Result<MinecraftFontGlyph>,
+    ) {
+        if (control.cleanup != ContinuationCleanup.PropagatedFailure) {
+            if (control.imageNull) assertSame(detachedGlyph, result.getOrThrow())
+            if (control.imageNull.not() && case == ContinuationCase.Absent) assertSame(missing, result.getOrThrow())
         }
     }
 
@@ -512,7 +542,8 @@ internal class MinecraftFontUnihexIndexTest {
                 .apply { isAccessible = true }
                 .invoke(engine, *arguments)
         } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.targetException)
+            val originalFailure = checkNotNull(failure.targetException)
+            throw originalFailure
         }
 
     private data class ContinuationControl(
@@ -563,25 +594,27 @@ internal class MinecraftFontUnihexIndexTest {
 
     private fun fillers(count: Int): List<FontProvider.WidthOverride> = List(count) { FontProvider.WidthOverride(10_000 + it * 2, 10_001 + it * 2, 0, 7) }
 
-    private fun provider(ranges: List<FontProvider.WidthOverride>): String = JsonObject().apply {
-        addProperty("type", "unihex")
-        addProperty("hex_file", "test:font/index.zip")
-        add(
-            "size_overrides",
-            JsonArray().apply {
-                ranges.forEach { range ->
-                    add(
-                        JsonObject().apply {
-                            addProperty("from", String(Character.toChars(range.first)))
-                            addProperty("to", String(Character.toChars(range.last)))
-                            addProperty("left", range.left)
-                            addProperty("right", range.right)
-                        },
-                    )
-                }
-            },
-        )
-    }.toString()
+    private fun provider(ranges: List<FontProvider.WidthOverride>): String =
+        JsonObject()
+            .apply {
+                addProperty("type", "unihex")
+                addProperty("hex_file", "test:font/index.zip")
+                add(
+                    "size_overrides",
+                    JsonArray().apply {
+                        ranges.forEach { range ->
+                            add(
+                                JsonObject().apply {
+                                    addProperty("from", String(Character.toChars(range.first)))
+                                    addProperty("to", String(Character.toChars(range.last)))
+                                    addProperty("left", range.left)
+                                    addProperty("right", range.right)
+                                },
+                            )
+                        }
+                    },
+                )
+            }.toString()
 
     private fun archive(): Pair<String, ByteArray> {
         val hex = listOf(65, 66, 70, 71, 0x1F600, 0x1F602).joinToString("\n") { "${it.toString(16).uppercase().padStart(4, '0')}:${"81".repeat(16)}" }
@@ -594,7 +627,15 @@ internal class MinecraftFontUnihexIndexTest {
         document: String = provider(ranges),
     ): MinecraftFontSnapshot = FontTestResources.snapshot(FontTestResources.font("default", document), archive(), capabilities = capabilities)
 
-    private fun indexes(engine: MinecraftFontEngine): Map<*, *> = MinecraftFontEngine::class.java.getDeclaredField("unihexIndexes").apply { isAccessible = true }.get(engine) as Map<*, *>
+    private fun indexes(engine: MinecraftFontEngine): Map<*, *> =
+        MinecraftFontEngine::class.java
+            .getDeclaredField("unihexIndexes")
+            .apply { isAccessible = true }
+            .get(engine) as Map<*, *>
 
-    private fun units(engine: MinecraftFontEngine): Int = MinecraftFontEngine::class.java.getDeclaredField("unihexIndexUnits").apply { isAccessible = true }.getInt(engine)
+    private fun units(engine: MinecraftFontEngine): Int =
+        MinecraftFontEngine::class.java
+            .getDeclaredField("unihexIndexUnits")
+            .apply { isAccessible = true }
+            .getInt(engine)
 }

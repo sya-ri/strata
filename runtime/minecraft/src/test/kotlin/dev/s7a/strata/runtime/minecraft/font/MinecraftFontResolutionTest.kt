@@ -366,17 +366,38 @@ internal class MinecraftFontResolutionTest {
 
     private fun assertTerminalState(engine: MinecraftFontEngine) {
         for (name in listOf("rasters", "resolutions", "faces", "bitmapSizes", "bitmapFailures", "faceFailures", "providerStatus", "fontStatus")) {
-            val retained = engine.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(engine) as Map<*, *>
+            val retained =
+                engine.javaClass
+                    .getDeclaredField(name)
+                    .apply { isAccessible = true }
+                    .get(engine) as Map<*, *>
             assertTrue(retained.isEmpty(), name)
         }
-        val validated = engine.javaClass.getDeclaredField("validatedFaces").apply { isAccessible = true }.get(engine) as Set<*>
+        val validated =
+            engine.javaClass
+                .getDeclaredField("validatedFaces")
+                .apply { isAccessible = true }
+                .get(engine) as Set<*>
         assertTrue(validated.isEmpty())
         assertEquals(0, resolutionUnits(engine))
         assertEquals(0, engine.retainedRasterEntries)
         assertEquals(0L, engine.retainedRasterBytes)
         assertEquals(0, engine.retainedFaces)
-        assertEquals(0L, engine.javaClass.getDeclaredField("faceBytes").apply { isAccessible = true }.getLong(engine))
-        for (name in listOf("snapshot", "backend")) assertTrue(engine.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(engine) == null)
+        assertEquals(
+            0L,
+            engine.javaClass
+                .getDeclaredField("faceBytes")
+                .apply { isAccessible = true }
+                .getLong(engine),
+        )
+        for (name in listOf("snapshot", "backend")) {
+            assertTrue(
+                engine.javaClass
+                    .getDeclaredField(name)
+                    .apply { isAccessible = true }
+                    .get(engine) == null,
+            )
+        }
     }
 
     private fun assertEquivalent(
@@ -430,19 +451,36 @@ internal class MinecraftFontResolutionTest {
         vararg args: Any,
     ): Any? =
         try {
-            MinecraftFontEngine::class.java.getDeclaredMethod(name, *types).apply { isAccessible = true }.invoke(engine, *args)
+            MinecraftFontEngine::class.java
+                .getDeclaredMethod(name, *types)
+                .apply { isAccessible = true }
+                .invoke(engine, *args)
         } catch (failure: InvocationTargetException) {
             throw checkNotNull(failure.targetException)
         }
 
     private fun rasterKeys(engine: MinecraftFontEngine): List<Any?> =
-        (MinecraftFontEngine::class.java.getDeclaredField("rasters").apply { isAccessible = true }.get(engine) as Map<*, *>).keys.toList()
+        (
+            MinecraftFontEngine::class.java
+                .getDeclaredField("rasters")
+                .apply { isAccessible = true }
+                .get(engine) as Map<*, *>
+        ).keys
+            .toList()
 
     private fun resolutionEntries(engine: MinecraftFontEngine): Int =
-        (MinecraftFontEngine::class.java.getDeclaredField("resolutions").apply { isAccessible = true }.get(engine) as Map<*, *>).size
+        (
+            MinecraftFontEngine::class.java
+                .getDeclaredField("resolutions")
+                .apply { isAccessible = true }
+                .get(engine) as Map<*, *>
+        ).size
 
     private fun resolutionUnits(engine: MinecraftFontEngine): Int =
-        MinecraftFontEngine::class.java.getDeclaredField("resolutionUnits").apply { isAccessible = true }.getInt(engine)
+        MinecraftFontEngine::class.java
+            .getDeclaredField("resolutionUnits")
+            .apply { isAccessible = true }
+            .getInt(engine)
 
     private fun observingBackend(
         width: Int,

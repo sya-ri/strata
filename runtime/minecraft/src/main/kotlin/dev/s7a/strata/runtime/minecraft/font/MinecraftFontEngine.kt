@@ -599,10 +599,17 @@ public class MinecraftFontEngine
             val units = 1 + misses.size
             if (resolutionLimit < units || epoch !== rasterEpoch) return
             // A backend may admit this same key while reentering the outer glyph walk.
-            resolutions.remove(key)?.let { previous -> resolutionUnits -= 1 + previous.misses.size }
+            resolutions
+                .remove(key)
+                ?.let { previous -> resolutionUnits -= 1 + previous.misses.size }
             while (resolutionLimit - units < resolutionUnits) {
                 val oldest = resolutions.entries.iterator()
-                resolutionUnits -= 1 + oldest.next().value.misses.size
+                resolutionUnits -= 1 +
+                    oldest
+                        .next()
+                        .value
+                        .misses
+                        .size
                 oldest.remove()
             }
             resolutions[key] = Resolution(provider, misses)
@@ -614,10 +621,17 @@ public class MinecraftFontEngine
             codePoint: Int,
         ): RasterKey? =
             when (val provider = entry.provider) {
-                is FontProvider.Bitmap -> null
-                is FontProvider.TrueType ->
+                is FontProvider.Bitmap -> {
+                    null
+                }
+
+                is FontProvider.TrueType -> {
                     if (codePoint in provider.skipped) null else RasterKey.TrueTypeGlyph(FontFaceKey(provider.resource, provider.settings), codePoint)
-                else -> RasterKey.Glyph(entry.identity, codePoint)
+                }
+
+                else -> {
+                    RasterKey.Glyph(entry.identity, codePoint)
+                }
             }
 
         private fun invalidateResolutions() {
