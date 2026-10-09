@@ -773,7 +773,11 @@ public open class MutableStateRoutingBenchmark {
                     Kind.OwnerReversal -> 8L
                     else -> 0L
                 }
-            val sourceChanges = if (workload.kind == Kind.ColdAdmission || workload.kind == Kind.FirstAdmission || workload.kind == Kind.LastCloseReuse || workload.kind == Kind.OwnerReversal) u else 0L
+            val sourceChanges =
+                when (workload.kind) {
+                    Kind.ColdAdmission, Kind.FirstAdmission, Kind.LastCloseReuse, Kind.OwnerReversal -> u
+                    else -> 0L
+                }
             val notified =
                 when (workload.kind) {
                     Kind.ComponentUnequal -> 64L
