@@ -27,36 +27,7 @@ internal object UnihexOverrideAssets {
                 UnihexOverrideScenario.Middle -> scenario.ranges / 2
                 else -> scenario.ranges - 1
             }
-        repeat(scenario.ranges) { position ->
-            val hit = position == selected && (scenario in setOf(UnihexOverrideScenario.None, UnihexOverrideScenario.Absent)).not()
-            val overlap = scenario == UnihexOverrideScenario.Overlap && position in setOf(3, 5, 9)
-            records.add(
-                JsonObject().apply {
-                    addProperty("from", String(Character.toChars(if (hit || overlap) first else 10_000 + position * 2)))
-                    addProperty("to", String(Character.toChars(if (hit || overlap) first + 63 else 10_001 + position * 2)))
-                    addProperty(
-                        "left",
-                        if (scenario == UnihexOverrideScenario.Padding) {
-                            -1
-                        } else if (overlap) {
-                            1
-                        } else {
-                            0
-                        },
-                    )
-                    addProperty(
-                        "right",
-                        if (scenario == UnihexOverrideScenario.Padding) {
-                            8
-                        } else if (overlap) {
-                            position
-                        } else {
-                            7
-                        },
-                    )
-                },
-            )
-        }
+        repeat(scenario.ranges) { position -> records.add(record(scenario, position, selected, first)) }
         val provider =
             JsonObject().apply {
                 addProperty("type", "unihex")
@@ -68,6 +39,40 @@ internal object UnihexOverrideAssets {
             "unihex-ordered-${scenario.name}-v1",
             mapOf("assets/minecraft/font/default.json" to document.toString().toByteArray(Charsets.UTF_8), "assets/strata_benchmark/font/ordered.zip" to bytes()),
         )
+    }
+
+    private fun record(
+        scenario: UnihexOverrideScenario,
+        position: Int,
+        selected: Int,
+        first: Int,
+    ): JsonObject {
+        val hit = position == selected && (scenario in setOf(UnihexOverrideScenario.None, UnihexOverrideScenario.Absent)).not()
+        val overlap = scenario == UnihexOverrideScenario.Overlap && position in setOf(3, 5, 9)
+        return JsonObject().apply {
+            addProperty("from", String(Character.toChars(if (hit || overlap) first else 10_000 + position * 2)))
+            addProperty("to", String(Character.toChars(if (hit || overlap) first + 63 else 10_001 + position * 2)))
+            addProperty(
+                "left",
+                if (scenario == UnihexOverrideScenario.Padding) {
+                    -1
+                } else if (overlap) {
+                    1
+                } else {
+                    0
+                },
+            )
+            addProperty(
+                "right",
+                if (scenario == UnihexOverrideScenario.Padding) {
+                    8
+                } else if (overlap) {
+                    position
+                } else {
+                    7
+                },
+            )
+        }
     }
 
     /**

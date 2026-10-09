@@ -14,6 +14,7 @@ import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
 import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.lang.reflect.Field
 import java.nio.ByteBuffer
 
 /**
@@ -57,25 +58,11 @@ public object UnihexOverrideWorkEvidence {
         state.setup()
         val records =
             try {
-                val source = UnihexOverrideAssets.source(scenario)
-                val document = checkNotNull(source.read("assets/minecraft/font/default.json"))
-                val ranges =
-                    JsonParser
-                        .parseString(document.toString(Charsets.UTF_8))
-                        .asJsonObject
-                        .getAsJsonArray("providers")
-                        .single()
-                        .asJsonObject
-                        .getAsJsonArray("size_overrides")
-                val trace = state.trace()
-                val scalars = UnihexOverrideAssets.scalars(scenario)
-                check(trace.size == scalars.size)
-                var predicates = 0L
-                for ((glyph, scalar) in trace.zip(scalars)) {
-                    val reference = originalGlyph(ranges, scalar)
-                    equalGlyph(glyph, reference.first)
-                    predicates += reference.second
-                }
+                val evidence = verifyTrace(scenario, state)
+                val document = evidence.document
+                val trace = evidence.trace
+                val scalars = evidence.scalars
+                val predicates = evidence.predicates
                 equalGlyph(state.warm(), trace.first())
                 equalGlyph(state.glyphs(), trace.last())
                 equalGlyph(state.firstUse(), trace.first())
@@ -122,6 +109,39 @@ public object UnihexOverrideWorkEvidence {
         return records.onEach { it.add("terminal_index_retention", terminal) }
     }
 
+    private class GlyphTraceEvidence(
+        val document: ByteArray,
+        val trace: List<MinecraftFontGlyph>,
+        val scalars: List<Int>,
+        val predicates: Long,
+    )
+
+    private fun verifyTrace(
+        scenario: UnihexOverrideScenario,
+        state: UnihexOverrideBenchmark.OverrideSession,
+    ): GlyphTraceEvidence {
+        val source = UnihexOverrideAssets.source(scenario)
+        val document = checkNotNull(source.read("assets/minecraft/font/default.json"))
+        val ranges =
+            JsonParser
+                .parseString(document.toString(Charsets.UTF_8))
+                .asJsonObject
+                .getAsJsonArray("providers")
+                .single()
+                .asJsonObject
+                .getAsJsonArray("size_overrides")
+        val trace = state.trace()
+        val scalars = UnihexOverrideAssets.scalars(scenario)
+        check(trace.size == scalars.size)
+        var predicates = 0L
+        for ((glyph, scalar) in trace.zip(scalars)) {
+            val reference = originalGlyph(ranges, scalar)
+            equalGlyph(glyph, reference.first)
+            predicates += reference.second
+        }
+        return GlyphTraceEvidence(document, trace, scalars, predicates)
+    }
+
     private fun originalGlyph(
         ranges: JsonArray,
         scalar: Int,
@@ -155,8 +175,8 @@ public object UnihexOverrideWorkEvidence {
                 .getDeclaredField("engine")
                 .apply { isAccessible = true }
                 .get(state) as MinecraftFontEngine
-        val field = engine.javaClass.declaredFields.firstOrNull { it.name == "unihexIndexes" }
-        val indexes = field?.apply { isAccessible = true }?.get(engine) as? Map<*, *> ?: emptyMap<Any, Any>()
+        val field = indexField(engine)
+        val indexes = (field?.apply { isAccessible = true }?.get(engine) as? Map<*, *>).orEmpty()
         var segments = 0L
         var bytes = 0L
         indexes.values.forEach { value ->
@@ -185,6 +205,14 @@ public object UnihexOverrideWorkEvidence {
             addProperty("actual_probe_instrumentation", "pending independent untimed instrumentation before formal acceptance")
         }
     }
+
+    private fun indexField(engine: MinecraftFontEngine): Field? =
+        try {
+            engine.javaClass.getDeclaredField("unihexIndexes")
+        } catch (expected: NoSuchFieldException) {
+            // The independent baseline intentionally has no derived interval field.
+            null
+        }
 
     private fun equalGlyph(
         actual: MinecraftFontGlyph,

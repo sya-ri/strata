@@ -101,6 +101,7 @@ public open class UnihexOverrideBenchmark {
     /**
      * Fixed immutable inputs and independent worker-owned engine/host.
      */
+    @Suppress("TooManyFunctions") // The nine public workloads and untimed admission share one trial owner and terminal lifetime.
     @State(Scope.Thread)
     public open class OverrideSession {
         /**
