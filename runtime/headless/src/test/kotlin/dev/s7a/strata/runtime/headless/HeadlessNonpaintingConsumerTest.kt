@@ -92,7 +92,13 @@ internal class HeadlessNonpaintingConsumerTest {
             val expectedSemantics = listOf(SemanticsEntry(bounds, Semantics(label = UiText.Literal("invisible"))))
             assertEquals(expectedSemantics, first.semantics)
             assertEquals(1, paints)
-            assertSame(red, first.drawCommands.filterIsInstance<DrawCommand.BlitImage>().last().image)
+            assertSame(
+                red,
+                first.drawCommands
+                    .filterIsInstance<DrawCommand.BlitImage>()
+                    .last()
+                    .image,
+            )
             for (scale in 1..4) {
                 val image = rasterizeHeadless(first.drawCommands, first.size, scale)
                 assertArrayEquals(HeadlessScalarRaster.paint(first.drawCommands, bounds, scale), image.copyArgb())
@@ -105,10 +111,22 @@ internal class HeadlessNonpaintingConsumerTest {
             assertEquals(originalCommands, first.drawCommands)
             assertEquals(expectedSemantics, first.semantics)
             val second = session.frame(Constraints.fixed(4, 4))
-            assertSame(blue, second.drawCommands.filterIsInstance<DrawCommand.BlitImage>().last().image)
+            assertSame(
+                blue,
+                second.drawCommands
+                    .filterIsInstance<DrawCommand.BlitImage>()
+                    .last()
+                    .image,
+            )
             assertEquals(expectedSemantics, second.semantics)
             assertArrayEquals(HeadlessScalarRaster.paint(second.drawCommands, bounds, 1), rasterizeHeadless(second.drawCommands, second.size).copyArgb())
-            assertSame(red, first.drawCommands.filterIsInstance<DrawCommand.BlitImage>().last().image)
+            assertSame(
+                red,
+                first.drawCommands
+                    .filterIsInstance<DrawCommand.BlitImage>()
+                    .last()
+                    .image,
+            )
         }
         assertEquals(1, closes)
         assertArrayEquals(intArrayOf(0xFFFF0000.toInt()), red.copyArgb())
@@ -143,7 +161,11 @@ internal class HeadlessNonpaintingConsumerTest {
     private class Retained(
         private val image: DrawImage,
         private val onPaint: () -> Unit,
-    ) : Node(), MeasureNode, PaintNode, SemanticsNode {
+    ) :
+        Node(),
+        MeasureNode,
+        PaintNode,
+        SemanticsNode {
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
