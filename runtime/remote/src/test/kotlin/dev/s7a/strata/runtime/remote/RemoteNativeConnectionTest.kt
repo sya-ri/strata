@@ -33,39 +33,7 @@ internal class RemoteNativeConnectionTest {
             negotiated(false, limits, expected::add).use { legacy ->
                 negotiated(true, limits, actual::add).use { native ->
                     listOf(0, 1, 7, 8, 63, 64, 65).forEach { count ->
-                        expected.clear()
-                        actual.clear()
-                        repeat(count) { index ->
-                            legacy.connection.send(RemoteMessage.Resynchronize(index + 1L))
-                            native.connection.send(RemoteMessage.Resynchronize(index + 1L))
-                        }
-                        assertEquals(field(legacy.connection, "queuedBytes"), field(native.connection, "queuedBytes"))
-                        assertEquals(field(legacy.connection, "queuedFrames"), field(native.connection, "queuedFrames"))
-                        val pending = field(native.connection, "queuedFrames") as Int
-                        assertEquals(pending.toLong() * 26, native.connection.retainedNativeHeadroom)
-                        val before = field(native.stream, "nextOutgoing")
-                        assertEquals(before, field(legacy.stream, "nextOutgoing"))
-                        legacy.connection.flush()
-                        native.connection.flush()
-                        assertEquals(minOf(pending, 8), actual.size)
-                        while ((field(native.connection, "queuedFrames") as Int) != 0) {
-                            legacy.connection.flush()
-                            native.connection.flush()
-                        }
-                        assertEquals(expected.size, actual.size)
-                        actual.indices.forEach { index -> assertArrayEquals(expected[index], actual[index]) }
-                        assertEquals(0L, native.connection.retainedNativeHeadroom)
-                        val retained = actual.map { it.copyOf() }
-                        native.connection.send(action(100, 24535))
-                        native.connection.flush()
-                        native.connection.discardSession(100)
-                        native.connection.flush(1000)
-                        retained.indices.forEach { index -> assertArrayEquals(retained[index], actual[index]) }
-                        // Advance the legacy control through the identical extra operation/identity history.
-                        legacy.connection.send(action(100, 24535))
-                        legacy.connection.flush()
-                        legacy.connection.discardSession(100)
-                        legacy.connection.flush(1000)
+                        verifyFlushedCallbacks(legacy, native, expected, actual, count)
                     }
                 }
             }
@@ -143,24 +111,7 @@ internal class RemoteNativeConnectionTest {
                 negotiated(true, limits, next::add).use { native ->
                     old.clear()
                     next.clear()
-                    val retained = mutableListOf<RemoteNativeTransfer>()
-                    var accepted = 0
-                    while (true) {
-                        val message = RemoteMessage.Resynchronize(accepted + 1L)
-                        val reference = runCatching { legacy.connection.send(message) }
-                        val candidate = runCatching { native.connection.send(message) }
-                        assertEquals(reference.isSuccess, candidate.isSuccess)
-                        if (candidate.isFailure) {
-                            assertEquals(RemoteFailure.ResourceLimit, (candidate.exceptionOrNull() as RemoteProtocolException).reason)
-                            assertEquals(reference.exceptionOrNull()?.message, candidate.exceptionOrNull()?.message)
-                            break
-                        }
-                        retained += nativeGroups(native.connection)
-                        assertEquals(field(legacy.connection, "queuedBytes"), field(native.connection, "queuedBytes"))
-                        assertEquals(field(legacy.connection, "queuedFrames"), field(native.connection, "queuedFrames"))
-                        assertEquals((field(native.connection, "queuedFrames") as Int).toLong() * 26, native.connection.retainedNativeHeadroom)
-                        accepted++
-                    }
+                    val retained = verifyAdmission(legacy, native)
                     retained.forEach(::assertReleased)
                     assertNull(field(native.connection, "outgoing"))
                     assertNull(field(native.connection, "nativeStream"))
@@ -248,25 +199,7 @@ internal class RemoteNativeConnectionTest {
             RemotePacketStream(address, send = next::add).use { nativeStream ->
                 RemoteConnection(emptySet(), limits, legacyStream::send).use { legacy ->
                     RemoteConnection.native(emptySet(), limits, nativeStream).use { native ->
-                        legacy.start()
-                        native.start()
-                        val bootstrap = nativeGroups(native)
-                        val hello = RemoteMessageCodec().encode(RemoteMessage.Hello(RemoteConnection.PROTOCOL_VERSION, limits, emptySet()))
-                        RemoteFraming(RemotePacket.limits).use { peer ->
-                            peer.send(hello) {
-                                assertNull(legacy.receive(it, 0))
-                                assertNull(native.receive(it, 0))
-                            }
-                        }
-                        legacy.send(RemoteMessage.Resynchronize(1))
-                        native.send(RemoteMessage.Resynchronize(1))
-                        assertEquals(field(legacy, "queuedBytes"), field(native, "queuedBytes"))
-                        legacy.flush(100)
-                        native.flush(100)
-                        assertEquals(old.size, next.size)
-                        old.indices.forEach { index -> assertArrayEquals(old[index], next[index]) }
-                        bootstrap.forEach(::assertReleased)
-                        assertEquals(0L, native.retainedNativeHeadroom)
+                        verifyQueuedBootstrap(legacy, native, limits, old, next)
                     }
                 }
             }
@@ -338,6 +271,110 @@ internal class RemoteNativeConnectionTest {
             }
             assertTrue((field(service, "peers") as Map<*, *>).isEmpty())
         }
+    }
+
+    /**
+     * Checks one negotiated pair while preserving retained callbacks and the shared extra-operation history.
+     */
+    private fun verifyFlushedCallbacks(
+        legacy: Fixture,
+        native: Fixture,
+        expected: MutableList<ByteArray>,
+        actual: MutableList<ByteArray>,
+        count: Int,
+    ) {
+        expected.clear()
+        actual.clear()
+        repeat(count) { index ->
+            legacy.connection.send(RemoteMessage.Resynchronize(index + 1L))
+            native.connection.send(RemoteMessage.Resynchronize(index + 1L))
+        }
+        assertEquals(field(legacy.connection, "queuedBytes"), field(native.connection, "queuedBytes"))
+        assertEquals(field(legacy.connection, "queuedFrames"), field(native.connection, "queuedFrames"))
+        val pending = field(native.connection, "queuedFrames") as Int
+        assertEquals(pending.toLong() * 26, native.connection.retainedNativeHeadroom)
+        val before = field(native.stream, "nextOutgoing")
+        assertEquals(before, field(legacy.stream, "nextOutgoing"))
+        legacy.connection.flush()
+        native.connection.flush()
+        assertEquals(minOf(pending, 8), actual.size)
+        while ((field(native.connection, "queuedFrames") as Int) != 0) {
+            legacy.connection.flush()
+            native.connection.flush()
+        }
+        assertEquals(expected.size, actual.size)
+        actual.indices.forEach { index -> assertArrayEquals(expected[index], actual[index]) }
+        assertEquals(0L, native.connection.retainedNativeHeadroom)
+        val retained = actual.map { it.copyOf() }
+        native.connection.send(action(100, 24535))
+        native.connection.flush()
+        native.connection.discardSession(100)
+        native.connection.flush(1000)
+        retained.indices.forEach { index -> assertArrayEquals(retained[index], actual[index]) }
+        // Advance the legacy control through the identical extra operation/identity history.
+        legacy.connection.send(action(100, 24535))
+        legacy.connection.flush()
+        legacy.connection.discardSession(100)
+        legacy.connection.flush(1000)
+    }
+
+    /**
+     * Runs matched admission until failure and returns the same retained native groups for release checks.
+     */
+    private fun verifyAdmission(
+        legacy: Fixture,
+        native: Fixture,
+    ): List<RemoteNativeTransfer> {
+        val retained = mutableListOf<RemoteNativeTransfer>()
+        var accepted = 0
+        while (true) {
+            val message = RemoteMessage.Resynchronize(accepted + 1L)
+            val reference = runCatching { legacy.connection.send(message) }
+            val candidate = runCatching { native.connection.send(message) }
+            assertEquals(reference.isSuccess, candidate.isSuccess)
+            if (candidate.isFailure) {
+                assertEquals(RemoteFailure.ResourceLimit, (candidate.exceptionOrNull() as RemoteProtocolException).reason)
+                assertEquals(reference.exceptionOrNull()?.message, candidate.exceptionOrNull()?.message)
+                break
+            }
+            retained += nativeGroups(native.connection)
+            assertEquals(field(legacy.connection, "queuedBytes"), field(native.connection, "queuedBytes"))
+            assertEquals(field(legacy.connection, "queuedFrames"), field(native.connection, "queuedFrames"))
+            assertEquals((field(native.connection, "queuedFrames") as Int).toLong() * 26, native.connection.retainedNativeHeadroom)
+            accepted++
+        }
+        return retained
+    }
+
+    /**
+     * Checks queued bootstrap bytes and released native groups before the enclosing owners close.
+     */
+    private fun verifyQueuedBootstrap(
+        legacy: RemoteConnection,
+        native: RemoteConnection,
+        limits: RemoteLimits,
+        old: MutableList<ByteArray>,
+        next: MutableList<ByteArray>,
+    ) {
+        legacy.start()
+        native.start()
+        val bootstrap = nativeGroups(native)
+        val hello = RemoteMessageCodec().encode(RemoteMessage.Hello(RemoteConnection.PROTOCOL_VERSION, limits, emptySet()))
+        RemoteFraming(RemotePacket.limits).use { peer ->
+            peer.send(hello) {
+                assertNull(legacy.receive(it, 0))
+                assertNull(native.receive(it, 0))
+            }
+        }
+        legacy.send(RemoteMessage.Resynchronize(1))
+        native.send(RemoteMessage.Resynchronize(1))
+        assertEquals(field(legacy, "queuedBytes"), field(native, "queuedBytes"))
+        legacy.flush(100)
+        native.flush(100)
+        assertEquals(old.size, next.size)
+        old.indices.forEach { index -> assertArrayEquals(old[index], next[index]) }
+        bootstrap.forEach(::assertReleased)
+        assertEquals(0L, native.retainedNativeHeadroom)
     }
 
     private fun action(
