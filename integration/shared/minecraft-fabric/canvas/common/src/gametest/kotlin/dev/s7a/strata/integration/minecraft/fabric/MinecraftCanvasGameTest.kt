@@ -91,6 +91,7 @@ internal object MinecraftCanvasGameTest {
         MinecraftOrderedCompositionGameTest.run(context, profile)
         MinecraftSampledSourceRequestsGameTest.run(context, profile)
         MinecraftCompositionMetadataGameTest.run(context, profile)
+        MinecraftCompositionTargetsGameTest.run(context, profile, fixture.compositionTargetValidation)
     }
 
     private fun verifyPortableOwners(

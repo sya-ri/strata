@@ -3,12 +3,12 @@ package dev.s7a.strata.runtime.minecraft.fabric
 import dev.s7a.strata.geometry.IntSize
 
 /**
- * Borrows two destination pairs and two metadata pairs already transferred to the enclosing native storage owner.
- * This initialization-local description never closes resources; every allocation follows the same ownership order on all device adapters.
+ * Borrows two alternating destination pairs and two owned metadata pairs.
+ * A generation-owned optional scratch pair is borrowed; the final output and metadata transfer to the enclosing native storage owner.
  */
 internal class FabricMinecraftCompositionTargets<T : AutoCloseable, V : AutoCloseable> private constructor(
     /**
-     * Alternating RGBA8 outputs, both owned before any upload or draw.
+     * Alternating RGBA8 outputs, both generation-owned before any upload or draw.
      */
     @get:JvmSynthetic
     internal val destinations: List<Pair<T, V>>,
@@ -29,9 +29,11 @@ internal class FabricMinecraftCompositionTargets<T : AutoCloseable, V : AutoClos
     internal companion object {
         /**
          * Records each destination, metadata texture and view in [owned] before invoking the next borrowed allocator.
-         * Factories select the adapter's exact formats and usage flags; failures preserve every earlier resource for fenced cleanup.
+         * Factories select exact formats and flags; an optional same-extent [scratch] belongs to the same generation.
+         * [passCount] fixes parity so the final result always belongs to this tile, and failures preserve earlier allocations for fenced cleanup.
          */
         @JvmSynthetic
+        @Suppress("LongParameterList") // Borrowed scratch parity joins the existing exact native allocation factories.
         internal fun <T : AutoCloseable, V : AutoCloseable> create(
             owned: FabricMinecraftNativeStorage,
             size: IntSize,
@@ -40,11 +42,20 @@ internal class FabricMinecraftCompositionTargets<T : AutoCloseable, V : AutoClos
             target: (IntSize) -> T,
             metadata: (String, IntSize) -> T,
             view: (T) -> V,
+            scratch: Pair<T, V>? = null,
+            passCount: Int = 0,
         ): FabricMinecraftCompositionTargets<T, V> {
             val outputs =
-                (0..1).map {
+                if (scratch == null) {
+                    (0..1).map {
+                        val texture = owned.allocate { target(size) }
+                        texture to owned.allocate { view(texture) }
+                    }
+                } else {
                     val texture = owned.allocate { target(size) }
-                    texture to owned.allocate { view(texture) }
+                    val output = texture to owned.allocate { view(texture) }
+                    // The last pass must land in the tile's independently owned immutable output.
+                    if (passCount % 2 == 0) listOf(output, scratch) else listOf(scratch, output)
                 }
             val indices = owned.allocate { metadata("Strata ordered composition axes", indexSize) }
             val indexView = owned.allocate { view(indices) }

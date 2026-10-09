@@ -76,9 +76,10 @@ internal class FabricMinecraftPreparedInputsTest {
                         val cold = checkNotNull(FabricMinecraftCompositionMap.create(commands, bounds.size, scale, origin, FabricMinecraftSamplingBudget()))
                         assertNotSame(old, map)
                         assertNotSame(old.indices, map.indices)
-                        assertEquals(0L, map.axisEntriesWritten)
+                        val active = changed.tint.value ushr 24 != 0 && changed.alphaCutoff <= (changed.tint.value ushr 24).toFloat() / 255f
+                        assertEquals(if (active) 0L else cold.axisEntriesWritten, map.axisEntriesWritten)
                         assertTrue(map.equivalent(cold))
-                        assertSame(changed.image, map.sources.last())
+                        if (active) assertSame(changed.image, map.sources.last()) else assertFalse(map.sources.any { it === changed.image })
                         assertArrayEquals(rasterizeHeadlessRegion(commands, bounds, scale).copyArgb(), reference.compose(map))
                         assertArrayEquals(saved, old.indices.copyArgb())
                         map.indices.copyArgb().fill(0)

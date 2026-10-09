@@ -1,5 +1,6 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.runtime.headless.HeadlessRasterScratch
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
@@ -55,7 +56,7 @@ internal class FabricMinecraftPortableFrames {
         rasterized: () -> Unit,
         uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
-        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)? = null,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit, FabricMinecraftCompositionWorkspace?) -> FabricMinecraftPortableTexture)? = null,
         submit: (List<FabricMinecraftPortableTexture>, () -> Unit) -> Unit,
     ) {
         if (images.isEmpty()) {
@@ -90,30 +91,42 @@ internal class FabricMinecraftPortableFrames {
         rasterized: () -> Unit,
         uploaded: (FabricMinecraftPortableImage) -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
-        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit, FabricMinecraftCompositionWorkspace?) -> FabricMinecraftPortableTexture)?,
     ): Prepared {
         val previous = current
         reuseCurrent(images)?.let { return it }
         val resources = NativeCanvasDevices.device(FabricNativeCanvasDriver).guiResources
         val identity = ownerId ?: resources.createOwnerId().also { ownerId = it }
         val matches = previous?.let { matchFabricMinecraftPortableImages(it.images, images) }
-        val set = resources.reserve(identity, images.map { it.reservationSize })
+        val reservations =
+            images.mapIndexed { index, image ->
+                val source = matchedSource(matches, index)
+                if (previous != null && 0 <= source) previous.imageReservations[source] else image.reservationSize
+            }
+        val targetPlan = FabricMinecraftCompositionTargetPlan.create(images, matches, reservations)
+        val workspace = targetPlan?.let { FabricMinecraftCompositionWorkspace(it) }
+        val imageReservations = targetPlan?.reservations?.drop(1) ?: reservations
+        val offset = if (workspace == null) 0 else 1
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
+        val set = resources.reserve(identity, targetPlan?.reservations ?: reservations)
         var failure: Throwable? = null
+        var prepared: Prepared? = null
         try {
+            workspace?.let { resources.add(set, it) }
             val rasterPixels = allocateRasterPixels(images, matches)
             HeadlessRasterScratch().use { scratch ->
                 images.forEachIndexed { index, input ->
                     val source = matchedSource(matches, index)
                     if (previous != null && 0 <= source) {
-                        resources.reuse(set, previous.set, source)
+                        resources.reuse(set, previous.set, source + previous.resourceOffset)
                         textures.add(previous.textures[source])
                     } else {
-                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled, composed) { resource -> resources.add(set, resource) })
+                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled, composed, workspace) { resource -> resources.add(set, resource) })
                         uploaded(input)
                     }
                 }
             }
+            prepared = Prepared(images, textures.toList(), resources, set, offset, imageReservations, workspace)
         } catch (caught: Throwable) {
             failure = caught
         }
@@ -132,10 +145,10 @@ internal class FabricMinecraftPortableFrames {
             }
             throw primary
         }
-        val prepared = Prepared(images, textures.toList(), resources, set)
-        current = prepared
+        val published = checkNotNull(prepared)
+        current = published
         previous?.let { it.resources.release(it.set) }
-        return prepared
+        return published
     }
 
     private fun matchedSource(
@@ -163,10 +176,11 @@ internal class FabricMinecraftPortableFrames {
         scratch: HeadlessRasterScratch?,
         rasterized: () -> Unit,
         sampled: ((FabricMinecraftSamplingMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
-        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit) -> FabricMinecraftPortableTexture)?,
+        composed: ((FabricMinecraftCompositionMap, (NativeGuiResource) -> Unit, FabricMinecraftCompositionWorkspace?) -> FabricMinecraftPortableTexture)?,
+        workspace: FabricMinecraftCompositionWorkspace?,
         retain: (NativeGuiResource) -> Unit,
     ): FabricMinecraftPortableTexture {
-        input.composition?.let { return checkNotNull(composed) { "Ordered GPU composition requires pinned source textures." }(it, retain) }
+        input.composition?.let { return checkNotNull(composed) { "Ordered GPU composition requires pinned source textures." }(it, retain, workspace) }
         val sampling = input.sampling
         if (sampling != null) return checkNotNull(sampled) { "GPU sampling requires a pinned source factory." }(sampling, retain)
         rasterized()
@@ -178,7 +192,7 @@ internal class FabricMinecraftPortableFrames {
         if (previous.images === images) return previous
         if (equivalent(previous.images, images).not()) return null
         // Equal pixels must not retain obsolete source-image storage through a previous command description.
-        return Prepared(images, previous.textures, previous.resources, previous.set).also { current = it }
+        return Prepared(images, previous.textures, previous.resources, previous.set, previous.resourceOffset, previous.imageReservations, previous.workspace).also { current = it }
     }
 
     private fun retireCurrent() {
@@ -197,5 +211,8 @@ internal class FabricMinecraftPortableFrames {
         val textures: List<FabricMinecraftPortableTexture>,
         val resources: NativeGuiResources,
         val set: NativeGuiResourceSet,
+        val resourceOffset: Int,
+        val imageReservations: List<IntSize>,
+        val workspace: FabricMinecraftCompositionWorkspace?,
     )
 }

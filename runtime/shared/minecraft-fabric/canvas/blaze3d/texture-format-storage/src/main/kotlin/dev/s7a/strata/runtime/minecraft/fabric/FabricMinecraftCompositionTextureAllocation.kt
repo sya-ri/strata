@@ -6,6 +6,7 @@ import com.mojang.blaze3d.textures.GpuTexture
 import com.mojang.blaze3d.textures.GpuTextureView
 import com.mojang.blaze3d.textures.TextureFormat
 import dev.s7a.strata.geometry.IntSize
+import net.minecraft.client.renderer.texture.AbstractTexture
 
 /**
  * Allocates exact RGBA8 composition targets for the compatible texture-view and sampler adapters on the render thread.
@@ -18,6 +19,8 @@ internal fun allocateFabricMinecraftCompositionTargets(
     size: IntSize,
     indices: NativeImage,
     factors: NativeImage,
+    scratch: AbstractTexture? = null,
+    passCount: Int = 0,
 ): FabricMinecraftCompositionTargets<GpuTexture, GpuTextureView> {
     val device = RenderSystem.getDevice()
     return FabricMinecraftCompositionTargets.create(
@@ -28,5 +31,7 @@ internal fun allocateFabricMinecraftCompositionTargets(
         { extent -> device.createTexture({ "Strata ordered composition destination" }, GpuTexture.USAGE_RENDER_ATTACHMENT or GpuTexture.USAGE_TEXTURE_BINDING or GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, extent.width, extent.height, 1, 1) },
         { label, extent -> device.createTexture({ label }, GpuTexture.USAGE_COPY_DST or GpuTexture.USAGE_TEXTURE_BINDING, TextureFormat.RGBA8, extent.width, extent.height, 1, 1) },
         device::createTextureView,
+        scratch?.let { it.getTexture() to it.getTextureView() },
+        passCount,
     )
 }

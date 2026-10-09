@@ -22,6 +22,13 @@ internal interface MinecraftCanvasTestResources : AutoCloseable {
         get() = emptyList()
 
     /**
+     * Optional stateless inspection of this adapter's actual composition container references.
+     * The returned validation owns no fixture source and may inspect other outputs after this source closes.
+     */
+    val compositionTargetValidation: MinecraftCompositionTargetValidation?
+        get() = null
+
+    /**
      * Actual selected native backend, checked independently of the launch preference.
      */
     val backend: MinecraftCanvasTestBackend

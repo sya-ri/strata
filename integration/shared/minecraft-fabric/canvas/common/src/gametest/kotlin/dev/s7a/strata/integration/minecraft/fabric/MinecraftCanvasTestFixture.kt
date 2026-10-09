@@ -29,6 +29,11 @@ internal class MinecraftCanvasTestFixture(
     internal val inputValidation: List<MinecraftCanvasInputValidation> = resources.inputValidation.toList()
 
     /**
+     * Stateless native composition inspection, independent of this fixture's source lifetime.
+     */
+    internal val compositionTargetValidation: MinecraftCompositionTargetValidation? = resources.compositionTargetValidation
+
+    /**
      * Actual selected native backend for explicit environment assertions.
      */
     internal val backend: MinecraftCanvasTestBackend = resources.backend

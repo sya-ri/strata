@@ -105,8 +105,21 @@ internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
     override fun close() = Unit
 
     /**
+     * Initializes a generation-owned intermediate with the same format, flags and extent as an ordinary composition destination.
+     * It is never a GUI output; ordered offscreen passes borrow it only before the generation seals.
+     */
+    @JvmSynthetic
+    internal fun initializeCompositionScratch(size: IntSize) {
+        RenderSystem.assertOnRenderThread()
+        val device = RenderSystem.getDevice()
+        texture = owned.allocate { device.createTexture({ "Strata preparation composition intermediate" }, TextureFormat.RGBA8, size.width, size.height, 1) }
+        setClamp(true)
+        setFilter(false, false)
+    }
+
+    /**
      * Records complete ordered RGBA8 composition into alternating owned destinations without native blending.
-     * Source views belong to the caller's full-presentation pin; all four texture/view pairs transfer before use.
+     * Source views belong to the full-presentation pin; owned targets and metadata transfer before use, and optional scratch belongs to the same generation.
      * Every pass covers the complete target, preserving preceding pixels outside CPU-resolved physical coverage.
      */
     @JvmSynthetic
@@ -115,13 +128,19 @@ internal class FabricMinecraftPortableNativeTexture : AbstractTexture() {
         factors: NativeImage,
         size: IntSize,
         sources: List<AbstractTexture?>,
+        scratch: AbstractTexture? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         val device = RenderSystem.getDevice()
         val outputs =
-            (0..1).map {
-                val target = owned.allocate { device.createTexture({ "Strata ordered composition destination" }, TextureFormat.RGBA8, size.width, size.height, 1) }
-                target
+            if (scratch == null) {
+                (0..1).map {
+                    owned.allocate { device.createTexture({ "Strata ordered composition destination" }, TextureFormat.RGBA8, size.width, size.height, 1) }
+                }
+            } else {
+                val output = owned.allocate { device.createTexture({ "Strata ordered composition destination" }, TextureFormat.RGBA8, size.width, size.height, 1) }
+                val intermediate = scratch.getTexture()
+                if (sources.size % 2 == 0) listOf(output, intermediate) else listOf(intermediate, output)
             }
         val indexTexture = owned.allocate { device.createTexture({ "Strata ordered composition axes" }, TextureFormat.RGBA8, indices.width, indices.height, 1) }
 

@@ -124,10 +124,11 @@ internal class FabricMinecraftPortableTexture private constructor(
     internal fun initialize(
         composition: FabricMinecraftCompositionMap,
         sources: List<AbstractTexture?>,
+        workspace: FabricMinecraftCompositionWorkspace? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        uploadPixels.initialize(composition, sources, ::retainStorage)
+        uploadPixels.initialize(composition, sources, ::retainStorage, workspace)
         registrationAttempted = true
         Minecraft.getInstance().textureManager.register(location, texture)
     }
@@ -198,11 +199,12 @@ internal class FabricMinecraftPortableTexture private constructor(
             composition: FabricMinecraftCompositionMap,
             sources: List<AbstractTexture?>,
             retain: (NativeGuiResource) -> Unit,
+            workspace: FabricMinecraftCompositionWorkspace? = null,
         ): FabricMinecraftPortableTexture {
             val location = minecraftResourceLocation("strata", "runtime/composed/${sequence.getAndIncrement().toULong()}")
             val owner = FabricMinecraftPortableTexture(location)
             retain(owner)
-            owner.initialize(composition, sources)
+            owner.initialize(composition, sources, workspace)
             return owner
         }
 

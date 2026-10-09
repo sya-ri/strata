@@ -124,10 +124,11 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
     internal fun initialize(
         composition: FabricMinecraftCompositionMap,
         sources: List<AbstractTexture?>,
+        workspace: FabricMinecraftCompositionWorkspace? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         check(uploadPixels.isEmpty && storage == null && closed.not()) { "A portable texture can initialize only once." }
-        uploadPixels.initialize(composition, sources, ::retainStorage)
+        uploadPixels.initialize(composition, sources, ::retainStorage, workspace)
     }
 
     /**
@@ -185,10 +186,11 @@ internal class FabricMinecraftPortableTexture private constructor() : NativeGuiR
             composition: FabricMinecraftCompositionMap,
             sources: List<AbstractTexture?>,
             retain: (NativeGuiResource) -> Unit,
+            workspace: FabricMinecraftCompositionWorkspace? = null,
         ): FabricMinecraftPortableTexture {
             val owner = FabricMinecraftPortableTexture()
             retain(owner)
-            owner.initialize(composition, sources)
+            owner.initialize(composition, sources, workspace)
             return owner
         }
 

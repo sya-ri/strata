@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.GL33
 
 /**
- * Owns both RGBA8 destinations, two metadata textures and two framebuffer names inside one fenced portable generation.
+ * Owns the final RGBA8 destination, optional private intermediate, two metadata textures and two framebuffer names inside one fenced generation.
  * Initialization records each name before another native operation can fail; no source, metadata image or screen is retained.
  * The device owns the one fixed shader program separately through terminal completion.
  * Independent release steps retain failed names for retry and acknowledge physical deletion only after every close succeeds.
@@ -24,6 +24,7 @@ import org.lwjgl.opengl.GL33
 internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
     private val textures = IntArray(4)
     private val framebuffers = IntArray(2)
+    private var borrowedOutput = -1
     private var output = -1
     private var closed = false
 
@@ -36,6 +37,7 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
     /**
      * Initializes and records the whole ordered tile while preserving all four texture units and drawing state.
      * Every source is synchronously borrowed; the caller seals initialization even after a native failure.
+     * Shared intermediate attachments are removed before state restoration on both success and partial failure.
      */
     @JvmSynthetic
     internal fun initialize(
@@ -43,45 +45,78 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
         factors: NativeImage,
         size: IntSize,
         sources: List<AbstractTexture?>,
+        scratch: AbstractTexture? = null,
     ) {
         RenderSystem.assertOnRenderThread()
         FabricNativeCanvasGlState(textureUnits = 4).use {
-            allocateTexture(0, size.width, size.height)
-            allocateTexture(1, size.width, size.height)
-            allocateTexture(2, indices.width, indices.height)
-            indices.upload(0, 0, 0, false)
-            allocateTexture(3, factors.width, factors.height)
-            factors.upload(0, 0, 0, false)
-            for (index in framebuffers.indices) {
-                framebuffers[index] = GL30.glGenFramebuffers()
-                check(framebuffers[index] != 0) { "Ordered composition framebuffer allocation failed." }
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[index])
-                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, textures[index], 0)
-                check(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE) { "Ordered composition framebuffer is incomplete." }
-            }
-            GL11.glViewport(0, 0, size.width, size.height)
-            GL11.glDisable(GL11.GL_BLEND)
-            GL11.glDisable(GL11.GL_DEPTH_TEST)
-            GL11.glDisable(GL11.GL_CULL_FACE)
-            GL11.glDisable(GL11.GL_SCISSOR_TEST)
-            GL11.glDisable(GL11.GL_DITHER)
-            GL11.glColorMask(true, true, true, true)
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[0])
-            GL11.glClearColor(0f, 0f, 0f, 0f)
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
-            val samplers = GL.getCapabilities().let { capabilities -> capabilities.OpenGL33 || capabilities.GL_ARB_sampler_objects }
-            sources.forEachIndexed { index, source ->
-                val previous = textures[index % 2]
-                val target = (index + 1) % 2
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[target])
-                bind(0, source?.getId() ?: previous, samplers)
-                bind(1, previous, samplers)
-                bind(2, textures[2], samplers)
-                bind(3, textures[3], samplers)
-                FabricNativeCanvasDriver.drawComposition(index)
-                output = target
+            FabricMinecraftFailures.runWithCleanup(
+                { compose(indices, factors, size, sources, scratch) },
+                ::detachBorrowedOutput,
+            )
+        }
+    }
+
+    private fun compose(
+        indices: NativeImage,
+        factors: NativeImage,
+        size: IntSize,
+        sources: List<AbstractTexture?>,
+        scratch: AbstractTexture?,
+    ) {
+        val intermediate = scratch?.getId()
+        val sharedIndex = if (sources.size % 2 == 0) 1 else 0
+        for (index in 0..1) {
+            if (intermediate != null && index == sharedIndex) {
+                borrowedOutput = index
+                textures[index] = intermediate
+            } else {
+                allocateTexture(index, size.width, size.height)
             }
         }
+        allocateTexture(2, indices.width, indices.height)
+        indices.upload(0, 0, 0, false)
+        allocateTexture(3, factors.width, factors.height)
+        factors.upload(0, 0, 0, false)
+        for (index in framebuffers.indices) {
+            framebuffers[index] = GL30.glGenFramebuffers()
+            check(framebuffers[index] != 0) { "Ordered composition framebuffer allocation failed." }
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[index])
+            GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, textures[index], 0)
+            check(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE) { "Ordered composition framebuffer is incomplete." }
+        }
+        GL11.glViewport(0, 0, size.width, size.height)
+        GL11.glDisable(GL11.GL_BLEND)
+        GL11.glDisable(GL11.GL_DEPTH_TEST)
+        GL11.glDisable(GL11.GL_CULL_FACE)
+        GL11.glDisable(GL11.GL_SCISSOR_TEST)
+        GL11.glDisable(GL11.GL_DITHER)
+        GL11.glColorMask(true, true, true, true)
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[0])
+        GL11.glClearColor(0f, 0f, 0f, 0f)
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        val samplers = GL.getCapabilities().let { capabilities -> capabilities.OpenGL33 || capabilities.GL_ARB_sampler_objects }
+        sources.forEachIndexed { index, source ->
+            val previous = textures[index % 2]
+            val target = (index + 1) % 2
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffers[target])
+            bind(0, source?.getId() ?: previous, samplers)
+            bind(1, previous, samplers)
+            bind(2, textures[2], samplers)
+            bind(3, textures[3], samplers)
+            FabricNativeCanvasDriver.drawComposition(index)
+            output = target
+        }
+    }
+
+    private fun detachBorrowedOutput() {
+        if (borrowedOutput < 0) return
+        val framebuffer = framebuffers[borrowedOutput]
+        if (framebuffer != 0) {
+            // An unbound FBO attachment retains deleted scratch storage until this reference is removed.
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer)
+            GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, 0, 0)
+        }
+        textures[borrowedOutput] = 0
     }
 
     private fun allocateTexture(
@@ -122,7 +157,10 @@ internal class FabricMinecraftGlCompositionStorage : NativeGuiResource {
         if (closed) return
         FabricMinecraftFailures.runWithCleanup(
             { release(framebuffers, GL30::glDeleteFramebuffers) },
-            { release(textures, TextureUtil::releaseTextureId) },
+            {
+                if (0 <= borrowedOutput) textures[borrowedOutput] = 0
+                release(textures, TextureUtil::releaseTextureId)
+            },
         )
         closed = true
     }

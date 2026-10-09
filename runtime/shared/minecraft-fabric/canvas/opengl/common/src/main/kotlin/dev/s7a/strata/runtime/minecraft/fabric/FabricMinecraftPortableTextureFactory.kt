@@ -9,6 +9,7 @@ import dev.s7a.strata.runtime.minecraft.canvas.NativeGuiResource
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.renderer.texture.AbstractTexture
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
 
 /**
@@ -44,6 +45,22 @@ internal fun initializeFabricMinecraftPortableTexture(
 }
 
 /**
+ * Transfers one empty legacy intermediate owner before exact-extent RGBA allocation.
+ * It belongs to the receiving preparation generation and is never registered as a GUI output.
+ */
+@OptIn(InternalStrataRuntimeApi::class)
+@JvmSynthetic
+internal fun initializeFabricMinecraftCompositionScratch(
+    size: IntSize,
+    retain: (AbstractTexture, NativeGuiResource) -> Unit,
+) {
+    RenderSystem.assertOnRenderThread()
+    val storage = FabricPortableNativeStorage()
+    retain(storage.texture, storage)
+    storage.initializeScratch(size)
+}
+
+/**
  * Keeps a staged texture name separate from its borrowed AbstractTexture until fenced native destruction.
  */
 @OptIn(InternalStrataRuntimeApi::class)
@@ -75,6 +92,25 @@ private class FabricPortableNativeStorage : NativeGuiResource {
             check(nativeId != 0) { "Portable GUI texture allocation returned no OpenGL name." }
             TextureUtil.prepareImage(nativeId, pixels.width, pixels.height)
             pixels.upload(0, 0, 0, false)
+        }
+    }
+
+    /**
+     * Allocates one empty composition intermediate after transfer, preserving the caller's OpenGL bindings.
+     * The same RGBA storage and nearest clamp parameters serve every borrowing tile of this exact extent.
+     */
+    @JvmSynthetic
+    internal fun initializeScratch(size: IntSize) {
+        RenderSystem.assertOnRenderThread()
+        FabricNativeCanvasGlState().use {
+            RenderSystem.activeTexture(GL13.GL_TEXTURE0)
+            nativeId = TextureUtil.generateTextureId()
+            check(nativeId != 0) { "Composition intermediate allocation returned no OpenGL name." }
+            TextureUtil.prepareImage(nativeId, size.width, size.height)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE)
         }
     }
 

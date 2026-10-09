@@ -47,6 +47,19 @@ internal class FabricMinecraftCompositionMap private constructor(
         }
 
     /**
+     * Reserves one immutable output plus unchanged CPU/staging/GPU metadata and per-tile overhead.
+     * The separately reserved generation workspace supplies the other alternating destination.
+     */
+    @get:JvmSynthetic
+    internal val singleOutputReservationSize: IntSize
+        get() {
+            val width = maxOf(physicalSize.width, indices.size.width, factors.size.width)
+            val bytes = FabricMinecraftSamplingBudget.compositionBytes(physicalSize, uploadBytes / 4L, sources.size)
+            val output = Math.multiplyExact(Math.multiplyExact(physicalSize.width.toLong(), physicalSize.height.toLong()), 4L)
+            return IntSize(width, Math.toIntExact((bytes - output + width * 4L - 1L) / (width * 4L)))
+        }
+
+    /**
      * Proves identical ordered output from exact metadata and the same immutable source identities.
      * Placement is irrelevant only when every original-coordinate axis and coverage entry agrees.
      */
@@ -247,7 +260,7 @@ internal class FabricMinecraftCompositionMap private constructor(
                                 is DrawCommand.SampledImage -> fractional(command.destination)
                             }
                         val coverage = intersect(clips.last(), bounds)
-                        if (0 < coverage.width && 0 < coverage.height) {
+                        if (0 < coverage.width && 0 < coverage.height && command.isFabricMinecraftCompositionNoOp().not()) {
                             if (1024 <= result.size) return null
                             result.add(Plan(command, coverage))
                         }
