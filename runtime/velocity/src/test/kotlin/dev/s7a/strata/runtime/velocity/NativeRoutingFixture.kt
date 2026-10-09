@@ -118,6 +118,10 @@ internal class NativeRoutingFixture(
             }
         }
         if (workload == NativeRoutingWorkload.AbsentService) field(plugin.javaClass, "screens").set(plugin, null)
+        prepareEvents()
+    }
+
+    private fun prepareEvents() {
         val channel = if (workload == NativeRoutingWorkload.WrongChannel) MinecraftChannelIdentifier.from("other:channel") else VelocityScreenService.CHANNEL
         val unknown = object : ChannelMessageSource { }
         events = actors.flatMapIndexed { index, actor ->
@@ -224,6 +228,21 @@ internal class NativeRoutingFixture(
         verifyOutput(actor.backendWrites, expectedBackend)
         check(actor.backendDestinations.size == expectedBackend.size)
         actor.backendDestinations.forEach { check(it === actor.current.get()) }
+        val snapshots = verifyInbox(index, proxy, client, accepted)
+        return mapOf(
+            "forwarded_packets" to (expectedClient.size + expectedBackend.size).toLong(),
+            "forwarded_bytes" to (expectedClient + expectedBackend).sumOf { it.size.toLong() },
+            "owner_inbox_packets" to snapshots.size.toLong(),
+            "owner_inbox_snapshot_bytes" to snapshots.sumOf { it.size.toLong() },
+        )
+    }
+
+    private fun verifyInbox(
+        index: Int,
+        proxy: Boolean,
+        client: Boolean,
+        accepted: Boolean,
+    ): List<ByteArray> {
         val inbox = field(peers[index].javaClass, "inbox").get(peers[index]) as RemoteFrameInbox
         val stored = field(inbox.javaClass, "frames").get(inbox) as Collection<*>
         val enqueued = accepted && client.not() && proxy
@@ -235,12 +254,7 @@ internal class NativeRoutingFixture(
             check(snapshot !== bytes)
             check(snapshot.contentEquals(bytes))
         }
-        return mapOf(
-            "forwarded_packets" to (expectedClient.size + expectedBackend.size).toLong(),
-            "forwarded_bytes" to (expectedClient + expectedBackend).sumOf { it.size.toLong() },
-            "owner_inbox_packets" to snapshots.size.toLong(),
-            "owner_inbox_snapshot_bytes" to snapshots.sumOf { it.size.toLong() },
-        )
+        return snapshots
     }
 
     private fun skipsRouting(): Boolean = workload in setOf(NativeRoutingWorkload.WrongChannel, NativeRoutingWorkload.AlreadyHandled, NativeRoutingWorkload.AbsentService)
