@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference
 internal class FabricMinecraftImageDecodeCache(
     private val decode: (InputStream) -> Decoded,
 ) {
+    private val maxEncodedBytes = 8 * 1024 * 1024
+    private val maxRetainedBytes = 16L * 1024 * 1024
     private val current = AtomicReference(State())
 
     /**
@@ -181,10 +183,5 @@ internal class FabricMinecraftImageDecodeCache(
         stream: InputStream,
     ) : FilterInputStream(stream) {
         override fun close() = Unit
-    }
-
-    private companion object {
-        val maxEncodedBytes = 8 * 1024 * 1024
-        val maxRetainedBytes = 16L * 1024 * 1024
     }
 }
