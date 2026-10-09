@@ -499,11 +499,16 @@ The 26.2 and 26.3 Vulkan Canvas resize gates keep the native surface fixed while
 
 ### Player-head filtered-image cache
 
-Each retained `PlayerHead` node keeps at most the current bilinearly resampled face and hat pair, keyed by source `DrawImage` identity and requested logical size.
+Each retained `PlayerHead` node keeps at most one current bilinearly resampled face and one current hat, keyed by source `DrawImage` identity, requested logical size and layer role.
+The face is prepared when painting that filtered key; the hat is prepared only when requested, then reused across later visibility toggles without changing the matching face identity.
+All requested layers finish before the first paint command; a new key releases both preceding layers before construction, and failed construction publishes no partial generation or commands.
 Sizes divisible by eight bypass this cache and paint the original 8 by 8 skin regions with nearest sampling, while other accepted sizes clamp every bilinear sample to its face or hat region.
 A filtered layer is limited to 1,024 by 1,024 pixels, bounding the two derived straight-ARGB snapshots below 8 MiB; larger integer-scale heads still reuse the original skin without derived storage.
-Skin or size replacement, asynchronous snapshot replacement, detachment, and disposal release the cached pair.
-Deterministic runtime tests cover the nearest path, region-clamped bilinear pixels, premultiplied alpha behavior, stable derived-image reuse, invalid-size rejection, and synchronous and asynchronous ownership.
+The cache belongs to the retained node's execution owner and contains no earlier key, binding, global cache or authoritative source state.
+Skin or size replacement, asynchronous image-identity or state replacement, detachment, disposal and failure cleanup release the current derived layers and borrowed skin reference.
+Equal pixels with a distinct image identity invalidate both layers on synchronous and asynchronous paths.
+Previously returned commands retain their independent immutable images after replacement or terminal release.
+Deterministic runtime tests cover independent ordered pixel references, hidden and visible cold preparation, delayed hat construction, stable identity reuse, source/size invalidation, bounded history, invalid sizes and owner-isolated lifecycle/failure release.
 
 ### Resource-font raster ownership
 

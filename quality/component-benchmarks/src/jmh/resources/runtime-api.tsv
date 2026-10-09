@@ -3811,6 +3811,7 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommands#m
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlatformCommands#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadElementKt#type:17:java.lang.Object:
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadPainter#constructor:1:()V
+minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadPainter#constructor:1:(Lkotlin/jvm/functions/Function2;)V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadPainter#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftPlayerHeadPainter$Companion;
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadPainter#method:17:clear$dev_s7a_strata_minecraft:()V
 minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftPlayerHeadPainter#method:17:paint$dev_s7a_strata_minecraft:(Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;IZ)V

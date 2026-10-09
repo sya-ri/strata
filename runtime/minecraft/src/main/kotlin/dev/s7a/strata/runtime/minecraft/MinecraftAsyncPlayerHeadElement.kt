@@ -14,10 +14,11 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
-import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PaintNode
+import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.render.PaintScope
+import dev.s7a.strata.runtime.minecraft.font.FontCloseFailures
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.node.Node as RetainedNode
 
@@ -55,6 +56,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
 
     /**
      * Retained lookup observer, fixed-square layout, and layered painter.
+     * Lookup observation and derived images suspend with session attachment while retained identity stays owned.
      */
     private class Node(
         initialPlatform: MinecraftUiPlatform,
@@ -67,7 +69,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         MeasureNode,
         LayoutNode,
         PaintNode,
-        LifecycleNode {
+        SessionAttachmentNode {
         private var platform: MinecraftUiPlatform? = initialPlatform
         private var source: PlayerSkinSource? = initialSource
         private var binding: MinecraftPlayerSkinBinding? = null
@@ -88,7 +90,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             require(constraints.isSatisfiedBy(measured)) {
                 "PlayerHead constraints must contain its requested size."
             }
-            activeChildIndex()?.let { index ->
+            activeChildIndex?.let { index ->
                 scope.measureChild(
                     index,
                     Constraints(
@@ -103,7 +105,7 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
         }
 
         override fun layout(scope: LayoutScope) {
-            activeChildIndex()?.let { index ->
+            activeChildIndex?.let { index ->
                 val childSize = scope.measuredChildSize(index)
                 scope.placeChild(
                     index,
@@ -120,24 +122,31 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             painter.paint(scope, ready.skin, size, showHat)
         }
 
-        override fun attach() {
+        override fun attach() = sessionAttached()
+
+        override fun sessionAttached() {
+            if (attached) return
             attached = true
             acquireBinding()
+            invalidate(DirtyMask.of(DirtyPhase.Measure))
         }
 
-        override fun detach() {
-            releaseBinding()
+        override fun sessionDetached() {
             snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
             painter.clear()
             attached = false
+            releaseBinding()
         }
 
+        override fun detach() = sessionDetached()
+
         override fun dispose() {
-            releaseBinding()
+            snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
             painter.clear()
             platform = null
             source = null
             attached = false
+            releaseBinding()
         }
 
         /**
@@ -153,6 +162,8 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
             val fallbackChanged = loadingIndex != current.loadingIndex || failureIndex != current.failureIndex
             val hatChanged = showHat != current.showHat
             if (sourceChanged) {
+                painter.clear()
+                snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
                 releaseBinding()
                 platform = current.platform
                 source = current.source
@@ -189,38 +200,42 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                         if (binding !== acquired) return@observe
                         val next = acquired.snapshot()
                         validateSnapshot(next)
-                        if (snapshot != next) {
+                        val previousSkin = (snapshot as? MinecraftPlayerSkinBinding.Snapshot.Ready)?.skin
+                        val nextSkin = (next as? MinecraftPlayerSkinBinding.Snapshot.Ready)?.skin
+                        if (snapshot != next || previousSkin !== nextSkin) {
                             snapshot = next
                             painter.clear()
                             invalidate(DirtyMask.of(DirtyPhase.Measure))
                         }
                     }
             } catch (failure: Throwable) {
-                acquired.close()
-                throw failure
+                binding = null
+                subscription = null
+                snapshot = MinecraftPlayerSkinBinding.Snapshot.Pending
+                painter.clear()
+                val cleanup = runCatching { acquired.close() }.exceptionOrNull()
+                throwBindingFailures(failure, cleanup)
             }
         }
 
         private fun releaseBinding() {
             val currentSubscription = subscription
-            subscription = null
-            currentSubscription?.close()
             val currentBinding = binding
+            subscription = null
             binding = null
-            currentBinding?.close()
+            val subscriptionFailure = runCatching { currentSubscription?.close() }.exceptionOrNull()
+            val bindingFailure = runCatching { currentBinding?.close() }.exceptionOrNull()
+            if (subscriptionFailure != null) throwBindingFailures(subscriptionFailure, bindingFailure)
+            bindingFailure?.let { throw it }
         }
 
-        private fun validateSnapshot(candidate: MinecraftPlayerSkinBinding.Snapshot) {
-            val ready = candidate as? MinecraftPlayerSkinBinding.Snapshot.Ready ?: return
-            require(ready.skin.size == skinSize) { "PlayerHead requires an exact 64 by 64 skin." }
-        }
-
-        private fun activeChildIndex(): Int? =
-            when (snapshot) {
-                MinecraftPlayerSkinBinding.Snapshot.Pending -> loadingIndex
-                is MinecraftPlayerSkinBinding.Snapshot.Ready -> null
-                MinecraftPlayerSkinBinding.Snapshot.Failed -> failureIndex
-            }
+        private val activeChildIndex: Int?
+            get() =
+                when (snapshot) {
+                    MinecraftPlayerSkinBinding.Snapshot.Pending -> loadingIndex
+                    is MinecraftPlayerSkinBinding.Snapshot.Ready -> null
+                    MinecraftPlayerSkinBinding.Snapshot.Failed -> failureIndex
+                }
     }
 
     companion object {
@@ -244,6 +259,25 @@ private class MinecraftAsyncPlayerHeadElement private constructor(
                 },
                 updateNode = { _, current, node -> node.updateFrom(current) },
             )
+
+        private fun throwBindingFailures(
+            primary: Throwable,
+            secondary: Throwable?,
+        ): Nothing {
+            if (secondary == null || secondary === primary) rethrowFailure(primary)
+            val failures = FontCloseFailures()
+            failures.attempt { rethrowFailure(primary) }
+            failures.attempt { rethrowFailure(secondary) }
+            failures.throwFailure()
+            rethrowFailure(primary)
+        }
+
+        private fun rethrowFailure(failure: Throwable): Nothing = throw failure
+
+        private fun validateSnapshot(candidate: MinecraftPlayerSkinBinding.Snapshot) {
+            val ready = candidate as? MinecraftPlayerSkinBinding.Snapshot.Ready ?: return
+            require(ready.skin.size == skinSize) { "PlayerHead requires an exact 64 by 64 skin." }
+        }
 
         @JvmSynthetic
         internal fun create(
