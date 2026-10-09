@@ -162,6 +162,16 @@ jobs:
       with:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Capture loaded remote compiler inventory
+      run: |-
+        bash ./gradlew :quality:remote-benchmarks:captureRemoteInventory
+        python3 - <<'PYTHON'
+        from difflib import unified_diff
+        from pathlib import Path
+        expected = Path('quality/remote-benchmarks/src/jmh/resources/remote-api.tsv')
+        actual = Path('quality/remote-benchmarks/build/performance/remote-api.tsv')
+        print(''.join(unified_diff(expected.read_text().splitlines(keepends=True), actual.read_text().splitlines(keepends=True), fromfile=str(expected), tofile=str(actual))), end='')
+        PYTHON
     - name: Check JVM modules and generate coverage once
       run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :quality:remote-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check

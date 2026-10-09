@@ -476,6 +476,34 @@ The module's `check` verifies exact changed-record counts, immutable tree parity
 Use the same three independent repetitions and separate AverageTime/SampleTime modes; smoke is a separate five-case input subset.
 These are protocol CPU measurements; actual Paper/Velocity owner scheduling, plugin messaging, backend switches and multisession behavior require separate real host evidence.
 
+`IncomingFragmentBenchmark` is a separate selected corpus on `jmhRemote`, with 120 generated cases and unchanged Standard JMH warm-up, measurement, fork and profiler settings.
+Select all three methods with `-Pstrata.performance.benchmarks=IncomingFragmentBenchmark`; the original 30-case protocol corpus remains unchanged.
+Its 1/8-owner matrix retains minimum, small and maximum fragments, 1 MiB and near-message-limit transfers, reversed and gap-filling input, duplicate/stale/incarnation/discovery controls and 64-byte negotiated fragments.
+`admissionCycle` measures a complete invocation lifecycle around actual decoding and bounded reorder admission; `assemblyCycle` additionally includes defensive native inbox snapshots before ordered drain and logical assembly.
+Both retain the public decode/Frame-offer control beside the loaded production route.
+`serverIngressCycle` separately invokes the actual common-service native inbox and bounded receive phase, with fresh discovered peers and literal native input.
+It does not substitute a copied server loop or use the public control to represent the production server.
+Literal source construction is outside JMH timing, while every JMH cycle includes fresh service/owner/queue preparation, discovery or stale preparation, the selected core operation, downstream complete output checks and terminal release.
+This keeps elapsed and GC-profiler allocation on the same declared lifecycle scope and avoids invocation-level timestamp distortion for tiny controls.
+The supplemental shared CPU meter isolates Admission, Assembly and ServerIngress with preparation, downstream parity and release outside each interval; retain and compare these separate scopes independently.
+The identical reflection adapter and logical-owner entry remain inside the selected operation on both runtime revisions.
+Native adapters retain their loaded-client/host acceptance obligations; this corpus cannot establish native scheduling or complete screen latency.
+
+`IncomingFragmentCpuEvidence` uses the same frozen fixture with the shared owner meter, 100 warm-up invocations and 200 measured invocations, and records the full 120-row matrix without consumer sampling code.
+Fresh queue/owner preparation, actual-array identity/copy probes, parity and cleanup are outside each measured sample.
+Its work counts report necessary decode storage, admitted fragment storage, actual queue-copy bytes/arrays and downstream assembly separately from normalized allocation.
+The opaque admission handle and owner capture are still measured overhead, so tiny packets and rejected-frame controls can regress even when queue-copy work disappears.
+These work counts do not claim every source allocation survives JIT optimization.
+`IncomingFragmentCpuComparison` consumes three independent baseline reports, three candidate reports, the frozen collector JAR and a fresh destination through `JvmPerformanceReports`.
+It retains all controls/regressions, runtime and compiler-inventory provenance, and unavailable metrics as null; native uploads/GPU/FPS are N/A.
+
+For an archived-runtime comparison, `strata.performance.remoteInventory` selects an explicitly preserved exact compiler inventory declared in `strata.performance.fixtureInputs`.
+Keep both baseline and candidate inventory files in the identical immutable input map on both sides; selecting one never changes the runtime classpath or relaxes the exact loaded-surface comparison.
+Ordinary `check` and collection without this explicit archived input remain bound to the current checked-in `remote-api.tsv` registration.
+Capture each inventory from its actual compiled archive with `captureRemoteInventory`; review permitted opt-in additions rather than inventing JVM symbols or accepting a package wildcard.
+Freeze one compiled fixture and shared collector after source/work preflight, and preserve exact source, archive and input hashes for three independent Standard invocations per side and per measured mode.
+The incoming comparison baseline must already include the bounded-drain change on both sides so its saving is not counted again.
+
 The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
 The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.
 

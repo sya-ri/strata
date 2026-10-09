@@ -62,10 +62,18 @@ public object RemoteWorkEvidence {
 
     /**
      * Rejects exact protocol API registration changes before full or smoke collection.
+     * Archived-runtime comparisons may select an explicit hashed fixture-input inventory; ordinary checks use the current repository registration.
      * Protocol and retained-session inputs register idle, update and lifetime operations without claiming host transport latency.
      */
     public fun verifySurface() {
-        val symbols = checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+        val selectedInventory = System.getProperty("strata.performance.remoteInventory")?.let { Path.of(it).toAbsolutePath().normalize() }
+        val symbols =
+            if (selectedInventory == null) {
+                checkNotNull(javaClass.getResourceAsStream("/remote-api.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }
+            } else {
+                require(JmhFixtureSelection.inputs().values.any { it.toAbsolutePath().normalize() == selectedInventory }) { "Archived remote inventory must be an explicitly frozen fixture input" }
+                Files.readAllLines(selectedInventory, Charsets.UTF_8)
+            }
         require(symbols.toSet().size == symbols.size) { "Duplicate remote performance API registration" }
         val feature = "Remote"
         val scenarios =
