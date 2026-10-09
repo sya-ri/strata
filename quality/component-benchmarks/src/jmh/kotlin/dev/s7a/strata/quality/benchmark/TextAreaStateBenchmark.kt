@@ -162,18 +162,20 @@ public open class TextAreaStateBenchmark {
             TextAreaCorpus.verify()
             val benchmark = TextAreaStateBenchmark()
             for (workload in TextAreaInput.entries) {
-                val inputs = Inputs().also {
-                    it.workload = workload
-                    it.setup()
-                }
+                val inputs =
+                    Inputs().also {
+                        it.workload = workload
+                        it.setup()
+                    }
                 check(benchmark.construct(inputs).value == inputs.values.canonical[0])
                 check(benchmark.coldSetter(inputs).value == inputs.values.canonical[0])
                 for (observation in TextAreaObservation.entries) {
-                    val assignments = Assignments().also {
-                        it.workload = workload
-                        it.observation = observation
-                        it.setup()
-                    }
+                    val assignments =
+                        Assignments().also {
+                            it.workload = workload
+                            it.observation = observation
+                            it.setup()
+                        }
                     try {
                         check(benchmark.setter64(assignments) == inputs.values.canonical[0])
                         val expected = if (observation == TextAreaObservation.Unobserved || workload == TextAreaInput.Empty) 0 else 64

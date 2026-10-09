@@ -91,10 +91,11 @@ public open class TextFieldAdmissionBenchmark {
         public fun verifyWork() {
             val benchmark = TextFieldAdmissionBenchmark()
             for (length in listOf(0, 8, 2_048, 16_384)) {
-                val input = Inputs().also {
-                    it.length = length
-                    it.setup()
-                }
+                val input =
+                    Inputs().also {
+                        it.length = length
+                        it.setup()
+                    }
                 check(benchmark.construct(input).value == input.texts[0])
                 check(benchmark.coldSetter(input).value == input.texts[0])
                 check(benchmark.setter64(input) == input.texts[1])

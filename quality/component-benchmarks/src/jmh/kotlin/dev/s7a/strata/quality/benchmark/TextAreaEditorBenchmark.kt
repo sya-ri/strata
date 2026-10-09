@@ -148,19 +148,21 @@ public open class TextAreaEditorBenchmark {
         /**
          * Equal-value frame control through the full public setter.
          */
-        public fun equalFrame(): RuntimeUiFrame = measured {
-            area.value = equal
-            host.frame(viewport, FrameTime(0))
-        }
+        public fun equalFrame(): RuntimeUiFrame =
+            measured {
+                area.value = equal
+                host.frame(viewport, FrameTime(0))
+            }
 
         /**
          * One changed public assignment followed by a completed retained frame.
          */
-        public fun assignmentFrame(): RuntimeUiFrame = measured {
-            revision = 1 - revision
-            area.value = texts[revision]
-            host.frame(viewport, FrameTime(0))
-        }
+        public fun assignmentFrame(): RuntimeUiFrame =
+            measured {
+                revision = 1 - revision
+                area.value = texts[revision]
+                host.frame(viewport, FrameTime(0))
+            }
 
         /**
          * Real input cycle without explicit frame extraction; validation is never bypassed.
@@ -174,41 +176,44 @@ public open class TextAreaEditorBenchmark {
         /**
          * Two changed input frames with an actual scalar insertion/deletion between them.
          */
-        public fun editFrames(): RuntimeUiFrame = measured {
-            host.dispatchTextInput(insert)
-            host.frame(viewport, FrameTime(0))
-            host.dispatchKeyboard(delete)
-            host.frame(viewport, FrameTime(0))
-        }
+        public fun editFrames(): RuntimeUiFrame =
+            measured {
+                host.dispatchTextInput(insert)
+                host.frame(viewport, FrameTime(0))
+                host.dispatchKeyboard(delete)
+                host.frame(viewport, FrameTime(0))
+            }
 
         /**
          * Independent cold ownership and terminal cleanup, with prepared immutable assets shared read-only.
          */
-        public fun lifecycle(): RuntimeUiFrame = fresh(TextAreaState(texts[0], length + 2)).use { next ->
-            next.attach()
-            next.frame(viewport, FrameTime(0))
-        }
+        public fun lifecycle(): RuntimeUiFrame =
+            fresh(TextAreaState(texts[0], length + 2)).use { next ->
+                next.attach()
+                next.frame(viewport, FrameTime(0))
+            }
 
         private inline fun measured(crossinline operation: () -> RuntimeUiFrame): RuntimeUiFrame = monitor?.sample { operation() } ?: operation()
 
-        private fun fresh(state: TextAreaState): MinecraftUiHost = createMinecraftUiHost(
-            UiDefinition("Canonical multiline editor") {
-                if (monitor != null) rootEvaluations += 1
-                if (observed) state.value
-                Stack {
-                    Observe(source) { value ->
-                        if (monitor != null) {
-                            regionEvaluations += 1
-                            sourceSeen = value
+        private fun fresh(state: TextAreaState): MinecraftUiHost =
+            createMinecraftUiHost(
+                UiDefinition("Canonical multiline editor") {
+                    if (monitor != null) rootEvaluations += 1
+                    if (observed) state.value
+                    Stack {
+                        Observe(source) { value ->
+                            if (monitor != null) {
+                                regionEvaluations += 1
+                                sourceSeen = value
+                            }
+                            if (observed) state.value
+                            TextArea(state, TextAreaViewport.Size(IntSize(300, 140)), wrap = wrap, modifier = Modifier.Empty.initialFocus())
                         }
-                        if (observed) state.value
-                        TextArea(state, TextAreaViewport.Size(IntSize(300, 140)), wrap = wrap, modifier = Modifier.Empty.initialFocus())
                     }
-                }
-            },
-            profile,
-            fontBackend = MinecraftFontBackendFactory { fonts.backend() },
-        )
+                },
+                profile,
+                fontBackend = MinecraftFontBackendFactory { fonts.backend() },
+            )
 
         /**
          * Enables shared untimed work collection, checks real input, source batching and retained lifecycle cleanup.
@@ -217,8 +222,7 @@ public open class TextAreaEditorBenchmark {
             val original = frame()
             val pixels = rasterizeHeadless(original.drawCommands, viewport).copyArgb().toList()
             val scroll = area.scrollState
-            val focus = host.textInputFocus
-            check(focus != null)
+            val focus = checkNotNull(host.textInputFocus)
             check(equalFrame() === original)
             monitor = RuntimeWorkMonitor(host, checkpointSamples = 16, maxNodeRecords = 64)
             assignmentFrame()
@@ -280,12 +284,13 @@ public open class TextAreaEditorBenchmark {
             for (length in listOf(8, 2_048, 16_384)) {
                 for (wrap in listOf(TextWrap.None, TextWrap.Character)) {
                     for (observed in listOf(false, true)) {
-                        val session = Session().also {
-                            it.length = length
-                            it.wrap = wrap
-                            it.observed = observed
-                            it.setup()
-                        }
+                        val session =
+                            Session().also {
+                                it.length = length
+                                it.wrap = wrap
+                                it.observed = observed
+                                it.setup()
+                            }
                         try {
                             session.verify()
                         } finally {

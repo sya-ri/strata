@@ -95,16 +95,19 @@ public open class TextAreaRejectionBenchmark {
         public fun verifyWork() {
             val benchmark = TextAreaRejectionBenchmark()
             for (workload in TextAreaRejectedInput.entries) {
-                val input = Inputs().also {
-                    it.workload = workload
-                    it.setup()
-                }
+                val input =
+                    Inputs().also {
+                        it.workload = workload
+                        it.setup()
+                    }
                 try {
                     val scroll = input.state.scrollState
-                    val original = input.state.value
+                    // Compare retained object identity so rejection cannot replace the committed String.
+                    val original: Any = input.state.value
                     check(benchmark.construct(input).message == workload.failure.message)
                     check(benchmark.setter64(input).message == workload.failure.message)
-                    check(input.state.value === original)
+                    val committed: Any = input.state.value
+                    check(committed === original)
                     check(input.state.scrollState === scroll)
                 } finally {
                     input.close()

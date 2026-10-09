@@ -31,13 +31,14 @@ internal class TextAreaBenchmarkFonts {
      * Prepares the same immutable resource-font graph and texture assets before measured operations.
      */
     fun profile(): MinecraftUiProfile {
-        val assets = MinecraftMemoryFontAssetSource(
-            "textarea-cpu-font-v1",
-            mapOf(
-                "assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:area.ttf","size":3}]}""".toByteArray(Charsets.UTF_8),
-                "assets/strata_benchmark/font/area.ttf" to byteArrayOf(1),
-            ),
-        )
+        val assets =
+            MinecraftMemoryFontAssetSource(
+                "textarea-cpu-font-v1",
+                mapOf(
+                    "assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:area.ttf","size":3}]}""".toByteArray(Charsets.UTF_8),
+                    "assets/strata_benchmark/font/area.ttf" to byteArrayOf(1),
+                ),
+            )
         val snapshot = MinecraftFontSnapshot.load(listOf(assets), MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84))
         check(snapshot.diagnostics.isEmpty())
         return ComponentProfile.create(snapshot)
@@ -53,7 +54,10 @@ internal class TextAreaBenchmarkFonts {
 
             override fun decodePng(bytes: ByteArray): DrawImage = error("The frozen CPU text fixture has no bitmap providers")
 
-            override fun openTrueType(bytes: ByteArray, settings: MinecraftTrueTypeSettings): MinecraftTrueTypeFace {
+            override fun openTrueType(
+                bytes: ByteArray,
+                settings: MinecraftTrueTypeSettings,
+            ): MinecraftTrueTypeFace {
                 check(closed.not())
                 resources += 1
                 return object : MinecraftTrueTypeFace {

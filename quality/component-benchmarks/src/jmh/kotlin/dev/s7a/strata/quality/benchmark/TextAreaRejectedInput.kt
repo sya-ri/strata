@@ -32,7 +32,9 @@ public enum class TextAreaRejectedInput(
     /**
      * Exact original observable failure classification, independent of candidate exception generation.
      */
-    public enum class Failure(public val message: String) {
+    public enum class Failure(
+        public val message: String,
+    ) {
         Control("Text area value contains a control character or formatting marker."),
         Surrogate("Text area value contains an isolated surrogate."),
         Length("Text area value exceeds its maximum length after newline normalization."),

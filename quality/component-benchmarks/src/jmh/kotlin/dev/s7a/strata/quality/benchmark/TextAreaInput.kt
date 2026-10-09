@@ -65,12 +65,7 @@ public enum class TextAreaInput(
             } else {
                 fragment.repeat(size / fragment.length) + "A".repeat(size % fragment.length)
             }
-        val first =
-            when (this) {
-                DiscardedSubstring2048 -> ("X".repeat(1_048_576) + canonical).substring(1_048_576)
-                DiscardedConcatenation16384 -> ("X".repeat(1_048_576) + canonical).substring(1_048_576, 1_048_576 + size / 2) + canonical.substring(size / 2)
-                else -> canonical
-            }
+        val first = deriveCallerInput(canonical)
         val change = first.indexOf('A')
         val second =
             when {
@@ -80,15 +75,23 @@ public enum class TextAreaInput(
                 else -> "B" + first.substring(1)
             }
         val expected = listOf(first, second)
-        val raw = expected.map { text ->
-            when {
-                this == MixedCr16384 -> text.replace("\n\n", "\r\r\n")
-                separator == null -> text
-                else -> text.replace("\n", separator)
+        val raw =
+            expected.map { text ->
+                when {
+                    this == MixedCr16384 -> text.replace("\n\n", "\r\r\n")
+                    separator == null -> text
+                    else -> text.replace("\n", separator)
+                }
             }
-        }
         return Values(raw, expected, maxOf(1, size))
     }
+
+    private fun deriveCallerInput(canonical: String): String =
+        when (this) {
+            DiscardedSubstring2048 -> ("X".repeat(1_048_576) + canonical).substring(1_048_576)
+            DiscardedConcatenation16384 -> ("X".repeat(1_048_576) + canonical).substring(1_048_576, 1_048_576 + size / 2) + canonical.substring(size / 2)
+            else -> canonical
+        }
 
     /**
      * Prepared caller-owned immutable input and independent expected output; no validator supplies expectations.
