@@ -142,7 +142,7 @@ internal class RuntimeDeclarationReuseTest {
         failureProbe.disposed = { assertTrue(failedEntries.all { it.declarationSnapshot == null }) }
         val primary = IllegalArgumentException("prepared metadata failed")
         failureProbe.failure = primary
-        assertSame(primary, assertThrows(IllegalArgumentException::class.java) { failed.projectDeclarations { Unit } })
+        assertSame(primary, assertThrows(IllegalArgumentException::class.java) { failed.projectDeclarations {} })
         failed.close()
         failed.close()
         assertEquals(1, failureProbe.disposals)
