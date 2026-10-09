@@ -83,12 +83,7 @@ public object FontFallbackWorkEvidence {
                 equalGlyph(churn, lifetime)
                 val retained = owner.retained
                 check(retained[0] <= 64L && retained[1] <= 1024 * 1024L && retained[2] <= 1L)
-                if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) checkNotNull(warm.image) { "Check failed." }
-                if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned)) check(warm.advance == 6f)
-                if (workload == FontFallbackWorkload.AtlasRejected) {
-                    check(warm.advance == 258f && warm.image?.size == IntSize(5, 8) && warm.oversizedRasterSize == null)
-                }
-                if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
+                verifyWarmGlyph(workload, warm)
                 listOf(
                     record(workload, depth, "warm", warm, listOf(warm)),
                     record(workload, depth, "churn", churn, traces.first()),
@@ -100,6 +95,18 @@ public object FontFallbackWorkEvidence {
         val work = owner.observedWork
         check(work[0] == work[5]) { "A fixture engine retained its native backend after close" }
         return records.onEach { row -> row.add("untimed_session_observed_work", JsonArray().apply { work.forEach { add(it) } }) }
+    }
+
+    private fun verifyWarmGlyph(
+        workload: FontFallbackWorkload,
+        warm: MinecraftFontGlyph,
+    ) {
+        if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) checkNotNull(warm.image) { "Check failed." }
+        if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned)) check(warm.advance == 6f)
+        if (workload == FontFallbackWorkload.AtlasRejected) {
+            check(warm.advance == 258f && warm.image?.size == IntSize(5, 8) && warm.oversizedRasterSize == null)
+        }
+        if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
     }
 
     private fun equalGlyph(
