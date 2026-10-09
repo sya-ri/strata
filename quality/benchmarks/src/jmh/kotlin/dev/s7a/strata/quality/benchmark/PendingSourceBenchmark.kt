@@ -250,9 +250,7 @@ public open class PendingSourceBenchmark {
             batches += 1
             presentation = presentation.alternate()
             when (workload.kind) {
-                Kind.Idle -> {
-                    Unit
-                }
+                Kind.Idle -> {}
 
                 Kind.All -> {
                     sources.forEach { it.publish(presentation) }
