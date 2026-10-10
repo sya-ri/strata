@@ -12,6 +12,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -275,6 +276,84 @@ internal class FabricMinecraftSampledImageDeviceTest {
         }
     }
 
+    @Test
+    fun maximumGuardedMembershipKeepsOrderedPhysicalQueriesAndRejectsCallbackMutation() {
+        listOf(0, 1, 256, 512).forEach { count ->
+            SampledFixture().use { fixture ->
+                val owners = List(if (256 < count) 2 else 1) { fixture.manager.openOwner() }
+                owners.forEachIndexed { index, owner ->
+                    val start = index * 256
+                    val size = minOf(256, count - start)
+                    fixture.borrow(owner, List(size) { image(start + it) })
+                }
+                val queries = ArrayList<Int>()
+                fixture.resources.forEachIndexed { index, resource ->
+                    resource.onClose = {
+                        assertThrows(IllegalStateException::class.java) { fixture.manager.openOwner() }
+                        assertThrows(IllegalStateException::class.java) { fixture.manager.poll() }
+                        assertThrows(IllegalStateException::class.java) { fixture.manager.release(owners.first()) }
+                    }
+                    resource.onDestruction = { queries.add(index) }
+                }
+                owners.forEach(fixture.manager::release)
+                assertEquals(count, fixture.manager.retainedResourceCount())
+                assertTrue(queries.isEmpty())
+                fixture.driver.signalAll()
+                fixture.manager.poll()
+
+                assertEquals((0 until count).toList(), queries)
+                assertEquals(0, fixture.manager.retainedResourceCount())
+                assertEquals(0L, fixture.manager.retainedResourceBytes())
+                assertTrue(fixture.resources.all { it.closeCalls == 1 })
+                fixture.manager.poll()
+                assertEquals((0 until count).toList(), queries)
+            }
+        }
+    }
+
+    @Test
+    fun asynchronousSourceAcknowledgementAttemptsEveryEntryAfterIndependentFailures() {
+        SampledFixture().use { fixture ->
+            val owners = List(2) { fixture.manager.openOwner() }
+            owners.forEachIndexed { index, owner -> fixture.borrow(owner, List(256) { image(index * 256 + it) }) }
+            val queries = ArrayList<Int>()
+            fixture.resources.forEachIndexed { index, resource ->
+                resource.destroyOnClose = false
+                resource.onDestruction = { queries.add(index) }
+            }
+            owners.forEach(fixture.manager::release)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals((0 until 512).toList(), queries)
+            assertEquals(512, fixture.manager.retainedResourceCount())
+            assertEquals(2048L, fixture.manager.retainedResourceBytes())
+
+            val firstFailure = IllegalArgumentException("first sampled query")
+            val secondFailure = IllegalStateException("second sampled query")
+            fixture.resources[1].destructionFailure = firstFailure
+            fixture.resources[3].destructionFailure = secondFailure
+            fixture.resources.forEachIndexed { index, resource -> resource.destroyed = index % 2 == 0 }
+            queries.clear()
+            val failure = assertThrows(IllegalArgumentException::class.java) { fixture.manager.poll() }
+            assertSame(firstFailure, failure)
+            assertEquals(listOf(secondFailure), failure.suppressed.toList())
+            assertEquals((0 until 512).toList(), queries)
+            assertEquals(256, fixture.manager.retainedResourceCount())
+            assertEquals(1024L, fixture.manager.retainedResourceBytes())
+
+            fixture.resources.forEach { resource ->
+                resource.destroyed = true
+                resource.destructionFailure = null
+            }
+            queries.clear()
+            fixture.manager.poll()
+            assertEquals((0 until 512).filter { it % 2 == 1 }, queries)
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            assertEquals(0L, fixture.manager.retainedResourceBytes())
+            assertTrue(fixture.resources.all { it.closeCalls == 1 })
+        }
+    }
+
     private fun image(value: Int): DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(value))
 
     private class SampledFixture : AutoCloseable {
@@ -368,11 +447,22 @@ internal class FabricMinecraftSampledImageDeviceTest {
 
     private class Resource : NativeGuiResource {
         var closeCalls = 0
+        var destroyed = false
+        var destroyOnClose = true
+        var destructionFailure: Throwable? = null
+        var onClose: (() -> Unit)? = null
+        var onDestruction: (() -> Unit)? = null
 
         override fun close() {
             closeCalls += 1
+            onClose?.invoke()
+            if (destroyOnClose) destroyed = true
         }
 
-        override fun isDestroyed(): Boolean = 0 < closeCalls
+        override fun isDestroyed(): Boolean {
+            onDestruction?.invoke()
+            destructionFailure?.let { throw it }
+            return destroyed
+        }
     }
 }

@@ -492,6 +492,21 @@ Once terminal shutdown starts, ordinary polling performs no further native work,
 Those failed terminal resources remain quarantined until external device teardown rather than being released by a late frame callback.
 The fixed sampling programs are device-owned, keyed only by native API family and row orientation, bounded to two orientation variants plus one ordered-composition variant, and released only after terminal GPU completion.
 
+Nonblocking target, portable-generation and sampled-source polls traverse owner-guarded current membership with invocation-local iterators.
+Acknowledged physical destruction removes the current record through that iterator; callbacks may change permitted retirement flags but cannot acquire resources or reenter a guarded manager operation.
+An empty target set does not bypass producer cleanup or other GUI managers.
+The registry keeps its device snapshot because a callback may register another device, which joins the next operation's membership.
+Retired producer eligibility is selected eagerly before any producer closes; a close callback that retires another owner does not expand that selected list.
+No cross-operation scratch, pending-work cache or authoritative-state index is introduced.
+
+The separate lifetime JMH corpus invokes actual Canvas/portable managers and the actual frozen Fabric sampled manager through the normal classloader.
+Stable states retain 0/1/64 target or portable records and 0/1/256/512 sampled sources across every measured poll; initialization, GUI, retirement, asynchronous destruction, quarantine and reload controls stay distinct.
+Complete submission and fresh admission-through-retirement protocols include their real setup work in their measured boundaries.
+Submission with one attachment retains the actual two-target buffer after priming; 64 simultaneous attachments expose the existing full-capacity committed-generation fallback.
+One sampled owner admits at most 256 entries, so the 512-entry CPU fixture uses two owners.
+Native presentation scenes separately cover real targets, barrier-separated portable layers, changed/clean sampled sources and a 512-request single-screen overflow control; that overflow does not claim 512 admitted entries in one owner.
+CPU fake-driver results do not establish native GPU or frame-rate gains, and every comparison still requires full-presentation GPU/GUI/upload evidence from the shared native meter.
+
 Deterministic protocol tests independently control capture and GUI fences and cover long unsignalled histories, resize, source replacement, reattachment, shared sources, cancellation, partial producer/GUI/cleanup failures, partial allocation rollback, the three/64 limits, rapid key churn, and retained old frames.
 Loaded native tests must separately inspect known GPU texels and a custom offscreen renderer before comparing the same-generation Headless capture; agreement between two snapshots alone is not native parity evidence.
 Backend-specific loaded results, especially OpenGL versus Vulkan, are recorded separately and must not be inferred from JVM protocol tests.

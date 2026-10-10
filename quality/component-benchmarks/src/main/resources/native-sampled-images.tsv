@@ -22,3 +22,15 @@ SampledScrolledRowsLarge
 SampledTiledTranslationSmall
 SampledTiledTranslationMedium
 SampledTiledTranslationLarge
+LifetimeTargets0
+LifetimeTargets1
+LifetimeTargets64
+LifetimeTargets64Clean
+LifetimePortable0
+LifetimePortable1
+LifetimePortable64
+LifetimeSources0
+LifetimeSources1
+LifetimeSources256
+LifetimeSources512Overflow
+LifetimeSources256Clean

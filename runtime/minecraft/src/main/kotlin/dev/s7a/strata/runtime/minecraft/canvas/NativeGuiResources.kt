@@ -365,8 +365,12 @@ public class NativeGuiResources internal constructor(
         }
 
     private fun pollInternal() {
+        if (sets.isEmpty()) return
         val failures = CanvasFailures()
-        sets.values.toList().forEach { record ->
+        // Release callbacks can mark other sets retired; guarded acquisition and removal cannot reenter.
+        val iterator = sets.values.iterator()
+        while (iterator.hasNext()) {
+            val record = iterator.next()
             failures.attempt { finishInitialization(record, force = false) }
             failures.attempt { finishGui(record, force = false) }
             if (releasable(record)) {
@@ -374,7 +378,7 @@ public class NativeGuiResources internal constructor(
                 record.resources.forEach { resource ->
                     if (resource.references == 0) failures.attempt { requestClose(resource, retry = false) }
                 }
-                failures.attempt { acknowledge(record, terminal = false) }
+                failures.attempt { acknowledge(record, terminal = false, iterator = iterator) }
             }
         }
         failures.throwIfPresent()
@@ -443,6 +447,7 @@ public class NativeGuiResources internal constructor(
     private fun acknowledge(
         record: ResourceSet,
         terminal: Boolean,
+        iterator: MutableIterator<ResourceSet>? = null,
     ) {
         val failures = CanvasFailures()
         record.resources.forEach { resource ->
@@ -457,7 +462,9 @@ public class NativeGuiResources internal constructor(
                 }
             }
         }
-        if (record.referencesReleased && record.resources.all { 0 < it.references || it.release == Release.Destroyed }) sets.remove(record.token.value)
+        if (record.referencesReleased && record.resources.all { 0 < it.references || it.release == Release.Destroyed }) {
+            if (iterator == null) sets.remove(record.token.value) else iterator.remove()
+        }
         failures.throwIfPresent()
     }
 
