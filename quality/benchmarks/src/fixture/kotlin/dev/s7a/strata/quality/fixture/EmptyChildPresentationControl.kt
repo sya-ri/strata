@@ -17,6 +17,7 @@ public object EmptyChildPresentationControl {
      */
     public fun verify(): List<List<DrawCommand>> {
         val probe = EmptyChildProbe()
+
         fun declaration(changed: Boolean) =
             probe.element(
                 0,
@@ -53,6 +54,7 @@ public object EmptyChildPresentationControl {
 
     private fun expected(changed: Boolean): List<DrawCommand> {
         val split = if (changed) 2 else 1
+
         fun color(value: Int) = ArgbColor(0xFF000000.toInt() or value)
 
         return listOf(

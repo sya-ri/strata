@@ -155,7 +155,9 @@ public class EmptyChildFixture(
     /**
      * Single-owner publisher; snapshot construction is included in observed sampling.
      */
-    private class Source(initial: Boolean) : StateSource<Boolean> {
+    private class Source(
+        initial: Boolean,
+    ) : StateSource<Boolean> {
         private var snapshot = StateSnapshot(StateRevision(0), initial)
         private var observer: ((StateSnapshot<Boolean>) -> Unit)? = null
 

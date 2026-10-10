@@ -285,10 +285,6 @@ public object EmptyChildControls {
                     check(fixture.probe.count(Stage.Update) == 3 && fixture.probe.events.isEmpty())
                     check(before.last() === fixture.probe.nodes.last())
                 }
-
-                else -> {
-                    error("Expected a transition")
-                }
             }
         }
     }
