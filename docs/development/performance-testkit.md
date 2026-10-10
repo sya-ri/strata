@@ -88,6 +88,30 @@ Complete-acceptance tasks opt out of configuration caching in the scoped model, 
 Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
 Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
 
+The generated `TextAreaInputBenchmark` fixture adds a separate 60-case logical editing corpus through the existing component entry point:
+`:quality:component-benchmarks:jmhComponents '-Pstrata.jvmOnly=true' '-Pstrata.performance.benchmarks=TextAreaInputBenchmark' '-Pstrata.performance.suite=text-area-input'`.
+Its 30 input rows cover beginning/middle/end primary presses on short wrapped, long BMP, supplementary, plateau and signed-coordinate lines, vertical/page navigation between two long hard-break lines, and three composition mapping regions.
+Each source respects the default state capacity; middle/end unwrapped inputs preserve real caret-following horizontal pan.
+Six initial-layout rows include fresh host creation, attach, first frame and terminal close with resource bytes prepared, while six clean-frame rows retain the existing frame.
+Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive method handle, with the same handle cost on both runtime sides.
+
+Each input operation includes the fixed public opportunity restoration, settled frame and target dispatch in one cycle: a clean frame before an ordinary press, an opposite navigation key plus frame before a directional key, or Home/frame/preedit/frame before composition cancellation.
+CPU and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
+The fixture uses no invocation-level setup, so it avoids per-call setup timestamps and allocation that the iteration-scoped [JMH GC profiler](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) would include outside a dispatch-only CPU interval.
+Reflection, independent oracle scans, font/backend construction and resource generation remain outside the cycle; all pointer/key events are prebuilt.
+The independent lookup rows isolate the actual line method, while complete initial-layout rows separately expose new-line admission and ownership costs.
+Do not interpret the cycle score as single-event latency or subtract noisy control scores to invent a dispatch-only allocation result.
+The untimed verifier independently checks complete Long-distance winners, scalar offsets, scroll/pan, focus token identity, committed semantics, exact headless pixels at scales one through three, clean frame reuse and terminal resource release.
+Candidate coordinate-read checks use the loaded runtime's inlined search diagnostic; an older runtime without that diagnostic still executes the same complete winner oracle.
+Source-derived baseline call/read counts must be labeled separately from observed diagnostics and measured CPU/allocation.
+
+For a paired runtime comparison, freeze the fixture, its Java primitive-handle helper, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
+A fixture-only archive can combine the Kotlin and Java compiled fixture roots and generated JMH roots without embedding any target runtime classes; this binds the helper to the same preserved fixture code source.
+Use the existing packaged collector entry point and the same resolved execution classpath, replacing only the selected actual Minecraft runtime archive.
+Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
+Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
+The corpus makes no native latency, upload, FPS or GPU claim.
+
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
 JDK Properties requires escaped colons in these project-path keys and escaped backslashes in Windows paths.
