@@ -1133,7 +1133,10 @@ if (completeIdeaModelActive) {
         })
         mustRunAfter(provider { allprojects.flatMap { it.tasks.matching { task -> task.name == "ideaModule" }.toList() } })
         doLast {
-            require(gitOutput("diff", "--name-only", "HEAD").isBlank()) { "Declaration acceptance requires the selected revision's clean tracked sources." }
+            val changedTrackedSources = gitOutput("diff", "--name-status", "--no-renames", "HEAD")
+            require(changedTrackedSources.isBlank()) {
+                "Declaration acceptance requires the selected revision's clean tracked sources. Changed tracked paths:\n$changedTrackedSources"
+            }
             val tracked = gitOutput("ls-files", "-z").split('\u0000').filter(String::isNotEmpty).sorted().associateWith { file(it).sha256() }
             val projects = allprojects.sortedBy { it.path }.map { owner ->
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
