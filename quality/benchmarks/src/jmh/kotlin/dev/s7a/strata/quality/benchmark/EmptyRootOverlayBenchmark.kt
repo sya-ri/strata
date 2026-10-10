@@ -267,7 +267,7 @@ public open class EmptyRootOverlayBenchmark {
     /**
      * Records terminal lifecycle attempts without instrumenting timed paint callbacks.
      */
-    private abstract class FixtureNode :
+    private open class FixtureNode :
         Node(),
         LifecycleNode {
         var detachCalls = 0
