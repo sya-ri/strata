@@ -2,11 +2,14 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Observe
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.TextField
 import dev.s7a.strata.component.TextFieldState
 import dev.s7a.strata.component.TextInputAppearance
 import dev.s7a.strata.component.TextStyle
+import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.ElementKey
+import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.KeyCode
@@ -249,8 +252,11 @@ internal class TextFieldPreeditFixture(
         val created =
             createMinecraftUiHost(
                 UiDefinition {
-                    Observe(source) { config ->
-                        TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = ElementKey("field"))
+                    if (row.control == Control.WidthAndFontReplacement) {
+                        // Preserve the fixed viewport while admitting either requested field width.
+                        Stack { field() }
+                    } else {
+                        field()
                     }
                 },
                 profile,
@@ -262,11 +268,20 @@ internal class TextFieldPreeditFixture(
     }
 
     /**
+     * Declares the frozen field under its row's current layout scope.
+     */
+    private fun UiScope.field() {
+        Observe(source) { config ->
+            TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = ElementKey("field"))
+        }
+    }
+
+    /**
      * Verifies current whole-frame pixels, ordered decorations, semantics, focus and bounded external observation.
      */
     fun verify(frame: RuntimeUiFrame) {
         val expected = checkNotNull(reference)
-        check(frame.size == IntSize(expected.width, 20))
+        check(frame.size == viewport)
         val rectangles = frame.drawCommands.filterIsInstance<DrawCommand.FillRectangle>()
         check(rectangles.map { it.bounds } == expected.rectangles()) { "Underline/caret order changed for ${row.name}" }
         check(rectangles.all { it.color.value == if (it.bounds.height == 1) TextFieldPreeditReference.underline else TextFieldPreeditReference.caretColor })
@@ -275,6 +290,7 @@ internal class TextFieldPreeditFixture(
         check(frame.drawCommands == images + rectangles) { "Field command ordering changed for ${row.name}" }
         check(rasterizeHeadless(frame.drawCommands, viewport).copyArgb().contentEquals(expected.pixels(viewport))) { "Independent pixels changed for ${row.name}" }
         val field = frame.semantics.single { it.semantics.role == SemanticsRole.TextField }
+        check(field.bounds == IntRect(0, 0, expected.width, 20))
         check(field.semantics.label == UiText.Literal(expected.value) && field.semantics.disabled == expected.enabled.not())
         check(current.state.value == expected.value)
         check(source.subscriptions == if (closedHost) 0 else 1)
