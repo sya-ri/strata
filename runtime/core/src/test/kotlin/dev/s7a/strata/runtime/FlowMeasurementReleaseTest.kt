@@ -65,14 +65,16 @@ internal class FlowMeasurementReleaseTest {
         val probe = TestProbe(failingMeasureTag = if (fails) TestProbe.ProbeId("0") else null)
         val session = createRuntimeUiSession {
             evaluateComponentTree {
-                Observe(source) { count -> FlowRow(horizontalSpacing = 1, verticalSpacing = 1) {
-                    repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) }
-                } }
+                Observe(source) { count ->
+                    FlowRow(horizontalSpacing = 1, verticalSpacing = 1) {
+                        repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) }
+                    }
+                }
             }
         }
         session.attach()
-        val observer = WeakReference(checkNotNull(source.observer))
         assertEquals(fails, runCatching { session.frame(BOUNDS) }.isFailure)
+        val observer = checkNotNull(source.observerReference)
         val retired = WeakReference(probe.created.first())
         if (shrink) {
             source.publish(0)
@@ -106,11 +108,17 @@ internal class FlowMeasurementReleaseTest {
     /** Actual subscribed source with a once-only callback release, independent of any tree cache. */
     private class ReleaseSource : StateSource<Int> {
         private var snapshot = StateSnapshot(StateRevision(0), 16)
+
+        /** Records the actual callback weakly before a failing frame releases its subscription. */
+        var observerReference: WeakReference<*>? = null
+            private set
+
         var observer: ((StateSnapshot<Int>) -> Unit)? = null
         var closes: Int = 0
 
         override fun subscribe(observer: (StateSnapshot<Int>) -> Unit): StateSubscription<Int> {
             check(this.observer == null)
+            observerReference = WeakReference(observer)
             this.observer = observer
             return StateSubscription(snapshot) {
                 this.observer = null

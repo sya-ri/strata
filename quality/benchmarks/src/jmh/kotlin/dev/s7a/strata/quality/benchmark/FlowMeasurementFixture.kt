@@ -78,9 +78,7 @@ internal class FlowMeasurementFixture(
                 source.publish(revision)
             }
 
-            Operation.IdleFrame -> {
-                Unit
-            }
+            Operation.IdleFrame -> {}
         }
         return session.frame(constraints())
     }
