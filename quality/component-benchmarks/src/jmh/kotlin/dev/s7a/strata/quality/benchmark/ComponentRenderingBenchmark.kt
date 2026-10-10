@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.evaluateComponentTree
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
@@ -149,8 +150,10 @@ public open class ComponentRenderingBenchmark {
                 hudOrder = payload.hudOrder,
                 pausesGame = payload.pausesGame,
             ) {
-                val root = evaluateComponentTree(payload.content)
-                element(FlowComponentReferenceElement(4, 4, Arrangement.Center, VerticalAlignment.Center, root.children, modifier = root.modifier))
+                Stack {
+                    val flow = evaluateComponentTree(payload.content).children.single()
+                    element(FlowComponentReferenceElement(4, 4, Arrangement.Center, VerticalAlignment.Center, flow.children, modifier = flow.modifier))
+                }
             }
         }
 

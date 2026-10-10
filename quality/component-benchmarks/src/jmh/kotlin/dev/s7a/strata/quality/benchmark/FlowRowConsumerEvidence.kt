@@ -50,9 +50,10 @@ internal object FlowRowConsumerEvidence {
         expected: RuntimeUiFrame,
         actual: RuntimeUiFrame,
     ) {
-        check(expected.size == actual.size && expected.semantics == actual.semantics)
-        // The actual 320/321 viewport constrains the shipped size modifier; all four buttons fit in one row.
-        val bounds = listOf(IntRect(18, 8, 90, 28), IntRect(94, 8, 150, 28), IntRect(154, 8, 246, 28), IntRect(250, 8, 302, 28))
+        check(expected.size == actual.size) { "FlowRow frame size differs: expected=${expected.size}, actual=${actual.size}" }
+        check(expected.semantics == actual.semantics) { "FlowRow semantics differ: expected=${expected.semantics}, actual=${actual.semantics}" }
+        // The shipped 168-wide root has 8-pixel insets and two centered rows under the unchanged Stack.
+        val bounds = listOf(IntRect(18, 8, 90, 28), IntRect(94, 8, 150, 28), IntRect(10, 32, 102, 52), IntRect(106, 32, 158, 52))
         check(actual.semantics.filter { it.semantics.role == SemanticsRole.Button }.map { it.bounds } == bounds)
         check(expected.drawCommands.size == actual.drawCommands.size)
         expected.drawCommands.zip(actual.drawCommands).forEach { (left, right) ->
