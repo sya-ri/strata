@@ -19,6 +19,10 @@ import org.junit.jupiter.api.Test
 internal class RemoteClientLifetimeTest {
     @Test
     fun preparationFailureReleasesExistingAndNewStateAndClosesTheSession() {
+        RemoteDecodeRoute.entries.forEach(::verifyPreparationFailureThroughDecodeRoute)
+    }
+
+    private fun verifyPreparationFailureThroughDecodeRoute(route: RemoteDecodeRoute) {
         val released = mutableListOf<Long>()
         val outgoing = mutableListOf<RemoteMessage>()
         val failure = IllegalStateException("extension preparation failed")
@@ -29,9 +33,9 @@ internal class RemoteClientLifetimeTest {
             if (value == 2L) throw failure
         }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
         val first = tree(listOf(node(1, 1)))
-        val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, first), registry, send = outgoing::add)
+        val client = RemoteClientSession(route.decode(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, first)) as RemoteMessage.Snapshot, registry, send = outgoing::add)
         val next = tree(listOf(node(1, 1, listOf(2)), node(2, 2)))
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { client.receive(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next))) })
+        assertSame(failure, assertThrows(IllegalStateException::class.java) { client.receive(route.decode(RemoteMessage.Update(1, 1, 2, RemotePatch.between(first, next))) as RemoteMessage.Update) })
         assertEquals(listOf(1L, 2L), released)
         assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), client.status)
         assertEquals(listOf(RemoteMessage.Applied(1, 1)), outgoing.filterIsInstance<RemoteMessage.Applied>())
@@ -42,6 +46,10 @@ internal class RemoteClientLifetimeTest {
 
     @Test
     fun releaseFailureStillNotifiesPeerAndPreservesFirstFailure() {
+        RemoteDecodeRoute.entries.forEach(::verifyReleaseFailureThroughDecodeRoute)
+    }
+
+    private fun verifyReleaseFailureThroughDecodeRoute(route: RemoteDecodeRoute) {
         val outgoing = mutableListOf<RemoteMessage>()
         val failure = IllegalStateException("extension release failed")
         val registry = RemoteRegistry()
@@ -49,7 +57,7 @@ internal class RemoteClientLifetimeTest {
         registry.element(TYPE, { it }, { _, context ->
             context.states.prepare(context.identity, key, { Owned(context.identity) }, {}, { throw failure })
         }) { _, context -> evaluateComponentTree { Spacer(context.modifier, context.key) } }
-        val client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1)))), registry, send = outgoing::add)
+        val client = RemoteClientSession(route.decode(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, tree(listOf(node(1, 1))))) as RemoteMessage.Snapshot, registry, send = outgoing::add)
         assertSame(failure, assertThrows(IllegalStateException::class.java) { client.close() })
         assertEquals(RemoteFailure.PeerClosed, outgoing.filterIsInstance<RemoteMessage.Close>().single().reason)
         client.close()

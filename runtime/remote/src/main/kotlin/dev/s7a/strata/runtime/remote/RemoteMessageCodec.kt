@@ -35,8 +35,16 @@ public class RemoteMessageCodec(
     /**
      * Decodes and validates the complete message schema and any included tree.
      */
-    public fun decode(bytes: ByteArray): RemoteMessage {
-        val fields = ProjectionFields(values.decode(bytes))
+    public fun decode(bytes: ByteArray): RemoteMessage = readMessage(values.decode(bytes))
+
+    /**
+     * Validates one completed connection-owned assembly under [RemoteValueCodec.decodeOwned]'s exclusive-input contract.
+     * The complete typed result is detached before the connection exposes it to its caller.
+     */
+    internal fun decodeOwned(bytes: ByteArray): RemoteMessage = readMessage(values.decodeOwned(bytes))
+
+    private fun readMessage(value: ProjectionValue): RemoteMessage {
+        val fields = ProjectionFields(value)
         val code = fields.int()
         val tag = requireNotNull(Tag.entries.find { it.code == code }) { "Unknown remote message tag." }
         val message =

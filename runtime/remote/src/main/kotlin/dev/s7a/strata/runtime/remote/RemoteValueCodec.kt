@@ -31,12 +31,24 @@ public class RemoteValueCodec(
     /**
      * Decodes exactly one value; truncated data, trailing bytes, and unknown tags are rejected.
      */
-    public fun decode(bytes: ByteArray): ProjectionValue {
+    public fun decode(bytes: ByteArray): ProjectionValue = decode(bytes, TextInput.Snapshot)
+
+    /**
+     * Decodes the connection's completed private assembly without temporary Text payload snapshots.
+     * The connection must exclusively own the array and keep it unchanged until this call returns.
+     * All returned values are detached, and neither the codec nor its results retain the input.
+     */
+    internal fun decodeOwned(bytes: ByteArray): ProjectionValue = decode(bytes, TextInput.Owned)
+
+    private fun decode(
+        bytes: ByteArray,
+        textInput: TextInput,
+    ): ProjectionValue {
         require(bytes.size <= limits.messageBytes) { "Remote message exceeds its byte limit." }
         return try {
             val input = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
             val budget = RemoteWorkBudget(limits)
-            val value = read(input, 0, budget)
+            val value = read(input, 0, budget, textInput)
             budget.checkTime()
             require(input.hasRemaining().not()) { "Trailing bytes in a remote value." }
             value
@@ -104,6 +116,7 @@ public class RemoteValueCodec(
         input: ByteBuffer,
         depth: Int,
         budget: RemoteWorkBudget,
+        textInput: TextInput,
     ): ProjectionValue {
         budget.visit()
         require(depth < limits.valueDepth) { "Remote value nesting exceeds its limit." }
@@ -128,9 +141,7 @@ public class RemoteValueCodec(
             }
 
             Tag.Text -> {
-                val bytes = readBytes(input)
-                val text = if (bytes.all { 0 <= it }) String(bytes, Charsets.UTF_8) else bytes.decodeToString(throwOnInvalidSequence = true)
-                ProjectionValue.Text(text)
+                ProjectionValue.Text(readText(input, textInput))
             }
 
             Tag.Bytes -> {
@@ -140,7 +151,7 @@ public class RemoteValueCodec(
             Tag.Sequence -> {
                 val size = input.int
                 require(size in 0..minOf(limits.collectionEntries, input.remaining())) { "Invalid remote collection length." }
-                ProjectionValue.Sequence(List(size) { read(input, depth + 1, budget) })
+                ProjectionValue.Sequence(List(size) { read(input, depth + 1, budget, textInput) })
             }
         }
     }
@@ -154,10 +165,44 @@ public class RemoteValueCodec(
         output.write(value)
     }
 
-    private fun readBytes(input: ByteBuffer): ByteArray {
+    private fun readByteLength(input: ByteBuffer): Int {
         val size = input.int
         require(size in 0..minOf(limits.messageBytes, input.remaining())) { "Invalid remote byte length." }
+        return size
+    }
+
+    private fun readBytes(input: ByteBuffer): ByteArray {
+        val size = readByteLength(input)
         return ByteArray(size).also { input.get(it) }
+    }
+
+    private fun readText(
+        input: ByteBuffer,
+        textInput: TextInput,
+    ): String =
+        when (textInput) {
+            TextInput.Snapshot -> {
+                val bytes = readBytes(input)
+                if (bytes.all { 0 <= it }) String(bytes, Charsets.UTF_8) else bytes.decodeToString(throwOnInvalidSequence = true)
+            }
+
+            TextInput.Owned -> {
+                val size = readByteLength(input)
+                val start = input.position()
+                val end = start + size
+                // Match the snapshot path's cursor advance, including malformed UTF-8 failures.
+                input.position(end)
+                val bytes = input.array()
+                if ((start until end).all { 0 <= bytes[it] }) String(bytes, start, size, Charsets.UTF_8) else bytes.decodeToString(start, end, throwOnInvalidSequence = true)
+            }
+        }
+
+    /**
+     * Invocation-local ownership boundary; public callers always capture each Text field first.
+     */
+    private enum class TextInput {
+        Snapshot,
+        Owned,
     }
 
     /**

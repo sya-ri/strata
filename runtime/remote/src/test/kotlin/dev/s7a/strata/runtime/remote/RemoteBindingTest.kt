@@ -26,12 +26,16 @@ internal class RemoteBindingTest {
 
     @Test
     fun staleRepliesPreserveDraftsAndExplicitReplacementAdvancesGeneration() {
+        RemoteDecodeRoute.entries.forEach(::verifyBindingThroughDecodeRoute)
+    }
+
+    private fun verifyBindingThroughDecodeRoute(route: RemoteDecodeRoute) {
         var sequence = 0L
         val bindings = RemoteServerBindings(RemoteLimits()) { sequence }
         val source = Value("initial")
         val binding = binding(source)
         val scope = Scope(bindings)
-        val initial = project(scope, binding)
+        val initial = project(scope, binding, route)
         val local = Value("initial")
         var writes = 0
         val editing =
@@ -51,34 +55,38 @@ internal class RemoteBindingTest {
         local.text = "second"
         editing.flushEdits(actions)
         sequence = 1
-        scope.actions.last().dispatch(eventSession, sent.first())
-        editing.reconcile(project(scope, binding))
+        scope.actions.last().dispatch(eventSession, route.value(binding.type, sent.first()))
+        editing.reconcile(project(scope, binding, route))
         assertEquals("second", local.text)
         assertEquals(0, writes)
         sequence = 2
-        scope.actions.last().dispatch(eventSession, sent.last())
-        editing.reconcile(project(scope, binding))
+        scope.actions.last().dispatch(eventSession, route.value(binding.type, sent.last()))
+        editing.reconcile(project(scope, binding, route))
         assertEquals(0, writes)
         source.text = "reset"
-        val replacement = project(scope, binding)
+        val replacement = project(scope, binding, route)
         assertEquals(initial.generation + 1, replacement.generation)
         editing.reconcile(replacement)
         assertEquals("reset", local.text)
         assertEquals(1, writes)
-        scope.actions.last().dispatch(eventSession, sent.last())
+        scope.actions.last().dispatch(eventSession, route.value(binding.type, sent.last()))
         assertEquals("reset", source.text)
         bindings.close()
     }
 
     @Test
     fun anOldSourceCannotEditANewSourceAtTheSameComponentPosition() {
+        RemoteDecodeRoute.entries.forEach(::verifySourceReplacementThroughDecodeRoute)
+    }
+
+    private fun verifySourceReplacementThroughDecodeRoute(route: RemoteDecodeRoute) {
         val bindings = RemoteServerBindings(RemoteLimits()) { 1 }
         val scope = Scope(bindings)
-        val old = project(scope, binding(Value("old")))
+        val old = project(scope, binding(Value("old")), route)
         val current = Value("new")
-        val fresh = project(scope, binding(current))
+        val fresh = project(scope, binding(current), route)
         assertNotEquals(old.identity, fresh.identity)
-        scope.actions.last().dispatch(eventSession, old.edit(ProjectionValue.Text("stale")))
+        scope.actions.last().dispatch(eventSession, route.value(BuiltinProjection.PointerPress.type, old.edit(ProjectionValue.Text("stale"))))
         assertEquals("new", current.text)
         bindings.close()
     }
@@ -86,9 +94,10 @@ internal class RemoteBindingTest {
     private fun project(
         scope: Scope,
         binding: ProjectionBinding<String>,
+        route: RemoteDecodeRoute,
     ): RemoteBindingSnapshot {
         scope.bindings.begin()
-        val projected = RemoteBindingSnapshot.decode(scope.binding(binding))
+        val projected = RemoteBindingSnapshot.decode(route.value(binding.type, scope.binding(binding)))
         scope.bindings.commit()
         return projected
     }

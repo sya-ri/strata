@@ -48,12 +48,14 @@ tasks.register<JavaExec>("jmhRemote") {
     val family = if (sessions) "remote-sessions" else "remote"
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
     workloads?.let { systemProperty("strata.performance.workloads", it) }
-    val suite = (if (quick) "$family-quick" else if (smoke) "$family-smoke" else family) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    val benchmarks = providers.gradleProperty("strata.performance.benchmarks").orNull
+    benchmarks?.let { systemProperty("strata.performance.benchmarks", it) }
+    val suite = (if (quick) "$family-quick" else if (smoke) "$family-smoke" else family) + (if (workloads != null || benchmarks != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.remoteSessions", sessions)
-    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null))
+    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {

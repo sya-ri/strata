@@ -474,7 +474,17 @@ The native-free `:quality:remote-benchmarks:jmhRemote` corpus measures real decl
 Its 30 generated cases use 100 nodes and the actual default 8192-node protocol bound, with stable, single-record and complete-record changes.
 The module's `check` verifies exact changed-record counts, immutable tree parity, canonical encoded messages and byte-identical fragmented delivery for every combination.
 Use the same three independent repetitions and separate AverageTime/SampleTime modes; smoke is a separate five-case input subset.
-These are protocol CPU measurements; actual Paper/Velocity owner scheduling, plugin messaging, backend switches and multisession behavior require separate real host evidence.
+These are JVM protocol operation measurements; JMH scores describe elapsed time, while owner CPU is collected separately through the shared JVM collector.
+Actual Paper/Velocity owner scheduling, plugin messaging, backend switches and multisession behavior require separate real host evidence.
+
+Select `RemoteTextBenchmark` through the existing `strata.performance.benchmarks` option on `jmhRemote` for 64 cases covering sixteen fixed text corpora and public message encode/decode, negotiated receive, and complete connection lifecycle operations.
+Select `RemoteProtocolBenchmark,RemoteTextBenchmark` for the whole 94-case comparison, or 188 rows across AverageTime and SampleTime.
+The default protocol corpus remains the original 30 cases.
+Text reference bytes come from an independent JDK writer; generated metadata and complete typed results are admitted outside timing through the shared fixture work gate.
+Negotiated receive refreshes only pre-created fragment identity headers in the invocation setup; lifecycle includes construction, local greeting drain, peer negotiation, complete receive, and close.
+Logical Text field/byte totals describe the reference schema and do not establish actual temporary arrays, physical allocation, CPU, or elapsed benefit.
+Freeze the same compiled fixture and collector on both runtime sides, retain every public and Text-free control, and collect three independent standard repetitions in each mode before evaluating a change.
+Source-site work observation, caller/private ownership, strict failure parity, real installed output, and terminal retention remain separate untimed acceptance gates.
 
 The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.
 The normal 4,096-record runtime diagnostic bound remains the default; a requested bound is finite and declared before monitoring starts, and overflow still rejects evidence.

@@ -67,6 +67,9 @@ The receiver restores order across asynchronous proxy events using a queue bound
 Duplicate sequences are ignored; conflicting queued duplicates fail validation.
 The native packet bound includes the fixed envelope; negotiated fragment limits reserve its bytes.
 The binary value codec uses explicit tags, big-endian numeric fields, strict UTF-8, and bounded byte/collection lengths.
+Public value and message decoders snapshot each Text field before decoding caller-owned input.
+The connection alone decodes Text directly from its completed private assembly, which remains exclusively owned and unchanged until complete typed validation returns.
+Both routes return detached immutable text and preserve byte/image snapshots, schema validation, limits, and terminal connection failures.
 Limits include frame/message bytes, aggregate values, structural depth, declaration count, queued bytes, fragment assembly time, and reconstruction time.
 HUD capacity is negotiated per connection, with a default of 16.
 Retained node and outgoing queue budgets cover all sessions on the connection.
