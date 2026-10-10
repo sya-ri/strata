@@ -136,7 +136,7 @@ internal class LinearMeasurementFixture(
                 if (operation == Operation.IdleFrame) check(initial === result)
                 session.close()
                 check(source.subscribed.not())
-                check(monitor.snapshot().activeSubscriptions == 0)
+                check(runCatching { monitor.snapshot() }.exceptionOrNull() is IllegalStateException)
                 session.close()
             }
         }
