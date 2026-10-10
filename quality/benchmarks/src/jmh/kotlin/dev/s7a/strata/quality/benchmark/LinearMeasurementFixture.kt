@@ -39,7 +39,7 @@ internal class LinearMeasurementFixture(
                     val spacing = if (topology.childCount == 0) extent else 0
                     val arrangement = if (operation == Operation.LayoutOnlyFrame && value % 2 == 1) Arrangement.End else Arrangement.Start
                     when (topology.axis) {
-                        Axis.Row ->
+                        Axis.Row -> {
                             Row(key = TARGET, spacing = spacing, horizontalArrangement = arrangement) {
                                 repeat(topology.childCount) { index ->
                                     val weight = topology.weight(index)
@@ -47,8 +47,9 @@ internal class LinearMeasurementFixture(
                                     Spacer(key = ElementKey(index), modifier = modifier.size(extent, 1))
                                 }
                             }
+                        }
 
-                        Axis.Column ->
+                        Axis.Column -> {
                             Column(key = TARGET, spacing = spacing, verticalArrangement = arrangement) {
                                 repeat(topology.childCount) { index ->
                                     val weight = topology.weight(index)
@@ -56,6 +57,7 @@ internal class LinearMeasurementFixture(
                                     Spacer(key = ElementKey(index), modifier = modifier.size(1, extent))
                                 }
                             }
+                        }
                     }
                 }
             }
@@ -79,9 +81,7 @@ internal class LinearMeasurementFixture(
                 source.publish(revision)
             }
 
-            Operation.IdleFrame -> {
-                Unit
-            }
+            Operation.IdleFrame -> {}
         }
         return session.frame(constraints())
     }
@@ -136,13 +136,16 @@ internal class LinearMeasurementFixture(
     private fun constraints(): Constraints {
         val cross = if (resized) 181 else 180
         return when (topology.bounds) {
-            Bounds.Finite -> Constraints.fixed(if (resized) 321 else 320, cross)
+            Bounds.Finite -> {
+                Constraints.fixed(if (resized) 321 else 320, cross)
+            }
 
-            Bounds.IntrinsicMain ->
+            Bounds.IntrinsicMain -> {
                 when (topology.axis) {
                     Axis.Row -> Constraints(maxHeight = cross)
                     Axis.Column -> Constraints(maxWidth = cross)
                 }
+            }
         }
     }
 

@@ -390,18 +390,25 @@ public enum class LinearMeasurementCase(
         /** Positive scalar weight for this direct child, or absence of weight parent data. */
         public fun weight(index: Int): Float? =
             when (shape) {
-                Shape.None -> null
+                Shape.None -> {
+                    null
+                }
 
-                Shape.SparseEndsFill ->
+                Shape.SparseEndsFill -> {
                     when (index) {
                         0 -> 1f
                         childCount - 1 -> 3f
                         else -> null
                     }
+                }
 
-                Shape.AlternatingFill -> if (index % 2 == 0) (index % 3 + 1).toFloat() else null
+                Shape.AlternatingFill -> {
+                    if (index % 2 == 0) (index % 3 + 1).toFloat() else null
+                }
 
-                Shape.AllFill, Shape.AllNonfill -> (index % 3 + 1).toFloat()
+                Shape.AllFill, Shape.AllNonfill -> {
+                    (index % 3 + 1).toFloat()
+                }
             }
     }
 }
