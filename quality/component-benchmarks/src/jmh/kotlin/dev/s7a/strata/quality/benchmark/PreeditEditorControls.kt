@@ -144,7 +144,8 @@ internal object PreeditEditorControls {
             editor.state.value = "Q"
             check(editor.evaluations == evaluations)
             check(
-                editor.frame()
+                editor
+                    .frame()
                     .semantics
                     .single()
                     .semantics
@@ -154,7 +155,8 @@ internal object PreeditEditorControls {
             editor.enabled.value = false
             check(editor.input(inputs.events.first()) == InputResult.Consumed)
             check(
-                editor.frame()
+                editor
+                    .frame()
                     .semantics
                     .single()
                     .semantics
@@ -205,7 +207,8 @@ internal object PreeditEditorControls {
                 PreeditRetention.inspect(second.host, 0, 0)
                 second.state.observe {}.close()
                 check(
-                    first.frame()
+                    first
+                        .frame()
                         .semantics
                         .single()
                         .semantics

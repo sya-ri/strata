@@ -34,10 +34,19 @@ internal object PreeditRetention {
             if (editorType.isInstance(value)) found.add(value)
             if (compositionType.isInstance(value)) preedits++
             when (value) {
-                is Array<*> -> value.filterNotNull().forEach(pending::add)
-                is Iterable<*> -> value.filterNotNull().forEach(pending::add)
-                is Map<*, *> -> (value.keys + value.values).filterNotNull().forEach(pending::add)
-                else ->
+                is Array<*> -> {
+                    value.filterNotNull().forEach(pending::add)
+                }
+
+                is Iterable<*> -> {
+                    value.filterNotNull().forEach(pending::add)
+                }
+
+                is Map<*, *> -> {
+                    (value.keys + value.values).filterNotNull().forEach(pending::add)
+                }
+
+                else -> {
                     if (
                         value.javaClass.name.startsWith("dev.s7a.strata.runtime.") &&
                         value.javaClass.name
@@ -46,6 +55,7 @@ internal object PreeditRetention {
                     ) {
                         enqueueFields(value, pending)
                     }
+                }
             }
         }
         check(found.size == editors && preedits == compositions) { "Current editor/composition ownership changed: ${found.size}/$preedits" }

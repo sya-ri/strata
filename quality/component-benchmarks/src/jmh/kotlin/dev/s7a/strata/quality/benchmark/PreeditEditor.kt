@@ -41,7 +41,6 @@ internal class PreeditEditor(
     private val advances: Map<Int, Int> = emptyMap(),
     borrowedState: TextAreaState? = null,
 ) : AutoCloseable {
-
     /**
      * Logical complete-frame viewport; padding leaves a 64 by 36 text clip.
      */
