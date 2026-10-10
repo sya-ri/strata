@@ -29,12 +29,13 @@ internal class RootOverlayScopeThreadTest {
                 val executor = Executors.newSingleThreadExecutor()
                 probe.rootOverlay = { scope ->
                     val expectedOwner = RuntimeExecutionOwner.current()
-                    executor.submit {
-                        assertNotEquals(expectedOwner, RuntimeExecutionOwner.current())
-                        val failure = assertFailsWith<IllegalStateException> { scope.anchorBounds }
-                        assertEquals("This runtime object requires its owning execution context.", failure.message)
-                        assertEquals(assertFailsWith<IllegalStateException> { scope.size }.message, failure.message)
-                    }.get(5, TimeUnit.SECONDS)
+                    executor
+                        .submit {
+                            assertNotEquals(expectedOwner, RuntimeExecutionOwner.current())
+                            val failure = assertFailsWith<IllegalStateException> { scope.anchorBounds }
+                            assertEquals("This runtime object requires its owning execution context.", failure.message)
+                            assertEquals(assertFailsWith<IllegalStateException> { scope.size }.message, failure.message)
+                        }.get(5, TimeUnit.SECONDS)
                     assertEquals(IntRect(0, 0, 4, 4), scope.anchorBounds)
                     scope.fillRectangle(scope.anchorBounds, ArgbColor(-1))
                 }
@@ -68,18 +69,19 @@ internal class RootOverlayScopeThreadTest {
         probe.rootOverlay = { scope ->
             assertNotEquals(constructionThread, Thread.currentThread())
             assertEquals(IntRect(0, 0, 4, 4), scope.anchorBounds)
-            contender.submit {
-                var invoked = false
-                val failure =
-                    assertFailsWith<IllegalStateException> {
-                        owner.run {
-                            invoked = true
-                            scope.anchorBounds
+            contender
+                .submit {
+                    var invoked = false
+                    val failure =
+                        assertFailsWith<IllegalStateException> {
+                            owner.run {
+                                invoked = true
+                                scope.anchorBounds
+                            }
                         }
-                    }
-                assertEquals("The runtime owner is already executing.", failure.message)
-                assertEquals(false, invoked)
-            }.get(5, TimeUnit.SECONDS)
+                    assertEquals("The runtime owner is already executing.", failure.message)
+                    assertEquals(false, invoked)
+                }.get(5, TimeUnit.SECONDS)
             scope.fillRectangle(scope.anchorBounds, ArgbColor(-1))
         }
         owner.run {
@@ -88,12 +90,13 @@ internal class RootOverlayScopeThreadTest {
             tree.layout()
         }
         try {
-            executor.submit {
-                owner.run {
-                    guard.check()
-                    assertTrue(tree.paint().isNotEmpty())
-                }
-            }.get(5, TimeUnit.SECONDS)
+            executor
+                .submit {
+                    owner.run {
+                        guard.check()
+                        assertTrue(tree.paint().isNotEmpty())
+                    }
+                }.get(5, TimeUnit.SECONDS)
             owner.run {
                 guard.check()
                 assertFailsWith<IllegalStateException> { probe.scopes.single().anchorBounds }
@@ -129,13 +132,14 @@ internal class RootOverlayScopeThreadTest {
         }
         val executor = Executors.newSingleThreadExecutor()
         try {
-            executor.submit {
-                val rectangle = requireNotNull(copied)
-                assertEquals(IntRect(0, 0, 4, 4), rectangle)
-                assertEquals(IntSize(4, 4), rectangle.size)
-                assertEquals(4, rectangle.right)
-                assertEquals("This runtime object requires its owning execution context.", assertFailsWith<IllegalStateException> { probe.scopes.single().anchorBounds }.message)
-            }.get(5, TimeUnit.SECONDS)
+            executor
+                .submit {
+                    val rectangle = requireNotNull(copied)
+                    assertEquals(IntRect(0, 0, 4, 4), rectangle)
+                    assertEquals(IntSize(4, 4), rectangle.size)
+                    assertEquals(4, rectangle.right)
+                    assertEquals("This runtime object requires its owning execution context.", assertFailsWith<IllegalStateException> { probe.scopes.single().anchorBounds }.message)
+                }.get(5, TimeUnit.SECONDS)
         } finally {
             executor.shutdownNow()
             assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
