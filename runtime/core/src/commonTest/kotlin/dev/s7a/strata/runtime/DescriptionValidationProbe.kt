@@ -139,17 +139,24 @@ internal class DescriptionValidationProbe {
     ) {
         override fun hashCode(): Int {
             probe.trace.add(Event.Hash(id))
-            hashFailure?.let { throw it }
+            propagateFailure(hashFailure)
             return hash
         }
 
         override fun equals(other: Any?): Boolean {
             probe.trace.add(Event.Equality(id, (other as? Key)?.id))
-            equalityFailure?.let { throw it }
+            propagateFailure(equalityFailure)
             return other is Key && value == other.value
         }
 
         override fun toString(): String = "key-$id"
+
+        /**
+         * Propagates an injected failure unchanged after the key callback has been recorded.
+         */
+        private fun propagateFailure(failure: Throwable?) {
+            if (failure != null) throw failure
+        }
     }
 
     /**

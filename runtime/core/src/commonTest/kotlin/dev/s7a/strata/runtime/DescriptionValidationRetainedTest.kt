@@ -271,12 +271,14 @@ internal class DescriptionValidationRetainedTest {
 
     @Test
     fun c40TerminalFailure() {
+        fun failingCleanup(failure: IllegalStateException): () -> Unit = { throw failure }
+
         val first = IllegalStateException("last child cleanup")
         val second = IllegalStateException("first child cleanup")
         val last = IllegalStateException("root cleanup")
         val probe = DescriptionValidationProbe()
         val tree = UiTree()
-        tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1), dispose = { throw second }), probe.element(2, key = probe.key(2), dispose = { throw first })), dispose = { throw last }))
+        tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1), dispose = failingCleanup(second)), probe.element(2, key = probe.key(2), dispose = failingCleanup(first))), dispose = failingCleanup(last)))
         assertSame(first, assertFailsWith<IllegalStateException> { tree.close() })
         assertEquals(listOf(second, last), first.suppressedExceptions)
         val events = probe.trace.toList()
