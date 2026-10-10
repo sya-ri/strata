@@ -30,6 +30,8 @@ kotlin.sourceSets.named("jsMain") {
     kotlin.exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
     kotlin.srcDir(rootProject.file("quality/component-benchmarks/src/jmh/kotlin"))
     kotlin.include("**/ComponentWorkload.kt", "**/integration/web/*.kt")
+    kotlin.srcDir(rootProject.file("examples/web/src/jsMain/kotlin"))
+    kotlin.include("**/CounterDemo.kt", "**/DemoActions.kt")
 }
 
 val installWebBrowsers = tasks.register<Exec>("installWebBrowsers") {
@@ -42,7 +44,7 @@ val buildWeb = tasks.register<Exec>("buildWeb") {
     description = "Bundles the application and emits its independently rendered initial HTML."
     dependsOn("jsBrowserDistribution", installWebBrowsers)
     inputs.dir(layout.buildDirectory.dir("dist/js/productionExecutable"))
-    inputs.file(rootProject.file("tools/web/build.mjs"))
+    inputs.dir(rootProject.file("tools/web"))
     outputs.dir(layout.buildDirectory.dir("site"))
     commandLine("node", rootProject.file("tools/web/build.mjs"), "build", layout.buildDirectory.get().asFile)
 }

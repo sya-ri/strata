@@ -31,6 +31,8 @@ It includes `index.html` with native styling and `minecraft.html` with `WebTheme
 The theme uses original CSS and browser monospace text, with no dependency on game assets or native font libraries.
 Build and mount must use the same theme; adoption rejects mismatches before modifying initial markup.
 The full-document renderer includes theme CSS before the body, and interactive hosts release their own stylesheet on close.
+Web Button resolves its label and uses the caller's fixed logical width without requiring a Canvas context or measuring label fit.
+Single-line Text still measures its natural width with the themed browser Canvas, including when a modifier later constrains its width; Canvas failures retain the existing Text failure and cleanup boundary.
 Node.js must be available on `PATH`; Playwright is resolved by the Kotlin npm installation using the version catalog, and `installWebBrowsers` installs its matching engines.
 Run `./gradlew :integration:web:check` to compare the shared scenario's Minecraft semantics and headless rasterization with Chromium, Firefox, and WebKit state transitions.
 The browser check opens the emitted document with JavaScript disabled first, then verifies startup adoption, native button actions, ordinary conditionals, and keyed sibling identity.
