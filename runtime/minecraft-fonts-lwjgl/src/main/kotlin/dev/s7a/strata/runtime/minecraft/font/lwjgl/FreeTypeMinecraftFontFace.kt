@@ -121,11 +121,26 @@ internal class FreeTypeMinecraftFontFace(
         require(width <= stride && stride <= Int.MAX_VALUE) { "FreeType returned an invalid glyph stride." }
         val rowStride = stride.toInt()
         val buffer = checkNotNull(rendered.buffer(Math.multiplyExact(rowStride, height))) { "FreeType returned no glyph pixels." }
+        val pixelCount = Math.multiplyExact(width, height)
         val pixels =
-            IntArray(Math.multiplyExact(width, height)) { offset ->
-                val row = offset / width
-                val physicalRow = if (0 <= pitch) row else height - row - 1
-                (buffer[physicalRow * rowStride + offset % width].toInt() and 0xff) * 0x01010101
+            if (0 < width && 0 < height) {
+                val output = IntArray(pixelCount)
+                for (row in 0 until height) {
+                    val physicalRow = if (0 <= pitch) row else height - row - 1
+                    val sourceBase = physicalRow * rowStride
+                    val outputBase = row * width
+                    for (column in 0 until width) {
+                        output[outputBase + column] = (buffer[sourceBase + column].toInt() and 0xff) * 0x01010101
+                    }
+                }
+                output
+            } else {
+                // Private nonpositive inputs retain the original initializer and failure order.
+                IntArray(pixelCount) { offset ->
+                    val row = offset / width
+                    val physicalRow = if (0 <= pitch) row else height - row - 1
+                    (buffer[physicalRow * rowStride + offset % width].toInt() and 0xff) * 0x01010101
+                }
             }
         return createOwnedDrawImage(IntSize(width, height), pixels)
     }
