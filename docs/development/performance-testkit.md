@@ -443,6 +443,24 @@ The original `jmh` task and its result path remain unchanged.
 `:quality:benchmarks:check` verifies the actual generated historical matrix before either task is used.
 Use the same repetition and mode properties and packaged summary/comparison commands as the component corpus.
 
+The separate `EmptyChildBenchmark` fixture is selected with `-Pstrata.performance.benchmarks=EmptyChildBenchmark -Pstrata.performance.suite=empty-child` on `jmhHistorical`.
+Its typed inventory has 60 cases: 24 compatible fresh-leaf redeclarations, 12 same-description or clean-frame controls, and 24 transitions involving nonempty target children, each with diagnostics disabled and enabled.
+The complete AverageTime and SampleTime inventory has 120 rows; three independent baseline and candidate repetitions require 720 matched score cells.
+Use one compiled fixture and collector with the existing `strata.performance.historicalRuntime` manifest replacement for both sets of actual runtime archives.
+The shared portable fixture and all 32 independent controls also run through the core's common JVM and JavaScript tests.
+The fixture's `verifyWork` preflight verifies the generated inventory, callback and retained-diagnostic assertions, exact headless pixels, and terminal runtime-reference release before collection.
+`EmptyChildWorkEvidence` additionally writes a fresh JSON qualification file from its one output-path argument, recording all controls, complete work counters, actual loaded archive hashes, and common fixture identities.
+Run that same executable and source against both archive sets before formal collection, and preserve those files as external fixture inputs.
+
+Each invocation constructs, attaches and settles a private tree or session outside JMH timing, executes one complete update or publication-plus-frame operation inside timing, then closes outside timing.
+Fresh description construction and source snapshot publication are included in the measured operation; same-description and clean-frame cases perform their declared unchanged operation.
+Cold invocation setup prevents transition reset work from changing the runtime comparison, and both variants use identical declarations, owners, collectors and setup.
+JMH's invocation timing boundary adds overhead visible in tiny and clean cases; the GC profiler's iteration-wide normalized allocation includes setup and cleanup.
+Report that allocation scope explicitly, retain raw repeated scores and noise evidence, and do not label it isolated update allocation or extrapolate frame rates.
+Eligible descendant update callbacks and nonempty parent update callbacks are counted separately.
+An independently observed fresh empty dynamic list records validation traversal and child-matching traversal without a runtime branch counter.
+Compare that observation alongside preserved validation, component/modifier work, structure, identity, cleanup and presentation evidence; it cannot establish behavioral parity on its own.
+
 JMH evidence requires an independent fork and rejects JVM flags that redirect the classpath, replace its classloader, patch modules or inject instrumentation agents.
 Such flags could make parent-loaded artifact identities certify different child code; they fail before any output directory or success receipt is created.
 Ordinary heap, GC and native-access JVM options remain supported and are recorded by JMH.

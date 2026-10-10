@@ -346,6 +346,7 @@ internal class Reconciler(
         parent: RetainedNode,
         descriptions: List<Element>,
     ) {
+        if (parent.children.isEmpty() && descriptions.isEmpty()) return
         val oldChildren = parent.children.toList()
         val keyed = HashMap<ElementKey<*>, RetainedNode>()
         oldChildren.forEach { oldChild ->
