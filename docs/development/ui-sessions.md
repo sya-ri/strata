@@ -137,6 +137,17 @@ Regions in one session share one mutation guard even when several regions and th
 The value getters of existing `CheckboxState`, `CycleButtonState`, `SliderState`, `TextFieldState`, and `TextAreaState` participate in the same tracking, so conditions based on those values also rebuild their screen.
 Their retained component subscriptions remain independent and continue to receive distinct normalized value changes.
 
+Each accepted assignment captures the current observer sequence and first-occurrence distinct mutation-owner sequence after access and current-operation checks, before entering guards or invoking caller equality.
+The state lazily retains one immutable routing plan keyed by those ordered observation identities and their fixed owner identities, under its construction execution owner.
+Every successful dependency admission or removal immediately clears that stored plan; duplicate admission and absent removal preserve order.
+Removing A1 from [A1, B1, A2] changes the next owner order from [A, B] to [B, A].
+One ongoing attempt keeps its original captured membership even if a guard or equality closes an observer; an unequal assignment still commits before invoking every captured invalidation in order.
+The last removal clears all cached observer/owner lists without waiting for a future assignment, while an executing attempt releases its private captured reference at its existing finally exit.
+Only current derived routing is retained, with N observation references and U owner references for the current membership; the preexisting authoritative dependency set remains outside that plan.
+No historical plan or plan backing capacity survives membership changes, and an unobserved state stores no plan.
+Values, equality results, mutation permission and invalidation outcomes are never cached.
+Every attempt validates access and operation phases, enters each owner in captured order, invokes exactly the original current-value equality, and leaves only the successfully entered prefix in reverse order.
+
 The caller owns state independently of a screen.
 Detach retains content dependencies so changes made while detached are observed on reattachment; close or terminal failure releases all dependencies without disposing caller-owned state.
 Removing a branch follows ordinary retained-node cleanup and key identity rules; values that must survive removal belong outside that branch's node lifetime.
