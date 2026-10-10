@@ -95,10 +95,12 @@ public enum class DescriptionValidationCase(
     public enum class Route {
         RootDefinition,
         ObserveRebuild,
+
         /**
          * Invalidates root content while returning an identical prepared description.
          */
         SameDescription,
+
         /**
          * Changes no state after settling.
          */
@@ -111,6 +113,7 @@ public enum class DescriptionValidationCase(
     public enum class Shape {
         Wide,
         ChainGroups16,
+
         /**
          * Breadth-first indices with at most two children per parent.
          */

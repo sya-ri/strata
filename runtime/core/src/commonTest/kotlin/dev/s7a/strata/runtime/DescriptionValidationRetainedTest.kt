@@ -9,6 +9,7 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
 import dev.s7a.strata.input.TextInputEvent
 import dev.s7a.strata.modifier.Modifier
@@ -72,7 +73,9 @@ internal class DescriptionValidationRetainedTest {
             val paint = tree.paint()
             val semantics = tree.semantics()
             val nodes = probe.nodes.toList()
+            assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
             val focus = nodes.map { it.focused }
+            assertEquals(listOf(false, true), focus)
             assertEquals(InputResult.Consumed, tree.dispatchTextInput(TextInputEvent.Character(65)))
             val editing = nodes.map { it.editing }
             val history = probe.trace.toList()

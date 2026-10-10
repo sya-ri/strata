@@ -57,16 +57,24 @@ internal class DescriptionValidationFixture(
         session =
             createRuntimeUiSession {
                 when (case.route) {
-                    DescriptionValidationCase.Route.RootDefinition -> description(state.value)
-                    DescriptionValidationCase.Route.ObserveRebuild ->
+                    DescriptionValidationCase.Route.RootDefinition -> {
+                        description(state.value)
+                    }
+
+                    DescriptionValidationCase.Route.ObserveRebuild -> {
                         evaluateComponentTree {
                             Observe(source) { element(description(it % 2)) }
                         }
+                    }
+
                     DescriptionValidationCase.Route.SameDescription -> {
                         state.value
                         checkNotNull(prepared)
                     }
-                    DescriptionValidationCase.Route.Clean -> checkNotNull(prepared)
+
+                    DescriptionValidationCase.Route.Clean -> {
+                        checkNotNull(prepared)
+                    }
                 }
             }
         session.attach()
@@ -100,16 +108,17 @@ internal class DescriptionValidationFixture(
                 verifyPresentation(frame, if (changed) revision % 2 else 0)
                 monitor.verify(
                     WorkExpectation(
-                        exact = mapOf(
-                            UiRenderMetric.FrameSuccess.name to 1L,
-                            UiRenderMetric.RootEvaluation.name to if (case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.SameDescription) 1L else 0L,
-                            UiRenderMetric.ContentEvaluation.name to if (case.route == DescriptionValidationCase.Route.ObserveRebuild) 1L else 0L,
-                            UiRenderMetric.NodeUpdate.name to if (changed) case.descendants + 1L else 0L,
-                            UiRenderMetric.NodeCreate.name to 0L,
-                            UiRenderMetric.NodeDispose.name to 0L,
-                            UiRenderMetric.Paint.name to if (changed) case.descendants + 1L else 0L,
-                            UiRenderMetric.Semantics.name to if (changed) case.descendants + 1L else 0L,
-                        ),
+                        exact =
+                            mapOf(
+                                UiRenderMetric.FrameSuccess.name to 1L,
+                                UiRenderMetric.RootEvaluation.name to if (case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.SameDescription) 1L else 0L,
+                                UiRenderMetric.ContentEvaluation.name to if (case.route == DescriptionValidationCase.Route.ObserveRebuild) 1L else 0L,
+                                UiRenderMetric.NodeUpdate.name to if (changed) case.descendants + 1L else 0L,
+                                UiRenderMetric.NodeCreate.name to 0L,
+                                UiRenderMetric.NodeDispose.name to 0L,
+                                UiRenderMetric.Paint.name to if (changed) case.descendants + 1L else 0L,
+                                UiRenderMetric.Semantics.name to if (changed) case.descendants + 1L else 0L,
+                            ),
                     ),
                 )
                 monitor.checkpoint()
@@ -122,8 +131,12 @@ internal class DescriptionValidationFixture(
         check(source.subscribed == (case.route == DescriptionValidationCase.Route.ObserveRebuild))
     }
 
-    private fun verifyPresentation(frame: RuntimeUiFrame, value: Int) {
+    private fun verifyPresentation(
+        frame: RuntimeUiFrame,
+        value: Int,
+    ) {
         val order = ArrayList<Int>()
+
         fun visit(index: Int) {
             order.add(index)
             when (case.shape) {
@@ -132,6 +145,7 @@ internal class DescriptionValidationFixture(
                         if (child <= case.descendants) visit(child)
                     }
                 }
+
                 DescriptionValidationCase.Shape.Wide, DescriptionValidationCase.Shape.ChainGroups16 -> {
                     if (index == 0) order.addAll(1..case.descendants)
                 }
@@ -161,5 +175,7 @@ internal class DescriptionValidationFixture(
     /**
      * Stable typed key prepared once rather than publishing changing key identities.
      */
-    private data class Key(val index: Int)
+    private data class Key(
+        val index: Int,
+    )
 }

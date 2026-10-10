@@ -218,7 +218,7 @@ internal class DescriptionValidationProbe {
             private set
 
         override val acceptsFocus: Boolean get() = true
-        override val requestsInitialFocus: Boolean get() = true
+        override val requestsInitialFocus: Boolean get() = false
         override val requiresTextInput: Boolean get() = true
 
         override fun onFocusChanged(focused: Boolean) {
