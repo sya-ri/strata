@@ -93,7 +93,7 @@ gradle.buildFinished { result ->
     if (buildDirectory != null) {
         def buildPath = gradle.buildPath
         def buildKey = MessageDigest.getInstance('SHA-256').digest(buildPath.getBytes('UTF-8')).encodeHex().toString()
-        def receipt = new File(binding.receipts, "$buildKey.json")
+        def receipt = new File(binding.receipts, "${buildKey}.json")
         if (receipt.exists()) fail('selection receipt must be fresh')
         receipt.parentFile.mkdirs()
         receipt.text = JsonOutput.prettyPrint(JsonOutput.toJson([
