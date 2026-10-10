@@ -48,6 +48,22 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Canonical TextArea preedit output
+
+Each preedit request validates raw and normalized capacity, every block's Unicode/control content, metadata agreement, complete text, scalar caret boundaries and focused ranges before changing editor state.
+Already canonical text may share only the immutable event String; a local output buffer begins at the first mandatory non-LF conversion and copies the validated canonical prefix once.
+The normalizer retains no event, block list, previous text, authoritative state or output pool.
+Conversion, including intermediate CRLF boundaries across blocks, produces detached canonical text.
+
+The complete preedit corpus contains 41 normalization/input-frame cases and four frame controls, for 86 comparison rows.
+Select both `TextAreaPreeditBenchmark,TextAreaPreeditFrameBenchmark` through the generic `:quality:component-benchmarks:jmhComponents` collector.
+Its optional `strata.performance.componentRuntime` manifest replaces exactly the API, core, headless, Minecraft and font runtime archives while retaining loaded class-tree verification.
+Use the same immutable compiled fixtures, collector, controls and unchanged committed-value normalizer for both variants.
+Each invocation consumes 64 prepared events; input-frame measurements include the bounded composition reset and every completed frame, while committed edit controls include their state resets.
+Normalizer-only measurements include the common reflection invocation boundary, and diagnostics, pixel comparison and event construction remain outside timing.
+Independent admission covers all 28 scalar, boundary, state, focus, geometry, pixel, lifetime and retention controls before collection.
+Three independent Standard repetitions per variant must retain every row and slower control; JVM results establish no native/GPU timing or upload benefit.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
