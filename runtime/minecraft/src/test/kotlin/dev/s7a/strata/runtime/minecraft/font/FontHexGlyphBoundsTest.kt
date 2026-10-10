@@ -17,7 +17,7 @@ import kotlin.random.Random
  * Compares packed natural bounds and the public consumer with the original scalar shift/pixel oracle.
  * Expected columns never call either runtime ink or bounds.
  */
-class FontHexGlyphBoundsTest {
+internal class FontHexGlyphBoundsTest {
     @Test
     fun everyAdmittedColumnAndRowMatchesOriginalScalarBounds() {
         for (width in listOf(8, 16, 24, 32)) {
