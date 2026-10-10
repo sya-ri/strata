@@ -36,8 +36,7 @@ internal class PreeditRuntime {
     /**
      * Extracts immutable output for untimed independent comparisons.
      */
-    internal fun output(value: Any): Triple<String, Int, IntRange?> =
-        Triple(text.invoke(value) as String, caret.invoke(value) as Int, focused.invoke(value) as IntRange?)
+    internal fun output(value: Any): Triple<String, Int, IntRange?> = Triple(text.invoke(value) as String, caret.invoke(value) as Int, focused.invoke(value) as IntRange?)
 
     private fun getter(prefix: String): Method = resultType.declaredMethods.single { it.name.startsWith(prefix) && it.parameterCount == 0 }
 }

@@ -58,6 +58,7 @@ internal class PreeditPixels(
     internal fun pixels(): IntArray {
         val pixels = IntArray(72 * 44) { 0xFF426789.toInt() }
         val layout = layout()
+
         fun fill(
             left: Int,
             top: Int,

@@ -82,8 +82,8 @@ internal object PreeditSourceWork {
     }
 
     private fun isBreak(scalar: Int): Boolean = scalar in setOf(10, 13, 11, 12, 0x85, 0x2028, 0x2029)
-    private fun accepted(scalar: Int): Boolean =
-        (scalar in 0xD800..0xDFFF).not() && (isBreak(scalar) || (32 <= scalar && scalar != 127 && scalar != 0xA7))
+
+    private fun accepted(scalar: Int): Boolean = (scalar in 0xD800..0xDFFF).not() && (isBreak(scalar) || (32 <= scalar && scalar != 127 && scalar != 0xA7))
 
     private class Work {
         var blockScalarChecks = 0
@@ -98,20 +98,21 @@ internal object PreeditSourceWork {
         var candidateMaterializations = 0
         var wrappers = 0
 
-        fun report(): JsonObject = JsonObject().apply {
-            addProperty("measured", false)
-            addProperty("contract", "pinned-source-expression-work-v1")
-            addProperty("block_scalar_checks", blockScalarChecks)
-            addProperty("full_scalar_checks", fullScalarChecks)
-            addProperty("block_agreement_requests", blockAgreementRequests)
-            addProperty("accepted_wrapper_constructions", wrappers)
-            addProperty("baseline_output_units", baselineOutputUnits)
-            addProperty("candidate_output_units", candidateOutputUnits)
-            addProperty("candidate_validated_prefix_copy_units", candidatePrefixUnits)
-            addProperty("baseline_buffer_constructions", baselineBuffers)
-            addProperty("candidate_buffer_constructions", candidateBuffers)
-            addProperty("baseline_result_materialization_calls", baselineMaterializations)
-            addProperty("candidate_result_materialization_calls", candidateMaterializations)
-        }
+        fun report(): JsonObject =
+            JsonObject().apply {
+                addProperty("measured", false)
+                addProperty("contract", "pinned-source-expression-work-v1")
+                addProperty("block_scalar_checks", blockScalarChecks)
+                addProperty("full_scalar_checks", fullScalarChecks)
+                addProperty("block_agreement_requests", blockAgreementRequests)
+                addProperty("accepted_wrapper_constructions", wrappers)
+                addProperty("baseline_output_units", baselineOutputUnits)
+                addProperty("candidate_output_units", candidateOutputUnits)
+                addProperty("candidate_validated_prefix_copy_units", candidatePrefixUnits)
+                addProperty("baseline_buffer_constructions", baselineBuffers)
+                addProperty("candidate_buffer_constructions", candidateBuffers)
+                addProperty("baseline_result_materialization_calls", baselineMaterializations)
+                addProperty("candidate_result_materialization_calls", candidateMaterializations)
+            }
     }
 }

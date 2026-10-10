@@ -37,7 +37,15 @@ internal object PreeditRetention {
                 is Array<*> -> value.filterNotNull().forEach(pending::add)
                 is Iterable<*> -> value.filterNotNull().forEach(pending::add)
                 is Map<*, *> -> (value.keys + value.values).filterNotNull().forEach(pending::add)
-                else -> if (value.javaClass.name.startsWith("dev.s7a.strata.runtime.") && value.javaClass.name.contains(".font.").not()) enqueueFields(value, pending)
+                else ->
+                    if (
+                        value.javaClass.name.startsWith("dev.s7a.strata.runtime.") &&
+                        value.javaClass.name
+                            .contains(".font.")
+                            .not()
+                    ) {
+                        enqueueFields(value, pending)
+                    }
             }
         }
         check(found.size == editors && preedits == compositions) { "Current editor/composition ownership changed: ${found.size}/$preedits" }

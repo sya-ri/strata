@@ -20,15 +20,16 @@ internal object PreeditEditorControls {
      * Runs the complete editor controls against the actual loaded runtime before collection.
      */
     internal fun verify(runtime: PreeditRuntime): List<String> {
-        val controls = linkedMapOf<String, () -> Unit>(
-            "EqualCaretRangeWork" to ::equalCaretRange,
-            "CurrentRemainingCapacity" to ::replacement,
-            "ImmutableStringAndBlockOwnership" to { ownership(runtime) },
-            "IndependentPixelsGeometryExtrema" to ::extrema,
-            "CommittedCutoffObserverRouting" to ::cutoff,
-            "FailureDetachDisposeOwnerIsolation" to ::lifetime,
-            "CurrentCompositionAndOldFrames" to ::history,
-        )
+        val controls =
+            linkedMapOf<String, () -> Unit>(
+                "EqualCaretRangeWork" to ::equalCaretRange,
+                "CurrentRemainingCapacity" to ::replacement,
+                "ImmutableStringAndBlockOwnership" to { ownership(runtime) },
+                "IndependentPixelsGeometryExtrema" to ::extrema,
+                "CommittedCutoffObserverRouting" to ::cutoff,
+                "FailureDetachDisposeOwnerIsolation" to ::lifetime,
+                "CurrentCompositionAndOldFrames" to ::history,
+            )
         controls.values.forEach { it() }
         return controls.keys.toList()
     }
@@ -120,7 +121,11 @@ internal object PreeditEditorControls {
                 check(editor.input(event) == reference.input(event))
                 val frame = editor.frame()
                 PreeditWorkEvidence.assertFrame(editor, reference, frame)
-                val underlines = frame.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().map { it.bounds }.filter { it.height == 1 }
+                val underlines =
+                    frame.drawCommands
+                        .filterIsInstance<DrawCommand.FillRectangle>()
+                        .map { it.bounds }
+                        .filter { it.height == 1 }
                 check(underlines == reference.underlines())
                 if (raw.length == 2) check(underlines == listOf(IntRect(5, 12, 9, 13)))
                 if (raw.length == 1) check(underlines.isEmpty())
@@ -138,11 +143,23 @@ internal object PreeditEditorControls {
             check(editor.state.value.contentEquals("P") && editor.evaluations == evaluations)
             editor.state.value = "Q"
             check(editor.evaluations == evaluations)
-            check(editor.frame().semantics.single().semantics.value == UiText.Literal("Q"))
+            check(
+                editor.frame()
+                    .semantics
+                    .single()
+                    .semantics
+                    .value == UiText.Literal("Q"),
+            )
             check(editor.evaluations == evaluations + 1)
             editor.enabled.value = false
             check(editor.input(inputs.events.first()) == InputResult.Consumed)
-            check(editor.frame().semantics.single().semantics.disabled)
+            check(
+                editor.frame()
+                    .semantics
+                    .single()
+                    .semantics
+                    .disabled,
+            )
             check(editor.input(inputs.events.first()) == InputResult.Ignored)
             PreeditRetention.inspect(editor.host, 1, 0)
             editor.enabled.value = true
@@ -187,7 +204,13 @@ internal object PreeditEditorControls {
                 second.close()
                 PreeditRetention.inspect(second.host, 0, 0)
                 second.state.observe {}.close()
-                check(first.frame().semantics.single().semantics.value == UiText.Literal("Q"))
+                check(
+                    first.frame()
+                        .semantics
+                        .single()
+                        .semantics
+                        .value == UiText.Literal("Q"),
+                )
             }
         }
         failureCleanup(inputs)
@@ -228,7 +251,13 @@ internal object PreeditEditorControls {
                 if (index % 64 == 0) PreeditRetention.inspect(editor.host, 1, 1)
             }
             check(rasterizeHeadless(old.drawCommands, old.size).copyArgb().contentEquals(pixels))
-            check(old.semantics.single().semantics.value == UiText.Literal("P"))
+            check(
+                old
+                    .semantics
+                    .single()
+                    .semantics
+                    .value == UiText.Literal("P"),
+            )
             editor.input(TextInputEvent.Preedit("", 0, emptyList(), -1))
             editor.frame()
             PreeditRetention.inspect(editor.host, 1, 0)

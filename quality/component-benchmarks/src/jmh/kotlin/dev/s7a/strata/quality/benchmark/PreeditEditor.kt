@@ -41,37 +41,45 @@ internal class PreeditEditor(
     private val advances: Map<Int, Int> = emptyMap(),
     borrowedState: TextAreaState? = null,
 ) : AutoCloseable {
+
     /**
      * Logical complete-frame viewport; padding leaves a 64 by 36 text clip.
      */
     internal val viewport: IntSize = IntSize(72, 44)
     private val stateIdentity = mutableStateOf(borrowedState ?: TextAreaState(inputs.committed, maxLength = inputs.maximum))
+
     /**
      * Sole authoritative committed value, separate from all uncommitted composition.
      */
     internal val state: TextAreaState get() = stateIdentity.value
+
     /**
      * Reactive enabled state used by disabled-routing controls.
      */
     internal val enabled = mutableStateOf(enabled)
+
     /**
      * Actual current backend glyph calls, after the runtime's bounded glyph cache.
      */
     internal var glyphCalls: Int = 0
         private set
+
     /**
      * Content evaluation count makes cutoff and preedit/state separation observable.
      */
     internal var evaluations: Int = 0
         private set
+
     /**
      * Injected exact failure for a previously unrequested glyph during actual frame work.
      */
     internal var glyphFailure: Throwable? = null
+
     /**
      * Exact fallible face cleanup injected only during independent lifetime admission.
      */
     internal var faceCloseFailure: Throwable? = null
+
     /**
      * Exact fallible backend cleanup injected only during independent lifetime admission.
      */
@@ -163,7 +171,9 @@ internal class PreeditEditor(
         backends++
         return object : MinecraftFontBackend {
             private var closed = false
+
             override fun decodePng(bytes: ByteArray): DrawImage = error("Preedit fixtures contain no bitmap provider")
+
             override fun openTrueType(
                 bytes: ByteArray,
                 settings: MinecraftTrueTypeSettings,
@@ -172,12 +182,14 @@ internal class PreeditEditor(
                 faces++
                 return object : MinecraftTrueTypeFace {
                     private var closed = false
+
                     override fun glyph(codePoint: Int): MinecraftFontGlyph {
                         check(closed.not())
                         glyphFailure?.let { throw it }
                         glyphCalls++
                         return MinecraftFontGlyph((advances[codePoint] ?: 1).toFloat(), 0f, 0f, 1f, 1f, glyphImage)
                     }
+
                     override fun close() {
                         if (closed) return
                         closed = true
@@ -186,6 +198,7 @@ internal class PreeditEditor(
                     }
                 }
             }
+
             override fun close() {
                 if (closed) return
                 closed = true

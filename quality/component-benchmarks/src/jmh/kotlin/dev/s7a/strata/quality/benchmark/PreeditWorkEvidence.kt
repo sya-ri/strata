@@ -61,19 +61,20 @@ public object PreeditWorkEvidence {
         check(controls.size == 28 && controls.distinct().size == 28)
         val cases = JsonArray()
         frozen.forEach { (case, inputs) -> cases.add(verifyCase(runtime, case, inputs, output)) }
-        val report = JsonObject().apply {
-            addProperty("contract", "textarea-preedit-behavior-v1")
-            addProperty("measured", false)
-            addProperty("status", "passed")
-            addProperty("case_count", cases.size())
-            addProperty("comparison_rows", rows.size)
-            addProperty("standard_cells", rows.size * 6)
-            addProperty("native_timing", "N/A")
-            addProperty("gpu_upload", "N/A")
-            add("controls", JsonArray().apply { controls.forEach(::add) })
-            add("registered_rows", JsonArray().apply { rows.sorted().forEach(::add) })
-            add("cases", cases)
-        }
+        val report =
+            JsonObject().apply {
+                addProperty("contract", "textarea-preedit-behavior-v1")
+                addProperty("measured", false)
+                addProperty("status", "passed")
+                addProperty("case_count", cases.size())
+                addProperty("comparison_rows", rows.size)
+                addProperty("standard_cells", rows.size * 6)
+                addProperty("native_timing", "N/A")
+                addProperty("gpu_upload", "N/A")
+                add("controls", JsonArray().apply { controls.forEach(::add) })
+                add("registered_rows", JsonArray().apply { rows.sorted().forEach(::add) })
+                add("cases", cases)
+            }
         output?.let { Files.writeString(it.resolve("behavior.json"), report.toString(), StandardOpenOption.CREATE_NEW) }
         println(report)
     }
@@ -110,18 +111,26 @@ public object PreeditWorkEvidence {
                     val frame = editor.frame()
                     val pixels = assertFrame(editor, reference, frame)
                     preserve(output, "$case-$index", frame, editor)
-                    outcomes.add(JsonObject().apply {
-                        addProperty("event", index)
-                        addProperty("consumed", outcome == InputResult.Consumed)
-                        addProperty("pixels_sha256", digest(pixels))
-                        addProperty("commands", frame.drawCommands.size)
-                        addProperty("committed_units", editor.state.value.length)
-                        add("source_expression_work", PreeditSourceWork.describe(event, inputs.remaining))
-                    })
+                    outcomes.add(
+                        JsonObject().apply {
+                            addProperty("event", index)
+                            addProperty("consumed", outcome == InputResult.Consumed)
+                            addProperty("pixels_sha256", digest(pixels))
+                            addProperty("commands", frame.drawCommands.size)
+                            addProperty("committed_units", editor.state.value.length)
+                            add("source_expression_work", PreeditSourceWork.describe(event, inputs.remaining))
+                        },
+                    )
                 }
                 return JsonObject().apply {
                     addProperty("case", case.name)
-                    addProperty("raw_units", inputs.events.first().fullText.length)
+                    addProperty(
+                        "raw_units",
+                        inputs.events
+                            .first()
+                            .fullText
+                            .length,
+                    )
                     addProperty("remaining_units", inputs.remaining)
                     addProperty("deliveries", inputs.events.size)
                     addProperty("immutable_result_reuse", shared)
@@ -187,7 +196,11 @@ public object PreeditWorkEvidence {
         check(editor.state.scrollState.metrics.offset == expected.scroll)
         val pixels = rasterizeHeadless(frame.drawCommands, editor.viewport).copyArgb()
         check(pixels.contentEquals(expected.pixels())) { "Independent complete-frame pixels differ" }
-        val underlines = frame.drawCommands.filterIsInstance<DrawCommand.FillRectangle>().map { it.bounds }.filter { it.height == 1 }
+        val underlines =
+            frame.drawCommands
+                .filterIsInstance<DrawCommand.FillRectangle>()
+                .map { it.bounds }
+                .filter { it.height == 1 }
         check(underlines == expected.underlines()) { "Independent underline geometry differs" }
         return pixels
     }
