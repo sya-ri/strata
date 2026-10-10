@@ -10,12 +10,45 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
  * Verifies that overlapping owner-thread evaluations cannot change each other's dependency tracking or guards.
  */
 internal class StateObservationThreadIsolationTest {
+    @Test
+    fun readCapturesIgnoreStateReadsOnOtherExecutionOwners() {
+        val entered = CountDownLatch(1)
+        val read = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val captured =
+                executor.submit<Boolean> {
+                    StateObservation.captureReads {
+                        entered.countDown()
+                        assertTrue(read.await(5, TimeUnit.SECONDS))
+                    }.second
+                }
+            val other =
+                executor.submit<Int> {
+                    assertTrue(entered.await(5, TimeUnit.SECONDS))
+                    try {
+                        mutableStateOf(42).value
+                    } finally {
+                        read.countDown()
+                    }
+                }
+            assertEquals(42, other.get(5, TimeUnit.SECONDS))
+            assertFalse(captured.get(5, TimeUnit.SECONDS))
+        } finally {
+            entered.countDown()
+            read.countDown()
+            executor.shutdownNow()
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
+    }
+
     @Test
     fun simultaneousEvaluationsTrackOnlyTheirOwnStates() {
         val firstEntered = CountDownLatch(1)

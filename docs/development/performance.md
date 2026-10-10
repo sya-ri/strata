@@ -598,8 +598,22 @@ Primitive-array bytes exclude object headers, temporary decoding allocations, an
 ### Virtual-list retention
 
 A virtual list materializes only the visible rows plus its bounded overscan rows, caches only the current materialized range, and reuses that range while its inputs and viewport remain clean.
+When the range moves, overlapping declarations are keyed by the same absolute index, immutable item reference identity, stable-key equality and current list definition epoch.
+Every current-window item and key is accessed again before reuse; this cache does not replace authoritative source lookup.
+Definition replacement and explicit refresh invalidate the whole window, including equal-count model changes, callback captures, profile context and viewport policy.
+Callbacks that directly read MutableState are not admitted to cross-window reuse; synchronous read capture preserves existing dependency ownership and restores nested contexts on return or failure.
+Observe regions keep their independent source subscriptions, frame cutoff and callback state tracking even when their enclosing row declaration is reused.
+Other caller-owned presentation captures require refresh, as specified by VirtualListState; row content must not rely on a callback for each scroll step.
+The owner-thread cache retains at most the current visible rows plus overscan, including one row record, input identity, key and immutable wrapper per materialized index.
+Moving to a disjoint range drops all previous records; there is no visited-row history or global pool.
+Row construction failure, node removal, session detachment and terminal disposal clear the cache, while reattachment invalidates measurement to reconstruct the current window.
+Existing retained nodes, navigation ownership and stable-key anchors remain separate from declaration reuse.
 Jumping across a large indexed source replaces the current range instead of retaining visited ranges.
 Prepending data preserves the visible stable key without materializing the intervening items.
+`VirtualWindowBenchmark` separates clean frames, one-row moves, fractional moves, disjoint jumps, refresh and definition replacement across 8, 40 and 128 materialized rows with simple, deep, directly stateful and independently observed factories.
+The shared historical collector substitutes actual runtime archives while holding this fixture and its independent callback, full-pixel, geometry, input, semantics and release references identical.
+`MutableStateReadBenchmark` separately measures unobserved and dependency-tracked reads so the admission check's state-getter cost remains visible outside virtualization.
+These are diagnostic timings with standard collector settings; the complete generated work hooks remain ordinary check acceptance without a fixed time threshold.
 
 ### Observed-region retention
 

@@ -4,6 +4,7 @@ import dev.s7a.strata.internal.platform.EvaluationContext
 import dev.s7a.strata.internal.platform.currentOwner
 import dev.s7a.strata.internal.platform.withValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import kotlin.jvm.JvmSynthetic
 
 /**
  * Runtime-owned dependency set for one owner-confined screen evaluator.
@@ -136,11 +137,33 @@ public class StateObservation(
         private val active = EvaluationContext<StateObservation>()
         private val comparing = EvaluationContext<Boolean>()
         private val operations = EvaluationContext<MutableList<StateObservation>>()
+        private val readCapture = EvaluationContext<() -> Unit>()
+
+        /**
+         * Reports whether a synchronous callback read mutable state without changing dependency ownership.
+         * Nested captures also notify their enclosing capture; every exit restores the caller's context.
+         * A derived declaration must not reuse a callback result that performed such a read.
+         */
+        @JvmSynthetic
+        internal fun <T> captureReads(content: () -> T): Pair<T, Boolean> {
+            var read = false
+            val enclosing = readCapture.current
+            val result =
+                readCapture.withValue(
+                    {
+                        read = true
+                        enclosing?.invoke()
+                    },
+                    content,
+                )
+            return result to read
+        }
 
         /**
          * Records a state read in the innermost screen evaluation on this thread.
          */
         internal fun record(state: MutableState<*>) {
+            readCapture.current?.invoke()
             val observation = active.current ?: return
             checkNotNull(observation.collecting).add(state)
             if (observation.dependencies.add(state)) state.observe(observation)

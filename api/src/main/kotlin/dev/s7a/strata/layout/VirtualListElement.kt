@@ -28,15 +28,16 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.DynamicChildrenNode
 import dev.s7a.strata.node.LayoutNode
-import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.PointerInputNode
+import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
 import dev.s7a.strata.projection.ProjectionScrollBinding
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.state.StateObservation
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
@@ -80,7 +81,7 @@ internal class VirtualListElement(
         LayoutNode,
         PointerInputNode,
         ClipChildrenNode,
-        LifecycleNode,
+        SessionAttachmentNode,
         DeclarationProjectionNode,
         VirtualListController<Any> {
         private var state = initial.state
@@ -100,6 +101,7 @@ internal class VirtualListElement(
         private var cachedStart = 0
         private var cachedEndExclusive = 0
         private var cachedChildren: List<Element> = emptyList()
+        private var cachedRows: List<CachedRow> = emptyList()
         private var anchorKey: Any? = null
         private var anchorIntraRowOffset = 0.0
         private var observer: ScrollStateObserver? = null
@@ -135,10 +137,7 @@ internal class VirtualListElement(
 
         override fun dynamicChildren(): List<Element> {
             if (itemCount == 0) {
-                visibleStart = 0
-                cachedStart = 0
-                cachedEndExclusive = 0
-                cachedChildren = emptyList()
+                clearCachedChildren()
                 clearAnchor()
                 return emptyList()
             }
@@ -151,22 +150,41 @@ internal class VirtualListElement(
             if (cachedChildren.isNotEmpty() && cachedStart == visibleStart && cachedEndExclusive == endExclusive) {
                 return cachedChildren
             }
+            val rows =
+                try {
+                    (visibleStart until endExclusive).map(::rowAt)
+                } catch (failure: Throwable) {
+                    clearCachedChildren()
+                    throw failure
+                }
             cachedStart = visibleStart
             cachedEndExclusive = endExclusive
-            cachedChildren =
-                (visibleStart until endExclusive).map { index ->
-                    val item = itemAt(index)
-                    val itemKey = keyAt(index)
-                    contentWorkObserver?.invoke(ContentWork.RowEvaluation)
-                    val child = itemContent(item)
+            cachedRows = rows
+            cachedChildren = rows.map { it.element }
+            return cachedChildren
+        }
+
+        private fun rowAt(index: Int): CachedRow {
+            val item = itemAt(index)
+            val itemKey = keyAt(index)
+            val previous = cachedRows.getOrNull(index - cachedStart)
+            if (previous != null && previous.reusable && previous.item === item && StateObservation.compare { previous.key == itemKey }) {
+                return previous
+            }
+            contentWorkObserver?.invoke(ContentWork.RowEvaluation)
+            val (child, readsState) = StateObservation.captureReads { itemContent(item) }
+            return CachedRow(
+                item = item,
+                key = itemKey,
+                element =
                     StackElement(
                         contentAlignment = Alignment.TopStart,
                         key = ElementKey(itemKey),
                         children = listOf(child),
                         modifier = Modifier.Empty,
-                    )
-                }
-            return cachedChildren
+                    ),
+                reusable = readsState.not(),
+            )
         }
 
         override fun measure(
@@ -258,6 +276,15 @@ internal class VirtualListElement(
             attached = false
             observer?.close()
             observer = null
+            clearCachedChildren()
+        }
+
+        override fun sessionAttached() {
+            invalidate(DirtyMask.of(DirtyPhase.Measure))
+        }
+
+        override fun sessionDetached() {
+            clearCachedChildren()
         }
 
         override fun dispose() {
@@ -374,7 +401,19 @@ internal class VirtualListElement(
             cachedStart = 0
             cachedEndExclusive = 0
             cachedChildren = emptyList()
+            cachedRows = emptyList()
         }
+
+        /**
+         * Derived current-window declaration and its immutable input identity, never an authoritative source snapshot.
+         * The index is implicit in cachedStart plus list position; replacement/refresh clears the whole definition epoch.
+         */
+        private class CachedRow(
+            val item: Any,
+            val key: Any,
+            val element: Element,
+            val reusable: Boolean,
+        )
 
         private fun resolveIndex(
             target: Any,
