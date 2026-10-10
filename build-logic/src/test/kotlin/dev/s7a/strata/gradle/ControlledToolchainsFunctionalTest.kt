@@ -219,7 +219,6 @@ internal class ControlledToolchainsFunctionalTest {
                 "-Dorg.gradle.java.installations.paths=$home",
                 "-Dorg.gradle.java.installations.fromEnv=",
                 *arguments,
-                "--no-daemon",
                 "--no-parallel",
                 "--max-workers=1",
                 "--stacktrace",
