@@ -14,8 +14,8 @@ internal class MinecraftCanonicalPreeditTest {
     @Test
     fun canonicalIdentityIncludesLfAndSupplementaryTextButRetainsNoCallerBlocks() {
         listOf("ASCII", "日本語", "🙂𐐀", "A\n🙂\n", "", "A".repeat(16_384)).forEach { text ->
-            val blocks = mutableListOf("", text, "")
-            val event = TextInputEvent.Preedit(text, text.length, blocks, 1)
+            val blocks = if (text.isEmpty()) mutableListOf(text) else mutableListOf("", text, "")
+            val event = TextInputEvent.Preedit(text, text.length, blocks, blocks.size / 2)
             blocks.clear()
             val normalized = checkNotNull(MinecraftTextAreaComposition.normalize(event, text.length))
             assertSame(text, normalized.fullText)
