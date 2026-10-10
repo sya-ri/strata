@@ -264,6 +264,10 @@ internal class TextFieldPreeditFixture(
             )
         created.attach()
         created.frame(viewport)
+        if (row.control == Control.FocusLoss) {
+            // Give this control focus once without a modifier that would reacquire it on the completed frame.
+            check(created.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)) == InputResult.Consumed)
+        }
         return created
     }
 
@@ -272,7 +276,7 @@ internal class TextFieldPreeditFixture(
      */
     private fun UiScope.field() {
         Observe(source) { config ->
-            TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = ElementKey("field"))
+            TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = if (row.control == Control.FocusLoss) Modifier.Empty else Modifier.Empty.initialFocus(), key = ElementKey("field"))
         }
     }
 
