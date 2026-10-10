@@ -76,6 +76,15 @@ Keep expected case counts and fixture-specific pixel, work and lifetime assertio
 Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-properties-file>` with unique labels and absolute regular-file paths.
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
+`FreeTypeGrayscaleBenchmark` defines a separate 40-row corpus: twenty supplied native bitmap conversions, four real glyphs in complete glyph and dirty Text boundaries, and twelve warm, rejected, non-FreeType, snapshot and lifecycle controls.
+Its [fixture inputs](../../quality/component-benchmarks/src/jmh/resources/freetype-grayscale-fixtures.tsv), [comparison matrix](../../quality/component-benchmarks/src/jmh/resources/freetype-grayscale-comparison.tsv), and [independent controls](../../quality/component-benchmarks/src/jmh/resources/freetype-grayscale-controls.tsv) retain the whole scope, including unmeasured and no-benefit rows.
+The actual-converter boundary includes the same reflective vararg adapter on both archives; native buffer preparation and oracle extraction are untimed.
+The dirty Text boundary includes a fresh host, cold native ownership, its complete first frame and terminal close, while the clean Text control uses a primed retained host.
+Before collection, run the generic untimed verifier on a qualified CPU-font runtime, commit the validated actual native admission data, and register that immutable JSON as `freetype-grayscale-admission` through `strata.performance.fixtureInputs`.
+The verifier compares complete pixels, exact Float metric bits, native pitch and Text geometry/semantics with independent scalar references; collection refuses a missing admission input or changed reference outputs.
+Collect the whole matrix with `:quality:component-benchmarks:jmhComponents -Pstrata.jvmOnly=true -Pstrata.performance.benchmarks=FreeTypeGrayscaleBenchmark -Pstrata.performance.suite=freetype-grayscale` using unchanged Standard settings and three independent repetitions per actual runtime archive.
+The thirty-control matrix, loaded runtime origins, CPU time and normalized allocation, final quality/native gates and separately qualified native presentation comparison remain distinct acceptance evidence.
+These CPU measurements establish no upload, GPU or FPS improvement.
 
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
 This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
