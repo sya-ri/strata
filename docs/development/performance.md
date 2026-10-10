@@ -86,6 +86,17 @@ These markers track existing phase participation; they do not skip required meas
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
 Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
+### Identical immutable modifier chains
+
+A fresh compatible component description sharing the exact previous `Modifier` instance reuses its current active modifier membership without diff collections, per-position masks or comparison pairs.
+Complete incoming validation, component updates, deferred content, monitoring and ordinary child reconciliation still run.
+Structural child reconciliation refreshes effective parent links even when a child's chain is unchanged; distinct chains retain positional type reconciliation and lifecycle/failure ordering.
+This identity guard adds no cache, shared nodes or historical references.
+Common JVM/JavaScript tests cover validation, clean revisions, effective ancestry, shared-chain owner isolation, deferred source cutoff and terminal failure cleanup; the external SPI verifies parent-scope reads.
+`ModifierReconciliationBenchmark` freezes fresh alternating declarations with chains of zero, one, eight and 32 modifiers across one and 1,000 entries, plus equivalent-chain, changed-description, replacement, add/remove, reorder and keyed controls.
+Select this separate corpus with `-Pstrata.performance.benchmarks=ModifierReconciliationBenchmark -Pstrata.performance.suite=modifier-reconciliation`.
+It measures retained update work including validation and component/child callbacks, with declaration construction and presentation excluded; source-level bookkeeping counts are distinct from measured surviving allocation.
+
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.

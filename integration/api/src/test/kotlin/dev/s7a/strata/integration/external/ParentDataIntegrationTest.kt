@@ -60,6 +60,34 @@ internal class ParentDataIntegrationTest {
     }
 
     @Test
+    fun identicalChildChainKeepsProviderIdentityAndReadsCurrentParentScopeAfterInvalidation() {
+        val probe = ParentDataProbe()
+        val externalProbe = ExternalProbe()
+        val value = ParentDataValue(7)
+        val modifier = Modifier.Empty.then(ParentDataModifierElement(probe, value = value))
+        val tree = UiTree()
+        try {
+            tree.update(treeWithChild(probe, externalProbe, modifier))
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+            val provider = probe.providers.single()
+            tree.update(treeWithChild(probe, externalProbe, modifier))
+            tree.measure(Constraints.fixed(10, 10))
+            tree.layout()
+            assertSame(provider, probe.providers.single())
+            assertEquals(2, provider.readCount)
+            tree.measure(Constraints.fixed(11, 11))
+            tree.layout()
+            assertEquals(4, provider.readCount)
+            assertEquals(listOf(value, value), probe.consumerMeasureValues)
+            assertEquals(listOf(value, value), probe.consumerLayoutValues)
+            assertEquals(1, externalProbe.componentUpdateCalls)
+        } finally {
+            tree.close()
+        }
+    }
+
+    @Test
     fun aDifferentKeyWithTheSameRuntimeClassDoesNotMatch() {
         val parentProbe = ParentDataProbe()
         val externalProbe = ExternalProbe()
