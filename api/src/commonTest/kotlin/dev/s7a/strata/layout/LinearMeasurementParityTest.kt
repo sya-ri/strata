@@ -17,13 +17,14 @@ internal class LinearMeasurementParityTest {
     fun weightedAllocationMatchesOriginalBoundsSizesAndOrdering() {
         for (orientation in orientations()) {
             for (count in listOf(0, 1, 16, 128, 4_096)) {
-                val plans = listOf(
-                    List<WeightParentData.Data?>(count) { null },
-                    List(count) { index -> if (index == 0 || index == count - 1) WeightParentData.Data(if (index == 0) 1f else 3f, true) else null },
-                    List(count) { index -> if (index % 2 == 0) WeightParentData.Data((index % 3 + 1).toFloat(), true) else null },
-                    List(count) { index -> WeightParentData.Data((index % 3 + 1).toFloat(), false) },
-                    List(count) { index -> WeightParentData.Data(if (index % 2 == 0) Float.MIN_VALUE else Float.MAX_VALUE, true) },
-                )
+                val plans =
+                    listOf(
+                        List<WeightParentData.Data?>(count) { null },
+                        List(count) { index -> if (index == 0 || index == count - 1) WeightParentData.Data(if (index == 0) 1f else 3f, true) else null },
+                        List(count) { index -> if (index % 2 == 0) WeightParentData.Data((index % 3 + 1).toFloat(), true) else null },
+                        List(count) { index -> WeightParentData.Data((index % 3 + 1).toFloat(), false) },
+                        List(count) { index -> WeightParentData.Data(if (index % 2 == 0) Float.MIN_VALUE else Float.MAX_VALUE, true) },
+                    )
                 for (weights in plans) {
                     for (constraints in bounds(orientation)) {
                         compare(orientation, weights, constraints)
@@ -73,13 +74,14 @@ internal class LinearMeasurementParityTest {
             val successful = scopes(weights)
             compare(orientation, successful, Constraints.fixed(320, 180))
             val trace = successful.first().trace
-            val groups = listOf(
-                trace.filterIsInstance<LinearMeasurementTrace.WeightRead>(),
-                trace.filterIsInstance<LinearMeasurementTrace.Measure>(),
-                trace.filterIsInstance<LinearMeasurementTrace.SizeRead>(),
-                trace.filterIsInstance<LinearMeasurementTrace.AlignmentRead>(),
-                trace.filterIsInstance<LinearMeasurementTrace.Place>(),
-            )
+            val groups =
+                listOf(
+                    trace.filterIsInstance<LinearMeasurementTrace.WeightRead>(),
+                    trace.filterIsInstance<LinearMeasurementTrace.Measure>(),
+                    trace.filterIsInstance<LinearMeasurementTrace.SizeRead>(),
+                    trace.filterIsInstance<LinearMeasurementTrace.AlignmentRead>(),
+                    trace.filterIsInstance<LinearMeasurementTrace.Place>(),
+                )
             for (events in groups) {
                 for (event in listOf(events.first(), events[events.size / 2], events.last())) {
                     val cause = IllegalStateException("Injected linear callback failure")
@@ -130,11 +132,9 @@ internal class LinearMeasurementParityTest {
         VerticalAlignment.entries.map { LinearOrientation.Row(it) } +
             HorizontalAlignment.entries.map { LinearOrientation.Column(it) }
 
-    private fun intrinsic(orientation: LinearOrientation): Constraints =
-        if (orientation.axis == LinearAxis.Horizontal) Constraints(maxHeight = 180) else Constraints(maxWidth = 180)
+    private fun intrinsic(orientation: LinearOrientation): Constraints = if (orientation.axis == LinearAxis.Horizontal) Constraints(maxHeight = 180) else Constraints(maxWidth = 180)
 
-    private fun bounds(orientation: LinearOrientation): List<Constraints> =
-        listOf(Constraints.fixed(320, 180), Constraints.fixed(0, 0), Constraints(1, 321, 2, 181), intrinsic(orientation), Constraints())
+    private fun bounds(orientation: LinearOrientation): List<Constraints> = listOf(Constraints.fixed(320, 180), Constraints.fixed(0, 0), Constraints(1, 321, 2, 181), intrinsic(orientation), Constraints())
 
     private fun scopes(
         weights: List<WeightParentData.Data?>,
@@ -170,7 +170,12 @@ internal class LinearMeasurementParityTest {
         return actual.exceptionOrNull()
     }
 
-    private fun execute(measure: MeasureNode, layout: LayoutNode, scope: LinearMeasurementScope, constraints: Constraints): Result<IntSize> =
+    private fun execute(
+        measure: MeasureNode,
+        layout: LayoutNode,
+        scope: LinearMeasurementScope,
+        constraints: Constraints,
+    ): Result<IntSize> =
         runCatching {
             measure.measure(scope, constraints).also {
                 scope.size = it
