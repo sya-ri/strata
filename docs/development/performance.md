@@ -48,6 +48,16 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Prepared sampled-image requests
+
+Each prepared Fabric frame owns one source list and identity-membership set in first-occurrence display-list order across direct layers and ordered composition tiles.
+The display-list identity, viewport and GUI scale key this current-state reuse; frame replacement, screen detachment and close release its references with the prepared inputs.
+The render-thread descriptions contain only immutable image identities, with one list entry and one membership entry per distinct image, and retain no native handle or historical frame.
+Every device borrow still resolves current native availability, capacity, LRU accounting and independent pins; duplicate-list callers receive the same once-per-identity behavior through a detached request snapshot.
+Per-command fallback counts, GUI draws, source-over quantization and consumption fences remain occurrence-based.
+The independent sampled-source JMH fixture measures full preparation separately from primed borrowing, including distinct equal-pixel sources, unique-source controls and sources repeated across six composition tiles.
+Loaded-client acceptance remains necessary for actual native pixels, uploads and GPU work; a native-free device fixture supplies none of those measurements.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

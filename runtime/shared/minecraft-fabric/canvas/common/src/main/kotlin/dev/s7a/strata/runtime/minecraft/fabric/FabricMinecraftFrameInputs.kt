@@ -71,28 +71,37 @@ internal class FabricMinecraftFrameInputs(
     internal val capacitySampledImages: Long = cpuLayers.fold(capacitySampledImages) { count, layer -> Math.addExact(count, layer.capacitySampledImages.toLong()) }
 
     /**
-     * Source identities requested for direct drawing and complete ordered composition, retaining no native storage.
+     * Distinct source requests prepared once across direct layers and complete ordered composition.
      */
     @get:JvmSynthetic
-    internal val sampled: List<DrawImage> =
-        buildList {
-            var index = 0
-            layers.forEach { layer ->
-                when (layer) {
-                    is FabricMinecraftFrameLayer.Portable -> {
-                        portable[index++].composition?.sources?.forEach { if (it != null) add(it) }
-                    }
+    internal val sampledRequests: FabricMinecraftSampledImageRequests =
+        FabricMinecraftSampledImageRequests(
+            sequence {
+                var index = 0
+                layers.forEach { layer ->
+                    when (layer) {
+                        is FabricMinecraftFrameLayer.Portable -> {
+                            portable[index++].composition?.sources?.forEach { if (it != null) yield(it) }
+                        }
 
-                    is FabricMinecraftFrameLayer.Sampled -> {
-                        add(layer.command.image)
-                        if (layer.sampling != null) index += 1
-                    }
+                        is FabricMinecraftFrameLayer.Sampled -> {
+                            yield(layer.command.image)
+                            if (layer.sampling != null) index += 1
+                        }
 
-                    is FabricMinecraftFrameLayer.Platform -> {
+                        is FabricMinecraftFrameLayer.Platform -> {
+                        }
                     }
                 }
-            }
-        }
+            },
+        )
+
+    /**
+     * Distinct requested image identities in first-occurrence display-list order, retaining no native storage.
+     */
+    @get:JvmSynthetic
+    internal val sampled: List<DrawImage>
+        get() = sampledRequests.images
 
     /**
      * Number of unsupported sampled commands in portable runs, including unavailable direct layers in this borrow.

@@ -33,7 +33,7 @@ internal class FabricMinecraftSamplingBudgetTest {
         val image = createDrawImage(IntSize(2, 2), IntArray(4) { -1 })
         val command = DrawCommand.SampledImage(image, FloatRect(0f, 0f, 2f, 2f), FloatRect(0f, 0f, 1f, 1f), alphaCutoff = 0f)
         val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(List(257) { command }, IntSize(1, 1), exactSampling = true), 1)
-        assertEquals(256, inputs.sampled.size)
+        assertEquals(1, inputs.sampled.size)
         assertEquals(1L, inputs.capacitySampledImages)
         assertEquals(0L, inputs.ineligibleSampledImages)
         val resolved = inputs.resolve({ false }) { true }

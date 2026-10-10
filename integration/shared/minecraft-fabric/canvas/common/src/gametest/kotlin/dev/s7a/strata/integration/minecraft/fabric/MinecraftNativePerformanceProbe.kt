@@ -39,6 +39,14 @@ internal class MinecraftNativePerformanceProbe(
     private val profileMode = PerformanceProfile.fromQuickFlag(System.getProperty("strata.performance.quick"))
     private val plan = profileMode.plan()
     private val sampledCorpus = System.getProperty("strata.performance.sampledImages", "false").toBooleanStrict()
+    private val independentCorpus =
+        System.getProperty("strata.performance.nativeFixture")?.let { name ->
+            val type = Class.forName(name, false, javaClass.classLoader).asSubclass(MinecraftNativePerformanceCorpus::class.java)
+            check(ArtifactIdentity.fullCodeSource(type) == ArtifactIdentity.fullCodeSource(javaClass)) { "An independent native fixture must belong to the verified fixture archive." }
+            val constructor = type.getDeclaredConstructor()
+            check(constructor.trySetAccessible())
+            constructor.newInstance()
+        }
     private val gpuQueries = System.getProperty("strata.performance.gpuQueries", "false").toBooleanStrict()
 
     /**
@@ -66,6 +74,12 @@ internal class MinecraftNativePerformanceProbe(
                 val scene = context.onClient { MinecraftSampledPerformanceScene(case, IntSize(viewport.width / scale, viewport.height / scale), plan.warmup + plan.samples) }
                 phases.add(measure(scale, case.name, update = { scene.update() }, definition = scene::definition))
             }
+            independentCorpus?.let { corpus ->
+                corpus.caseIds.filter { it in selection.ids }.forEach { id ->
+                    val scene = context.onClient { corpus.scene(id, IntSize(viewport.width / scale, viewport.height / scale), plan.warmup + plan.samples) }
+                    phases.add(measure(scale, id, update = { scene.update() }, definition = scene::definition))
+                }
+            }
             context.waitFor(2400) { canvas.leasesOpened == canvas.leasesClosed && canvas.renderersOpened == canvas.renderersClosed }
         }
         context.waitFor(2400) { canvas.leasesOpened == canvas.leasesClosed && canvas.renderersOpened == canvas.renderersClosed }
@@ -86,15 +100,24 @@ internal class MinecraftNativePerformanceProbe(
         PerformanceJson.writeNew(output.resolve("report.json"), report)
     }
 
-    private fun selection(): PerformanceSelection = PerformanceSelection(if (sampledCorpus) MinecraftSampledPerformanceCase.entries.map { it.name }.toSet() else ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas", System.getProperty("strata.performance.workloads") ?: if (profileMode == PerformanceProfile.Quick) (if (sampledCorpus) MinecraftSampledPerformanceCase.entries.first().name else ComponentWorkload.entries.first().name) else null)
+    private fun selection(): PerformanceSelection {
+        check(independentCorpus == null || sampledCorpus.not()) { "Independent and ordinary sampled-image corpora are separate scopes." }
+        val cases = independentCorpus?.caseIds ?: if (sampledCorpus) MinecraftSampledPerformanceCase.entries.map { it.name }.toSet() else ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas"
+        return PerformanceSelection(cases, System.getProperty("strata.performance.workloads") ?: if (profileMode == PerformanceProfile.Quick) cases.first() else null)
+    }
 
     private fun createReport(
         conditions: JsonObject,
         selection: PerformanceSelection,
     ): JsonObject {
-        val family = if (sampledCorpus) "native-sampled-images" else "native-components"
+        val family = independentCorpus?.family ?: if (sampledCorpus) "native-sampled-images" else "native-components"
         val report = conditions.deepCopy()
         report.add("selected_cases", JsonArray().apply { selection.ids.forEach(::add) })
+        independentCorpus?.let { corpus ->
+            report.addProperty("independent_fixture_family", corpus.family)
+            report.addProperty("independent_fixture_class", corpus.javaClass.name)
+            report.add("independent_fixture_cases", JsonArray().apply { corpus.caseIds.forEach(::add) })
+        }
         report.addProperty("schema_version", 1)
         report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1"))
         if (profileMode == PerformanceProfile.Quick) report.addProperty("measurement_profile", profileMode.name)
@@ -142,11 +165,12 @@ internal class MinecraftNativePerformanceProbe(
                     mapOf(
                         "api" to "dev.s7a.strata.render.DrawImage",
                         "core" to "dev.s7a.strata.runtime.UiSession",
+                        "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
                         "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
                         "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
                         "fabric" to FabricMinecraftScreen::class.java.name,
                     ),
-                    setOf("api", "core", "minecraft", "fonts"),
+                    setOf("api", "core", "headless", "minecraft", "fonts"),
                 ).also(LoadedArtifactMetadata::verifyComplete)
         }
 

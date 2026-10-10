@@ -75,6 +75,13 @@ Ordinary checks discover every generated fixture and its optional verifier autom
 Keep expected case counts and fixture-specific pixel, work and lifetime assertions with the fixture or its work helper.
 Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-properties-file>` with unique labels and absolute regular-file paths.
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
+
+`FabricFramePerformanceEvidence` is a generic shared-kit entry for explicitly selected generated fixtures that need an independently supplied actual Fabric archive.
+Supply the unchanged fixture/collector/control classpath and the six actual API, core, headless, Minecraft, font and Fabric target archives; the kit verifies and preserves their actual loaded class trees in every fork.
+It accepts a fresh output directory, repetition index and ordinary JMH settings, with the same `strata.performance.benchmarks`, `workloads`, `parameters` and immutable `fixtureInputs` selectors.
+`SampledSourceRequestsBenchmark` has eighteen preparation/borrow rows over its nine compiled direct and composed cases, including C=1/64/4096, U=1/16/C controls and six-tile source sharing.
+Use standard three one-second warmups, five one-second measurements, one independent fork, one thread, microsecond units and the GC profiler, with three independent invocations per runtime.
+Its signalled native-free resource fixture measures the actual device CPU path and normalized allocation; it reports no native pixels, real source uploads or GPU interval.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
@@ -156,11 +163,12 @@ For legacy production clients, window validation resolves intermediary client/wi
 Missing mappings, missing host members, dead handles and iconified windows reject collection rather than producing a valid zero-cost interval.
 
 Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
-The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report or current JMH `receipt.json` with the same runtime binaries).
 For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
 Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
-That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
-The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
+That JVM report or receipt supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+The adapter reads exactly one legacy `strata` or current `runtime_metadata` inventory without rewriting the raw receipt, requires a successful invocation and current per-iteration fork verification, and preserves strict file/resource/class-tree checks.
+The adapter selects the five shared API/core/headless/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
 Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
@@ -212,6 +220,18 @@ The JVM tests exercise these contracts against the actual packaged collector rat
 
 ## Independent sampled-image, GPU and cold-image evidence
 
+The generic `strata.performance.nativeFixture` property selects a compiled `MinecraftNativePerformanceCorpus` implementation from the same verified fixture archive.
+Its own complete case IDs and family are recorded before shared workload selection; it does not change the ordinary component or sampled-image matrices or counts.
+`MinecraftSampledSourceRequestsCorpus` supplies ten source-request cases at all standard GUI scales, separating clean direct drawing, shared composed tiles and prebuilt one-use identity replacement.
+Its 320-by-180 logical composed region spans multiple native tiles at every GUI scale while preserving all 64 ordered original placements.
+The 4096-identity control retains the complete original frame: its first 256 sources use the bounded native owner cache and its remaining 3840 placements use the existing ordered portable fallback.
+Process these reports with `NativeComponentPerformanceEvidence` using an `independent_fixture` object containing the exact compiled `family`, fully qualified `class` and ordered `cases` array, plus the ordinary collector, CPU provenance, runs and output fields.
+The processor rejects a changed fixture matrix, duplicate cases, missing scales, changed fixture archive, incomplete frame counts and unbalanced release, and an independent family cannot satisfy canonical native acceptance.
+Three standard baseline and three standard candidate processes must use the same compiled fixture and collector archives and workload selection for each backend.
+The ordinary loaded suite also checks complete dense/direct/composed pixels, current request identity reuse and reference release at GUI densities one and four.
+Full presentation and GUI-only GPU scopes remain distinct under the strict paired-scope contract below.
+An adapter that cannot record complete full presentation pairs must preserve consistently unavailable GPU measurements; available GUI-only pairs cannot certify that missing scope.
+
 Set `strata.performance.sampledImages=true` together with a fresh `strata.performance.nativeOutput` to collect the independent sampled-image corpus.
 Its reviewed registry is `quality/component-benchmarks/src/main/resources/native-sampled-images.tsv`: stationary, translated, resized, clipped, replaced, ordered overlapping-row, scrolling-row and tiled-translation scenes, each with 16, 64 and 256 texel source extents.
 Standard collection retains 30 warm-up frames, 60 measured frames, three independent processes and GUI scales 1–4; quick collection retains its separate identity and counts.
@@ -229,9 +249,14 @@ The other category includes unsupported mapping, clips and adapter/source limits
 Older measured runtimes expose unavailable payload values as null rather than zero.
 
 GPU queries are opt-in through `strata.performance.gpuQueries=true`, recorded in the controlled report conditions.
-The compiled RenderPearl fixture records timestamp pairs immediately around the real native GUI consumer and uses the actual device's timestamp period to convert ticks to nanoseconds.
-`GpuPerformanceMeter` requires every requested pair to complete before publishing p50, p95 and p99 GPU distributions.
-The GPU scope includes all host commands between those timestamps; it excludes CPU preparation, uploads and sampled-target passes recorded before GUI consumption.
+The compiled RenderPearl fixture records two timestamp pairs and uses the actual device's timestamp period to convert ticks to nanoseconds.
+The GUI-only pair surrounds the real native GUI consumer and excludes uploads and sampled-target passes recorded before GUI consumption.
+The full presentation pair starts before owner-thread frame preparation and ends after GUI consumption, covering intervening source/metadata uploads and ordered offscreen composition.
+Its GPU duration does not measure CPU preparation time; the timestamps bound commands on the native device timeline.
+`GpuPerformanceMeter` requires every requested pair to complete before publishing separate p50, p95 and p99 GPU distributions.
+The native processor requires both complete scopes when GUI queries are available and rejects using the GUI-only scope as full presentation evidence.
+Older unsupported adapters may omit the full-scope ancestor while their GUI queries are explicitly unavailable; the adapter registers no missing-path projection and preserves full GPU metrics as null with a reason.
+Mixed ancestor presence or GUI/full-scope measurement availability across one complete raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.

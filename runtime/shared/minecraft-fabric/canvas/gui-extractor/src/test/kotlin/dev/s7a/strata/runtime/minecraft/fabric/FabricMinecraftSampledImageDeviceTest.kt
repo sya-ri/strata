@@ -12,15 +12,238 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Verifies referential cache identity, independent bounds, and fenced terminal release without a loaded Minecraft client.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class FabricMinecraftSampledImageDeviceTest {
+    @Test
+    fun duplicateListEnumerationRemainsGuardedAgainstDeviceCallbackReentry() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val images = CallbackList(image(6)) { fixture.manager.openOwner() }
+            val failure = assertThrows(IllegalStateException::class.java) { fixture.borrow(owner, images) }
+            assertEquals("Sampled-image device operations cannot reenter callbacks.", failure.message)
+            assertEquals(1, images.enumerations)
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            fixture.borrow(owner, listOf(image(7)))
+            assertEquals(1, fixture.uploads)
+        }
+    }
+
+    @Test
+    fun invalidAndClosedOwnersRejectBeforeEnumeratingDuplicateListInputs() {
+        SampledFixture().use { fixture ->
+            SampledFixture().use { foreign ->
+                val images = CallbackList(image(8)) { error("Invalid owners must reject before enumeration.") }
+                val foreignOwner = foreign.manager.openOwner()
+                assertThrows(IllegalStateException::class.java) { fixture.borrow(foreignOwner, images) }
+                val owner = fixture.manager.openOwner()
+                fixture.manager.release(owner)
+                assertThrows(IllegalStateException::class.java) { fixture.borrow(owner, images) }
+                assertEquals(0, images.enumerations)
+                assertEquals(0, fixture.uploads)
+                assertEquals(0, fixture.manager.retainedResourceCount())
+            }
+        }
+    }
+
+    @Test
+    @Suppress("TooGenericExceptionCaught") // The worker transfers any rejected operation failure to its owner-thread assertion.
+    fun offThreadBorrowRejectsBeforeEnumeratingDuplicateListInputs() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val images = CallbackList(image(9)) { error("Off-thread inputs must not be enumerated.") }
+            val failure = AtomicReference<Throwable?>()
+            val thread =
+                Thread {
+                    try {
+                        fixture.borrow(owner, images)
+                    } catch (caught: Throwable) {
+                        failure.set(caught)
+                    }
+                }
+            thread.start()
+            thread.join()
+            assertTrue(failure.get() is IllegalStateException)
+            assertEquals("Sampled-image device operations require the render owner thread.", failure.get()?.message)
+            assertEquals(0, images.enumerations)
+            assertEquals(0, fixture.manager.retainedResourceCount())
+        }
+    }
+
+    @Test
+    fun failedPollingRejectsBeforeEnumeratingDuplicateListInputs() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            fixture.borrow(owner, listOf(image(10)))
+            fixture.driver.signalAll()
+            val fence = fixture.driver.fences.single()
+            fence.closeFailures = 1
+            val images = CallbackList(image(11)) { error("Failed polling must precede enumeration.") }
+            assertThrows(IllegalStateException::class.java) { fixture.borrow(owner, images) }
+            assertEquals(0, images.enumerations)
+            assertEquals(1, fixture.uploads)
+            fixture.manager.poll()
+            fixture.borrow(owner, listOf(image(11)))
+            assertEquals(2, fixture.uploads)
+        }
+    }
+
+    @Test
+    fun unchangedPreparedRequestsKeepOwnerCapacityAndExactFallbackAccounting() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val images = List(257) { image(it) }
+            val requests = FabricMinecraftSampledImageRequests((images + images).asSequence())
+            fixture.borrow(owner, requests)
+            assertEquals(257, fixture.misses)
+            assertEquals(256, fixture.uploads)
+            fixture.borrow(owner, requests)
+            assertEquals(256, fixture.hits)
+            assertEquals(258, fixture.misses)
+            assertEquals(256, fixture.uploads)
+            assertEquals(0, fixture.evictions)
+            assertEquals(256, fixture.manager.retainedResourceCount())
+            fixture.manager.release(owner)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            assertEquals(0L, fixture.manager.retainedResourceBytes())
+        }
+    }
+
+    @Test
+    fun preparedRequestsPreserveUploadOrderCountersAndIndependentOwnerReferences() {
+        SampledFixture().use { fixture ->
+            val firstOwner = fixture.manager.openOwner()
+            val secondOwner = fixture.manager.openOwner()
+            val first = image(1)
+            val equalPixels = image(1)
+            val last = image(2)
+            val requests = FabricMinecraftSampledImageRequests(sequenceOf(last, first, last, equalPixels, first))
+            fixture.borrow(firstOwner, requests)
+            assertEquals(3, fixture.misses)
+            assertEquals(3, fixture.uploads)
+            assertSame(last, fixture.acquiredImages[0])
+            assertSame(first, fixture.acquiredImages[1])
+            assertSame(equalPixels, fixture.acquiredImages[2])
+
+            fixture.borrow(firstOwner, requests)
+            fixture.borrow(secondOwner, requests)
+            assertEquals(6, fixture.hits)
+            assertEquals(3, fixture.misses)
+            assertEquals(3, fixture.uploads)
+            assertEquals(0, fixture.evictions)
+            fixture.manager.release(firstOwner)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(3, fixture.manager.retainedResourceCount())
+            fixture.manager.release(secondOwner)
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            assertEquals(listOf(1, 1, 1), fixture.resources.map { it.closeCalls })
+        }
+    }
+
+    @Test
+    fun preparedRequestsRecheckSupportAndReloadWithoutRetainingNativeAvailability() {
+        var supported = false
+        SampledFixture { supported }.use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val source = image(3)
+            val requests = FabricMinecraftSampledImageRequests(sequenceOf(source, source))
+            fixture.borrow(owner, requests)
+            assertEquals(1, fixture.misses)
+            assertEquals(0, fixture.uploads)
+            supported = true
+            fixture.borrow(owner, requests)
+            assertEquals(2, fixture.misses)
+            assertEquals(1, fixture.uploads)
+            fixture.driver.signalAll()
+            fixture.manager.reload()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+
+            fixture.borrow(owner, requests)
+            fixture.borrow(owner, requests)
+            assertEquals(3, fixture.misses)
+            assertEquals(2, fixture.uploads)
+            assertEquals(1, fixture.hits)
+            fixture.manager.release(owner)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+        }
+    }
+
+    @Test
+    fun preparedNestedPinsSurviveIntermediateConsumptionAndReentrantScreenRelease() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val source = image(4)
+            val requests = FabricMinecraftSampledImageRequests(sequenceOf(source, source))
+            fixture.manager.borrow(owner, requests, {}, {}, {}, {}).use { outer ->
+                assertEquals(1, outer.entries.single().pins)
+                fixture.manager.borrow(owner, requests, {}, {}, {}, {}).use { inner ->
+                    assertEquals(2, inner.entries.single().pins)
+                    inner.queued(source)
+                    fixture.manager.consumed()
+                    fixture.driver.signalAll()
+                    fixture.manager.poll()
+                    assertEquals(2, inner.entries.single().pins)
+                }
+                assertEquals(1, outer.entries.single().pins)
+                outer.queued(source)
+                fixture.manager.release(owner)
+                assertEquals(0, fixture.resources.single().closeCalls)
+            }
+            assertEquals(0, fixture.resources.single().closeCalls)
+            fixture.manager.consumed()
+            assertEquals(0, fixture.resources.single().closeCalls)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            assertEquals(1, fixture.resources.single().closeCalls)
+            assertThrows(IllegalStateException::class.java) { fixture.borrow(owner, requests) }
+        }
+    }
+
+    @Test
+    fun preparedRequestsBalancePinsAfterSubmissionAndAccountingCallbackFailures() {
+        SampledFixture().use { fixture ->
+            val owner = fixture.manager.openOwner()
+            val source = image(5)
+            val requests = FabricMinecraftSampledImageRequests(sequenceOf(source, source))
+            val primary = IllegalArgumentException("Injected sampled-image callback failure.")
+            assertSame(
+                primary,
+                assertThrows(IllegalArgumentException::class.java) {
+                    fixture.manager.borrow(owner, requests, {}, {}, { throw primary }, {})
+                },
+            )
+            assertSame(
+                primary,
+                assertThrows(IllegalArgumentException::class.java) {
+                    fixture.manager.borrow(owner, requests, {}, {}, {}, {}).use { borrowed ->
+                        assertEquals(1, borrowed.entries.single().pins)
+                        throw primary
+                    }
+                },
+            )
+            fixture.manager.release(owner)
+            fixture.driver.signalAll()
+            fixture.manager.poll()
+            assertEquals(0, fixture.manager.retainedResourceCount())
+            assertEquals(1, fixture.resources.single().closeCalls)
+        }
+    }
+
     @Test
     fun duplicateIdentityMissesOnceBeforeTheNextBorrowHits() {
         SampledFixture().use { fixture ->
@@ -277,11 +500,34 @@ internal class FabricMinecraftSampledImageDeviceTest {
 
     private fun image(value: Int): DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(value))
 
-    private class SampledFixture : AutoCloseable {
+    private class CallbackList(
+        private val image: DrawImage,
+        private val onEnumeration: () -> Unit,
+    ) : AbstractList<DrawImage>() {
+        var enumerations = 0
+        override val size: Int = 1
+
+        override fun get(index: Int): DrawImage {
+            require(index == 0)
+            return image
+        }
+
+        override fun iterator(): Iterator<DrawImage> {
+            enumerations += 1
+            onEnumeration()
+            return listOf(image).iterator()
+        }
+    }
+
+    private class SampledFixture(
+        supports: (DrawImage) -> Boolean = { true },
+    ) : AutoCloseable {
         val driver = Driver()
         val resources = ArrayList<Resource>()
+        val acquiredImages = ArrayList<DrawImage>()
         val manager =
-            FabricMinecraftSampledImageDevice(driver, { true }) { _, retain ->
+            FabricMinecraftSampledImageDevice(driver, supports) { image, retain ->
+                acquiredImages.add(image)
                 Resource().also { resource ->
                     resources.add(resource)
                     retain(resource)
@@ -300,6 +546,15 @@ internal class FabricMinecraftSampledImageDeviceTest {
             manager
                 .borrow(owner, images, { hits += 1 }, { misses += 1 }, { uploads += 1 }, { evictions += 1 })
                 .use {}
+        }
+
+        fun borrow(
+            owner: FabricMinecraftSampledImageDevice.Owner,
+            requests: FabricMinecraftSampledImageRequests,
+        ) {
+            manager
+                .borrow(owner, requests, { hits += 1 }, { misses += 1 }, { uploads += 1 }, { evictions += 1 })
+                .use { borrowed -> assertEquals(requests.images.count { owner.images.containsKey(it) }, borrowed.entries.size) }
         }
 
         fun queue(

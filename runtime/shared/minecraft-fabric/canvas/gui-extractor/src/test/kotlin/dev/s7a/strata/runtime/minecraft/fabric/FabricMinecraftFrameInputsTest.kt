@@ -10,6 +10,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -25,7 +26,8 @@ internal class FabricMinecraftFrameInputsTest {
         for (scale in 1..4) {
             val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, IntSize(8, 8), scale), scale)
             assertSame(inputs, inputs.resolve({ true }) { error("Available images must not fall back") })
-            assertEquals(listOf(image, image), inputs.sampled)
+            assertEquals(listOf(image), inputs.sampled)
+            assertSame(inputs.sampledRequests, inputs.resolve({ true }) { error("No fallback") }.sampledRequests)
             var unavailable = 0
             val fallback =
                 inputs.resolve({ false }) {
@@ -50,6 +52,58 @@ internal class FabricMinecraftFrameInputsTest {
                     .rasterize()
                     .copyArgb(),
             )
+        }
+    }
+
+    @Test
+    fun directAndComposedTilesShareOneFirstOccurrenceRequestOrder() {
+        val size = IntSize(768, 512)
+        val first = createDrawImage(IntSize(128, 128)) { _, _ -> 0x804466AA.toInt() }
+        val equalPixels = createDrawImage(first.size, first.copyArgb())
+        val source = FloatRect(0f, 0f, 128f, 128f)
+        val destination = FloatRect(0f, 0f, 768f, 512f)
+        val direct = DrawCommand.SampledImage(first, source, FloatRect(0f, 0f, 64f, 64f), alphaCutoff = 0f)
+        val composed = DrawCommand.SampledImage(equalPixels, source, destination, tint = ArgbColor(0xC0BFD7EF.toInt()), alphaCutoff = 0f)
+        val commands = listOf(direct, composed, composed.copy(image = first), direct.copy(image = equalPixels))
+        val layers = partitionFabricMinecraftFrame(commands, size)
+        val inputs = FabricMinecraftFrameInputs(layers, 1, compositionEnabled = true)
+        assertTrue(1 < inputs.portable.count { it.composition != null })
+        assertEquals(2, inputs.sampled.size)
+        assertSame(first, inputs.sampled[0])
+        assertSame(equalPixels, inputs.sampled[1])
+        assertSame(layers, inputs.layers)
+        assertSame(inputs, inputs.resolve({ true }) { error("All sources are available") })
+
+        val replaced = createDrawImage(first.size, first.copyArgb())
+        val changedCommands = commands.map { if (it === direct) direct.copy(image = replaced) else it }
+        val changed = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(changedCommands, size), 1, compositionEnabled = true)
+        assertEquals(3, changed.sampled.size)
+        assertSame(replaced, changed.sampled[0])
+        assertSame(equalPixels, changed.sampled[1])
+        assertSame(first, changed.sampled[2])
+        val empty = FabricMinecraftFrameInputs(emptyList(), 1, compositionEnabled = true)
+        assertTrue(empty.sampled.isEmpty())
+        assertSame(first, inputs.sampled[0])
+    }
+
+    @Test
+    fun repeatedUnavailableDirectPlacementsKeepOccurrenceFallbackCounts() {
+        val size = IntSize(64, 64)
+        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
+        val source = FloatRect(0f, 0f, 1f, 1f)
+        for (occurrences in listOf(1, 64, 4096)) {
+            val commands =
+                List(occurrences) { index ->
+                    val x = (index % 64).toFloat()
+                    val y = (index / 64).toFloat()
+                    DrawCommand.SampledImage(image, source, FloatRect(x, y, x + 1f, y + 1f), alphaCutoff = 0f)
+                }
+            val inputs = FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, size), 1)
+            assertEquals(1, inputs.sampled.size)
+            assertEquals(occurrences, inputs.layers.size)
+            assertEquals(occurrences.toLong(), inputs.resolve({ false }) { true }.capacitySampledImages)
+            assertEquals(occurrences.toLong(), inputs.resolve({ false }) { false }.ineligibleSampledImages)
+            assertSame(inputs, inputs.resolve({ true }) { error("Restored sources must draw directly") })
         }
     }
 

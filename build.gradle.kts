@@ -1563,6 +1563,10 @@ subprojects {
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
                 }
+                providers.gradleProperty("strata.performance.nativeFixture").orNull?.let { selected ->
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeFixture", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeFixture=$selected") }
+                }
                 tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.nativeOutput", nativeOutput.path) }
                 tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.nativeOutput=${nativeOutput.path}") }
                 afterEvaluate {

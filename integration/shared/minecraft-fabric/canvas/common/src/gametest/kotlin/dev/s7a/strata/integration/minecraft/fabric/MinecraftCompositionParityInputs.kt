@@ -57,5 +57,8 @@ internal object MinecraftCompositionParityInputs {
         return field.get(image) != null
     }
 
-    private fun presenter(screen: FabricMinecraftScreen): Any = if (runCatching { screen.javaClass.getDeclaredField("portableFrames") }.isSuccess) screen else member(screen, "presentation")
+    /**
+     * Returns the version-owned presentation holder for synchronous fixture inspection only.
+     */
+    internal fun presenter(screen: FabricMinecraftScreen): Any = if (runCatching { screen.javaClass.getDeclaredField("portableFrames") }.isSuccess) screen else member(screen, "presentation")
 }
