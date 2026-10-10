@@ -9,6 +9,8 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
  * Execution-owner-confined presentation-state store bounded by the current decoded screen and its negotiated entry limit.
  * Keys combine a remote identity and a trusted type token; removed identities and terminal screens release their entries.
  * Preparation runs before declaration evaluation, so incoming values never mutate state from a render callback.
+ * Editable membership uses the same keys and admission order, contains only current entries, and is cleared before release callbacks.
+ * Every current editable entry is polled, including distinct keys sharing a value; membership never caches authoritative values.
  */
 public class RemoteClientStates internal constructor(
     private val limits: RemoteLimits,
@@ -16,12 +18,16 @@ public class RemoteClientStates internal constructor(
     private val owner = RuntimeExecutionOwner.current()
     private val values = mutableMapOf<Key, Entry>()
     private val retained = mutableSetOf<Key>()
+    private val editable = mutableMapOf<Key, RemoteEditableValue>()
     private var phase = Phase.Idle
     private var flushing = false
+    private var preparingEntry = false
 
     /**
      * Creates or updates a typed presentation value from a registered preparation callback.
      * [release] runs exactly once when the value is retired, including terminal failure cleanup.
+     * Creation and update callbacks cannot reenter preparation; closing from either callback invalidates this operation.
+     * A fresh factory result returned after close is released instead of admitted; callback failures remain primary.
      */
     public fun <T : Any> prepare(
         identity: Long,
@@ -33,15 +39,29 @@ public class RemoteClientStates internal constructor(
         checkOwner()
         check(phase == Phase.Preparing) { "Remote state can only be prepared before declaration evaluation." }
         require(0 < identity) { "Remote state identities must be positive." }
-        val address = Key(identity, key)
-        val entry =
-            values[address] ?: run {
-                require(values.size < limits.collectionEntries) { "Too many retained remote values." }
-                val value = create()
-                Entry(value) { release(value) }.also { values[address] = it }
-            }
-        retained.add(address)
-        update(key.type.java.cast(entry.value))
+        check(preparingEntry.not()) { "Remote state preparation cannot reenter an entry callback." }
+        preparingEntry = true
+        try {
+            val address = Key(identity, key)
+            val entry =
+                values[address] ?: run {
+                    require(values.size < limits.collectionEntries) { "Too many retained remote values." }
+                    val value = create()
+                    if (phase != Phase.Preparing) {
+                        release(value)
+                        error("Remote state closed before a factory result could be admitted.")
+                    }
+                    Entry(value) { release(value) }.also {
+                        values[address] = it
+                        if (value is RemoteEditableValue) editable[address] = value
+                    }
+                }
+            retained.add(address)
+            update(key.type.java.cast(entry.value))
+            check(phase == Phase.Preparing) { "Remote state closed during its update callback." }
+        } finally {
+            preparingEntry = false
+        }
     }
 
     /**
@@ -65,7 +85,11 @@ public class RemoteClientStates internal constructor(
         if (flushing) return
         flushing = true
         try {
-            values.values.forEach { (it.value as? RemoteEditableValue)?.flushEdits(actions) }
+            val iterator = editable.values.iterator()
+            while (iterator.hasNext()) {
+                iterator.next().flushEdits(actions)
+                check(phase == Phase.Idle) { "Remote state closed during edit polling." }
+            }
         } finally {
             flushing = false
         }
@@ -76,24 +100,33 @@ public class RemoteClientStates internal constructor(
      */
     internal fun update(prepare: () -> Unit) {
         checkOwner()
-        check(phase == Phase.Idle)
+        check(phase == Phase.Idle && flushing.not()) { "Remote state preparation cannot reenter another store operation." }
         phase = Phase.Preparing
         retained.clear()
         try {
             prepare()
+            check(phase == Phase.Preparing) { "Remote state closed during preparation." }
+            phase = Phase.Retiring
             val obsolete = values.keys.filter { (it in retained).not() }
-            obsolete.forEach { values.remove(it)?.release?.invoke() }
+            obsolete.forEach { address ->
+                val entry = values.remove(address)
+                editable.remove(address)
+                entry?.release?.invoke()
+                check(phase == Phase.Retiring) { "Remote state closed during retirement." }
+            }
         } finally {
             retained.clear()
-            phase = Phase.Idle
+            if (phase != Phase.Closed) phase = Phase.Idle
         }
     }
 
     override fun close() {
         checkOwner()
+        if (phase == Phase.Closed) return
         phase = Phase.Closed
         val retiring = values.values.toList()
         values.clear()
+        editable.clear()
         retained.clear()
         var failure: Throwable? = null
         retiring.forEach { entry ->
@@ -123,5 +156,5 @@ public class RemoteClientStates internal constructor(
         val release: () -> Unit,
     )
 
-    private enum class Phase { Idle, Preparing, Closed }
+    private enum class Phase { Idle, Preparing, Retiring, Closed }
 }

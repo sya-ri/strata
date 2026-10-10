@@ -206,10 +206,11 @@ public class RemoteClientSession(
 
     /**
      * Flushes committed text edits before the adapter flushes its bounded outgoing transport.
+     * Callback failure or terminal state-store cutoff closes the session through the same guarded cleanup as updates.
      */
     public fun flushEdits() {
         checkActive()
-        states.flushEdits(actions)
+        guarded { states.flushEdits(actions) }
     }
 
     /**
@@ -292,12 +293,14 @@ public class RemoteClientSession(
         value: ProjectionValue,
     ): Long {
         checkActive()
-        states.flushEdits(actions)
-        require(0 < endpoint) { "Invalid remote event endpoint." }
-        check(nextSequence < Long.MAX_VALUE) { "Remote action sequence space is exhausted." }
-        val sequence = nextSequence++
-        checkNotNull(outgoing)(RemoteMessage.Action(identity, sequence, endpoint, type, value))
-        return sequence
+        return guarded {
+            states.flushEdits(actions)
+            require(0 < endpoint) { "Invalid remote event endpoint." }
+            check(nextSequence < Long.MAX_VALUE) { "Remote action sequence space is exhausted." }
+            val sequence = nextSequence++
+            checkNotNull(outgoing)(RemoteMessage.Action(identity, sequence, endpoint, type, value))
+            sequence
+        }
     }
 
     private fun requestSnapshot() {
