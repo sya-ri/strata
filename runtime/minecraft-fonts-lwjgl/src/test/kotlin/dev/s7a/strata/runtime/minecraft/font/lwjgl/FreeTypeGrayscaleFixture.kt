@@ -17,7 +17,7 @@ import kotlin.math.abs
 
 /**
  * Owns native storage only until conversion returns; every retained image is inspected after release.
- * Kept outside the test class hierarchy so STB-only discovery does not resolve FreeType method signatures.
+ * Reflection-facing method descriptors avoid native bitmap types so STB-only workers can discover the helper.
  */
 internal object FreeTypeGrayscaleFixture {
     /**
@@ -184,10 +184,11 @@ internal object FreeTypeGrayscaleFixture {
             .getDeclaredMethod("pixels", FT_Bitmap::class.java, Int::class.java, Int::class.java)
             .apply { isAccessible = true }
 
+    // Reflection already accepts Object; keep FT_Bitmap out of the method descriptor used by test discovery.
     private fun invoke(
         face: FreeTypeMinecraftFontFace,
         convert: Method,
-        bitmap: FT_Bitmap,
+        bitmap: Any,
         width: Int,
         height: Int,
     ): DrawImage =

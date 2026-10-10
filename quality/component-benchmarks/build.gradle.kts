@@ -48,7 +48,7 @@ require(componentNativeClassifier.matches(Regex("natives-[a-z0-9-]+")))
 dependencies {
     add("jmhRuntimeOnly", "com.ibm.icu:icu4j:${componentCatalog.findVersion("icu-minecraft-262").orElseThrow().requiredVersion}")
     listOf("lwjgl", "lwjgl-stb", "lwjgl-freetype").forEach { binding ->
-        add("jmhRuntimeOnly", "org.lwjgl:$binding:$componentLwjglVersion")
+        add("jmh", "org.lwjgl:$binding:$componentLwjglVersion")
         add("jmhRuntimeOnly", "org.lwjgl:$binding:$componentLwjglVersion:$componentNativeClassifier")
     }
 }
