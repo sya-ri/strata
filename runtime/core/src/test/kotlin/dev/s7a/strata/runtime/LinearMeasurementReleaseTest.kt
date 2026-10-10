@@ -67,7 +67,10 @@ internal class LinearMeasurementReleaseTest {
         }
     }
 
-    private fun closedOwners(horizontal: Boolean, fails: Boolean): Evidence {
+    private fun closedOwners(
+        horizontal: Boolean,
+        fails: Boolean,
+    ): Evidence {
         val source = ReleaseSource()
         val probe = TestProbe(failingMeasureTag = if (fails) TestProbe.ProbeId("0") else null)
         val session = session(horizontal, source, probe)
@@ -97,15 +100,21 @@ internal class LinearMeasurementReleaseTest {
         return Evidence(session, retired, listOf(retired, WeakReference(source), WeakReference(probe), observer))
     }
 
-    private fun session(horizontal: Boolean, source: ReleaseSource, probe: TestProbe): RuntimeUiSession =
-        createRuntimeUiSession {
-            evaluateComponentTree {
-                Observe(source) { count ->
-                    if (horizontal) Row { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
-                    else Column { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
+    private fun session(
+        horizontal: Boolean,
+        source: ReleaseSource,
+        probe: TestProbe,
+    ): RuntimeUiSession = createRuntimeUiSession {
+        evaluateComponentTree {
+            Observe(source) { count ->
+                if (horizontal) {
+                    Row { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
+                } else {
+                    Column { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
                 }
             }
         }
+    }
 
     // Collection occurs after each creating stack frame returns, without measuring GC or allocating pressure buffers.
     private fun assertCollected(references: List<WeakReference<*>>) {
@@ -131,6 +140,7 @@ internal class LinearMeasurementReleaseTest {
      */
     private class ReleaseSource : StateSource<Int> {
         private var snapshot = StateSnapshot(StateRevision(0), 16)
+
         /**
          * Records the actual callback weakly before a failing frame releases its subscription.
          */
