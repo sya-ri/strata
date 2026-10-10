@@ -449,7 +449,12 @@ internal class EmptyRootOverlayTest {
     private open class ProbeNode(
         val tag: Tag,
         val trace: MutableList<Event>,
-    ) : Node(), MeasureNode, LayoutNode, PaintNode, ChildTransformNode, LifecycleNode {
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        PaintNode,
+        ChildTransformNode,
+        LifecycleNode {
         var offset = IntOffset.Zero
         var transform = ChildTransform.Identity
         var placeChildren = true
@@ -518,7 +523,9 @@ internal class EmptyRootOverlayTest {
     private open class RootNode(
         tag: Tag,
         trace: MutableList<Event>,
-    ) : ProbeNode(tag, trace), OverlayPaintNode, RootOverlayPaintNode {
+    ) : ProbeNode(tag, trace),
+        OverlayPaintNode,
+        RootOverlayPaintNode {
         val geometry = ArrayList<Pair<IntSize, IntRect>>()
         var localOverlay: (PaintScope) -> Unit = {}
         var rootPaint: (RootOverlayPaintScope) -> Unit = {}
@@ -538,7 +545,8 @@ internal class EmptyRootOverlayTest {
     private class ClippedRootNode(
         tag: Tag,
         trace: MutableList<Event>,
-    ) : RootNode(tag, trace), ClipChildrenNode
+    ) : RootNode(tag, trace),
+        ClipChildrenNode
 
     /**
      * Stable typed description owning one fresh probe per retained lifetime.

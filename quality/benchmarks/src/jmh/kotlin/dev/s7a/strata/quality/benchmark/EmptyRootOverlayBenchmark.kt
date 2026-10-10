@@ -53,6 +53,7 @@ public open class EmptyRootOverlayBenchmark {
         Absent,
         CallbackEmpty,
         RootNonempty,
+
         /**
          * One overlay leaf below sixteen ordinary ancestors.
          */
@@ -266,7 +267,9 @@ public open class EmptyRootOverlayBenchmark {
     /**
      * Records terminal lifecycle attempts without instrumenting timed paint callbacks.
      */
-    private abstract class FixtureNode : Node(), LifecycleNode {
+    private abstract class FixtureNode :
+        Node(),
+        LifecycleNode {
         var detachCalls = 0
         var disposeCalls = 0
 
@@ -286,7 +289,9 @@ public open class EmptyRootOverlayBenchmark {
      */
     private open class ContainerNode(
         private val kind: ContainerKind,
-    ) : FixtureNode(), MeasureNode, LayoutNode {
+    ) : FixtureNode(),
+        MeasureNode,
+        LayoutNode {
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
@@ -318,7 +323,8 @@ public open class EmptyRootOverlayBenchmark {
      */
     private class RootOverlayNode(
         private val emitsOverlay: Boolean,
-    ) : ContainerNode(ContainerKind.Root), RootOverlayPaintNode {
+    ) : ContainerNode(ContainerKind.Root),
+        RootOverlayPaintNode {
         override fun paintRootOverlay(scope: RootOverlayPaintScope) {
             if (emitsOverlay) scope.fillRectangle(ROOT_OVERLAY, OVERLAY)
         }
@@ -327,7 +333,10 @@ public open class EmptyRootOverlayBenchmark {
     /**
      * A row with independently invalidated color or measured width.
      */
-    private open class LeafNode : FixtureNode(), MeasureNode, PaintNode {
+    private open class LeafNode :
+        FixtureNode(),
+        MeasureNode,
+        PaintNode {
         private var width = 1
         private var color = FIRST
 
@@ -352,6 +361,7 @@ public open class EmptyRootOverlayBenchmark {
                     color = if (alternate) SECOND else FIRST
                     invalidate(DirtyMask.of(DirtyPhase.Paint))
                 }
+
                 Invalidation.Geometry -> {
                     width = if (alternate) 2 else 1
                     invalidate(DirtyMask.of(DirtyPhase.Measure))
@@ -363,7 +373,9 @@ public open class EmptyRootOverlayBenchmark {
     /**
      * The only overlay-producing descendant; its sixteen ancestors remain overlay-free.
      */
-    private class OverlayLeafNode : LeafNode(), RootOverlayPaintNode {
+    private class OverlayLeafNode :
+        LeafNode(),
+        RootOverlayPaintNode {
         override fun paintRootOverlay(scope: RootOverlayPaintScope) {
             scope.fillRectangle(DESCENDANT_OVERLAY, OVERLAY)
         }
