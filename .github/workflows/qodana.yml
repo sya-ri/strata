@@ -160,6 +160,7 @@ jobs:
         name: qodana-report
         path: ${{ runner.temp }}/qodana/results
         if-no-files-found: error
+        include-hidden-files: true
     - name: Save verified Qodana indexes
       if: success() && steps.analysis_cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6

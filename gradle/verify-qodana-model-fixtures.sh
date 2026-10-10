@@ -364,10 +364,16 @@ if [[ "$fixture_project_file_path" != "$fixture_project" ]]; then
 fi
 
 temporary_jmh_directory=$(mktemp -d "$fixture_project/quality/working-owner.XXXXXX")
-"$fixture_python" - "$fixture_project" "$fixture_root/Modules.json" "$temporary_jmh_directory" "$repository_root/gradle/verify-qodana-declarations.py" "${fixture_versions[@]}" <<'PY'
+# Native Python can resolve a different Windows Bash than the invoking fixture shell.
+fixture_bash_file_path=$BASH
+if command -v cygpath >/dev/null 2>&1; then
+  fixture_bash_file_path=$(cygpath -m "$fixture_bash_file_path")
+fi
+STRATA_FIXTURE_BASH="$fixture_bash_file_path" "$fixture_python" - "$fixture_project" "$fixture_root/Modules.json" "$temporary_jmh_directory" "$repository_root/gradle/verify-qodana-declarations.py" "${fixture_versions[@]}" <<'PY'
 import copy
 import hashlib
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -602,6 +608,69 @@ original_sarif = sarif_path.read_bytes()
 sarif_path.write_text(json.dumps({"runs": [{"versionControlProvenance": [{"revisionId": "0" * 40}]}]}))
 validate(model_path, rejected=True)
 sarif_path.write_bytes(original_sarif)
+
+# The full native stage must admit an exact declared shared root in an arbitrary working owner.
+native_path = "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"
+native_url = "file://$PROJECT_DIR$/" + native_path
+native_shared = dict(sourceSet="jmh", kind="TestSource", path=native_path, exists=True, generated=False,
+                     files={file.relative_to(root).as_posix(): hashlib.sha256(file.read_bytes()).hexdigest()
+                            for file in (root / native_path).rglob("*") if file.is_file()})
+native_inventory = copy.deepcopy(inventory)
+native_owner = native_inventory["owners"][-1]
+native_owner["roots"].append(native_shared)
+for declared_project in native_inventory["projects"]:
+    if declared_project["module"] == native_owner["module"]:
+        declared_project["roots"].append(dict(kind="TestSource", path=native_path))
+    else:
+        consumer = next((module for module in model["modules"] if module["name"] == declared_project["module"]), None)
+        for source in consumer["contentEntries"][0]["sourceFolders"] if consumer else []:
+            if source["path"] == native_url:
+                declared_project["roots"].append(dict(kind=source["type"], path=native_path))
+native_model = copy.deepcopy(model)
+next(module for module in native_model["modules"] if module["name"] == native_owner["module"])["contentEntries"][0]["sourceFolders"].append(dict(type="TestSource", path=native_url))
+native_iml = root / native_owner["iml"]
+original_native_iml = native_iml.read_bytes()
+generated = ET.fromstring(original_native_iml.decode())
+ET.SubElement(generated.find("./component/content"), "sourceFolder", url=native_url, isTestSource="true")
+native_iml.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(generated, encoding="unicode"))
+inventory_path.write_text(json.dumps(native_inventory))
+native_candidate = model_path.with_name("jmh-native-shared.json")
+native_candidate.write_text(json.dumps(native_model))
+
+
+def validate_pipeline(candidate, boundary=None):
+    result = subprocess.run([os.environ["STRATA_FIXTURE_BASH"], str(validator.with_name("verify-qodana-model.sh")), str(candidate), str(root), "/data/project"], capture_output=True, text=True)
+    if boundary is None:
+        if result.returncode:
+            raise SystemExit(f"Declared native shared root failed the full verifier: {result.stdout} {result.stderr}")
+    elif result.returncode == 0 or boundary not in result.stderr:
+        raise SystemExit(f"Native shared-root mutation was accepted or rejected at the wrong boundary: {result.stdout} {result.stderr}")
+
+
+validate_pipeline(native_candidate)
+for mutation in ("wrong-kind", "broader", "foreign-owner", "duplicate", "native-duplicate"):
+    candidate = copy.deepcopy(native_model)
+    module = next(module for module in candidate["modules"] if module["name"] == native_owner["module"])
+    imported = module["contentEntries"][0]["sourceFolders"]
+    source = next(folder for folder in imported if folder["path"] == native_url)
+    if mutation == "wrong-kind":
+        source["type"] = "Source"
+    elif mutation == "broader":
+        source["path"] = source["path"].rsplit("/", 1)[0]
+    elif mutation == "foreign-owner":
+        imported.remove(source)
+        next(module for module in candidate["modules"] if module["name"] == owners[1]["module"])["contentEntries"][0]["sourceFolders"].append(source)
+    elif mutation == "duplicate":
+        imported.append(copy.deepcopy(source))
+    else:
+        next(module for module in candidate["modules"] if module["name"] == "integration-minecraft-fabric-" + sys.argv[5])["contentEntries"][0]["sourceFolders"].append(copy.deepcopy(source))
+    invalid.write_text(json.dumps(candidate))
+    boundary = "Qodana declaration completeness" if mutation == "duplicate" else "existing owned and declared linked target source roots"
+    validate_pipeline(invalid, boundary)
+inventory_path.write_bytes(original_inventory)
+validate_pipeline(native_candidate, "existing owned and declared linked target source roots")
+native_iml.write_bytes(original_native_iml)
+print("Verified a declared native-namespace root in an arbitrary JMH owner and six full-pipeline rejection cases.")
 print(f"Verified declaration-driven roots, custom owners, SDKs and dependency mutations for {len(owners)} JMH owners.")
 PY
 
