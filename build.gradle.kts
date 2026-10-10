@@ -1092,6 +1092,7 @@ private val minecraftRemapExecutionService =
 
 if (completeIdeaModelActive) {
     apply(plugin = "idea")
+    apply(from = "gradle/qodana-jmh-inventory.gradle.kts")
 }
 
 allprojects {
@@ -1598,6 +1599,21 @@ subprojects {
     plugins.withId("me.champeau.jmh") {
         val fixture = extensions.getByType<SourceSetContainer>().named("jmh")
         val fixtureKotlin = extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh")
+        if (completeIdeaModelActive) {
+            val kotlinInputs = provider {
+                val kotlin = extensions.getByType<KotlinJvmProjectExtension>()
+                kotlin.target.compilations.getByName("jmh").allKotlinSourceSets - kotlin.target.compilations.getByName("main").allKotlinSourceSets
+            }
+            extensions.configure<IdeaModel> {
+                module {
+                    testSources.from(fixture.map { it.java.srcDirs }, kotlinInputs.map { sourceSets -> sourceSets.flatMap { it.kotlin.srcDirs } })
+                    testResources.from(fixture.map { it.resources.srcDirs }, kotlinInputs.map { sourceSets -> sourceSets.flatMap { it.resources.srcDirs } })
+                    val testPlus = requireNotNull(scopes["TEST"]?.get("plus"))
+                    testPlus.add(configurations.getByName(fixture.get().compileClasspathConfigurationName))
+                    testPlus.add(configurations.getByName(fixture.get().runtimeClasspathConfigurationName))
+                }
+            }
+        }
         val analysisJava = extensions.getByType<JavaToolchainService>().launcherFor {
             languageVersion.set(JavaLanguageVersion.of(javaVersion))
         }

@@ -1058,3 +1058,5 @@ else
   echo "Qodana project modules do not exactly match their existing owned and declared linked target source roots: $target_source_mismatches" >&2
   exit 1
 fi
+
+"$qodana_python" "$script_root/verify-qodana-declarations.py" "$project_root" "$model" "$qodana_container_project_root" "$(dirname "$input_model")/Java.json"

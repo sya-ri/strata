@@ -123,6 +123,36 @@ jobs:
         else
           echo 'Qodana did not create an IDE cache directory.'
         fi
+    - name: Retain declaration and generated model evidence
+      if: always()
+      shell: bash
+      env:
+        RESULTS: ${{ runner.temp }}/qodana/results
+      run: |
+        python3 - <<'PY'
+        import os
+        import pathlib
+        import shutil
+        import xml.etree.ElementTree as ET
+        root = pathlib.Path.cwd()
+        destination = pathlib.Path(os.environ['RESULTS']) / 'modelEvidence'
+        shutil.copytree(root / 'build/qodana', destination / 'build/qodana', dirs_exist_ok=True)
+        for relative in ('.idea/modules.xml', '.idea/misc.xml', 'strata.ipr'):
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(root / relative, target)
+        for module in ET.parse(root / '.idea/modules.xml').getroot().findall('./component/modules/module'):
+            url = module.attrib['fileurl']
+            prefix = 'file://$PROJECT_DIR$/'
+            if not url.startswith(prefix):
+                raise SystemExit(f'Unsupported generated module URL: {url}')
+            relative = pathlib.PurePosixPath(url[len(prefix):])
+            if relative.is_absolute() or '..' in relative.parts:
+                raise SystemExit(f'Noncanonical generated module URL: {url}')
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(root / relative, target)
+        PY
     - name: Upload Qodana report
       if: always()
       uses: actions/upload-artifact@v7
