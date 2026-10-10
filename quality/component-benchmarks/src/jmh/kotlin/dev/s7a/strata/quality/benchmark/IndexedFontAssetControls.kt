@@ -34,7 +34,6 @@ public object IndexedFontAssetControls {
     private val reference = Regex("[0-9a-f]{40}")
     private val valid = "0".repeat(40)
     private val limits = MinecraftFontLoadLimits()
-    private val hashMessage = "Asset index object hash is invalid."
 
     /**
      * Runs the complete boundary corpus, filesystem/ownership controls and generated workload checks.
@@ -114,7 +113,7 @@ public object IndexedFontAssetControls {
             control(Control.Escapes) {
                 check(source(single(quote(valid))).paths() == setOf("assets/test/data"))
                 check(source(single("\"$valid\"")).paths() == setOf("assets/test/data"))
-                failure<IllegalArgumentException>(hashMessage) { source(single("\"${"0".repeat(39)}\\u0041\"")) }
+                invalidHash { source(single("\"${"0".repeat(39)}\\u0041\"")) }
                 hash("0".repeat(39) + '\n', false)
             }
             control(Control.HashShapes) {
@@ -129,11 +128,11 @@ public object IndexedFontAssetControls {
             control(Control.InvalidPositions) {
                 listOf(0, 1, 2).forEach { invalid ->
                     val entries = (0..2).map { offset -> "test/$offset" to if (offset == invalid) "A".repeat(40) else valid }
-                    failure<IllegalArgumentException>(hashMessage) { source(records(entries)) }
+                    invalidHash { source(records(entries)) }
                 }
             }
             control(Control.FailFastOrder) {
-                failure<IllegalArgumentException>(hashMessage) { source(records(listOf("test/first" to "A".repeat(40), "../later" to valid))) }
+                invalidHash { source(records(listOf("test/first" to "A".repeat(40), "../later" to valid))) }
                 failure<IllegalArgumentException>("Font asset paths cannot contain empty or parent-traversal segments.") { source(records(listOf("../first" to valid, "test/later" to "A".repeat(40)))) }
                 check(source(records(listOf("test/z" to valid, "test/a" to valid, "test/m" to valid))).paths().toList() == listOf("assets/test/z", "assets/test/a", "assets/test/m"))
             }
@@ -201,7 +200,7 @@ public object IndexedFontAssetControls {
             control(Control.StreamClosure) {
                 check(source("{\"objects\":{}}").paths().isEmpty())
                 requireClosedIndex()
-                failure<IllegalArgumentException>(hashMessage) { source(single("\"bad\"")) }
+                invalidHash { source(single("\"bad\"")) }
                 requireClosedIndex()
                 failure<MinecraftFontLoadLimitException> { source("{\"objects\":{}}", limits.copy(maxDocumentBytes = 0)) }
                 requireClosedIndex()
@@ -242,7 +241,10 @@ public object IndexedFontAssetControls {
                 PortableTextWorkEvidence.main(emptyArray())
             }
             check(completed.toList() == Control.entries)
-            println("indexed-font-controls=32; runtime=${MinecraftIndexedFontAssetSource::class.java.protectionDomain.codeSource.location}; fixture=${javaClass.protectionDomain.codeSource.location}")
+            val runtimeClass = MinecraftIndexedFontAssetSource::class.java
+            val runtimeOrigin = runtimeClass.protectionDomain.codeSource.location
+            val fixtureOrigin = javaClass.protectionDomain.codeSource.location
+            println("indexed-font-controls=32; runtime=$runtimeOrigin; fixture=$fixtureOrigin")
         }
 
         private fun control(
@@ -270,7 +272,7 @@ public object IndexedFontAssetControls {
             accepted: Boolean,
         ) {
             check(reference.matches(value) == accepted)
-            if (accepted) check(source(single(quote(value))).paths() == setOf("assets/test/data")) else failure<IllegalArgumentException>(hashMessage) { source(single(quote(value))) }
+            if (accepted) check(source(single(quote(value))).paths() == setOf("assets/test/data")) else invalidHash { source(single(quote(value))) }
         }
 
         private fun source(
@@ -286,6 +288,10 @@ public object IndexedFontAssetControls {
         private fun records(entries: List<Pair<String, String>>): String = entries.joinToString(",", "{\"objects\":{", "}}") { (path, hash) -> "${quote(path)}:{\"hash\":${quote(hash)}}" }
 
         private fun quote(value: String): String = value.map { character -> "\\u%04x".format(Locale.ROOT, character.code) }.joinToString("", "\"", "\"")
+
+        private fun invalidHash(operation: () -> Any?) {
+            failure<IllegalArgumentException>("Asset index object hash is invalid.", operation)
+        }
 
         private inline fun <reified T : Throwable> failure(
             message: String? = null,

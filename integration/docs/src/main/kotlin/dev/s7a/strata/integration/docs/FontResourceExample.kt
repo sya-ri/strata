@@ -12,13 +12,11 @@ import java.nio.file.Path
 
 /**
  * Loads a shareable snapshot while the caller keeps the exact-target files stable.
- * The custom pack has highest priority; [limits] applies to both index reads and loading.
+ * The custom pack has highest priority; construct the indexed receiver with the same [limits] used for loading.
  * Invalid documents produce diagnostics, enumeration failures propagate, and streams close before return.
  */
-internal fun loadFonts(
+internal fun MinecraftIndexedFontAssetSource.loadFonts(
     clientJar: Path,
-    assetIndex: Path,
-    objects: Path,
     customPack: Path,
     compatibility: MinecraftFontCompatibility,
     options: MinecraftFontOptions,
@@ -27,7 +25,7 @@ internal fun loadFonts(
     MinecraftFontSnapshot.load(
         sources =
             listOf(
-                MinecraftIndexedFontAssetSource(assetIndex, objects, "Minecraft assets", limits),
+                this,
                 MinecraftArchiveFontAssetSource(clientJar),
                 MinecraftDirectoryFontAssetSource(customPack),
             ),

@@ -45,7 +45,7 @@ public class IndexedFontAssetFiles private constructor(
     /**
      * Runs the actual compiled documentation example, including its constructor and complete snapshot load.
      */
-    public fun loadExample(): MinecraftFontSnapshot = loadFonts(archive, index, objects, directory, compatibility, options, limits)
+    public fun loadExample(): MinecraftFontSnapshot = source().loadFonts(archive, directory, compatibility, options, limits)
 
     /**
      * Consumes IDs, complete diagnostics and deterministic detached glyphs after the engine closes.
@@ -74,10 +74,12 @@ public class IndexedFontAssetFiles private constructor(
      * Prepares common inputs once, independently of collection and runtime qualification.
      */
     public companion object {
+        private val defaultFont = ResourceId("minecraft", "default")
+
         /**
          * Exact default-font path selected by the read operation and snapshot loader.
          */
-        public val defaultPath: String = "assets/minecraft/font/default.json"
+        public val defaultPath: String = "assets/${defaultFont.namespace}/font/${defaultFont.path}.json"
 
         /**
          * Unmodified source and snapshot ceilings; no matrix size requires inflation.
@@ -93,7 +95,6 @@ public class IndexedFontAssetFiles private constructor(
          * Identical provider options for the two qualifications and every collection.
          */
         public val options: MinecraftFontOptions = MinecraftFontOptions()
-        private val defaultFont = ResourceId("minecraft", "default")
         private val indexedBytes = document("""{"A":7,"I":2}""")
 
         /**
