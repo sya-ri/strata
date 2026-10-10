@@ -18,22 +18,31 @@ internal class QodanaJmhModelFunctionalTest {
 
     private val repository =
         generateSequence(Path.of("").toAbsolutePath()) { it.parent }
-            .first { Files.isRegularFile(it.resolve("gradle/qodana-jmh-inventory.gradle.kts")) }
+            .first { Files.isRegularFile(it.resolve("gradle/libs.versions.toml")) }
 
     @Test
     fun `discover custom working owners and retain all declared inputs and dependency mappings`() {
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
-        Files.copy(repository.resolve("gradle/qodana-jmh-inventory.gradle.kts"), directory.resolve("gradle/qodana-jmh-inventory.gradle.kts"))
+        write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
         Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", ${owners.joinToString { "\"$it\"" }})\n")
         val production = Files.readString(repository.resolve("build.gradle.kts"))
+        val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
         Files.writeString(
             directory.resolve("build.gradle.kts"),
             """
+            import groovy.json.JsonOutput
+            import java.io.File
+            import java.security.MessageDigest
+            import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+            import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+            import org.gradle.api.plugins.JavaPluginExtension
             import org.gradle.api.tasks.SourceSetContainer
+            import org.gradle.jvm.toolchain.JavaLanguageVersion
+            import org.gradle.jvm.toolchain.JavaToolchainService
             import org.gradle.plugins.ide.idea.model.IdeaModel
             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
             plugins {
@@ -42,7 +51,7 @@ internal class QodanaJmhModelFunctionalTest {
                 alias(libs.plugins.jmh) apply false
             }
             val completeIdeaModelActive = true
-            apply(from = "gradle/qodana-jmh-inventory.gradle.kts")
+            $inventory
             subprojects {
                 apply(plugin = "org.jetbrains.kotlin.jvm")
                 apply(plugin = "idea")
@@ -119,7 +128,10 @@ internal class QodanaJmhModelFunctionalTest {
     }
 
     /** Writes authored fixture sources before the declaration snapshot is selected. */
-    private fun write(relative: String, text: String) {
+    private fun write(
+        relative: String,
+        text: String,
+    ) {
         val target = directory.resolve(relative)
         Files.createDirectories(target.parent)
         Files.writeString(target, text)
@@ -135,7 +147,13 @@ internal class QodanaJmhModelFunctionalTest {
     /** Bounds the real plugin/model fixture without loading Minecraft or benchmark harness generation. */
     private fun runner(): GradleRunner =
         GradleRunner.create().withProjectDir(directory.toFile()).withArguments(
-            "cleanIdea", "idea", "qodanaDeclarationInventory", "--no-configure-on-demand", "--max-workers=1", "--no-parallel",
-            "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m", "--stacktrace",
+            "cleanIdea",
+            "idea",
+            "qodanaDeclarationInventory",
+            "--no-configure-on-demand",
+            "--max-workers=1",
+            "--no-parallel",
+            "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m",
+            "--stacktrace",
         )
 }
