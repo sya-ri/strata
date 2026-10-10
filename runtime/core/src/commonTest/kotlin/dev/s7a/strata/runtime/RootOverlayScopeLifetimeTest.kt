@@ -131,39 +131,7 @@ internal class RootOverlayScopeLifetimeTest {
         val other = RuntimeExecutionOwner()
         for (cause in GuardFailureCause.entries) {
             owner.run {
-                val probe = RootOverlayProbe()
-                val detach = IllegalStateException("detach after guard failure")
-                val dispose = IllegalStateException("dispose after guard failure")
-                probe.detachFailure = detach
-                probe.disposeFailure = dispose
-                val session = createRuntimeUiSession { probe.element() }
-                try {
-                    session.attach()
-                    val initial = session.frame(Constraints.fixed(4, 4))
-                    val committed = initial.drawCommands.toList()
-                    val expired = probe.scopes.single()
-                    var guardFailure: IllegalStateException? = null
-                    probe.rootOverlay = { scope ->
-                        scope.fillRectangle(IntRect(0, 0, 4, 4), ArgbColor(-1))
-                        guardFailure =
-                            when (cause) {
-                                GuardFailureCause.Owner -> other.run { assertFailsWith<IllegalStateException> { scope.anchorBounds } }
-                                GuardFailureCause.Lifetime -> assertFailsWith<IllegalStateException> { expired.anchorBounds }
-                            }
-                        throw requireNotNull(guardFailure)
-                    }
-                    probe.invalidatePaint()
-                    val thrown = assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }
-                    assertSame(guardFailure, thrown)
-                    assertEquals(listOf(detach, dispose), thrown.suppressedExceptions.toList())
-                    assertEquals(committed, initial.drawCommands)
-                    probe.scopes.forEach { scope -> assertFailsWith<IllegalStateException> { scope.anchorBounds } }
-                    assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }
-                } finally {
-                    session.close()
-                }
-                assertEquals(1, probe.detachCalls)
-                assertEquals(1, probe.disposeCalls)
+                verifyEscapingGetterFailure(cause, other)
             }
         }
     }
@@ -202,6 +170,48 @@ internal class RootOverlayScopeLifetimeTest {
         (first.scopes + second.scopes).forEach { scope -> assertFailsWith<IllegalStateException> { scope.anchorBounds } }
         assertEquals(1, second.detachCalls)
         assertEquals(1, second.disposeCalls)
+    }
+
+    /**
+     * Verifies one escaped guard boundary against the same committed frame and terminal cleanup contract.
+     */
+    private fun verifyEscapingGetterFailure(
+        cause: GuardFailureCause,
+        other: RuntimeExecutionOwner,
+    ) {
+        val probe = RootOverlayProbe()
+        val detach = IllegalStateException("detach after guard failure")
+        val dispose = IllegalStateException("dispose after guard failure")
+        probe.detachFailure = detach
+        probe.disposeFailure = dispose
+        val session = createRuntimeUiSession { probe.element() }
+        try {
+            session.attach()
+            val initial = session.frame(Constraints.fixed(4, 4))
+            val committed = initial.drawCommands.toList()
+            val expired = probe.scopes.single()
+            var guardFailure: IllegalStateException? = null
+            probe.rootOverlay = { scope ->
+                scope.fillRectangle(IntRect(0, 0, 4, 4), ArgbColor(-1))
+                guardFailure =
+                    when (cause) {
+                        GuardFailureCause.Owner -> other.run { assertFailsWith<IllegalStateException> { scope.anchorBounds } }
+                        GuardFailureCause.Lifetime -> assertFailsWith<IllegalStateException> { expired.anchorBounds }
+                    }
+                throw requireNotNull(guardFailure)
+            }
+            probe.invalidatePaint()
+            val thrown = assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }
+            assertSame(guardFailure, thrown)
+            assertEquals(listOf(detach, dispose), thrown.suppressedExceptions.toList())
+            assertEquals(committed, initial.drawCommands)
+            probe.scopes.forEach { scope -> assertFailsWith<IllegalStateException> { scope.anchorBounds } }
+            assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(4, 4)) }
+        } finally {
+            session.close()
+        }
+        assertEquals(1, probe.detachCalls)
+        assertEquals(1, probe.disposeCalls)
     }
 
     /**
