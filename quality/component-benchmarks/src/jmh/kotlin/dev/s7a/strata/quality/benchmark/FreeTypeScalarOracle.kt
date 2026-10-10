@@ -24,10 +24,11 @@ internal object FreeTypeScalarOracle {
         LwjglMinecraftFontBackendFactory.open(FontRasterAssets.compatibility(MinecraftTrueTypeRasterizer.FreeType)).use { backend ->
             backend.openTrueType(FreeTypeGrayscaleAssets.font(), fixture.settings).use { managed ->
                 val delegate = FreeTypeGrayscaleAssets.delegate(managed)
-                val face = delegate.javaClass
-                    .getDeclaredField("face")
-                    .apply { isAccessible = true }
-                    .get(delegate) as FT_Face
+                val face =
+                    delegate.javaClass
+                        .getDeclaredField("face")
+                        .apply { isAccessible = true }
+                        .get(delegate) as FT_Face
                 val index = FreeType.FT_Get_Char_Index(face, fixture.scalar.toLong())
                 check(index != 0) { "The frozen scalar is absent" }
                 check(FreeType.FT_Load_Glyph(face, index, FreeType.FT_LOAD_NO_BITMAP or FreeType.FT_LOAD_BITMAP_METRICS_ONLY) == 0)

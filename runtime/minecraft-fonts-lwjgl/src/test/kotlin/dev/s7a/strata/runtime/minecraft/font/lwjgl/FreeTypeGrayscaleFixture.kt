@@ -179,9 +179,10 @@ internal object FreeTypeGrayscaleFixture {
         }
     }
 
-    private fun converter(face: FreeTypeMinecraftFontFace): Method = face.javaClass
-        .getDeclaredMethod("pixels", FT_Bitmap::class.java, Int::class.java, Int::class.java)
-        .apply { isAccessible = true }
+    private fun converter(face: FreeTypeMinecraftFontFace): Method =
+        face.javaClass
+            .getDeclaredMethod("pixels", FT_Bitmap::class.java, Int::class.java, Int::class.java)
+            .apply { isAccessible = true }
 
     private fun invoke(
         face: FreeTypeMinecraftFontFace,

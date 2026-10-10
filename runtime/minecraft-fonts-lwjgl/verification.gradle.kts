@@ -2,6 +2,7 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 
@@ -193,6 +194,8 @@ fun fontRuntime(contract: FontTestContract) {
         systemProperty("strata.fontPreparedTextBounds", contract.preparedTextBounds)
         javaLauncher.set(workerLauncher)
         if (contract.requiresNativeAccess()) jvmArgs("--enable-native-access=ALL-UNNAMED")
+        // Preserve isolated-worker discovery and linkage causes in ordinary CI failure logs.
+        testLogging { exceptionFormat = TestExceptionFormat.FULL }
         useJUnitPlatform { excludeTags("font-offline-parity") }
     }
     tasks.named("check") { dependsOn(verification) }
