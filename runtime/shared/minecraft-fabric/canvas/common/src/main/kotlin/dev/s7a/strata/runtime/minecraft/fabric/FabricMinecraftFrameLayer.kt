@@ -100,6 +100,9 @@ internal inline fun submitFabricMinecraftFrameLayers(
  * Adapters with floating UV submission may admit fractional source edges; other adapters require integer texel edges.
  * Unsupported sampled commands remain inside the existing portable path without changing their pixels or ordering.
  * Invisible portable primitives are omitted from pixel inputs; direct-image barriers retain their exact display-list positions.
+ * Integer clip intersections are updated once per push and restored per pop, with one prefix per active nesting level.
+ * Stack capacity is bounded by peak depth within this invocation; return or failure releases the stack.
+ * Original clip commands remain separate for exact fractional eligibility and balanced portable reconstruction.
  *
  * @param commands complete balanced display list.
  * @param viewport positive or empty logical viewport used only for visibility and bounded fallback allocation.
@@ -118,7 +121,7 @@ internal fun partitionFabricMinecraftFrame(
 ): List<FabricMinecraftFrameLayer> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val layers = ArrayList<FabricMinecraftFrameLayer>()
-    val activeClips = ArrayList<IntRect>()
+    val effectiveClips = ArrayList<IntRect>()
     val activeClipCommands = ArrayList<DrawCommand>()
     val viewportBounds = IntRect(0, 0, viewport.width, viewport.height)
     var portable = ArrayList<DrawCommand>()
@@ -133,7 +136,7 @@ internal fun partitionFabricMinecraftFrame(
     fun flushPortable() {
         val bounds = portableBounds
         if (bounds != null) {
-            repeat(activeClips.size) { portable.add(DrawCommand.PopClip) }
+            repeat(effectiveClips.size) { portable.add(DrawCommand.PopClip) }
             layers.addAll(tileFabricMinecraftPortable(portable, bounds, scale, portableIneligibleSampledImages, portableCapacitySampledImages, portableTintFallbackImages, portableAlphaCutoffFallbackImages))
         }
         portable = ArrayList()
@@ -148,19 +151,19 @@ internal fun partitionFabricMinecraftFrame(
     commands.forEachIndexed { occurrence, command ->
         when (command) {
             is DrawCommand.FillRectangle -> {
-                val visible = visibleFabricBounds(command.bounds, activeClips, viewportBounds) ?: return@forEachIndexed
+                val visible = visibleFabricBounds(command.bounds, effectiveClips.lastOrNull() ?: viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.BlitImage -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
+                val visible = visibleFabricBounds(command.destination, effectiveClips.lastOrNull() ?: viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.SampledImage -> {
-                val visibleClip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
+                val visibleClip = effectiveClips.lastOrNull() ?: viewportBounds
                 val ordinary = isDirectFabricSampledImage(command, scale, fractionalSource)
                 val extendedEffects = command.tint != ArgbColor(-1) || command.alphaCutoff != 0f
                 val supported = isDirectFabricSampledImage(command, scale, fractionalSource, exactSampling)
@@ -180,7 +183,7 @@ internal fun partitionFabricMinecraftFrame(
                 if (directClip != null) {
                     flushPortable()
                     command.destination.enclosingFabricViewportBounds(directClip)?.let { visible ->
-                        layers.add(sampledFabricLayer(command, directClip.takeIf { activeClips.isNotEmpty() }, visible, scale, fractionalSource))
+                        layers.add(sampledFabricLayer(command, directClip.takeIf { effectiveClips.isNotEmpty() }, visible, scale, fractionalSource))
                     }
                 } else {
                     val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEachIndexed
@@ -200,50 +203,50 @@ internal fun partitionFabricMinecraftFrame(
             }
 
             is DrawCommand.BlitImagePixels -> {
-                val visible = visibleFabricBounds(command.destination, activeClips, viewportBounds) ?: return@forEachIndexed
+                val visible = visibleFabricBounds(command.destination, effectiveClips.lastOrNull() ?: viewportBounds) ?: return@forEachIndexed
                 portable.add(command)
                 portableBounds = includeFabricVisibleBounds(portableBounds, visible)
             }
 
             is DrawCommand.PushClip -> {
-                activeClips.add(command.bounds)
+                effectiveClips.add(intersectFabricBounds(effectiveClips.lastOrNull() ?: viewportBounds, command.bounds))
                 activeClipCommands.add(command)
                 portable.add(command)
             }
 
             is DrawCommand.PushFractionalClip -> {
                 val bounds = command.bounds
-                activeClips.add(
+                val integerBounds =
                     IntRect(
                         floor(bounds.left.coerceIn(0f, viewport.width.toFloat())).toInt(),
                         floor(bounds.top.coerceIn(0f, viewport.height.toFloat())).toInt(),
                         ceil(bounds.right.coerceIn(0f, viewport.width.toFloat())).toInt(),
                         ceil(bounds.bottom.coerceIn(0f, viewport.height.toFloat())).toInt(),
-                    ),
-                )
+                    )
+                effectiveClips.add(intersectFabricBounds(effectiveClips.lastOrNull() ?: viewportBounds, integerBounds))
                 activeClipCommands.add(command)
                 portable.add(command)
             }
 
             DrawCommand.PopClip -> {
-                require(activeClips.isNotEmpty()) { "Clip pop has no matching push." }
-                activeClips.removeAt(activeClips.lastIndex)
+                require(effectiveClips.isNotEmpty()) { "Clip pop has no matching push." }
+                effectiveClips.removeAt(effectiveClips.lastIndex)
                 activeClipCommands.removeAt(activeClipCommands.lastIndex)
                 portable.add(command)
             }
 
             is DrawCommand.Platform -> {
                 val bounds = command.bounds
-                val clip = activeClips.fold(viewportBounds, ::intersectFabricBounds)
+                val clip = effectiveClips.lastOrNull() ?: viewportBounds
                 require(fractionalClipsContain(activeClipCommands, FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat()), clip)) {
                     "Opaque platform drawing intersecting a fractional clip is unsupported."
                 }
                 flushPortable()
-                layers.add(FabricMinecraftFrameLayer.Platform(command, clip.takeIf { activeClips.isNotEmpty() }))
+                layers.add(FabricMinecraftFrameLayer.Platform(command, clip.takeIf { effectiveClips.isNotEmpty() }))
             }
         }
     }
-    require(activeClips.isEmpty()) { "Clip push has no matching pop." }
+    require(effectiveClips.isEmpty()) { "Clip push has no matching pop." }
     flushPortable()
     return layers
 }
@@ -323,10 +326,9 @@ private fun pixelAlignedFabricSampledClip(
 
 private fun visibleFabricBounds(
     commandBounds: IntRect,
-    activeClips: List<IntRect>,
-    viewportBounds: IntRect,
+    effectiveClip: IntRect,
 ): IntRect? {
-    val visible = activeClips.fold(intersectFabricBounds(viewportBounds, commandBounds), ::intersectFabricBounds)
+    val visible = intersectFabricBounds(effectiveClip, commandBounds)
     return visible.takeIf { 0 < it.width && 0 < it.height }
 }
 

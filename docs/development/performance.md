@@ -48,6 +48,23 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Native frame clip intersections
+
+Changed-frame Fabric partitioning owns one effective viewport intersection per active clip level.
+Push computes the next prefix and pop restores the previous value; stack size equals current depth and backing capacity is bounded by the peak depth of that invocation.
+Return or failure releases the scratch stack, with no cross-frame key, native resource, image pin or historical entry.
+Original clip commands still determine fractional containment, physical pixel alignment and balanced portable runs.
+A conservative integer enclosure cannot grant native eligibility rejected by those raw commands.
+
+The independent complete-stack and physical pixel-center tests cover depths zero through 128, sibling restoration, empty/offscreen edge positions, malformed frames, blit source coordinates, barrier order, fallback counts and large tile ordering groups.
+The separate `FrameClipBenchmark` corpus uses the actual Fabric archive through the same normal-classloader reflective boundary on both revisions.
+Its 120 scene rows compare changed partitioning with primed frame-input resolution at five depths, two primitive counts, three clip representations and small/large viewports; six additional rows cover empty, clip-only, empty/offscreen clips, large coordinates and sibling changes.
+The 14 native `FrameClip` cases use the existing sampled-image family and shared presented-frame meter, with depth-zero/shallow controls, integer/fractional/mixed deep clips, few primitives, small viewport and clean prepared-frame reuse at every standard GUI scale.
+A fixed native Canvas source supplies an actual platform barrier under the original clips; source images stay unchanged across paint revisions.
+The prepared resolution control does not measure the screen's clean-frame identity guard; that bypass requires separate native evidence.
+For C ordinary visibility checks at depth D, the removed folds contain C*D intersections, replaced by D prefix updates for one enclosing stack.
+These are conditional source work counts, not measured CPU or allocation savings; primitive intersections and raw fractional checks remain.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

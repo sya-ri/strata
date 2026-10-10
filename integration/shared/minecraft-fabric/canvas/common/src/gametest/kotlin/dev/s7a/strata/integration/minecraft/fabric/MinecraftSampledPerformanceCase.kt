@@ -7,6 +7,10 @@ package dev.s7a.strata.integration.minecraft.fabric
 internal enum class MinecraftSampledPerformanceCase(
     val mode: Mode,
     val resolution: Int,
+    val clipDepth: Int = 0,
+    val clipPattern: ClipPattern? = null,
+    val clipPrimitives: Int = 512,
+    val smallClipViewport: Boolean = false,
 ) {
     SampledStationarySmall(Mode.Stationary, 16),
     SampledStationaryMedium(Mode.Stationary, 64),
@@ -32,6 +36,20 @@ internal enum class MinecraftSampledPerformanceCase(
     SampledTiledTranslationSmall(Mode.TiledTranslation, 16),
     SampledTiledTranslationMedium(Mode.TiledTranslation, 64),
     SampledTiledTranslationLarge(Mode.TiledTranslation, 256),
+    FrameClipInteger0(Mode.FrameClips, 4, 0, ClipPattern.Integer),
+    FrameClipInteger1(Mode.FrameClips, 4, 1, ClipPattern.Integer),
+    FrameClipInteger4(Mode.FrameClips, 4, 4, ClipPattern.Integer),
+    FrameClipInteger32(Mode.FrameClips, 4, 32, ClipPattern.Integer),
+    FrameClipInteger128(Mode.FrameClips, 4, 128, ClipPattern.Integer),
+    FrameClipFractional4(Mode.FrameClips, 4, 4, ClipPattern.Fractional),
+    FrameClipFractional32(Mode.FrameClips, 4, 32, ClipPattern.Fractional),
+    FrameClipFractional128(Mode.FrameClips, 4, 128, ClipPattern.Fractional),
+    FrameClipMixed4(Mode.FrameClips, 4, 4, ClipPattern.Mixed),
+    FrameClipMixed32(Mode.FrameClips, 4, 32, ClipPattern.Mixed),
+    FrameClipMixed128(Mode.FrameClips, 4, 128, ClipPattern.Mixed),
+    FrameClipFewMixed32(Mode.FrameClips, 4, 32, ClipPattern.Mixed, clipPrimitives = 8),
+    FrameClipSmallInteger32(Mode.FrameClips, 4, 32, ClipPattern.Integer, smallClipViewport = true),
+    FrameClipCleanMixed32(Mode.FrameClipsClean, 4, 32, ClipPattern.Mixed),
     ;
 
     /**
@@ -46,5 +64,16 @@ internal enum class MinecraftSampledPerformanceCase(
         OrderedRows,
         ScrolledRows,
         TiledTranslation,
+        FrameClips,
+        FrameClipsClean,
+    }
+
+    /**
+     * Raw clip representation produced by alternating fixed child translations before leaf coordinates are restored.
+     */
+    enum class ClipPattern {
+        Integer,
+        Fractional,
+        Mixed,
     }
 }

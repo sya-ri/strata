@@ -29,6 +29,13 @@ The task runs the performance entry only, without the ordinary correctness scene
 Add `"quick": true` to a native summary request and provide one run plus a real CPU receipt for binary provenance, as for standard collection.
 Before accepting a performance change, repeat the affected workloads using their unchanged standard settings and run the required correctness gates once the implementation is stable.
 
+The separate `FrameClipPerformanceEvidence` entry registers `FrameClipBenchmark` with the shared collector and accepts a fresh output directory, repetition index and ordinary JMH CLI settings.
+Supply the actual API, core, headless, Minecraft, font and Fabric runtime archives on the normal application/context classpath, alongside the unchanged generated fixture, collector, harness and control libraries.
+Register external control libraries with the existing `strata.performance.inputs` manifest and select the same mode through `strata.performance.mode` and JMH's `-bm` argument.
+The complete matrix contains 126 rows per mode and is collected three independent times per side using standard settings.
+Archive and full class-tree identities from the actual parent and forks establish the comparison; filenames and rewritten provenance reports do not.
+Complete native presentation and GUI-only GPU measurements remain a separate acceptance scope.
+
 ## Collection ownership
 
 The kit owns clocks, sample collection, distributions, native presentation counters, runtime monitoring, and collector provenance.
