@@ -103,7 +103,7 @@ private class MinecraftTextFieldElement(
         private var focused = false
         private var attached = false
         private var cursor = initialState.value.length
-        private var preedit: TextInputEvent.Preedit? = null
+        private var preedit: Composition? = null
         private var releaseObserver: AutoCloseable? = null
 
         override val acceptsFocus: Boolean
@@ -127,7 +127,7 @@ private class MinecraftTextFieldElement(
             appearance.paint(scope, enabled, focused)
             val currentValue = checkNotNull(state).value
             val composed = composedText(currentValue)
-            val visualCursor = Math.addExact(cursor, preedit?.caretPosition ?: 0)
+            val visualCursor = Math.addExact(cursor, preedit?.event?.caretPosition ?: 0)
             val visible = visibleText(composed, visualCursor)
             val run = createRun(visible.text)
             run.paint(scope, textOrigin.x, textOrigin.y)
@@ -334,8 +334,9 @@ private class MinecraftTextFieldElement(
                 return InputResult.Ignored
             }
             val next = event.takeIf { current -> current.fullText.isNotEmpty() }
-            if (preedit != next) {
-                preedit = next
+            if (preedit?.event != next) {
+                val composition = next?.let { Composition(it, focusedRange(it)) }
+                preedit = composition
                 invalidate(DirtyMask.of(DirtyPhase.Paint))
             }
             return InputResult.Consumed
@@ -391,10 +392,10 @@ private class MinecraftTextFieldElement(
         private fun cursorAt(localX: Int): Int {
             val value = checkNotNull(state).value
             val composed = composedText(value)
-            val visible = visibleText(composed, Math.addExact(cursor, preedit?.caretPosition ?: 0))
+            val visible = visibleText(composed, Math.addExact(cursor, preedit?.event?.caretPosition ?: 0))
             val position = checkNotNull(textRenderer).literalPositionAt(visible.text, font, localX.coerceIn(0, innerWidth))
             val composedPosition = Math.addExact(visible.start, position)
-            val compositionEnd = Math.addExact(cursor, preedit?.fullText?.length ?: 0)
+            val compositionEnd = Math.addExact(cursor, preedit?.event?.fullText?.length ?: 0)
             return when {
                 composedPosition <= cursor -> composedPosition
                 composedPosition < compositionEnd -> cursor
@@ -404,17 +405,16 @@ private class MinecraftTextFieldElement(
 
         private fun composedText(value: String): String =
             preedit?.let { composition ->
-                value.substring(0, cursor) + composition.fullText + value.substring(cursor)
+                value.substring(0, cursor) + composition.event.fullText + value.substring(cursor)
             } ?: value
 
         private fun paintPreeditBlock(
             scope: PaintScope,
             visible: VisibleText,
         ) {
-            val composition = preedit ?: return
-            if (composition.focusedBlock < 0 || composition.blocks.joinToString("") != composition.fullText) return
-            val blockStart = Math.addExact(cursor, composition.blocks.take(composition.focusedBlock).sumOf(String::length))
-            val blockEnd = Math.addExact(blockStart, composition.blocks[composition.focusedBlock].length)
+            val range = preedit?.focusedRange ?: return
+            val blockStart = Math.addExact(cursor, range.start)
+            val blockEnd = Math.addExact(blockStart, range.length)
             val visibleEnd = Math.addExact(visible.start, visible.text.length)
             val start = maxOf(visible.start, blockStart)
             val end = minOf(visibleEnd, blockEnd)
@@ -432,6 +432,36 @@ private class MinecraftTextFieldElement(
             preedit = null
             invalidate(DirtyMask.of(DirtyPhase.Paint))
         }
+
+        private fun focusedRange(event: TextInputEvent.Preedit): FocusedRange? {
+            if (event.focusedBlock < 0) return null
+            var offset = 0
+            var focusedStart = 0
+            event.blocks.forEachIndexed { index, block ->
+                if (event.fullText.length - offset < block.length || event.fullText.regionMatches(offset, block, 0, block.length).not()) return null
+                if (index == event.focusedBlock) focusedStart = offset
+                offset += block.length
+            }
+            if (offset != event.fullText.length) return null
+            return FocusedRange(focusedStart, event.blocks[event.focusedBlock].length)
+        }
+
+        /**
+         * Current accepted input and its nullable relative underline range, confined to this node's owner thread.
+         * All composition cutoff paths release both together; no font, geometry, native handle or previous input is retained.
+         */
+        private data class Composition(
+            val event: TextInputEvent.Preedit,
+            val focusedRange: FocusedRange?,
+        )
+
+        /**
+         * UTF-16 start and length in the current fully agreeing scalar-valid blocks; placement remains checked during paint.
+         */
+        private data class FocusedRange(
+            val start: Int,
+            val length: Int,
+        )
 
         private fun previousScalar(
             text: String,

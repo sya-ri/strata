@@ -543,6 +543,16 @@ The raster byte bound covers cache-owned pixels; the face byte bound covers reta
 Neither includes glyphs in current caller-owned runs or immutable source-file bytes in a shared snapshot.
 Native font acceptance separately compares standard Minecraft rendering at each tested GUI scale; sharing the portable rasterizer cannot by itself establish native equality.
 
+### Single-line composition metadata
+
+Each retained TextField owns only its current accepted immutable preedit event and one nullable relative focused-block start and length.
+Full-text and every-block scalar/control validation and the scalar caret boundary are checked before replacement; complete ordered block agreement and the focused prefix are derived only when accepted input changes.
+The event's full text, blocks and focused index determine the relative range; caret changes still participate in event equality and paint invalidation.
+Paint translates that range through the current checked cursor placement and signed font widths, retaining no font, geometry, scope or native handle in the metadata.
+Appearance, width and font changes preserve the current composition and recalculate geometry while painting.
+Replacement, empty composition, focus loss, disabling, state replacement, external committed edits, cursor/committed input, detachment and disposal release the event and range together, including terminal host failure and close.
+All access stays on the node's owner thread, with no historical-event map or global index.
+
 ### Visible glyph submission
 
 A current text run retains its immutable positioned glyphs and at most three additional float extrema for horizontal candidate selection.
