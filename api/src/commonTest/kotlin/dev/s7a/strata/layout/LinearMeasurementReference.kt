@@ -19,7 +19,9 @@ import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.node.Node as RetainedNode
 
 /**
- * Internal immutable description shared by row and column declarations.
+ * Frozen complete Row/Column reference from master 5b0bc358d6dc8346fad091be6347036e96a55dfd.
+ * Original LinearElement blob: 25c61d700e7489517161d23d88e4d3e340dc2739.
+ * Keep the original measure and layout algorithms independent from the candidate.
  *
  * The base [Element] snapshots the direct children and retains the immutable modifier chain.
  * After submission, the runtime owns this description snapshot and the retained [Node] created from it.
@@ -33,7 +35,7 @@ import dev.s7a.strata.node.Node as RetainedNode
  * @param modifier active behavior applied around the retained component.
  * @throws IllegalArgumentException when [spacing] is negative.
  */
-internal class LinearElement(
+internal class LinearMeasurementReference(
     val orientation: LinearOrientation,
     val spacing: Int,
     val arrangement: Arrangement,
@@ -76,10 +78,10 @@ internal class LinearElement(
             scope: MeasureScope,
             constraints: Constraints,
         ): IntSize {
-            val weights = collectWeights(scope)
+            val plan = collectWeights(scope)
             val childSizes = arrayOfNulls<IntSize>(scope.childCount)
-            val fixedMain = measureFixedChildren(scope, constraints, weights, childSizes)
-            measureWeightedChildren(scope, constraints, weights, fixedMain, childSizes)
+            val fixedMain = measureFixedChildren(scope, constraints, plan.weights, childSizes)
+            measureWeightedChildren(scope, constraints, plan, fixedMain, childSizes)
             return constraints.constrain(naturalSize(childSizes))
         }
 
@@ -123,8 +125,8 @@ internal class LinearElement(
          * @return the phases affected by the changed properties.
          */
         internal fun update(
-            previous: LinearElement,
-            current: LinearElement,
+            previous: LinearMeasurementReference,
+            current: LinearMeasurementReference,
         ): DirtyMask {
             var dirty = DirtyMask.None
             val axisChanged = previous.orientation.axis != current.orientation.axis
@@ -146,32 +148,34 @@ internal class LinearElement(
             return dirty
         }
 
-        // Null is a completely captured unweighted pass, never a request to reread parent data.
-        private fun collectWeights(scope: MeasureScope): Array<WeightParentData.Data?>? {
-            var weights: Array<WeightParentData.Data?>? = null
-            val childCount = scope.childCount
-            for (index in 0 until childCount) {
+        private class WeightPlan(
+            val weights: Array<WeightParentData.Data?>,
+            val weighted: Boolean,
+        )
+
+        private fun collectWeights(scope: MeasureScope): WeightPlan {
+            val weights = arrayOfNulls<WeightParentData.Data>(scope.childCount)
+            var weighted = false
+            for (index in 0 until scope.childCount) {
                 val weight = scope.childParentData(index, WeightParentData.KEY)
+                weights[index] = weight
                 if (weight != null) {
-                    val captured = weights ?: arrayOfNulls<WeightParentData.Data>(childCount).also { weights = it }
-                    captured[index] = weight
+                    weighted = true
                 }
             }
-            return weights
+            return WeightPlan(weights, weighted)
         }
 
         private fun measureFixedChildren(
             scope: MeasureScope,
             constraints: Constraints,
-            weights: Array<WeightParentData.Data?>?,
+            weights: Array<WeightParentData.Data?>,
             childSizes: Array<IntSize?>,
         ): Long {
             var fixedMain = 0L
-            var commonConstraints: Constraints? = null
             for (index in 0 until scope.childCount) {
-                if (weights?.get(index) == null) {
-                    val childConstraints = commonConstraints ?: fixedConstraints(constraints).also { commonConstraints = it }
-                    val size = scope.measureChild(index, childConstraints)
+                if (weights[index] == null) {
+                    val size = scope.measureChild(index, fixedConstraints(constraints))
                     childSizes[index] = size
                     fixedMain += mainExtent(size)
                 }
@@ -182,19 +186,21 @@ internal class LinearElement(
         private fun measureWeightedChildren(
             scope: MeasureScope,
             constraints: Constraints,
-            capturedWeights: Array<WeightParentData.Data?>?,
+            plan: WeightPlan,
             fixedMain: Long,
             childSizes: Array<IntSize?>,
         ) {
-            val weights = capturedWeights ?: return
+            if (plan.weighted.not()) {
+                return
+            }
             if (mainMaximum(constraints) == Int.MAX_VALUE) {
-                measureIntrinsicWeightedChildren(scope, constraints, weights, childSizes)
+                measureIntrinsicWeightedChildren(scope, constraints, plan.weights, childSizes)
                 return
             }
             val available = availableWeightSpace(scope.childCount, constraints, fixedMain)
-            val slots = allocateWeightedSlots(weights, available)
+            val slots = allocateWeightedSlots(plan.weights, available)
             for (index in 0 until scope.childCount) {
-                val weight = weights[index]
+                val weight = plan.weights[index]
                 if (weight != null) {
                     childSizes[index] =
                         scope.measureChild(index, weightedConstraints(constraints, slots[index], weight.fill))
@@ -208,11 +214,9 @@ internal class LinearElement(
             weights: Array<WeightParentData.Data?>,
             childSizes: Array<IntSize?>,
         ) {
-            var commonConstraints: Constraints? = null
             for (index in 0 until scope.childCount) {
                 if (weights[index] != null) {
-                    val childConstraints = commonConstraints ?: intrinsicWeightedConstraints(constraints).also { commonConstraints = it }
-                    childSizes[index] = scope.measureChild(index, childConstraints)
+                    childSizes[index] = scope.measureChild(index, intrinsicWeightedConstraints(constraints))
                 }
             }
         }
@@ -357,9 +361,9 @@ internal class LinearElement(
      * Stable token for both axis variants of the linear component.
      */
     companion object {
-        internal val TYPE: ElementType<LinearElement, Node> =
+        internal val TYPE: ElementType<LinearMeasurementReference, Node> =
             ElementType(
-                elementClass = LinearElement::class,
+                elementClass = LinearMeasurementReference::class,
                 nodeClass = Node::class,
                 validateLocal = { element ->
                     require(0 <= element.spacing) { "Linear layout spacing must be non-negative." }

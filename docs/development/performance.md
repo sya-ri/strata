@@ -71,6 +71,23 @@ The separate `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=
 It also measures an actual 128-child declaration rebuild separately from construction-only operations; no retained frame, rasterization, upload or GPU consumption occurs inside these boundaries.
 It uses the existing receipt collector, runtime manifest replacement and standard sampling settings without changing the historical corpus.
 
+### Invocation-local linear measurement
+
+Row and Column capture every direct child's weight parent data in ascending order before measuring any child.
+An entirely unweighted pass uses no weight array; the first non-null weight admits one current-child-count array, whose earlier positions remain unweighted.
+Fixed children share one immutable loosened Constraints value within that invocation, created only when the first fixed child is measured.
+Intrinsic weighted children similarly share one value only when that path runs.
+Bounded weighted slots retain their original Double arithmetic, fill rules, ordering and last-child remainder.
+The parent retains no weight plan, callback, scope or historical child membership.
+The existing measurement and placement child-size snapshots remain independent and complete.
+Child measure caches may retain the primitive-only immutable Constraints under their ordinary replacement and release contract.
+
+The separate `LinearMeasurementBenchmark,ReactiveRenderingBenchmark` selection in `:quality:benchmarks:jmhHistorical`, with suite `linear-measurement-v1`, keeps 110 finite linear cases and all 18 unchanged reactive controls.
+Both average and sample modes retain the original Standard settings and shared generated-inventory, runtime-selection and evidence-processing contracts.
+Every new timed case disables monitoring; independent work checks require actual standard Row/Column measurement on dirty, resize and lifecycle operations and zero target measurement on idle and layout-only controls.
+Lifecycle includes source/session/declaration construction, attach, two complete frames and terminal close.
+Removed construction sites are a structural forecast, distinct from measured elapsed time, normalized allocation, retained heap and actual thread CPU.
+
 ### Current-child geometry participation
 
 Each retained entry owns its current measure and layout pass identities; direct children record only their last participating parent pass and one placement offset.
