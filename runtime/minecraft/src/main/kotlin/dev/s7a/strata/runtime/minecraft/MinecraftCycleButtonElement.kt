@@ -196,8 +196,13 @@ private class MinecraftCycleButtonElement private constructor(
             focused = false
         }
 
+        /**
+         * Installs the fresh description and subscriptions, reporting only changed presentation, geometry or semantics.
+         * The runtime merges this mask with pending state and input invalidations.
+         */
         internal fun updateFrom(current: MinecraftCycleButtonElement): DirtyMask {
             val geometryChanged = width != current.width
+            val paintChanged = presentationChanged(current)
             val semanticsChanged = enabled != current.enabled || state !== current.state || labels != current.labels
             if (state !== current.state) {
                 observer?.close()
@@ -215,10 +220,22 @@ private class MinecraftCycleButtonElement private constructor(
                 hovered = false
                 focused = false
             }
-            var dirty = DirtyMask.of(DirtyPhase.Paint)
+            var dirty = if (paintChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
             if (geometryChanged) dirty += DirtyMask.of(DirtyPhase.Measure)
             if (semanticsChanged) dirty += DirtyMask.of(DirtyPhase.Semantics)
             return dirty
+        }
+
+        private fun presentationChanged(current: MinecraftCycleButtonElement): Boolean =
+            width != current.width || enabled != current.enabled || state !== current.state ||
+                normalSprite !== current.normalSprite || highlightedSprite !== current.highlightedSprite ||
+                disabledSprite !== current.disabledSprite || equivalentLabels(current.labels).not()
+
+        private fun equivalentLabels(current: List<Pair<MinecraftTextRun, MinecraftTextRun>>): Boolean {
+            val previous = checkNotNull(labels)
+            return previous.size == current.size && previous.indices.all { index ->
+                previous[index].first.equivalentTo(current[index].first) && previous[index].second.equivalentTo(current[index].second)
+            }
         }
 
         private fun currentLabel(): Pair<MinecraftTextRun, MinecraftTextRun> {

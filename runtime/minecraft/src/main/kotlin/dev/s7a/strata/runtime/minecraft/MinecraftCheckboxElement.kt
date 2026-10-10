@@ -192,8 +192,13 @@ private class MinecraftCheckboxElement private constructor(
             focused = false
         }
 
+        /**
+         * Installs the fresh description and subscriptions, reporting only changed presentation, geometry or semantics.
+         * The runtime merges this mask with pending state and input invalidations.
+         */
         internal fun updateFrom(current: MinecraftCheckboxElement): DirtyMask {
             val geometryChanged = width != current.width
+            val paintChanged = presentationChanged(current)
             val semanticsChanged = label != current.label || enabled != current.enabled || state !== current.state
             if (state !== current.state) {
                 observer?.close()
@@ -214,11 +219,18 @@ private class MinecraftCheckboxElement private constructor(
                 hovered = false
                 focused = false
             }
-            var dirty = DirtyMask.of(DirtyPhase.Paint)
+            var dirty = if (paintChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
             if (geometryChanged) dirty += DirtyMask.of(DirtyPhase.Measure)
             if (semanticsChanged) dirty += DirtyMask.of(DirtyPhase.Semantics)
             return dirty
         }
+
+        private fun presentationChanged(current: MinecraftCheckboxElement): Boolean =
+            width != current.width || enabled != current.enabled || state !== current.state ||
+                normal !== current.normal || highlighted !== current.highlighted ||
+                selected !== current.selected || selectedHighlighted !== current.selectedHighlighted ||
+                checkNotNull(normalText).equivalentTo(current.normalText).not() ||
+                checkNotNull(inactiveText).equivalentTo(current.inactiveText).not()
 
         private fun activate() {
             val next = checkNotNull(state).toggle()

@@ -694,3 +694,22 @@ Record the measured revision, configuration, and environment with each temporary
 Compare wall-clock results only when host load and power conditions are controlled; normalized allocation and deterministic retention checks provide different evidence.
 Historical measurements in Git history do not establish performance on the current revision.
 Promote a verified architectural conclusion into this contract instead of accumulating host-specific result tables in it.
+
+## Stateful Minecraft control updates
+
+Checkbox, Slider and CycleButton retain paint when a fresh description has the same width, enabled state, state owner, immutable sprite identities and complete prepared text contents.
+Both normal and inactive text runs use the same complete text equivalence as pointer buttons: unresolved text, layout size, signed native width, positioned legacy and sampled glyphs, and paint policy all participate.
+CycleButton compares every normal/inactive label pair in option order, including unselected options; replacement state owns a new immutable value-to-label mapping and always invalidates paint.
+Fresh actions and fields are installed on every update, with previous state observation retired before replacement observation is acquired.
+Existing pending state/input invalidations remain owned by the core and are combined with the returned update mask.
+This classification adds no cache and retains only the existing current node inputs.
+CycleButton semantics retain their conservative existing invalidation until a complete ordered semantic equivalence contract is separately proven.
+
+`StatefulControlBenchmark` verifies 600 generated operation cases: declaration cutoff/reconciliation and complete frames across 1, 64 and 512 rows; Checkbox, Slider, CycleButton, mixed composition and size-matched no-control rows; short/long labels; 3/64 ordered choices; clean, exact description reuse, fresh equivalent descriptions, one changed label and all changed labels.
+Each changed frame also updates an independently observed image sibling, while the root rebuild creates fresh control descriptions for the fresh-equivalent case.
+Untimed checks compare independently calculated original-asset pixels, complete ordered semantics, geometry, raw unchanged-row commands, necessary work, current source ownership, detachment/reattachment and old-frame immutability.
+The declaration operation borrows the real host's existing core session once outside timing to call its public declaration projection contract; its result includes snapshot projection cost and excludes measurement and painting.
+
+The [performance testkit](performance-testkit.md#component-runtime-archive-substitution) defines actual runtime-archive substitution and shared collector provenance.
+The fixture, harness, collector, control libraries, font input, profile recipe and input manifests remain identical between sides.
+GPU upload and timing remain unmeasured for this CPU corpus.

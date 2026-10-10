@@ -217,8 +217,13 @@ private class MinecraftSliderElement private constructor(
             dragging = false
         }
 
+        /**
+         * Installs the fresh description and subscriptions, reporting only changed presentation, geometry or semantics.
+         * The runtime merges this mask with pending state and input invalidations.
+         */
         internal fun updateFrom(current: MinecraftSliderElement): DirtyMask {
             val geometryChanged = width != current.width
+            val paintChanged = presentationChanged(current)
             val semanticsChanged = label != current.label || enabled != current.enabled || state !== current.state
             if (state !== current.state) {
                 observer?.close()
@@ -240,11 +245,18 @@ private class MinecraftSliderElement private constructor(
                 focused = false
                 dragging = false
             }
-            var dirty = DirtyMask.of(DirtyPhase.Paint)
+            var dirty = if (paintChanged) DirtyMask.of(DirtyPhase.Paint) else DirtyMask.None
             if (geometryChanged) dirty += DirtyMask.of(DirtyPhase.Measure)
             if (semanticsChanged) dirty += DirtyMask.of(DirtyPhase.Semantics)
             return dirty
         }
+
+        private fun presentationChanged(current: MinecraftSliderElement): Boolean =
+            width != current.width || enabled != current.enabled || state !== current.state ||
+                normalTrack !== current.normalTrack || highlightedTrack !== current.highlightedTrack ||
+                normalHandle !== current.normalHandle || highlightedHandle !== current.highlightedHandle ||
+                checkNotNull(normalText).equivalentTo(current.normalText).not() ||
+                checkNotNull(inactiveText).equivalentTo(current.inactiveText).not()
 
         private fun setFromPointer(x: Int) {
             val fraction = (x.toDouble() - HANDLE_WIDTH / 2.0) / (width - HANDLE_WIDTH).toDouble()
