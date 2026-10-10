@@ -28,8 +28,10 @@ internal object FreeTypeGrayscaleAssets {
      * Borrows the backend-owned genuine runtime delegate for untimed native fixture/oracle access.
      * The managed wrapper remains the sole owner and releases this delegate at backend close.
      */
-    internal fun delegate(face: MinecraftTrueTypeFace): MinecraftTrueTypeFace =
-        face.javaClass.getDeclaredField("delegate").apply { isAccessible = true }.get(face) as MinecraftTrueTypeFace
+    internal fun delegate(face: MinecraftTrueTypeFace): MinecraftTrueTypeFace = face.javaClass
+        .getDeclaredField("delegate")
+        .apply { isAccessible = true }
+        .get(face) as MinecraftTrueTypeFace
 
     /**
      * Reads the existing registered immutable CC0 font before sampling.

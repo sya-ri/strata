@@ -70,14 +70,19 @@ internal class FreeTypeControlFixture(
                 host = owner.cleanHost()
             }
 
-            FreeTypeGrayscaleBenchmark.Control.MalformedConverterInput -> malformed = FreeTypeBitmapFixture(8, FreeTypeGrayscaleBenchmark.Layout.PaddedNegative)
+            FreeTypeGrayscaleBenchmark.Control.MalformedConverterInput -> {
+                malformed = FreeTypeBitmapFixture(8, FreeTypeGrayscaleBenchmark.Layout.PaddedNegative)
+            }
+
             FreeTypeGrayscaleBenchmark.Control.SnapshotReplacement -> {
                 snapshots = listOf(11f, 12f).map { size -> FreeTypeGrayscaleAssets.snapshot(FreeTypeGrayscaleAssets.source(MinecraftTrueTypeSettings(size, 2f))) }
                 replacement = engine(snapshots.first())
                 checkNotNull(replacement).glyph(font, 65)
             }
 
-            else -> prepareFace()
+            else -> {
+                prepareFace()
+            }
         }
     }
 
@@ -142,7 +147,11 @@ internal class FreeTypeControlFixture(
                 release()
             } catch (caught: Throwable) {
                 val primary = failure
-                if (primary == null) failure = caught else if (primary !== caught) primary.addSuppressed(caught)
+                if (primary == null) {
+                    failure = caught
+                } else if (primary !== caught) {
+                    primary.addSuppressed(caught)
+                }
             }
         }
         host = null

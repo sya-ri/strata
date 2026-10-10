@@ -69,11 +69,13 @@ public object FreeTypeGrayscaleWorkEvidence {
                 check(image.copyArgb().contentEquals(expected)) { "Converted image retained native storage" }
                 image.copyArgb().fill(0)
                 check(image.copyArgb().contentEquals(expected)) { "Pixel ownership escaped through extraction" }
-                records.add(record("converter:axis=$axis,layout=$layout", expected).apply {
-                    addProperty("width", axis)
-                    addProperty("height", axis)
-                    addProperty("pitch", (axis + if (layout.padded) 3 else 0) * if (layout.reversed) -1 else 1)
-                })
+                records.add(
+                    record("converter:axis=$axis,layout=$layout", expected).apply {
+                        addProperty("width", axis)
+                        addProperty("height", axis)
+                        addProperty("pitch", (axis + if (layout.padded) 3 else 0) * if (layout.reversed) -1 else 1)
+                    },
+                )
             }
         }
     }
@@ -88,12 +90,14 @@ public object FreeTypeGrayscaleWorkEvidence {
                 val frame = owner.dirtyText()
                 equalFrame(expected, frame)
                 records.add(glyphRecord("completeFreeTypeGlyph:fixture=$fixture", actual, reference.pitch))
-                records.add(record("completeDirtyTextFrame:fixture=$fixture", rasterizeHeadless(frame.drawCommands, FreeTypeGlyphOwner.viewport).copyArgb()).apply {
-                    addProperty("width", frame.size.width)
-                    addProperty("height", frame.size.height)
-                    addProperty("draw_commands", frame.drawCommands.size)
-                    addProperty("semantics", frame.semantics.size)
-                })
+                records.add(
+                    record("completeDirtyTextFrame:fixture=$fixture", rasterizeHeadless(frame.drawCommands, FreeTypeGlyphOwner.viewport).copyArgb()).apply {
+                        addProperty("width", frame.size.width)
+                        addProperty("height", frame.size.height)
+                        addProperty("draw_commands", frame.drawCommands.size)
+                        addProperty("semantics", frame.semantics.size)
+                    },
+                )
             }
         }
     }
@@ -104,17 +108,33 @@ public object FreeTypeGrayscaleWorkEvidence {
             val result = owner.use { it.sample() }
             val record = JsonObject().apply { addProperty("id", "control:operation=$control") }
             when (control) {
-                FreeTypeGrayscaleBenchmark.Control.MissingFreeTypeGlyph -> check(result == true)
-                FreeTypeGrayscaleBenchmark.Control.EmptyFreeTypeGlyph -> check((result as MinecraftFontGlyph).image == null)
-                FreeTypeGrayscaleBenchmark.Control.AtlasRejectedGlyph -> check((result as MinecraftFontGlyph).image == null && result.oversizedRasterSize != null)
-                FreeTypeGrayscaleBenchmark.Control.ImageLimitRejectedGlyph -> check(result is MinecraftFontLoadLimitException)
-                FreeTypeGrayscaleBenchmark.Control.SnapshotLoad -> check((result as MinecraftFontSnapshot).diagnostics.isEmpty())
+                FreeTypeGrayscaleBenchmark.Control.MissingFreeTypeGlyph -> {
+                    check(result == true)
+                }
+
+                FreeTypeGrayscaleBenchmark.Control.EmptyFreeTypeGlyph -> {
+                    check((result as MinecraftFontGlyph).image == null)
+                }
+
+                FreeTypeGrayscaleBenchmark.Control.AtlasRejectedGlyph -> {
+                    check((result as MinecraftFontGlyph).image == null && result.oversizedRasterSize != null)
+                }
+
+                FreeTypeGrayscaleBenchmark.Control.ImageLimitRejectedGlyph -> {
+                    check(result is MinecraftFontLoadLimitException)
+                }
+
+                FreeTypeGrayscaleBenchmark.Control.SnapshotLoad -> {
+                    check((result as MinecraftFontSnapshot).diagnostics.isEmpty())
+                }
+
                 FreeTypeGrayscaleBenchmark.Control.MalformedConverterInput -> {
                     val failures = result as List<*>
                     check(failures.size == 3 && failures.all { it is IllegalArgumentException })
                     val expected = listOf("The ttf provider requires grayscale glyphs.", "FreeType glyph dimensions changed during rasterization.", "FreeType returned an invalid glyph stride.")
                     check(failures.map { (it as Throwable).message } == expected)
                 }
+
                 FreeTypeGrayscaleBenchmark.Control.CompleteCleanTextFrame -> {
                     val frame = result as RuntimeUiFrame
                     FreeTypeGlyphOwner(FreeTypeGlyphFixture.SmallGlyphOne).use { reference ->
@@ -167,10 +187,11 @@ public object FreeTypeGrayscaleWorkEvidence {
     private fun record(
         id: String,
         pixels: IntArray,
-    ): JsonObject = JsonObject().apply {
-        addProperty("id", id)
-        addProperty("argb_sha256", pixelDigest(pixels))
-    }
+    ): JsonObject =
+        JsonObject().apply {
+            addProperty("id", id)
+            addProperty("argb_sha256", pixelDigest(pixels))
+        }
 
     private fun pixelDigest(pixels: IntArray): String {
         val bytes = ByteBuffer.allocate(Math.multiplyExact(pixels.size, 4))

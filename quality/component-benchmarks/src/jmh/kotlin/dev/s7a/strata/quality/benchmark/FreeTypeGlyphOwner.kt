@@ -54,27 +54,29 @@ internal class FreeTypeGlyphOwner(
     /**
      * Complete cold dirty/reset operation through the actual Minecraft profile, including terminal close.
      */
-    internal fun dirtyText(): RuntimeUiFrame = host().use { owner ->
-        owner.attach()
-        owner.frame(viewport)
-    }
+    internal fun dirtyText(): RuntimeUiFrame =
+        host().use { owner ->
+            owner.attach()
+            owner.frame(viewport)
+        }
 
     /**
      * Returns a primed host for the unchanged complete clean-frame control.
      */
-    internal fun cleanHost(): MinecraftUiHost = host().also { owner ->
-        try {
-            owner.attach()
-            owner.frame(viewport)
-        } catch (failure: Throwable) {
+    internal fun cleanHost(): MinecraftUiHost =
+        host().also { owner ->
             try {
-                owner.close()
-            } catch (cleanup: Throwable) {
-                if (cleanup !== failure) failure.addSuppressed(cleanup)
+                owner.attach()
+                owner.frame(viewport)
+            } catch (failure: Throwable) {
+                try {
+                    owner.close()
+                } catch (cleanup: Throwable) {
+                    if (cleanup !== failure) failure.addSuppressed(cleanup)
+                }
+                throw failure
             }
-            throw failure
         }
-    }
 
     /**
      * Independent complete Text/profile output from scalar-oracle pixels and metrics, without native conversion.
@@ -102,8 +104,7 @@ internal class FreeTypeGlyphOwner(
         }
     }
 
-    private fun host(factory: MinecraftFontBackendFactory = LwjglMinecraftFontBackendFactory): MinecraftUiHost =
-        createMinecraftUiHost(UiDefinition("FreeType grayscale Text") { Text(text) }, profile, factory)
+    private fun host(factory: MinecraftFontBackendFactory = LwjglMinecraftFontBackendFactory): MinecraftUiHost = createMinecraftUiHost(UiDefinition("FreeType grayscale Text") { Text(text) }, profile, factory)
 
     /**
      * Closes the trial face and backend; returned images and frame commands retain detached pixels only.
