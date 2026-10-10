@@ -333,7 +333,8 @@ public enum class LinearMeasurementCase(
     L109(Topology.ColumnNone4096, Operation.IdleFrame),
 
     /** Column, 4096 children, None, Finite, LayoutOnlyFrame. */
-    L110(Topology.ColumnNone4096, Operation.LayoutOnlyFrame);
+    L110(Topology.ColumnNone4096, Operation.LayoutOnlyFrame),
+    ;
 
     /** Standard layout axis; only the main-axis extent alternates. */
     public enum class Axis { Row, Column }
@@ -383,14 +384,23 @@ public enum class LinearMeasurementCase(
         ColumnAllNonfill128Finite(Axis.Column, 128, Shape.AllNonfill, Bounds.Finite),
         ColumnAllNonfill128IntrinsicMain(Axis.Column, 128, Shape.AllNonfill, Bounds.IntrinsicMain),
         ColumnAllFill4096Finite(Axis.Column, 4_096, Shape.AllFill, Bounds.Finite),
-        ColumnAllFill4096IntrinsicMain(Axis.Column, 4_096, Shape.AllFill, Bounds.IntrinsicMain);
+        ColumnAllFill4096IntrinsicMain(Axis.Column, 4_096, Shape.AllFill, Bounds.IntrinsicMain),
+        ;
 
         /** Positive scalar weight for this direct child, or absence of weight parent data. */
         public fun weight(index: Int): Float? =
             when (shape) {
                 Shape.None -> null
-                Shape.SparseEndsFill -> when (index) { 0 -> 1f; childCount - 1 -> 3f; else -> null }
+
+                Shape.SparseEndsFill ->
+                    when (index) {
+                        0 -> 1f
+                        childCount - 1 -> 3f
+                        else -> null
+                    }
+
                 Shape.AlternatingFill -> if (index % 2 == 0) (index % 3 + 1).toFloat() else null
+
                 Shape.AllFill, Shape.AllNonfill -> (index % 3 + 1).toFloat()
             }
     }
