@@ -68,6 +68,7 @@ internal class UiSession(
             validateMutation = ::checkWritable,
         )
     private val bindings: MutableList<UiSessionBinding<*>> = ArrayList()
+    private val pendingBindings = PendingBindingQueue<UiSessionBinding<*>> { it.captureOrder }
     private val screenScopeFacade = SessionScreenScope()
 
     @Volatile
@@ -181,7 +182,16 @@ internal class UiSession(
         checkDeclaration()
         beginOperation(SessionOperation.Bind)
         establishingBinding = true
-        val binding = UiSessionBinding<T>(::checkReadable, ::beginStateMutation, ::endStateMutation)
+        val binding =
+            UiSessionBinding<T>(
+                ::checkReadable,
+                ::beginStateMutation,
+                ::endStateMutation,
+                pendingBindings.monitor,
+                pendingBindings::enqueue,
+                pendingBindings::remove,
+            )
+        binding.captureOrder = bindings.size.toLong()
         bindings.add(binding)
         try {
             return runCatching {
@@ -557,9 +567,9 @@ internal class UiSession(
     }
 
     private fun applyBindingCutoff() {
-        bindings.forEach(UiSessionBinding<*>::capturePending)
+        pendingBindings.capture(UiSessionBinding<*>::capturePending)
         tree?.captureFrameState()
-        bindings.forEach { binding ->
+        pendingBindings.takeCaptured().forEach { binding ->
             if (binding.applyPending()) {
                 dirty = true
             }
@@ -665,11 +675,13 @@ internal class UiSession(
         clearCachedFrame()
         val ownedBindings = bindings.toList()
         bindings.clear()
+        pendingBindings.clear()
         val retainedTree = tree
         tree = null
         ownedBindings.forEach { binding ->
             closeBinding(binding, failures)
         }
+        pendingBindings.clear()
         if (retainedTree != null) {
             failures.capture { retainedTree.close() }
         }

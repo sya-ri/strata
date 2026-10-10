@@ -19,6 +19,8 @@ internal class ObservedSourceRegistry(
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) : AutoCloseable {
     private val bindings = IdentityMap<StateSource<*>, ObservedSourceBinding>()
+    private val pending = PendingBindingQueue<ObservedSourceBinding> { it.captureOrder }
+    private var captureOrderDirty = false
     private val owners = IdentityMap<StateObserverNode, List<StateSource<*>>>()
     private val unusedBindings = LinkedHashSet<ObservedSourceBinding>()
     private val acquiring: MutableSet<StateSource<*>> = identitySet()
@@ -85,18 +87,23 @@ internal class ObservedSourceRegistry(
     }
 
     /**
-     * Captures all current sources before arbitrary equality code or observer publication can run.
+     * Captures accepted pending roots before arbitrary equality code or observer publication can run.
+     * Membership changes refresh identity-map order once; stable cutoffs never snapshot every binding.
      */
     fun capture() {
         frameActive = true
-        bindings.values.forEach(ObservedSourceBinding::capture)
+        if (captureOrderDirty) {
+            bindings.values.forEachIndexed { index, binding -> binding.captureOrder = index.toLong() }
+            captureOrderDirty = false
+        }
+        pending.capture(ObservedSourceBinding::capture)
     }
 
     /**
      * Commits every captured source before notifying any region; notifications never evaluate content.
      */
     fun commit() {
-        bindings.values.forEach { binding ->
+        pending.takeCaptured().forEach { binding ->
             if (binding.commit()) {
                 monitoring.record(UiRenderMetric.RootValueChange)
                 changed.addLast(binding)
@@ -131,7 +138,11 @@ internal class ObservedSourceRegistry(
     }
 
     private fun acquire(source: StateSource<*>): ObservedSourceBinding {
-        val binding = bindings[source] ?: createBinding(source).also { bindings[source] = it }
+        val binding =
+            bindings[source] ?: createBinding(source).also {
+                bindings[source] = it
+                captureOrderDirty = true
+            }
         binding.references += 1
         unusedBindings.remove(binding)
         return binding
@@ -142,7 +153,7 @@ internal class ObservedSourceRegistry(
         try {
             val upstream = (source as? DerivedStateSource<*>)?.let { acquire(it.upstream) }
             if (upstream != null) monitoring.record(UiRenderMetric.Projection)
-            return runCatching { ObservedSourceBinding(source, upstream) }
+            return runCatching { ObservedSourceBinding(source, pending, upstream) }
                 .getOrElse { failure ->
                     if (upstream != null) releaseBinding(upstream)
                     throw failure
@@ -180,6 +191,7 @@ internal class ObservedSourceRegistry(
             val binding = unusedBindings.first()
             unusedBindings.remove(binding)
             bindings.remove(binding.source)
+            captureOrderDirty = true
             binding.upstream?.let { upstream ->
                 upstream.dependents.remove(binding)
                 releaseBinding(upstream)
@@ -200,8 +212,11 @@ internal class ObservedSourceRegistry(
         contentUpdates = false
         val closing = bindings.values
         bindings.clear()
+        pending.clear()
+        captureOrderDirty = false
         val failures = FailureAccumulator()
         closing.forEach { binding -> failures.capture { closeBinding(binding) } }
+        pending.clear()
         failures.throwIfPresent()
     }
 

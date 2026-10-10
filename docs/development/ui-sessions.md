@@ -31,7 +31,7 @@ See the [remote protocol](../reference/remote-protocol.md) for application versu
 Observe, direct-source components, and observed activation modifiers use one ObservedSourceRegistry in the session-owned UiTree.
 The registry indexes sources by reference identity and retains each live source's committed, pending, and captured snapshots plus its subscription carrier, and the current source list of each observing node.
 Source callbacks only enqueue revisions through the existing UiSessionBinding implementation.
-Every binding is captured before any value comparison or node notification; all values are committed before observing nodes are notified.
+Every accepted pending root is captured before any value comparison or node notification; all selected root values are committed before observing nodes are notified.
 DerivedStateSource exposes a pure upstream edge to this registry; ordinary mapped subscriptions remain independent adapters outside a UI tree.
 After root snapshots commit, the registry walks only affected projection edges, computes each retained projection once for its input, and stops at equal results.
 An identity-indexed consumer set coalesces repeated arguments, original/derived inputs, and multiple changed dependencies into one committed value tuple per affected node.
@@ -162,10 +162,18 @@ A source may still publish a later revision from equality; that callback only en
 
 Each source subscription returns an initial snapshot from the same linearization point that installs its observer.
 Callbacks that race or precede the return from `subscribe` are merged with that snapshot by revision.
-The execution owner first captures every session binding and every retained `FrameCutoffNode`, then commits the captured observations before content reconciliation.
+The execution owner first freezes every selected pending session binding and every retained `FrameCutoffNode`, then commits the complete captured cutoff before content reconciliation.
 Capture cannot invoke caller value equality or publish observations; commit evaluates session-bound value equality after releasing the binding lock.
 A callback arriving after the cutoff remains pending for the following frame.
 Each participating binding retains at most one transaction-local captured observation between these two phases, in addition to its committed and latest pending state.
+Pending root targets are deduplicated by binding identity under the same monitor that protects their revision snapshots.
+Each owner freezes its entire selected set under that monitor, then releases it before equality, projection or application callbacks.
+The session-declared set commits in declaration order; the tree-owned set preserves its current identity-map traversal order, recomputed only after graph membership changes.
+An accepted callback after selection waits for that monitor and queues the following cutoff; accepted callbacks during comparison cannot change an already captured observation.
+Derived bindings enter through changed upstream edges rather than the root queue.
+The queue retains at most one pending and one transaction-local selected reference per current root; nonempty capture replaces pending storage, and removal rebuilds after its tracked peak exceeds twice current membership.
+Initial-snapshot coalescing and disable remove obsolete targets; disable also clears queue callbacks, and terminal cleanup drops both sets even after source cleanup fails.
+These sets record authoritative pending revision ownership and do not cache or replace source values.
 Sources newly attached or replaced during reconciliation may paint their subscription's initial snapshot, but later callbacks wait for the next frame cutoff.
 
 Public source consumers follow the same cutoff and attachment contracts; see [Canvas](../guides/canvas.md#cpu-sources) for the externally owned image-source case.

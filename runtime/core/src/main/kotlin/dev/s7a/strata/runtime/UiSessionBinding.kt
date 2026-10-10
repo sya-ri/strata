@@ -17,19 +17,29 @@ import kotlin.reflect.KProperty
  * @param checkReadable validates owner thread and session lifecycle for property reads.
  * @param beginMutation claims the session-wide value comparison guard.
  * @param endMutation releases the session-wide value comparison guard.
+ * @param monitor owns revision snapshots and optional queue membership under one shared lock.
+ * @param onPending marks accepted work under that lock without application code; disable clears this callback.
+ * @param onIdle removes queued work under that lock after initial coalescing or disable; disable clears this callback.
  */
 internal class UiSessionBinding<T>(
     private val checkReadable: () -> Unit,
     private val beginMutation: () -> Unit,
     private val endMutation: () -> Unit,
+    private val monitor: Any = Any(),
+    private var onPending: ((UiSessionBinding<T>) -> Unit)? = null,
+    private var onIdle: ((UiSessionBinding<T>) -> Unit)? = null,
 ) : ReadOnlyProperty<Any?, T> {
-    private val monitor = Any()
     private var committed: StateSnapshot<T>? = null
     private var pending: StateSnapshot<T>? = null
     private var captured: StateSnapshot<T>? = null
     private var subscription: StateSubscription<T>? = null
     private var closeRequested: Boolean = false
     private var disabled: Boolean = false
+
+    /**
+     * Declaration order assigned before subscription; queue selection preserves the original commit order.
+     */
+    var captureOrder: Long = 0L
 
     /**
      * Returns the owner-thread committed value without consuming a pending notification.
@@ -71,6 +81,7 @@ internal class UiSessionBinding<T>(
                 return
             }
             pending = snapshot
+            onPending?.invoke(this)
         }
     }
 
@@ -102,6 +113,7 @@ internal class UiSessionBinding<T>(
             val queued = pending
             if (queued == null || queued.revision <= initial.revision) {
                 pending = null
+                onIdle?.invoke(this)
             }
             committed = initial
         }
@@ -110,7 +122,7 @@ internal class UiSessionBinding<T>(
     /**
      * Takes the newest pending observation without committing or comparing caller-owned values.
      *
-     * The session captures every binding and retained cutoff node before applying any captured observation.
+     * The session freezes every selected pending binding and retained cutoff node before applying any captured observation.
      * Only one transaction-local snapshot is retained until [applyPending] or terminal cleanup.
      */
     fun capturePending() {
@@ -150,6 +162,9 @@ internal class UiSessionBinding<T>(
             disabled = true
             pending = null
             captured = null
+            onIdle?.invoke(this)
+            onPending = null
+            onIdle = null
         }
     }
 
