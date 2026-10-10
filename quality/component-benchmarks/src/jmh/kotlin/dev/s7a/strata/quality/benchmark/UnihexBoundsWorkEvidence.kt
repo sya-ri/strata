@@ -181,17 +181,9 @@ public object UnihexBoundsWorkEvidence {
             val first = state.operation()
             val second = state.operation()
             when (control) {
-                UnihexBoundsControl.WarmRasterHit -> {
-                    check(first === second && first is MinecraftFontGlyph)
-                    checkGlyph(state.fixture, state.fractional, first)
-                }
+                UnihexBoundsControl.WarmRasterHit -> checkWarmRasterHit(state, first, second)
 
-                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> {
-                    check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
-                    checkGlyph(state.fixture, state.fractional, first)
-                    checkGlyph(state.fixture, state.fractional, second)
-                    check(state.retained[0] == 1L && state.retained[1] <= 16L * 1024 * 1024 && state.retained[2] == 0L)
-                }
+                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> checkEvictedGlyphs(state, first, second)
 
                 UnihexBoundsControl.MatchingOverride -> checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph, -1..33)
                 UnihexBoundsControl.NoMatchingOverride, UnihexBoundsControl.EngineLifecycle -> checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph)
@@ -200,23 +192,11 @@ public object UnihexBoundsWorkEvidence {
                     checkFrame(state.fixture, state.fractional, first as RuntimeUiFrame, "A")
                 }
 
-                UnihexBoundsControl.AbsentSparseGlyph -> {
-                    check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first == second)
-                    check(first.advance.toRawBits() == 6.0f.toRawBits())
-                }
+                UnihexBoundsControl.AbsentSparseGlyph -> checkAbsentSparseGlyph(first, second)
 
-                UnihexBoundsControl.Bitmap -> {
-                    val image = checkNotNull((first as MinecraftFontGlyph).image)
-                    check(image.size == IntSize(8, 8))
-                    val expected = IntArray(64) { index -> if ((index % 8 + index / 8) % 2 == 0) -1 else 0x00ffffff }
-                    check(image.copyArgb().contentEquals(expected))
-                }
+                UnihexBoundsControl.Bitmap -> checkBitmapGlyph(first as MinecraftFontGlyph)
 
-                UnihexBoundsControl.TrueType -> {
-                    check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
-                    check(checkNotNull(first.image).copyArgb().contentEquals(checkNotNull(second.image).copyArgb()))
-                    check(first.copy(image = null) == second.copy(image = null))
-                }
+                UnihexBoundsControl.TrueType -> checkTrueTypeGlyphs(first, second)
 
                 UnihexBoundsControl.SnapshotLoad -> check(first !== second)
                 UnihexBoundsControl.SnapshotReplacement -> {
@@ -227,6 +207,50 @@ public object UnihexBoundsWorkEvidence {
         } finally {
             state.close()
         }
+    }
+
+    private fun checkWarmRasterHit(
+        state: UnihexBoundsControlBenchmark.ControlState,
+        first: Any,
+        second: Any,
+    ) {
+        check(first === second && first is MinecraftFontGlyph)
+        checkGlyph(state.fixture, state.fractional, first)
+    }
+
+    private fun checkEvictedGlyphs(
+        state: UnihexBoundsControlBenchmark.ControlState,
+        first: Any,
+        second: Any,
+    ) {
+        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
+        checkGlyph(state.fixture, state.fractional, first)
+        checkGlyph(state.fixture, state.fractional, second)
+        check(state.retained[0] == 1L && state.retained[1] <= 16L * 1024 * 1024 && state.retained[2] == 0L)
+    }
+
+    private fun checkAbsentSparseGlyph(
+        first: Any,
+        second: Any,
+    ) {
+        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first == second)
+        check(first.advance.toRawBits() == 6.0f.toRawBits())
+    }
+
+    private fun checkBitmapGlyph(glyph: MinecraftFontGlyph) {
+        val image = checkNotNull(glyph.image)
+        check(image.size == IntSize(8, 8))
+        val expected = IntArray(64) { index -> if ((index % 8 + index / 8) % 2 == 0) -1 else 0x00ffffff }
+        check(image.copyArgb().contentEquals(expected))
+    }
+
+    private fun checkTrueTypeGlyphs(
+        first: Any,
+        second: Any,
+    ) {
+        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
+        check(checkNotNull(first.image).copyArgb().contentEquals(checkNotNull(second.image).copyArgb()))
+        check(first.copy(image = null) == second.copy(image = null))
     }
 
     private fun checkGlyph(
