@@ -137,12 +137,13 @@ internal class ControlledToolchainsFunctionalTest {
     fun `explicit task executable override is refused and ordinary builds remain usable`() {
         Files.writeString(
             directory.resolve("build.gradle"),
-            "\n" + """
-            tasks.named('runFixture') {
-                javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger()) }
-                executable = '${directory.resolve("unbound-java").toString().replace('\\', '/')}'
-            }
-            """.trimIndent() + "\n",
+            "\n" +
+                """
+                tasks.named('runFixture') {
+                    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger()) }
+                    executable = '${directory.resolve("unbound-java").toString().replace('\\', '/')}'
+                }
+                """.trimIndent() + "\n",
             StandardOpenOption.APPEND,
         )
         val result = controlled("runFixture").buildAndFail()
@@ -182,8 +183,7 @@ internal class ControlledToolchainsFunctionalTest {
     }
 
     /** Reads every participating build receipt without filtering included build names. */
-    private fun receipts(): List<MutableMap<String, Any?>> =
-        Files.list(directory.resolve("selected")).use { paths -> paths.toList().map(::readMap) }
+    private fun receipts(): List<MutableMap<String, Any?>> = Files.list(directory.resolve("selected")).use { paths -> paths.toList().map(::readMap) }
 
     /** Clears only synthetic previous-case receipt files inside the temporary fixture. */
     private fun clearReceipts() {
@@ -195,7 +195,10 @@ internal class ControlledToolchainsFunctionalTest {
     }
 
     /** Uses the existing TestKit launcher and a fresh invocation manifest. */
-    private fun controlled(task: String, extra: List<String> = emptyList()): GradleRunner {
+    private fun controlled(
+        task: String,
+        extra: List<String> = emptyList(),
+    ): GradleRunner {
         val manifest = directory.resolve("binding.json")
         Files.writeString(manifest, JsonOutput.toJson(binding))
         val properties = binding.getValue("properties") as Map<*, *>
@@ -220,8 +223,7 @@ internal class ControlledToolchainsFunctionalTest {
                 "--no-parallel",
                 "--max-workers=1",
                 "--stacktrace",
-            )
-            .withEnvironment(System.getenv() + mapOf("JAVA_HOME" to home))
+            ).withEnvironment(System.getenv() + mapOf("JAVA_HOME" to home))
     }
 
     /** Copies parsed JSON into a mutable fixture binding without changing the production reader. */
