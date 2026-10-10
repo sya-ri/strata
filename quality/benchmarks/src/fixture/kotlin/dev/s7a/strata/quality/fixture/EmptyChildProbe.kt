@@ -39,26 +39,32 @@ import dev.s7a.strata.text.UiText
 @Suppress("TooManyFunctions")
 public class EmptyChildProbe {
     private val calls = IntArray(Stage.entries.size)
+
     /**
      * Current test-owned node handles; setup and terminal checks may inspect them.
      */
     public val nodes: MutableList<ProbeNode> = mutableListOf()
+
     /**
      * Ordered lifecycle attempts, bounded by the single invocation's tree.
      */
     public val events: MutableList<Event> = mutableListOf()
+
     /**
      * Optional exact failure injected at one typed callback boundary.
      */
     public var failure: Failure? = null
+
     /**
      * Later cleanup failures used to verify suppression order independently.
      */
     public var cleanupFailures: List<Failure> = emptyList()
+
     /**
      * Optional update hook for cutoff and localized-work controls.
      */
     public var onUpdate: (() -> Unit)? = null
+
     /**
      * Complete immutable output of the dynamic test primitive.
      */
@@ -80,7 +86,10 @@ public class EmptyChildProbe {
     /**
      * Records one callback and injects the original failure before its effect, when selected.
      */
-    public fun record(stage: Stage, id: Int) {
+    public fun record(
+        stage: Stage,
+        id: Int,
+    ) {
         calls[stage.ordinal] += 1
         when (stage) {
             Stage.Attach, Stage.Detach, Stage.Dispose -> events.add(Event(stage, id))
@@ -108,38 +117,60 @@ public class EmptyChildProbe {
     /**
      * Creates one fresh pass-through modifier with independent validate/update hooks.
      */
-    public fun modifier(id: Int, payload: Int = 0): Modifier = Modifier.Empty.then(ProbeModifier(this, id, payload))
+    public fun modifier(
+        id: Int,
+        payload: Int = 0,
+    ): Modifier = Modifier.Empty.then(ProbeModifier(this, id, payload))
 
     /**
      * Callback boundaries; values are observations, never runtime branch predictions.
      */
     public enum class Stage {
-        Validate, Create, Update, Attach, Detach, Dispose, Measure, Layout, Paint, Semantics,
-        ModifierValidate, ModifierCreate, ModifierUpdate, Dynamic,
+        Validate,
+        Create,
+        Update,
+        Attach,
+        Detach,
+        Dispose,
+        Measure,
+        Layout,
+        Paint,
+        Semantics,
+        ModifierValidate,
+        ModifierCreate,
+        ModifierUpdate,
+        Dynamic,
+
         /**
          * Compatible ordinary update whose previous and incoming child lists are both empty.
          */
         EligibleUpdate,
+
         /**
          * Compatible ordinary update with at least one nonempty child list.
          */
         NonemptyUpdate,
+
         /**
          * Eligible callback at the workload's empty target component.
          */
         TargetEligibleUpdate,
+
         /**
          * Ordinary matching required at a nonempty transition target parent.
          */
         TargetMissUpdate,
+
         /**
          * Independently eligible fresh descendant under a nonempty transition target.
          */
         DescendantEligibleUpdate,
+
         /**
          * Descendant callback requiring ordinary nonempty matching.
          */
         DescendantMissUpdate,
+
         /**
          * Ordinary matching at the fixed surrounding container.
          */
@@ -149,22 +180,37 @@ public class EmptyChildProbe {
     /**
      * Compatible token selection for explicit replacement and dynamic controls.
      */
-    public enum class Kind { Ordinary, Alternate, Dynamic }
+    public enum class Kind {
+        Ordinary,
+        Alternate,
+        Dynamic,
+    }
 
     /**
      * Fixture roles distinguish target-parent work from independently eligible descendants and surrounding containers.
      */
-    public enum class Role { Target, Descendant, Surrounding }
+    public enum class Role {
+        Target,
+        Descendant,
+        Surrounding,
+    }
 
     /**
      * Detached ordered lifecycle evidence.
      */
-    public data class Event(public val stage: Stage, public val id: Int)
+    public data class Event(
+        public val stage: Stage,
+        public val id: Int,
+    )
 
     /**
      * Injection configuration owned by a single control.
      */
-    public data class Failure(public val stage: Stage, public val id: Int, public val cause: Throwable)
+    public data class Failure(
+        public val stage: Stage,
+        public val id: Int,
+        public val cause: Throwable,
+    )
 
     /**
      * Immutable SPI declaration; construction and snapshot copying remain inside sampled updates.
@@ -196,15 +242,15 @@ public class EmptyChildProbe {
          */
         public val role: Role,
     ) : Element(
-        if (keyed) ElementIdentity.Keyed(ElementKey(id)) else ElementIdentity.Positional,
-        when (kind) {
-            Kind.Ordinary -> ordinaryType
-            Kind.Alternate -> alternateType
-            Kind.Dynamic -> dynamicType
-        },
-        children,
-        modifier,
-    )
+            if (keyed) ElementIdentity.Keyed(ElementKey(id)) else ElementIdentity.Positional,
+            when (kind) {
+                Kind.Ordinary -> ordinaryType
+                Kind.Alternate -> alternateType
+                Kind.Dynamic -> dynamicType
+            },
+            children,
+            modifier,
+        )
 
     /**
      * Test-owned retained node; callbacks expose real phase work and terminal retirement.
@@ -222,14 +268,21 @@ public class EmptyChildProbe {
          * Current presentation value, updated only by the SPI hook.
          */
         public var payload: Int,
-    ) : Node(), MeasureNode, LayoutNode, PaintNode, SemanticsNode, LifecycleNode {
+    ) : Node(),
+        MeasureNode,
+        LayoutNode,
+        PaintNode,
+        SemanticsNode,
+        LifecycleNode {
         private var measuredPayload = payload
         private var paintedPayload = payload
         private var semanticsPayload = payload
+
         /**
          * Last direct-child count seen through the real layout scope.
          */
         public var childCount: Int = 0
+
         /**
          * Whether terminal disposal was attempted.
          */
@@ -238,21 +291,33 @@ public class EmptyChildProbe {
         /**
          * Applies only the presentation fields selected by the declaration's exact diff mask.
          */
-        public fun updatePayload(value: Int, mask: DirtyMask) {
+        public fun updatePayload(
+            value: Int,
+            mask: DirtyMask,
+        ) {
             payload = value
             if (DirtyPhase.Measure in mask) measuredPayload = value
             if (DirtyPhase.Paint in mask) paintedPayload = value
             if (DirtyPhase.Semantics in mask) semanticsPayload = value
         }
 
-        override fun attach() { probe.record(Stage.Attach, id) }
-        override fun detach() { probe.record(Stage.Detach, id) }
+        override fun attach() {
+            probe.record(Stage.Attach, id)
+        }
+
+        override fun detach() {
+            probe.record(Stage.Detach, id)
+        }
+
         override fun dispose() {
             disposed = true
             probe.record(Stage.Dispose, id)
         }
 
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             probe.record(Stage.Measure, id)
             childCount = scope.childCount
             var width = 0
@@ -276,19 +341,26 @@ public class EmptyChildProbe {
 
         override fun semantics(scope: SemanticsScope) {
             probe.record(Stage.Semantics, id)
-            scope.emit(Semantics(label = UiText.literal(id.toString()), value = UiText.literal(semanticsPayload.toString())))
+            scope.emit(Semantics(label = UiText.Literal(id.toString()), value = UiText.Literal(semanticsPayload.toString())))
         }
 
         /**
          * Proves runtime callbacks were retired without rebinding the node.
          */
-        public fun invalidateForControl() { invalidate(DirtyMask.All) }
+        public fun invalidateForControl() {
+            invalidate(DirtyMask.All)
+        }
     }
 
     /**
      * Dynamic SPI primitive exercising the real committed description-list path.
      */
-    private class DynamicNode(probe: EmptyChildProbe, id: Int, payload: Int) : ProbeNode(probe, id, payload), DynamicChildrenNode {
+    private class DynamicNode(
+        probe: EmptyChildProbe,
+        id: Int,
+        payload: Int,
+    ) : ProbeNode(probe, id, payload),
+        DynamicChildrenNode {
         override fun dynamicChildren(): List<Element> {
             probe.record(Stage.Dynamic, id)
             return probe.dynamicOutput
@@ -357,8 +429,14 @@ public class EmptyChildProbe {
                 ProbeModifier::class,
                 ProbeModifierNode::class,
                 { it.probe.record(Stage.ModifierValidate, it.id) },
-                { it.probe.record(Stage.ModifierCreate, it.id); ProbeModifierNode() },
-                { _, current, _ -> current.probe.record(Stage.ModifierUpdate, current.id); DirtyMask.None },
+                {
+                    it.probe.record(Stage.ModifierCreate, it.id)
+                    ProbeModifierNode()
+                },
+                { _, current, _ ->
+                    current.probe.record(Stage.ModifierUpdate, current.id)
+                    DirtyMask.None
+                },
             )
     }
 }

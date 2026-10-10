@@ -40,10 +40,12 @@ public class EmptyChildFixture(
     private val tree: UiTree?
     private val session: RuntimeUiSession?
     private val initial: Element
+
     /**
      * Retained diagnostics, absent for collector-disabled cases.
      */
     public val monitor: UiRenderMonitor?
+
     /**
      * Initial settled immutable frame for exact clean-frame identity assertions.
      */
@@ -60,13 +62,15 @@ public class EmptyChildFixture(
                 settle()
                 initialFrame = null
             }
+
             Operation.ObservedRegionFrame, Operation.CleanSessionFrame -> {
                 tree = null
-                session = createRuntimeUiSession {
-                    evaluateComponentTree {
-                        Observe(source) { changed -> element(declaration(changed)) }
+                session =
+                    createRuntimeUiSession {
+                        evaluateComponentTree {
+                            Observe(source) { changed -> element(declaration(changed)) }
+                        }
                     }
-                }
                 monitor = if (monitoring) session.startRenderMonitoring(16_384) else null
                 session.attach()
                 initialFrame = session.frame(constraints)
@@ -81,20 +85,34 @@ public class EmptyChildFixture(
      */
     public fun execute(): Any =
         when (workload.operation) {
-            Operation.DirectTreeUpdate -> checkNotNull(tree).also { it.update(declaration(true)) }
-            Operation.SameDescriptionTreeUpdate -> checkNotNull(tree).also { it.update(initial) }
+            Operation.DirectTreeUpdate -> {
+                checkNotNull(tree).also { it.update(declaration(true)) }
+            }
+
+            Operation.SameDescriptionTreeUpdate -> {
+                checkNotNull(tree).also { it.update(initial) }
+            }
+
             Operation.ObservedRegionFrame -> {
                 source.publish(true)
                 checkNotNull(session).frame(constraints)
             }
-            Operation.CleanSessionFrame -> checkNotNull(session).frame(constraints)
+
+            Operation.CleanSessionFrame -> {
+                checkNotNull(session).frame(constraints)
+            }
         }
 
     /**
      * Runs direct-tree presentation after qualification, outside the direct-update timing boundary.
      */
     public fun settle() {
-        tree?.let { it.measure(constraints); it.layout(); it.paint(); it.semantics() }
+        tree?.let {
+            it.measure(constraints)
+            it.layout()
+            it.paint()
+            it.semantics()
+        }
     }
 
     /**
@@ -140,15 +158,18 @@ public class EmptyChildFixture(
     private class Source(initial: Boolean) : StateSource<Boolean> {
         private var snapshot = StateSnapshot(StateRevision(0), initial)
         private var observer: ((StateSnapshot<Boolean>) -> Unit)? = null
+
         /**
          * Current subscription ownership, inspected outside sampling.
          */
         val subscribed: Boolean get() = observer != null
+
         override fun subscribe(observer: (StateSnapshot<Boolean>) -> Unit): StateSubscription<Boolean> {
             check(this.observer == null)
             this.observer = observer
             return StateSubscription(snapshot) { this.observer = null }
         }
+
         /**
          * Publishes a new revision synchronously; content still waits for the frame cutoff.
          */

@@ -47,7 +47,8 @@ public enum class EmptyChildWorkload(
     DirectNonempty1(Operation.DirectTreeUpdate, Payload.NonemptyToNonempty, 1),
     DirectNonempty128(Operation.DirectTreeUpdate, Payload.NonemptyToNonempty, 128),
     ObservedNonempty1(Operation.ObservedRegionFrame, Payload.NonemptyToNonempty, 1),
-    ObservedNonempty128(Operation.ObservedRegionFrame, Payload.NonemptyToNonempty, 128);
+    ObservedNonempty128(Operation.ObservedRegionFrame, Payload.NonemptyToNonempty, 128),
+    ;
 
     /**
      * Public update/frame boundary; setup and cleanup remain outside sampling.

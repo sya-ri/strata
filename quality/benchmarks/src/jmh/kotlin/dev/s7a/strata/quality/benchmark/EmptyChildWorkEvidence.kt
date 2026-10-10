@@ -65,24 +65,28 @@ public object EmptyChildWorkEvidence {
         listOf(Element::class.java, UiTree::class.java, HeadlessImage::class.java).forEach { type ->
             val source = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI()).toAbsolutePath().normalize()
             require(Files.isRegularFile(source) && source.fileName.toString().endsWith(".jar")) { "Qualification requires actual runtime archives: $type/$source" }
-            runtime.add(type.name, JsonObject().apply {
-                addProperty("source", source.toString())
-                addProperty("sha256", ArtifactIdentity.fullCodeSource(type))
-            })
+            runtime.add(
+                type.name,
+                JsonObject().apply {
+                    addProperty("source", source.toString())
+                    addProperty("sha256", ArtifactIdentity.fullCodeSource(type))
+                },
+            )
         }
-        val result = JsonObject().apply {
-            addProperty("contract", "strata-empty-child-qualification-v1")
-            addProperty("status", "passed")
-            add("controls", controls)
-            add("work", work)
-            add("runtime", runtime)
-            add("fixtures", GsonBuilder().create().toJsonTree(ArtifactIdentity.applicationTrees(listOf(EmptyChildBenchmark::class.java, EmptyChildFixture::class.java))))
-            addProperty("empty_dynamic_list_iterations", EmptyChildControls.emptyMatchingIterations())
-            addProperty("pixel_oracle", "exact-opaque-three-pixel-v1")
-            addProperty("terminal_reference_assertions", "passed")
-            addProperty("java_version", System.getProperty("java.version"))
-            addProperty("java_vendor", System.getProperty("java.vendor"))
-        }
+        val result =
+            JsonObject().apply {
+                addProperty("contract", "strata-empty-child-qualification-v1")
+                addProperty("status", "passed")
+                add("controls", controls)
+                add("work", work)
+                add("runtime", runtime)
+                add("fixtures", GsonBuilder().create().toJsonTree(ArtifactIdentity.applicationTrees(listOf(EmptyChildBenchmark::class.java, EmptyChildFixture::class.java))))
+                addProperty("empty_dynamic_list_iterations", EmptyChildControls.emptyMatchingIterations())
+                addProperty("pixel_oracle", "exact-opaque-three-pixel-v1")
+                addProperty("terminal_reference_assertions", "passed")
+                addProperty("java_version", System.getProperty("java.version"))
+                addProperty("java_vendor", System.getProperty("java.vendor"))
+            }
         Files.createDirectories(checkNotNull(output.parent))
         Files.writeString(output, GsonBuilder().setPrettyPrinting().create().toJson(result), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
     }
@@ -137,7 +141,17 @@ public object EmptyChildWorkEvidence {
         check((field(callbacks, "cutoff") as Collection<*>).isEmpty() && (field(callbacks, "timed") as Collection<*>).isEmpty())
     }
 
-    private fun field(owner: Any, name: String): Any = checkNotNull(nullableField(owner, name))
+    private fun field(
+        owner: Any,
+        name: String,
+    ): Any = checkNotNull(nullableField(owner, name))
 
-    private fun nullableField(owner: Any, name: String): Any? = owner.javaClass.getDeclaredField(name).also { it.isAccessible = true }.get(owner)
+    private fun nullableField(
+        owner: Any,
+        name: String,
+    ): Any? =
+        owner.javaClass
+            .getDeclaredField(name)
+            .also { it.isAccessible = true }
+            .get(owner)
 }

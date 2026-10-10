@@ -33,12 +33,14 @@ public open class EmptyChildBenchmark {
         @JvmField
         @Param("DirectChanged1", "DirectChanged128", "DirectChanged4096", "ObservedChanged1", "ObservedChanged128", "ObservedChanged4096", "DirectEqual1", "DirectEqual128", "DirectEqual4096", "ObservedEqual1", "ObservedEqual128", "ObservedEqual4096", "Same1", "Same128", "Same4096", "Clean1", "Clean128", "Clean4096", "DirectEmptyToOne1", "DirectEmptyToOne128", "ObservedEmptyToOne1", "ObservedEmptyToOne128", "DirectOneToEmpty1", "DirectOneToEmpty128", "ObservedOneToEmpty1", "ObservedOneToEmpty128", "DirectNonempty1", "DirectNonempty128", "ObservedNonempty1", "ObservedNonempty128")
         public var workload: EmptyChildWorkload = EmptyChildWorkload.DirectChanged1
+
         /**
          * Collector-enabled and collector-disabled cases share the exact fixture.
          */
         @JvmField
         @Param("false", "true")
         public var monitoring: Boolean = false
+
         /**
          * Invocation-owned fixture, created outside timing and released after timing.
          */
@@ -48,13 +50,17 @@ public open class EmptyChildBenchmark {
          * Creates and settles the initial declaration outside sampling.
          */
         @Setup(Level.Invocation)
-        public fun setup() { fixture = EmptyChildFixture(workload, monitoring) }
+        public fun setup() {
+            fixture = EmptyChildFixture(workload, monitoring)
+        }
 
         /**
          * Completes terminal cleanup outside sampling.
          */
         @TearDown(Level.Invocation)
-        public fun close() { fixture.close() }
+        public fun close() {
+            fixture.close()
+        }
     }
 
     /**

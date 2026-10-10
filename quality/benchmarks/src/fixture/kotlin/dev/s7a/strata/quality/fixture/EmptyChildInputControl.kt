@@ -45,7 +45,11 @@ public object EmptyChildInputControl {
         val session = createRuntimeUiSession { InputElement(probe, state.value) }
         session.attach()
         val initial = session.frame(Constraints())
-        check(initial.semantics.single().semantics.label == UiText.literal("leaf"))
+        check(
+            initial.semantics
+                .single()
+                .semantics.label == UiText.Literal("leaf"),
+        )
         check(probe.focus == listOf(true))
         val focus = session.textInputFocus
         check(focus != null)
@@ -54,7 +58,11 @@ public object EmptyChildInputControl {
         check(probe.acquisitions == 1 && probe.hover.last())
         state.value = true
         val changed = session.frame(Constraints())
-        check(changed.semantics.single().semantics.value == UiText.literal("true"))
+        check(
+            changed.semantics
+                .single()
+                .semantics.value == UiText.Literal("true"),
+        )
         check(session.textInputFocus == focus && probe.focus == listOf(true))
         check(probe.updates == 1 && probe.validations == 2 && probe.creations == 1)
         check(session.dispatchPointer(PointerEvent.Drag(IntOffset(5, 6), PointerButton.Primary, 5.0, 6.0)) == InputResult.Consumed)
@@ -87,30 +95,70 @@ public object EmptyChildInputControl {
     /**
      * Fresh description with a stable type/key and a changed semantics field.
      */
-    private class InputElement(val probe: Probe, val value: Boolean) :
-        Element(ElementIdentity.Keyed(ElementKey(1)), type)
+    private class InputElement(
+        val probe: Probe,
+        val value: Boolean,
+    ) : Element(ElementIdentity.Keyed(ElementKey(1)), type)
 
     /**
      * Custom capability node; the runtime never dispatches on this concrete class.
      */
-    private class InputNode(private val probe: Probe, var value: Boolean) :
-        Node(), MeasureNode, FocusTargetNode, PointerCaptureNode, PointerHoverNode, KeyboardInputNode, TextInputNode, SemanticsNode {
+    private class InputNode(
+        private val probe: Probe,
+        var value: Boolean,
+    ) : Node(),
+        MeasureNode,
+        FocusTargetNode,
+        PointerCaptureNode,
+        PointerHoverNode,
+        KeyboardInputNode,
+        TextInputNode,
+        SemanticsNode {
         override val acceptsFocus: Boolean get() = true
         override val requestsInitialFocus: Boolean get() = true
         override val requiresTextInput: Boolean get() = true
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize = constraints.constrain(IntSize(1, 1))
-        override fun onFocusChanged(focused: Boolean) { probe.focus.add(focused) }
-        override fun onPointerHover(hovered: Boolean) { probe.hover.add(hovered) }
-        override fun onPointerEvent(event: PointerEvent, localPosition: IntOffset): InputResult {
+
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize = constraints.constrain(IntSize(1, 1))
+
+        override fun onFocusChanged(focused: Boolean) {
+            probe.focus.add(focused)
+        }
+
+        override fun onPointerHover(hovered: Boolean) {
+            probe.hover.add(hovered)
+        }
+
+        override fun onPointerEvent(
+            event: PointerEvent,
+            localPosition: IntOffset,
+        ): InputResult {
             probe.positions.add(localPosition)
             return InputResult.Consumed
         }
-        override fun onPointerCaptureAcquired(button: PointerButton) { probe.acquisitions += 1 }
-        override fun onPointerCaptureCancelled(button: PointerButton) { probe.cancellations += 1 }
-        override fun onKeyboardEvent(event: KeyboardEvent): InputResult { probe.keys += 1; return InputResult.Consumed }
-        override fun onTextInput(event: TextInputEvent): InputResult { probe.text += 1; return InputResult.Consumed }
+
+        override fun onPointerCaptureAcquired(button: PointerButton) {
+            probe.acquisitions += 1
+        }
+
+        override fun onPointerCaptureCancelled(button: PointerButton) {
+            probe.cancellations += 1
+        }
+
+        override fun onKeyboardEvent(event: KeyboardEvent): InputResult {
+            probe.keys += 1
+            return InputResult.Consumed
+        }
+
+        override fun onTextInput(event: TextInputEvent): InputResult {
+            probe.text += 1
+            return InputResult.Consumed
+        }
+
         override fun semantics(scope: SemanticsScope) {
-            scope.emit(Semantics(label = UiText.literal("leaf"), value = UiText.literal(value.toString())))
+            scope.emit(Semantics(label = UiText.Literal("leaf"), value = UiText.Literal(value.toString())))
         }
     }
 
@@ -119,7 +167,14 @@ public object EmptyChildInputControl {
             InputElement::class,
             InputNode::class,
             { it.probe.validations += 1 },
-            { it.probe.creations += 1; InputNode(it.probe, it.value) },
-            { _, current, node -> current.probe.updates += 1; node.value = current.value; DirtyMask.All },
+            {
+                it.probe.creations += 1
+                InputNode(it.probe, it.value)
+            },
+            { _, current, node ->
+                current.probe.updates += 1
+                node.value = current.value
+                DirtyMask.All
+            },
         )
 }
