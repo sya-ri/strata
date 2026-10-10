@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import java.util.Properties
 
 plugins {
@@ -134,6 +135,20 @@ tasks.register<JavaExec>("jmhComponents") {
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {
+        providers.gradleProperty("strata.performance.componentRuntime").orNull?.let { path ->
+            val targets = Properties()
+            rootProject.file(path).bufferedReader(Charsets.UTF_8).use(targets::load)
+            val projects = setOf(":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl")
+            require(targets.stringPropertyNames() == projects) { "Register exactly the five component runtime project paths" }
+            val archives = projects.map { project -> rootProject.file(targets.getProperty(project)).canonicalFile }
+            require(archives.toSet().size == projects.size && archives.all { it.isFile && it.extension == "jar" }) { "Component runtime targets must be five distinct actual JARs" }
+            val artifacts = configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
+                .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in projects }
+            require(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == projects) { "Component runtime classpath inventory changed" }
+            val replaced = artifacts.map { it.file.canonicalFile }.toSet()
+            classpath = files(classpath.files.filter { (it.canonicalFile in replaced).not() }) + files(archives)
+            // The common collector verifies actual loaded class trees and archives for every selected fixture.
+        }
         val entries = Properties()
         configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
             val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier

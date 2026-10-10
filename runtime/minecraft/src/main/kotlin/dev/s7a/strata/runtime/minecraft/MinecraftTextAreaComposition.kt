@@ -31,6 +31,7 @@ internal object MinecraftTextAreaComposition {
      * Raw text and total block text are bounded by twice [remainingUtf16], the maximum CRLF contraction factor.
      * Block count is bounded by the raw text budget plus one, including empty boundary blocks.
      * A caret or block boundary that splits a surrogate pair is rejected.
+     * Fully validated canonical text shares only the event's immutable String; converted output is detached.
      *
      * @param event immutable uncommitted input-method update.
      * @param remainingUtf16 non-negative normalized UTF-16 capacity after the committed value.
@@ -93,7 +94,8 @@ internal object MinecraftTextAreaComposition {
         private val focused: IntRange?,
         private val capacity: Int,
     ) {
-        private val text = StringBuilder(minOf(event.fullText.length, capacity))
+        private var text: StringBuilder? = null
+        private var length = 0
         private var offset = 0
         private var caret: Int? = null
         private var first: Int? = null
@@ -106,14 +108,19 @@ internal object MinecraftTextAreaComposition {
                 if (accepted(codePoint).not()) return null
                 val isBreak = MinecraftTextContent.isHardBreak(codePoint)
                 val units = if (isBreak) 1 else Character.charCount(codePoint)
-                if (capacity - text.length < units) return null
+                if (capacity - length < units) return null
                 if (isBreak) {
-                    text.append('\n')
+                    if (codePoint != 0x0A && text == null) {
+                        text = StringBuilder(minOf(event.fullText.length, capacity)).append(event.fullText, 0, offset)
+                    }
+                    text?.append('\n')
+                    length++
                     offset++
                     recordBoundary()
                     if (codePoint == 0x0D && offset < event.fullText.length && event.fullText[offset] == '\n') offset++
                 } else {
-                    text.appendCodePoint(codePoint)
+                    text?.appendCodePoint(codePoint)
+                    length += units
                     offset += units
                 }
                 recordBoundary()
@@ -125,13 +132,13 @@ internal object MinecraftTextAreaComposition {
                 } else {
                     (first ?: return null) until (end ?: return null)
                 }
-            return MinecraftTextAreaPreedit(text.toString(), caretPosition, range)
+            return MinecraftTextAreaPreedit(text?.toString() ?: event.fullText, caretPosition, range)
         }
 
         private fun recordBoundary() {
-            if (offset == event.caretPosition) caret = text.length
-            if (focused?.first == offset) first = text.length
-            if (focused != null && focused.last.toLong() + 1L == offset.toLong()) end = text.length
+            if (offset == event.caretPosition) caret = length
+            if (focused?.first == offset) first = length
+            if (focused != null && focused.last.toLong() + 1L == offset.toLong()) end = length
         }
     }
 }
