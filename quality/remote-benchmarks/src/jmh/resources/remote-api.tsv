@@ -464,6 +464,7 @@ dev.s7a.strata.runtime.remote.RemoteMessage$Update#type:25:java.lang.Object:dev.
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#constructor:1:()V
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteLimits;)V
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#method:17:decode:([B)Ldev/s7a/strata/runtime/remote/RemoteMessage;
+dev.s7a.strata.runtime.remote.RemoteMessageCodec#method:17:decodeOwned$dev_s7a_strata_remote:([B)Ldev/s7a/strata/runtime/remote/RemoteMessage;
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#method:17:encode:(Ldev/s7a/strata/runtime/remote/RemoteMessage;)[B
 dev.s7a.strata.runtime.remote.RemoteMessageCodec#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteMessageCodec$WhenMappings#type:4121:java.lang.Object:
@@ -753,6 +754,7 @@ dev.s7a.strata.runtime.remote.RemoteUiSettings#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteValueCodec#constructor:1:()V
 dev.s7a.strata.runtime.remote.RemoteValueCodec#constructor:1:(Ldev/s7a/strata/runtime/remote/RemoteLimits;)V
 dev.s7a.strata.runtime.remote.RemoteValueCodec#method:17:decode:([B)Ldev/s7a/strata/projection/ProjectionValue;
+dev.s7a.strata.runtime.remote.RemoteValueCodec#method:17:decodeOwned$dev_s7a_strata_remote:([B)Ldev/s7a/strata/projection/ProjectionValue;
 dev.s7a.strata.runtime.remote.RemoteValueCodec#method:17:encode:(Ldev/s7a/strata/projection/ProjectionValue;)[B
 dev.s7a.strata.runtime.remote.RemoteValueCodec#type:17:java.lang.Object:
 dev.s7a.strata.runtime.remote.RemoteValueCodec$WhenMappings#type:4121:java.lang.Object:
