@@ -63,15 +63,8 @@ val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped
     // These complete native screens are not used by the portable component definitions.
     exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
 }
-val fontResourceSources = objects.sourceDirectorySet("performanceFontResources", "Shipped offline font-resource example").apply {
-    srcDir(rootProject.file("integration/docs/src/main/kotlin"))
-    include("**/FontResourceExample.kt")
-}
 extensions.configure<KotlinJvmProjectExtension> {
-    sourceSets.named("jmh") {
-        kotlin.source(showcaseSources)
-        kotlin.source(fontResourceSources)
-    }
+    sourceSets.named("jmh") { kotlin.source(showcaseSources) }
 }
 
 jmh {

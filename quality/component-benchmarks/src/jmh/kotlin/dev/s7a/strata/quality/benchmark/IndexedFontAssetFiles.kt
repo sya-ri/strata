@@ -55,7 +55,7 @@ public class IndexedFontAssetFiles private constructor(
             Output(snapshot.fontIds.toList(), snapshot.diagnostics, listOf('A', 'B', 'D', 'I').map { engine.glyph(defaultFont, it.code) })
         }
 
-    override fun close() = Unit
+    override fun close(): Unit = Unit
 
     /**
      * Values returned to JMH; contains no source, stream, engine or mutable JSON tree.
@@ -122,11 +122,12 @@ public class IndexedFontAssetFiles private constructor(
                 val hash = digest("SHA-1", indexedBytes)
                 val objectPath = Files.createDirectories(objects.resolve(hash.take(2))).resolve(hash)
                 Files.write(objectPath, indexedBytes)
-                val records = (0 until input.records).joinToString(",") { record ->
-                    val path = if (record == 0) "minecraft/font/default.json" else "test/unused/$record.dat"
-                    val selected = if (record == 0 || input.shared) hash else digest("SHA-1", path.toByteArray(Charsets.US_ASCII))
-                    "\"$path\":{\"hash\":\"$selected\"}"
-                }
+                val records =
+                    (0 until input.records).joinToString(",") { record ->
+                        val path = if (record == 0) "minecraft/font/default.json" else "test/unused/$record.dat"
+                        val selected = if (record == 0 || input.shared) hash else digest("SHA-1", path.toByteArray(Charsets.US_ASCII))
+                        "\"$path\":{\"hash\":\"$selected\"}"
+                    }
                 val index = Files.writeString(folder.resolve("index.json"), "{\"objects\":{$records}}", Charsets.UTF_8)
                 check(Files.size(index) <= limits.maxDocumentBytes && input.records <= limits.maxSourceEntries)
                 val archive = folder.resolve("client.jar")
@@ -149,11 +150,12 @@ public class IndexedFontAssetFiles private constructor(
             }
             val countFile = Files.write(root.resolve("counts.csv"), counts, Charsets.UTF_8)
             inputs.setProperty("indexed-counts", countFile.toString())
-            val hashFile = Files.write(
-                root.resolve("sha256.csv"),
-                listOf("label,sha256") + inputs.stringPropertyNames().sorted().map { label -> "$label,${digest("SHA-256", Files.readAllBytes(Path.of(inputs.getProperty(label))))}" },
-                Charsets.UTF_8,
-            )
+            val hashFile =
+                Files.write(
+                    root.resolve("sha256.csv"),
+                    listOf("label,sha256") + inputs.stringPropertyNames().sorted().map { label -> "$label,${digest("SHA-256", Files.readAllBytes(Path.of(inputs.getProperty(label))))}" },
+                    Charsets.UTF_8,
+                )
             inputs.setProperty("indexed-sha256", hashFile.toString())
             val manifest = root.resolve("fixture-inputs.properties")
             Files.newBufferedWriter(manifest, Charsets.UTF_8).use { writer -> inputs.store(writer, "Common indexed-font inputs; freeze before both variants") }

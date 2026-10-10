@@ -82,7 +82,7 @@ tasks.withType<Test>().configureEach {
         rootProject.layout.projectDirectory.file("docs/guides/fonts.md"),
         rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyUnicodeTextScreen.kt"),
         rootProject.layout.projectDirectory.file("integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyMultilineTextScreen.kt"),
-        rootProject.layout.projectDirectory.file("integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt"),
+        rootProject.layout.projectDirectory.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt"),
     ).withPropertyName("compiledGuideInputs").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 

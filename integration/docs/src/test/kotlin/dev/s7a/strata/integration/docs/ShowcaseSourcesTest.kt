@@ -45,7 +45,7 @@ internal class ShowcaseSourcesTest {
                     ),
                 "docs/guides/fonts.md" to
                     SourceReference(
-                        "integration/docs/src/main/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt",
+                        "integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/docs/FontResourceExample.kt",
                         "font-resources",
                     ),
             )

@@ -124,7 +124,7 @@ public object IndexedFontAssetControls {
             }
             control(Control.DocumentShapes) {
                 listOf("{}", "{\"objects\":null}", "{\"objects\":[]}", "[]", "1").forEach { json -> failure<IllegalArgumentException>("Expected a JSON object.") { source(json) } }
-                failure<MalformedJsonException>() { source("{\"objects\":]}") }
+                failure<MalformedJsonException> { source("{\"objects\":]}") }
             }
             control(Control.InvalidPositions) {
                 listOf(0, 1, 2).forEach { invalid ->
@@ -147,7 +147,7 @@ public object IndexedFontAssetControls {
             }
             control(Control.PathHashPrecedence) {
                 failure<IllegalArgumentException>("Font asset paths must be canonical relative paths.") { source(records(listOf("/absolute" to "bad"))) }
-                failure<MinecraftFontLoadLimitException>() { source(records(listOf("test/data" to "bad")), limits.copy(maxPathLength = 8)) }
+                failure<MinecraftFontLoadLimitException> { source(records(listOf("test/data" to "bad")), limits.copy(maxPathLength = 8)) }
             }
             control(Control.Paths) {
                 check(source(records(listOf("test/folder/data" to valid))).paths() == setOf("assets/test/folder/data"))
@@ -157,27 +157,27 @@ public object IndexedFontAssetControls {
             control(Control.PathCeilings) {
                 val json = records(listOf("test/data" to valid))
                 check(source(json, limits.copy(maxPathLength = 16)).paths().single().length == 16)
-                failure<MinecraftFontLoadLimitException>() { source(json, limits.copy(maxPathLength = 15)) }
+                failure<MinecraftFontLoadLimitException> { source(json, limits.copy(maxPathLength = 15)) }
             }
             control(Control.ByteCeilings) {
                 val json = "{\"objects\":{}}"
                 val size = json.toByteArray(Charsets.UTF_8).size
                 val exact = limits.copy(maxDocumentBytes = size, maxInputBytes = size.toLong())
                 check(source(json, exact).paths().isEmpty())
-                for (bounded in listOf(exact.copy(maxDocumentBytes = size - 1), exact.copy(maxInputBytes = size.toLong() - 1))) failure<MinecraftFontLoadLimitException>() { source(json, bounded) }
+                for (bounded in listOf(exact.copy(maxDocumentBytes = size - 1), exact.copy(maxInputBytes = size.toLong() - 1))) failure<MinecraftFontLoadLimitException> { source(json, bounded) }
             }
             control(Control.EntryCeilings) {
                 val json = records(listOf("test/a" to valid, "test/b" to valid))
                 check(source(json, limits.copy(maxSourceEntries = 2)).paths().size == 2)
-                failure<MinecraftFontLoadLimitException>() { source(json, limits.copy(maxSourceEntries = 1)) }
+                failure<MinecraftFontLoadLimitException> { source(json, limits.copy(maxSourceEntries = 1)) }
             }
             control(Control.JsonCeilings) {
                 val json = single(quote(valid))
                 check(source(json, limits.copy(maxJsonDepth = 3, maxJsonValues = 10)).paths().size == 1)
-                failure<MinecraftFontLoadLimitException>() { source(json, limits.copy(maxJsonDepth = 2)) }
-                failure<MinecraftFontLoadLimitException>() { source(json, limits.copy(maxJsonValues = 9)) }
+                failure<MinecraftFontLoadLimitException> { source(json, limits.copy(maxJsonDepth = 2)) }
+                failure<MinecraftFontLoadLimitException> { source(json, limits.copy(maxJsonValues = 9)) }
                 check(json.length == 277)
-                failure<MinecraftFontLoadLimitException>() { source(json, limits.copy(maxDocumentBytes = json.length - 1)) }
+                failure<MinecraftFontLoadLimitException> { source(json, limits.copy(maxDocumentBytes = json.length - 1)) }
             }
             control(Control.Constructors) {
                 Files.writeString(index, single(quote(valid)))
@@ -194,7 +194,7 @@ public object IndexedFontAssetControls {
                 val source = source(single(quote(hash)))
                 check(checkNotNull(source.read("assets/test/data")).contentEquals(bytes))
                 check(source.read("assets/test/absent") == null)
-                failure<MinecraftFontLoadLimitException>() { source.read("assets/test/data", limits.copy(maxAssetBytes = 2)) }
+                failure<MinecraftFontLoadLimitException> { source.read("assets/test/data", limits.copy(maxAssetBytes = 2)) }
                 check(checkNotNull(source.read("assets/test/data", limits.copy(maxAssetBytes = 3))).contentEquals(bytes))
             }
             control(Control.SymlinksAndIo) { symlinksAndIo() }
@@ -203,9 +203,9 @@ public object IndexedFontAssetControls {
                 requireClosedIndex()
                 failure<IllegalArgumentException>(hashMessage) { source(single("\"bad\"")) }
                 requireClosedIndex()
-                failure<MinecraftFontLoadLimitException>() { source("{\"objects\":{}}", limits.copy(maxDocumentBytes = 0)) }
+                failure<MinecraftFontLoadLimitException> { source("{\"objects\":{}}", limits.copy(maxDocumentBytes = 0)) }
                 requireClosedIndex()
-                failure<MinecraftFontLoadLimitException>() { source("{\"objects\":{}}", limits.copy(maxJsonValues = 0)) }
+                failure<MinecraftFontLoadLimitException> { source("{\"objects\":{}}", limits.copy(maxJsonValues = 0)) }
                 requireClosedIndex()
             }
             control(Control.FreshBytes) {
@@ -310,11 +310,11 @@ public object IndexedFontAssetControls {
         }
 
         private fun symlinksAndIo() {
-            failure<IOException>() { MinecraftIndexedFontAssetSource(root.resolve("missing.json"), objects) }
+            failure<IOException> { MinecraftIndexedFontAssetSource(root.resolve("missing.json"), objects) }
             val source = source(single(quote("c".repeat(40))))
-            failure<IOException>() { source.read("assets/test/data") }
+            failure<IOException> { source.read("assets/test/data") }
             Files.createDirectory(objects.resolve("cc"))
-            failure<IOException>() { source.read("assets/test/data") }
+            failure<IOException> { source.read("assets/test/data") }
             val outside = Files.write(root.resolve("outside.bin"), byteArrayOf(42))
             val linkHash = "d".repeat(40)
             val link = Files.createDirectories(objects.resolve("dd")).resolve(linkHash)
@@ -338,14 +338,16 @@ public object IndexedFontAssetControls {
             val executor = Executors.newFixedThreadPool(2)
             val start = CountDownLatch(1)
             try {
-                val first = executor.submit<MinecraftIndexedFontAssetSource> {
-                    check(start.await(30, TimeUnit.SECONDS))
-                    MinecraftIndexedFontAssetSource(firstIndex, objects, "first", limits.copy(maxSourceEntries = 1))
-                }
-                val second = executor.submit<MinecraftIndexedFontAssetSource> {
-                    check(start.await(30, TimeUnit.SECONDS))
-                    MinecraftIndexedFontAssetSource(secondIndex, objects, "second", limits.copy(maxSourceEntries = 1))
-                }
+                val first =
+                    executor.submit<MinecraftIndexedFontAssetSource> {
+                        check(start.await(30, TimeUnit.SECONDS))
+                        MinecraftIndexedFontAssetSource(firstIndex, objects, "first", limits.copy(maxSourceEntries = 1))
+                    }
+                val second =
+                    executor.submit<MinecraftIndexedFontAssetSource> {
+                        check(start.await(30, TimeUnit.SECONDS))
+                        MinecraftIndexedFontAssetSource(secondIndex, objects, "second", limits.copy(maxSourceEntries = 1))
+                    }
                 start.countDown()
                 val a = first.get(30, TimeUnit.SECONDS)
                 val b = second.get(30, TimeUnit.SECONDS)
@@ -353,15 +355,18 @@ public object IndexedFontAssetControls {
                 val document = """{"providers":[{"type":"space","advances":{"A":7}}]}""".toByteArray(Charsets.UTF_8)
                 writeObject(valid, document)
                 val budgetLimits = limits.copy(maxProviders = 1, maxInputBytes = document.size.toLong())
-                val snapshots = listOf(a, b).map { indexed ->
-                    executor.submit<MinecraftFontSnapshot> {
-                        val callback = object : MinecraftFontAssetSource by indexed {
-                            override fun paths(): Set<String> = setOf(IndexedFontAssetFiles.defaultPath)
-                            override fun read(path: String): ByteArray? = if (path == IndexedFontAssetFiles.defaultPath) indexed.read(indexed.paths().single()) else null
+                val snapshots =
+                    listOf(a, b).map { indexed ->
+                        executor.submit<MinecraftFontSnapshot> {
+                            val callback =
+                                object : MinecraftFontAssetSource by indexed {
+                                    override fun paths(): Set<String> = setOf(IndexedFontAssetFiles.defaultPath)
+
+                                    override fun read(path: String): ByteArray? = if (path == IndexedFontAssetFiles.defaultPath) indexed.read(indexed.paths().single()) else null
+                                }
+                            MinecraftFontSnapshot.load(listOf(callback), IndexedFontAssetFiles.compatibility, IndexedFontAssetFiles.options, budgetLimits)
                         }
-                        MinecraftFontSnapshot.load(listOf(callback), IndexedFontAssetFiles.compatibility, IndexedFontAssetFiles.options, budgetLimits)
                     }
-                }
                 snapshots.forEach { future ->
                     val snapshot = future.get(30, TimeUnit.SECONDS)
                     check(snapshot.fontIds == setOf(ResourceId("minecraft", "default")) && snapshot.diagnostics.isEmpty())
@@ -392,17 +397,18 @@ public object IndexedFontAssetControls {
                     check(providerSources(snapshot) == listOf(fixture.directory.toString(), fixture.archive.toString()) + if (input.records == 0) emptyList() else listOf("Minecraft assets"))
                     check(output == fixture.output(fixture.loadExample()))
                     val reads = mutableListOf<String>()
-                    val tracked = object : MinecraftFontAssetSource by source {
-                        override fun read(path: String): ByteArray? {
-                            reads.add(path)
-                            check(path.startsWith("assets/test/unused/").not()) { "Snapshot read an unrelated index record" }
-                            return source.read(path)
+                    val tracked =
+                        object : MinecraftFontAssetSource by source {
+                            override fun read(path: String): ByteArray? {
+                                reads.add(path)
+                                check(path.startsWith("assets/test/unused/").not()) { "Snapshot read an unrelated index record" }
+                                return source.read(path)
+                            }
                         }
-                    }
                     val replay = MinecraftFontSnapshot.load(listOf(tracked, MinecraftArchiveFontAssetSource(fixture.archive), MinecraftDirectoryFontAssetSource(fixture.directory)), IndexedFontAssetFiles.compatibility, IndexedFontAssetFiles.options, limits)
                     check(output == fixture.output(replay))
                     check(reads.count { it == IndexedFontAssetFiles.defaultPath } == if (input.records == 0) 0 else 1)
-                    if (1 < input.records && input.shared.not()) failure<IOException>() { source.read("assets/test/unused/1.dat") }
+                    if (1 < input.records && input.shared.not()) failure<IOException> { source.read("assets/test/unused/1.dat") }
                 }
             }
             overlayAndFilterPriority()
@@ -426,12 +432,30 @@ public object IndexedFontAssetControls {
                 val metadata = fixture.directory.resolve("pack.mcmeta")
                 Files.writeString(metadata, """{"overlays":{"entries":[{"directory":"selected","formats":84}]}}""")
                 val snapshot = fixture.loadExample()
-                check(fixture.output(snapshot).glyphs.first().advance == 19f)
+                check(
+                    fixture
+                        .output(snapshot)
+                        .glyphs
+                        .first()
+                        .advance == 19f,
+                )
                 val uniform = MinecraftFontSnapshot.load(listOf(fixture.source(), MinecraftArchiveFontAssetSource(fixture.archive), MinecraftDirectoryFontAssetSource(fixture.directory)), IndexedFontAssetFiles.compatibility, IndexedFontAssetFiles.options.copy(uniform = true), limits)
-                check(fixture.output(uniform).glyphs.first().advance == 17f)
+                check(
+                    fixture
+                        .output(uniform)
+                        .glyphs
+                        .first()
+                        .advance == 17f,
+                )
                 check(providerSources(snapshot).take(2) == listOf(fixture.directory.toString(), fixture.directory.toString()))
                 Files.writeString(metadata, """{"filter":{"block":[{"namespace":"minecraft","path":"font/default\\.json"}]}}""")
-                check(fixture.output(fixture.loadExample()).glyphs.take(3).map { it.advance } == listOf(13f, 6f, 5f))
+                check(
+                    fixture
+                        .output(fixture.loadExample())
+                        .glyphs
+                        .take(3)
+                        .map { it.advance } == listOf(13f, 6f, 5f),
+                )
                 Files.writeString(metadata, """{"filter":{"block":[{"namespace":"["}]}}""")
                 val diagnostics = fixture.loadExample().diagnostics
                 check(diagnostics.size == 1 && diagnostics.single().kind == MinecraftFontDiagnostic.Kind.PackMetadataFailure)
@@ -464,21 +488,28 @@ public object IndexedFontAssetControls {
             var reads = 0
             val delegate = source(records(listOf("minecraft/font/default.json" to valid)))
             writeObject(valid, """{"providers":[{"type":"space","advances":{"A":7}}]}""".toByteArray())
-            val source = object : MinecraftFontAssetSource {
-                override val name = "retiring"
-                override fun paths(): Set<String> {
-                    check(retired.not())
-                    return delegate.paths()
+            val source =
+                object : MinecraftFontAssetSource {
+                    override val name = "retiring"
+
+                    override fun paths(): Set<String> {
+                        check(retired.not())
+                        return delegate.paths()
+                    }
+
+                    override fun read(path: String): ByteArray? {
+                        check(retired.not())
+                        reads++
+                        return delegate.read(path)
+                    }
                 }
-                override fun read(path: String): ByteArray? {
-                    check(retired.not())
-                    reads++
-                    return delegate.read(path)
-                }
-            }
             val snapshot = MinecraftFontSnapshot.load(listOf(source), IndexedFontAssetFiles.compatibility)
             retired = true
-            val entries = MinecraftIndexedFontAssetSource::class.java.getDeclaredField("entries").apply { isAccessible = true }.get(delegate)
+            val entries =
+                MinecraftIndexedFontAssetSource::class.java
+                    .getDeclaredField("entries")
+                    .apply { isAccessible = true }
+                    .get(delegate)
             return Triple(snapshot, listOf(WeakReference(source), WeakReference(delegate), WeakReference(entries)), reads)
         }
     }
