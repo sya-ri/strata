@@ -45,6 +45,7 @@ import dev.s7a.strata.ui.UiDefinition
  * Diagnostics and the independent CPU reference exist only in untimed verification, never in JMH collection.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooManyFunctions") // Keep all frozen controls and untimed checks on the one owner-thread host.
 internal class TextFieldPreeditFixture(
     private val row: TextFieldPreeditRow,
     verify: Boolean = false,
@@ -97,6 +98,7 @@ internal class TextFieldPreeditFixture(
         return if (row.control == Control.DisposeCloseRelease) lifetime() else host.frame(viewport)
     }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod") // Direct frozen control dispatch preserves the timed host transitions.
     private fun control(control: Control) {
         when (control) {
             Control.NoCompositionDirtyField, Control.AppearanceOnlyPaint -> {
@@ -320,6 +322,7 @@ internal class TextFieldPreeditFixture(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod") // Explicit immutable event construction keeps each independent control reviewable.
     private fun event(variant: Int): TextInputEvent.Preedit {
         val letter = if (variant == 0) "B" else "C"
         if (0 < row.length) {

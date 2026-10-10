@@ -37,7 +37,8 @@ internal class TextFieldPreeditReference(
         val split =
             event.caretPosition in 1 until event.fullText.length &&
                 event.fullText[event.caretPosition - 1].isHighSurrogate() && event.fullText[event.caretPosition].isLowSurrogate()
-        if (enabled.not() || focused.not() || accepted.not() || split) return InputResult.Ignored
+        val interactive = enabled && focused
+        if (interactive.not() || accepted.not() || split) return InputResult.Ignored
         composition = event.takeIf { it.fullText.isNotEmpty() }
         return InputResult.Consumed
     }
@@ -48,7 +49,7 @@ internal class TextFieldPreeditReference(
     fun rectangles(): List<IntRect> {
         if (focused.not() || enabled.not()) return emptyList()
         val event = composition
-        val text = value.substring(0, cursor) + (event?.fullText ?: "") + value.substring(cursor)
+        val text = value.substring(0, cursor) + event?.fullText.orEmpty() + value.substring(cursor)
         val caret = cursor + (event?.caretPosition ?: 0)
         val start = visibleStart(text, caret)
         var end = start
@@ -79,11 +80,12 @@ internal class TextFieldPreeditReference(
     /**
      * Computes the entire expected field image directly, including independent glyph texels and decorations.
      */
+    @Suppress("CyclomaticComplexMethod") // Direct scalar loops keep independent texel expectations visible without production helpers.
     fun pixels(viewport: IntSize): IntArray {
         val pixels = IntArray(viewport.width * viewport.height)
         for (y in 0 until 20) for (x in 0 until width) pixels[y * viewport.width + x] = background
         val event = composition
-        val text = value.substring(0, cursor) + (event?.fullText ?: "") + value.substring(cursor)
+        val text = value.substring(0, cursor) + event?.fullText.orEmpty() + value.substring(cursor)
         val caret = cursor + (event?.caretPosition ?: 0)
         val start = visibleStart(text, caret)
         var end = start
@@ -128,7 +130,7 @@ internal class TextFieldPreeditReference(
             }
             if (resourceFonts.not()) {
                 val event = composition
-                val text = value.substring(0, cursor) + (event?.fullText ?: "") + value.substring(cursor)
+                val text = value.substring(0, cursor) + event?.fullText.orEmpty() + value.substring(cursor)
                 val caret = cursor + (event?.caretPosition ?: 0)
                 val start = visibleStart(text, caret)
                 var offset = start
