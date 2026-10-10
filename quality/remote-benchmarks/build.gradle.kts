@@ -2,15 +2,19 @@ import dev.detekt.gradle.extensions.DetektExtension
 import me.champeau.jmh.JMHTask
 import me.champeau.jmh.JmhBytecodeGeneratorTask
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.util.Properties
 
 plugins { alias(libs.plugins.jmh) }
-extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+extensions.configure<DetektExtension> { source.from("src/jmh/kotlin", rootProject.file("quality/shared/tiled-image-fixture")) }
 dependencies {
     add("jmh", project(":api"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:remote"))
     add("jmh", project(":performance-testkit"))
+}
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("jmh") { kotlin.srcDir(rootProject.file("quality/shared/tiled-image-fixture")) }
 }
 jmh { jmhVersion.set(libs.versions.benchmark.harness) }
 
@@ -45,15 +49,24 @@ tasks.register<JavaExec>("jmhRemote") {
     val mode = providers.gradleProperty("strata.performance.mode").getOrElse("avgt")
     require(mode in setOf("avgt", "sample"))
     val sessions = providers.gradleProperty("strata.performance.remoteSessions").map(String::toBooleanStrict).getOrElse(false)
-    val family = if (sessions) "remote-sessions" else "remote"
+    val benchmarks = providers.gradleProperty("strata.performance.benchmarks").orNull
+    val parameters = providers.gradleProperty("strata.performance.parameters").orNull
+    val fixtureInputs = providers.gradleProperty("strata.performance.fixtureInputs").orNull
     val workloads = providers.gradleProperty("strata.performance.workloads").orNull
+    require(benchmarks == null || (sessions.not() && workloads == null && smoke.not())) { "Explicit fixtures and legacy remote corpus selection are separate scopes" }
+    require(parameters == null || benchmarks != null) { "Compiled parameter selection requires explicit fixtures" }
+    require(fixtureInputs == null || benchmarks != null) { "Additional fixture inputs require explicit fixtures" }
+    val family = if (benchmarks != null) "remote-selected" else if (sessions) "remote-sessions" else "remote"
+    benchmarks?.let { systemProperty("strata.performance.benchmarks", it) }
+    parameters?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
+    fixtureInputs?.let { systemProperty("strata.performance.fixtureInputs", rootProject.file(it).absolutePath) }
     workloads?.let { systemProperty("strata.performance.workloads", it) }
     val suite = (if (quick) "$family-quick" else if (smoke) "$family-smoke" else family) + (if (workloads != null) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
-    val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
+    val includes = if (benchmarks != null) ".*" else if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.remoteSessions", sessions)
-    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null))
+    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {

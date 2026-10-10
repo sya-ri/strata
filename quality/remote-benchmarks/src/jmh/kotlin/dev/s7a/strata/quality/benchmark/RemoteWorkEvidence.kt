@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonParser
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmApiInventory
 import dev.s7a.strata.performance.PerformanceCoverage
@@ -31,6 +32,7 @@ public object RemoteWorkEvidence {
             return
         }
         verifySurface()
+        JmhFixtureSelection.verifyWork(JmhFixtureSelection.all(listOf(RemoteProtocolBenchmark::class.java)))
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt"), includes = listOf("RemoteProtocolBenchmark.diff")).size == 6)
         val benchmark = RemoteProtocolBenchmark()

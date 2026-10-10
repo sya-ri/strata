@@ -90,9 +90,7 @@ internal class TiledImageTileLayerElement(
 
         override fun prepareDeclaration() {
             if (active.not()) return
-            val next = createPlan(checkNotNull(state).metrics)
-            reconcileEntries(next.requiredIds)
-            plan = next
+            installPlan(checkNotNull(state).metrics)
         }
 
         override val declarationProjection: DeclarationProjection<*>
@@ -181,13 +179,11 @@ internal class TiledImageTileLayerElement(
         override fun layout(scope: LayoutScope) {
             check(scope.childCount == 0) { "The tiled image paint layer cannot place children." }
             if (active.not()) return
-            val next = createPlan(checkNotNull(state).metrics)
-            reconcileEntries(next.requiredIds)
-            plan = next
+            installPlan(checkNotNull(state).metrics)
         }
 
         override fun paint(scope: PaintScope) {
-            plan.cells.forEach { cell ->
+            plan.topology.cells.forEach { cell ->
                 val ready = entries[cell.id]?.committedTile() as? TiledImageTile.Ready ?: return@forEach
                 scope.sampledImage(
                     image = ready.image,
@@ -218,12 +214,14 @@ internal class TiledImageTileLayerElement(
         internal fun update(current: TiledImageTileLayerElement): DirtyMask {
             val sourceChanged = source !== current.source
             val geometryChanged = bounds != current.bounds || levels != current.levels
-            check(sourceChanged || geometryChanged.not()) {
-                "Tiled image geometry cannot change without replacing its source identity."
-            }
             val stateChanged = state !== current.state
             val sizeChanged = destinationSize != current.destinationSize
             val policyChanged = cachePolicy != current.cachePolicy
+            val bindingChanged = sourceChanged || geometryChanged || stateChanged
+            if (bindingChanged || sizeChanged || policyChanged) plan = TilePlan.Empty
+            check(sourceChanged || geometryChanged.not()) {
+                "Tiled image geometry cannot change without replacing its source identity."
+            }
             bounds = current.bounds
             levels = current.levels
             destinationSize = current.destinationSize
@@ -244,7 +242,7 @@ internal class TiledImageTileLayerElement(
             }
             return when {
                 sizeChanged -> DirtyMask.of(DirtyPhase.Measure)
-                sourceChanged || geometryChanged || stateChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
+                bindingChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
                 else -> DirtyMask.None
             }
         }
@@ -253,6 +251,21 @@ internal class TiledImageTileLayerElement(
             observed.observe {
                 invalidate(DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint))
             }
+
+        @Suppress("TooGenericExceptionCaught") // Failed planning or subscription installation must release every reusable topology witness.
+        private fun installPlan(metrics: PanZoomMetrics) {
+            try {
+                val next = createPlan(metrics)
+                if (next.topology !== plan.topology) {
+                    plan = TilePlan.Empty
+                    reconcileEntries(next.topology.requiredIds)
+                }
+                plan = next
+            } catch (failure: Throwable) {
+                plan = TilePlan.Empty
+                throw failure
+            }
+        }
 
         private fun createPlan(metrics: PanZoomMetrics): TilePlan {
             check(metrics.geometryKnown) { "Tiled image transform geometry must be known before layout." }
@@ -288,6 +301,22 @@ internal class TiledImageTileLayerElement(
                     LevelRange(level, tileRange(level, visible, overscan))
                 }
             if (fitsPolicy(requiredRanges).not()) return null
+            val key =
+                if (fitsKeyStorage(requiredRanges.size)) {
+                    TopologyKey(
+                        sourceGeneration,
+                        bounds,
+                        destinationSize,
+                        cachePolicy,
+                        selectedLevel,
+                        requiredRanges,
+                        if (cachePolicy.overscanTiles == 0) requiredRanges.first().range else tileRange(selectedLevel, visible, 0),
+                    )
+                } else {
+                    null
+                }
+            val current = plan.topology
+            if (key != null && current.key == key) return TilePlan(current, metrics.center, metrics.scale)
             val required = ArrayList<TiledImageTileId>()
             requiredRanges.forEach { levelRange ->
                 levelRange.range.forEach { column, row ->
@@ -300,7 +329,12 @@ internal class TiledImageTileLayerElement(
                     cells.add(cell(levelIndex, column, row))
                 }
             }
-            return TilePlan(cells, required, metrics.center, metrics.scale)
+            return TilePlan(TileTopology(key, cells, required), metrics.center, metrics.scale)
+        }
+
+        private fun fitsKeyStorage(levelCount: Int): Boolean {
+            val ranges = levelCount.toLong() + if (0 < cachePolicy.overscanTiles) 1L else 0L
+            return ranges <= cachePolicy.maxEntries && ranges <= cachePolicy.maxBytes / Long.SIZE_BYTES / 4L
         }
 
         private fun fitsPolicy(ranges: List<LevelRange>): Boolean {
@@ -653,14 +687,38 @@ internal class TiledImageTileLayerElement(
             val bottom: Long,
         )
 
-        private data class TilePlan(
+        /**
+         * Exact admitted grid identity; the source-generation stamp fixes the validated detached level geometry.
+         * The selected visible range differs from its required range only when selected-level overscan is enabled.
+         * Coarser visible and required ranges are identical, so no duplicate fallback range list is retained.
+         */
+        private data class TopologyKey(
+            val sourceGeneration: Long,
+            val bounds: LongRect,
+            val viewportSize: IntSize,
+            val policy: TiledImageCachePolicy,
+            val selectedLevel: Int,
+            val requiredRanges: List<LevelRange>,
+            val selectedVisibleRange: TileRange,
+        )
+
+        /**
+         * One current successfully installed immutable grid, with original IDs/cells and no image or source ownership.
+         * A null key keeps the original uncached planning path when additional range storage exceeds its conservative bound.
+         */
+        private data class TileTopology(
+            val key: TopologyKey?,
             val cells: List<TileCell>,
             val requiredIds: List<TiledImageTileId>,
+        )
+
+        private data class TilePlan(
+            val topology: TileTopology,
             val center: DoubleOffset,
             val scale: Double,
         ) {
             companion object {
-                val Empty: TilePlan = TilePlan(emptyList(), emptyList(), DoubleOffset.Zero, 1.0)
+                val Empty: TilePlan = TilePlan(TileTopology(null, emptyList(), emptyList()), DoubleOffset.Zero, 1.0)
             }
         }
     }

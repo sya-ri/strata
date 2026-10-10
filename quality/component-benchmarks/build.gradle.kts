@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.jmh)
 }
 
-extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+extensions.configure<DetektExtension> { source.from("src/jmh/kotlin", rootProject.file("quality/shared/tiled-image-fixture")) }
 
 dependencies {
     implementation(project(":performance-testkit"))
@@ -64,7 +64,10 @@ val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped
     exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
 }
 extensions.configure<KotlinJvmProjectExtension> {
-    sourceSets.named("jmh") { kotlin.source(showcaseSources) }
+    sourceSets.named("jmh") {
+        kotlin.source(showcaseSources)
+        kotlin.srcDir(rootProject.file("quality/shared/tiled-image-fixture"))
+    }
 }
 
 jmh {

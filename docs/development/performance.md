@@ -448,6 +448,22 @@ The configured entry and byte maxima include empty, initializing, committed, pen
 If the preferred set does not fit, planning tries coarser selected levels without mutating the current subscriptions; failure of the coarsest set occurs before partial installation.
 Panning replaces tiles beyond the current margin instead of retaining visited map regions.
 
+The retained tile layer additionally reuses only its current successfully installed immutable grid topology across layout and declaration preparation.
+Every request still validates known/matching viewport geometry, computes preferred and admitted levels and exact required ranges, and applies the original complete entry/byte policy before a reuse decision.
+The typed key includes the source-generation stamp fixing detached level geometry, source bounds, exact viewport size, complete policy, selected level, every required half-open range, and the selected level's visible range.
+Coarser visible ranges equal their required ranges; changed center or scale may share topology only when all these exact fields match.
+Each request still supplies its current center and scale to destination conversion, commits tile revisions through the original shared cutoff, paints current images, and places application overlays normally.
+A hit reuses the existing required IDs and coarse-to-fine row-major cells and skips membership reconciliation only because that topology was published after successful subscription reconciliation.
+A miss clears the reusable plan before removal/subscription callbacks and publishes no partial plan after failure.
+Source/state/viewport/policy replacement, invalid same-source geometry, detach, disposal, and every failed planning or installation path release the reusable key before terminal callbacks.
+
+Only one topology is retained per tile-layer owner; its cells are no greater than its required observations and the original entry and image-byte limits remain unchanged.
+Additional key storage owns at most one required range descriptor per selected-or-coarser level and one selected visible range when overscan differs.
+The range count must fit both the existing maxEntries and a separate conservative maxBytes budget of four Long coordinates per retained range; this is a logical coordinate charge, not a measured JVM or JavaScript object footprint.
+When that metadata admission fails, the component keeps original tile admission and uncached enumeration rather than rejecting a valid working set.
+The key stores no source, PanZoomState, complete level-list copy, previous viewport, subscription, image, mutable scratch buffer, or history.
+Replacement temporarily holds the old and pending bounded grids on the owner stack; terminal cleanup clears the current field before callbacks and old public frames remain detached.
+
 Planning, subscription establishment, reconciliation, and release run on the retained tree's owner thread.
 StateSource callbacks may enqueue from any thread, retain only the newest pending revision for that tile, and commit through the session's shared frame cutoff.
 Leaving the working set, source replacement, detachment, close, and failed subscription establishment clear attachment references and close every observation without closing the externally owned source or state history.
@@ -455,6 +471,17 @@ Cleanup attempts all removed observations and preserves later failures as suppre
 
 Deterministic tests cover clean identity reuse, movement within and across the overscan boundary, marker-only updates, preferred and fallback LOD budgeting, source replacement, callback and subscribe races, invalid tile rejection, detach and terminal release, and exact range planning above the double integer precision boundary for positive, negative, and non-power-of-two grids.
 Headless and loaded Fabric parity require the same pixels and row-major coarse-to-fine command order, while native sampled-image counters require stable tile images to avoid rerasterization and upload during pan, zoom, and marker movement.
+
+The TiledImage topology fixture compiles one shared public-input source into the existing component and remote JMH modules.
+Eleven input shapes cover a single tile, sparse and dense grids, multiple fallback levels, mixed and empty tiles, separate entry/byte fallback, optional-key rejection, 10,000 validated levels with one admitted observation, and large-coordinate sub-ULP controls.
+Four navigation traces distinguish same-range pan, same-range zoom, deliberate range crossings, and preferred-level changes; single-level and clamped shapes remain explicit controls.
+The portable fixture separately measures public pre-input layout synchronization, complete dirty frames, clean retained frames, and cold protocols including acquisition, tile/overlay revisions, equivalent redeclaration, fit/viewport/source replacement and release.
+The remote fixture separately measures the actual server projection, normal unchanged projection, and message encoding/decoding plus validated client reconstruction and frame consumption; it does not skip idle projection work.
+Select TiledImageTopologyBenchmark through the existing jmhComponents task and TiledImageRemoteBenchmark through jmhRemote with the shared strata.performance.benchmarks selector; default remote protocol/session scopes remain unchanged.
+The remote launcher uses the same generated method/parameter/input admission and shared collector without a fixture-specific flag or standalone timing path.
+Optional untimed validation checks complete generated row inventories, actual phase counters, exact ordered required/cell hashes and logical reserved/key storage, stable observation counts, old outputs, real reconstructed pixels and balanced terminal ownership.
+The complete matrix contains 176 portable and 132 remote rows per measured mode; every row requires the same frozen fixture and complete independent baseline/candidate collections.
+These JVM fixtures establish no native upload, GUI, GPU, frame-latency or FPS improvement; native timing metrics are inapplicable while applicable loaded parity and release checks remain required.
 
 ### Canvas source and target retention
 
