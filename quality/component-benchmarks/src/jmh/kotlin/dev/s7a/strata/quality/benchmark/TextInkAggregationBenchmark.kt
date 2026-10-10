@@ -228,16 +228,24 @@ public open class TextInkAggregationBenchmark {
      * Fixed provider semantics, distinct from the old PortableTextBenchmark's unchanged native workloads.
      */
     public enum class Provider {
-        /** Validated printable ASCII snapshots with exact integer positions. */
+        /**
+         * Validated printable ASCII snapshots with exact integer positions.
+         */
         Legacy,
 
-        /** Fractional bearings with positive scalar advances through the real font engine. */
+        /**
+         * Fractional bearings with positive scalar advances through the real font engine.
+         */
         SampledForward,
 
-        /** Exactly cancelling positive and negative advances with overlapping quads through the real engine. */
+        /**
+         * Exactly cancelling positive and negative advances with overlapping quads through the real engine.
+         */
         SampledSigned,
 
-        /** Logical advances with no image or submitted quad. */
+        /**
+         * Logical advances with no image or submitted quad.
+         */
         SpacingOnly,
     }
 
