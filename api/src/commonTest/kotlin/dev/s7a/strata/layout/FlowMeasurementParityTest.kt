@@ -46,7 +46,7 @@ internal class FlowMeasurementParityTest {
         val pair = List(2) { FlowMeasurementScope(sizes, FlowMeasurementScope.Failure(expectedEvent, cause)) }
         val actual = compare(pair, bounds, 1, Int.MAX_VALUE)
         assertSame(cause, actual)
-        assertEquals((0 until 3).map { FlowMeasurementTrace.Measure(it, bounds) }, pair.first().trace)
+        assertEquals<List<FlowMeasurementTrace>>((0 until 3).map { FlowMeasurementTrace.Measure(it, bounds) }, pair.first().trace)
     }
 
     @Test
@@ -103,9 +103,19 @@ internal class FlowMeasurementParityTest {
     }
 
     private enum class Pattern {
-        Zero, One, Two, Mixed;
+        Zero,
+        One,
+        Two,
+        Mixed,
+        ;
 
-        fun width(index: Int): Int = when (this) { Zero -> 0; One -> 1; Two -> 2; Mixed -> index % 3 }
+        fun width(index: Int): Int =
+            when (this) {
+                Zero -> 0
+                One -> 1
+                Two -> 2
+                Mixed -> index % 3
+            }
     }
 
     private fun compare(sizes: List<IntSize>, bounds: Constraints, spacing: Int, verticalSpacing: Int): Throwable? =

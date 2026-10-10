@@ -33,27 +33,32 @@ internal class FlowMeasurementFixture(
     private val source = BenchmarkStateSource(0)
     private var revision = 0
     private var resized = false
-    private val session: RuntimeUiSession = createRuntimeUiSession {
-        evaluateComponentTree {
-            Observe(source) { value ->
-                val extent = if (operation == Operation.LayoutOnlyFrame) 1 else value % 2 + 1
-                val spacing = if (topology.childCount == 0) extent else 1
-                val arrangement = if (operation == Operation.LayoutOnlyFrame && value % 2 == 1) Arrangement.End else Arrangement.Start
-                val children = List(topology.childCount) { index -> child(index, extent) }
-                if (original) {
-                    element(FlowReferenceElement(spacing, 1, arrangement, VerticalAlignment.Top, children, TARGET))
-                } else {
-                    FlowRow(key = TARGET, horizontalSpacing = spacing, verticalSpacing = 1, horizontalArrangement = arrangement) {
-                        children.forEach { element(it) }
+    private val session: RuntimeUiSession =
+        createRuntimeUiSession {
+            evaluateComponentTree {
+                Observe(source) { value ->
+                    val extent = if (operation == Operation.LayoutOnlyFrame) 1 else value % 2 + 1
+                    val spacing = if (topology.childCount == 0) extent else 1
+                    val arrangement = if (operation == Operation.LayoutOnlyFrame && value % 2 == 1) Arrangement.End else Arrangement.Start
+                    val children = List(topology.childCount) { index -> child(index, extent) }
+                    if (original) {
+                        element(FlowReferenceElement(spacing, 1, arrangement, VerticalAlignment.Top, children, TARGET))
+                    } else {
+                        FlowRow(key = TARGET, horizontalSpacing = spacing, verticalSpacing = 1, horizontalArrangement = arrangement) {
+                            children.forEach { element(it) }
+                        }
                     }
                 }
             }
         }
-    }
 
-    private fun child(index: Int, height: Int): Element = evaluateComponentTree {
-        Spacer(key = ElementKey(index), modifier = Modifier.Empty.size(topology.width(index), height).background(COLOR))
-    }
+    private fun child(
+        index: Int,
+        height: Int,
+    ): Element =
+        evaluateComponentTree {
+            Spacer(key = ElementKey(index), modifier = Modifier.Empty.size(topology.width(index), height).background(COLOR))
+        }
 
     /** Attaches and primes persistent sessions outside timing; Lifecycle performs this inside each invocation. */
     fun open(): RuntimeUiFrame {
@@ -64,12 +69,18 @@ internal class FlowMeasurementFixture(
     /** Publishes or resizes once and consumes one complete retained frame. */
     fun perform(): RuntimeUiFrame {
         when (operation) {
-            Operation.ResizeFrame -> resized = resized.not()
+            Operation.ResizeFrame -> {
+                resized = resized.not()
+            }
+
             Operation.SourceFrame, Operation.Lifecycle, Operation.LayoutOnlyFrame -> {
                 revision += 1
                 source.publish(revision)
             }
-            Operation.IdleFrame -> Unit
+
+            Operation.IdleFrame -> {
+                Unit
+            }
         }
         return session.frame(constraints())
     }
@@ -90,16 +101,18 @@ internal class FlowMeasurementFixture(
                     val snapshot = monitor.snapshot()
                     check(snapshot.overflowed.not())
                     val node = snapshot.nodes.single { it.id == target }
-                    val measures = when (operation) {
-                        Operation.IdleFrame, Operation.LayoutOnlyFrame -> 0L
-                        Operation.Lifecycle -> 2L
-                        Operation.ResizeFrame, Operation.SourceFrame -> 1L
-                    }
-                    val layouts = when (operation) {
-                        Operation.IdleFrame -> 0L
-                        Operation.Lifecycle -> 2L
-                        else -> 1L
-                    }
+                    val measures =
+                        when (operation) {
+                            Operation.IdleFrame, Operation.LayoutOnlyFrame -> 0L
+                            Operation.Lifecycle -> 2L
+                            Operation.ResizeFrame, Operation.SourceFrame -> 1L
+                        }
+                    val layouts =
+                        when (operation) {
+                            Operation.IdleFrame -> 0L
+                            Operation.Lifecycle -> 2L
+                            else -> 1L
+                        }
                     check(node.counts.getValue(UiRenderMetric.Measure) == measures)
                     check(node.counts.getValue(UiRenderMetric.Layout) == layouts)
                     check(snapshot.activeSubscriptions == 1 && source.subscribed)
@@ -117,16 +130,20 @@ internal class FlowMeasurementFixture(
         }
     }
 
-    private fun sameFrame(expected: RuntimeUiFrame, actual: RuntimeUiFrame) {
+    private fun sameFrame(
+        expected: RuntimeUiFrame,
+        actual: RuntimeUiFrame,
+    ) {
         check(expected.size == actual.size)
         check(expected.drawCommands == actual.drawCommands) { "Original ordered geometry changed for $topology/$operation" }
         check(expected.semantics == actual.semantics)
     }
 
-    private fun constraints(): Constraints = Constraints(
-        maxWidth = if (resized) topology.resizedMaximumWidth else topology.maximumWidth,
-        maxHeight = if (resized) 181 else 180,
-    )
+    private fun constraints(): Constraints =
+        Constraints(
+            maxWidth = if (resized) topology.resizedMaximumWidth else topology.maximumWidth,
+            maxHeight = if (resized) 181 else 180,
+        )
 
     /** Releases the real source callback and terminal owner, including failed or partially primed operations. */
     override fun close() {

@@ -18,12 +18,13 @@ internal class FlowReferenceElement(
     key: ElementKey<*>? = null,
 ) : Element(key?.let(ElementIdentity::Keyed) ?: ElementIdentity.Positional, TYPE, children = children, modifier = Modifier.Empty) {
     private companion object {
-        val TYPE = ElementType(
-            elementClass = FlowReferenceElement::class,
-            nodeClass = FlowReferenceNode::class,
-            validateLocal = { element -> require(0 <= element.horizontalSpacing && 0 <= element.verticalSpacing) },
-            createNode = { element -> FlowReferenceNode(element.horizontalSpacing, element.verticalSpacing, element.horizontalArrangement, element.verticalAlignment) },
-            updateNode = { previous, current, node -> node.update(previous, current) },
-        )
+        val TYPE =
+            ElementType(
+                elementClass = FlowReferenceElement::class,
+                nodeClass = FlowReferenceNode::class,
+                validateLocal = { element -> require(0 <= element.horizontalSpacing && 0 <= element.verticalSpacing) },
+                createNode = { element -> FlowReferenceNode(element.horizontalSpacing, element.verticalSpacing, element.horizontalArrangement, element.verticalAlignment) },
+                updateNode = { previous, current, node -> node.update(previous, current) },
+            )
     }
 }

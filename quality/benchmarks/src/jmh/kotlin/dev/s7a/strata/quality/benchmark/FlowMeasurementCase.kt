@@ -74,7 +74,8 @@ public enum class FlowMeasurementCase(
     F067(Topology.Unbounded4096, Operation.SourceFrame),
     F068(Topology.Unbounded4096, Operation.Lifecycle),
     F069(Topology.Unbounded4096, Operation.IdleFrame),
-    F070(Topology.Unbounded4096, Operation.LayoutOnlyFrame);
+    F070(Topology.Unbounded4096, Operation.LayoutOnlyFrame),
+    ;
 
     /** One complete retained frame or independent terminal lifetime. */
     public enum class Operation { ResizeFrame, SourceFrame, Lifecycle, IdleFrame, LayoutOnlyFrame }
@@ -101,18 +102,20 @@ public enum class FlowMeasurementCase(
         OnePerRow4096(4_096, Shape.OnePerRow, 1),
         PackedFour4096(4_096, Shape.PackedFour, 7),
         ExactBoundary4096(4_096, Shape.ExactBoundary, 7),
-        Unbounded4096(4_096, Shape.Unbounded, Int.MAX_VALUE);
+        Unbounded4096(4_096, Shape.Unbounded, Int.MAX_VALUE),
+        ;
 
         /** Source-independent positive child width, including exact-boundary cyclic inputs. */
         public fun width(index: Int): Int = if (shape == Shape.ExactBoundary && index % 2 == 0) 2 else 1
 
         /** Immutable alternating main constraint for resize; the unbounded sentinel remains unchanged. */
         public val resizedMaximumWidth: Int
-            get() = when (shape) {
-                Shape.Empty -> 33
-                Shape.OnePerRow -> 2
-                Shape.Unbounded -> Int.MAX_VALUE
-                Shape.Single, Shape.PackedFour, Shape.ExactBoundary -> 9
-            }
+            get() =
+                when (shape) {
+                    Shape.Empty -> 33
+                    Shape.OnePerRow -> 2
+                    Shape.Unbounded -> Int.MAX_VALUE
+                    Shape.Single, Shape.PackedFour, Shape.ExactBoundary -> 9
+                }
     }
 }
