@@ -103,9 +103,7 @@ internal class TextFieldPreeditFixture(
                 publish(settings[phase])
             }
 
-            Control.CleanActiveComposition -> {
-                Unit
-            }
+            Control.CleanActiveComposition -> {}
 
             Control.EmptyClear -> {
                 input(events[phase])
@@ -186,9 +184,7 @@ internal class TextFieldPreeditFixture(
                 }
             }
 
-            Control.DisposeCloseRelease -> {
-                Unit
-            }
+            Control.DisposeCloseRelease -> {}
 
             else -> {
                 input(events[phase])
