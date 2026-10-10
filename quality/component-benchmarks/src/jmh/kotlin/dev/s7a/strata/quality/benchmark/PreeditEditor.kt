@@ -115,10 +115,10 @@ internal class PreeditEditor(
 
     init {
         check(snapshot.diagnostics.isEmpty())
-        try {
+        runCatching {
             host.attach()
             frame()
-        } catch (failure: Throwable) {
+        }.exceptionOrNull()?.let { failure ->
             runCatching { host.close() }.exceptionOrNull()?.let { if (it !== failure) failure.addSuppressed(it) }
             check(ownedResources == 0)
             throw failure

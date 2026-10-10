@@ -17,6 +17,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
+import java.util.IdentityHashMap
+import java.util.Locale
 
 /**
  * Whole-Issue deterministic admission using independent scalars, complete pixels, work and retained ownership.
@@ -101,7 +103,7 @@ public object PreeditWorkEvidence {
                     } else {
                         val result = runtime.output(checkNotNull(actual))
                         check(result == Triple(expected.text, expected.caret, expected.focused))
-                        if (result.first === event.fullText) shared++
+                        if (IdentityHashMap<String, Unit>().apply { put(event.fullText, Unit) }.containsKey(result.first)) shared++
                     }
                     val outcome = editor.input(event)
                     check(outcome == reference.input(event)) { "Input outcome differs for $case at $index" }
@@ -207,6 +209,6 @@ public object PreeditWorkEvidence {
     internal fun digest(pixels: IntArray): String {
         val bytes = ByteBuffer.allocate(pixels.size * Int.SIZE_BYTES)
         pixels.forEach(bytes::putInt)
-        return MessageDigest.getInstance("SHA-256").digest(bytes.array()).joinToString("") { "%02x".format(it) }
+        return MessageDigest.getInstance("SHA-256").digest(bytes.array()).joinToString("") { "%02x".format(Locale.ROOT, it) }
     }
 }

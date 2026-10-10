@@ -34,7 +34,7 @@ internal object PreeditReference {
         event.blocks.forEachIndexed { index, value ->
             val start = blockUnits
             blockUnits += value.length
-            if (budget < blockUnits || Int.MAX_VALUE < blockUnits || decode(value) == null) return null
+            if (validBlock(value, blockUnits, budget).not()) return null
             if (start + value.length <= event.fullText.length) {
                 agreement = agreement && event.fullText.substring(start.toInt(), blockUnits.toInt()) == value
             } else {
@@ -55,6 +55,14 @@ internal object PreeditReference {
         return Result(decoded.first, caret, range, decoded.second)
     }
 
+    private fun validBlock(
+        value: String,
+        total: Long,
+        budget: Long,
+    ): Boolean = total <= budget && total <= Int.MAX_VALUE && decode(value) != null
+
+    private fun isForbidden(scalar: Int): Boolean = scalar < 32 || scalar == 127 || scalar == 0xA7
+
     private fun decode(raw: String): Pair<String, List<Int?>>? {
         val output = ArrayList<Char>()
         val boundaries = MutableList<Int?>(raw.length + 1) { null }
@@ -74,7 +82,7 @@ internal object PreeditReference {
                 scalar = first.code
             }
             val hardBreak = scalar in setOf(10, 13, 11, 12, 0x85, 0x2028, 0x2029)
-            if (hardBreak.not() && (scalar < 32 || scalar == 127 || scalar == 0xA7)) return null
+            if (hardBreak.not() && isForbidden(scalar)) return null
             if (hardBreak) {
                 output.add('\n')
                 cursor++

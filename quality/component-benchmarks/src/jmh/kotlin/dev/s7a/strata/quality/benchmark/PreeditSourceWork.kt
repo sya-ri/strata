@@ -32,13 +32,7 @@ internal object PreeditSourceWork {
             val hardBreak = isBreak(scalar)
             val units = if (hardBreak) 1 else Character.charCount(scalar)
             if (remaining - length < units) return work.report()
-            work.baselineOutputUnits += units
-            if (hardBreak && scalar != 10 && work.candidateBuffers == 0) {
-                work.candidateBuffers = 1
-                work.candidateOutputUnits = offset.toLong()
-                work.candidatePrefixUnits = offset.toLong()
-            }
-            if (work.candidateBuffers == 1) work.candidateOutputUnits += units
+            recordOutput(work, scalar, offset, units)
             length += units
             offset += if (hardBreak) 1 else units
             if (scalar == 13 && offset < event.fullText.length && event.fullText[offset] == '\n') offset++
@@ -49,6 +43,21 @@ internal object PreeditSourceWork {
             work.wrappers = 1
         }
         return work.report()
+    }
+
+    private fun recordOutput(
+        work: Work,
+        scalar: Int,
+        offset: Int,
+        units: Int,
+    ) {
+        work.baselineOutputUnits += units
+        if (isBreak(scalar) && scalar != 10 && work.candidateBuffers == 0) {
+            work.candidateBuffers = 1
+            work.candidateOutputUnits = offset.toLong()
+            work.candidatePrefixUnits = offset.toLong()
+        }
+        if (work.candidateBuffers == 1) work.candidateOutputUnits += units
     }
 
     private fun inspectBlocks(

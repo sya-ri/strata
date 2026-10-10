@@ -138,7 +138,7 @@ internal class PreeditPixels(
         var offset = 0
         var start = 0
         var maximum = 0
-        var boundaries = arrayListOf(0 to 0)
+        val boundaries = arrayListOf(0 to 0)
         positions[0] = Position(0, 0)
         while (offset < text.length) {
             val scalar = text.codePointAt(offset)
@@ -149,7 +149,8 @@ internal class PreeditPixels(
                 y += 9
                 x = 0
                 start = offset
-                boundaries = arrayListOf(offset to 0)
+                boundaries.clear()
+                boundaries.add(offset to 0)
             } else {
                 glyphs.add(Position(x, y))
                 x += advances[scalar] ?: 1
