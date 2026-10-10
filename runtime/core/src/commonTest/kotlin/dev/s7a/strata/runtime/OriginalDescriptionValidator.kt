@@ -7,14 +7,13 @@ import dev.s7a.strata.runtime.platform.identitySet
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
- * Validates a complete element description before retained state is mutated.
+ * Independent frozen pre-change validator from master 414cb972ffa8c89a4aee2102d1dc2834dbe32eae.
+ * Keep the eager sibling sets: the controls compare exact keyed callbacks and first failure with production.
  */
 @OptIn(InternalStrataRuntimeApi::class)
-internal class DescriptionValidator {
+internal class OriginalDescriptionValidator {
     /**
-     * Validates local properties, direct-sibling keys, and cycles throughout [root].
-     *
-     * @param root the proposed root description.
+     * Validates the complete proposed root with the original eager algorithm.
      */
     fun validate(root: Element) {
         val active = identitySet<Element>()
@@ -22,18 +21,15 @@ internal class DescriptionValidator {
     }
 
     /**
-     * Validates one dynamically produced direct-sibling set and every descendant before reconciliation.
-     *
-     * @param children complete proposed direct-child descriptions.
+     * Validates a fresh dynamic list with the original eager algorithm.
      */
     fun validateChildren(children: List<Element>) {
         val active = identitySet<Element>()
-        var keys: HashSet<ElementKey<*>>? = null
+        val keys = HashSet<ElementKey<*>>()
         children.forEach { child ->
             val identity = child.identity
             if (identity is ElementIdentity.Keyed) {
-                val siblingKeys = keys ?: HashSet<ElementKey<*>>().also { keys = it }
-                require(siblingKeys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
+                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
             }
             visit(child, active)
         }
@@ -46,12 +42,11 @@ internal class DescriptionValidator {
         require(active.add(element)) { "An element description contains a cycle." }
         element.type.validateErased(element)
         element.modifier.elements().forEach { modifier -> modifier.type.validateErased(modifier) }
-        var keys: HashSet<ElementKey<*>>? = null
+        val keys = HashSet<ElementKey<*>>()
         element.children.forEach { child ->
             val identity = child.identity
             if (identity is ElementIdentity.Keyed) {
-                val siblingKeys = keys ?: HashSet<ElementKey<*>>().also { keys = it }
-                require(siblingKeys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
+                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
             }
             visit(child, active)
         }
