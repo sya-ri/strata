@@ -102,6 +102,8 @@ internal object MinecraftCanvasGameTest {
         MinecraftCanvasGenerationGameTest.run(context, profile)
         MinecraftCanvasPointerGameTest.run(context, profile)
         MinecraftCanvasFailureGameTest.run(context, profile)
+        MinecraftSamplingCoverageDeviceGameTest.run(context)
+        MinecraftSamplingCoveragePresenterGameTest.run(context, profile)
     }
 
     private fun verify(
