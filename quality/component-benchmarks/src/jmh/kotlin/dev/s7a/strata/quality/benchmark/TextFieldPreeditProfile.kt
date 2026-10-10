@@ -57,5 +57,8 @@ internal object TextFieldPreeditProfile {
             buttonDisabled(image(200, 20), 1, NineSliceCenterMode.Tiled)
         }
 
-    private fun image(width: Int, height: Int): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { 0xFF426789.toInt() })
+    private fun image(
+        width: Int,
+        height: Int,
+    ): DrawImage = createDrawImage(IntSize(width, height), IntArray(width * height) { 0xFF426789.toInt() })
 }

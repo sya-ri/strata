@@ -54,14 +54,15 @@ internal class TextFieldPreeditFixture(
     private val viewport = IntSize(if (row.control == Control.WidthAndFontReplacement) 88 else 80, 20)
     private val profile = TextFieldPreeditProfile.create(if (resourceFonts) snapshot() else null)
     private val states = List(2) { TextFieldState("A", maxLength = if (row.control == Control.PreeditBeyondRemainingCapacity) 1 else 32767) }
-    private val settings = List(2) { variant ->
-        Settings(
-            state = states[if (row.control == Control.StateReplacement) variant else 0],
-            appearance = appearance(variant),
-            width = if (row.control == Control.WidthAndFontReplacement && variant == 1) 88 else 80,
-            font = ResourceId(if (row.control == Control.WidthAndFontReplacement && variant == 1) "strata_benchmark" else "minecraft", if (row.control == Control.WidthAndFontReplacement && variant == 1) "wide" else "default"),
-        )
-    }
+    private val settings =
+        List(2) { variant ->
+            Settings(
+                state = states[if (row.control == Control.StateReplacement) variant else 0],
+                appearance = appearance(variant),
+                width = if (row.control == Control.WidthAndFontReplacement && variant == 1) 88 else 80,
+                font = ResourceId(if (row.control == Control.WidthAndFontReplacement && variant == 1) "strata_benchmark" else "minecraft", if (row.control == Control.WidthAndFontReplacement && variant == 1) "wide" else "default"),
+            )
+        }
     private val disabled = settings[0].copy(enabled = false)
     private val source = StressStateSource(settings[0])
     private val events = List(2, ::event)
@@ -98,17 +99,38 @@ internal class TextFieldPreeditFixture(
 
     private fun control(control: Control) {
         when (control) {
-            Control.NoCompositionDirtyField, Control.AppearanceOnlyPaint -> publish(settings[phase])
-            Control.CleanActiveComposition -> Unit
-            Control.EmptyClear -> { input(events[phase]); input(empty) }
-            Control.IdenticalPreeditNoOp -> input(events[0])
-            Control.WidthAndFontReplacement -> { input(events[phase]); publish(settings[phase]) }
+            Control.NoCompositionDirtyField, Control.AppearanceOnlyPaint -> {
+                publish(settings[phase])
+            }
+
+            Control.CleanActiveComposition -> {
+                Unit
+            }
+
+            Control.EmptyClear -> {
+                input(events[phase])
+                input(empty)
+            }
+
+            Control.IdenticalPreeditNoOp -> {
+                input(events[0])
+            }
+
+            Control.WidthAndFontReplacement -> {
+                input(events[phase])
+                publish(settings[phase])
+            }
+
             Control.FocusLoss -> {
                 refocus()
                 input(events[phase])
                 host.resetInputState()
-                reference?.let { it.focused = false; it.composition = null }
+                reference?.let {
+                    it.focused = false
+                    it.composition = null
+                }
             }
+
             Control.DisabledUpdate -> {
                 publish(settings[0])
                 host.frame(viewport)
@@ -116,30 +138,61 @@ internal class TextFieldPreeditFixture(
                 input(events[phase])
                 publish(disabled)
             }
-            Control.StateReplacement -> { input(events[phase]); publish(settings[phase]) }
+
+            Control.StateReplacement -> {
+                input(events[phase])
+                publish(settings[phase])
+            }
+
             Control.ExternalStateMutation -> {
                 input(events[phase])
                 current.state.value = if (phase == 0) "A" else "D"
-                reference?.let { it.value = current.state.value; it.cursor = minOf(it.cursor, it.value.length); it.composition = null }
+                reference?.let {
+                    it.value = current.state.value
+                    it.cursor = minOf(it.cursor, it.value.length)
+                    it.composition = null
+                }
             }
+
             Control.CommittedInputAndCursorClear -> {
                 current.state.value = "A"
-                reference?.let { it.value = "A"; it.cursor = minOf(it.cursor, 1); it.composition = null }
+                reference?.let {
+                    it.value = "A"
+                    it.cursor = minOf(it.cursor, 1)
+                    it.composition = null
+                }
                 input(events[phase])
                 host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Home, 0))
-                reference?.let { it.cursor = 0; it.composition = null }
+                reference?.let {
+                    it.cursor = 0
+                    it.composition = null
+                }
                 input(events[phase])
                 check(host.dispatchTextInput(TextInputEvent.Character('D'.code)) == InputResult.Consumed)
-                reference?.let { it.value = "DA"; it.cursor = 1; it.composition = null }
+                reference?.let {
+                    it.value = "DA"
+                    it.cursor = 1
+                    it.composition = null
+                }
             }
+
             Control.DetachReattach -> {
                 input(events[phase])
                 host.detach()
                 host.attach()
-                reference?.let { it.focused = true; it.composition = null }
+                reference?.let {
+                    it.focused = true
+                    it.composition = null
+                }
             }
-            Control.DisposeCloseRelease -> Unit
-            else -> input(events[phase])
+
+            Control.DisposeCloseRelease -> {
+                Unit
+            }
+
+            else -> {
+                input(events[phase])
+            }
         }
     }
 
@@ -180,7 +233,12 @@ internal class TextFieldPreeditFixture(
             host = open()
         }
         closedHost = false
-        reference?.let { it.value = "A"; it.cursor = 1; it.focused = true; it.composition = null }
+        reference?.let {
+            it.value = "A"
+            it.cursor = 1
+            it.focused = true
+            it.composition = null
+        }
         input(events[phase])
         val frame = host.frame(viewport)
         host.close()
@@ -190,15 +248,16 @@ internal class TextFieldPreeditFixture(
     }
 
     private fun open(): MinecraftUiHost {
-        val created = createMinecraftUiHost(
-            UiDefinition {
-                Observe(source) { config ->
-                    TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = ElementKey("field"))
-                }
-            },
-            profile,
-            fontBackend = MinecraftFontBackendFactory { SpaceBackend() },
-        )
+        val created =
+            createMinecraftUiHost(
+                UiDefinition {
+                    Observe(source) { config ->
+                        TextField(config.state, config.appearance, IntSize(config.width, 20), config.font, enabled = config.enabled, textStyle = TextStyle.ContainerLabel, modifier = Modifier.Empty.initialFocus(), key = ElementKey("field"))
+                    }
+                },
+                profile,
+                fontBackend = MinecraftFontBackendFactory { SpaceBackend() },
+            )
         created.attach()
         created.frame(viewport)
         return created
@@ -227,7 +286,10 @@ internal class TextFieldPreeditFixture(
     /**
      * Proves dirty appearance really paints without measuring or laying out and clean composition frames reuse identity.
      */
-    fun verifyWork(previous: RuntimeUiFrame, frame: RuntimeUiFrame) {
+    fun verifyWork(
+        previous: RuntimeUiFrame,
+        frame: RuntimeUiFrame,
+    ) {
         if (row.control == Control.DisposeCloseRelease) return
         val counts = checkNotNull(monitor).snapshot().counts
         if (row.operation == Operation.UnchangedPreeditDirtyFieldFrame || row.control in setOf(Control.NoCompositionDirtyField, Control.AppearanceOnlyPaint)) {
@@ -243,7 +305,9 @@ internal class TextFieldPreeditFixture(
     /**
      * Begins one bounded untimed verification interval.
      */
-    fun checkpoint() { monitor?.checkpoint() }
+    fun checkpoint() {
+        monitor?.checkpoint()
+    }
 
     /**
      * Current completed clean frame for identity and parity assertions outside timing.
@@ -251,7 +315,9 @@ internal class TextFieldPreeditFixture(
     fun frame(): RuntimeUiFrame = host.frame(viewport)
 
     override fun close() {
-        try { monitor?.close() } finally {
+        try {
+            monitor?.close()
+        } finally {
             monitor = null
             host.close()
             check(source.subscriptions == 0)
@@ -262,12 +328,13 @@ internal class TextFieldPreeditFixture(
         val letter = if (variant == 0) "B" else "C"
         if (0 < row.length) {
             val text = letter.repeat(row.length)
-            val blocks = when (row.partition) {
-                Partition.TwoHalves -> listOf(text.take(row.length / 2), text.drop(row.length / 2))
-                Partition.Fixed8Blocks -> text.chunked(row.length / 8)
-                Partition.OneScalarPerBlock -> text.map(Char::toString)
-                Partition.EmptyBoundaryBlocks -> listOf("", text.take(row.length / 2), "", text.drop(row.length / 2), "")
-            }
+            val blocks =
+                when (row.partition) {
+                    Partition.TwoHalves -> listOf(text.take(row.length / 2), text.drop(row.length / 2))
+                    Partition.Fixed8Blocks -> text.chunked(row.length / 8)
+                    Partition.OneScalarPerBlock -> text.map(Char::toString)
+                    Partition.EmptyBoundaryBlocks -> listOf("", text.take(row.length / 2), "", text.drop(row.length / 2), "")
+                }
             val focus = if (row.focus == TextFieldPreeditRow.Focus.FirstNonempty) blocks.indexOfFirst(String::isNotEmpty) else blocks.indexOfLast(String::isNotEmpty)
             return TextInputEvent.Preedit(text, text.length, blocks, focus)
         }
@@ -324,7 +391,12 @@ internal class TextFieldPreeditFixture(
      */
     private class SpaceBackend : MinecraftFontBackend {
         override fun decodePng(bytes: ByteArray) = error("Space fixture must not decode pixels")
-        override fun openTrueType(bytes: ByteArray, settings: MinecraftTrueTypeSettings): MinecraftTrueTypeFace = error("Space fixture must not open a native face")
+
+        override fun openTrueType(
+            bytes: ByteArray,
+            settings: MinecraftTrueTypeSettings,
+        ): MinecraftTrueTypeFace = error("Space fixture must not open a native face")
+
         override fun close() = Unit
     }
 }

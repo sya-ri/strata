@@ -94,7 +94,8 @@ public enum class TextFieldPreeditRow(
     ExternalStateMutation(control = Control.ExternalStateMutation),
     CommittedInputAndCursorClear(control = Control.CommittedInputAndCursorClear),
     DetachReattach(control = Control.DetachReattach),
-    DisposeCloseRelease(control = Control.DisposeCloseRelease);
+    DisposeCloseRelease(control = Control.DisposeCloseRelease),
+    ;
 
     /**
      * Stable fixture identity shared by both main operation modes.

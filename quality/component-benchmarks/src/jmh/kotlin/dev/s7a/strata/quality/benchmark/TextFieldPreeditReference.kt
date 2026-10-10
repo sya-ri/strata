@@ -28,13 +28,15 @@ internal class TextFieldPreeditReference(
      */
     fun input(event: TextInputEvent.Preedit): InputResult {
         val texts = listOf(event.fullText) + event.blocks
-        val accepted = texts.all { text ->
-            text.codePoints().allMatch { scalar ->
-                0x20 <= scalar && (scalar in 0xD800..0xDFFF).not() && (scalar in setOf(0x7F, 0x85, 0xA7, 0x2028, 0x2029)).not()
+        val accepted =
+            texts.all { text ->
+                text.codePoints().allMatch { scalar ->
+                    0x20 <= scalar && (scalar in 0xD800..0xDFFF).not() && (scalar in setOf(0x7F, 0x85, 0xA7, 0x2028, 0x2029)).not()
+                }
             }
-        }
-        val split = event.caretPosition in 1 until event.fullText.length &&
-            event.fullText[event.caretPosition - 1].isHighSurrogate() && event.fullText[event.caretPosition].isLowSurrogate()
+        val split =
+            event.caretPosition in 1 until event.fullText.length &&
+                event.fullText[event.caretPosition - 1].isHighSurrogate() && event.fullText[event.caretPosition].isLowSurrogate()
         if (enabled.not() || focused.not() || accepted.not() || split) return InputResult.Ignored
         composition = event.takeIf { it.fullText.isNotEmpty() }
         return InputResult.Consumed
@@ -115,29 +117,35 @@ internal class TextFieldPreeditReference(
      * Independent ordered image submissions: nine source-grid cells followed by logical-order foreground glyphs.
      * Each triple is source image size, source rectangle and original destination; production painting is never called.
      */
-    fun images(): List<Triple<IntSize, IntRect, IntRect>> = buildList {
-        val xs = listOf(0, 1, width - 1, width)
-        val ys = listOf(0, 1, 19, 20)
-        for (y in 0..2) for (x in 0..2) {
-            add(Triple(IntSize(3, 3), IntRect(x, y, x + 1, y + 1), IntRect(xs[x], ys[y], xs[x + 1], ys[y + 1])))
-        }
-        if (resourceFonts.not()) {
-            val event = composition
-            val text = value.substring(0, cursor) + (event?.fullText ?: "") + value.substring(cursor)
-            val caret = cursor + (event?.caretPosition ?: 0)
-            val start = visibleStart(text, caret)
-            var offset = start
-            while (offset < text.length) {
-                val next = text.offsetByCodePoints(offset, 1)
-                if (width - 8 < width(text, start, next)) break
-                val x = 4 + width(text, start, offset)
-                if (text[offset] != ' ') add(Triple(IntSize(8, 8), IntRect(0, 0, 8, 8), IntRect(x, 6, x + 8, 14)))
-                offset = next
+    fun images(): List<Triple<IntSize, IntRect, IntRect>> =
+        buildList {
+            val xs = listOf(0, 1, width - 1, width)
+            val ys = listOf(0, 1, 19, 20)
+            for (y in 0..2) {
+                for (x in 0..2) {
+                    add(Triple(IntSize(3, 3), IntRect(x, y, x + 1, y + 1), IntRect(xs[x], ys[y], xs[x + 1], ys[y + 1])))
+                }
+            }
+            if (resourceFonts.not()) {
+                val event = composition
+                val text = value.substring(0, cursor) + (event?.fullText ?: "") + value.substring(cursor)
+                val caret = cursor + (event?.caretPosition ?: 0)
+                val start = visibleStart(text, caret)
+                var offset = start
+                while (offset < text.length) {
+                    val next = text.offsetByCodePoints(offset, 1)
+                    if (width - 8 < width(text, start, next)) break
+                    val x = 4 + width(text, start, offset)
+                    if (text[offset] != ' ') add(Triple(IntSize(8, 8), IntRect(0, 0, 8, 8), IntRect(x, 6, x + 8, 14)))
+                    offset = next
+                }
             }
         }
-    }
 
-    private fun visibleStart(text: String, caret: Int): Int {
+    private fun visibleStart(
+        text: String,
+        caret: Int,
+    ): Int {
         var offset = 0
         var remaining = width(text, 0, caret)
         while (width - 8 < remaining) {
@@ -148,17 +156,22 @@ internal class TextFieldPreeditReference(
         return offset
     }
 
-    private fun width(text: String, start: Int, end: Int): Int {
+    private fun width(
+        text: String,
+        start: Int,
+        end: Int,
+    ): Int {
         var result = 0
         var offset = start
         while (offset < end) {
             val scalar = text.codePointAt(offset)
-            result += when {
-                negativeAdvance && scalar == 0x1F642 -> -10
-                wideFont -> 3
-                scalar == 0x20 -> 4
-                else -> 2
-            }
+            result +=
+                when {
+                    negativeAdvance && scalar == 0x1F642 -> -10
+                    wideFont -> 3
+                    scalar == 0x20 -> 4
+                    else -> 2
+                }
             offset += Character.charCount(scalar)
         }
         return result

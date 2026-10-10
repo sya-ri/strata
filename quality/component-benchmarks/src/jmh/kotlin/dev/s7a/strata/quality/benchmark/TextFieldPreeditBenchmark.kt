@@ -41,7 +41,9 @@ public open class TextFieldPreeditBenchmark {
          * Constructs and primes the full host and both event producers outside collection.
          */
         @Setup(Level.Trial)
-        public fun setup() { fixture = TextFieldPreeditFixture(row) }
+        public fun setup() {
+            fixture = TextFieldPreeditFixture(row)
+        }
 
         /**
          * Executes only the declared complete operation; no helper-only samples enter the matrix.
@@ -52,7 +54,9 @@ public open class TextFieldPreeditBenchmark {
          * Releases the host, current composition, source observation and diagnostic references.
          */
         @TearDown(Level.Trial)
-        public fun close() { fixture.close() }
+        public fun close() {
+            fixture.close()
+        }
     }
 
     /**
@@ -65,7 +69,12 @@ public open class TextFieldPreeditBenchmark {
         @JvmStatic
         public fun verifyWork() {
             check(TextFieldPreeditRow.entries.size == 78)
-            check(TextFieldPreeditRow.entries.map { it.fixtureId }.toSet().size == 54)
+            check(
+                TextFieldPreeditRow.entries
+                    .map { it.fixtureId }
+                    .toSet()
+                    .size == 54,
+            )
             check(TextFieldPreeditRow.entries.count { it.control != null } == 30)
             check(JmhWorkloadInventory.capture(listOf(TextFieldPreeditBenchmark::class.java), setOf("avgt")).size == 78)
             TextFieldPreeditRow.entries.forEach { row ->
