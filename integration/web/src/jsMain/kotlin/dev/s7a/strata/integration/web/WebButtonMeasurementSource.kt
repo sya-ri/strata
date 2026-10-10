@@ -16,7 +16,9 @@ internal class WebButtonMeasurementSource<T>(
     private var revision = 0L
     private val observers = ArrayList<(StateSnapshot<T>) -> Unit>()
 
-    /** Number of live source-owned subscriptions. */
+    /**
+     * Number of live source-owned subscriptions.
+     */
     val active: Int get() = observers.size
 
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
@@ -27,7 +29,9 @@ internal class WebButtonMeasurementSource<T>(
         }
     }
 
-    /** Publishes synchronously; runtime callbacks may only enqueue the detached snapshot. */
+    /**
+     * Publishes synchronously; runtime callbacks may only enqueue the detached snapshot.
+     */
     fun publish(next: T) {
         revision += 1
         value = next

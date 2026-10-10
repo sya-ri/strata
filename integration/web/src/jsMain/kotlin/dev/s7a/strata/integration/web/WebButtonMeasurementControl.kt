@@ -46,7 +46,9 @@ internal enum class WebButtonMeasurementControl(
     FailureCloseRelease("failure-close-release"),
     ;
 
-    /** Fault injected into native Canvas methods only while this control executes. */
+    /**
+     * Fault injected into native Canvas methods only while this control executes.
+     */
     enum class CanvasFault {
         None,
         NullContext,

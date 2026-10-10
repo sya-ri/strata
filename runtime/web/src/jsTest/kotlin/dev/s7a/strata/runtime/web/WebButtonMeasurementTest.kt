@@ -16,7 +16,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 
-/** Verifies fixed-width construction independently of native DOM rendering and browser timing. */
+/**
+ * Verifies fixed-width construction independently of native DOM rendering and browser timing.
+ */
 internal class WebButtonMeasurementTest {
     @Test
     fun fixedButtonsDoNotRequireCanvasWhileAutomaticTextRetainsItsFailure() {
@@ -52,8 +54,14 @@ internal class WebButtonMeasurementTest {
         }
     }
 
-    /** Restores native prototype values on every exit, including an assertion failure. */
-    private fun withCanvasFault(fault: CanvasFault, failure: Throwable, action: () -> Unit) {
+    /**
+     * Restores native prototype values on every exit, including an assertion failure.
+     */
+    private fun withCanvasFault(
+        fault: CanvasFault,
+        failure: Throwable,
+        action: () -> Unit,
+    ) {
         val documentPrototype = js("Document.prototype")
         val canvasPrototype = js("HTMLCanvasElement.prototype")
         val contextPrototype = js("CanvasRenderingContext2D.prototype")
@@ -62,7 +70,7 @@ internal class WebButtonMeasurementTest {
         val measure = contextPrototype.measureText
         try {
             when (fault) {
-                CanvasFault.Creation -> documentPrototype.createElement = { tag: String -> if (tag == "canvas") throw failure else create.call(document, tag) }
+                CanvasFault.Creation -> documentPrototype.createElement = { _: String -> throw failure }
                 CanvasFault.NullContext -> canvasPrototype.getContext = { _: String -> null }
                 CanvasFault.Measure -> contextPrototype.measureText = { _: String -> throw failure }
             }
@@ -74,7 +82,9 @@ internal class WebButtonMeasurementTest {
         }
     }
 
-    /** Distinct native prerequisites removed only for fixed-width Button construction. */
+    /**
+     * Distinct native prerequisites removed only for fixed-width Button construction.
+     */
     private enum class CanvasFault {
         Creation,
         NullContext,
