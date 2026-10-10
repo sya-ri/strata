@@ -94,7 +94,7 @@ Qodana runs for PRs changing analyzed code or analysis configuration, manual ful
 It uses its recommended JVM profile without a baseline and receives every catalog-declared Java toolchain.
 Each run analyzes the complete selected revision once with a zero-problem threshold; PR differential mode is disabled so it does not rebuild and reindex the base commit.
 The workflow explicitly selects `qodana-jvm-community` in native mode so analysis can use the installed toolchains and restored Gradle user home.
-One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model.
+One `--no-daemon` Gradle invocation compiles `classes`, `gametestClasses`, and every discovered JMH owner's `jmhClasses`, assembles the five plain common jars required by Loom's nested-library model, and generates the IDEA model and declaration inventory.
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
@@ -109,11 +109,22 @@ The latter preserves mapped binaries without optional source remapping.
 The generated IDEA model assigns linked source roots, real compile/test/GameTest classpaths, and language levels to each owner; `rootJavaProjects` opens that model directly.
 Bootstrap may replace its disposable `.idea`/`*.iml` outputs between revisions.
 The workflow validates every discovered owner so an incomplete import cannot pass through exclusions.
+The shared JMH plugin boundary exports declared Java/Kotlin inputs and resources as `TestSource`/`TestResource` in their actual owner, including nondefault directories, and retains the resolved compile/runtime classpaths in IDEA's TEST scope.
+`qodanaDeclarationInventory` discovers owners from the configured Gradle plugin/source-set model and records actual module identities, Java requirements, source/resource declarations, file membership and hashes, and resolved project/library dependency identities independently of IML and Qodana JSON.
+Nonexistent directories remain explicit declarations without becoming model roots; compiler and harness outputs are build intermediates, and authored JMH roots inside excluded build directories fail verification.
+The verifier compares the declaration inventory with both generated IML and imported Qodana roots, SDKs, language levels, and dependency closures.
+The selected Git revision, clean tracked bytes, authored membership, and SARIF revision must agree before declaration completeness can pass.
+Missing owners or roots, paired omission from both models, wrong kinds or owners, duplicate roots or dependencies, broader paths, changed source membership, and unresolved required libraries fail verification.
+Native consumers retain their exact canonical component `TestSource` links.
+Other shared roots, including authored showcase inputs, are accepted only when the foreign owner independently declares the same exact root and kind in the configured project inventory.
 
 Before analysis, disk reclamation runs only when free space is below 40 GiB; free space is logged again afterward.
 IDE indexes are restored for matching build-model inputs and saved only after successful analysis and complete-model verification.
 Keeping matrix Gradle caches read-only limits storage pressure so these indexes and the complete Loom project cache can coexist.
 Every run recreates the project model and analysis reports and verifies every expected module.
+The report artifact retains the fresh declaration inventory, generated IML/project metadata, and bootstrap task log under `modelEvidence` beside the imported model and SARIF.
+Gradle task outcomes distinguish executed work from `NO-SOURCE`, `SKIPPED`, `UP-TO-DATE`, and `FROM-CACHE`; build-cache reuse does not establish current source membership or analysis.
+Cold and reused-index acceptance must retain equivalent revision-bound owner/root/dependency inventories and fresh reports; zero findings, compilation, or Detekt cannot establish analysis of an omitted JMH corpus.
 Disable an inspection only with an actionable rationale in the checked-in configuration.
 
 ## Controller regression checks
