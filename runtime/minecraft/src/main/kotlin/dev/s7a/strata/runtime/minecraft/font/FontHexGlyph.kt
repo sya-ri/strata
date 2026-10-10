@@ -22,8 +22,19 @@ internal class FontHexGlyph(
 
     /**
      * Finds inclusive natural ink bounds; native empty rows retain one extra transparent column.
+     * Packed admitted widths use the union of source columns across every owned row.
+     * Other internal widths retain the original scalar shift semantics.
      */
     fun bounds(): IntRange {
+        if (width in 8..32 && width % 8 == 0) {
+            var columns = 0L
+            for (row in rows) columns = columns or row
+            columns = columns and ((1L shl width) - 1L)
+            if (columns == 0L) return 0..width
+            return (columns.countLeadingZeroBits() - (Long.SIZE_BITS - width))..(width - 1 - columns.countTrailingZeroBits())
+        }
+
+        // Other internal widths retain the original JVM shift and source-column semantics.
         var left = width
         var right = -1
         for (y in rows.indices) {
