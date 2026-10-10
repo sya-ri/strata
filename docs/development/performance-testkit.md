@@ -370,6 +370,9 @@ The driver rejects duplicate engine/scenario/phase registrations and conditions 
 Fixture-returned data cannot replace the driver-owned invocation or host identity, and operation failure closes the current page and browser before rejecting the matrix.
 `:performance-testkit:verifyBrowserPerformanceDriver` tests these orchestration and failure contracts with synthetic browser lifetimes and is part of the kit's `check`; it is not real browser performance evidence.
 The driver records the actual linked testkit JS artifact and driver hashes separately from the complete application-bundle hash, browser version, viewport, and workload conditions.
+The Web runner accepts an optional fifth performance argument containing a JSON map of additional frozen input names to file paths, resolved relative to that manifest; it records and rechecks the manifest and inputs through the same shared driver.
+Untimed fixture registrations run in the ordinary complete Web verification path; its optional third argument selects baseline or candidate expectations and defaults to candidate.
+The 36 Button controls restore native Canvas descriptors after each control, retain Text's measurement/failure path and exercise independent normal-property/pixel parity and terminal release; comparative evidence also supplies the actual compiled integration fixture artifact and control inventory/source guards in the input manifest.
 The kit captures input hashes before collection and verifies them again before writing evidence; an operation failure or changed input cannot produce a successful report.
 It also hashes and rechecks separately supplied fixture-input files and compares the loaded browser inventory with the independently exported build inventory before sampling.
 Every fixture registers its actual application-script URL; the kit hashes the response body fetched by the browser and rejects a response that differs from the captured bundle before sampling.
