@@ -94,7 +94,16 @@ public open class TextInkAggregationBenchmark {
         @Setup(Level.Trial)
         public fun setup() {
             require(scalars in setOf(1, 16, 256, 4096))
-            val first = CharArray(scalars) { index -> if (index % 16 == 15 && index < scalars - 1) '\n' else if (index % 2 == 0) 'A' else 'B' }.concatToString()
+            val first =
+                CharArray(scalars) { index ->
+                    if (index % 16 == 15 && index < scalars - 1) {
+                        '\n'
+                    } else if (index % 2 == 0) {
+                        'A'
+                    } else {
+                        'B'
+                    }
+                }.concatToString()
             inputs = listOf(first, "C" + first.substring(1))
             source = StressStateSource(first)
             editor = TextAreaState(first, maxLength = scalars)
@@ -154,18 +163,19 @@ public open class TextInkAggregationBenchmark {
         public val subscriptions: Int get() = source.subscriptions
 
         private fun snapshot(): MinecraftFontSnapshot =
-            MinecraftFontSnapshot.load(
-                listOf(
-                    MinecraftMemoryFontAssetSource(
-                        "text-ink-v1",
-                        mapOf(
-                            "assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:ink.ttf"}]}""".toByteArray(Charsets.UTF_8),
-                            "assets/strata_benchmark/font/ink.ttf" to byteArrayOf(1),
+            MinecraftFontSnapshot
+                .load(
+                    listOf(
+                        MinecraftMemoryFontAssetSource(
+                            "text-ink-v1",
+                            mapOf(
+                                "assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:ink.ttf"}]}""".toByteArray(Charsets.UTF_8),
+                                "assets/strata_benchmark/font/ink.ttf" to byteArrayOf(1),
+                            ),
                         ),
                     ),
-                ),
-                MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, preparedTextBounds = true),
-            ).also { check(it.diagnostics.isEmpty()) }
+                    MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, preparedTextBounds = true),
+                ).also { check(it.diagnostics.isEmpty()) }
 
         private fun backend(): MinecraftFontBackend {
             backends += 1

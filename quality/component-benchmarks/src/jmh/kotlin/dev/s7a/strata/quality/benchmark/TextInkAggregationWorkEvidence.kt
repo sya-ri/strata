@@ -50,12 +50,13 @@ public object TextInkAggregationWorkEvidence {
             check(state.ownedResources == if (provider == TextInkAggregationBenchmark.Provider.Legacy) 0 else 2)
             check(state.subscriptions == if (operation == TextInkAggregationBenchmark.Operation.ChangedEditorEnabled) 0 else 1)
             // The editor frame also blits; the compatibility glyph fixture has its own eight-by-eight images.
-            val hasGlyphs = next.drawCommands.any {
-                when (provider) {
-                    TextInkAggregationBenchmark.Provider.Legacy -> it is DrawCommand.BlitImage && it.image.size == IntSize(8, 8)
-                    else -> it is DrawCommand.SampledImage
+            val hasGlyphs =
+                next.drawCommands.any {
+                    when (provider) {
+                        TextInkAggregationBenchmark.Provider.Legacy -> it is DrawCommand.BlitImage && it.image.size == IntSize(8, 8)
+                        else -> it is DrawCommand.SampledImage
+                    }
                 }
-            }
             check(hasGlyphs == (provider == TextInkAggregationBenchmark.Provider.SpacingOnly).not())
             if (clean) {
                 WorkExpectation(exact = mapOf(UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.Measure.name to 0L, UiRenderMetric.Layout.name to 0L, UiRenderMetric.Paint.name to 0L)).verify(PerformanceJson.work(monitor.snapshot()))
