@@ -4,7 +4,9 @@ package dev.s7a.strata.quality.benchmark
  * Typed decoding of the debug probe's external JVM marker method names.
  * Unknown methods have no operation-boundary meaning and produce no marker.
  */
-internal enum class RemoteProbeMarker(private val methodName: String) {
+internal enum class RemoteProbeMarker(
+    private val methodName: String,
+) {
     Begin("begin"),
     Finish("finish"),
     ;

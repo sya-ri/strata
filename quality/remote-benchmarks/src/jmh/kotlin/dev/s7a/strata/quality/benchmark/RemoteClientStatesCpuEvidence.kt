@@ -91,11 +91,12 @@ public object RemoteClientStatesCpuEvidence {
             scene.entries = entries
             scene.membership = membership
             scene.setUp()
-            val sample = JvmPerformanceRunner.measure("$entries/$membership/$operation", plan) {
-                var result = 0L
-                repeat(batch) { result = operation.run(scene) }
-                result
-            }
+            val sample =
+                JvmPerformanceRunner.measure("$entries/$membership/$operation", plan) {
+                    var result = 0L
+                    repeat(batch) { result = operation.run(scene) }
+                    result
+                }
             sample.evidence.apply {
                 addProperty("entries", entries)
                 addProperty("membership", membership.name)
@@ -112,7 +113,9 @@ public object RemoteClientStatesCpuEvidence {
     /**
      * Executable operations corresponding exactly to the compiled JMH methods.
      */
-    private enum class Operation(val run: (RemoteClientStatesBenchmark.Scene) -> Long) {
+    private enum class Operation(
+        val run: (RemoteClientStatesBenchmark.Scene) -> Long,
+    ) {
         Idle(RemoteClientStatesBenchmark.Scene::idle),
         Edits(RemoteClientStatesBenchmark.Scene::edit),
         PreAction(RemoteClientStatesBenchmark.Scene::action),
