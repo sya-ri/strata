@@ -26,10 +26,11 @@ internal class DescriptionValidationOwnershipTest {
             tree.update(probe.element(0))
             val history = probe.trace.toList()
             val failures = ArrayList<Throwable?>()
-            val thread = Thread {
-                failures.add(runCatching { tree.update(probe.element(1, key = probe.key(1))) }.exceptionOrNull())
-                failures.add(runCatching { tree.close() }.exceptionOrNull())
-            }
+            val thread =
+                Thread {
+                    failures.add(runCatching { tree.update(probe.element(1, key = probe.key(1))) }.exceptionOrNull())
+                    failures.add(runCatching { tree.close() }.exceptionOrNull())
+                }
             thread.start()
             thread.join()
             assertTrue(failures.all { it is IllegalStateException })
@@ -86,7 +87,10 @@ internal class DescriptionValidationOwnershipTest {
     /**
      * Live tree with its retired key represented only by a weak reference.
      */
-    private data class Removed(val tree: UiTree, val key: WeakReference<DescriptionValidationProbe.Key>)
+    private data class Removed(
+        val tree: UiTree,
+        val key: WeakReference<DescriptionValidationProbe.Key>,
+    )
 
     /**
      * Closed owner plus weak caller objects; no test closure captures either caller object.
