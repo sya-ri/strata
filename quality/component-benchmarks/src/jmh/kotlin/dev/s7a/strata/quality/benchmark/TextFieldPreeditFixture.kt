@@ -197,7 +197,7 @@ internal class TextFieldPreeditFixture(
                 }
             },
             profile,
-            MinecraftFontBackendFactory { SpaceBackend() },
+            fontBackend = MinecraftFontBackendFactory { SpaceBackend() },
         )
         created.attach()
         created.frame(viewport)
