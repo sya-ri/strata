@@ -1,0 +1,133 @@
+row	fixture	operation	advance	cacheEntries	cacheBytes	reset	frame
+R001	W8Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R002	W8Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R003	W8Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R004	W8Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R005	W8Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R006	W8AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R007	W8AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R008	W8AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R009	W8AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R010	W8AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R011	W8LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R012	W8LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R013	W8LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R014	W8LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R015	W8LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R016	W8RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R017	W8RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R018	W8RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R019	W8RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R020	W8RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R021	W8CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R022	W8CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R023	W8CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R024	W8CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R025	W8CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R026	W8DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R027	W8DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R028	W8DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R029	W8DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R030	W8DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R031	W16Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R032	W16Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R033	W16Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R034	W16Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R035	W16Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R036	W16AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R037	W16AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R038	W16AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R039	W16AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R040	W16AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R041	W16LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R042	W16LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R043	W16LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R044	W16LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R045	W16LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R046	W16RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R047	W16RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R048	W16RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R049	W16RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R050	W16RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R051	W16CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R052	W16CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R053	W16CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R054	W16CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R055	W16CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R056	W16DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R057	W16DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R058	W16DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R059	W16DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R060	W16DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R061	W24Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R062	W24Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R063	W24Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R064	W24Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R065	W24Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R066	W24AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R067	W24AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R068	W24AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R069	W24AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R070	W24AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R071	W24LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R072	W24LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R073	W24LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R074	W24LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R075	W24LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R076	W24RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R077	W24RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R078	W24RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R079	W24RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R080	W24RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R081	W24CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R082	W24CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R083	W24CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R084	W24CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R085	W24CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R086	W24DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R087	W24DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R088	W24DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R089	W24DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R090	W24DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R091	W32Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R092	W32Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R093	W32Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R094	W32Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R095	W32Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R096	W32AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R097	W32AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R098	W32AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R099	W32AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R100	W32AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R101	W32LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R102	W32LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R103	W32LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R104	W32LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R105	W32LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R106	W32RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R107	W32RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R108	W32RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R109	W32RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R110	W32RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R111	W32CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R112	W32CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R113	W32CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R114	W32CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R115	W32CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R116	W32DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
+R117	W32DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
+R118	W32DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R119	W32DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
+R120	W32DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
+R121	Evicted8Integer	Control	Integer	1	16777216	alternate A/B through one-entry cache	N/A
+R122	Evicted32Fractional	Control	Fractional	1	16777216	alternate A/B through one-entry cache	N/A
+R123	WarmRasterHit	Control	Fractional	4096	16777216	prime A in default bounded cache	N/A
+R124	AbsentSparseGlyph	Control	Fractional	0	16777216	request absent C	N/A
+R125	MatchingOverride	Control	Fractional	0	16777216	first matching inclusive ordered range	N/A
+R126	NoMatchingOverride	Control	Fractional	0	16777216	scan frozen nonwinning ordered ranges	N/A
+R127	TrueType	Control	N/A	0	16777216	uncached A after real native preflight	N/A
+R128	Bitmap	Control	N/A	0	16777216	uncached A after real PNG preflight	N/A
+R129	SnapshotLoad	Control	Fractional	0	16777216	complete public load from prepared source	N/A
+R130	EngineLifecycle	Control	Fractional	0	16777216	open/use/close independent engine	N/A
+R131	CleanTextFrame	Control	Fractional	4096	16777216	prime A/B and repeat unchanged frame	320x40; density1,2,3 admission
+R132	SnapshotReplacement	Control	Fractional	4096	16777216	load/profile/open/attach/frame/close alternating prepared source	320x40; density1,2,3 admission
