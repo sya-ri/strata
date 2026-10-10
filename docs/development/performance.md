@@ -469,6 +469,11 @@ Its attachment index is keyed by immutable device and attachment identities, whi
 Native Canvas requests in core commands and retained RuntimeUiFrame instances contain only scalar device and attachment identifiers; separate prepared tokens also identify the committed generation.
 Portable commands and explicit capture snapshots may retain immutable CPU images, but no command retains a target, renderer, source callback, or host.
 The current batch is bounded to one outstanding native presentation; the next presentation cannot overtake an unconsumed or uncancelled batch.
+Preparation transfers its freshly completed resolved-command and receipt lists to the detached presentation without taking a second membership snapshot.
+Only preparation owns their construction, and no mutable construction alias escapes or remains available for later mutation.
+The mapping buffers retain only current payload membership and their standard geometrically bounded spare capacity; empty mappings allocate no element backing array.
+Later preparation, cancellation, consumption, reload and device shutdown cannot mutate an older presentation.
+Ordinary Canvas-free Fabric presentation bypasses this preparation boundary entirely.
 Resource reload discards committed generations and retires old producers; new instances open lazily when a target permit is available.
 
 At most three target sets may exist for one stable CanvasId across source replacement and detach/reattach, and at most 64 active, retired, partially allocated, or quarantined sets may exist on one device.
