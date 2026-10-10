@@ -2,6 +2,7 @@ package dev.s7a.strata.runtime
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.node.DirtyPhase
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
@@ -14,7 +15,7 @@ internal class RetainedPaintSnapshot(
     val local: RetainedPaintCommands,
     val viewport: IntSize,
     val commands: RetainedDrawCommands,
-    val rootOverlays: RetainedDrawCommands,
+    val rootOverlays: List<DrawCommand>,
 ) {
     /**
      * Returns whether local paint, geometry and every reachable child's paint remain current.

@@ -23,6 +23,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Executes retained local paint and transforms commands into tree coordinates.
+ * Empty subtree root-overlay results use the immutable zero-resource list; nonempty results preserve ordered concatenation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal class PaintPipeline(
@@ -50,18 +51,27 @@ internal class PaintPipeline(
         val commands = transformedCommands(retained)
         val parts = ArrayList<List<DrawCommand>>(retained.effectiveChildCount + 2)
         parts.add(commands.beforeChildren)
-        val rootOverlays = ArrayList<List<DrawCommand>>()
+        var rootOverlays: MutableList<List<DrawCommand>>? = null
         for (index in 0 until retained.effectiveChildCount) {
             val child = retained.effectiveChildAt(index)
             if (child.placed) {
                 val snapshot = paintNode(child, viewport)
                 parts.add(snapshot.commands)
-                if (snapshot.rootOverlays.isNotEmpty()) rootOverlays.add(snapshot.rootOverlays)
+                if (snapshot.rootOverlays.isNotEmpty()) {
+                    val overlays = rootOverlays ?: ArrayList()
+                    overlays.add(snapshot.rootOverlays)
+                    rootOverlays = overlays
+                }
             }
         }
         parts.add(commands.afterChildren)
-        if (commands.rootOverlays.isNotEmpty()) rootOverlays.add(commands.rootOverlays)
-        return RetainedPaintSnapshot(commands, viewport, RetainedDrawCommands(parts), RetainedDrawCommands(rootOverlays)).also { retained.paintSnapshot = it }
+        if (commands.rootOverlays.isNotEmpty()) {
+            val overlays = rootOverlays ?: ArrayList()
+            overlays.add(commands.rootOverlays)
+            rootOverlays = overlays
+        }
+        val overlays = rootOverlays?.let(::RetainedDrawCommands) ?: emptyList()
+        return RetainedPaintSnapshot(commands, viewport, RetainedDrawCommands(parts), overlays).also { retained.paintSnapshot = it }
     }
 
     private fun transformedCommands(retained: RetainedEntry): RetainedPaintCommands {
