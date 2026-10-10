@@ -21,14 +21,14 @@ public object RemoteTextReference {
      */
     public fun encode(message: RemoteMessage): ByteArray {
         val bytes = ByteArrayOutputStream()
-        DataOutputStream(bytes).use { write(it, project(message)) }
+        DataOutputStream(bytes).use { RemoteTextValueReference.write(it, project(message)) }
         return bytes.toByteArray()
     }
 
     /**
      * Counts Text fields and UTF-8 payload lengths in the reference schema, without claiming runtime work.
      */
-    public fun textTotals(message: RemoteMessage): Pair<Int, Int> = textTotals(project(message))
+    public fun textTotals(message: RemoteMessage): Pair<Int, Int> = RemoteTextValueReference.textTotals(project(message))
 
     private fun project(message: RemoteMessage): ProjectionValue =
         when (message) {
@@ -80,74 +80,6 @@ public object RemoteTextReference {
     private fun declaration(value: RemoteDeclaration): ProjectionValue = fields(number(value.identity), type(value.type), value.value)
 
     private fun node(value: RemoteNode): ProjectionValue = fields(declaration(value.declaration), sequence(value.modifiers.map(::declaration)), sequence(value.children.map(::number)))
-
-    private fun textTotals(value: ProjectionValue): Pair<Int, Int> =
-        when (value) {
-            is ProjectionValue.Text -> {
-                1 to value.value.toByteArray(Charsets.UTF_8).size
-            }
-
-            is ProjectionValue.Sequence -> {
-                value.values.fold(0 to 0) { total, child ->
-                    val next = textTotals(child)
-                    total.first + next.first to total.second + next.second
-                }
-            }
-
-            else -> {
-                0 to 0
-            }
-        }
-
-    private fun write(
-        output: DataOutputStream,
-        value: ProjectionValue,
-    ) {
-        when (value) {
-            ProjectionValue.Absent -> {
-                output.writeByte(0)
-            }
-
-            is ProjectionValue.Flag -> {
-                output.writeByte(1)
-                output.writeBoolean(value.value)
-            }
-
-            is ProjectionValue.Integer -> {
-                output.writeByte(2)
-                output.writeLong(value.value)
-            }
-
-            is ProjectionValue.Real -> {
-                output.writeByte(3)
-                output.writeDouble(value.value)
-            }
-
-            is ProjectionValue.Text -> {
-                output.writeByte(4)
-                writeBytes(output, value.value.toByteArray(Charsets.UTF_8))
-            }
-
-            is ProjectionValue.Bytes -> {
-                output.writeByte(5)
-                writeBytes(output, value.toByteArray())
-            }
-
-            is ProjectionValue.Sequence -> {
-                output.writeByte(6)
-                output.writeInt(value.values.size)
-                value.values.forEach { write(output, it) }
-            }
-        }
-    }
-
-    private fun writeBytes(
-        output: DataOutputStream,
-        bytes: ByteArray,
-    ) {
-        output.writeInt(bytes.size)
-        output.write(bytes)
-    }
 
     private fun number(value: Int): ProjectionValue = number(value.toLong())
 

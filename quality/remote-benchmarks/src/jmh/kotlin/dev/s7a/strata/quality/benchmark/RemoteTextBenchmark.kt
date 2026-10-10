@@ -172,7 +172,7 @@ public open class RemoteTextBenchmark {
             target.start()
             target.flush(helloFrames.size)
             helloFrames.forEach { check(target.receive(it, 0) == null) }
-            check(target.capabilities != null)
+            checkNotNull(target.capabilities) { "Check failed." }
         }
 
         /**
