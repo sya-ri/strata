@@ -291,13 +291,14 @@ internal class MinecraftTextInkAggregationTest {
         interleaved: Boolean = true,
     ): MinecraftTextRun {
         val snapshot = FontTestResources.snapshot(FontTestResources.font("default", """{"type":"ttf","file":"test:ink.ttf"}"""), "assets/test/font/ink.ttf" to byteArrayOf(1), capabilities = FontTestResources.compatibility.copy(preparedTextBounds = prepared, interleavedShadows = interleaved))
-        val backend = FontTestBackend(open = { _, _ ->
-            object : MinecraftTrueTypeFace {
-                override fun glyph(codePoint: Int): MinecraftFontGlyph? = glyphs[codePoint]
+        val backend =
+            FontTestBackend(open = { _, _ ->
+                object : MinecraftTrueTypeFace {
+                    override fun glyph(codePoint: Int): MinecraftFontGlyph? = glyphs[codePoint]
 
-                override fun close() = Unit
-            }
-        })
+                    override fun close() = Unit
+                }
+            })
         return MinecraftFontEngine(snapshot, { backend }).use { engine -> MinecraftTextRun.createFonts(UiText.Literal(text), engine, FontTestResources.defaultFont, foreground, tint, logicalOrder = true) }
     }
 
