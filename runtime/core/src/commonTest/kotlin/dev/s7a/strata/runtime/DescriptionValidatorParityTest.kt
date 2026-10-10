@@ -21,19 +21,21 @@ internal class DescriptionValidatorParityTest {
     fun c02KeylessWide() = compare { probe -> listOf(probe.element(0, List(128) { probe.element(it + 1) })) }
 
     @Test
-    fun c03KeylessChainGroups() = compare { probe ->
-        listOf(probe.element(0, List(8) { group -> (16 downTo 1).fold(emptyList<Element>()) { children, depth -> listOf(probe.element(group * 16 + depth, children)) }.single() }))
-    }
+    fun c03KeylessChainGroups() =
+        compare { probe ->
+            listOf(probe.element(0, List(8) { group -> (16 downTo 1).fold(emptyList<Element>()) { children, depth -> listOf(probe.element(group * 16 + depth, children)) }.single() }))
+        }
 
     @Test
-    fun c04KeylessBalanced() = compare { probe ->
-        val elements = arrayOfNulls<Element>(129)
-        for (id in 128 downTo 0) {
-            val children = (id * 2 + 1..id * 2 + 2).filter { it <= 128 }.map { checkNotNull(elements[it]) }
-            elements[id] = probe.element(id, children)
+    fun c04KeylessBalanced() =
+        compare { probe ->
+            val elements = arrayOfNulls<Element>(129)
+            for (id in 128 downTo 0) {
+                val children = (id * 2 + 1..id * 2 + 2).filter { it <= 128 }.map { checkNotNull(elements[it]) }
+                elements[id] = probe.element(id, children)
+            }
+            listOf(checkNotNull(elements[0]))
         }
-        listOf(checkNotNull(elements[0]))
-    }
 
     @Test
     fun c05EmptyDynamicSiblings() = compare { emptyList() }
@@ -57,18 +59,20 @@ internal class DescriptionValidatorParityTest {
     fun c11EqualDistinctKeyObjects() = compare(rejects = true) { listOf(it.element(1, key = it.key(1, value = 0)), it.element(2, key = it.key(2, value = 0))) }
 
     @Test
-    fun c12RepeatedSameKeyObject() = compare(rejects = true) { probe ->
-        val key = probe.key(1)
-        listOf(probe.element(1, key = key), probe.element(2, key = key))
-    }
+    fun c12RepeatedSameKeyObject() =
+        compare(rejects = true) { probe ->
+            val key = probe.key(1)
+            listOf(probe.element(1, key = key), probe.element(2, key = key))
+        }
 
     @Test
     fun c13HashCollisionsDistinct() = compare { probe -> List(16) { probe.element(it, key = probe.key(it)) } }
 
     @Test
-    fun c14SameKeyDifferentParents() = compare { probe ->
-        listOf(probe.element(0, List(2) { probe.element(it + 1, listOf(probe.element(it + 3, key = probe.key(it, value = 0)))) }))
-    }
+    fun c14SameKeyDifferentParents() =
+        compare { probe ->
+            listOf(probe.element(0, List(2) { probe.element(it + 1, listOf(probe.element(it + 3, key = probe.key(it, value = 0)))) }))
+        }
 
     @Test
     fun c15HashThrows() {
@@ -92,9 +96,10 @@ internal class DescriptionValidatorParityTest {
     fun c19ElementValidationOrder() = compare { probe -> listOf(probe.element(0, listOf(probe.element(1, listOf(probe.element(2))), probe.element(3)))) }
 
     @Test
-    fun c20ModifierValidationOrder() = compare { probe ->
-        listOf(probe.element(0, listOf(probe.element(1, modifier = Modifier.Empty.then(probe.modifier(3)))), modifier = Modifier.Empty.then(probe.modifier(1)).then(probe.modifier(2))))
-    }
+    fun c20ModifierValidationOrder() =
+        compare { probe ->
+            listOf(probe.element(0, listOf(probe.element(1, modifier = Modifier.Empty.then(probe.modifier(3)))), modifier = Modifier.Empty.then(probe.modifier(1)).then(probe.modifier(2))))
+        }
 
     @Test
     fun c21ElementValidationFailure() {
@@ -109,9 +114,10 @@ internal class DescriptionValidatorParityTest {
     }
 
     @Test
-    fun c23DuplicateBeforeDescendantFailure() = compare(rejects = true) { probe ->
-        listOf(probe.element(1, key = probe.key(1, value = 0)), probe.element(2, key = probe.key(2, value = 0), validate = { error("unreached duplicate child") }))
-    }
+    fun c23DuplicateBeforeDescendantFailure() =
+        compare(rejects = true) { probe ->
+            listOf(probe.element(1, key = probe.key(1, value = 0)), probe.element(2, key = probe.key(2, value = 0), validate = { error("unreached duplicate child") }))
+        }
 
     @Test
     fun c24EarlierInvalidSiblingBeforeDuplicate() {
@@ -122,10 +128,11 @@ internal class DescriptionValidatorParityTest {
     }
 
     @Test
-    fun c31SharedPositionalDescription() = compare { probe ->
-        val shared = probe.element(3)
-        listOf(probe.element(0, listOf(probe.element(1, listOf(shared)), probe.element(2, listOf(shared)))))
-    }
+    fun c31SharedPositionalDescription() =
+        compare { probe ->
+            val shared = probe.element(3)
+            listOf(probe.element(0, listOf(probe.element(1, listOf(shared)), probe.element(2, listOf(shared)))))
+        }
 
     /**
      * Replays immutable descriptions through independent algorithms and compares complete traces at both sibling entry points.

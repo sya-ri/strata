@@ -34,10 +34,14 @@ internal class DescriptionValidationRetainedTest {
         val probe = DescriptionValidationProbe()
         UiTree().use { tree ->
             tree.update(probe.element(0))
-            val invalid = probe.element(1, validate = {
-                assertFailsWith<IllegalStateException> { tree.close() }
-                tree.update(probe.element(2))
-            })
+            val invalid =
+                probe.element(
+                    1,
+                    validate = {
+                        assertFailsWith<IllegalStateException> { tree.close() }
+                        tree.update(probe.element(2))
+                    },
+                )
             assertFailsWith<IllegalStateException> { tree.update(invalid) }
             assertEquals(TreeState.Active, tree.state)
             tree.update(probe.element(3))
@@ -49,15 +53,16 @@ internal class DescriptionValidationRetainedTest {
     fun c26ValidationStateWrite() {
         val state = mutableStateOf(0)
         val probe = DescriptionValidationProbe()
-        val failure = assertFailsWith<IllegalStateException> {
-            createRuntimeUiSession {
-                val value = state.value
-                probe.element(value, validate = { state.value += 1 })
-            }.use { session ->
-                session.attach()
-                session.frame(Constraints.fixed(2, 2))
+        val failure =
+            assertFailsWith<IllegalStateException> {
+                createRuntimeUiSession {
+                    val value = state.value
+                    probe.element(value, validate = { state.value += 1 })
+                }.use { session ->
+                    session.attach()
+                    session.frame(Constraints.fixed(2, 2))
+                }
             }
-        }
         assertTrue(checkNotNull(failure.message).isNotEmpty())
         assertEquals(0, state.value)
         assertTrue(probe.nodes.isEmpty())
@@ -171,7 +176,13 @@ internal class DescriptionValidationRetainedTest {
             probe.trace.clear()
             tree.update(probe.element(9, listOf(2, 0, 1).map { probe.element(it, key = keys[it]) }))
             assertEquals(4, probe.nodes.size)
-            assertEquals(listOf(2, 0, 1), probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Ownership>().filter { it.phase == DescriptionValidationProbe.Phase.Update && it.id != 9 }.map { it.id })
+            assertEquals(
+                listOf(2, 0, 1),
+                probe.trace
+                    .filterIsInstance<DescriptionValidationProbe.Event.Ownership>()
+                    .filter { it.phase == DescriptionValidationProbe.Phase.Update && it.id != 9 }
+                    .map { it.id },
+            )
             assertEquals(listOf(10, 11, 12), children.map { it.editing })
         }
     }

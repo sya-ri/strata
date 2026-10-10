@@ -87,27 +87,39 @@ internal class DescriptionValidationProbe {
         /**
          * Local description validation.
          */
-        data class Local(val id: Int) : Event
+        data class Local(
+            val id: Int,
+        ) : Event
 
         /**
          * Immutable modifier validation.
          */
-        data class ModifierValidation(val id: Int) : Event
+        data class ModifierValidation(
+            val id: Int,
+        ) : Event
 
         /**
          * Caller key hash invocation.
          */
-        data class Hash(val id: Int) : Event
+        data class Hash(
+            val id: Int,
+        ) : Event
 
         /**
          * Caller key equality invocation, preserving receiver direction.
          */
-        data class Equality(val receiver: Int, val argument: Int?) : Event
+        data class Equality(
+            val receiver: Int,
+            val argument: Int?,
+        ) : Event
 
         /**
          * Retained ownership callback.
          */
-        data class Ownership(val phase: Phase, val id: Int) : Event
+        data class Ownership(
+            val phase: Phase,
+            val id: Int,
+        ) : Event
     }
 
     /**
@@ -237,7 +249,10 @@ internal class DescriptionValidationProbe {
             return InputResult.Consumed
         }
 
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             for (child in 0 until scope.childCount) scope.measureChild(child, Constraints(maxWidth = 2, maxHeight = 2))
             return constraints.constrain(IntSize(2, 2))
         }
@@ -254,7 +269,10 @@ internal class DescriptionValidationProbe {
             scope.emit(Semantics(label = UiText.Literal("node-$id")))
         }
 
-        override fun onPointerEvent(event: PointerEvent, localPosition: IntOffset): InputResult = InputResult.Consumed
+        override fun onPointerEvent(
+            event: PointerEvent,
+            localPosition: IntOffset,
+        ): InputResult = InputResult.Consumed
 
         override fun attach() {
             probe.trace.add(Event.Ownership(Phase.Attach, id))
@@ -314,7 +332,8 @@ internal class DescriptionValidationProbe {
         private val probe: DescriptionValidationProbe,
         var id: Int,
         var onDispose: () -> Unit,
-    ) : ModifierNode(), LifecycleNode {
+    ) : ModifierNode(),
+        LifecycleNode {
         override fun attach() {
             probe.trace.add(Event.Ownership(Phase.ModifierAttach, id))
         }

@@ -8,7 +8,9 @@ import dev.s7a.strata.state.StateSubscription
 /**
  * One caller-owned source with independently asserted publication and release for portable validation controls.
  */
-internal class DescriptionValidationSource<T>(initial: T) : StateSource<T> {
+internal class DescriptionValidationSource<T>(
+    initial: T,
+) : StateSource<T> {
     private var snapshot = StateSnapshot(StateRevision(0), initial)
     private var observer: ((StateSnapshot<T>) -> Unit)? = null
 
