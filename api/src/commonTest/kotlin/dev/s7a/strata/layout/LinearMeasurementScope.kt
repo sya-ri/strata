@@ -7,7 +7,9 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Independent public-scope adapter recording the entire original measure/layout callback order. */
+/**
+ * Independent public-scope adapter recording the entire original measure/layout callback order.
+ */
 internal class LinearMeasurementScope(
     val weights: MutableList<WeightParentData.Data?>,
     private val naturalSizes: List<IntSize>,
@@ -59,6 +61,8 @@ internal class LinearMeasurementScope(
         if (injected != null && injected.event == event) throw injected.cause
     }
 
-    /** One original throwable shared by both algorithm executions. */
+    /**
+     * One original throwable shared by both algorithm executions.
+     */
     data class Failure(val event: LinearMeasurementTrace, val cause: Throwable)
 }

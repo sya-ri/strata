@@ -315,27 +315,37 @@ internal class LinearReferenceNode(
         }
     }
 
-    /** Type-safe reference orientation; copied original defaults remain separate from candidate code. */
+    /**
+     * Type-safe reference orientation; copied original defaults remain separate from candidate code.
+     */
     sealed interface Orientation {
         val axis: Axis
         data class Row(val alignment: VerticalAlignment) : Orientation { override val axis: Axis = Axis.Horizontal }
         data class Column(val alignment: HorizontalAlignment) : Orientation { override val axis: Axis = Axis.Vertical }
     }
 
-    /** Original main-axis branches. */
+    /**
+     * Original main-axis branches.
+     */
     enum class Axis { Horizontal, Vertical }
 
-    /** Independent typed weight key and immutable original scalar inputs. */
+    /**
+     * Independent typed weight key and immutable original scalar inputs.
+     */
     object WeightParentData {
         data class Data(val weight: Float, val fill: Boolean)
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)
 
-        /** Active reference provider; measurement invalidation matches the original standard modifier. */
+        /**
+         * Active reference provider; measurement invalidation matches the original standard modifier.
+         */
         data class Element(val data: Data) : ModifierElement {
             override val type: ModifierNodeType<*, *> get() = TYPE
         }
 
-        /** Owner-confined current reference weight. */
+        /**
+         * Owner-confined current reference weight.
+         */
         class ProviderNode(var data: Data) : ModifierNode(), ParentDataModifierNode<Data> {
             override val parentDataKey: ParentDataKey<Data> get() = KEY
             override fun parentData(): Data = data
@@ -353,13 +363,17 @@ internal class LinearReferenceNode(
         )
     }
 
-    /** Original row cross-axis value and referential key. */
+    /**
+     * Original row cross-axis value and referential key.
+     */
     object RowAlignmentParentData {
         data class Data(val alignment: VerticalAlignment)
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)
     }
 
-    /** Original column cross-axis value and referential key. */
+    /**
+     * Original column cross-axis value and referential key.
+     */
     object ColumnAlignmentParentData {
         data class Data(val alignment: HorizontalAlignment)
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)

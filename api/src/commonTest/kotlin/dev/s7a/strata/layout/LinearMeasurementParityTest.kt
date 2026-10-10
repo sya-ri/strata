@@ -9,7 +9,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** Original complete algorithms independently check values, callback cutoffs and exceptional prefixes on JVM/JS. */
+/**
+ * Original complete algorithms independently check values, callback cutoffs and exceptional prefixes on JVM/JS.
+ */
 internal class LinearMeasurementParityTest {
     @Test
     fun weightedAllocationMatchesOriginalBoundsSizesAndOrdering() {
@@ -38,11 +40,7 @@ internal class LinearMeasurementParityTest {
                 for (weightedIndex in listOf<Int?>(null, 0, count - 1)) {
                     val weights = List(count) { index -> if (index == weightedIndex) WeightParentData.Data(1f, true) else null }
                     val pair = scopes(weights)
-                    pair.forEach { scope ->
-                        scope.onMeasure = {
-                            for (index in scope.weights.indices) scope.weights[index] = WeightParentData.Data(3f, false)
-                        }
-                    }
+                    mutateWeightsOnMeasure(pair)
                     compare(orientation, pair, Constraints.fixed(320, 180))
                     val trace = pair.first().trace
                     assertEquals((0 until count).map(LinearMeasurementTrace::WeightRead), trace.take(count))
@@ -117,6 +115,14 @@ internal class LinearMeasurementParityTest {
             val weighted = scopes(List(16) { WeightParentData.Data(1f, true) }).first()
             node.measure(weighted, intrinsic(orientation))
             assertTrue(weighted.bounds.all { it === weighted.bounds.first() })
+        }
+    }
+
+    private fun mutateWeightsOnMeasure(pair: List<LinearMeasurementScope>) {
+        pair.forEach { scope ->
+            scope.onMeasure = {
+                for (index in scope.weights.indices) scope.weights[index] = WeightParentData.Data(3f, false)
+            }
         }
     }
 

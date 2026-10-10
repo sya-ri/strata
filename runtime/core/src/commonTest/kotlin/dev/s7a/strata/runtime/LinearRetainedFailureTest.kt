@@ -6,7 +6,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 
-/** Pipeline failures preserve primary/suppressed identity, poisoned cleanup, and idempotent terminal close. */
+/**
+ * Pipeline failures preserve primary/suppressed identity, poisoned cleanup, and idempotent terminal close.
+ */
 internal class LinearRetainedFailureTest {
     @Test
     fun firstMiddleLastChildFailuresPreserveOriginalCleanupAndThrowableIdentities() {

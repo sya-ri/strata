@@ -13,7 +13,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-/** Real standard linear parents retain neither a usable escaped scope nor duplicate child participation. */
+/**
+ * Real standard linear parents retain neither a usable escaped scope nor duplicate child participation.
+ */
 internal class LinearScopeLifetimeTest {
     @Test
     fun everyEscapedMeasureAndLayoutScopeRejectsUseAfterCallback() {

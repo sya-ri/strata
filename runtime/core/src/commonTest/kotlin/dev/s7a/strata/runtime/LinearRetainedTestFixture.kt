@@ -20,7 +20,9 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Executes original and standard layouts through real public scopes with the same retained probe children. */
+/**
+ * Executes original and standard layouts through real public scopes with the same retained probe children.
+ */
 internal class LinearRetainedTestFixture(
     private val original: Boolean,
     val horizontal: Boolean,
@@ -28,7 +30,9 @@ internal class LinearRetainedTestFixture(
 ) : AutoCloseable {
     val tree: UiTree = UiTree()
 
-    /** Installs current immutable membership; keyed and positional reuse are exercised by the same adapter. */
+    /**
+     * Installs current immutable membership; keyed and positional reuse are exercised by the same adapter.
+     */
     fun update(
         ids: List<Int>,
         weights: List<Float?> = List(ids.size) { null },
@@ -72,7 +76,9 @@ internal class LinearRetainedTestFixture(
         tree.update(description)
     }
 
-    /** Completes retained measure, layout, ordered paint, semantics, and actual pointer dispatch. */
+    /**
+     * Completes retained measure, layout, ordered paint, semantics, and actual pointer dispatch.
+     */
     fun frame(constraints: Constraints): Output {
         val size = tree.measure(constraints)
         tree.layout()
@@ -88,10 +94,14 @@ internal class LinearRetainedTestFixture(
         return probe.element(tag, key = if (keyed) tag else null, modifier = sized)
     }
 
-    /** Releases every claimed original/candidate child on normal or exceptional paths. */
+    /**
+     * Releases every claimed original/candidate child on normal or exceptional paths.
+     */
     override fun close() = tree.close()
 
-    /** Detached complete portable output, without a retained node or source reference. */
+    /**
+     * Detached complete portable output, without a retained node or source reference.
+     */
     data class Output(
         val size: IntSize,
         val commands: List<DrawCommand>,

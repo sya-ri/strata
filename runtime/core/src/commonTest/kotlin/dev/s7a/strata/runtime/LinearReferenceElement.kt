@@ -6,7 +6,9 @@ import dev.s7a.strata.element.ElementType
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.modifier.Modifier
 
-/** Retained public-SPI adapter for the frozen whole original linear node. */
+/**
+ * Retained public-SPI adapter for the frozen whole original linear node.
+ */
 internal class LinearReferenceElement(
     val orientation: LinearReferenceNode.Orientation,
     val spacing: Int,

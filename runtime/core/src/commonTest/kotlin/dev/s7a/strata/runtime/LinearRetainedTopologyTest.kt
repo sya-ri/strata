@@ -5,7 +5,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
-/** Current-state reuse is compared across equal-count weight replacement, keyed movement and independent owners. */
+/**
+ * Current-state reuse is compared across equal-count weight replacement, keyed movement and independent owners.
+ */
 internal class LinearRetainedTopologyTest {
     @Test
     fun appendRemoveShrinkReorderAndWeightChangesKeepOriginalRetainedIdentity() {

@@ -10,13 +10,17 @@ import dev.s7a.strata.modifier.ModifierNodeType
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.ModifierNode
 
-/** Captures actual callback scopes solely to verify their original lifetime and once-only contracts. */
+/**
+ * Captures actual callback scopes solely to verify their original lifetime and once-only contracts.
+ */
 internal class LinearScopeProbeModifier(
     val probe: Probe,
 ) : ModifierElement {
     override val type: ModifierNodeType<*, *> get() = TYPE
 
-    /** Test-owned escaped scopes; these are never part of a production owner or timed fixture. */
+    /**
+     * Test-owned escaped scopes; these are never part of a production owner or timed fixture.
+     */
     class Probe {
         var measure: MeasureScope? = null
         var layout: LayoutScope? = null
@@ -24,7 +28,9 @@ internal class LinearScopeProbeModifier(
         var duplicateLayout: Boolean = false
     }
 
-    /** Delegates the complete ordinary modifier behavior before an optional illegal second operation. */
+    /**
+     * Delegates the complete ordinary modifier behavior before an optional illegal second operation.
+     */
     class CaptureNode(private val probe: Probe) : ModifierNode() {
         override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
             probe.measure = scope

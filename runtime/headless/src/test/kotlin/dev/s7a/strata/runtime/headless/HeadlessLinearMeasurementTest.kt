@@ -16,7 +16,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-/** Independent literal full-image oracle for actual fixed-first/weighted-slot geometry at three output densities. */
+/**
+ * Independent literal full-image oracle for actual fixed-first/weighted-slot geometry at three output densities.
+ */
 internal class HeadlessLinearMeasurementTest {
     @Test
     fun fullRowAndColumnPixelsPreserveFixedFirstSlotsAndOriginalCommandOrder() {

@@ -22,7 +22,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-/** Real weak-reference and foreign-owner evidence with closed/live session carriers deliberately kept reachable. */
+/**
+ * Real weak-reference and foreign-owner evidence with closed/live session carriers deliberately kept reachable.
+ */
 internal class LinearMeasurementReleaseTest {
     @Test
     fun normalAndExceptionalCloseReleaseTreeSourceObserverAndContentCaptures() {
@@ -115,17 +117,23 @@ internal class LinearMeasurementReleaseTest {
         assertTrue(references.all { it.get() == null }, "Linear measurement retained a retired owner or callback.")
     }
 
-    /** Closed or live carrier kept reachable while checking retired owners; observations are weak only. */
+    /**
+     * Closed or live carrier kept reachable while checking retired owners; observations are weak only.
+     */
     private data class Evidence(
         val session: RuntimeUiSession,
         val retired: WeakReference<*>,
         val references: List<WeakReference<*>>,
     )
 
-    /** One real source subscription, whose callback must be released by the session rather than by test cleanup. */
+    /**
+     * One real source subscription, whose callback must be released by the session rather than by test cleanup.
+     */
     private class ReleaseSource : StateSource<Int> {
         private var snapshot = StateSnapshot(StateRevision(0), 16)
-        /** Records the actual callback weakly before a failing frame releases its subscription. */
+        /**
+         * Records the actual callback weakly before a failing frame releases its subscription.
+         */
         var observerReference: WeakReference<*>? = null
             private set
         var observer: ((StateSnapshot<Int>) -> Unit)? = null
@@ -141,7 +149,9 @@ internal class LinearMeasurementReleaseTest {
             }
         }
 
-        /** Publishes one actual revision; callbacks only enqueue into the real retained session. */
+        /**
+         * Publishes one actual revision; callbacks only enqueue into the real retained session.
+         */
         fun publish(count: Int) {
             snapshot = StateSnapshot(StateRevision(snapshot.revision.value + 1), count)
             observer?.invoke(snapshot)

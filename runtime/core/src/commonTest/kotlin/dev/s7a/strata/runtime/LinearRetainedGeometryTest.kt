@@ -7,7 +7,9 @@ import dev.s7a.strata.layout.VerticalAlignment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** Complete retained geometry, ordered commands, semantics and input match the frozen original. */
+/**
+ * Complete retained geometry, ordered commands, semantics and input match the frozen original.
+ */
 internal class LinearRetainedGeometryTest {
     @Test
     fun allMainAndCrossPoliciesRemainEquivalentWithFixedAndWeightedChildren() {
