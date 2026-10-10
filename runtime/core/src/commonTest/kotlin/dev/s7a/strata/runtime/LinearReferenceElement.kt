@@ -16,12 +16,13 @@ internal class LinearReferenceElement(
     children: List<Element>,
 ) : Element(ElementIdentity.Positional, TYPE, children = children, modifier = Modifier.Empty) {
     private companion object {
-        val TYPE = ElementType(
-            elementClass = LinearReferenceElement::class,
-            nodeClass = LinearReferenceNode::class,
-            validateLocal = { element -> require(0 <= element.spacing) },
-            createNode = { element -> LinearReferenceNode(element.orientation, element.spacing, element.arrangement) },
-            updateNode = { previous, current, node -> node.update(previous, current) },
-        )
+        val TYPE =
+            ElementType(
+                elementClass = LinearReferenceElement::class,
+                nodeClass = LinearReferenceNode::class,
+                validateLocal = { element -> require(0 <= element.spacing) },
+                createNode = { element -> LinearReferenceNode(element.orientation, element.spacing, element.arrangement) },
+                updateNode = { previous, current, node -> node.update(previous, current) },
+            )
     }
 }

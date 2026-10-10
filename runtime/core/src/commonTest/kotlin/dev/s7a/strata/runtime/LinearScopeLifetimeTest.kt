@@ -51,9 +51,14 @@ internal class LinearScopeLifetimeTest {
         }
     }
 
-    private fun description(horizontal: Boolean, probe: LinearScopeProbeModifier.Probe) =
-        evaluateComponentTree {
-            if (horizontal) Row { Spacer(modifier = Modifier.Empty.then(LinearScopeProbeModifier(probe))) }
-            else Column { Spacer(modifier = Modifier.Empty.then(LinearScopeProbeModifier(probe))) }
+    private fun description(
+        horizontal: Boolean,
+        probe: LinearScopeProbeModifier.Probe,
+    ) = evaluateComponentTree {
+        if (horizontal) {
+            Row { Spacer(modifier = Modifier.Empty.then(LinearScopeProbeModifier(probe))) }
+        } else {
+            Column { Spacer(modifier = Modifier.Empty.then(LinearScopeProbeModifier(probe))) }
         }
+    }
 }

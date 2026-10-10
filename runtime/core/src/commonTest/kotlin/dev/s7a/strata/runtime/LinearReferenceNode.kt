@@ -320,8 +320,24 @@ internal class LinearReferenceNode(
      */
     sealed interface Orientation {
         val axis: Axis
-        data class Row(val alignment: VerticalAlignment) : Orientation { override val axis: Axis = Axis.Horizontal }
-        data class Column(val alignment: HorizontalAlignment) : Orientation { override val axis: Axis = Axis.Vertical }
+
+        /**
+         * Original horizontal orientation and vertical child alignment.
+         */
+        data class Row(
+            val alignment: VerticalAlignment,
+        ) : Orientation {
+            override val axis: Axis = Axis.Horizontal
+        }
+
+        /**
+         * Original vertical orientation and horizontal child alignment.
+         */
+        data class Column(
+            val alignment: HorizontalAlignment,
+        ) : Orientation {
+            override val axis: Axis = Axis.Vertical
+        }
     }
 
     /**
@@ -333,41 +349,61 @@ internal class LinearReferenceNode(
      * Independent typed weight key and immutable original scalar inputs.
      */
     object WeightParentData {
-        data class Data(val weight: Float, val fill: Boolean)
+        /**
+         * Immutable original weight and slot-filling policy read by measurement.
+         */
+        data class Data(
+            val weight: Float,
+            val fill: Boolean,
+        )
+
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)
 
         /**
          * Active reference provider; measurement invalidation matches the original standard modifier.
          */
-        data class Element(val data: Data) : ModifierElement {
+        data class Element(
+            val data: Data,
+        ) : ModifierElement {
             override val type: ModifierNodeType<*, *> get() = TYPE
         }
 
         /**
          * Owner-confined current reference weight.
          */
-        class ProviderNode(var data: Data) : ModifierNode(), ParentDataModifierNode<Data> {
+        class ProviderNode(
+            var data: Data,
+        ) : ModifierNode(),
+            ParentDataModifierNode<Data> {
             override val parentDataKey: ParentDataKey<Data> get() = KEY
+
             override fun parentData(): Data = data
         }
 
-        private val TYPE = ModifierNodeType(
-            elementClass = Element::class,
-            nodeClass = ProviderNode::class,
-            validateLocal = { element -> require(element.data.weight.isFinite() && 0 < element.data.weight) },
-            createNode = { element -> ProviderNode(element.data) },
-            updateNode = { previous, current, node ->
-                node.data = current.data
-                if (previous.data == current.data) DirtyMask.None else DirtyMask.of(DirtyPhase.Measure)
-            },
-        )
+        private val TYPE =
+            ModifierNodeType(
+                elementClass = Element::class,
+                nodeClass = ProviderNode::class,
+                validateLocal = { element -> require(element.data.weight.isFinite() && 0 < element.data.weight) },
+                createNode = { element -> ProviderNode(element.data) },
+                updateNode = { previous, current, node ->
+                    node.data = current.data
+                    if (previous.data == current.data) DirtyMask.None else DirtyMask.of(DirtyPhase.Measure)
+                },
+            )
     }
 
     /**
      * Original row cross-axis value and referential key.
      */
     object RowAlignmentParentData {
-        data class Data(val alignment: VerticalAlignment)
+        /**
+         * Original vertical alignment supplied by a row child.
+         */
+        data class Data(
+            val alignment: VerticalAlignment,
+        )
+
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)
     }
 
@@ -375,7 +411,13 @@ internal class LinearReferenceNode(
      * Original column cross-axis value and referential key.
      */
     object ColumnAlignmentParentData {
-        data class Data(val alignment: HorizontalAlignment)
+        /**
+         * Original horizontal alignment supplied by a column child.
+         */
+        data class Data(
+            val alignment: HorizontalAlignment,
+        )
+
         val KEY: ParentDataKey<Data> = ParentDataKey(Data::class)
     }
 

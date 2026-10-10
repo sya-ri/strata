@@ -31,8 +31,13 @@ internal class LinearScopeProbeModifier(
     /**
      * Delegates the complete ordinary modifier behavior before an optional illegal second operation.
      */
-    class CaptureNode(private val probe: Probe) : ModifierNode() {
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+    class CaptureNode(
+        private val probe: Probe,
+    ) : ModifierNode() {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             probe.measure = scope
             val result = super.measure(scope, constraints)
             if (probe.duplicateMeasure) scope.measureChild(0, constraints)
@@ -47,12 +52,13 @@ internal class LinearScopeProbeModifier(
     }
 
     private companion object {
-        val TYPE = ModifierNodeType(
-            elementClass = LinearScopeProbeModifier::class,
-            nodeClass = CaptureNode::class,
-            validateLocal = { _ -> },
-            createNode = { element -> CaptureNode(element.probe) },
-            updateNode = { _, _, _ -> DirtyMask.None },
-        )
+        val TYPE =
+            ModifierNodeType(
+                elementClass = LinearScopeProbeModifier::class,
+                nodeClass = CaptureNode::class,
+                validateLocal = { _ -> },
+                createNode = { element -> CaptureNode(element.probe) },
+                updateNode = { _, _, _ -> DirtyMask.None },
+            )
     }
 }

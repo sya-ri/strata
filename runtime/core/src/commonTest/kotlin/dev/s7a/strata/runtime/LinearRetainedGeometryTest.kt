@@ -16,22 +16,46 @@ internal class LinearRetainedGeometryTest {
         for (horizontal in listOf(true, false)) {
             for (arrangement in Arrangement.entries) {
                 for (vertical in VerticalAlignment.entries) {
-                    for (alignment in HorizontalAlignment.entries) {
-                        for (fill in listOf(false, true)) {
-                            LinearRetainedTestFixture(true, horizontal).use { original ->
-                                LinearRetainedTestFixture(false, horizontal).use { candidate ->
-                                    val ids = (0 until 16).toList()
-                                    val weights = List(16) { index -> if (index % 2 == 0) (index % 3 + 1).toFloat() else null }
-                                    for (fixture in listOf(original, candidate)) fixture.update(ids, weights, fill, spacing = 1, arrangement = arrangement, vertical = vertical, alignment = alignment)
-                                    for (bounds in listOf(Constraints.fixed(61, 43), Constraints.fixed(0, 0), if (horizontal) Constraints(maxHeight = 43) else Constraints(maxWidth = 61))) {
-                                        assertEquals(original.frame(bounds), candidate.frame(bounds))
-                                        assertEquals(original.probe.measureConstraints, candidate.probe.measureConstraints)
-                                        assertEquals(original.probe.inputObservations, candidate.probe.inputObservations)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    verifyCrossPolicies(horizontal, arrangement, vertical)
+                }
+            }
+        }
+    }
+
+    /**
+     * Visits the unchanged alignment and fill combinations in their original order.
+     */
+    private fun verifyCrossPolicies(
+        horizontal: Boolean,
+        arrangement: Arrangement,
+        vertical: VerticalAlignment,
+    ) {
+        for (alignment in HorizontalAlignment.entries) {
+            for (fill in listOf(false, true)) {
+                verifyGeometry(horizontal, arrangement, vertical, alignment, fill)
+            }
+        }
+    }
+
+    /**
+     * Opens a fresh original/candidate pair for one policy and closes it after the same bounds checks.
+     */
+    private fun verifyGeometry(
+        horizontal: Boolean,
+        arrangement: Arrangement,
+        vertical: VerticalAlignment,
+        alignment: HorizontalAlignment,
+        fill: Boolean,
+    ) {
+        LinearRetainedTestFixture(true, horizontal).use { original ->
+            LinearRetainedTestFixture(false, horizontal).use { candidate ->
+                val ids = (0 until 16).toList()
+                val weights = List(16) { index -> if (index % 2 == 0) (index % 3 + 1).toFloat() else null }
+                for (fixture in listOf(original, candidate)) fixture.update(ids, weights, fill, spacing = 1, arrangement = arrangement, vertical = vertical, alignment = alignment)
+                for (bounds in listOf(Constraints.fixed(61, 43), Constraints.fixed(0, 0), if (horizontal) Constraints(maxHeight = 43) else Constraints(maxWidth = 61))) {
+                    assertEquals(original.frame(bounds), candidate.frame(bounds))
+                    assertEquals(original.probe.measureConstraints, candidate.probe.measureConstraints)
+                    assertEquals(original.probe.inputObservations, candidate.probe.inputObservations)
                 }
             }
         }

@@ -44,35 +44,37 @@ internal class LinearRetainedTestFixture(
         alignment: HorizontalAlignment = HorizontalAlignment.Start,
         keyed: Boolean = true,
     ) {
-        val description = if (original) {
-            val children = ids.mapIndexed { index, id ->
-                val weight = weights[index]
-                val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.then(LinearReferenceNode.WeightParentData.Element(LinearReferenceNode.WeightParentData.Data(weight, fill)))
-                leaf(id, keyed, modifier, extent)
-            }
-            val orientation = if (horizontal) LinearReferenceNode.Orientation.Row(vertical) else LinearReferenceNode.Orientation.Column(alignment)
-            LinearReferenceElement(orientation, spacing, arrangement, children)
-        } else {
-            evaluateComponentTree {
-                if (horizontal) {
-                    Row(spacing = spacing, horizontalArrangement = arrangement, verticalAlignment = vertical) {
-                        ids.forEachIndexed { index, id ->
-                            val weight = weights[index]
-                            val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.weight(weight, fill)
-                            element(leaf(id, keyed, modifier, extent))
-                        }
+        val description =
+            if (original) {
+                val children =
+                    ids.mapIndexed { index, id ->
+                        val weight = weights[index]
+                        val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.then(LinearReferenceNode.WeightParentData.Element(LinearReferenceNode.WeightParentData.Data(weight, fill)))
+                        leaf(id, keyed, modifier, extent)
                     }
-                } else {
-                    Column(spacing = spacing, verticalArrangement = arrangement, horizontalAlignment = alignment) {
-                        ids.forEachIndexed { index, id ->
-                            val weight = weights[index]
-                            val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.weight(weight, fill)
-                            element(leaf(id, keyed, modifier, extent))
+                val orientation = if (horizontal) LinearReferenceNode.Orientation.Row(vertical) else LinearReferenceNode.Orientation.Column(alignment)
+                LinearReferenceElement(orientation, spacing, arrangement, children)
+            } else {
+                evaluateComponentTree {
+                    if (horizontal) {
+                        Row(spacing = spacing, horizontalArrangement = arrangement, verticalAlignment = vertical) {
+                            ids.forEachIndexed { index, id ->
+                                val weight = weights[index]
+                                val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.weight(weight, fill)
+                                element(leaf(id, keyed, modifier, extent))
+                            }
+                        }
+                    } else {
+                        Column(spacing = spacing, verticalArrangement = arrangement, horizontalAlignment = alignment) {
+                            ids.forEachIndexed { index, id ->
+                                val weight = weights[index]
+                                val modifier = if (weight == null) Modifier.Empty else Modifier.Empty.weight(weight, fill)
+                                element(leaf(id, keyed, modifier, extent))
+                            }
                         }
                     }
                 }
             }
-        }
         tree.update(description)
     }
 
@@ -88,7 +90,12 @@ internal class LinearRetainedTestFixture(
         return Output(size, commands, semantics, input)
     }
 
-    private fun leaf(id: Int, keyed: Boolean, modifier: Modifier, extent: Int): Element {
+    private fun leaf(
+        id: Int,
+        keyed: Boolean,
+        modifier: Modifier,
+        extent: Int,
+    ): Element {
         val tag = TestProbe.ProbeId(id.toString())
         val sized = if (horizontal) modifier.size(extent, 3) else modifier.size(3, extent)
         return probe.element(tag, key = if (keyed) tag else null, modifier = sized)

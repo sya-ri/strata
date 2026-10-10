@@ -15,22 +15,47 @@ internal class LinearRetainedTopologyTest {
             for (keyed in listOf(false, true)) {
                 LinearRetainedTestFixture(true, horizontal).use { original ->
                     LinearRetainedTestFixture(false, horizontal).use { candidate ->
-                        for (count in listOf(0, 1, 16, 128, 4_096, 128, 16, 1, 0)) {
-                            val ids = (0 until count).toList()
-                            for (order in listOf(ids, ids.reversed())) {
-                                for (weighted in listOf(false, true, false)) {
-                                    for (fixture in listOf(original, candidate)) {
-                                        fixture.update(order, List(count) { index -> if (weighted && index % 2 == 0) 1f else null }, keyed = keyed)
-                                    }
-                                    assertEquals(original.frame(Constraints.fixed(320, 180)), candidate.frame(Constraints.fixed(320, 180)))
-                                    assertEquals(original.probe.events, candidate.probe.events)
-                                    assertEquals(original.probe.created.size, candidate.probe.created.size)
-                                }
-                            }
-                        }
+                        verifyTopologyTransitions(original, candidate, keyed)
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Borrows the same live pair for every unchanged membership, order and weight transition.
+     */
+    private fun verifyTopologyTransitions(
+        original: LinearRetainedTestFixture,
+        candidate: LinearRetainedTestFixture,
+        keyed: Boolean,
+    ) {
+        for (count in listOf(0, 1, 16, 128, 4_096, 128, 16, 1, 0)) {
+            val ids = (0 until count).toList()
+            for (order in listOf(ids, ids.reversed())) {
+                for (weighted in listOf(false, true, false)) {
+                    updateFixtures(original, candidate, count, order, weighted, keyed)
+                    assertEquals(original.frame(Constraints.fixed(320, 180)), candidate.frame(Constraints.fixed(320, 180)))
+                    assertEquals(original.probe.events, candidate.probe.events)
+                    assertEquals(original.probe.created.size, candidate.probe.created.size)
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates original then candidate with the same current transition inputs before assertions.
+     */
+    private fun updateFixtures(
+        original: LinearRetainedTestFixture,
+        candidate: LinearRetainedTestFixture,
+        count: Int,
+        order: List<Int>,
+        weighted: Boolean,
+        keyed: Boolean,
+    ) {
+        for (fixture in listOf(original, candidate)) {
+            fixture.update(order, List(count) { index -> if (weighted && index % 2 == 0) 1f else null }, keyed = keyed)
         }
     }
 
