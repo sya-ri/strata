@@ -23,7 +23,9 @@ import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Real standard Row/Column, one caller-owned publisher, and one terminal session per fixture owner. */
+/**
+ * Real standard Row/Column, one caller-owned publisher, and one terminal session per fixture owner.
+ */
 internal class LinearMeasurementFixture(
     private val topology: Topology,
     private val operation: Operation,
@@ -63,13 +65,17 @@ internal class LinearMeasurementFixture(
             }
         }
 
-    /** Attaches and primes outside timing for persistent operations, inside timing for Lifecycle. */
+    /**
+     * Attaches and primes outside timing for persistent operations, inside timing for Lifecycle.
+     */
     fun open(): RuntimeUiFrame {
         session.attach()
         return session.frame(constraints())
     }
 
-    /** Publishes or resizes exactly once, then consumes one complete retained frame. */
+    /**
+     * Publishes or resizes exactly once, then consumes one complete retained frame.
+     */
     fun perform(): RuntimeUiFrame {
         when (operation) {
             Operation.ResizeFrame -> {
@@ -86,7 +92,9 @@ internal class LinearMeasurementFixture(
         return session.frame(constraints())
     }
 
-    /** Independent actual callback admission; diagnostics are never enabled in the timed new corpus. */
+    /**
+     * Independent actual callback admission; diagnostics are never enabled in the timed new corpus.
+     */
     fun verify(): Unit =
         session.use {
             session.attach()
@@ -149,7 +157,9 @@ internal class LinearMeasurementFixture(
         }
     }
 
-    /** Releases the terminal owner, including a failed or partially primed session. */
+    /**
+     * Releases the terminal owner, including a failed or partially primed session.
+     */
     override fun close() {
         session.close()
         check(source.subscribed.not())

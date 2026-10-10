@@ -12,24 +12,34 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 
-/** Complete invalidated linear operations and unchanged controls; no private timing or diagnostic boundary. */
+/**
+ * Complete invalidated linear operations and unchanged controls; no private timing or diagnostic boundary.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 public open class LinearMeasurementBenchmark {
-    /** Returns one complete frame; Lifecycle includes source/session/declarations, attach, both frames, and close. */
+    /**
+     * Returns one complete frame; Lifecycle includes source/session/declarations, attach, both frames, and close.
+     */
     @Benchmark
     public fun operation(state: Scene): RuntimeUiFrame = state.perform()
 
-    /** One JMH worker owner; every new timed case runs with monitoring disabled. */
+    /**
+     * One JMH worker owner; every new timed case runs with monitoring disabled.
+     */
     @State(Scope.Thread)
     public open class Scene {
-        /** Exactly one finite admitted case, avoiding an invalid Cartesian product. */
+        /**
+         * Exactly one finite admitted case, avoiding an invalid Cartesian product.
+         */
         @JvmField
         @Param
         public var linearCase: LinearMeasurementCase = LinearMeasurementCase.L001
 
         private var fixture: LinearMeasurementFixture? = null
 
-        /** Primes only persistent sessions; lifecycle construction remains part of every measured invocation. */
+        /**
+         * Primes only persistent sessions; lifecycle construction remains part of every measured invocation.
+         */
         @Setup(Level.Trial)
         public fun setup() {
             if (linearCase.operation != Operation.Lifecycle) {
@@ -37,7 +47,9 @@ public open class LinearMeasurementBenchmark {
             }
         }
 
-        /** Executes the frozen complete operation with the supplied compiled case. */
+        /**
+         * Executes the frozen complete operation with the supplied compiled case.
+         */
         public fun perform(): RuntimeUiFrame =
             if (linearCase.operation == Operation.Lifecycle) {
                 LinearMeasurementFixture(linearCase.topology, linearCase.operation).use {
@@ -48,7 +60,9 @@ public open class LinearMeasurementBenchmark {
                 checkNotNull(fixture).perform()
             }
 
-        /** Closes the persistent owner after collection; lifecycle owners have already closed in each invocation. */
+        /**
+         * Closes the persistent owner after collection; lifecycle owners have already closed in each invocation.
+         */
         @TearDown(Level.Trial)
         public fun close() {
             val previous = fixture
@@ -57,9 +71,13 @@ public open class LinearMeasurementBenchmark {
         }
     }
 
-    /** Original finite inventory and every actual new-cell work gate, discovered by the shared selector. */
+    /**
+     * Original finite inventory and every actual new-cell work gate, discovered by the shared selector.
+     */
     public companion object {
-        /** Validates all 128 cases/256 mode rows, including the unchanged reactive controls, before collection. */
+        /**
+         * Validates all 128 cases/256 mode rows, including the unchanged reactive controls, before collection.
+         */
         @JvmStatic
         public fun verifyWork() {
             LinearMeasurementCorpus.verifyInventory()
