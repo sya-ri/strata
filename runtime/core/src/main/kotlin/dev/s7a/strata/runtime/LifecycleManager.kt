@@ -48,6 +48,7 @@ internal class LifecycleManager(
      * @param retained the installed node whose local attachment is required.
      */
     fun attachCurrent(retained: RetainedNode) {
+        if (retained.hasPendingAttachments.not()) return
         retained.modifiers.forEach { modifier -> attachModifier(modifier) }
         if (retained.attachAttempted) {
             return
@@ -76,8 +77,11 @@ internal class LifecycleManager(
      * @param retained the installed root to scan.
      */
     fun attachPending(retained: RetainedNode) {
+        if (retained.hasPendingAttachments.not()) return
         attachCurrent(retained)
-        retained.children.forEach(::attachPending)
+        val children = retained.attachmentChildren
+        for (index in children.indices) attachPending(children[index])
+        retained.refreshTraversalSummary(propagate = false)
     }
 
     /**
@@ -118,6 +122,8 @@ internal class LifecycleManager(
      */
     fun prepareCleanup(retained: RetainedNode) {
         markCleanupStarted(retained)
+        retained.clearTraversalSummary()
+        retained.logicalParent?.refreshTraversalSummary()
         retained.modifiers.forEach(::markCleanupStarted)
         retained.children.forEach(::prepareCleanup)
     }

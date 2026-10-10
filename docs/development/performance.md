@@ -677,6 +677,23 @@ The separate stress corpus records initial ownership, clean frames and real upda
 
 ## Interpreting measurements
 
+### Current retained traversal membership
+
+Each retained logical node keeps ordered direct-child subsets for content refresh, unfinished attachment, focus targets, and semantics capabilities.
+The complete key is the current node's immutable capability identity, current modifier identities, current ordered direct-child identities and their capability summaries, and attachment-attempt state.
+Creation, node replacement, modifier reconciliation, child insertion/removal/reordering, and completed attachment update the affected summaries and propagate changed membership to logical ancestors.
+Phase invalidation preserves capability membership; acceptance properties, observed-source declarations, deferred reasons, semantics payloads and geometry remain live and are never stored in these summaries.
+
+The lists borrow only current direct children in declaration order, with at most four additional references per logical edge and fixed scalar flags per retained node.
+They do not flatten descendants, retain prior generations, or cache source values.
+The owning tree updates and reads them synchronously under its execution owner.
+Parent-first dynamic callbacks reconcile their children before selecting the next child subset, so newly inserted descendants attach and evaluate in the same pass; immutable borrowed subsets remain stable when a descendant updates an ancestor's summary.
+Attachment completion prunes temporary participant paths bottom-up, and cleanup clears every summary before input-release, detach or dispose callbacks, including failed reconciliation and terminal failure.
+Unplaced branches remain excluded through the ordinary live placement checks, while applicable parent measurement/layout and dense participant enumeration still perform their required work.
+
+Common JVM/JavaScript tests cover broad and deep trees, absent/sparse/dense participants, list identity reuse, dynamic insertion/removal, modifier replacement, order, mutable focus acceptance, initial-focus uniqueness, callback invalidation, exact primary failures, independent owners, source cutoff, full updates, bounded current-child retention and terminal release.
+Timing and allocation acceptance use the same frozen generated fixture and shared performance collector on both runtime revisions; removed visits do not establish a latency or frame-rate percentage.
+
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
 It runs at 320 by 180 and 1920 by 1080 physical pixels, with diagnostics disabled and enabled.
 The command fixture still assembles the complete ordered display list; the composition fixture also allocates a complete output image and applies every ordered foreground blend, using uniform-surface scalar evaluation where exact.
