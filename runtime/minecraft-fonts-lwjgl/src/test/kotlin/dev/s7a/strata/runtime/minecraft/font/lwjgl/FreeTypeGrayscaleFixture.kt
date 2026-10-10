@@ -198,13 +198,14 @@ internal object FreeTypeGrayscaleFixture {
             throw checkNotNull(failure.cause)
         }
 
+    // Callback argument types can appear in generated method descriptors inspected during test discovery.
     private fun <T> withBitmap(
         width: Int,
         height: Int,
         pitch: Int,
         mode: Int,
         buffer: ByteBuffer?,
-        use: (FT_Bitmap) -> T,
+        use: (Any) -> T,
     ): T =
         MemoryStack.stackPush().use { stack ->
             val bitmap = FT_Bitmap.calloc(stack)
