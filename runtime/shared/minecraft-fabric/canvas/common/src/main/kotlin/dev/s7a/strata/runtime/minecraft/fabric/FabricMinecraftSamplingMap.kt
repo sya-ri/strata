@@ -47,16 +47,20 @@ internal class FabricMinecraftSamplingMap(
         val minimumAlpha = if (command.alphaCutoff == 1f) 255 else 0
         val mask = (command.tint.value ushr 16 and 1) or ((command.tint.value ushr 8 and 1) shl 1) or ((command.tint.value and 1) shl 2)
         val effects = (minimumAlpha shl 3) or mask
+        val firstX = ceil(destination.left.toDouble() * scale - 0.5)
+        val lastX = ceil(destination.right.toDouble() * scale - 0.5)
+        val firstY = ceil(destination.top.toDouble() * scale - 0.5)
+        val lastY = ceil(destination.bottom.toDouble() * scale - 0.5)
         indices =
             createDrawImage(IntSize(width, 3)) { coordinate, row ->
                 val value =
                     when (row) {
                         0 -> {
-                            if (coordinate < physicalSize.width) axis(Math.addExact(left, coordinate), destination.left, destination.right, if (command.orientation.flipX) source.right else source.left, if (command.orientation.flipX) source.left else source.right, command.image.size.width) else 0
+                            if (coordinate < physicalSize.width) axis(Math.addExact(left, coordinate), firstX, lastX, destination.left, destination.right, if (command.orientation.flipX) source.right else source.left, if (command.orientation.flipX) source.left else source.right, command.image.size.width) else 0
                         }
 
                         1 -> {
-                            if (coordinate < physicalSize.height) axis(Math.addExact(top, coordinate), destination.top, destination.bottom, if (command.orientation.flipY) source.bottom else source.top, if (command.orientation.flipY) source.top else source.bottom, command.image.size.height) else 0
+                            if (coordinate < physicalSize.height) axis(Math.addExact(top, coordinate), firstY, lastY, destination.top, destination.bottom, if (command.orientation.flipY) source.bottom else source.top, if (command.orientation.flipY) source.top else source.bottom, command.image.size.height) else 0
                         }
 
                         2 -> {
@@ -89,16 +93,17 @@ internal class FabricMinecraftSamplingMap(
         return true
     }
 
+    @Suppress("LongParameterList") // Preserve the original Float inputs separately from the once-per-axis Double coverage bounds.
     private fun axis(
         physical: Int,
+        first: Double,
+        last: Double,
         destinationStart: Float,
         destinationEnd: Float,
         sourceStart: Float,
         sourceEnd: Float,
         sourceSize: Int,
     ): Int {
-        val first = ceil(destinationStart.toDouble() * scale - 0.5)
-        val last = ceil(destinationEnd.toDouble() * scale - 0.5)
         if ((physical.toDouble() in first..<last).not()) return 0
         val center = (physical.toFloat() + 0.5f) / scale.toFloat()
         val relative = (center - destinationStart) / (destinationEnd - destinationStart)
