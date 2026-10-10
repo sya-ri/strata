@@ -45,11 +45,13 @@ internal fun cachedFabricMinecraftProfile(
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
 internal fun invalidateFabricMinecraftProfile(manager: Any) {
-    currentProfile.invalidate(manager, Minecraft.getInstance().resourceManager === manager)
+    val activeClient = Minecraft.getInstance().resourceManager === manager
+    currentProfile.invalidate(manager, activeClient)
+    invalidateFabricMinecraftImageDecode(manager, activeClient)
 }
 
 /**
- * Permanently releases the active client's profile cache before native resource shutdown.
+ * Permanently releases the active client's profile and decoded-image caches before native resource shutdown.
  *
  * Later normal opens fail without invoking extraction; existing immutable hosts remain independent.
  * Closing any other manager can only evict that manager's populated entry and cannot terminate the client cache.
@@ -60,5 +62,7 @@ internal fun invalidateFabricMinecraftProfile(manager: Any) {
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
 internal fun closeFabricMinecraftProfile(manager: Any) {
-    currentProfile.close(manager, Minecraft.getInstance().resourceManager === manager)
+    val activeClient = Minecraft.getInstance().resourceManager === manager
+    currentProfile.close(manager, activeClient)
+    closeFabricMinecraftImageDecode(manager, activeClient)
 }

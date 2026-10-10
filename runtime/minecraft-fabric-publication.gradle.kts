@@ -8,6 +8,12 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
+// Development consumers retain the owner-managed Minecraft graph without adding it to published metadata.
+configurations.consumable("developmentRuntimeElements") {
+    extendsFrom(configurations.named("runtimeClasspath").get())
+    outgoing.artifact(tasks.named("jar"))
+}
+
 // Why: the outer Fabric artifact nests every Strata common module and must publish only the separately installed Kotlin runtime mod.
 listOf("api", "implementation").forEach { configurationName ->
     configurations.named(configurationName) {

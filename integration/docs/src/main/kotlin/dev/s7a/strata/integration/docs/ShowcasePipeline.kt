@@ -42,7 +42,7 @@ internal object ShowcasePipeline {
                 inputs.assetIndex,
                 inputs.assetObjects,
                 inputs.versionManifest,
-                normalizedProject.resolve("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources"),
+                normalizedProject.resolve("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/gametest/resources"),
             )
         val frames = LinkedHashMap<String, ShowcaseFrameReceipt>()
         val overview = renderOverview(overviewScenario, overviewRegion, assets, frames)

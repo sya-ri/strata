@@ -1501,6 +1501,7 @@ subprojects {
                     dependencies.add(implementationConfigurationName, project(":performance-testkit"))
                     java.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/verification/src/gametest/java"))
                     java.srcDir(remoteVerificationFamily.resolve("java"))
+                    resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/resources/fabric-client-gametest/src/gametest/resources"))
                     resources.srcDir(remoteVerificationFamily.resolve("resources"))
                 }
             }

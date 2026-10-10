@@ -17,6 +17,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.screen.ScreenDefinition
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -83,6 +84,59 @@ internal class MinecraftResourceImageRetentionTest {
             host.close()
         }
     }
+
+    @Test
+    fun belowAtAndAboveIdentifierAdmissionKeepLazyPinsAndFreshOverflowResults() {
+        for (count in listOf(511, 512, 513)) {
+            val ids = List(count) { ResourceId("example", "textures/gui/admission_$it.png") }
+            val overflow = ResourceId("example", "textures/gui/hot_overflow.png")
+            val resolved = ArrayList<DrawImage>()
+            val platform =
+                FakeImagePlatform { id ->
+                    createDrawImage(IntSize(1, 1), intArrayOf(platformColor(id, overflow, resolved.size))).also(resolved::add)
+                }
+            val host =
+                createMinecraftUiHost(
+                    ScreenDefinition("Resource admission boundary") {
+                        Stack {
+                            ids.forEach { Image(ImageSource.Resource(it)) }
+                            Image(ImageSource.Resource(overflow))
+                            Image(ImageSource.Resource(overflow))
+                            Image(ImageSource.Resource(ids.first()))
+                        }
+                    },
+                    MinecraftProfileFixture.create(),
+                    platform,
+                )
+            try {
+                assertTrue(platform.imageCalls.isEmpty())
+                host.attach()
+                assertEquals(count + if (count < 512) 1 else 2, platform.imageCalls.size)
+                assertEquals(1, platform.imageCalls.count { it == ids.first() })
+                assertEquals(if (count < 512) 1 else 2, platform.imageCalls.count { it == overflow })
+                val commands =
+                    host.frame(IntSize(1, 1)).drawCommands
+                        .filterIsInstance<DrawCommand.SampledImage>()
+                assertSame(commands.first().image, commands.last().image)
+                val firstOverflow = commands[count].image
+                val secondOverflow = commands[count + 1].image
+                if (count < 512) {
+                    assertSame(firstOverflow, secondOverflow)
+                } else {
+                    assertNotSame(firstOverflow, secondOverflow)
+                    assertEquals(firstOverflow.argbAt(0, 0) + 1, secondOverflow.argbAt(0, 0))
+                }
+            } finally {
+                host.close()
+            }
+        }
+    }
+
+    private fun platformColor(
+        id: ResourceId,
+        overflow: ResourceId,
+        call: Int,
+    ): Int = if (id == overflow) 0xFF000000.toInt() or call else 0xFF556677.toInt()
 
     @Test
     fun deferredRowsReuseResourceImageIdentityAcrossFarJumps() {

@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.attributes.java.TargetJvmVersion
 import java.util.Properties
 
 plugins {
@@ -11,6 +12,11 @@ plugins {
 }
 
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
+
+// Runtime variants follow the existing Minecraft launcher; fixture bytecode retains the baseline target.
+configurations.named("jmhRuntimeClasspath") {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, libs.versions.java.minecraft.get().toInt())
+}
 
 dependencies {
     implementation(project(":performance-testkit"))
@@ -23,6 +29,10 @@ dependencies {
     add("jmh", project(":runtime:headless"))
     add("jmh", project(":runtime:minecraft"))
     add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
+    // Reflective fixtures use the actual adapter JAR and its normal Minecraft runtime dependencies.
+    rootProject.findProject(":runtime:minecraft-fabric-26.3")?.let { adapter ->
+        add("jmhRuntimeOnly", project(path = adapter.path, configuration = "developmentRuntimeElements"))
+    }
 }
 
 // The separate component corpus uses one isolated native generation, matching the shipped modern showcase.
