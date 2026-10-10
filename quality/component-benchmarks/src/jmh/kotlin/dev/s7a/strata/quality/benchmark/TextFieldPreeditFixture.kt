@@ -200,8 +200,8 @@ internal class TextFieldPreeditFixture(
     private fun refocus() {
         if (host.textInputFocus == null) {
             host.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0))
-            reference?.focused = true
         }
+        reference?.focused = true
     }
 
     private fun publish(next: Settings) {
