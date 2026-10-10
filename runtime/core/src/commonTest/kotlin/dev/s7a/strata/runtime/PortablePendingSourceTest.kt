@@ -30,18 +30,19 @@ internal class PortablePendingSourceTest {
             val sources = List(count) { CutoffTestSource(0) }
             val projections = sources.map { source -> source.map { it % 2 } }
             val evaluations = IntArray(count)
-            val session = createRuntimeUiSession {
-                evaluateComponentTree {
-                    Stack {
-                        projections.forEachIndexed { index, source ->
-                            Observe(source, key = ElementKey(index)) {
-                                evaluations[index] += 1
-                                Spacer()
+            val session =
+                createRuntimeUiSession {
+                    evaluateComponentTree {
+                        Stack {
+                            projections.forEachIndexed { index, source ->
+                                Observe(source, key = ElementKey(index)) {
+                                    evaluations[index] += 1
+                                    Spacer()
+                                }
                             }
                         }
                     }
                 }
-            }
             try {
                 session.attach()
                 val constraints = Constraints.fixed(4, 4)
@@ -79,21 +80,25 @@ internal class PortablePendingSourceTest {
     fun publicationFromEqualityCannotChangeAnotherRootsAlreadyCapturedValue() {
         val second = CutoffTestSource(Value(0))
         var publishDuringComparison = false
-        val first = CutoffTestSource(Value(0) {
-            if (publishDuringComparison) {
-                publishDuringComparison = false
-                second.publish(Value(2))
-            }
-        })
+        val first =
+            CutoffTestSource(
+                Value(0) {
+                    if (publishDuringComparison) {
+                        publishDuringComparison = false
+                        second.publish(Value(2))
+                    }
+                },
+            )
         val seen = ArrayList<List<Int>>()
-        val session = createRuntimeUiSession {
-            evaluateComponentTree {
-                Observe(first, second) { left, right ->
-                    seen.add(listOf(left.number, right.number))
-                    Spacer()
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    Observe(first, second) { left, right ->
+                        seen.add(listOf(left.number, right.number))
+                        Spacer()
+                    }
                 }
             }
-        }
         try {
             session.attach()
             val constraints = Constraints.fixed(4, 4)
@@ -119,19 +124,20 @@ internal class PortablePendingSourceTest {
         val source = mutableStateOf(first)
         val visible = mutableStateOf(true)
         val seen = ArrayList<Int>()
-        val session = createRuntimeUiSession {
-            val current = source.value
-            evaluateComponentTree {
-                Stack {
-                    if (visible.value) {
-                        Observe(current) {
-                            seen.add(it)
-                            Spacer()
+        val session =
+            createRuntimeUiSession {
+                val current = source.value
+                evaluateComponentTree {
+                    Stack {
+                        if (visible.value) {
+                            Observe(current) {
+                                seen.add(it)
+                                Spacer()
+                            }
                         }
                     }
                 }
             }
-        }
         try {
             session.attach()
             val constraints = Constraints.fixed(4, 4)
@@ -170,9 +176,10 @@ internal class PortablePendingSourceTest {
         val cleanup = IllegalArgumentException("Subscription cleanup failed")
         var failProjection = false
         val mapped = first.map { value -> if (failProjection) throw failure else value }
-        val session = createRuntimeUiSession {
-            evaluateComponentTree { Observe(mapped, second) { _, _ -> Spacer() } }
-        }
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree { Observe(mapped, second) { _, _ -> Spacer() } }
+            }
         session.attach()
         val constraints = Constraints.fixed(4, 4)
         session.frame(constraints)

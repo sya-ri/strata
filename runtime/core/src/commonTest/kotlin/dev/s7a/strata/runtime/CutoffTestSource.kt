@@ -9,7 +9,9 @@ import dev.s7a.strata.state.StateSubscription
 /**
  * Thread-safe test source with explicit revisions, counted subscriptions and intentionally retained stale callbacks.
  */
-internal class CutoffTestSource<T>(initial: T) : StateSource<T> {
+internal class CutoffTestSource<T>(
+    initial: T,
+) : StateSource<T> {
     private val monitor = Any()
     private var current = StateSnapshot(StateRevision(0), initial)
     private val observers = LinkedHashSet<(StateSnapshot<T>) -> Unit>()
@@ -38,12 +40,13 @@ internal class CutoffTestSource<T>(initial: T) : StateSource<T> {
     var closeFailure: Throwable? = null
 
     override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
-        val initial = synchronized(monitor) {
-            subscriptions += 1
-            observers.add(observer)
-            staleObserver = observer
-            current
-        }
+        val initial =
+            synchronized(monitor) {
+                subscriptions += 1
+                observers.add(observer)
+                staleObserver = observer
+                current
+            }
         return StateSubscription(initial) {
             synchronized(monitor) {
                 check(observers.remove(observer))
