@@ -55,6 +55,7 @@ public object ApiOnlyResponsivePanel {
      * [panelModifier] runs inside sizing and clipping, and [content] supplies ordinary application components.
      * Keep this composition at the screen root to make its available size the current logical viewport.
      */
+    @Suppress("FunctionName")
     public fun UiScope.ResponsivePanel(
         minimumViewport: IntSize = IntSize(480, 270),
         panelModifier: Modifier = Modifier.Empty,

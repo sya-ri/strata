@@ -43,8 +43,20 @@ internal class ResponsivePanelIntegrationTest {
             listOf(IntSize(640, 360), IntSize(1, 1), IntSize.Zero, IntSize(640, 360)).forEach { viewport ->
                 assertEquals(viewport, tree.measure(Constraints.fixed(viewport.width, viewport.height)))
                 tree.layout()
-                val bounds = tree.paint().filterIsInstance<DrawCommand.PushClip>().single().bounds
-                assertEquals(bounds, tree.paint().filterIsInstance<DrawCommand.FillRectangle>().single().bounds)
+                val bounds =
+                    tree
+                        .paint()
+                        .filterIsInstance<DrawCommand.PushClip>()
+                        .single()
+                        .bounds
+                assertEquals(
+                    bounds,
+                    tree
+                        .paint()
+                        .filterIsInstance<DrawCommand.FillRectangle>()
+                        .single()
+                        .bounds,
+                )
                 assertEquals(bounds, tree.semantics().single().bounds)
             }
         } finally {
@@ -76,8 +88,22 @@ internal class ResponsivePanelIntegrationTest {
                 assertEquals(Constraints.fixed(bounds.width, bounds.height), probe.componentMeasureConstraints.last())
                 assertSame(component, probe.componentNodes.getValue(ExternalNodeId.Root))
                 assertEquals(bounds, tree.semantics().single().bounds)
-                assertEquals(bounds, tree.paint().filterIsInstance<DrawCommand.FillRectangle>().single().bounds)
-                assertEquals(bounds, tree.paint().filterIsInstance<DrawCommand.PushClip>().single().bounds)
+                assertEquals(
+                    bounds,
+                    tree
+                        .paint()
+                        .filterIsInstance<DrawCommand.FillRectangle>()
+                        .single()
+                        .bounds,
+                )
+                assertEquals(
+                    bounds,
+                    tree
+                        .paint()
+                        .filterIsInstance<DrawCommand.PushClip>()
+                        .single()
+                        .bounds,
+                )
                 assertEquals(1, tree.paint().count { it is DrawCommand.PopClip })
                 assertEquals(InputResult.Consumed, press(tree, bounds.left, bounds.top))
                 assertEquals(InputResult.Consumed, press(tree, bounds.right - 1, bounds.bottom - 1))
@@ -212,7 +238,10 @@ internal class ResponsivePanelIntegrationTest {
         }
     }
 
-    private class OverflowNode : Node(), MeasureNode, LayoutNode {
+    private class OverflowNode :
+        Node(),
+        MeasureNode,
+        LayoutNode {
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
