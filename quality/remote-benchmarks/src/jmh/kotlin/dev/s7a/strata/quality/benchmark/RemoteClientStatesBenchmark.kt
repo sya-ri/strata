@@ -124,11 +124,12 @@ public open class RemoteClientStatesBenchmark {
         private val trace = mutableListOf<RemoteMessage.Action>()
 
         private val editableCount: Int
-            get() = when (membership) {
-                Membership.None -> 0
-                Membership.Few -> 10
-                Membership.All -> entries
-            }
+            get() =
+                when (membership) {
+                    Membership.None -> 0
+                    Membership.Few -> 10
+                    Membership.All -> entries
+                }
 
         /**
          * Primes the actual state store using the registered preparation path before collection.
@@ -166,12 +167,13 @@ public open class RemoteClientStatesBenchmark {
                 actions = context.actions
                 evaluateComponentTree { Spacer(context.modifier, context.key) }
             }
-            client = RemoteClientSession(snapshot(), registry, send = { message ->
-                if (message is RemoteMessage.Action) {
-                    lastSequence = message.sequence
-                    if (tracing) trace.add(message)
-                }
-            })
+            client =
+                RemoteClientSession(snapshot(), registry, send = { message ->
+                    if (message is RemoteMessage.Action) {
+                        lastSequence = message.sequence
+                        if (tracing) trace.add(message)
+                    }
+                })
             val content = client.definition(UiText.Literal("State polling")).transfer().content
             host = createRuntimeUiSession { evaluateComponentTree(content) }
             host.attach()
@@ -253,7 +255,11 @@ public open class RemoteClientStatesBenchmark {
             val indexed = maps.size == 2
             val expectedVisits = if (indexed) editableCount else entries
             tracing = true
-            fun operation(expectedActions: Int, run: () -> Unit) {
+
+            fun operation(
+                expectedActions: Int,
+                run: () -> Unit,
+            ) {
                 maps.forEach { it.visits = 0 }
                 val beforePolls = polls
                 val beforeSequence = lastSequence
@@ -267,15 +273,21 @@ public open class RemoteClientStatesBenchmark {
             operation(0) { idle() }
             operation(editableCount) { edit() }
             check(trace.map { it.endpoint } == (1..editableCount).map(Int::toLong))
-            check(trace.map { it.value } == (1..editableCount).map { identity ->
-                ProjectionValue.Sequence(listOf(ProjectionValue.Integer(identity.toLong()), ProjectionValue.Integer(1), ProjectionValue.Integer(1)))
-            })
+            check(
+                trace.map { it.value } ==
+                    (1..editableCount).map { identity ->
+                        ProjectionValue.Sequence(listOf(ProjectionValue.Integer(identity.toLong()), ProjectionValue.Integer(1), ProjectionValue.Integer(1)))
+                    },
+            )
             check(trace.all { it.session == 1L && it.type == EVENT })
             operation(editableCount + 1) { action() }
             check(trace.dropLast(1).map { it.endpoint } == (1..editableCount).map(Int::toLong))
-            check(trace.dropLast(1).map { it.value } == (1..editableCount).map { identity ->
-                ProjectionValue.Sequence(listOf(ProjectionValue.Integer(identity.toLong()), ProjectionValue.Integer(1), ProjectionValue.Integer(2)))
-            })
+            check(
+                trace.dropLast(1).map { it.value } ==
+                    (1..editableCount).map { identity ->
+                        ProjectionValue.Sequence(listOf(ProjectionValue.Integer(identity.toLong()), ProjectionValue.Integer(1), ProjectionValue.Integer(2)))
+                    },
+            )
             check(trace.last().endpoint == BUSINESS && trace.last().value == ProjectionValue.Absent)
             check(trace.all { it.session == 1L && it.type == EVENT })
             val beforeCreated = created
@@ -294,37 +306,45 @@ public open class RemoteClientStatesBenchmark {
         /**
          * Mutable native editor value; edits deliberately have no dirty notification.
          */
-        private class Cell(var value: Long)
+        private class Cell(
+            var value: Long,
+        )
 
         /**
          * Decoded immutable preparation inputs; scalar generations are data rather than capability discriminators.
          */
-        private data class Properties(val shifted: Boolean, val generation: Long)
+        private data class Properties(
+            val shifted: Boolean,
+            val generation: Long,
+        )
 
         /**
          * Counts real value traversal in an independent, untimed session without modifying production source.
          */
-        private class VisitMap<K, V>(private val backing: MutableMap<K, V>) : MutableMap<K, V> by backing {
+        private class VisitMap<K, V>(
+            private val backing: MutableMap<K, V>,
+        ) : MutableMap<K, V> by backing {
             var visits = 0L
-            override val values: MutableCollection<V> = object : AbstractMutableCollection<V>() {
-                override val size: Int get() = backing.size
+            override val values: MutableCollection<V> =
+                object : AbstractMutableCollection<V>() {
+                    override val size: Int get() = backing.size
 
-                override fun add(element: V): Boolean = error("Map values cannot be added")
+                    override fun add(element: V): Boolean = error("Map values cannot be added")
 
-                override fun iterator(): MutableIterator<V> {
-                    val iterator = backing.values.iterator()
-                    return object : MutableIterator<V> {
-                        override fun hasNext(): Boolean = iterator.hasNext()
+                    override fun iterator(): MutableIterator<V> {
+                        val iterator = backing.values.iterator()
+                        return object : MutableIterator<V> {
+                            override fun hasNext(): Boolean = iterator.hasNext()
 
-                        override fun next(): V {
-                            visits++
-                            return iterator.next()
+                            override fun next(): V {
+                                visits++
+                                return iterator.next()
+                            }
+
+                            override fun remove() = iterator.remove()
                         }
-
-                        override fun remove() = iterator.remove()
                     }
                 }
-            }
         }
 
         private companion object {

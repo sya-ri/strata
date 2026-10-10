@@ -211,8 +211,11 @@ public open class RemoteBytesBenchmark {
 
         private fun project(payloads: List<ByteArray>): ProjectionValue =
             when (corpus) {
-                Corpus.ManySmall -> ProjectionValue.Sequence(payloads.map(ProjectionValue::Bytes))
-                Corpus.NestedMixed ->
+                Corpus.ManySmall -> {
+                    ProjectionValue.Sequence(payloads.map(ProjectionValue::Bytes))
+                }
+
+                Corpus.NestedMixed -> {
                     ProjectionValue.Sequence(
                         listOf(
                             ProjectionValue.Text("日本語"),
@@ -222,8 +225,15 @@ public open class RemoteBytesBenchmark {
                             ProjectionValue.Absent,
                         ),
                     )
-                Corpus.ByteFree -> ProjectionValue.Sequence(List(128) { ProjectionValue.Integer(it.toLong()) } + listOf(ProjectionValue.Text("byte-free control"), ProjectionValue.Flag(true)))
-                else -> ProjectionValue.Bytes(payloads.single())
+                }
+
+                Corpus.ByteFree -> {
+                    ProjectionValue.Sequence(List(128) { ProjectionValue.Integer(it.toLong()) } + listOf(ProjectionValue.Text("byte-free control"), ProjectionValue.Flag(true)))
+                }
+
+                else -> {
+                    ProjectionValue.Bytes(payloads.single())
+                }
             }
 
         private fun projectAction(action: RemoteMessage.Action): ProjectionValue =
@@ -249,7 +259,10 @@ public open class RemoteBytesBenchmark {
             value: ProjectionValue,
         ) {
             when (value) {
-                ProjectionValue.Absent -> output.writeByte(0)
+                ProjectionValue.Absent -> {
+                    output.writeByte(0)
+                }
+
                 is ProjectionValue.Flag -> {
                     output.writeByte(1)
                     output.writeBoolean(value.value)

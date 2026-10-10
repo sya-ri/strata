@@ -7,10 +7,10 @@ import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.PerformanceJson
+import org.openjdk.jmh.runner.Runner
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
-import org.openjdk.jmh.runner.Runner
 
 /**
  * Immutable supplemental-CPU pairing to one complete JMH run on the same actual JVM and runtime archives.
@@ -32,7 +32,14 @@ internal class RemoteCpuPair(
     private val resultFile = directory.resolve("results.json")
     private val collectorFile = directory.resolve("collector.jar")
     private val harnessFile = directory.resolve("harness.jar")
-    private val executable = Path.of(ProcessHandle.current().info().command().orElseThrow())
+    private val executable =
+        Path.of(
+            ProcessHandle
+                .current()
+                .info()
+                .command()
+                .orElseThrow(),
+        )
     private val hashes = listOf(receiptFile, resultFile, collectorFile, harnessFile, sourceFile, executable).associateWith(ArtifactIdentity::file).toMutableMap()
     private val environment = environment()
     private val jvmArguments = Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments)
@@ -57,14 +64,26 @@ internal class RemoteCpuPair(
         val expected = JmhWorkloadInventory.capture(listOf(fixtureClass), setOf("avgt"))
         require(receipt.getAsJsonArray("registered_workloads").map { it.asString }.toSet() == expected)
         val rows =
-            Files.newBufferedReader(resultFile, Charsets.UTF_8)
+            Files
+                .newBufferedReader(resultFile, Charsets.UTF_8)
                 .use { JsonParser.parseReader(it).asJsonArray }
                 .map { it.asJsonObject }
         require(rows.size == expected.size && rows.map(::workload).toSet() == expected)
-        require(rows.all { row ->
-            row.getAsJsonObject("primaryMetric").get("scoreUnit").asString.contentEquals("us/op") &&
-                row.getAsJsonObject("secondaryMetrics").getAsJsonObject("gc.alloc.rate.norm").get("scoreUnit").asString.contentEquals("B/op")
-        })
+        require(
+            rows.all { row ->
+                row
+                    .getAsJsonObject("primaryMetric")
+                    .get("scoreUnit")
+                    .asString
+                    .contentEquals("us/op") &&
+                    row
+                        .getAsJsonObject("secondaryMetrics")
+                        .getAsJsonObject("gc.alloc.rate.norm")
+                        .get("scoreUnit")
+                        .asString
+                        .contentEquals("B/op")
+            },
+        )
         val controls = controls(rows.first())
         require(rows.all { controls(it) == controls }) { "Paired JMH controls differ across cases" }
         verifyControls(controls)

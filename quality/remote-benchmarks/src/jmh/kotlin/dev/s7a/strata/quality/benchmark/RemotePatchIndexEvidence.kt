@@ -55,15 +55,17 @@ public object RemotePatchIndexEvidence {
                         check(seen.add(listOf(nodes, shape, change, operation)))
                         components = (arguments[4] as ArrayReference).getValues().map { (it as LongValue).value() }.toSet()
                         owner = event.thread().uniqueID()
-                        current = JsonObject().apply {
-                            addProperty("nodes", nodes)
-                            addProperty("shape", shape.name)
-                            addProperty("change", change.name)
-                            addProperty("operation", operation.name)
-                            addProperty("index_component_identity_reads", 0L)
-                            addProperty("validation_modifier_identity_reads", 0L)
-                        }
+                        current =
+                            JsonObject().apply {
+                                addProperty("nodes", nodes)
+                                addProperty("shape", shape.name)
+                                addProperty("change", change.name)
+                                addProperty("operation", operation.name)
+                                addProperty("index_component_identity_reads", 0L)
+                                addProperty("validation_modifier_identity_reads", 0L)
+                            }
                     }
+
                     RemoteProbeMarker.Finish -> {
                         check(owner == event.thread().uniqueID() && constructorRead.not())
                         rows.add(checkNotNull(current))
@@ -71,13 +73,21 @@ public object RemotePatchIndexEvidence {
                         components = emptySet()
                         owner = null
                     }
-                    null -> Unit
+
+                    null -> {
+                        Unit
+                    }
                 }
                 return
             }
             if (current == null || method.name().contentEquals("getIdentity").not()) return
             check(owner == event.thread().uniqueID() && constructorRead.not())
-            val caller = event.thread().frame(1).location().method()
+            val caller =
+                event
+                    .thread()
+                    .frame(1)
+                    .location()
+                    .method()
             constructorRead = caller.isConstructor && caller.declaringType().name() == RemoteTree::class.java.name
         }
 
@@ -85,7 +95,15 @@ public object RemotePatchIndexEvidence {
          * Counts the returned identity only for a proven tree-construction getter invocation.
          */
         override fun exit(event: MethodExitEvent) {
-            if (current == null || event.method().name().contentEquals("getIdentity").not() || constructorRead.not()) return
+            if (
+                current == null ||
+                event
+                    .method()
+                    .name()
+                    .contentEquals("getIdentity")
+                    .not() ||
+                constructorRead.not()
+            ) return
             check(owner == event.thread().uniqueID())
             val identity = (event.returnValue() as LongValue).value()
             val field = if (identity in components) "index_component_identity_reads" else "validation_modifier_identity_reads"
