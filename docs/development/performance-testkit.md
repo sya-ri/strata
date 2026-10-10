@@ -70,6 +70,9 @@ Class selection uses anchored JMH include filters and checks the complete genera
 Quick collection retains explicitly selected classes, methods and parameters; ordinary quick runs keep their existing default smoke subset.
 
 Add a JMH fixture to the existing source set without changing a Gradle build script or collection launcher.
+The API-only authoring contract, documentation consumer, Web integration, and component fixtures compile shared API-only `*Example.kt` sources from [the showcase source directory](../../integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin).
+Keep platform-neutral examples there so every consumer checks the same declarations.
+Put reusable JVM offline examples in [the documentation JVM source directory](../../integration/docs/src/main/kotlin); the documentation consumer and JMH fixtures compile its `*Example.kt` files without individual build-script registration.
 An optional public static no-argument `verifyWork()` method owns deterministic fixture acceptance outside timing; Kotlin companions expose it with `@JvmStatic`.
 Ordinary checks discover every generated fixture and its optional verifier automatically; selected collection also checks the chosen fixtures before starting forks.
 Keep expected case counts and fixture-specific pixel, work and lifetime assertions with the fixture or its work helper.

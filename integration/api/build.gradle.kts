@@ -1,4 +1,7 @@
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.tasks.testing.Test
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import java.io.File
 
 group = "dev.s7a.strata.integration"
 
@@ -8,6 +11,19 @@ dependencies {
     testImplementation(rootProject.project(":runtime:minecraft"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+val sharedApiExamples = objects.sourceDirectorySet("sharedApiExamples", "Shipped API-only component declarations").apply {
+    srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+    include("**/*Example.kt")
+    exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
+}
+extensions.configure<KotlinJvmProjectExtension> {
+    sourceSets.named("main") { kotlin.source(sharedApiExamples) }
+}
+tasks.named<Test>("test") {
+    inputs.files(sharedApiExamples)
+    systemProperty("strata.sharedApiExampleSources", sharedApiExamples.files.map { it.absolutePath }.sorted().joinToString(File.pathSeparator))
 }
 
 val checkApiOnlyClasspath =

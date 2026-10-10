@@ -7,6 +7,7 @@ This guide explains how an offline caller supplies that environment without laun
 ## Loading an offline resource stack
 
 The compiled example below combines already-downloaded indexed assets, a client JAR, and a higher-priority custom pack.
+Construct the indexed receiver from the asset index and object directory with the same load limits.
 Supply sources from lowest to highest priority and keep their files stable until loading returns.
 The result is independent of later input-file changes.
 
@@ -22,13 +23,11 @@ import java.nio.file.Path
 
 /**
  * Loads a shareable snapshot while the caller keeps the exact-target files stable.
- * The custom pack has highest priority; [limits] applies to both index reads and loading.
+ * The custom pack has highest priority; construct the indexed receiver with the same [limits] used for loading.
  * Invalid documents produce diagnostics, enumeration failures propagate, and streams close before return.
  */
-internal fun loadFonts(
+internal fun MinecraftIndexedFontAssetSource.loadFonts(
     clientJar: Path,
-    assetIndex: Path,
-    objects: Path,
     customPack: Path,
     compatibility: MinecraftFontCompatibility,
     options: MinecraftFontOptions,
@@ -37,7 +36,7 @@ internal fun loadFonts(
     MinecraftFontSnapshot.load(
         sources =
             listOf(
-                MinecraftIndexedFontAssetSource(assetIndex, objects, "Minecraft assets", limits),
+                this,
                 MinecraftArchiveFontAssetSource(clientJar),
                 MinecraftDirectoryFontAssetSource(customPack),
             ),
@@ -98,7 +97,7 @@ The [snapshot loading contract](https://gh.s7a.dev/strata/runtime/minecraft/dev.
 ## Bound resource loading
 
 `MinecraftFontLoadLimits` bounds input size, expansion, record counts, and decoded image payloads.
-Keep the defaults unless the tool needs a deliberate tighter or larger budget, and pass the same policy to source constructors that read input before snapshot loading, as the example does.
+Keep the defaults unless the tool needs a deliberate tighter or larger budget, and pass the same policy to source constructors that read input before snapshot loading and to the example's loading function.
 The [limits reference](https://gh.s7a.dev/strata/runtime/minecraft/dev.s7a.strata.runtime.minecraft.font/-minecraft-font-load-limits/index.html) contains the individual ceilings and defaults.
 These are payload and work budgets, not a total JVM or native-memory limit.
 

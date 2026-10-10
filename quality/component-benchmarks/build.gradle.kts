@@ -57,8 +57,9 @@ val componentLauncher = extensions.getByType<JavaToolchainService>().launcherFor
     languageVersion.set(JavaLanguageVersion.of(libs.versions.java.minecraft.get().toInt()))
 }
 
-val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped API-only component declarations").apply {
+val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped shared API and JVM documentation examples").apply {
     srcDir(rootProject.file("integration/shared/minecraft-fabric/scenarios/gui-extractor/src/gametest/kotlin"))
+    srcDir(rootProject.file("integration/docs/src/main/kotlin"))
     include("**/*Example.kt")
     // These complete native screens are not used by the portable component definitions.
     exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")

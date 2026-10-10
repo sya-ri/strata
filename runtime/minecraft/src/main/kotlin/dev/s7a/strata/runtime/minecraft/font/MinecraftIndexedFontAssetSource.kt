@@ -36,7 +36,7 @@ public class MinecraftIndexedFontAssetSource(
             requireFontLimit(path.length.toLong() + 7, limits.maxPathLength.toLong(), "asset index path length")
             val relative = "assets/${path.checkedFontSourcePath()}"
             val hash = FontJson.string(FontJson.objectValue(value).get("hash"))
-            require(Regex("[0-9a-f]{40}").matches(hash)) { "Asset index object hash is invalid." }
+            require(hash.length == 40 && hash.all { character -> character in '0'..'9' || character in 'a'..'f' }) { "Asset index object hash is invalid." }
             hashes[relative] = hash
         }
         entries = hashes
