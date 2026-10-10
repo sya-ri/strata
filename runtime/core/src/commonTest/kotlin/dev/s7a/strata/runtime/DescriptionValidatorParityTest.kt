@@ -128,7 +128,8 @@ internal class DescriptionValidatorParityTest {
     }
 
     /**
-     * Builds independent key objects for each algorithm and compares complete traces at both sibling entry points.
+     * Replays immutable descriptions through independent algorithms and compares complete traces at both sibling entry points.
+     * Reusing the same key objects fixes identity-sensitive collision ordering between executions.
      */
     private fun compare(
         exactFailure: Throwable? = null,
@@ -136,19 +137,20 @@ internal class DescriptionValidatorParityTest {
         build: (DescriptionValidationProbe) -> List<Element>,
     ) {
         for (dynamic in listOf(false, true)) {
-            val original = DescriptionValidationProbe()
-            val candidate = DescriptionValidationProbe()
-            val oldChildren = build(original)
-            val newChildren = build(candidate)
+            val probe = DescriptionValidationProbe()
+            val children = build(probe)
+            val root = probe.element(-1, children)
             val expected =
                 runCatching {
-                    if (dynamic) OriginalDescriptionValidator().validateChildren(oldChildren) else OriginalDescriptionValidator().validate(original.element(-1, oldChildren))
+                    if (dynamic) OriginalDescriptionValidator().validateChildren(children) else OriginalDescriptionValidator().validate(root)
                 }.exceptionOrNull()
+            val expectedTrace = probe.trace.toList()
+            probe.trace.clear()
             val actual =
                 runCatching {
-                    if (dynamic) DescriptionValidator().validateChildren(newChildren) else DescriptionValidator().validate(candidate.element(-1, newChildren))
+                    if (dynamic) DescriptionValidator().validateChildren(children) else DescriptionValidator().validate(root)
                 }.exceptionOrNull()
-            assertEquals(original.trace, candidate.trace)
+            assertEquals(expectedTrace, probe.trace)
             assertEquals(rejects, actual != null)
             assertEquals(expected?.let { it::class }, actual?.let { it::class })
             assertEquals(expected?.message, actual?.message)
@@ -156,7 +158,7 @@ internal class DescriptionValidatorParityTest {
                 assertSame(exactFailure, expected)
                 assertSame(exactFailure, actual)
             }
-            if (actual == null && oldChildren.isNotEmpty()) assertTrue(original.trace.any { it is DescriptionValidationProbe.Event.Local })
+            if (actual == null && children.isNotEmpty()) assertTrue(expectedTrace.any { it is DescriptionValidationProbe.Event.Local })
         }
     }
 }
