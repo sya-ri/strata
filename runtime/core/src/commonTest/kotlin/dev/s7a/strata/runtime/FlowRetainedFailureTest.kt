@@ -6,7 +6,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 
-/** Actual retained first/middle/last child failures preserve original poison and terminal cleanup identities. */
+/**
+ * Actual retained first/middle/last child failures preserve original poison and terminal cleanup identities.
+ */
 internal class FlowRetainedFailureTest {
     @Test
     fun childAndSuppressedCleanupFailuresPreserveExactOriginalCallbacksAndIdentities() {

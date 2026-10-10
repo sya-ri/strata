@@ -16,7 +16,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-/** Literal complete pixel oracle for two real rows, all placement policies, parent overrides and densities 1/2/3. */
+/**
+ * Literal complete pixel oracle for two real rows, all placement policies, parent overrides and densities 1/2/3.
+ */
 internal class HeadlessFlowMeasurementTest {
     @Test
     fun fullPaintedPixelsKeepOriginalGreedyRowsAndRowLocalAlignment() {

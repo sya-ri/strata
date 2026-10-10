@@ -24,7 +24,9 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Complete original/candidate public scopes, real painted/semantic children, actual pointer and focus delivery. */
+/**
+ * Complete original/candidate public scopes, real painted/semantic children, actual pointer and focus delivery.
+ */
 internal class FlowRetainedTestFixture(
     private val original: Boolean,
     val probe: TestProbe = TestProbe(),
@@ -33,7 +35,9 @@ internal class FlowRetainedTestFixture(
     val focus: MutableList<Pair<Int, FocusEvent>> = mutableListOf()
     val keys: MutableList<Int> = mutableListOf()
 
-    /** Installs direct immutable children without synthetic row parents or candidate-derived geometry. */
+    /**
+     * Installs direct immutable children without synthetic row parents or candidate-derived geometry.
+     */
     fun update(
         ids: List<Int>,
         widths: List<Int> = List(ids.size) { 1 },
@@ -66,7 +70,9 @@ internal class FlowRetainedTestFixture(
         tree.update(description)
     }
 
-    /** Completes real layout/paint/semantics and pointer/focused keyboard dispatch in retained order. */
+    /**
+     * Completes real layout/paint/semantics and pointer/focused keyboard dispatch in retained order.
+     */
     fun frame(constraints: Constraints): Output {
         val size = tree.measure(constraints)
         tree.layout()
@@ -87,10 +93,14 @@ internal class FlowRetainedTestFixture(
         return probe.element(tag, key = if (keyed) tag else null, modifier = sized)
     }
 
-    /** Releases all active direct children and callbacks on the owning tree thread. */
+    /**
+     * Releases all active direct children and callbacks on the owning tree thread.
+     */
     override fun close() = tree.close()
 
-    /** Detached full portable output and actual focus/input callback observations. */
+    /**
+     * Detached full portable output and actual focus/input callback observations.
+     */
     data class Output(
         val size: IntSize,
         val commands: List<DrawCommand>,
@@ -102,7 +112,9 @@ internal class FlowRetainedTestFixture(
         val keys: List<Int>,
     )
 
-    /** Stable typed root key used only by independent diagnostics. */
+    /**
+     * Stable typed root key used only by independent diagnostics.
+     */
     val target: ElementKey<*> = ElementKey(Target.Flow)
 
     private enum class Target { Flow }

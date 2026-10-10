@@ -7,7 +7,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
-/** Original whole-node geometry, direct ownership and policy reuse across every required retained topology. */
+/**
+ * Original whole-node geometry, direct ownership and policy reuse across every required retained topology.
+ */
 internal class FlowRetainedParityTest {
     @Test
     fun allArrangementsAlignmentsAndParentOverridesPreserveFullOrderedOutputAndInput() {

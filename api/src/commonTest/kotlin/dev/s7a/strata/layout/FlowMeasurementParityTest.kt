@@ -9,7 +9,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** Original complete FlowRow measurement/layout check finite partitions, cutoffs, arithmetic and policies on JVM/JS. */
+/**
+ * Original complete FlowRow measurement/layout check finite partitions, cutoffs, arithmetic and policies on JVM/JS.
+ */
 internal class FlowMeasurementParityTest {
     @Test
     fun allFinitePartitionsAndNaturalExtentsMatchTheFrozenOriginal() {
@@ -56,7 +58,7 @@ internal class FlowMeasurementParityTest {
                 for (overridden in listOf(false, true)) {
                     val sizes = List(16) { index -> IntSize(index % 3, index % 4) }
                     val pair = List(2) { FlowMeasurementScope(sizes, overrideAlignment = overridden) }
-                    pair.forEach { scope -> scope.onPlace = { for (index in scope.measuredSizes.indices) scope.measuredSizes[index] = IntSize.Zero } }
+                    mutateSizesOnPlace(pair)
                     compare(pair, Constraints.fixed(9, 180), 1, 2, arrangement, alignment)
                     val trace = pair.first().trace
                     val firstPlacement = trace.indexOfFirst { it is FlowMeasurementTrace.Place }
@@ -99,6 +101,12 @@ internal class FlowMeasurementParityTest {
             assertEquals(execute(reference, reference, pair[0], bounds), execute(candidate, candidate, pair[1], bounds))
             assertEquals(pair[0].trace, pair[1].trace)
             assertTrue(pair[1].trace.filterIsInstance<FlowMeasurementTrace.Measure>().map { it.index } == (0 until count).toList())
+        }
+    }
+
+    private fun mutateSizesOnPlace(pair: List<FlowMeasurementScope>) {
+        pair.forEach { scope ->
+            scope.onPlace = { for (index in scope.measuredSizes.indices) scope.measuredSizes[index] = IntSize.Zero }
         }
     }
 

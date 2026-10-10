@@ -11,7 +11,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Independent actual target-node dirty policy checks without drawing conclusions from elapsed time. */
+/**
+ * Independent actual target-node dirty policy checks without drawing conclusions from elapsed time.
+ */
 internal class FlowRetainedPolicyTest {
     @Test
     fun arrangementAndDefaultAlignmentRemainLayoutOnlyParentOverridesRemainMeasureDirtyAndIdleIsClean() {

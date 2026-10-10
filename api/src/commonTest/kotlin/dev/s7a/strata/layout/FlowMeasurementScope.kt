@@ -7,7 +7,9 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Public-scope adapter preserving valid child bounds and recording complete successful/exceptional prefixes. */
+/**
+ * Public-scope adapter preserving valid child bounds and recording complete successful/exceptional prefixes.
+ */
 internal class FlowMeasurementScope(
     private val naturalSizes: List<IntSize>,
     private val failure: Failure? = null,
@@ -49,6 +51,8 @@ internal class FlowMeasurementScope(
         if (injected != null && injected.event == event) throw injected.cause
     }
 
-    /** An original throwable injected at one actual scope attempt. */
+    /**
+     * An original throwable injected at one actual scope attempt.
+     */
     data class Failure(val event: FlowMeasurementTrace, val cause: Throwable)
 }

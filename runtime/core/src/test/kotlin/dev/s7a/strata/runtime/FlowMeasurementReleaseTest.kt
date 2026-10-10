@@ -21,7 +21,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-/** Actual owner collection after unwind, with live and terminal session handles deliberately kept reachable. */
+/**
+ * Actual owner collection after unwind, with live and terminal session handles deliberately kept reachable.
+ */
 internal class FlowMeasurementReleaseTest {
     @Test
     fun normalAndExceptionalCloseReleaseChildSourceObserverAndContentOwners() {
@@ -98,18 +100,24 @@ internal class FlowMeasurementReleaseTest {
         assertTrue(references.all { it.get() == null }, "Flow measurement retained a retired owner or callback.")
     }
 
-    /** Strong carrier holding only the session and weak observations during collection. */
+    /**
+     * Strong carrier holding only the session and weak observations during collection.
+     */
     private data class Evidence(
         val session: RuntimeUiSession,
         val retired: WeakReference<*>,
         val references: List<WeakReference<*>>,
     )
 
-    /** Actual subscribed source with a once-only callback release, independent of any tree cache. */
+    /**
+     * Actual subscribed source with a once-only callback release, independent of any tree cache.
+     */
     private class ReleaseSource : StateSource<Int> {
         private var snapshot = StateSnapshot(StateRevision(0), 16)
 
-        /** Records the actual callback weakly before a failing frame releases its subscription. */
+        /**
+         * Records the actual callback weakly before a failing frame releases its subscription.
+         */
         var observerReference: WeakReference<*>? = null
             private set
 
@@ -126,7 +134,9 @@ internal class FlowMeasurementReleaseTest {
             }
         }
 
-        /** Publishes one real revision; the callback only enqueues into the actual session. */
+        /**
+         * Publishes one real revision; the callback only enqueues into the actual session.
+         */
         fun publish(count: Int) {
             snapshot = StateSnapshot(StateRevision(snapshot.revision.value + 1), count)
             observer?.invoke(snapshot)

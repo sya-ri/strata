@@ -12,7 +12,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-/** Real FlowRow ownership rejects escaped scopes and repeated child participation exactly as other standard parents. */
+/**
+ * Real FlowRow ownership rejects escaped scopes and repeated child participation exactly as other standard parents.
+ */
 internal class FlowScopeLifetimeTest {
     @Test
     fun actualEscapedScopesRejectUseAfterTheOwningCallbackReturns() {
