@@ -71,6 +71,37 @@ Spacing and weight changes require measurement; arrangement and container alignm
 Equal values remain clean.
 Custom layouts must follow the detailed [Element SPI](../reference/element-spi.md) and [parent-data contract](../reference/modifier-spi.md#parent-data).
 
+## Center a responsive panel
+
+Use a viewport-filling `Stack(contentAlignment = Alignment.Center)` for placement and an application-owned sizing modifier for a breakpoint policy.
+The [compiled API-only example](../../integration/api/src/main/kotlin/dev/s7a/strata/integration/consumer/ApiOnlyResponsivePanel.kt) contains a complete screen factory and the `ResponsivePanel` composition to copy into a local client application.
+It uses the public [Modifier SPI](../reference/modifier-spi.md#extension-guide); no component registration or runtime implementation import is required.
+The factory draws a solid panel that closes on activation; replace its Spacer with your content through the composition's content slot.
+
+The example's `minimumViewport` defaults to `IntSize(480, 270)` in logical GUI units.
+When both available dimensions reach those inclusive thresholds, the panel occupies 50% of the width and 50% of the height, centered on both axes.
+If either dimension is below its threshold, both panel dimensions use 100% of the available space.
+For example, a 640 by 360 viewport gives a 320 by 180 panel, while a 479 by 270 viewport gives a 479 by 270 panel.
+At exactly 480 by 270, the panel returns to half size; odd extents and centering round down.
+Here, “50%” means half of each axis, which is one quarter of the area.
+Choose your application's threshold through the factory or composition argument.
+
+The outer Stack fills the viewport and loosens its child's minimum constraints, allowing that child to be smaller than the screen.
+The sizing modifier chooses exact child constraints during measurement, so changed viewport constraints select the policy again without reconstructing the screen or retaining a window-size snapshot in application state.
+Keep this composition at the screen root; inside another container, the breakpoint uses that container's available size.
+The example requires bounded dimensions and accepts zero-size viewports.
+Its `ClipChildrenNode` clips descendant paint and pointer input to the same measured panel bounds.
+Clipping does not relax a fixed-size component's measurement contract: a Text or control whose required size is outside the supplied constraints still fails measurement.
+Choose a [text overflow policy](text.md#multiline-display) for bounded text, or give overflowing content an appropriate scrolling viewport; a vertical `ScrollArea` with a linked `Scrollbar` permits vertical overflow while retaining a bounded width.
+
+Minecraft's Fabric screen adapter passes the current scaled Screen width and height to the host, which supplies fixed root constraints in those logical units.
+Window pixels and framebuffer pixels are separate dimensions: do not multiply or divide the layout constraints by GUI scale again.
+Changing GUI scale can cross a logical breakpoint even when the physical window is unchanged.
+`scaleToFit` addresses a different task: [fitting a fixed design surface](modifiers.md#fit-a-design-surface) scales its subtree uniformly, while this panel policy changes the space available for ordinary child layout.
+
+This example targets a local client screen.
+Server-owned Paper or Velocity screens additionally need a [declaration projection and matching client extension](../reference/declaration-projection.md) for an application-owned modifier.
+
 ## Continue reading
 
 [Modifiers](modifiers.md) explains sizing, padding, and scaling order.
