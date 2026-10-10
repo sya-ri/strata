@@ -13,6 +13,7 @@ import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.onActivate
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -29,13 +30,23 @@ import org.junit.jupiter.api.Test
 internal class RemoteSessionTest {
     @Test
     fun realInputInvokesServerHandlerOnceAndUpdatesTheExistingClientHost() {
+        val frames = RemoteDecodeRoute.entries.map(::verifyInputThroughDecodeRoute)
+        frames.forEach { frame ->
+            assertEquals(frames.first().size, frame.size)
+            assertEquals(frames.first().semantics, frame.semantics)
+            assertEquals(frames.first().drawCommands, frame.drawCommands)
+            assertEquals(List(64) { -16776961 }, rasterizeHeadless(frame.drawCommands, frame.size).copyArgb().toList())
+        }
+    }
+
+    private fun verifyInputThroughDecodeRoute(route: RemoteDecodeRoute): RuntimeUiFrame {
+        var result: RuntimeUiFrame? = null
         val clicks = mutableStateOf(0)
         val registry = RemoteRegistry().also(RemoteBuiltins::register)
-        val codec = RemoteMessageCodec()
         val outbound = mutableListOf<RemoteMessage>()
         val incoming = mutableListOf<RemoteMessage>()
         val server =
-            RemoteServerSession(1, ProjectionValue.Text("test"), registry.types, send = { outbound.add(codec.decode(codec.encode(it))) }) {
+            RemoteServerSession(1, ProjectionValue.Text("test"), registry.types, send = { outbound.add(route.decode(it)) }) {
                 evaluateComponentTree {
                     val color = if (clicks.value == 0) ArgbColor(-65536) else ArgbColor(-16776961)
                     Spacer(modifier = Modifier.Empty.background(color).onActivate { clicks.value += 1 })
@@ -43,7 +54,7 @@ internal class RemoteSessionTest {
             }
         server.use {
             server.tick()
-            val client = RemoteClientSession(outbound.removeAt(0) as RemoteMessage.Snapshot, registry, send = { incoming.add(codec.decode(codec.encode(it))) })
+            val client = RemoteClientSession(outbound.removeAt(0) as RemoteMessage.Snapshot, registry, send = { incoming.add(route.decode(it)) })
             client.use {
                 val content = client.definition(UiText.Literal("test")).transfer().content
                 createRuntimeUiSession { evaluateComponentTree(content) }.use { host ->
@@ -60,10 +71,12 @@ internal class RemoteSessionTest {
                     val updated = host.frame(Constraints.fixed(8, 8))
                     assertNotEquals(first.drawCommands, updated.drawCommands)
                     assertEquals(localFrame().drawCommands, updated.drawCommands)
+                    result = updated
                 }
             }
         }
         assertTrue(server.status is RemoteSessionStatus.Closed)
+        return checkNotNull(result)
     }
 
     private fun deliver(

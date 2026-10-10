@@ -54,7 +54,7 @@ public class RemoteConnection(
         check(outgoing != null) { "Remote connection is closed." }
         return guarded {
             val assembled = framing.receive(bytes, nowMillis) ?: return@guarded null
-            val message = codec.decode(assembled)
+            val message = codec.decodeOwned(assembled)
             if (message is RemoteMessage.Hello) {
                 negotiate(message)
                 null
