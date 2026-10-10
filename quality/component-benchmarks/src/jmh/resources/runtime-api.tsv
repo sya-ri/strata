@@ -3305,10 +3305,10 @@ core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:getBeforeChildr
 core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:getRootOverlays:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#method:17:matches:(Ldev/s7a/strata/runtime/RetainedEntry;)Z
 core	Core	dev.s7a.strata.runtime.RetainedPaintCommands#type:17:java.lang.Object:
-core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#constructor:1:(Ldev/s7a/strata/runtime/RetainedPaintCommands;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/runtime/RetainedDrawCommands;Ldev/s7a/strata/runtime/RetainedDrawCommands;)V
+core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#constructor:1:(Ldev/s7a/strata/runtime/RetainedPaintCommands;Ldev/s7a/strata/geometry/IntSize;Ldev/s7a/strata/runtime/RetainedDrawCommands;Ljava/util/List;)V
 core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:getCommands:()Ldev/s7a/strata/runtime/RetainedDrawCommands;
 core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:getLocal:()Ldev/s7a/strata/runtime/RetainedPaintCommands;
-core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:getRootOverlays:()Ldev/s7a/strata/runtime/RetainedDrawCommands;
+core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:getRootOverlays:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:getViewport:()Ldev/s7a/strata/geometry/IntSize;
 core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#method:17:matches:(Ldev/s7a/strata/runtime/RetainedEntry;Ldev/s7a/strata/geometry/IntSize;)Z
 core	Core	dev.s7a.strata.runtime.RetainedPaintSnapshot#type:17:java.lang.Object:
