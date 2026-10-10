@@ -1,0 +1,113 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
+import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.javadoc.Javadoc
+import org.gradle.api.tasks.testing.Test
+import java.security.MessageDigest
+
+// An explicitly supplied init script verifies the existing graph; it never changes task toolchains.
+def manifestPath = System.getenv('STRATA_TOOLCHAIN_BINDING')
+if (manifestPath == null || manifestPath.isBlank()) throw new GradleException('Controlled toolchain binding is required')
+def binding = new JsonSlurper().parse(new File(manifestPath))
+def profile = binding.profile
+def canonical = { value -> new File(value.toString()).canonicalFile }
+def fail = { message -> throw new GradleException("Controlled toolchain refusal: $message") }
+def daemon = profile.jdks.find { it.major == profile.daemon_major }
+if (daemon == null || canonical(System.getProperty('java.home')) != canonical(daemon.home) ||
+        canonical(System.getenv('JAVA_HOME')) != canonical(daemon.home) ||
+        JavaVersion.current().majorVersion != daemon.major.toString() ||
+        System.getProperty('java.runtime.version') != daemon.runtime_version ||
+        System.getProperty('java.vm.version') != daemon.jvm_version ||
+        System.getProperty('java.vendor') != daemon.implementor) {
+    fail('actual Gradle daemon identity differs from its binding')
+}
+binding.properties.each { key, value ->
+    if (System.getProperty(key) != value) fail('standard Java installation property differs from its binding')
+}
+if (gradle.startParameter.configurationCacheRequested) fail('controlled selection must be revalidated without a configuration cache')
+if (gradle.gradleVersion != profile.gradle_version || canonical(gradle.gradleHomeDir) != canonical(profile.gradle_installation_home)) {
+    fail('actual Gradle installation differs from its binding')
+}
+
+def buildDirectory = null
+def tools = []
+def taskRefs = []
+def verifyTool = { task, role, tool, executableFor ->
+    def metadata = tool.metadata
+    def expected = profile.jdks.find { it.major == metadata.languageVersion.asInt() }
+    def executable = expected == null ? null : executableFor(expected)
+    if (expected == null || canonical(metadata.installationPath.asFile) != canonical(expected.home) ||
+            metadata.vendor != expected.vendor || metadata.javaRuntimeVersion != expected.runtime_version ||
+            metadata.jvmVersion != expected.jvm_version || canonical(tool.executablePath.asFile) != canonical(executable)) {
+        fail("selected $role for ${task.path} differs from the bound JDK")
+    }
+    def record = [task: task.path, role: role, major: expected.major, home: expected.home,
+                  vendor: metadata.vendor, runtime_version: metadata.javaRuntimeVersion,
+                  jvm_version: metadata.jvmVersion, executable: tool.executablePath.asFile.canonicalPath]
+    tools.removeAll { it.task == task.path && it.role == role }
+    tools.add(record)
+    return expected
+}
+def verifyTask = { task ->
+    if (task instanceof JavaCompile) {
+        def expected = verifyTool(task, 'compiler', task.javaCompiler.get(), { it.javac })
+        if (task.options.forkOptions.executable != null && canonical(task.options.forkOptions.executable) != canonical(expected.javac)) {
+            fail("compiler executable override for ${task.path}")
+        }
+        if (task.options.forkOptions.javaHome != null && canonical(task.options.forkOptions.javaHome) != canonical(expected.home)) {
+            fail("compiler home override for ${task.path}")
+        }
+    } else if (task instanceof Javadoc) {
+        verifyTool(task, 'javadoc', task.javadocTool.get(), { new File(it.home, "bin/javadoc${it.java.endsWith('.exe') ? '.exe' : ''}").path })
+    } else if (task.hasProperty('javaLauncher') && task.javaLauncher.present) {
+        def expected = verifyTool(task, 'launcher', task.javaLauncher.get(), { it.java })
+        // A null executable delegates to the selected launcher; compare only an explicit override.
+        if ((task instanceof Test || task instanceof JavaExec) && task.executable != null && canonical(task.executable) != canonical(expected.java)) {
+            fail("Java executable override for ${task.path}")
+        }
+    }
+    if (task.hasProperty('kotlinJavaToolchain')) {
+        def major = task.kotlinJavaToolchain.javaVersion.get().majorVersion.toInteger()
+        if (profile.jdks.find { it.major == major } == null) fail("unbound Kotlin toolchain for ${task.path}")
+    }
+    if (task.hasProperty('jdkHome') && task.jdkHome.present) {
+        def home = task.jdkHome.get().asFile
+        if (profile.jdks.find { canonical(it.home) == canonical(home) } == null) fail("unbound analysis JDK for ${task.path}")
+    }
+}
+gradle.settingsEvaluated { settings ->
+    buildDirectory = settings.settingsDir.canonicalPath
+    if (settings.settingsDir.canonicalFile == canonical(binding.root) && settings.providers.gradleProperty('strata.jvmOnly').getOrElse('false').toBoolean() != binding.jvm_only) {
+        fail('actual Gradle model differs from its binding')
+    }
+}
+gradle.taskGraph.whenReady { graph ->
+    graph.allTasks.each(verifyTask)
+    taskRefs = graph.allTasks
+}
+gradle.taskGraph.beforeTask { task -> verifyTask(task) }
+gradle.buildFinished { result ->
+    if (buildDirectory != null) {
+        def buildPath = gradle.buildPath
+        def buildKey = MessageDigest.getInstance('SHA-256').digest(buildPath.getBytes('UTF-8')).encodeHex().toString()
+        def receipt = new File(binding.receipts, "${buildKey}.json")
+        if (receipt.exists()) fail('selection receipt must be fresh')
+        receipt.parentFile.mkdirs()
+        receipt.text = JsonOutput.prettyPrint(JsonOutput.toJson([
+            schema: 1, status: result.failure == null ? 'passed' : 'failed',
+            build_path: buildPath, project_dir: buildDirectory, parent_build_path: gradle.parent?.buildPath,
+            included_builds: gradle.includedBuilds.collect { [project_dir: it.projectDir.canonicalPath] },
+            profile_sha256: binding.profile_sha256, gradle_version: gradle.gradleVersion,
+            daemon: [home: daemon.home, major: daemon.major, vendor: System.getProperty('java.vendor'),
+                     runtime_version: System.getProperty('java.runtime.version'), jvm_version: System.getProperty('java.vm.version')],
+            tasks: taskRefs.collect { task ->
+                [path: task.path, type: task.class.name, executed: task.state.executed,
+                 did_work: task.state.didWork, skipped: task.state.skipped, up_to_date: task.state.upToDate,
+                 kotlin_major: task.hasProperty('kotlinJavaToolchain') ? task.kotlinJavaToolchain.javaVersion.get().majorVersion.toInteger() : null]
+            }, tools: tools.sort { left, right -> (left.task <=> right.task) ?: (left.role <=> right.role) }
+        ])) + '\n'
+    }
+}

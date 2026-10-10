@@ -58,6 +58,46 @@ Install the Java toolchains declared by the version catalog; automatic toolchain
 The [wrapper configuration](../../gradle/wrapper/gradle-wrapper.properties) and [version catalog](../../gradle/libs.versions.toml) are the source of build-tool and dependency versions.
 Common modules use the baseline toolchain, while adapters use their target's required toolchain from the [compatibility reference](../reference/compatibility.md).
 
+### Controlled JVM preparation
+
+For repeatable preparation, supply exact installed JDK inputs at the existing launcher boundary through [controlled_toolchains.py](../../gradle/controlled_toolchains.py).
+Its `bind` function returns arguments, an environment and a fresh manifest; the caller keeps its existing wrapper, executor, task selection, resource limits and process observer.
+The ordinary developer command and repository-wide discovery defaults are unchanged.
+
+The caller supplies a UTF-8 JSON profile with `schema: 1`, `model` (`complete` or `jvmOnly`), `daemon_major`, actual `gradle_version`, `gradle_installation_home`, `gradle_user_home`, `jdks`, `inherited_properties`, `inherited_environment`, and `daemon_criteria`.
+Both models derive required Java versions from the version catalog; the complete model requires every declared Java version, while JVM preparation requires the baseline and JVM benchmark versions plus the daemon.
+Each JDK entry combines `installation(home)`'s canonical paths, release identity and complete installation-tree digest with independently observed Gradle `vendor`, `runtime_version` and `jvm_version` metadata.
+The snapshot reader executes no JVM and cannot establish that metadata from a directory name or release vendor alone.
+Preserve the original wrapper, daemon, compiler and test homes when freezing a comparison.
+
+`inherited_properties` records the relevant discovery and daemon properties under `user`, `project` and `installation`; the reader does not return unrelated properties or credentials.
+`inherited_environment` records each declared `fromEnv` variable's resolved home.
+`daemon_criteria` is null when the criteria file is absent, or contains its SHA-256 and decoded `properties` when present.
+Changes, incomplete profiles, missing compilers, extra inherited homes, mismatching `JAVA_HOME`, daemon criteria and command-line/JVM-option overrides fail before launch.
+Regular-file symlinks must remain inside their installation; directory links and oversized inventories fail rather than silently narrowing the identity.
+
+The candidate uses the standard `org.gradle.java.installations.auto-detect=false`, `auto-download=false`, `paths`, `fromEnv`, and `org.gradle.java.home` system properties.
+Explicit paths include required Gradle-managed JDKs as well as the current JDK.
+The two automatic settings must both be disabled to exclude unselected cached installations; explicit paths alone extend automatic discovery.
+Current-JVM metadata can be read directly, while a different required JDK still needs Gradle's metadata probe.
+These properties reduce discovery; they do not prove process ownership, finite effective JVM caps or measurement completeness.
+See the [Gradle toolchain contract](https://docs.gradle.org/current/userguide/toolchains.html#sec:custom_loc) for standard discovery inputs.
+
+After a successful existing launcher call, `verify` requires fresh selection receipts from [controlled-toolchains.init.gradle](../../gradle/controlled-toolchains.init.gradle) and rechecks the original inputs.
+The init script validates the actual Gradle daemon and selected compiler, launcher and Javadoc metadata without rewriting their assignments; each participating build preserves its complete resolved task graph.
+Root and included builds retain separate Gradle build paths and project directories, so identical local task paths remain distinct.
+The verifier joins included receipts through captured parent or declared included-build relationships and rejects unrelated, missing or ambiguous identities.
+Kotlin's actual `jdkHome` diagnostics are checked against each executed task's build identity and declared version; retain serial, plain `--info` output for this verification.
+Controlled invocations disable configuration-cache reuse so every selection is checked again, and refuse an absent receipt even when Gradle only warns and returns zero.
+The existing [compiled fixture collection check](../../gradle/verify-jvm-fixture-collection.py) accepts `STRATA_TOOLCHAIN_PROFILE` to use the same binding without changing its fixtures, options, generated harness or selected work.
+
+Preparation comparisons use three independent complete attempts on each side with matching profiles, caps, cache conditions, selected tasks and fixture bytes.
+Preserve an unrestricted discovery control with `bind(..., bounded=False)` and the bounded candidate with `bounded=True`; both retain the same metadata verification and selected work.
+Keep complete API-consumer and compiled fixture/harness preparation as separate units, and include binding, preparation and terminal verification in whole-attempt wall time.
+Cross-check every fresh metadata-probe diagnostic with the existing qualified process ledger, including required probes; an unknown generation or cap rejects the attempt.
+Report actual owned CPU, allocation availability, fresh RSS, probe origins and task outcomes alongside wall time, preserving failures and regressions.
+Source-based probe-count projections cannot establish a measured preparation improvement, and scoped preparation cannot replace full acceptance or IDE/Qodana verification.
+
 ## Quality checks
 
 Run affected module checks while developing and wait for change-scoped PR CI before review.

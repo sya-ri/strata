@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+from controlled_toolchains import bind, verify
+
 
 FIXTURE = """package dev.s7a.strata.quality.benchmark
 
@@ -90,6 +92,19 @@ def main():
     wrapper = ([str(root / "gradlew.bat")] if os.name == "nt" else ["bash", str(root / "gradlew")]) + [
         "--no-daemon", "--max-workers=1", "-Pkotlin.compiler.execution.strategy=in-process",
     ]
+
+    def invoke(arguments, log_path, *, check=True):
+        """Keep the ordinary launcher and optionally verify its explicitly frozen JDK inputs."""
+        environment = dict(os.environ)
+        manifest = None
+        if environment.get("STRATA_TOOLCHAIN_PROFILE"):
+            arguments, environment, manifest = bind(environment["STRATA_TOOLCHAIN_PROFILE"], root, environment,
+                                                     arguments, evidence / (log_path.stem + "-toolchains"))
+        with log_path.open("w", encoding="utf-8") as log:
+            result = subprocess.run(wrapper + arguments, cwd=root, env=environment, stdout=log, stderr=subprocess.STDOUT, check=check)
+        if manifest is not None and result.returncode == 0:
+            verify(manifest, root, environment, log_path)
+        return result
     multiplatform = {":api", ":runtime:core", ":performance-testkit"}
     benchmarks = {":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks"}
     projects = multiplatform | benchmarks | {
@@ -109,8 +124,7 @@ def main():
     println('EXPLICIT_JVM_PROJECTS=' + paths.join(','))
 }
 """, encoding="utf-8")
-    with (evidence / "task-closure.log").open("w", encoding="utf-8") as log:
-        subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+    invoke(["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, evidence / "task-closure.log")
     closure_log = (evidence / "task-closure.log").read_text(encoding="utf-8")
     selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
     assert set(selected.split(",")) == projects
@@ -130,8 +144,7 @@ def main():
         resource.parent.mkdir(parents=True, exist_ok=True)
         resource.write_bytes(extra.read_bytes())
         (evidence / source.name).write_text(FIXTURE, encoding="utf-8")
-        with (evidence / "collection.log").open("w", encoding="utf-8") as log:
-            subprocess.run(wrapper + arguments + [f"-Pstrata.performance.output={evidence / 'run-0'}"], cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+        invoke(arguments + [f"-Pstrata.performance.output={evidence / 'run-0'}"], evidence / "collection.log")
         run = evidence / "run-0"
         receipt = json.loads((run / "receipt.json").read_text(encoding="utf-8"))
         results = json.loads((run / "results.json").read_text(encoding="utf-8"))
@@ -146,8 +159,7 @@ def main():
         assert result["secondaryMetrics"]["strata.provenance"]["score"] == 1
         assert "Verified unregistered scoped fixture" in (evidence / "collection.log").read_text(encoding="utf-8")
         extra.write_text("FF173A58\n", encoding="utf-8")
-        with (evidence / "rejected-input.log").open("w", encoding="utf-8") as log:
-            rejected = subprocess.run(wrapper + arguments + [f"-Pstrata.performance.output={evidence / 'rejected'}"], cwd=root, stdout=log, stderr=subprocess.STDOUT)
+        rejected = invoke(arguments + [f"-Pstrata.performance.output={evidence / 'rejected'}"], evidence / "rejected-input.log", check=False)
         assert rejected.returncode != 0
         assert "Fixture external input differs from compiled resource" in (evidence / "rejected-input.log").read_text(encoding="utf-8")
         assert (evidence / "rejected").exists() is False

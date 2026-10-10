@@ -52,6 +52,7 @@ Use [build and verification](development/build.md) for local commands, [CI](deve
 Runtime contributors should also read [UI sessions](development/ui-sessions.md), [rendering](development/rendering.md), [performance](development/performance.md), and [font verification](development/font-verification.md).
 Use [render monitoring](development/render-monitoring.md) to verify actual update work and the [independent screen exercise](development/skill-forward-evaluation.md) to maintain the skill's authoring guidance.
 Use the [performance testkit](development/performance-testkit.md) to share measurement and evidence contracts with downstream applications.
+Use [controlled JVM preparation](development/build.md#controlled-jvm-preparation) to bind installed JDK identities without narrowing selected verification work.
 Follow [Minecraft adapter development](development/minecraft-versions.md) when changing version support.
 The generated [shared-source matrix](development/minecraft-shared-sources.md) shows which shared runtime sources each Minecraft version compiles.
 
