@@ -24,7 +24,9 @@ import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** Standard FlowRow, positive standard painted leaves, and one real publisher/terminal owner per complete operation. */
+/**
+ * Standard FlowRow, positive standard painted leaves, and one real publisher/terminal owner per complete operation.
+ */
 internal class FlowMeasurementFixture(
     private val topology: Topology,
     private val operation: Operation,
@@ -60,13 +62,17 @@ internal class FlowMeasurementFixture(
             Spacer(key = ElementKey(index), modifier = Modifier.Empty.size(topology.width(index), height).background(COLOR))
         }
 
-    /** Attaches and primes persistent sessions outside timing; Lifecycle performs this inside each invocation. */
+    /**
+     * Attaches and primes persistent sessions outside timing; Lifecycle performs this inside each invocation.
+     */
     fun open(): RuntimeUiFrame {
         session.attach()
         return session.frame(constraints())
     }
 
-    /** Publishes or resizes once and consumes one complete retained frame. */
+    /**
+     * Publishes or resizes once and consumes one complete retained frame.
+     */
     fun perform(): RuntimeUiFrame {
         when (operation) {
             Operation.ResizeFrame -> {
@@ -83,7 +89,9 @@ internal class FlowMeasurementFixture(
         return session.frame(constraints())
     }
 
-    /** Checks actual target phase work and full ordered geometry against a separate original retained session. */
+    /**
+     * Checks actual target phase work and full ordered geometry against a separate original retained session.
+     */
     fun verify() {
         check(original.not())
         FlowMeasurementFixture(topology, operation, original = true).use { reference ->
@@ -113,15 +121,17 @@ internal class FlowMeasurementFixture(
                         }
                     check(node.counts.getValue(UiRenderMetric.Measure) == measures)
                     check(node.counts.getValue(UiRenderMetric.Layout) == layouts)
-                    check(snapshot.activeSubscriptions == 1 && source.subscribed)
+                    check(snapshot.activeSubscriptions == 1)
+                    check(source.subscribed)
                     val rectangles = result.drawCommands.filterIsInstance<DrawCommand.FillRectangle>()
                     check(rectangles.size == topology.childCount)
                     check(rectangles.all { 0 < it.bounds.width && 0 < it.bounds.height && it.color == COLOR })
-                    check(result.drawCommands.size == rectangles.size && result.semantics.isEmpty())
+                    check(result.drawCommands.size == rectangles.size)
+                    check(result.semantics.isEmpty())
                     if (operation == Operation.IdleFrame) check(initial === result)
                     session.close()
                     check(source.subscribed.not())
-                    check(monitor.snapshot().activeSubscriptions == 0)
+                    check(runCatching { monitor.snapshot() }.exceptionOrNull() is IllegalStateException)
                     session.close()
                 }
             }
@@ -143,7 +153,9 @@ internal class FlowMeasurementFixture(
             maxHeight = if (resized) 181 else 180,
         )
 
-    /** Releases the real source callback and terminal owner, including failed or partially primed operations. */
+    /**
+     * Releases the real source callback and terminal owner, including failed or partially primed operations.
+     */
     override fun close() {
         session.close()
         check(source.subscribed.not())

@@ -2,9 +2,13 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
 
-/** Immutable complete generated metadata inventory, including all unchanged reactive controls. */
+/**
+ * Immutable complete generated metadata inventory, including all unchanged reactive controls.
+ */
 internal object FlowMeasurementCorpus {
-    /** Rejects missing, duplicated, changed or unexpected identities before either runtime is admitted. */
+    /**
+     * Rejects missing, duplicated, changed or unexpected identities before either runtime is admitted.
+     */
     fun verifyInventory() {
         val expected =
             checkNotNull(javaClass.getResourceAsStream("/flow-measurement-v1.jsonl"))

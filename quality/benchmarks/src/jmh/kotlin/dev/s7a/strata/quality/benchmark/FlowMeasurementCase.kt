@@ -1,6 +1,8 @@
 package dev.s7a.strata.quality.benchmark
 
-/** Exact 70 complete-operation cells from Issue 252; the single enum prevents invalid parameter products. */
+/**
+ * Exact 70 complete-operation cells from Issue 252; the single enum prevents invalid parameter products.
+ */
 public enum class FlowMeasurementCase(
     public val topology: Topology,
     public val operation: Operation,
@@ -77,13 +79,19 @@ public enum class FlowMeasurementCase(
     F070(Topology.Unbounded4096, Operation.LayoutOnlyFrame),
     ;
 
-    /** One complete retained frame or independent terminal lifetime. */
+    /**
+     * One complete retained frame or independent terminal lifetime.
+     */
     public enum class Operation { ResizeFrame, SourceFrame, Lifecycle, IdleFrame, LayoutOnlyFrame }
 
-    /** Greedy-row shapes fixed independently of candidate partition helpers. */
+    /**
+     * Greedy-row shapes fixed independently of candidate partition helpers.
+     */
     public enum class Shape { Empty, Single, OnePerRow, PackedFour, ExactBoundary, Unbounded }
 
-    /** Immutable admitted input rows; all gaps are one and finite cross maximum is 180. */
+    /**
+     * Immutable admitted input rows; all gaps are one and finite cross maximum is 180.
+     */
     public enum class Topology(
         public val childCount: Int,
         public val shape: Shape,
@@ -105,10 +113,14 @@ public enum class FlowMeasurementCase(
         Unbounded4096(4_096, Shape.Unbounded, Int.MAX_VALUE),
         ;
 
-        /** Source-independent positive child width, including exact-boundary cyclic inputs. */
+        /**
+         * Source-independent positive child width, including exact-boundary cyclic inputs.
+         */
         public fun width(index: Int): Int = if (shape == Shape.ExactBoundary && index % 2 == 0) 2 else 1
 
-        /** Immutable alternating main constraint for resize; the unbounded sentinel remains unchanged. */
+        /**
+         * Immutable alternating main constraint for resize; the unbounded sentinel remains unchanged.
+         */
         public val resizedMaximumWidth: Int
             get() =
                 when (shape) {

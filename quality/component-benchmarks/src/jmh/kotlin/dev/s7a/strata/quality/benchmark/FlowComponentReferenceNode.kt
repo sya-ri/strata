@@ -185,25 +185,45 @@ internal class FlowComponentReferenceNode(
         val height: Int,
     )
 
-    /** Active test-only parent data with the original measure invalidation on override changes. */
+    /**
+     * Active test-only parent data with the original measure invalidation on override changes.
+     */
     object AlignmentParentData {
-        /** Immutable row-local placement override. */
-        data class Data(val alignment: VerticalAlignment)
+        /**
+         * Immutable row-local placement override.
+         */
+        data class Data(
+            val alignment: VerticalAlignment,
+        )
 
-        /** Referential key kept independent of the standard parent's key. */
+        /**
+         * Referential key kept independent of the standard parent's key.
+         */
         val KEY = ParentDataKey(Data::class)
 
-        /** Immutable active modifier description. */
-        data class Element(val data: Data) : ModifierElement {
+        /**
+         * Immutable active modifier description.
+         */
+        data class Element(
+            val data: Data,
+        ) : ModifierElement {
             override val type: ModifierNodeType<*, *> get() = TYPE
         }
 
-        /** Owner-thread provider with no external resource or operation history. */
-        class Provider(private var data: Data) : ModifierNode(), ParentDataModifierNode<Data> {
+        /**
+         * Owner-thread provider with no external resource or operation history.
+         */
+        class Provider(
+            private var data: Data,
+        ) : ModifierNode(),
+            ParentDataModifierNode<Data> {
             override val parentDataKey: ParentDataKey<Data> get() = KEY
+
             override fun parentData(): Data = data
 
-            /** Applies original parent-data invalidation on a changed value. */
+            /**
+             * Applies original parent-data invalidation on a changed value.
+             */
             fun update(next: Data): DirtyMask {
                 val changed = data != next
                 data = next
@@ -211,13 +231,14 @@ internal class FlowComponentReferenceNode(
             }
         }
 
-        private val TYPE = ModifierNodeType(
-            elementClass = Element::class,
-            nodeClass = Provider::class,
-            validateLocal = { _ -> },
-            createNode = { element -> Provider(element.data) },
-            updateNode = { _, current, node -> node.update(current.data) },
-        )
+        private val TYPE =
+            ModifierNodeType(
+                elementClass = Element::class,
+                nodeClass = Provider::class,
+                validateLocal = { _ -> },
+                createNode = { element -> Provider(element.data) },
+                updateNode = { _, current, node -> node.update(current.data) },
+            )
     }
 
     /**

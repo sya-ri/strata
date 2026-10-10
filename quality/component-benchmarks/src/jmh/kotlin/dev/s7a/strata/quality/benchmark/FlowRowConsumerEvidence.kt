@@ -9,15 +9,20 @@ import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-/** All four actual shipped FlowRow consumers, independently paired with the frozen original retained node. */
+/**
+ * All four actual shipped FlowRow consumers, independently paired with the frozen original retained node.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object FlowRowConsumerEvidence {
-    /** Untimed full ordered command/source-pixel, semantics, frame and raster parity at all three densities. */
+    /**
+     * Untimed full ordered command/source-pixel, semantics, frame and raster parity at all three densities.
+     */
     fun verify() {
-        val original = ComponentRenderingBenchmark.ComponentSession().also {
-            it.component = ComponentWorkload.FlowRow
-            it.originalFlow = true
-        }
+        val original =
+            ComponentRenderingBenchmark.ComponentSession().also {
+                it.component = ComponentWorkload.FlowRow
+                it.originalFlow = true
+            }
         val candidate = ComponentRenderingBenchmark.ComponentSession().also { it.component = ComponentWorkload.FlowRow }
         try {
             original.setup()
@@ -33,11 +38,18 @@ internal object FlowRowConsumerEvidence {
             compare(original.lifecycle(), candidate.lifecycle())
             check(PerformanceJson.work(original.snapshot()) == PerformanceJson.work(candidate.snapshot()))
         } finally {
-            try { candidate.close() } finally { original.close() }
+            try {
+                candidate.close()
+            } finally {
+                original.close()
+            }
         }
     }
 
-    private fun compare(expected: RuntimeUiFrame, actual: RuntimeUiFrame) {
+    private fun compare(
+        expected: RuntimeUiFrame,
+        actual: RuntimeUiFrame,
+    ) {
         check(expected.size == actual.size && expected.semantics == actual.semantics)
         // The actual 320/321 viewport constrains the shipped size modifier; all four buttons fit in one row.
         val bounds = listOf(IntRect(18, 8, 90, 28), IntRect(94, 8, 150, 28), IntRect(154, 8, 246, 28), IntRect(250, 8, 302, 28))
@@ -49,16 +61,24 @@ internal object FlowRowConsumerEvidence {
                     check(right is DrawCommand.BlitImage && left.copy(image = right.image) == right)
                     images(left.image, right.image)
                 }
+
                 is DrawCommand.BlitImagePixels -> {
                     check(right is DrawCommand.BlitImagePixels && left.copy(image = right.image) == right)
                     images(left.image, right.image)
                 }
+
                 is DrawCommand.SampledImage -> {
                     check(right is DrawCommand.SampledImage && left.copy(image = right.image) == right)
                     images(left.image, right.image)
                 }
-                is DrawCommand.FillRectangle, is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> check(left == right)
-                is DrawCommand.Platform -> error("The shipped portable FlowRow must not emit opaque platform commands")
+
+                is DrawCommand.FillRectangle, is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
+                    check(left == right)
+                }
+
+                is DrawCommand.Platform -> {
+                    error("The shipped portable FlowRow must not emit opaque platform commands")
+                }
             }
         }
         for (density in listOf(1, 2, 3)) {
@@ -68,7 +88,10 @@ internal object FlowRowConsumerEvidence {
         }
     }
 
-    private fun images(expected: DrawImage, actual: DrawImage) {
+    private fun images(
+        expected: DrawImage,
+        actual: DrawImage,
+    ) {
         check(expected.size == actual.size && expected.copyArgb().contentEquals(actual.copyArgb()))
     }
 }

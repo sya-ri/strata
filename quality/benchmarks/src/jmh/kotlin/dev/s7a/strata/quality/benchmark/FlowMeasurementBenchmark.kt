@@ -11,24 +11,34 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 
-/** Complete FlowRow invalidations and unchanged controls through the ordinary generated selector and collector. */
+/**
+ * Complete FlowRow invalidations and unchanged controls through the ordinary generated selector and collector.
+ */
 @OptIn(InternalStrataRuntimeApi::class)
 public open class FlowMeasurementBenchmark {
-    /** Returns a full painted frame; Lifecycle includes declarations, attach, both frames and terminal close. */
+    /**
+     * Returns a full painted frame; Lifecycle includes declarations, attach, both frames and terminal close.
+     */
     @Benchmark
     public fun operation(state: Scene): RuntimeUiFrame = state.perform()
 
-    /** One real session per worker, with monitoring disabled in every new timed cell. */
+    /**
+     * One real session per worker, with monitoring disabled in every new timed cell.
+     */
     @State(Scope.Thread)
     public open class Scene {
-        /** One exact finite complete-operation cell without speculative parameter combinations. */
+        /**
+         * One exact finite complete-operation cell without speculative parameter combinations.
+         */
         @JvmField
         @Param
         public var flowCase: FlowMeasurementCase = FlowMeasurementCase.F001
 
         private var fixture: FlowMeasurementFixture? = null
 
-        /** Primes persistent owners outside timing; lifecycle creates its complete owner inside each operation. */
+        /**
+         * Primes persistent owners outside timing; lifecycle creates its complete owner inside each operation.
+         */
         @Setup(Level.Trial)
         public fun setup() {
             if (flowCase.operation != Operation.Lifecycle) {
@@ -36,7 +46,9 @@ public open class FlowMeasurementBenchmark {
             }
         }
 
-        /** Executes the unchanged complete boundary on the selected compiled cell. */
+        /**
+         * Executes the unchanged complete boundary on the selected compiled cell.
+         */
         public fun perform(): RuntimeUiFrame =
             if (flowCase.operation == Operation.Lifecycle) {
                 FlowMeasurementFixture(flowCase.topology, flowCase.operation).use {
@@ -47,7 +59,9 @@ public open class FlowMeasurementBenchmark {
                 checkNotNull(fixture).perform()
             }
 
-        /** Releases a persistent worker owner; one-shot lifecycles have already closed before return. */
+        /**
+         * Releases a persistent worker owner; one-shot lifecycles have already closed before return.
+         */
         @TearDown(Level.Trial)
         public fun close() {
             val previous = fixture
@@ -56,9 +70,13 @@ public open class FlowMeasurementBenchmark {
         }
     }
 
-    /** Untimed admission discovered by the existing generated fixture selection. */
+    /**
+     * Untimed admission discovered by the existing generated fixture selection.
+     */
     public companion object {
-        /** Checks all 88 cases/176 mode rows, actual new work/ordered output, and unchanged reactive ownership. */
+        /**
+         * Checks all 88 cases/176 mode rows, actual new work/ordered output, and unchanged reactive ownership.
+         */
         @JvmStatic
         public fun verifyWork() {
             FlowMeasurementCorpus.verifyInventory()

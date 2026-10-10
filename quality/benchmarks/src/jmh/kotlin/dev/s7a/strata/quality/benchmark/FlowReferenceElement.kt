@@ -8,7 +8,9 @@ import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.modifier.Modifier
 
-/** Public-SPI retained adapter for the complete frozen original FlowRow node. */
+/**
+ * Public-SPI retained adapter for the complete frozen original FlowRow node.
+ */
 internal class FlowReferenceElement(
     val horizontalSpacing: Int,
     val verticalSpacing: Int,

@@ -65,7 +65,9 @@ public open class ComponentRenderingBenchmark {
         @Param
         public var component: ComponentWorkload = ComponentWorkload.Row
 
-        /** Untimed original FlowRow adapter; the generated timed corpus always keeps its default false. */
+        /**
+         * Untimed original FlowRow adapter; the generated timed corpus always keeps its default false.
+         */
         internal var originalFlow: Boolean = false
 
         private lateinit var profile: MinecraftUiProfile
@@ -166,9 +168,13 @@ public open class ComponentRenderingBenchmark {
         }
     }
 
-    /** Untimed shipped consumer admission through the ordinary generated fixture selector. */
+    /**
+     * Untimed shipped consumer admission through the ordinary generated fixture selector.
+     */
     public companion object {
-        /** Checks all four unchanged shipped FlowRow operations against the complete frozen original node. */
+        /**
+         * Checks all four unchanged shipped FlowRow operations against the complete frozen original node.
+         */
         @JvmStatic
         public fun verifyWork(): Unit = FlowRowConsumerEvidence.verify()
     }
