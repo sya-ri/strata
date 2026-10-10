@@ -434,13 +434,21 @@ internal class EmptyRootOverlayTest {
      * Records phase and lifecycle attempts without deriving expectations from runtime output.
      */
     private sealed interface Event {
-        data class Paint(val tag: Tag) : Event
+        data class Paint(
+            val tag: Tag,
+        ) : Event
 
-        data class RootOverlay(val tag: Tag) : Event
+        data class RootOverlay(
+            val tag: Tag,
+        ) : Event
 
-        data class Detach(val tag: Tag) : Event
+        data class Detach(
+            val tag: Tag,
+        ) : Event
 
-        data class Dispose(val tag: Tag) : Event
+        data class Dispose(
+            val tag: Tag,
+        ) : Event
     }
 
     /**
