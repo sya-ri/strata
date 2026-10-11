@@ -71,6 +71,13 @@ gradle.projectsEvaluated {
                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)
                     }
                 }
+                rootProject.providers.gradleProperty("strata.performance.profilers").orNull?.let { requested ->
+                    val profilers = requested.split(',')
+                    check(profilers.isNotEmpty() && profilers.toSet().size == profilers.size)
+                    check(profilers.all { it.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+")) })
+                    val forwarded = args.orEmpty().windowed(2).filter { it[0].contentEquals("-prof") }.map { it[1] }.toSet()
+                    args(profilers.filter { it !in forwarded }.flatMap { listOf("-prof", it) })
+                }
                 val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
                 if (requested != null && project.configurations.findByName("jmhRuntimeClasspath") != null) {
                     val targets = Properties()

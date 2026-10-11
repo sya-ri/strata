@@ -31,7 +31,8 @@
       ],
       "workloads": [],
       "parameters": {},
-      "expected_cases": 1
+      "expected_cases": 1,
+      "profilers": []
     }
   ],
   "inputs": [],

@@ -530,12 +530,26 @@ The schema requires these fields:
 | `dependency_pins` | Optional frozen control JAR pins relative to the actual Gradle user home. |
 | `java_pins` | Optional fixed Windows `java.exe` and `release` pins for the `toolchain` and `launcher` roles. |
 
+A suite may additionally declare `profilers` as unique compiled JMH profiler class names.
+The driver passes these through `strata.performance.profilers` to the standard JMH `-prof` option only during collection; the existing GC and provenance profilers remain enabled.
+No fixture class name is registered in the build script or driver.
+Custom secondary metrics remain in the complete raw JMH results and the shared processor reports their independent-run medians, units and baseline/candidate deltas alongside its standard latency/allocation/GC metrics.
+Additional metrics require complete per-fork/per-iteration scalar data, the same metric inventory in every repetition and both sides, and unchanged units.
+An owner requiring an additional CPU metric must verify its actual availability across the whole selected matrix before accepting that corpus.
+Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
+Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
+
 Supported collector projects are `:quality:benchmarks`, `:quality:component-benchmarks` and `:quality:remote-benchmarks`.
 They use the existing `jmhHistorical`, `jmhComponents` and `jmhRemote` tasks and full `verifyHistoricalWorkloads`, `verifyComponentRenderingWork` and `verifyRemoteWorkloads` work gates.
 Generated fixture selection does not require a central benchmark registry or a fixture-specific build-script branch.
 Remote protocol and retained-session defaults remain separate existing scopes; a supplemental compiled remote fixture uses the same generated selection contract.
-Select native-free fixtures whose required toolchains fit the fixed catalog profile.
-Native/GPU/upload/input-latency/FPS acceptance is N/A in this CPU route; real game, browser and Paper/Velocity host evidence uses its own integration route.
+Select CPU fixtures whose required toolchains fit the fixed catalog profile.
+The existing component task also supplies OS-classified LWJGL/STB/FreeType native JARs, fixed font inputs and native access for CPU font-library controls.
+These controls do not require a graphics window or loaded game, but their actual DLL load, workload parity and release must pass in the job; a missing native library or required control fails the whole corpus.
+GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A in this CPU route; real game, browser and Paper/Velocity host evidence uses its own integration route.
+This manifest does not bind versioned Fabric adapter archives, Web/browser runs or Velocity main/probe and separately registered remote inventories.
+It also does not reproduce an unrestricted toolchain-discovery control or change its original RAM/metaspace conditions.
+Such owners retain their existing complete evidence routes; JVM success cannot substitute for those domains, and a changed measurement environment cannot be presented as the same comparison.
 
 Each source is reconstructed in a private checkout with `core.autocrlf=false`, staged patches and an exact `git write-tree` guard.
 The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
@@ -554,6 +568,10 @@ Thread CPU per operation is unavailable in the existing collector; Job CPU inclu
 Every Gradle invocation requires fresh available physical RAM of at least 4096 MiB, checked again inside its owning Windows Job immediately before Java.
 The suspended caller is assigned before it can start Gradle; descendants inherit a 3 GiB committed-memory limit, kill-on-close and no breakaway.
 One invocation has 1800 seconds of work and 30 seconds of cleanup, one Gradle worker and one test fork.
+The hosted job has a six-hour bound, with a reserve for terminal evidence and upload; these limits are fixed rather than exposed as manifest overrides.
+An entire suite and all twelve collections must fit those bounds.
+A selection whose required full iterations already exceed the invocation or attempt bound is unsupported; do not shorten its iterations, drop controls, select fewer cases or combine partial runs to make it fit.
+This single-runner route does not shard a corpus across distributed executors.
 The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB, probe 32/256 MiB, compiler/generator/test worker 512/256 MiB and JavaExec/JMH fork 768/384 MiB.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.

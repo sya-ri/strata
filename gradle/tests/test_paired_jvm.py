@@ -1,5 +1,6 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
 import copy
+import csv
 import importlib.util
 import json
 import os
@@ -51,6 +52,22 @@ class PairedJvmTest(unittest.TestCase):
         value["suites"][0].update(project=":quality:remote-benchmarks", benchmarks=[], workloads=["RemoteProtocolBenchmark.diff"])
         self.assertEqual(self.load(value), value)
 
+    def test_preserve_existing_dotted_input_labels_and_compiled_profiler_names(self):
+        value = copy.deepcopy(self.manifest)
+        value["inputs"][0]["label"] = "unihex-bounds-assets.zip"
+        value["suites"][0]["profilers"] = ["dev.s7a.strata.quality.benchmark.UnihexBoundsCpuProfiler"]
+        self.assertEqual(self.load(value), value)
+        for label in ("../assets.zip", "assets/file", "line\nfeed", "key=value", "key:value"):
+            changed = copy.deepcopy(value)
+            changed["inputs"][0]["label"] = label
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                self.load(changed)
+        for profilers in (["gc"], ["bad;command.Profiler"], ["example..Profiler"], ["example.Profiler", "example.Profiler"]):
+            changed = copy.deepcopy(value)
+            changed["suites"][0]["profilers"] = profilers
+            with self.subTest(profilers=profilers), self.assertRaises(ValueError):
+                self.load(changed)
+
     def test_reject_changed_missing_or_duplicate_inputs_and_selectors(self):
         mutations = [
             lambda value: value.update(repetitions=1),
@@ -85,6 +102,19 @@ class PairedJvmTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 PAIRED.read_json(path)
 
+    def test_table_preserves_processor_secondary_units_without_reaggregating(self):
+        comparison = {"cases": [{"benchmark": "example.Fixture.operation", "params": {}, "primary_unit": "us/op",
+                                  "metrics": {"primary_score_median": {"baseline": 1.0, "candidate": 2.0, "delta": 1.0, "candidate_to_baseline": 2.0}},
+                                  "secondary_metrics": {"unihex.processCpu": {"unit": "ns/op", "baseline": 10.0, "candidate": 6.0, "delta": -4.0, "candidate_to_baseline": 0.6}}}]}
+        PAIRED.table(self.root, [("complete", "avgt", comparison)], [])
+        with (self.root / "table.csv").open(encoding="utf-8", newline="") as source:
+            rows = list(csv.DictReader(source))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1]["metric"], "jmh_secondary.unihex.processCpu")
+        self.assertEqual(rows[1]["unit"], "ns/op")
+        self.assertEqual(rows[1]["delta"], "-4.0")
+        self.assertIn("ns/op", (self.root / "report.md").read_text(encoding="utf-8"))
+
     def test_preserve_failed_attempt_and_every_hidden_evidence_byte(self):
         output = self.root / "attempt"
         output.mkdir()
@@ -93,10 +123,14 @@ class PairedJvmTest(unittest.TestCase):
         intermediate = output / "workspaces"
         intermediate.mkdir()
         (intermediate / "cache.bin").write_bytes(b"cache")
+        retained = output / "raw/workspaces"
+        retained.mkdir(parents=True)
+        (retained / "receipt.json").write_bytes(b"complete suite evidence")
         archive = PAIRED.pack(output)
         with zipfile.ZipFile(archive) as saved:
-            self.assertEqual(set(saved.namelist()), {"attempt.json", ".hidden-provenance"})
+            self.assertEqual(set(saved.namelist()), {"attempt.json", ".hidden-provenance", "raw/workspaces/receipt.json"})
             self.assertEqual(saved.read(".hidden-provenance"), b"actual bytes")
+            self.assertEqual(saved.read("raw/workspaces/receipt.json"), b"complete suite evidence")
         with self.assertRaises(FileExistsError):
             PAIRED.write_new(output / "attempt.json", {"status": "passed"})
         with self.assertRaises(FileExistsError):

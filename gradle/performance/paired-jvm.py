@@ -102,7 +102,8 @@ def load_manifest(root, path):
     require(isinstance(data["suites"], list) and data["suites"], "No paired suites selected")
     names = set()
     for suite in data["suites"]:
-        require(set(suite) == {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}, "Invalid suite fields")
+        fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
+        require(set(suite) in (fields, fields | {"profilers"}), "Invalid suite fields")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -115,9 +116,12 @@ def load_manifest(root, path):
                         and len(values) == len(set(values)) and all(isinstance(item, str) and re.fullmatch(r"[A-Za-z0-9_+.-]+", item) for item in values)
                         for key, values in suite["parameters"].items()), "Invalid compiled parameter selection")
         require(isinstance(suite["expected_cases"], int) and not isinstance(suite["expected_cases"], bool) and 0 < suite["expected_cases"], "Declare the complete selected case count")
+        profilers = suite.get("profilers", [])
+        require(isinstance(profilers, list) and len(profilers) == len(set(profilers))
+                and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in profilers), "Use unique compiled JMH profiler class names")
     labels = set()
     for value in data["inputs"]:
-        require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_-]+", value["label"])
+        require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
         labels.add(value["label"])
         pin(root, value["pin"])
@@ -262,13 +266,17 @@ def table(output, comparisons, phases):
     rows = []
     for suite, mode, comparison in comparisons:
         for case in comparison["cases"]:
+            units = {"primary_score_median": case["primary_unit"], "allocation_bytes_per_operation_median": "B/op", "gc_count_median": "counts", "gc_time_ms_median_available": "ms"}
             for metric, value in case["metrics"].items():
                 rows.append({"suite": suite, "mode": mode, "benchmark": case["benchmark"], "params": json.dumps(case["params"], sort_keys=True),
-                             "metric": metric, **value})
+                             "metric": metric, "unit": units.get(metric, ""), **value})
+            for metric, value in case.get("secondary_metrics", {}).items():
+                rows.append({"suite": suite, "mode": mode, "benchmark": case["benchmark"], "params": json.dumps(case["params"], sort_keys=True),
+                             "metric": "jmh_secondary." + metric, **value})
             for metric, before in case.get("per_run_percentile_medians", {}).get("baseline", {}).items():
                 after = case["per_run_percentile_medians"]["candidate"][metric]
                 rows.append({"suite": suite, "mode": mode, "benchmark": case["benchmark"], "params": json.dumps(case["params"], sort_keys=True),
-                             "metric": f"sample_percentile_{metric}", "baseline": before, "candidate": after, "delta": after-before,
+                             "metric": f"sample_percentile_{metric}", "unit": case["primary_unit"], "baseline": before, "candidate": after, "delta": after-before,
                              "candidate_to_baseline": after / before if before != 0 else None})
     with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
         writer = csv.DictWriter(target, fieldnames=list(rows[0]))
@@ -276,14 +284,14 @@ def table(output, comparisons, phases):
         writer.writerows(rows)
     with (output / "report.md").open("x", encoding="utf-8") as target:
         target.write("# Paired JVM evidence\n\nAll values are from this attempt on the same hosted VM. Time is per declared fixture batch; no wall-time pass threshold is applied.\n\n")
-        target.write("| Suite/mode/case | Metric | Baseline | Candidate | Delta |\n| --- | --- | ---: | ---: | ---: |\n")
+        target.write("| Suite/mode/case | Metric | Unit | Baseline | Candidate | Delta |\n| --- | --- | --- | ---: | ---: | ---: |\n")
         for row in rows:
             values = ["unavailable" if row[key] is None else f"{row[key]:.9g}" for key in ("baseline", "candidate", "delta")]
-            target.write(f"| {row['suite']}/{row['mode']}/{row['benchmark']} {row['params']} | {row['metric']} | {' | '.join(values)} |\n")
+            target.write(f"| {row['suite']}/{row['mode']}/{row['benchmark']} {row['params']} | {row['metric']} | {row['unit']} | {' | '.join(values)} |\n")
         target.write("\n| Phase | Seconds |\n| --- | ---: |\n")
         for phase in phases:
             target.write(f"| {phase['name']} | {phase['elapsed_seconds']:.3f} |\n")
-        target.write("\nThread CPU per operation is unavailable in the existing collector. Job CPU includes preparation and descendants. Native/GPU/upload/input-latency/FPS acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
+        target.write("\nThread CPU per operation is unavailable in the existing collector. Job CPU includes preparation and descendants. Additional declared JMH profiler metrics remain in raw results. CPU native font-library controls require their full work gate and actual library load/release; GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
 
 
 def pack(output):
@@ -291,7 +299,7 @@ def pack(output):
     archive = output.parent / (output.name + ".zip")
     with zipfile.ZipFile(archive, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as target:
         for path in sorted(output.rglob("*")):
-            if path.is_file() and "workspaces" not in path.relative_to(output).parts:
+            if path.is_file() and path.relative_to(output).parts[0] != "workspaces":
                 require(not path.is_symlink(), "Evidence contains a symlink")
                 target.write(path, path.relative_to(output).as_posix())
     return archive
@@ -339,7 +347,7 @@ def run(root, manifest_path, output):
     output.mkdir(parents=True, exist_ok=False)
     started = time.monotonic()
     record = {"schema": "strata-paired-jvm-attempt-v1", "status": "failed", "run_id": os.environ.get("GITHUB_RUN_ID"),
-              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "sources": {}, "phases": [], "native_gpu": "N/A"}
+              "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "sources": {}, "phases": [], "gpu_window_loaded_game": "N/A"}
     helper = Path(__file__).with_name("invoke-windows.ps1")
     init = Path(__file__).with_name("bounded-jvm.init.gradle.kts")
     try:
@@ -461,6 +469,8 @@ def run(root, manifest_path, output):
                         destination = output / "raw" / suite["name"] / mode / side / f"run-{repetition}"
                         flags = [f"-Pstrata.performance.mode={mode}", f"-Pstrata.performance.repetition={repetition}",
                                  f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                        if suite.get("profilers"):
+                            flags.append("-Pstrata.performance.profilers=" + ",".join(suite["profilers"]))
                         if FixtureProject.decode(project) == FixtureProject.HISTORICAL:
                             flags += [f"-Pstrata.performance.historicalOutputRoot={destination.parent}"]
                             destination = destination.parent / (suite["name"] + ("-sample" if mode == "sample" else "")) / f"run-{repetition}"
@@ -498,7 +508,7 @@ def run(root, manifest_path, output):
         record["elapsed_seconds"] = time.monotonic()-started
         write_new(output / "attempt.json", record)
         write_new(output / "file-inventory.json", {path.relative_to(output).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
-                                                  for path in sorted(output.rglob("*")) if path.is_file() and "workspaces" not in path.relative_to(output).parts})
+                                                  for path in sorted(output.rglob("*")) if path.is_file() and path.relative_to(output).parts[0] != "workspaces"})
         archive = pack(output)
         print(f"Preserved {record['status']} whole attempt: {archive}", flush=True)
 
