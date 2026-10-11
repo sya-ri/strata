@@ -5,6 +5,7 @@ package dev.s7a.strata.runtime.headless
 import dev.s7a.strata.component.FlowRow
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.evaluateComponentTree
+import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
@@ -34,32 +35,45 @@ internal class HeadlessFlowMeasurementTest {
                             Spacer(modifier = Modifier.Empty.size(2, 1).background(colors[2]))
                         }
                     }
-                    val redTop = if (overridden || alignment == VerticalAlignment.Bottom) 1 else 0
-                    // The first row fills all five pixels; the last row has one two-pixel child and slack three.
-                    val blueLeft = when (arrangement) {
-                        Arrangement.Start, Arrangement.SpaceBetween -> 0
-                        Arrangement.Center, Arrangement.SpaceAround, Arrangement.SpaceEvenly -> 1
-                        Arrangement.End -> 3
-                    }
-                    for (density in listOf(1, 2, 3)) {
-                        val frame = renderHeadless(description, IntSize(5, 5), density)
-                        for (y in 0 until frame.image.size.height) {
-                            for (x in 0 until frame.image.size.width) {
-                                val logicalX = x / density
-                                val logicalY = y / density
-                                val expected = when {
-                                    logicalX < 2 && logicalY == redTop -> colors[0].value
-                                    3 <= logicalX && logicalY < 2 -> colors[1].value
-                                    blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
-                                    else -> 0
-                                }
-                                assertEquals(expected, frame.image.argbAt(x, y), "$arrangement/$alignment/$overridden/$density at ($x,$y)")
-                            }
-                        }
-                        assertEquals(true, frame.semantics.isEmpty())
-                    }
+                    assertFrames(description, colors, arrangement, alignment, overridden)
                 }
             }
+        }
+    }
+
+    /**
+     * Checks every density with the literal pixel oracle and then checks each complete frame's semantics.
+     */
+    private fun assertFrames(
+        description: Element,
+        colors: List<ArgbColor>,
+        arrangement: Arrangement,
+        alignment: VerticalAlignment,
+        overridden: Boolean,
+    ) {
+        val redTop = if (overridden || alignment == VerticalAlignment.Bottom) 1 else 0
+        // The first row fills all five pixels; the last row has one two-pixel child and slack three.
+        val blueLeft = when (arrangement) {
+            Arrangement.Start, Arrangement.SpaceBetween -> 0
+            Arrangement.Center, Arrangement.SpaceAround, Arrangement.SpaceEvenly -> 1
+            Arrangement.End -> 3
+        }
+        for (density in listOf(1, 2, 3)) {
+            val frame = renderHeadless(description, IntSize(5, 5), density)
+            for (y in 0 until frame.image.size.height) {
+                for (x in 0 until frame.image.size.width) {
+                    val logicalX = x / density
+                    val logicalY = y / density
+                    val expected = when {
+                        logicalX < 2 && logicalY == redTop -> colors[0].value
+                        3 <= logicalX && logicalY < 2 -> colors[1].value
+                        blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
+                        else -> 0
+                    }
+                    assertEquals(expected, frame.image.argbAt(x, y), "$arrangement/$alignment/$overridden/$density at ($x,$y)")
+                }
+            }
+            assertEquals(true, frame.semantics.isEmpty())
         }
     }
 }

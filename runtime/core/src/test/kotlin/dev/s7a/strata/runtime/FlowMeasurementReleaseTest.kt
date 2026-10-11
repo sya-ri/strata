@@ -62,7 +62,10 @@ internal class FlowMeasurementReleaseTest {
         }
     }
 
-    private fun owners(fails: Boolean, shrink: Boolean): Evidence {
+    private fun owners(
+        fails: Boolean,
+        shrink: Boolean,
+    ): Evidence {
         val source = ReleaseSource()
         val probe = TestProbe(failingMeasureTag = if (fails) TestProbe.ProbeId("0") else null)
         val session = createRuntimeUiSession {

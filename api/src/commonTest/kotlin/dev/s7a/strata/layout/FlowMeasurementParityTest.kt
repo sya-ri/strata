@@ -74,12 +74,13 @@ internal class FlowMeasurementParityTest {
         val successful = List(2) { FlowMeasurementScope(sizes) }
         compare(successful, Constraints.fixed(9, 180), 1, 1)
         val trace = successful.first().trace
-        val groups = listOf(
-            trace.filterIsInstance<FlowMeasurementTrace.Measure>(),
-            trace.filterIsInstance<FlowMeasurementTrace.SizeRead>(),
-            trace.filterIsInstance<FlowMeasurementTrace.AlignmentRead>(),
-            trace.filterIsInstance<FlowMeasurementTrace.Place>(),
-        )
+        val groups =
+            listOf(
+                trace.filterIsInstance<FlowMeasurementTrace.Measure>(),
+                trace.filterIsInstance<FlowMeasurementTrace.SizeRead>(),
+                trace.filterIsInstance<FlowMeasurementTrace.AlignmentRead>(),
+                trace.filterIsInstance<FlowMeasurementTrace.Place>(),
+            )
         for (events in groups) {
             for (event in listOf(events.first(), events[events.size / 2], events.last())) {
                 val cause = IllegalArgumentException("Original scope failure")
@@ -126,8 +127,12 @@ internal class FlowMeasurementParityTest {
             }
     }
 
-    private fun compare(sizes: List<IntSize>, bounds: Constraints, spacing: Int, verticalSpacing: Int): Throwable? =
-        compare(List(2) { FlowMeasurementScope(sizes) }, bounds, spacing, verticalSpacing)
+    private fun compare(
+        sizes: List<IntSize>,
+        bounds: Constraints,
+        spacing: Int,
+        verticalSpacing: Int,
+    ): Throwable? = compare(List(2) { FlowMeasurementScope(sizes) }, bounds, spacing, verticalSpacing)
 
     private fun compare(
         pair: List<FlowMeasurementScope>,
@@ -149,11 +154,15 @@ internal class FlowMeasurementParityTest {
         return actual.exceptionOrNull()
     }
 
-    private fun execute(measure: MeasureNode, layout: LayoutNode, scope: FlowMeasurementScope, bounds: Constraints): Result<IntSize> =
-        runCatching {
-            measure.measure(scope, bounds).also {
-                scope.size = it
-                layout.layout(scope)
-            }
+    private fun execute(
+        measure: MeasureNode,
+        layout: LayoutNode,
+        scope: FlowMeasurementScope,
+        bounds: Constraints,
+    ): Result<IntSize> = runCatching {
+        measure.measure(scope, bounds).also {
+            scope.size = it
+            layout.layout(scope)
         }
+    }
 }
