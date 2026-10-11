@@ -233,18 +233,20 @@ internal class TiledImageTileLayerElement(
                 plan = TilePlan.Empty
                 closeEntries(removeAllEntries())
             }
-            if (stateChanged) {
-                val previous = observer
-                observer = null
-                state = current.state
-                previous?.close()
-                if (active) observer = observeState(current.state)
-            }
+            if (stateChanged) replaceState(current.state)
             return when {
                 sizeChanged -> DirtyMask.of(DirtyPhase.Measure)
                 bindingChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
                 else -> DirtyMask.None
             }
+        }
+
+        private fun replaceState(next: PanZoomState) {
+            val previous = observer
+            observer = null
+            state = next
+            previous?.close()
+            if (active) observer = observeState(next)
         }
 
         private fun observeState(observed: PanZoomState): PanZoomStateObserver =
