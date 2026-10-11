@@ -23,6 +23,7 @@ set -euo pipefail
 printf '%s\n' "$@" >> gradle-arguments.txt
 echo invocation >> gradle-invocations.txt
 [[ "${FAIL_COMPILATION:-false}" != true ]] || exit 23
+[[ "${OMIT_INVENTORY:-false}" == true ]] || printf '{"owners":[]}\n' > build/qodana/declarations.json
 cat > strata.ipr <<'XML'
 <project>
   <component name="ProjectModuleManager">
@@ -39,13 +40,14 @@ SH
 
 bash "$fixture_root/gradle/prepare-qodana-idea-model.sh"
 [[ $(wc -l < "$fixture_root/gradle-invocations.txt") -eq 1 ]]
-for argument in --no-daemon --no-configure-on-demand \
+for argument in --console=plain --no-daemon --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true --system-prop=fabric.loom.ci=true \
   cleanIdea :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar \
-  :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses idea; do
+  :runtime:minecraft-fonts-lwjgl:jar classes gametestClasses idea qodanaDeclarationInventory; do
   [[ $(grep -Fxc -- "$argument" "$fixture_root/gradle-arguments.txt") -eq 1 ]]
 done
-[[ $(wc -l < "$fixture_root/gradle-arguments.txt") -eq 13 ]]
+[[ $(wc -l < "$fixture_root/gradle-arguments.txt") -eq 15 ]]
+[[ -s "$fixture_root/build/qodana/declarations.json" && -f "$fixture_root/build/qodana/gradle.log" ]]
 grep -F 'runtime-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'integration-minecraft-fabric-1.21.iml' "$fixture_root/.idea/modules.xml" >/dev/null
 grep -F 'jbr-25' "$fixture_root/.idea/misc.xml" >/dev/null
@@ -57,6 +59,12 @@ fi
 [[ $(wc -l < "$fixture_root/gradle-invocations.txt") -eq 1 ]]
 STRATA_QODANA_BOOTSTRAP=true bash "$fixture_root/gradle/prepare-qodana-idea-model.sh"
 [[ $(wc -l < "$fixture_root/gradle-invocations.txt") -eq 2 ]]
+
+if STRATA_QODANA_BOOTSTRAP=true OMIT_INVENTORY=true bash "$fixture_root/gradle/prepare-qodana-idea-model.sh" > "$fixture_root/missing-inventory.log" 2>&1; then
+  echo 'Qodana bootstrap accepted a stale or missing declaration inventory.' >&2
+  exit 1
+fi
+grep -Fq 'did not recreate the declaration-derived JMH inventory' "$fixture_root/missing-inventory.log"
 
 rm -f -- "$fixture_root/.idea/modules.xml" "$fixture_root/strata.ipr"
 status=0
