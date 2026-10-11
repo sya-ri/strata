@@ -101,7 +101,9 @@ public object RemotePatchIndexEvidence {
                     .contentEquals("getIdentity")
                     .not() ||
                 constructorRead.not()
-            ) return
+            ) {
+                return
+            }
             check(owner == event.thread().uniqueID())
             val identity = (event.returnValue() as LongValue).value()
             val field = if (identity in components) "index_component_identity_reads" else "validation_modifier_identity_reads"
