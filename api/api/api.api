@@ -1905,11 +1905,18 @@ public final class dev/s7a/strata/projection/BuiltinProjection : java/lang/Enum 
 }
 
 public final class dev/s7a/strata/projection/DeclarationProjection {
+	public static final field Companion Ldev/s7a/strata/projection/DeclarationProjection$Companion;
 	public fun <init> (Ldev/s7a/strata/projection/ProjectionType;Ljava/lang/Object;ZLkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Ldev/s7a/strata/projection/ProjectionType;Ljava/lang/Object;ZLkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun encode (Ldev/s7a/strata/projection/ProjectionScope;)Ldev/s7a/strata/projection/ProjectionValue;
+	public final fun getFixedValue ()Ldev/s7a/strata/projection/ProjectionValue;
 	public final fun getInputEnabled ()Z
 	public final fun getType ()Ldev/s7a/strata/projection/ProjectionType;
+}
+
+public final class dev/s7a/strata/projection/DeclarationProjection$Companion {
+	public final fun fixed (Ldev/s7a/strata/projection/ProjectionType;Ldev/s7a/strata/projection/ProjectionValue;Z)Ldev/s7a/strata/projection/DeclarationProjection;
+	public static synthetic fun fixed$default (Ldev/s7a/strata/projection/DeclarationProjection$Companion;Ldev/s7a/strata/projection/ProjectionType;Ldev/s7a/strata/projection/ProjectionValue;ZILjava/lang/Object;)Ldev/s7a/strata/projection/DeclarationProjection;
 }
 
 public final class dev/s7a/strata/projection/ProjectionAction {
