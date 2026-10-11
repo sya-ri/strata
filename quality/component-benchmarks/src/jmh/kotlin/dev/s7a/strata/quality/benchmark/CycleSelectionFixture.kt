@@ -151,9 +151,7 @@ internal class CycleSelectionFixture(
     @Suppress("CyclomaticComplexMethod", "LongMethod") // Every frozen independent transition is explicit in this shared complete-operation boundary.
     internal fun control(): RuntimeUiFrame {
         when (checkNotNull(control)) {
-            CycleSelectionControl.CleanRetainedFrame -> {
-                Unit
-            }
+            CycleSelectionControl.CleanRetainedFrame -> {}
 
             CycleSelectionControl.OneOptionUnchangedFrame -> {
                 return hover()
