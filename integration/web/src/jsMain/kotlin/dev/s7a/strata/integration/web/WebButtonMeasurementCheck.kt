@@ -608,7 +608,11 @@ internal object WebButtonMeasurementCheck {
             try {
                 mountWeb(definition, reference, size, referenceTheme).use { host ->
                     prepareReference(host, reference)
-                    check(properties(root) == properties(reference)) { "Button state differs from independent rendering: $phase" }
+                    val current = properties(root)
+                    val expected = properties(reference)
+                    check(current == expected) {
+                        "Button state differs from independent rendering: $phase; current=$current; reference=$expected; currentDeclarations=${inlineStyles(root)}; referenceDeclarations=${inlineStyles(reference)}"
+                    }
                     val styles = document.querySelectorAll("style")
                     val css = (0 until styles.length).joinToString("") { (checkNotNull(styles.item(it)) as HTMLElement).outerHTML }
                     val focus = (0 until root.children.length).firstOrNull { root.children.item(it) === document.activeElement }
@@ -627,6 +631,18 @@ internal object WebButtonMeasurementCheck {
             (0 until root.children.length).map { index ->
                 val element = element(root, index)
                 listOf(element.tagName, element.textContent, element.style.cssText, element.getAttribute("data-strata-theme"), (element as? HTMLButtonElement)?.type, (element as? HTMLButtonElement)?.disabled)
+            }
+
+        /**
+         * Captures every inline declaration value and priority for mismatch diagnostics.
+         */
+        private fun inlineStyles(root: HTMLElement): List<Map<String, Pair<String, String>>> =
+            (0 until root.children.length).map { child ->
+                val style = element(root, child).style
+                (0 until style.length).associate { index ->
+                    val name = style.item(index)
+                    name to (style.getPropertyValue(name) to style.getPropertyPriority(name))
+                }
             }
 
         /**
