@@ -101,6 +101,7 @@ The following distinctions describe implementation ownership, not cross-version 
 Versioned `runtime/minecraft-fabric-<version>` and `integration/minecraft-fabric-<version>` directories own Gradle projects, distributions, and exact-target verification.
 Shared runtime sources live under `runtime/shared/minecraft-fabric/`; matching verification sources live under `integration/shared/minecraft-fabric/`.
 Game-independent font comparison sources live under `integration/shared/font-parity/`.
+The independent scalar image-background reference lives under `integration/shared/image-backgrounds/` and is compiled as a complete test source root by portable JVM tests, frozen benchmarks, and loaded-client fixtures.
 These shared directories are source roots, not Gradle projects or published libraries.
 The [generated shared-source matrix](minecraft-shared-sources.md) shows the runtime roots compiled by each target, with purpose-specific Canvas and input tables comparing alternative adapters separately from the roots used together.
 

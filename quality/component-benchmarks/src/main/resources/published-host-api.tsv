@@ -5180,6 +5180,8 @@
 :velocity-api@Velocity	:velocity-api@Velocity	jvm:dev/s7a/strata/velocity/event/StrataUiPresentationChangedEvent#public final fun getPrevious ()Ldev/s7a/strata/ui/UiPresentation;
 :velocity-api@Velocity	:velocity-api@Velocity	jvm:dev/s7a/strata/velocity/event/StrataUiPresentationChangedEvent#public final fun getSession ()Ldev/s7a/strata/ui/UiSession;
 :velocity-api@Velocity	:velocity-api@Velocity	jvm:dev/s7a/strata/velocity/event/StrataUiPresentationChangedEvent#public fun <init> (Lcom/velocitypowered/api/proxy/Player;Ljava/lang/Object;JLdev/s7a/strata/ui/UiSession;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiPresentation;Ldev/s7a/strata/ui/UiCategory;)V
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/PaintPipelineKt#public final class dev/s7a/strata/runtime/PaintPipelineKt {
+:runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/PaintPipelineKt#public static final synthetic fun paintSingleTexelImageTiles (Ldev/s7a/strata/render/PaintScope;Ldev/s7a/strata/render/DrawImage;)Z
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState#public abstract interface class dev/s7a/strata/runtime/TreeState {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState$Active#public final class dev/s7a/strata/runtime/TreeState$Active : dev/s7a/strata/runtime/TreeState {
 :runtime:core@Jvm	:runtime:core@Jvm	jvm:dev/s7a/strata/runtime/TreeState$Active#public fun equals (Ljava/lang/Object;)Z
@@ -5839,6 +5841,7 @@
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.state|{}state[0]#final val state
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree.update|update(dev.s7a.strata.element.Element){}[0]#final fun update(dev.s7a.strata.element/Element)
 :runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/UiTree|null[0]#final class dev.s7a.strata.runtime/UiTree : dev.s7a.strata.runtime.spi/RuntimeUiDiagnosticsOwner, kotlin/AutoCloseable {
+:runtime:core@Web	:runtime:core@Web	klib:dev.s7a.strata.runtime/paintSingleTexelImageTiles|paintSingleTexelImageTiles(dev.s7a.strata.render.PaintScope;dev.s7a.strata.render.DrawImage){}[0]#final fun dev.s7a.strata.runtime/paintSingleTexelImageTiles(dev.s7a.strata.render/PaintScope, dev.s7a.strata.render/DrawImage): kotlin/Boolean
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final class dev/s7a/strata/runtime/remote/RemoteAddress {
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final fun component1 ()Ldev/s7a/strata/runtime/remote/RemoteEndpoint;
 :runtime:remote@Jvm	:runtime:remote@Jvm	jvm:dev/s7a/strata/runtime/remote/RemoteAddress#public final fun component2 ()Ljava/util/UUID;

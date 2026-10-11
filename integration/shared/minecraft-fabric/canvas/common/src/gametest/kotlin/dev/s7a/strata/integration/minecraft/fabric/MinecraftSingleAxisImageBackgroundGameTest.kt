@@ -8,7 +8,6 @@ import dev.s7a.strata.component.ScrollArea
 import dev.s7a.strata.component.ScrollState
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.Stack
-import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.Insets
 import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
@@ -36,7 +35,7 @@ import javax.imageio.ImageIO
 /**
  * Checks real loaded presentation of all singleton source axes and unchanged controls in one bounded mosaic.
  * Each 80 by 40 panel has independent original scalar/nearest/ARGB pixels; no candidate rasterizer supplies the oracle.
- * Source replacement, fractional fit/scroll, cropped edges and complete GUI densities one through four remain visible.
+ * Source replacement, fractional fit and scroll requests, profile integer placement, cropped edges and GUI densities one through four remain visible.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 internal object MinecraftSingleAxisImageBackgroundGameTest {
@@ -60,7 +59,7 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
         context.waitFor { released() }
         context.configureViewport(physical, scale)
         val logical = IntSize(physical.width / scale, physical.height / scale)
-        val scene = context.onClient { Scene() }
+        val scene = context.onClient { Scene(ScrollImages(profile)) }
         val screen = context.onClient { createMinecraftScreen(scene.definition(), profile, parent = null) }
         var failure: Throwable? = null
         try {
@@ -94,7 +93,7 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
             }
             Files.writeString(
                 context.outputDirectory.resolve("single-axis-background-$scale.properties"),
-                "cases=16\npanelWidth=80\npanelHeight=40\nguiScale=$scale\nsourceRevisions=2\noriginalScalarPixelOracle=true\nfractionalFitAndScroll=true\ntolerance=0\nresult=passed\n",
+                "cases=16\npanelWidth=80\npanelHeight=40\nguiScale=$scale\nsourceRevisions=2\noriginalScalarPixelOracle=true\nfractionalFit=true\nfractionalScrollRequest=10.25\nprofileChildPlacement=integer\ntolerance=0\nresult=passed\n",
             )
         } catch (caught: Throwable) {
             failure = caught
@@ -114,7 +113,7 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
     /**
      * Pure client-owned immutable image pairs and one current revision; no native texture or frame history is retained.
      */
-    private class Scene {
+    private class Scene(private val scrollImages: ScrollImages) {
         val revision = mutableStateOf(0)
         val scroll = ScrollState()
         private val images = Case.entries.associateWith { case -> List(2) { phase -> image(case, phase) } }
@@ -172,6 +171,10 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
                 Case.entries.forEachIndexed { index, case ->
                     val offset = IntOffset(index % 4 * panel.width, index / 4 * panel.height)
                     val image = images.getValue(case)[revision.value]
+                    if (case.mapping == Mapping.Scroll) {
+                        addAll(originalScroll(image, offset))
+                        return@forEachIndexed
+                    }
                     add(DrawCommand.PushClip(IntRect(offset.x, offset.y, offset.x + panel.width, offset.y + panel.height)))
                     val commands =
                         when (case.mapping) {
@@ -179,13 +182,7 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
                                 MinecraftTileBackgroundReference.fitted(image, IntSize(63, 31), panel, offset)
                             }
 
-                            Mapping.Scroll -> {
-                                MinecraftTileBackgroundReference.scalar(image, IntSize(panel.width, 100)).map { blit ->
-                                    val source = blit.source
-                                    val destination = blit.destination
-                                    DrawCommand.SampledImage(image, FloatRect(source.left.toFloat(), source.top.toFloat(), source.right.toFloat(), source.bottom.toFloat()), FloatRect((offset.x + destination.left).toFloat(), (offset.y + destination.top - 10.25).toFloat(), (offset.x + destination.right).toFloat(), (offset.y + destination.bottom - 10.25).toFloat()), ArgbColor(-1), 0f)
-                                }
-                            }
+                            Mapping.Scroll -> error("Scroll commands include their profile decoration and child clip separately")
 
                             Mapping.Stretch -> {
                                 listOf(DrawCommand.BlitImage(image, IntRect(0, 0, image.size.width, image.size.height), IntRect(0, 0, case.extent.width, case.extent.height)))
@@ -214,6 +211,37 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
                 }
             }
 
+        /**
+         * Models the profile-backed ScrollArea independently: doubled phase tiles, integer child offset, child-only clip and outside separators.
+         * Assets come from the immutable input profile; no candidate node, collector, command frame or rasterizer supplies expected pixels.
+         */
+        private fun originalScroll(image: DrawImage, offset: IntOffset): List<DrawCommand> =
+            buildList {
+                val scrollOffset = scroll.metrics.offset.toInt()
+                val backdrop =
+                    createDrawImage(
+                        panel,
+                        IntArray(panel.width * panel.height) { index ->
+                            val x = (index % panel.width + panel.width) % (scrollImages.background.size.width * 2) / 2
+                            val y = (index / panel.width + panel.height + scrollOffset) % (scrollImages.background.size.height * 2) / 2
+                            scrollImages.background.argbAt(x, y)
+                        },
+                    )
+                add(DrawCommand.BlitImage(backdrop, IntRect(0, 0, panel.width, panel.height), IntRect(offset.x, offset.y, offset.x + panel.width, offset.y + panel.height)))
+                add(DrawCommand.PushClip(IntRect(offset.x, offset.y, offset.x + panel.width, offset.y + panel.height)))
+                for (blit in MinecraftTileBackgroundReference.scalar(image, IntSize(panel.width, 100))) {
+                    val destination = blit.destination
+                    add(blit.copy(destination = IntRect(offset.x + destination.left, offset.y + destination.top + 2 - scrollOffset, offset.x + destination.right, offset.y + destination.bottom + 2 - scrollOffset)))
+                }
+                add(DrawCommand.PopClip)
+                for ((separator, top) in listOf(scrollImages.header to offset.y - 2, scrollImages.footer to offset.y + panel.height)) {
+                    for (blit in MinecraftTileBackgroundReference.scalar(separator, IntSize(panel.width, 2))) {
+                        val destination = blit.destination
+                        add(blit.copy(destination = IntRect(offset.x + destination.left, top + destination.top, offset.x + destination.right, top + destination.bottom)))
+                    }
+                }
+            }
+
         private fun nineSlice(image: DrawImage): List<DrawCommand> {
             val xs = listOf(0, 1, panel.width - 1, panel.width)
             val ys = listOf(0, 1, panel.height - 1, panel.height)
@@ -235,6 +263,21 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
                     if (case == Case.EqualMulti) 0x80112233.toInt() xor (phase * 0x00070707) else (alphas[(index + phase + 3) % alphas.size] shl 24) or ((index * 73471 + phase * 7919 + 0x123456) and 0xFFFFFF)
                 },
             )
+        }
+    }
+
+    /**
+     * Reads only the three immutable profile input images at the fixture boundary, without widening the production SPI.
+     * Reflection is limited to the established profile getters; missing assets or dimensions fail this loaded fixture.
+     */
+    private class ScrollImages(profile: MinecraftUiProfile) {
+        val background = image(profile, "getListBackground", IntSize(16, 16))
+        val header = image(profile, "getListHeaderSeparator", IntSize(32, 2))
+        val footer = image(profile, "getListFooterSeparator", IntSize(32, 2))
+
+        private fun image(profile: MinecraftUiProfile, getter: String, expectedSize: IntSize): DrawImage {
+            val method = profile.javaClass.getDeclaredMethod(getter).apply { check(trySetAccessible()) }
+            return (method.invoke(profile) as DrawImage).also { require(it.size == expectedSize) }
         }
     }
 

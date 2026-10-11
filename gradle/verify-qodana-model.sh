@@ -447,6 +447,9 @@ classify_target_source_path() {
   elif [[ "$repository_relative_path" == 'examples/paper/src/main/kotlin' ]]; then
     target_source_allowed_owners='integration,paper-example'
     target_source_root='examples/paper'
+  elif [[ "$repository_relative_path" == 'integration/shared/image-backgrounds/src/test/kotlin' ]]; then
+    target_source_allowed_owners='integration,minecraft'
+    target_source_root='integration/shared/image-backgrounds'
   elif [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' ]]; then
     target_source_allowed_owners='integration'
     target_source_root='quality/component-benchmarks'
@@ -769,6 +772,11 @@ for version in "${expected_versions[@]}"; do
     "integration-minecraft-fabric-$version.iml"
 done
 record_expected_target_source_roots \
+  'minecraft' \
+  '-' \
+  'runtime/minecraft' \
+  'minecraft.iml'
+record_expected_target_source_roots \
   'docs' \
   '-' \
   'integration/docs' \
@@ -837,6 +845,30 @@ for version in "${expected_versions[@]}"; do
     echo "The generated integration IDEA module must link exactly one canonical component TestSource: version=$version source=$integration_component_source_count total=$integration_component_root_count" >&2
     exit 1
   fi
+done
+
+image_background_reference_path='file://$PROJECT_DIR$/integration/shared/image-backgrounds/src/test/kotlin'
+for reference_owner in minecraft integration; do
+  reference_versions=('-')
+  if [[ "$reference_owner" == 'integration' ]]; then
+    reference_versions=("${expected_versions[@]}")
+  fi
+  for reference_version in "${reference_versions[@]}"; do
+    reference_source_count=0
+    reference_root_count=0
+    while IFS=$'\t' read -r expected_owner expected_version expected_type expected_path; do
+      if [[ "$expected_owner" == "$reference_owner" && "$expected_version" == "$reference_version" && "$expected_path" == "$image_background_reference_path" ]]; then
+        ((reference_root_count += 1))
+        if [[ "$expected_type" == 'TestSource' ]]; then
+          ((reference_source_count += 1))
+        fi
+      fi
+    done < "$expected_target_source_roots"
+    if [[ "$reference_source_count" -ne 1 || "$reference_root_count" -ne 1 ]]; then
+      echo "The generated IDEA module must link exactly one independent image-background TestSource: owner=$reference_owner version=$reference_version source=$reference_source_count total=$reference_root_count" >&2
+      exit 1
+    fi
+  done
 done
 
 font_backend_source_count=0
@@ -954,11 +986,6 @@ while IFS=$'\t' read -r module_name source_type source_url; do
     exit 1
   }
   classify_target_source_path "$repository_relative_path"
-  # The benchmark owner's own source remains outside native-target parity; foreign links do not.
-  if [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' && \
-    "$module_name" =~ ^(component-benchmarks|quality-component-benchmarks|strata\.quality\.component-benchmarks)$ ]]; then
-    target_source_allowed_owners=''
-  fi
   if $target_source_uses_target_namespace && [[ -z "$target_source_allowed_owners" ]]; then
     echo "Qodana project modules contain an unapproved target-namespace source root: $source_url" >&2
     exit 1
@@ -984,7 +1011,20 @@ target_source_mismatches=$(
     --arg docsPattern "$docs_pattern" \
     --arg fontPattern "$font_backend_pattern" \
     --rawfile expectedTargetSources "$expected_target_source_roots" \
-    --rawfile actualSources "$model_source_roots" '
+    --rawfile actualSources "$model_source_roots" \
+    --slurpfile declarations "$project_root/build/qodana/declarations.json" '
+      def declaredJmhSource($source):
+        any($declarations[0].owners[];
+          .module == $source.module
+          and any(.roots[];
+            .exists and .generated == false
+            and .kind == $source.type
+            and ("file://$PROJECT_DIR$/" + .path) == $source.path
+          )
+        );
+      def rootCounts:
+        group_by([.owner, .version, .type, .path])
+        | map(.[0] + {count: length});
       def expectedTargetSources:
         $expectedTargetSources
         | split("\n")
@@ -1017,6 +1057,8 @@ target_source_mismatches=$(
             owner: "integration",
             version: (.name | sub("^(strata\\.integration\\.minecraft-fabric|integration-minecraft-fabric)-"; "") | gsub("_"; "."))
           }
+        elif .name | test("^(minecraft|runtime-minecraft|strata\\.runtime\\.minecraft)$") then
+          {owner: "minecraft", version: "-"}
         elif .name | test($docsPattern) then
           {owner: "docs", version: "-"}
         elif .name | test($fontPattern) then
@@ -1035,7 +1077,11 @@ target_source_mismatches=$(
             actualSources[]
             | . as $source
             | ({name: $source.module} | targetIdentity($runtimePattern; $integrationPattern; $docsPattern; $fontPattern)) as $identity
-            | select($identity.owner != "unexpected-module" or ($source.classifiedOwners | length) != 0)
+            # Keep native consumers exact; the final declaration verifier checks every JMH owner.
+            | select(
+                $identity.owner != "unexpected-module"
+                or (($source.classifiedOwners | length) != 0 and (declaredJmhSource($source) | not))
+              )
             | {
                 owner: $identity.owner,
                 version: $identity.version,
@@ -1048,7 +1094,10 @@ target_source_mismatches=$(
       | if $actual == $expected then
           []
         else
-          [{expected: $expected, actual: $actual}]
+          [{
+            missing: (($expected | rootCounts) - ($actual | rootCounts)),
+            unexpected: (($actual | rootCounts) - ($expected | rootCounts))
+          }]
         end
     ' "$model"
 )
@@ -1058,3 +1107,5 @@ else
   echo "Qodana project modules do not exactly match their existing owned and declared linked target source roots: $target_source_mismatches" >&2
   exit 1
 fi
+
+"$qodana_python" "$script_root/verify-qodana-declarations.py" "$project_root" "$model" "$qodana_container_project_root" "$(dirname "$input_model")/Java.json"

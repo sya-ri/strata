@@ -10,11 +10,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-// The same game-independent scalar/pixel oracle is compiled into JVM, frozen benchmark and loaded-client fixtures.
-val tileBackgroundReference = objects.sourceDirectorySet("tileBackgroundReference", "Independent original tiling and pixel reference").apply {
-    srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin"))
-    include("**/MinecraftTileBackgroundReference.kt")
-}
+// The complete game-independent reference root is shared with frozen benchmark and loaded-client fixtures.
 extensions.configure<KotlinJvmProjectExtension> {
-    sourceSets.named("test") { kotlin.source(tileBackgroundReference) }
+    sourceSets.named("test") { kotlin.srcDir(rootProject.file("integration/shared/image-backgrounds/src/test/kotlin")) }
 }

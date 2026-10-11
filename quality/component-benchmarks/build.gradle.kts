@@ -63,14 +63,10 @@ val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped
     // These complete native screens are not used by the portable component definitions.
     exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
 }
-val tileBackgroundReference = objects.sourceDirectorySet("tileBackgroundReference", "Independent original tiling and pixel reference").apply {
-    srcDir(rootProject.file("integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin"))
-    include("**/MinecraftTileBackgroundReference.kt")
-}
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("jmh") {
         kotlin.source(showcaseSources)
-        kotlin.source(tileBackgroundReference)
+        kotlin.srcDir(rootProject.file("integration/shared/image-backgrounds/src/test/kotlin"))
     }
 }
 
