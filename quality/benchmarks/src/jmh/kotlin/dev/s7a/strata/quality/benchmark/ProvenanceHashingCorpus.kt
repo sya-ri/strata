@@ -48,8 +48,12 @@ internal object ProvenanceHashingCorpus {
     /**
      * One fixed corpus identity; directory and archive operations remain independent rows.
      */
-    internal data class Case(val mode: Mode, val entries: Int, val shape: Shape) {
-        internal val id: String = "${mode.name}-${entries}-${shape.name}"
+    internal data class Case(
+        val mode: Mode,
+        val entries: Int,
+        val shape: Shape,
+    ) {
+        internal val id: String = "${mode.name}-$entries-${shape.name}"
     }
 
     /**
@@ -87,24 +91,29 @@ internal object ProvenanceHashingCorpus {
         try {
             val rows = JsonArray()
             cases.forEach { rows.add(create(root, it, templates)) }
-            val manifest = JsonObject().apply {
-                addProperty("contract", "strata-provenance-corpus-v1")
-                addProperty("measured_rows", 55)
-                addProperty("rejected_controls", 3)
-                add("cases", rows)
-            }
+            val manifest =
+                JsonObject().apply {
+                    addProperty("contract", "strata-provenance-corpus-v1")
+                    addProperty("measured_rows", 55)
+                    addProperty("rejected_controls", 3)
+                    add("cases", rows)
+                }
             Files.writeString(root.resolve("manifest.json"), GsonBuilder().setPrettyPrinting().create().toJson(manifest))
         } finally {
             templates.clear()
         }
     }
 
-    private fun create(root: Path, case: Case, templates: MutableMap<Int, ByteArray>): JsonObject {
+    private fun create(
+        root: Path,
+        case: Case,
+        templates: MutableMap<Int, ByteArray>,
+    ): JsonObject {
         val directory = root.resolve(case.id)
         Files.createDirectories(directory)
         val classMode = case.mode in setOf(Mode.LoadedClassTree, Mode.PreservedClassTree)
         repeat(case.entries) { index ->
-            val classEntry = classMode || case.mode == Mode.EntryArchive && index == 0
+            val classEntry = classMode || (case.mode == Mode.EntryArchive && index == 0)
             val size = length(case.shape, index, classEntry)
             val name = if (classEntry) "fixture/FixtureProbe${index.toString().padStart(5, '0')}.class" else "assets/entry-${index.toString().padStart(5, '0')}.bin"
             val content = if (classEntry) rename(template(root, size, templates), index) else ByteArray(size) { (it * 31 + index).toByte() }
@@ -119,17 +128,19 @@ internal object ProvenanceHashingCorpus {
         }
         val archiveMode = case.mode in setOf(Mode.EntryArchive, Mode.LoadedClassTree, Mode.PreservedClassTree, Mode.RejectedLoadedTree, Mode.RejectedPreservedTree)
         val selected = entries(directory).filter { case.mode != Mode.ResourceSelection || it.startsWith("assets/") || it.startsWith("data/") }
-        val input = when {
-            archiveMode -> archive(directory, root.resolve("${case.id}.jar"))
-            case.mode == Mode.SingleFile -> directory.resolve(selected.single())
-            else -> directory
-        }
-        val hash = when (case.mode) {
-            Mode.SingleFile -> hash(directory.resolve(selected.single()))
-            Mode.LoadedClassTree, Mode.PreservedClassTree -> classTree(directory, selected)
-            Mode.EmptyDirectory, Mode.RejectedLoadedTree, Mode.RejectedPreservedTree -> null
-            else -> framed(directory, selected)
-        }
+        val input =
+            when {
+                archiveMode -> archive(directory, root.resolve("${case.id}.jar"))
+                case.mode == Mode.SingleFile -> directory.resolve(selected.single())
+                else -> directory
+            }
+        val hash =
+            when (case.mode) {
+                Mode.SingleFile -> hash(directory.resolve(selected.single()))
+                Mode.LoadedClassTree, Mode.PreservedClassTree -> classTree(directory, selected)
+                Mode.EmptyDirectory, Mode.RejectedLoadedTree, Mode.RejectedPreservedTree -> null
+                else -> framed(directory, selected)
+            }
         return JsonObject().apply {
             addProperty("mode", case.mode.name)
             addProperty("entries", case.entries)
@@ -143,7 +154,11 @@ internal object ProvenanceHashingCorpus {
         }
     }
 
-    private fun length(shape: Shape, index: Int, classEntry: Boolean): Int =
+    private fun length(
+        shape: Shape,
+        index: Int,
+        classEntry: Boolean,
+    ): Int =
         when (shape) {
             Shape.Short -> if (classEntry) 0 else listOf(0, 1, 7)[index % 3]
             Shape.Mixed -> if (classEntry) listOf(0, 8191, 8192, 8193, 32769)[index % 5] else listOf(0, 1, 7, 8191, 8192, 8193, 32769)[index % 7]
@@ -152,12 +167,17 @@ internal object ProvenanceHashingCorpus {
             Shape.Empty -> error("Empty inputs contain no entries")
         }
 
-    private fun template(root: Path, target: Int, templates: MutableMap<Int, ByteArray>): ByteArray =
+    private fun template(
+        root: Path,
+        target: Int,
+        templates: MutableMap<Int, ByteArray>,
+    ): ByteArray =
         templates.getOrPut(target) {
             val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler()) { "Provenance construction requires a full JDK" }
             val directory = root.resolve("compiled-template-$target")
             Files.createDirectories(directory)
             val source = directory.resolve("$markerName.java")
+
             fun compile(padding: Int): ByteArray {
                 Files.writeString(source, "package fixture; public final class $markerName { public static final String PAD = \"${"a".repeat(padding)}\"; }")
                 check(compiler.run(null, null, null, "-d", directory.toString(), source.toString()) == 0) { "Fixture compilation failed" }
@@ -167,7 +187,10 @@ internal object ProvenanceHashingCorpus {
             if (target == 0) minimal else compile(target - minimal.size).also { check(it.size == target) }
         }
 
-    private fun rename(template: ByteArray, index: Int): ByteArray {
+    private fun rename(
+        template: ByteArray,
+        index: Int,
+    ): ByteArray {
         val from = markerName.toByteArray(Charsets.US_ASCII)
         val to = "FixtureProbe${index.toString().padStart(5, '0')}".toByteArray(Charsets.US_ASCII)
         check(from.size == to.size)
@@ -185,10 +208,17 @@ internal object ProvenanceHashingCorpus {
 
     private fun entries(directory: Path): List<String> =
         Files.walk(directory).use { files ->
-            files.filter(Files::isRegularFile).map { directory.relativize(it).joinToString("/") }.sorted().toList()
+            files
+                .filter(Files::isRegularFile)
+                .map { directory.relativize(it).joinToString("/") }
+                .sorted()
+                .toList()
         }
 
-    private fun archive(directory: Path, path: Path): Path {
+    private fun archive(
+        directory: Path,
+        path: Path,
+    ): Path {
         JarOutputStream(Files.newOutputStream(path)).use { output ->
             entries(directory).forEach { name ->
                 output.putNextEntry(JarEntry(name).apply { time = 0 })
@@ -199,7 +229,10 @@ internal object ProvenanceHashingCorpus {
         return path
     }
 
-    private fun framed(directory: Path, entries: List<String>): String {
+    private fun framed(
+        directory: Path,
+        entries: List<String>,
+    ): String {
         val digest = MessageDigest.getInstance("SHA-256")
         entries.forEach { name ->
             val encoded = name.toByteArray(Charsets.UTF_8)
@@ -212,7 +245,10 @@ internal object ProvenanceHashingCorpus {
         return HexFormat.of().formatHex(digest.digest())
     }
 
-    private fun classTree(directory: Path, entries: List<String>): String {
+    private fun classTree(
+        directory: Path,
+        entries: List<String>,
+    ): String {
         val digest = MessageDigest.getInstance("SHA-256")
         entries.forEach { name -> digest.update("$name=${hash(directory.resolve(name))}\n".toByteArray(Charsets.UTF_8)) }
         return HexFormat.of().formatHex(digest.digest())

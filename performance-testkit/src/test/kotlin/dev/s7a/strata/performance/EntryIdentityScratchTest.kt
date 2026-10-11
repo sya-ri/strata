@@ -161,9 +161,10 @@ internal class EntryIdentityScratchTest {
     @Test
     fun anEmptyTraversalKeepsTheGoldenWithoutOpeningAStream() {
         val expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        assertEquals(expected, ArtifactIdentity.tree(directory))
+        assertFailsWith<IllegalArgumentException> { ArtifactIdentity.tree(directory) }
         assertEquals(expected, hash(emptyList()) { error("An empty traversal must not open a stream") })
     }
+
     private fun mixedEntries(): Map<String, ByteArray> =
         listOf(0, 1, 7, 8191, 8192, 8193, 32_769).mapIndexed { index, size -> "entry-$index" to ByteArray(size) { (it * 31 + index).toByte() } }.toMap()
 

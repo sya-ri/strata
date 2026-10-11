@@ -19,7 +19,10 @@ internal object ProvenanceHashingProbe {
     /**
      * Returns one detached observation; no stream, callback, class loader or scratch survives the call.
      */
-    internal fun entries(loader: ClassLoader, row: JsonObject): JsonObject {
+    internal fun entries(
+        loader: ClassLoader,
+        row: JsonObject,
+    ): JsonObject {
         val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
         val path = Path.of(row.get("path").asString)
         val buffers = IdentityHashMap<ByteArray, Boolean>()
@@ -27,10 +30,15 @@ internal object ProvenanceHashingProbe {
         var bytes = 0L
         var opened = 0
         var closed = 0
+
         fun observe(input: InputStream): InputStream {
             opened += 1
             return object : FilterInputStream(input) {
-                override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                override fun read(
+                    buffer: ByteArray,
+                    offset: Int,
+                    length: Int,
+                ): Int {
                     buffers[buffer] = true
                     reads += 1
                     return `in`.read(buffer, offset, length).also { if (0 < it) bytes += it }
@@ -46,24 +54,38 @@ internal object ProvenanceHashingProbe {
         }
         val archive = if (mode == ProvenanceHashingCorpus.Mode.EntryArchive) ZipFile(path.toFile()) else null
         return archive.use {
-            val names = archive?.entries()?.asSequence()?.filterNot { it.isDirectory }?.map { it.name }?.sorted()?.toList() ?: Files.walk(path).use { files ->
-                files.filter(Files::isRegularFile).map { path.relativize(it).joinToString("/") }.filter { name ->
-                    mode != ProvenanceHashingCorpus.Mode.ResourceSelection || name.startsWith("assets/") || name.startsWith("data/")
-                }.sorted().toList()
-            }
+            val names =
+                archive
+                    ?.entries()
+                    ?.asSequence()
+                    ?.filterNot { it.isDirectory }
+                    ?.map { it.name }
+                    ?.sorted()
+                    ?.toList()
+                    ?: Files.walk(path).use { files ->
+                        files
+                            .filter(Files::isRegularFile)
+                            .map { path.relativize(it).joinToString("/") }
+                            .filter { name ->
+                                mode != ProvenanceHashingCorpus.Mode.ResourceSelection || name.startsWith("assets/") || name.startsWith("data/")
+                            }.sorted()
+                            .toList()
+                    }
             val callback = Class.forName("kotlin.jvm.functions.Function1", false, loader)
-            val opener = Proxy.newProxyInstance(loader, arrayOf(callback)) { _, method, arguments ->
-                check(method.name.contentEquals("invoke")) { "Unexpected traversal callback method" }
-                val name = checkNotNull(arguments).single() as String
-                observe(if (archive == null) Files.newInputStream(path.resolve(name)) else archive.getInputStream(checkNotNull(archive.getEntry(name))))
-            }
+            val opener =
+                Proxy.newProxyInstance(loader, arrayOf(callback)) { _, method, arguments ->
+                    check(method.name.contentEquals("invoke")) { "Unexpected traversal callback method" }
+                    val name = checkNotNull(arguments).single() as String
+                    observe(if (archive == null) Files.newInputStream(path.resolve(name)) else archive.getInputStream(checkNotNull(archive.getEntry(name))))
+                }
             val type = Class.forName("dev.s7a.strata.performance.EntryIdentity", false, loader)
             val method = type.declaredMethods.single { it.name.contentEquals("hashEntries") && it.parameterCount == 2 }.apply { isAccessible = true }
-            val hash = try {
-                method.invoke(type.getField("INSTANCE").get(null), names, opener) as String
-            } catch (failure: InvocationTargetException) {
-                throw checkNotNull(failure.cause)
-            }
+            val hash =
+                try {
+                    method.invoke(type.getField("INSTANCE").get(null), names, opener) as String
+                } catch (failure: InvocationTargetException) {
+                    throw checkNotNull(failure.cause)
+                }
             check(hash.contentEquals(row.get("sha256").asString))
             check(opened == names.size && closed == opened && bytes == row.get("entry_bytes").asLong)
             JsonObject().apply {

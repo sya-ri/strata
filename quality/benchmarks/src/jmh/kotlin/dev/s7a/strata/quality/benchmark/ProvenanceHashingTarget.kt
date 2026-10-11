@@ -17,7 +17,10 @@ import java.util.jar.JarFile
  * Reflection crosses the two Kotlin/Gson namespaces without sharing target classes with the collector.
  */
 @Suppress("TooManyFunctions") // Target invocation, validation and certification remain separate untimed boundaries.
-internal class ProvenanceHashingTarget(private val archive: Path, controls: Collection<Path>) : AutoCloseable {
+internal class ProvenanceHashingTarget(
+    private val archive: Path,
+    controls: Collection<Path>,
+) : AutoCloseable {
     private val loader = URLClassLoader("provenance-target", (listOf(archive) + controls).map { it.toUri().toURL() }.toTypedArray(), ClassLoader.getPlatformClassLoader())
     private val identity = resolve { helper(ArtifactIdentity::class.java.name) }
     private val metadata = resolve { helper(LoadedArtifactMetadata::class.java.name) }
@@ -25,11 +28,13 @@ internal class ProvenanceHashingTarget(private val archive: Path, controls: Coll
     private val foreignJson = resolve { Class.forName(JsonObject::class.java.name, false, loader) }
     private val capture = resolve { metadata.javaClass.getMethod("capture", ClassLoader::class.java, Map::class.java, Set::class.java) }
     private val verify = resolve { metadata.javaClass.getMethod("verifyComplete", foreignJson) }
-    private val classTree = resolve {
-        preserved.javaClass.declaredMethods.single {
-            it.name.substringBefore('$').contentEquals("classTree") && it.parameterTypes.contentEquals(arrayOf(Path::class.java))
-        }.apply { isAccessible = true }
-    }
+    private val classTree =
+        resolve {
+            preserved.javaClass.declaredMethods
+                .single {
+                    it.name.substringBefore('$').contentEquals("classTree") && it.parameterTypes.contentEquals(arrayOf(Path::class.java))
+                }.apply { isAccessible = true }
+        }
     private val directory = resolve { identity.javaClass.getMethod("tree", Path::class.java) }
     private val file = resolve { identity.javaClass.getMethod("file", Path::class.java) }
     private val application = resolve { identity.javaClass.getMethod("applicationTrees", List::class.java) }
@@ -59,12 +64,13 @@ internal class ProvenanceHashingTarget(private val archive: Path, controls: Coll
         loader.close()
     }
 
-    private fun <T> resolve(operation: () -> T): T = try {
-        operation()
-    } catch (failure: Throwable) {
-        runCatching(loader::close).exceptionOrNull()?.let(failure::addSuppressed)
-        throw failure
-    }
+    private fun <T> resolve(operation: () -> T): T =
+        try {
+            operation()
+        } catch (failure: Throwable) {
+            runCatching(loader::close).exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
 
     private fun helper(name: String): Any {
         val type = Class.forName(name, false, loader)
@@ -74,7 +80,11 @@ internal class ProvenanceHashingTarget(private val archive: Path, controls: Coll
         return type.getField("INSTANCE").get(null)
     }
 
-    private fun call(receiver: Any, method: Method, vararg arguments: Any): Any =
+    private fun call(
+        receiver: Any,
+        method: Method,
+        vararg arguments: Any,
+    ): Any =
         try {
             method.invoke(receiver, *arguments) ?: Unit
         } catch (failure: InvocationTargetException) {
@@ -84,57 +94,75 @@ internal class ProvenanceHashingTarget(private val archive: Path, controls: Coll
     /**
      * Owns one input loader; validation and closure remain outside timed operations.
      */
-    internal inner class Prepared(private val row: JsonObject) : AutoCloseable {
+    internal inner class Prepared(
+        private val row: JsonObject,
+    ) : AutoCloseable {
         private val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
         private val path = Path.of(row.get("path").asString)
         private val inputLoader = URLClassLoader("provenance-input", arrayOf(path.toUri().toURL()), ClassLoader.getPlatformClassLoader())
         private val representative = row.get("representative").asString
         private val loadedClasses: List<Class<*>> = prepareClasses()
 
-        private fun prepareClasses(): List<Class<*>> = try {
-            if (mode in setOf(ProvenanceHashingCorpus.Mode.EntryArchive, ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.PreservedClassTree)) {
-                JarFile(path.toFile()).use { input ->
-                    input.entries().asSequence().filter { it.name.endsWith(".class") }.map { entry ->
-                        Class.forName(entry.name.removeSuffix(".class").replace('/', '.'), false, inputLoader).also { type ->
-                            check(type.classLoader === inputLoader && Files.isSameFile(Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI()), path))
-                        }
-                    }.toList()
+        private fun prepareClasses(): List<Class<*>> =
+            try {
+                if (mode in setOf(ProvenanceHashingCorpus.Mode.EntryArchive, ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.PreservedClassTree)) {
+                    JarFile(path.toFile()).use { input ->
+                        input
+                            .entries()
+                            .asSequence()
+                            .filter { it.name.endsWith(".class") }
+                            .map { entry ->
+                                Class.forName(entry.name.removeSuffix(".class").replace('/', '.'), false, inputLoader).also { type ->
+                                    check(type.classLoader === inputLoader && Files.isSameFile(Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI()), path))
+                                }
+                            }.toList()
+                    }
+                } else {
+                    emptyList()
                 }
-            } else emptyList()
-        } catch (failure: Throwable) {
-            runCatching(inputLoader::close).exceptionOrNull()?.let(failure::addSuppressed)
-            throw failure
-        }
+            } catch (failure: Throwable) {
+                runCatching(inputLoader::close).exceptionOrNull()?.let(failure::addSuppressed)
+                throw failure
+            }
 
         /**
          * Computes the complete public consumer operation or actual preserved-evidence verification.
          */
-        internal fun operation(): Any = when (mode) {
-            ProvenanceHashingCorpus.Mode.EntryDirectory, ProvenanceHashingCorpus.Mode.EmptyDirectory -> call(identity, directory, path)
-            ProvenanceHashingCorpus.Mode.SingleFile -> call(identity, file, path)
-            ProvenanceHashingCorpus.Mode.EntryArchive -> call(identity, application, listOf(loadedClasses.single { it.name.contentEquals(representative) }))
-            ProvenanceHashingCorpus.Mode.ResourceSelection -> call(identity, resources, path, row.get("marker").asString)
-            ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.RejectedLoadedTree -> call(metadata, capture, inputLoader, mapOf("fixture" to representative), setOf("fixture"))
-            ProvenanceHashingCorpus.Mode.PreservedClassTree, ProvenanceHashingCorpus.Mode.RejectedPreservedTree -> call(preserved, classTree, path)
-        }
+        internal fun operation(): Any =
+            when (mode) {
+                ProvenanceHashingCorpus.Mode.EntryDirectory, ProvenanceHashingCorpus.Mode.EmptyDirectory -> call(identity, directory, path)
+                ProvenanceHashingCorpus.Mode.SingleFile -> call(identity, file, path)
+                ProvenanceHashingCorpus.Mode.EntryArchive -> call(identity, application, listOf(loadedClasses.single { it.name.contentEquals(representative) }))
+                ProvenanceHashingCorpus.Mode.ResourceSelection -> call(identity, resources, path, row.get("marker").asString)
+                ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.RejectedLoadedTree -> call(metadata, capture, inputLoader, mapOf("fixture" to representative), setOf("fixture"))
+                ProvenanceHashingCorpus.Mode.PreservedClassTree, ProvenanceHashingCorpus.Mode.RejectedPreservedTree -> call(preserved, classTree, path)
+            }
 
         /**
          * Checks an independent golden and actual entry/byte counters after the complete operation.
          */
         internal fun validate(result: Any): JsonObject {
-            val tree = when (mode) {
-                ProvenanceHashingCorpus.Mode.LoadedClassTree -> {
-                    call(metadata, verify, result)
-                    detach(result).getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree")
+            val tree =
+                when (mode) {
+                    ProvenanceHashingCorpus.Mode.LoadedClassTree -> {
+                        call(metadata, verify, result)
+                        detach(result).getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree")
+                    }
+
+                    ProvenanceHashingCorpus.Mode.PreservedClassTree -> {
+                        detach(result)
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
-                ProvenanceHashingCorpus.Mode.PreservedClassTree -> detach(result)
-                else -> null
-            }
-            val hash = tree?.get("sha256")?.asString ?: when (mode) {
-                ProvenanceHashingCorpus.Mode.EntryArchive -> (result as Map<*, *>).values.single() as String
-                ProvenanceHashingCorpus.Mode.ResourceSelection -> (result as Map<*, *>)["sha256"] as String
-                else -> result as String
-            }
+            val hash =
+                tree?.get("sha256")?.asString ?: when (mode) {
+                    ProvenanceHashingCorpus.Mode.EntryArchive -> (result as Map<*, *>).values.single() as String
+                    ProvenanceHashingCorpus.Mode.ResourceSelection -> (result as Map<*, *>)["sha256"] as String
+                    else -> result as String
+                }
             check(hash.contentEquals(row.get("sha256").asString)) { "Complete target hash differs from independent golden: $row" }
             tree?.let {
                 check(it.get("entryCount").asInt == row.get("entries").asInt && it.get("bytes").asLong == row.get("entry_bytes").asLong)
@@ -151,11 +179,12 @@ internal class ProvenanceHashingTarget(private val archive: Path, controls: Coll
          */
         internal fun rejection(): JsonObject {
             var response: Any? = null
-            val failure = runCatching {
-                val result = operation()
-                response = result
-                if (mode == ProvenanceHashingCorpus.Mode.RejectedLoadedTree) call(metadata, verify, result)
-            }.exceptionOrNull()
+            val failure =
+                runCatching {
+                    val result = operation()
+                    response = result
+                    if (mode == ProvenanceHashingCorpus.Mode.RejectedLoadedTree) call(metadata, verify, result)
+                }.exceptionOrNull()
             val rejectedFailure = checkNotNull(failure)
             check(if (mode == ProvenanceHashingCorpus.Mode.RejectedLoadedTree) rejectedFailure is IllegalStateException else rejectedFailure is IllegalArgumentException) { "Empty input was not rejected by the actual consumer" }
             return JsonObject().apply {
