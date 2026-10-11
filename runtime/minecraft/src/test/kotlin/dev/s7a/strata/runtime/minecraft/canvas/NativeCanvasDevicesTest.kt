@@ -26,21 +26,7 @@ internal class NativeCanvasDevicesTest {
         val replacement = NativeCanvasFixture.Driver()
         val device = NativeCanvasDevices.device(driver)
         NativeCanvasDevices.device(peer)
-        val callbackDriver = NativeCanvasFixture.Driver()
-        val callbackManager = PollManager()
-        val acquiringManager = PollManager()
-        var registeredDuringPoll = false
-        acquiringManager.onPoll = {
-            if (registeredDuringPoll.not()) {
-                registeredDuringPoll = true
-                NativeCanvasDevices.device(callbackDriver).registerGuiResourceManager(callbackManager)
-            }
-        }
-        device.registerGuiResourceManager(acquiringManager)
-        NativeCanvasDevices.poll()
-        assertEquals(0, callbackManager.polls)
-        NativeCanvasDevices.poll()
-        assertEquals(1, callbackManager.polls)
+        val callbackDriver = verifyPollRegistrationSnapshot(device)
         var managedEntries = 1
         var managedBytes = 4L
         device.registerGuiResourceManager(
@@ -116,6 +102,25 @@ internal class NativeCanvasDevicesTest {
             assertThrows(IllegalStateException::class.java) { NativeCanvasDevices.device(driver) }
             assertThrows(IllegalStateException::class.java) { NativeCanvasDevices.device(replacement) }
         }
+    }
+
+    private fun verifyPollRegistrationSnapshot(device: NativeCanvasDevice): NativeCanvasFixture.Driver {
+        val callbackDriver = NativeCanvasFixture.Driver()
+        val callbackManager = PollManager()
+        val acquiringManager = PollManager()
+        var registeredDuringPoll = false
+        acquiringManager.onPoll = {
+            if (registeredDuringPoll.not()) {
+                registeredDuringPoll = true
+                NativeCanvasDevices.device(callbackDriver).registerGuiResourceManager(callbackManager)
+            }
+        }
+        device.registerGuiResourceManager(acquiringManager)
+        NativeCanvasDevices.poll()
+        assertEquals(0, callbackManager.polls)
+        NativeCanvasDevices.poll()
+        assertEquals(1, callbackManager.polls)
+        return callbackDriver
     }
 
     private class PollManager : NativeGuiResourceManager {

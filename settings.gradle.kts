@@ -1,4 +1,5 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 val releaseRepository = providers.gradleProperty("strata.releaseRepository")
 
@@ -142,37 +143,49 @@ val minecraftCheckVersions =
         emptySet()
     }
 // This union closes the three JVM fixture source sets over their runtime, testkit and quality dependencies.
-val jvmProjectPaths = setOf(
+val sharedJvmProjectPaths = setOf(
     ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
     ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
 )
-val webProjectPaths = jvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
-val benchmarkProjectPaths = setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks")
-val jvmMultiplatformProjectPaths = setOf(":api", ":runtime:core", ":performance-testkit")
-val jvmPublishedProjectPaths = jvmProjectPaths - benchmarkProjectPaths - ":quality:detekt-rules"
-val jvmCollectorTasks = setOf(
-    ":quality:benchmarks:jmhHistorical", ":quality:component-benchmarks:jmhComponents",
-    ":quality:remote-benchmarks:jmhRemote", ":performance-testkit:processEvidence",
-)
+val jvmProjectPaths = sharedJvmProjectPaths + ":integration:api"
+val webProjectPaths = sharedJvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 if (webOnly || jvmOnly) {
     require((webOnly && jvmOnly).not()) { "Choose one scoped project model: strata.webOnly or strata.jvmOnly." }
     require(completeIdeaModel.not()) { "IDE/Qodana requires the complete project model; remove strata.webOnly and strata.jvmOnly." }
     require(providers.gradleProperty("strata.minecraftVersions").orNull.isNullOrBlank()) { "Minecraft target selection requires the complete project model." }
 }
+
+/** Identifies complete-build acceptance from resolved Gradle task metadata, never CLI option tokens. */
+fun requiresCompleteJvmModel(name: String, group: String?): Boolean =
+    name == "check" || (name.startsWith("kover") && group == LifecycleBasePlugin.VERIFICATION_GROUP) || group in setOf("publishing", "release") ||
+        name in setOf(
+            "ciMinecraftCheck", "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory",
+            "capturePublishedHostInventory", "verifyOfflineFontParity",
+        )
+
 if (jvmOnly) {
-    require(requestedTasks.isNotEmpty() && requestedTasks.all { task ->
-        val owner = task.substringBeforeLast(':')
-        val name = task.substringAfterLast(':')
-        owner in jvmProjectPaths && (
-            name in setOf("formatKotlin", "lintKotlin", "detekt", "classes") ||
-                (owner in jvmPublishedProjectPaths && name in setOf("checkKotlinAbi", "updateKotlinAbi")) ||
-                (owner in jvmMultiplatformProjectPaths && name in setOf("jvmTest", "jvmJar")) ||
-                (owner in jvmProjectPaths - jvmMultiplatformProjectPaths && name in setOf("test", "jar")) ||
-                task in jvmCollectorTasks ||
-                (owner in benchmarkProjectPaths && name in setOf("jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses"))
-            )
-    }) { "strata.jvmOnly supports only fully qualified JVM fixture preparation, tests and collection; run check, publication, Kover and inventory acceptance with the complete build." }
     include(*jvmProjectPaths.toTypedArray())
+    gradle.projectsEvaluated {
+        rootProject.allprojects.forEach { project ->
+            project.tasks.configureEach {
+                if (requiresCompleteJvmModel(name, group)) {
+                    // Invalid acceptance graphs must be reconfigured to preserve refusal before task execution.
+                    notCompatibleWithConfigurationCache("strata.jvmOnly requires the complete build for acceptance.")
+                    doFirst { error("strata.jvmOnly requires the complete build for this acceptance task.") }
+                }
+            }
+        }
+    }
+    // Gradle resolves task selectors and their options; only actual complete-acceptance tasks are refused.
+    gradle.taskGraph.whenReady {
+        val completeAcceptance = allTasks.filter { task ->
+            requiresCompleteJvmModel(task.name, task.group)
+        }
+        require(completeAcceptance.isEmpty()) {
+            "strata.jvmOnly cannot run complete acceptance tasks ${completeAcceptance.map { it.path }}; " +
+                "run check, publication, Kover, published inventory and native acceptance with the complete build."
+        }
+    }
 } else if (webOnly) {
     require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
         task.substringBeforeLast(':') in webProjectPaths &&
