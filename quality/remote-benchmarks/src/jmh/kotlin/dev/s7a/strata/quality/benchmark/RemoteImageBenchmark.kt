@@ -58,7 +58,9 @@ public open class RemoteImageBenchmark {
     /**
      * Repeated square inputs and a rectangular image close to the standalone negotiated message byte bound.
      */
-    public enum class Extent(public val size: IntSize) {
+    public enum class Extent(
+        public val size: IntSize,
+    ) {
         Square256(IntSize(256, 256)),
         Square512(IntSize(512, 512)),
         Square1024(IntSize(1024, 1024)),
@@ -85,7 +87,9 @@ public open class RemoteImageBenchmark {
      * Shared large-image trees declare enough wire budget for every repeated payload; no wire deduplication is assumed.
      */
     @State(Scope.Thread)
-    public open class Scene(private val reconstructionMillis: Long = 1000) : AutoCloseable {
+    public open class Scene(
+        private val reconstructionMillis: Long = 1000,
+    ) : AutoCloseable {
         /**
          * Prepared size and independent raw-byte corpus.
          */
@@ -127,11 +131,12 @@ public open class RemoteImageBenchmark {
             codec = RemoteImageCodec(limits.messageBytes)
             if (workload != Workload.ColdEncode && workload != Workload.ResourceReference) {
                 val count = if (workload == Workload.IndependentSessions) 2 else 1
-                owners = (1..count).map { identity ->
-                    val leaves = if (workload == Workload.SharedNodes) 2 else 1
-                    val root = ImageElement({ if (visible) currentImage() else null }, List(leaves - 1) { ImageElement({ currentImage() }) })
-                    RemoteServerSession(identity.toLong(), ProjectionValue.Absent, setOf(ImageElement.PROJECTION), limits, send = ::receive) { root }.also { it.tick() }
-                }
+                owners =
+                    (1..count).map { identity ->
+                        val leaves = if (workload == Workload.SharedNodes) 2 else 1
+                        val root = ImageElement({ if (visible) currentImage() else null }, List(leaves - 1) { ImageElement({ currentImage() }) })
+                        RemoteServerSession(identity.toLong(), ProjectionValue.Absent, setOf(ImageElement.PROJECTION), limits, send = ::receive) { root }.also { it.tick() }
+                    }
                 verifyWire(checkNotNull(last))
             }
         }
@@ -141,8 +146,14 @@ public open class RemoteImageBenchmark {
          */
         public fun perform(): Any =
             when (workload) {
-                Workload.ColdEncode -> codec.encode(ImageSource.Pixels(first))
-                Workload.ResourceReference -> codec.encode(resource)
+                Workload.ColdEncode -> {
+                    codec.encode(ImageSource.Pixels(first))
+                }
+
+                Workload.ResourceReference -> {
+                    codec.encode(resource)
+                }
+
                 else -> {
                     if (workload == Workload.Replacements || workload == Workload.EqualIdentityChurn) selected = selected.not()
                     if (workload == Workload.RemovalReadmission) visible = visible.not()
@@ -160,7 +171,12 @@ public open class RemoteImageBenchmark {
                 "message_bytes" to limits.messageBytes.toLong(),
                 "pending_bytes" to limits.pendingBytes.toLong(),
                 "sessions" to owners.size.toLong(),
-                "nodes" to (if (workload == Workload.SharedNodes) 2L else if (owners.isEmpty()) 0L else owners.size.toLong()),
+                "nodes" to
+                    when {
+                        workload == Workload.SharedNodes -> 2L
+                        owners.isEmpty() -> 0L
+                        else -> owners.size.toLong()
+                    },
             )
 
         /**
@@ -222,16 +238,24 @@ public open class RemoteImageBenchmark {
             check(ordinary.javaClass == expected.javaClass && ordinary.message == expected.message)
             check(nineSlice.javaClass == expected.javaClass && nineSlice.message == expected.message)
             var imageCalls = 0
-            val scope = object : ProjectionScope {
-                override fun image(image: DrawImage): ProjectionValue {
-                    imageCalls++
-                    return RemoteImageCodec(byteLimit + Int.SIZE_BYTES).encode(ImageSource.Pixels(image))
+            val scope =
+                object : ProjectionScope {
+                    override fun image(image: DrawImage): ProjectionValue {
+                        imageCalls++
+                        return RemoteImageCodec(byteLimit + Int.SIZE_BYTES).encode(ImageSource.Pixels(image))
+                    }
+
+                    override fun text(text: UiText): ProjectionValue = error("Unused text")
+
+                    override fun requireType(type: ProjectionType): Unit = error("Unused type")
+
+                    override fun action(
+                        action: ProjectionAction<*>,
+                        key: ProjectionValue,
+                    ): Long = error("Unused action")
+
+                    override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
                 }
-                override fun text(text: UiText): ProjectionValue = error("Unused text")
-                override fun requireType(type: ProjectionType): Unit = error("Unused type")
-                override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = error("Unused action")
-                override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unused binding")
-            }
             val element = runtime.image(source, null, null, Modifier.Empty, null)
             val projected = requireNotNull(runCatching { requireNotNull(element.projection).encode(scope) }.exceptionOrNull())
             check(projected.javaClass == expected.javaClass && projected.message == expected.message)
@@ -255,14 +279,21 @@ public open class RemoteImageBenchmark {
             val bytes = wire.encode(message)
             check(bytes.size <= limits.messageBytes)
             check(wire.decode(bytes) == message)
-            val tree = when (message) {
-                is RemoteMessage.Snapshot -> message.tree
-                is RemoteMessage.Update -> {
-                    message.patch.changed.forEach { check(codec.decode(it.declaration.value) == ImageSource.Pixels(first)) }
-                    null
+            val tree =
+                when (message) {
+                    is RemoteMessage.Snapshot -> {
+                        message.tree
+                    }
+
+                    is RemoteMessage.Update -> {
+                        message.patch.changed.forEach { check(codec.decode(it.declaration.value) == ImageSource.Pixels(first)) }
+                        null
+                    }
+
+                    else -> {
+                        error("Expected a declaration message")
+                    }
                 }
-                else -> error("Expected a declaration message")
-            }
             if (tree != null) verifyTree(tree)
         }
 

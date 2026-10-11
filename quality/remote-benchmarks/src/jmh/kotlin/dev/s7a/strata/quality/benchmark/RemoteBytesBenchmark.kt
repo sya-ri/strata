@@ -115,12 +115,12 @@ public open class RemoteBytesBenchmark {
          */
         @Setup(Level.Trial)
         public fun setup() {
-            payloads = payloads(5)
+            payloads = payloads(corpus, 5, limits.messageBytes)
             value = project(payloads)
             valueWire = reference(value)
             val emptyAction = RemoteMessage.Action(1, 1, 1, type, ProjectionValue.Bytes(byteArrayOf()))
             val actionHeader = reference(projectAction(emptyAction)).size
-            action = RemoteMessage.Action(1, 1, 1, type, project(payloads(actionHeader)))
+            action = RemoteMessage.Action(1, 1, 1, type, project(payloads(corpus, actionHeader, limits.messageBytes)))
             actionWire = reference(projectAction(action))
             check(valueWire.size <= limits.messageBytes && actionWire.size <= limits.messageBytes)
         }
@@ -194,21 +194,6 @@ public open class RemoteBytesBenchmark {
             println("Bytes $corpus: ${payloads.size} payload fields, ${payloads.sumOf { it.size.toLong() }} generic payload bytes; ${valueWire.size} value wire bytes, ${actionWire.size} action wire bytes")
         }
 
-        private fun payloads(header: Int): List<ByteArray> {
-            val sizes =
-                when (corpus) {
-                    Corpus.Zero -> listOf(0)
-                    Corpus.Small32 -> listOf(32)
-                    Corpus.Large262144 -> listOf(262144)
-                    Corpus.OneMiB -> listOf(1048576)
-                    Corpus.NearLimit -> listOf(limits.messageBytes - header)
-                    Corpus.ManySmall -> List(256) { 32 }
-                    Corpus.NestedMixed -> listOf(4096, 32)
-                    Corpus.ByteFree -> emptyList()
-                }
-            return sizes.mapIndexed { field, size -> ByteArray(size) { (it * 31 + field).toByte() } }
-        }
-
         private fun project(payloads: List<ByteArray>): ProjectionValue =
             when (corpus) {
                 Corpus.ManySmall -> {
@@ -235,6 +220,30 @@ public open class RemoteBytesBenchmark {
                     ProjectionValue.Bytes(payloads.single())
                 }
             }
+    }
+
+    /**
+     * Generated discovery owns the complete fixture; the generic shared launcher needs no special flag.
+     */
+    public companion object {
+        private fun payloads(
+            corpus: Corpus,
+            header: Int,
+            messageBytes: Int,
+        ): List<ByteArray> {
+            val sizes =
+                when (corpus) {
+                    Corpus.Zero -> listOf(0)
+                    Corpus.Small32 -> listOf(32)
+                    Corpus.Large262144 -> listOf(262144)
+                    Corpus.OneMiB -> listOf(1048576)
+                    Corpus.NearLimit -> listOf(messageBytes - header)
+                    Corpus.ManySmall -> List(256) { 32 }
+                    Corpus.NestedMixed -> listOf(4096, 32)
+                    Corpus.ByteFree -> emptyList()
+                }
+            return sizes.mapIndexed { field, size -> ByteArray(size) { (it * 31 + field).toByte() } }
+        }
 
         private fun projectAction(action: RemoteMessage.Action): ProjectionValue =
             ProjectionValue.Sequence(
@@ -299,12 +308,7 @@ public open class RemoteBytesBenchmark {
                 }
             }
         }
-    }
 
-    /**
-     * Generated discovery owns the complete fixture; the generic shared launcher needs no special flag.
-     */
-    public companion object {
         /**
          * Requires all 64 generated combinations and their independent wire/ownership/framing checks.
          */

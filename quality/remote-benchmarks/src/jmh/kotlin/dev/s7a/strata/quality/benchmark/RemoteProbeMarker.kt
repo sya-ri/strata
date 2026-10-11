@@ -15,6 +15,9 @@ internal enum class RemoteProbeMarker(
      * Decodes externally reported names before an observer dispatches operation lifetime behavior.
      */
     companion object {
+        /**
+         * Returns the typed boundary for one actual JVM method name, or null for an unrelated method.
+         */
         fun decode(methodName: String): RemoteProbeMarker? = entries.find { it.methodName.contentEquals(methodName) }
     }
 }

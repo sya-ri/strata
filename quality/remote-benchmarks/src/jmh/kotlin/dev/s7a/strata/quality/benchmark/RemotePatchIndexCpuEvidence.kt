@@ -37,7 +37,7 @@ public object RemotePatchIndexCpuEvidence {
         val identity = ArtifactIdentity.applicationTrees(fixtures)
         val inputFiles = externalInputs()
         val inputs = inputFiles.mapValues { ArtifactIdentity.file(it.value) }
-        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, identity, inputFiles, RemotePatchIndexBenchmark::class.java)
+        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, inputFiles, RemotePatchIndexBenchmark::class.java)
         val plan = PerformancePlan(warmup = 100, samples = 200)
         val phases = JsonArray()
         for (nodes in listOf(1, 128, 8192)) {

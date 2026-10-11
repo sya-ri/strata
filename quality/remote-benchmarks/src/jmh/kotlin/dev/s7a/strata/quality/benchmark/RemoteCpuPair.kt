@@ -22,7 +22,6 @@ internal class RemoteCpuPair(
     sourcePath: Path,
     repetition: Int,
     runtime: JsonObject,
-    fixtureIdentity: Map<String, String>,
     inputs: Map<String, Path>,
     fixtureClass: Class<*>,
 ) {
@@ -59,6 +58,7 @@ internal class RemoteCpuPair(
         require(receipt.get("harness_sha256").asString == hashes.getValue(harnessFile) && hashes.getValue(harnessFile) == ArtifactIdentity.fullCodeSource(Runner::class.java))
         verifyArchives(receipt, runtime, inputs)
         val fixture = fixtureClass.name
+        val fixtureIdentity = ArtifactIdentity.applicationTrees(listOf(fixtureClass))
         require(receipt.getAsJsonObject("fixture_identity").get(fixture).asString == fixtureIdentity.getValue(fixture))
         receipt.getAsJsonObject("environment").entrySet().forEach { (key, value) -> require(environment.get(key) == value) }
         val expected = JmhWorkloadInventory.capture(listOf(fixtureClass), setOf("avgt"))
