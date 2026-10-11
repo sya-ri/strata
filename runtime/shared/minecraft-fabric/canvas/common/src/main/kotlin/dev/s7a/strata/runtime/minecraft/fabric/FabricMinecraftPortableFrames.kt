@@ -98,20 +98,14 @@ internal class FabricMinecraftPortableFrames {
         val resources = NativeCanvasDevices.device(FabricNativeCanvasDriver).guiResources
         val identity = ownerId ?: resources.createOwnerId().also { ownerId = it }
         val matches = previous?.let { matchFabricMinecraftPortableImages(it.images, images) }
-        val reservations =
-            images.mapIndexed { index, image ->
-                val source = matchedSource(matches, index)
-                if (previous != null && 0 <= source) previous.imageReservations[source] else image.reservationSize
-            }
+        val reservations = reservationSizes(images, previous, matches)
         val targetPlan = FabricMinecraftCompositionTargetPlan.create(images, matches, reservations)
         val workspace = targetPlan?.let { FabricMinecraftCompositionWorkspace(it) }
         val imageReservations = targetPlan?.reservations?.drop(1) ?: reservations
         val offset = if (workspace == null) 0 else 1
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         val set = resources.reserve(identity, targetPlan?.reservations ?: reservations)
-        var failure: Throwable? = null
-        var prepared: Prepared? = null
-        try {
+        val prepared = prepareSet(resources, set) {
             workspace?.let { resources.add(set, it) }
             val rasterPixels = allocateRasterPixels(images, matches)
             HeadlessRasterScratch().use { scratch ->
@@ -126,7 +120,39 @@ internal class FabricMinecraftPortableFrames {
                     }
                 }
             }
-            prepared = Prepared(images, textures.toList(), resources, set, offset, imageReservations, workspace)
+            Prepared(images, textures.toList(), resources, set, offset, imageReservations, workspace)
+        }
+        current = prepared
+        previous?.let { it.resources.release(it.set) }
+        return prepared
+    }
+
+    /**
+     * Carries matched reservations into the new admission without recomputing their reduced extent.
+     */
+    private fun reservationSizes(
+        images: List<FabricMinecraftPortableImage>,
+        previous: Prepared?,
+        matches: IntArray?,
+    ): List<IntSize> =
+        images.mapIndexed { index, image ->
+            val source = matchedSource(matches, index)
+            if (previous != null && 0 <= source) previous.imageReservations[source] else image.reservationSize
+        }
+
+    /**
+     * Seals each set and preserves the first preparation failure before current-generation publication.
+     * Inlining avoids a new operation closure after reservation but before the failure boundary.
+     */
+    private inline fun prepareSet(
+        resources: NativeGuiResources,
+        set: NativeGuiResourceSet,
+        create: () -> Prepared,
+    ): Prepared {
+        var failure: Throwable? = null
+        var prepared: Prepared? = null
+        try {
+            prepared = create()
         } catch (caught: Throwable) {
             failure = caught
         }
@@ -145,10 +171,7 @@ internal class FabricMinecraftPortableFrames {
             }
             throw primary
         }
-        val published = checkNotNull(prepared)
-        current = published
-        previous?.let { it.resources.release(it.set) }
-        return published
+        return checkNotNull(prepared)
     }
 
     private fun matchedSource(

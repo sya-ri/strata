@@ -114,25 +114,8 @@ internal class MinecraftCompositionTargetsScene(
         val source = FloatRect(0.125f, 0.375f, image.size.width - 0.125f, image.size.height - 0.25f)
         repeat(count) { pass ->
             val sparse = case == MinecraftCompositionTargetsCorpus.Case.SparseLarge && pass % 2 == 0
-            val destination =
-                FloatRect(
-                    area.left + scroll + if (sparse) area.width * 0.25f + 0.125f else 0.25f,
-                    area.top + if (sparse) area.height * 0.25f + 0.125f else 0.125f,
-                    area.right + scroll - if (sparse) area.width * 0.25f + 0.125f else 0.125f,
-                    area.bottom - if (sparse) area.height * 0.25f + 0.125f else 0.375f,
-                )
-            val tint =
-                if (case == MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge && pass < 6) {
-                    0x00ABCDEF
-                } else {
-                    val stable =
-                        when (case) {
-                            MinecraftCompositionTargetsCorpus.Case.ReplacementLarge, MinecraftCompositionTargetsCorpus.Case.SourceChurnLarge, MinecraftCompositionTargetsCorpus.Case.ScrollLarge, MinecraftCompositionTargetsCorpus.Case.ActivePassSwapLarge -> true
-                            else -> false
-                        }
-                    val changed = if (stable || (case == MinecraftCompositionTargetsCorpus.Case.OneDirtyLarge && group != 0)) 0 else phase
-                    0x80BFD7EF.toInt() xor changed
-                }
+            val destination = sampleDestination(area, scroll, sparse)
+            val tint = sampleTint(group, pass, phase)
             scope.sampledImage(
                 image,
                 source,
@@ -143,5 +126,32 @@ internal class MinecraftCompositionTargetsScene(
             )
         }
         if (case == MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge) repeat(8) { scope.fillRectangle(area, ArgbColor(0x00ABCDEF)) }
+    }
+
+    private fun sampleDestination(
+        area: IntRect,
+        scroll: Float,
+        sparse: Boolean,
+    ): FloatRect =
+        FloatRect(
+            area.left + scroll + if (sparse) area.width * 0.25f + 0.125f else 0.25f,
+            area.top + if (sparse) area.height * 0.25f + 0.125f else 0.125f,
+            area.right + scroll - if (sparse) area.width * 0.25f + 0.125f else 0.125f,
+            area.bottom - if (sparse) area.height * 0.25f + 0.125f else 0.375f,
+        )
+
+    private fun sampleTint(
+        group: Int,
+        pass: Int,
+        phase: Int,
+    ): Int {
+        if (case == MinecraftCompositionTargetsCorpus.Case.NoOpHeavyLarge && pass < 6) return 0x00ABCDEF
+        val stable =
+            when (case) {
+                MinecraftCompositionTargetsCorpus.Case.ReplacementLarge, MinecraftCompositionTargetsCorpus.Case.SourceChurnLarge, MinecraftCompositionTargetsCorpus.Case.ScrollLarge, MinecraftCompositionTargetsCorpus.Case.ActivePassSwapLarge -> true
+                else -> false
+            }
+        val changed = if (stable || (case == MinecraftCompositionTargetsCorpus.Case.OneDirtyLarge && group != 0)) 0 else phase
+        return 0x80BFD7EF.toInt() xor changed
     }
 }

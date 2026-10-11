@@ -329,12 +329,12 @@ public open class CompositionMetadataBenchmark {
                 try {
                     if (loaded) {
                         scene.setup()
-                    } else {
-                        val commands = scene.prepareSources()
-                        check(commands.size == 2 && commands.all { it.isNotEmpty() })
-                        check((commands[0] === commands[1]) == case.static)
-                        if (case.extent == IntSize(64, 64)) commands.forEach { check(rasterizeHeadless(it, case.extent).size == case.extent) }
+                        return@forEach
                     }
+                    val commands = scene.prepareSources()
+                    check(commands.size == 2 && commands.all { it.isNotEmpty() })
+                    check((commands[0] === commands[1]) == case.static)
+                    if (case.extent == IntSize(64, 64)) commands.forEach { check(rasterizeHeadless(it, case.extent).size == case.extent) }
                 } finally {
                     scene.close()
                 }

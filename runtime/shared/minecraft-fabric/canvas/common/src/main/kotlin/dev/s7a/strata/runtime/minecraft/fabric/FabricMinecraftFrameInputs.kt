@@ -161,8 +161,7 @@ internal class FabricMinecraftFrameInputs(
             previous: FabricMinecraftFrameInputs? = null,
             capacity: Long = 0L,
             ineligible: Long = 0L,
-        ): FabricMinecraftFrameInputs =
-            FabricMinecraftFrameInputs(layers, scale, capacity, ineligible, compositionEnabled, preparePortable(layers, scale, compositionEnabled, previous?.portable.orEmpty()))
+        ): FabricMinecraftFrameInputs = FabricMinecraftFrameInputs(layers, scale, capacity, ineligible, compositionEnabled, preparePortable(layers, scale, compositionEnabled, previous?.portable.orEmpty()))
 
         /**
          * Applies this traversal's independent admission and bounded complete/axis proofs to current portable descriptions.
@@ -187,7 +186,10 @@ internal class FabricMinecraftFrameInputs(
                 val old = previous.getOrNull(matches[index])?.composition
                 val composition =
                     when {
-                        input.sampling != null -> null
+                        input.sampling != null -> {
+                            null
+                        }
+
                         old != null -> {
                             if (budget.admitComposition(old.physicalSize, old.uploadBytes / 4L, old.sources.size)) {
                                 factors.get(old.orderedTints, old.factors)
@@ -200,7 +202,10 @@ internal class FabricMinecraftFrameInputs(
                         FabricMinecraftCompositionMap.shouldCompose(input.commands) -> {
                             FabricMinecraftCompositionMap.create(input, budget, factors, previous.getOrNull(axes[index])?.composition)
                         }
-                        else -> null
+
+                        else -> {
+                            null
+                        }
                     }
                 if (composition == null) input else FabricMinecraftPortableImage(input.commands, input.size, scale, input.origin, composition = composition)
             }
@@ -220,7 +225,9 @@ internal class FabricMinecraftFrameInputs(
                     layer.sampling?.let { sampling -> FabricMinecraftPortableImage(listOf(layer.command), layer.visibleBounds.size, scale, IntOffset(layer.visibleBounds.left, layer.visibleBounds.top), sampling) }
                 }
 
-                is FabricMinecraftFrameLayer.Platform -> null
+                is FabricMinecraftFrameLayer.Platform -> {
+                    null
+                }
             }
     }
 }

@@ -67,9 +67,7 @@ internal object MinecraftCompositionTargetsGameTest {
                 }
                 val after = context.onClient { observe(screen) }
                 val reused = after.textures.count { texture -> before.textures.any { it === texture } }
-                if (0 < generation && case.stationary) check(before.inputs === after.inputs && before.preparations == after.preparations)
-                if (0 < generation && case.stationary.not()) check(before.inputs !== after.inputs && before.preparations < after.preparations)
-                if (0 < generation && case == MinecraftCompositionTargetsCorpus.Case.OneDirtyLarge) check(0 < reused)
+                verifyReplacement(case, generation, before, after, reused)
                 val retired = before.workspace?.takeIf { it !== after.workspace }
                 if (retired != null) context.waitFor { nullableMember(retired, "closed") == true && retired.isDestroyed() }
                 val detached = validation?.let { context.onClient { it.inspect(after.composedTextures) } }
@@ -101,6 +99,18 @@ internal object MinecraftCompositionTargetsGameTest {
                 { context.waitFor { released() } },
             )
         }
+    }
+
+    private fun verifyReplacement(
+        case: MinecraftCompositionTargetsCorpus.Case,
+        generation: Int,
+        before: Observation,
+        after: Observation,
+        reused: Int,
+    ) {
+        if (0 < generation && case.stationary) check(before.inputs === after.inputs && before.preparations == after.preparations)
+        if (0 < generation && case.stationary.not()) check(before.inputs !== after.inputs && before.preparations < after.preparations)
+        if (0 < generation && case == MinecraftCompositionTargetsCorpus.Case.OneDirtyLarge) check(0 < reused)
     }
 
     private fun compare(

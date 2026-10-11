@@ -273,25 +273,27 @@ public open class CompositionTargetsBenchmark {
                     val right = minOf(size.width, left + 256)
                     val bottom = minOf(size.height, top + 256)
                     val area = IntRect(left, top, right, bottom)
-                    val count = when (case) {
-                        Case.DenseOddLarge -> 3
-                        Case.NoOpHeavyLarge, Case.CutoffHeavyLarge -> 8
-                        Case.MixedPassesLarge -> group % 17 + 1
-                        else -> 4
-                    }
+                    val count =
+                        when (case) {
+                            Case.DenseOddLarge -> 3
+                            Case.NoOpHeavyLarge, Case.CutoffHeavyLarge -> 8
+                            Case.MixedPassesLarge -> group % 17 + 1
+                            else -> 4
+                        }
                     val scroll = if (case == Case.ScrollLarge) generation * 0.25f else 0f
-                    val sampled = List(count) { pass ->
-                        val sparse = case == Case.SparseLarge && pass % 2 == 0
-                        val tint = tint(case, group, pass, generation)
-                        DrawCommand.SampledImage(
-                            image,
-                            FloatRect(0.125f, 0.375f, image.size.width - 0.125f, image.size.height - 0.25f),
-                            FloatRect(left + scroll + if (sparse) (right - left) * 0.25f + 0.125f else 0.25f, top + if (sparse) (bottom - top) * 0.25f + 0.125f else 0.125f, right + scroll - if (sparse) (right - left) * 0.25f + 0.125f else 0.125f, bottom - if (sparse) (bottom - top) * 0.25f + 0.125f else 0.375f),
-                            ArgbColor(tint),
-                            alphaCutoff = if (case == Case.CutoffHeavyLarge && pass < 6) 1f else 0.1f,
-                            orientation = if (pass % 2 == 0) SampledImageOrientation.Normal else SampledImageOrientation.FlipHorizontal,
-                        )
-                    }
+                    val sampled =
+                        List(count) { pass ->
+                            val sparse = case == Case.SparseLarge && pass % 2 == 0
+                            val tint = tint(case, group, pass, generation)
+                            DrawCommand.SampledImage(
+                                image,
+                                FloatRect(0.125f, 0.375f, image.size.width - 0.125f, image.size.height - 0.25f),
+                                FloatRect(left + scroll + if (sparse) (right - left) * 0.25f + 0.125f else 0.25f, top + if (sparse) (bottom - top) * 0.25f + 0.125f else 0.125f, right + scroll - if (sparse) (right - left) * 0.25f + 0.125f else 0.125f, bottom - if (sparse) (bottom - top) * 0.25f + 0.125f else 0.375f),
+                                ArgbColor(tint),
+                                alphaCutoff = if (case == Case.CutoffHeavyLarge && pass < 6) 1f else 0.1f,
+                                orientation = if (pass % 2 == 0) SampledImageOrientation.Normal else SampledImageOrientation.FlipHorizontal,
+                            )
+                        }
                     val fills =
                         if (case == Case.ActivePassSwapLarge) {
                             listOf(DrawCommand.FillRectangle(IntRect(left, top, minOf(right, left + 127), bottom), ArgbColor(if (generation == 0) 0x00ABCDEF else 0x80445566.toInt())), DrawCommand.FillRectangle(IntRect(minOf(right, left + 128), top, right, bottom), ArgbColor(if (generation == 0) 0x80112233.toInt() else 0x00ABCDEF)))
@@ -309,10 +311,11 @@ public open class CompositionTargetsBenchmark {
             val images = portable.invoke(inputs) as List<*>
             val previous = if (retain) previousImages else null
             val matches = previous?.let { matchImages.invoke(null, it, images) as IntArray }
-            val base = images.mapIndexed { index, image ->
-                val source = matches?.get(index) ?: -1
-                if (0 <= source) previousReservations[source] else reservationSize.invoke(image) as IntSize
-            }
+            val base =
+                images.mapIndexed { index, image ->
+                    val source = matches?.get(index) ?: -1
+                    if (0 <= source) previousReservations[source] else reservationSize.invoke(image) as IntSize
+                }
             val planned = targetPlan?.invoke(targetCompanion, images, matches, base)
             val reserved =
                 if (planned == null) {
