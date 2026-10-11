@@ -9,6 +9,7 @@ import com.sun.jdi.Bootstrap
 import com.sun.jdi.Method
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
+import com.sun.jdi.VirtualMachine
 import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
 import com.sun.jdi.event.VMDisconnectEvent
@@ -50,55 +51,9 @@ public object RemoteBytesCopyEvidence {
         val process = vm.process()
         val observation = Observation()
         try {
-            require(vm.canGetMethodReturnValues()) { "The probe requires JDI array return identities" }
-            for (name in listOf("dev.s7a.strata.projection.ProjectionValue\$Bytes", RemoteBytesCopyProbe::class.java.name)) {
-                vm.eventRequestManager().createMethodEntryRequest().apply {
-                    addClassFilter(name)
-                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                    enable()
-                }
-                vm.eventRequestManager().createMethodExitRequest().apply {
-                    addClassFilter(name)
-                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                    enable()
-                }
-            }
-            var connected = true
-            while (connected) {
-                val events = vm.eventQueue().remove(60000)
-                checkNotNull(events) { "The copy probe stopped producing events" }
-                for (event in events) {
-                    when (event) {
-                        is MethodEntryEvent -> observation.enter(event)
-                        is MethodExitEvent -> observation.exit(event)
-                        is VMDisconnectEvent -> connected = false
-                    }
-                }
-                events.resume()
-            }
-            check(process.waitFor() == 0) { "Copy probe failed: ${process.errorStream.bufferedReader().readText()}" }
-            check(observation.complete())
+            observe(vm, observation)
             val provenance = read(child)
-            val plan = read(planFile)
-            val archives = JsonObject()
-            provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").forEach { entry ->
-                val module = entry.asJsonObject
-                archives.addProperty(module.get("module").asString, module.getAsJsonObject("codeSource").get("sha256").asString)
-            }
-            val sources = plan.getAsJsonArray("sources").map { it.asJsonObject }
-            require(sources.size == 2 && sources.map { it.get("revision").asString }.distinct().size == 2)
-            val revision = Regex("[0-9a-f]{40}")
-            val hash = Regex("[0-9a-f]{64}")
-            require(plan.get("fixture_revision").asString.matches(revision))
-            sources.forEach { source ->
-                require(source.get("revision").asString.matches(revision))
-                val recorded = source.getAsJsonObject("archives")
-                require(recorded.keySet() == setOf("api", "core", "remote") && recorded.entrySet().all { it.value.asString.matches(hash) })
-            }
-            require(plan.get("fixture_tree_sha256") == provenance.getAsJsonObject("fixture_identity").get(RemoteBytesBenchmark::class.java.name))
-            val source = sources.single { it.getAsJsonObject("archives") == archives }
-            require(ArtifactIdentity.file(planFile) == planHash)
-            require(ArtifactIdentity.applicationTrees(listOf(javaClass)) == observer)
+            val source = verifySource(planFile, planHash, provenance, observer)
             PerformanceJson.writeNew(
                 output,
                 JsonObject().apply {
@@ -117,6 +72,70 @@ public object RemoteBytesCopyEvidence {
         } finally {
             if (process.isAlive) process.destroyForcibly()
         }
+    }
+
+    private fun observe(
+        vm: VirtualMachine,
+        observation: Observation,
+    ) {
+        val process = vm.process()
+        require(vm.canGetMethodReturnValues()) { "The probe requires JDI array return identities" }
+        for (name in listOf("dev.s7a.strata.projection.ProjectionValue\$Bytes", RemoteBytesCopyProbe::class.java.name)) {
+            vm.eventRequestManager().createMethodEntryRequest().apply {
+                addClassFilter(name)
+                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+                enable()
+            }
+            vm.eventRequestManager().createMethodExitRequest().apply {
+                addClassFilter(name)
+                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+                enable()
+            }
+        }
+        var connected = true
+        while (connected) {
+            val events = vm.eventQueue().remove(60000)
+            checkNotNull(events) { "The copy probe stopped producing events" }
+            for (event in events) {
+                when (event) {
+                    is MethodEntryEvent -> observation.enter(event)
+                    is MethodExitEvent -> observation.exit(event)
+                    is VMDisconnectEvent -> connected = false
+                }
+            }
+            events.resume()
+        }
+        check(process.waitFor() == 0) { "Copy probe failed: ${process.errorStream.bufferedReader().readText()}" }
+        check(observation.complete())
+    }
+
+    private fun verifySource(
+        planFile: Path,
+        planHash: String,
+        provenance: JsonObject,
+        observer: Map<String, String>,
+    ): JsonObject {
+        val plan = read(planFile)
+        val archives = JsonObject()
+        provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").forEach { entry ->
+            val module = entry.asJsonObject
+            archives.addProperty(module.get("module").asString, module.getAsJsonObject("codeSource").get("sha256").asString)
+        }
+        val sources = plan.getAsJsonArray("sources").map { it.asJsonObject }
+        require(sources.size == 2 && sources.map { it.get("revision").asString }.distinct().size == 2)
+        val revision = Regex("[0-9a-f]{40}")
+        val hash = Regex("[0-9a-f]{64}")
+        require(plan.get("fixture_revision").asString.matches(revision))
+        sources.forEach { source ->
+            require(source.get("revision").asString.matches(revision))
+            val recorded = source.getAsJsonObject("archives")
+            require(recorded.keySet() == setOf("api", "core", "remote") && recorded.entrySet().all { it.value.asString.matches(hash) })
+        }
+        require(plan.get("fixture_tree_sha256") == provenance.getAsJsonObject("fixture_identity").get(RemoteBytesBenchmark::class.java.name))
+        val source = sources.single { it.getAsJsonObject("archives") == archives }
+        require(ArtifactIdentity.file(planFile) == planHash)
+        require(ArtifactIdentity.applicationTrees(listOf(javaClass)) == observer)
+        return source
     }
 
     private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
