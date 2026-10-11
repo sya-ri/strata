@@ -147,7 +147,10 @@ internal class TextAreaNormalizationTest {
         }
     }
 
-    private fun verifyLongInputs(length: Int, separator: String) {
+    private fun verifyLongInputs(
+        length: Int,
+        separator: String,
+    ) {
         val pieces = listOf("A", "日", "🙂", "e\u0301", "\u2066B\u2069", "\n")
         val canonical = buildString { repeat(length) { append(pieces[it % pieces.size]) } }
         val positions = listOf(0, 1, canonical.length / 2, canonical.length)
@@ -187,7 +190,11 @@ internal class TextAreaNormalizationTest {
         assertSame(canonical, state.value)
     }
 
-    private fun verify(input: String, maximum: Int, setter: Boolean = true) {
+    private fun verify(
+        input: String,
+        maximum: Int,
+        setter: Boolean = true,
+    ) {
         val scalar = outcome { TextAreaNormalizationReference.scalar(input, maximum) }
         assertEquals(scalar, outcome { TextAreaNormalizationReference.utf16(input, maximum) })
         assertEquals(scalar, outcome { TextAreaState(input, maximum).value })
@@ -196,10 +203,11 @@ internal class TextAreaNormalizationTest {
         val previous = state.value
         val scroll = state.scrollState
         var callbacks = 0
-        val release = state.observe { committed ->
-            callbacks += 1
-            assertSame(committed, state.value)
-        }
+        val release =
+            state.observe { committed ->
+                callbacks += 1
+                assertSame(committed, state.value)
+            }
         try {
             assertEquals(
                 scalar,

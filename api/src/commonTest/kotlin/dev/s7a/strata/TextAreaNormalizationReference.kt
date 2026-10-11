@@ -11,7 +11,10 @@ internal object TextAreaNormalizationReference {
     /**
      * Replays the complete original eager-output scalar loop, including CRLF contraction.
      */
-    fun scalar(value: String, maximum: Int): String {
+    fun scalar(
+        value: String,
+        maximum: Int,
+    ): String {
         require(0 < maximum) { "Text area maximum length must be positive." }
         val result = StringBuilder(minOf(value.length, maximum))
         var offset = 0
@@ -40,7 +43,10 @@ internal object TextAreaNormalizationReference {
     /**
      * Decodes UTF-16 by inspecting individual code units, with no platform scalar or append helper.
      */
-    fun utf16(value: String, maximum: Int): String {
+    fun utf16(
+        value: String,
+        maximum: Int,
+    ): String {
         require(0 < maximum) { "Text area maximum length must be positive." }
         val output = mutableListOf<Char>()
         var index = 0
@@ -56,13 +62,19 @@ internal object TextAreaNormalizationReference {
                     output.add(value[index])
                 }
 
-                in '\uDC00'..'\uDFFF' -> throw IllegalArgumentException("Text area value contains an isolated surrogate.")
+                in '\uDC00'..'\uDFFF' -> {
+                    throw IllegalArgumentException("Text area value contains an isolated surrogate.")
+                }
+
                 '\r' -> {
                     output.add('\n')
                     if (index + 1 < value.length && value[index + 1] == '\n') index += 1
                 }
 
-                '\n', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029' -> output.add('\n')
+                '\n', '\u000B', '\u000C', '\u0085', '\u2028', '\u2029' -> {
+                    output.add('\n')
+                }
+
                 else -> {
                     require('\u0020' <= unit && unit != '\u007F' && unit != '\u00A7') {
                         "Text area value contains a control character or formatting marker."

@@ -66,17 +66,18 @@ internal class TextAreaMutationOrderTest {
         val trace = mutableListOf<String>()
         val retained = mutableListOf<String>()
         val failure = IllegalStateException("Reentrant observer failure")
-        val first = state.observe { committed ->
-            assertSame(committed, state.value)
-            trace.add(committed)
-            retained.add(committed)
-            if (trace.size == 1) {
-                state.value = "B\r\n日"
-                assertEquals("B\n日", state.value)
-                assertEquals("A\n🙂", committed)
-                throw failure
+        val first =
+            state.observe { committed ->
+                assertSame(committed, state.value)
+                trace.add(committed)
+                retained.add(committed)
+                if (trace.size == 1) {
+                    state.value = "B\r\n日"
+                    assertEquals("B\n日", state.value)
+                    assertEquals("A\n🙂", committed)
+                    throw failure
+                }
             }
-        }
         assertSame(failure, assertFailsWith<IllegalStateException> { state.value = "A\u2029🙂" })
         assertEquals(listOf("A\n🙂", "B\n日"), trace)
         assertEquals(trace, retained)
