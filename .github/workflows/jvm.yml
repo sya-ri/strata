@@ -458,7 +458,7 @@ jobs:
         common, web, docs, full_docs, workflow = (p[key] == 'true' for key in ('common', 'web', 'docs', 'docs_full', 'workflow'))
         minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
         expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
-        expected['paired-jvm'] = p['paired_manifest'] != ''
+        expected['paired-jvm'] = p.get('paired_manifest', '') != ''
         for job, selected in expected.items():
             required = 'success' if selected else 'skipped'
             assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"

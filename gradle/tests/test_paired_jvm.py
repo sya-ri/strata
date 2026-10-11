@@ -4,7 +4,9 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -144,6 +146,24 @@ class PairedJvmTest(unittest.TestCase):
                 PAIRED.run(self.root, manifest, output)
         self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "failed")
         self.assertTrue(output.with_suffix(".zip").is_file())
+
+    def test_workflow_result_accepts_runner_omitted_empty_opt_in_output(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        script = textwrap.dedent(re.search(r"(?ms)^\s+python3 - <<'PY'\n(.*?)^\s+PY\n", workflow)[1])
+        outputs = {key: "false" for key in ("common", "web", "docs", "docs_full", "workflow", "all_minecraft")}
+        outputs.update(minecraft="[]", paired_manifest="")
+        # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
+        exposed = {key: value for key, value in outputs.items() if value}
+        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
+        jobs["plan"] = {"result": "success", "outputs": exposed}
+        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
+            exec(compile(script, "jvm-workflow-result", "exec"), {})
+        exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
+        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+            exec(compile(script, "jvm-workflow-result", "exec"), {})
+        jobs["paired-jvm"]["result"] = "success"
+        with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
+            exec(compile(script, "jvm-workflow-result", "exec"), {})
 
 
 if __name__ == "__main__":
