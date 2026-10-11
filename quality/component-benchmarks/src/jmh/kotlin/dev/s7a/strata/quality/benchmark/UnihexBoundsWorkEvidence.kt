@@ -62,15 +62,7 @@ public object UnihexBoundsWorkEvidence {
         val begin = { println("Unihex operation begin ${row.id} ${row.identity()}") }
         val end = { output: Any -> println("Unihex operation end ${row.id} ${output.javaClass.name}") }
         when (row.operation) {
-            UnihexBoundsRow.Operation.NaturalBounds -> {
-                val state =
-                    UnihexBoundsBenchmark.BoundsState().also {
-                        it.fixture = checkNotNull(fixture)
-                        it.setup()
-                    }
-                begin()
-                end(state.bounds())
-            }
+            UnihexBoundsRow.Operation.NaturalBounds -> UnihexBoundsTrace.naturalBounds(fixture, begin, end)
 
             UnihexBoundsRow.Operation.PublicUncachedGlyph -> {
                 val state =
