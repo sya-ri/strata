@@ -239,6 +239,7 @@ public open class RemotePatchIndexBenchmark {
                     val current = records.filter { it.declaration.identity != removed }.map { node(it.declaration.identity, it.children.map { child -> if (child == removed) added else child }, 0) } + node(added, emptyList(), 0)
                     (if (nodes == 1) added else 1L) to current
                 }
+
                 Change.RootReplacement -> {
                     val root = nodes + 1L
                     root to (records.drop(1) + node(root, records.first().children, 0))

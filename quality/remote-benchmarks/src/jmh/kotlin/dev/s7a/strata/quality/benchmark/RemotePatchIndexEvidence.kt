@@ -74,9 +74,7 @@ public object RemotePatchIndexEvidence {
                         owner = null
                     }
 
-                    null -> {
-                        Unit
-                    }
+                    null -> {}
                 }
                 return
             }
