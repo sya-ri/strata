@@ -1,0 +1,102 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "ac489bfcf97f7231d8f3173cce83baae4843f83a",
+      "patches": [
+        {
+          "path": ".github/performance/unihex-bounds/candidate.patch",
+          "sha256": "97a136014d00a94bdfd6e14a4b60ac9d597134c5e3907702ee69a18343e59943"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "0f061ddb1f523b15a7e5842512df6c1c46dc90c7",
+      "patches": [
+        {
+          "path": ".github/performance/unihex-bounds/baseline.patch",
+          "sha256": "703ac09818af8b2d93627860b08a122838917f48889a754f0a72390c1a6d1072"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "ac489bfcf97f7231d8f3173cce83baae4843f83a",
+      "patches": [
+        {
+          "path": ".github/performance/unihex-bounds/candidate.patch",
+          "sha256": "97a136014d00a94bdfd6e14a4b60ac9d597134c5e3907702ee69a18343e59943"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless",
+    ":runtime:minecraft",
+    ":runtime:minecraft-fonts-lwjgl"
+  ],
+  "suites": [
+    {
+      "project": ":quality:component-benchmarks",
+      "name": "unihex-bounds-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsBenchmark",
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsControlBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 132,
+      "profilers": [
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsCpuProfiler"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "label": "unihex-bounds-assets.zip",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/resources/unihex-bounds/assets.zip",
+        "sha256": "7b90d871a19ef8cd1610356480045fe2ade2d12b1e3943cb8ae5e09b41088632"
+      }
+    },
+    {
+      "label": "unihex-bounds-fixtures.tsv",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/resources/unihex-bounds/fixtures.tsv",
+        "sha256": "f0267b5b757ac826ec48dfa72caf9c9b3406ceacf19987ed2f0a1bfb42d24a36"
+      }
+    },
+    {
+      "label": "unihex-bounds-comparisons.tsv",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/resources/unihex-bounds/comparisons.tsv",
+        "sha256": "a7d0dcf3bfdf46c559013fcd0d8ae7b98d05dd0ef5a8a0f32b7f6c0757c6e244"
+      }
+    },
+    {
+      "label": "unihex-bounds-measurements.tsv",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/resources/unihex-bounds/measurements.tsv",
+        "sha256": "428fe01e46d33df4c15abf737b34ebc800fa39b4d60bade6b952c69377f9f8ad"
+      }
+    },
+    {
+      "label": "unihex-bounds-controls.tsv",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/resources/unihex-bounds/controls.tsv",
+        "sha256": "89e76e7a93b6ca847cc58fb6fb99f04b8cf0512c7446c24fab1d7f2a83efb90b"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

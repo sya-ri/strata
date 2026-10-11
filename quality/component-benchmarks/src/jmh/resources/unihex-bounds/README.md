@@ -1,7 +1,7 @@
 # Unihex natural-bounds comparison inputs
 
 This complete corpus compares the actual runtime natural-bound helper and public consumers while changing only `FontHexGlyph.bounds`.
-The fixed baseline is synced master `5ddad0f7d05651bd5a44e16ba7d17ae3e8ca1ff8`, including the accepted complete-JMH Qodana tooling from #287.
+The fixed baseline is synced master `7ebd9c94f3da521cadb76eadd4312289eaf88d7e`, including the accepted complete-JMH Qodana tooling and shared paired JVM CI.
 Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
 These sources are preparation; all execution, origin qualification, controls and measurements are Pending.
@@ -36,6 +36,13 @@ Use the existing generic generated-fixture discovery and `verifyWork()` admissio
 Select `UnihexBoundsBenchmark,UnihexBoundsControlBenchmark` through the existing `strata.performance.benchmarks` property and use the shared collector and unchanged Standard settings from [the component task](../../../../build.gradle.kts).
 Preparation/checks use the existing JVM-only model; complete acceptance uses the complete model.
 No benchmark-specific Gradle task or property is added.
+
+The [full paired manifest](../../../../../../.github/performance/paired-jvm.json) binds this complete corpus to the shared Windows CPU route.
+Its immutable source patches reconstruct the same prepared fixture and collector on both runtime sides from the accepted master; only `FontHexGlyph.kt` differs.
+The driver retains all 132 cases in each of three baseline and three candidate AverageTime collections (792 required cells), plus the separate complete SampleTime comparison (792 additional cells).
+Input attributes preserve the original five resource blobs across checkouts; predeclared compiled, dependency and Java byte pins are empty because no qualifying archives or hosted executables have yet been produced for this revision.
+Actual source archive hashes, loaded origins, CPU availability, controls, collection costs and all measurements remain Pending until this corpus completes.
+The shared CPU route supplements the existing external untimed tracing and real OpenGL/Vulkan, font ownership and supported-version acceptance; it does not replace them.
 Register `assets.zip`, `fixtures.tsv`, `comparisons.tsv`, `measurements.tsv` and `controls.tsv` through the existing `strata.performance.fixtureInputs` properties manifest, with labels `unihex-bounds-<filename>` and exact absolute regular-file paths.
 Preserve that same manifest's original files for both runtime sides.
 Additional input labels never replace the collector's required library/native/TrueType controls.

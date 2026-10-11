@@ -168,10 +168,11 @@ internal class FontHexGlyphBoundsTest {
         val engine = MinecraftFontEngine(snapshot(record('A'.code, 32, rows), true), { backend })
         val old = engine.glyph(FontTestResources.defaultFont, 'A'.code)
         try {
-            val foreign = FutureTask {
-                assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
-                assertThrows(IllegalStateException::class.java) { engine.close() }
-            }
+            val foreign =
+                FutureTask {
+                    assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
+                    assertThrows(IllegalStateException::class.java) { engine.close() }
+                }
             val thread = Thread(foreign)
             thread.start()
             foreign.get(10, TimeUnit.SECONDS)
@@ -213,7 +214,15 @@ internal class FontHexGlyphBoundsTest {
             LongArray(16) { 1L shl (width - 1) },
             LongArray(16) { 1L },
             LongArray(16) { if (it % 3 == 0) 1L shl (width / 2) else 0L },
-            LongArray(16) { if (it == 0) 1L shl (width - 2) else if (it == 15) 2L else 0L },
+            LongArray(16) {
+                if (it == 0) {
+                    1L shl (width - 2)
+                } else if (it == 15) {
+                    2L
+                } else {
+                    0L
+                }
+            },
             LongArray(16) { if (it % 2 == 0) mask else 0L },
             LongArray(16) { random.nextLong() and random.nextLong() and mask },
         )

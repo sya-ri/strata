@@ -1,0 +1,2887 @@
+diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
+index ef9ec812dd4ceb52ff651f8583a0af7b4f40e617..310ebe76eba54492c1a1e31c55a1cad9eab4e970 100644
+--- a/docs/development/performance-testkit.md
++++ b/docs/development/performance-testkit.md
+@@ -77,6 +77,11 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
+ The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
+ For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
+ 
++The component task accepts `-Pstrata.performance.profilers=<comma-separated-JMH-profiler-identifiers>` for additional metrics from standard JMH profilers.
++It appends the requested profilers to the unchanged GC and loaded-fork provenance profilers; omission preserves the existing collection.
++Use the same selection on both runtime sides and retain it in the raw receipt's arguments.
++JMH resolves each identifier and rejects unavailable profilers before a successful collection receipt.
++
+ Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
+ This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
+ Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
+diff --git a/quality/component-benchmarks/build.gradle.kts b/quality/component-benchmarks/build.gradle.kts
+index cbcb1247390777cd21af59b49bc53680d7613ca1..8cd362f09e4288a2ab1136ff10f1f246dc04de23 100644
+--- a/quality/component-benchmarks/build.gradle.kts
++++ b/quality/component-benchmarks/build.gradle.kts
+@@ -129,6 +129,9 @@ tasks.register<JavaExec>("jmhComponents") {
+     fixtureInputs?.let { systemProperty("strata.performance.fixtureInputs", rootProject.file(it).absolutePath) }
+     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
+     args(result.get().absolutePath, repetition.toString(), if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
++    val profilers = providers.gradleProperty("strata.performance.profilers").orNull?.split(',')?.map(String::trim).orEmpty()
++    require(profilers.all(String::isNotBlank) && profilers.distinct().size == profilers.size) { "Additional JMH profiler identifiers must be nonblank and unique" }
++    profilers.forEach { args("-prof", it) }
+     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
+     systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
+     systemProperty("strata.performance.mode", mode)
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsAssets.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsAssets.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..b191700bd595c69fbf78bb13eca50ce23b234846
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsAssets.kt
+@@ -0,0 +1,130 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JmhFixtureSelection
++import dev.s7a.strata.resource.ResourceId
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
++import java.io.ByteArrayInputStream
++import java.nio.file.Files
++import java.util.zip.ZipInputStream
++
++/**
++ * Reads the committed detached bytes outside sampling; frozen files are registered with the shared collector.
++ * The scalar oracle below uses the original shift expression, independently of the changed runtime helper.
++ */
++internal object UnihexBoundsAssets {
++    /**
++     * Default provider addressed by every public consumer operation.
++     */
++    internal val font: ResourceId = ResourceId("minecraft", "default")
++
++    /**
++     * Reads a packed record from the immutable geometry table, without runtime decoding or bit scans.
++     */
++    internal fun rows(fixture: UnihexBoundsFixture): LongArray {
++        val line = bytes("fixtures.tsv").toString(Charsets.UTF_8).lineSequence().single { it.substringBefore('\t') == fixture.name }
++        return line
++            .split('\t')[2]
++            .split(',')
++            .map { it.toLong(16) }
++            .toLongArray()
++    }
++
++    /**
++     * Creates a copied public asset source from the exact original ZIP and font document.
++     */
++    internal fun source(
++        fixture: UnihexBoundsFixture,
++        document: String = "${fixture.name}.json",
++    ): MinecraftMemoryFontAssetSource =
++        MinecraftMemoryFontAssetSource(
++            "unihex-bounds-v1",
++            mapOf(
++                "assets/minecraft/font/default.json" to bundle(document),
++                "assets/strata_benchmark/font/glyphs.zip" to bundle("${fixture.name}.zip"),
++            ),
++        )
++
++    /**
++     * Loads the public snapshot with exact immutable release capabilities and default input budgets.
++     */
++    internal fun snapshot(
++        fixture: UnihexBoundsFixture,
++        fractional: Boolean,
++        document: String = "${fixture.name}.json",
++    ): MinecraftFontSnapshot = load(source(fixture, document), fractional)
++
++    /**
++     * Keeps source loading as a complete explicit operation rather than hidden benchmark setup.
++     */
++    internal fun load(
++        source: MinecraftMemoryFontAssetSource,
++        fractional: Boolean,
++    ): MinecraftFontSnapshot =
++        MinecraftFontSnapshot
++            .load(listOf(source), compatibility(fractional))
++            .also { check(it.diagnostics.isEmpty()) { "Frozen Unihex fixture failed: ${it.diagnostics}" } }
++
++    /**
++     * The two real advance capabilities are crossed independently with the same source bytes.
++     */
++    internal fun compatibility(fractional: Boolean): MinecraftFontCompatibility = MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = fractional, rejectMalformedOverlayMetadata = true)
++
++    /**
++     * Reads a registered external original or the same committed development resource outside timing.
++     */
++    internal fun bytes(name: String): ByteArray {
++        if (System.getProperty("strata.performance.fixtureInputs") != null) {
++            val path = checkNotNull(JmhFixtureSelection.inputs()["unihex-bounds-$name"]) { "Missing frozen input: $name" }
++            return Files.readAllBytes(path)
++        }
++        return checkNotNull(javaClass.getResourceAsStream("/unihex-bounds/$name")).use { it.readBytes() }
++    }
++
++    /**
++     * Extracts one exact stored bundle member; this work belongs only to source preparation.
++     */
++    internal fun bundle(name: String): ByteArray {
++        ZipInputStream(ByteArrayInputStream(bytes("assets.zip"))).use { archive ->
++            var entry = archive.nextEntry
++            while (entry != null) {
++                if (entry.name == name) return archive.readBytes()
++                archive.closeEntry()
++                entry = archive.nextEntry
++            }
++        }
++        error("Missing frozen asset: $name")
++    }
++
++    /**
++     * Original unsigned Long per-pixel reference, including the native column guard and JVM shift masking.
++     */
++    internal fun scalarInk(
++        width: Int,
++        rows: LongArray,
++        x: Int,
++        y: Int,
++    ): Boolean = x in 0..31 && ((rows[y] shl (32 - width)) ushr (31 - x)) and 1L != 0L
++
++    /**
++     * Original scalar extrema; no new runtime helper or leading/trailing-bit operation enters this oracle.
++     */
++    internal fun scalarBounds(
++        width: Int,
++        rows: LongArray,
++    ): IntRange {
++        var left = width
++        var right = -1
++        for (y in rows.indices) {
++            for (x in 0 until width) {
++                if (scalarInk(width, rows, x, y)) {
++                    left = minOf(left, x)
++                    right = maxOf(right, x)
++                }
++            }
++        }
++        return if (right < left) 0..width else left..right
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ba6a17697aaf024ac25d06300ca2b6871a4269e
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsBenchmark.kt
+@@ -0,0 +1,278 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import dev.s7a.strata.component.Stack
++import dev.s7a.strata.component.Text
++import dev.s7a.strata.component.TextStyle
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.PointerEvent
++import dev.s7a.strata.performance.RuntimeWorkMonitor
++import dev.s7a.strata.render.DrawImage
++import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.ui.UiDefinition
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++import java.lang.invoke.MethodHandle
++import java.lang.invoke.MethodHandles
++import java.lang.invoke.MethodType
++
++/**
++ * The complete 120-row geometry corpus: real natural bounds, uncached public glyphs and retained dirty Text.
++ * Acquisition, original ZIP creation, decoding and scalar reference checks never occur in sampled setup.
++ * Natural bounds include one identical method-handle invocation on both runtime archives.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class UnihexBoundsBenchmark {
++    /**
++     * Invokes the actual loaded runtime helper once on one immutable owned glyph.
++     */
++    @Benchmark
++    public fun naturalBounds(state: BoundsState): IntRange = state.bounds()
++
++    /**
++     * Includes actual raster construction, width validation and public metric creation with caching disabled.
++     */
++    @Benchmark
++    public fun publicUncachedGlyph(state: GlyphState): MinecraftFontGlyph = state.glyph()
++
++    /**
++     * Publishes a changed Text value and returns the complete real retained frame with default font caching.
++     */
++    @Benchmark
++    public fun completeDirtyTextFrame(state: TextState): RuntimeUiFrame = state.update()
++
++    /**
++     * Shared deterministic admission is discovered by the existing generic fixture verifier.
++     */
++    public companion object {
++        /**
++         * Verifies the complete immutable 132-row registry and independent scalar/public/frame checks.
++         */
++        @JvmStatic
++        public fun verifyWork(): Unit = UnihexBoundsWorkEvidence.verify()
++    }
++
++    /**
++     * Worker-owned immutable row fixture and actual runtime method binding, with no copied implementation.
++     */
++    @State(Scope.Thread)
++    public open class BoundsState {
++        /**
++         * All six row patterns at each of the four admitted decoded widths.
++         */
++        @JvmField
++        @Param
++        public var fixture: UnihexBoundsFixture = UnihexBoundsFixture.W8Empty
++        private lateinit var glyph: Any
++        private lateinit var method: MethodHandle
++
++        /**
++         * Resolves the real archive class and copies its original sixteen packed rows before measurement.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            val type = Class.forName("dev.s7a.strata.runtime.minecraft.font.FontHexGlyph")
++            val lookup = MethodHandles.publicLookup()
++            glyph = lookup.findConstructor(type, MethodType.methodType(Void.TYPE, Int::class.java, LongArray::class.java)).invoke(fixture.width, UnihexBoundsAssets.rows(fixture))
++            method = lookup.findVirtual(type, "bounds", MethodType.methodType(IntRange::class.java))
++        }
++
++        /**
++         * The same handle call reaches baseline or candidate according to the actual execution classpath.
++         */
++        public fun bounds(): IntRange = method.invoke(glyph) as IntRange
++    }
++
++    /**
++     * Actual public no-cache glyph preparation after provider preflight; no source generation is sampled.
++     */
++    @State(Scope.Thread)
++    public open class GlyphState {
++        /**
++         * Exactly the 24 frozen geometry inputs.
++         */
++        @JvmField
++        @Param
++        public var fixture: UnihexBoundsFixture = UnihexBoundsFixture.W8Empty
++
++        /**
++         * Both release-specific advance capabilities, crossed with identical immutable source bytes.
++         */
++        @JvmField
++        @Param("false", "true")
++        public var fractional: Boolean = false
++        private lateinit var engine: MinecraftFontEngine
++        private var backends = 0
++
++        /**
++         * Loads through the public snapshot API and preflights one independently owned engine before sampling.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            engine = MinecraftFontEngine(UnihexBoundsAssets.snapshot(fixture, fractional), backendFactory(), cacheEntries = 0, cacheBytes = 0)
++            glyph()
++        }
++
++        /**
++         * Performs the full public uncached consumer operation without extracting pixels inside timing.
++         */
++        public fun glyph(): MinecraftFontGlyph = engine.glyph(UnihexBoundsAssets.font, 'A'.code)
++
++        /**
++         * Closes the actual owner and proves no raster, face or backend survives terminal cleanup.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            engine.close()
++            check(engine.retainedRasterEntries == 0 && engine.retainedRasterBytes == 0L && engine.retainedFaces == 0 && backends == 0)
++        }
++
++        private fun backendFactory(): MinecraftFontBackendFactory = portableBackend { backends += it }
++    }
++
++    /**
++     * Current Text and one host with the unchanged default raster cache.
++     * Both scalar rasters are primed; dirty content still executes normal layout/paint while natural work may be zero.
++     * The top-start Stack admits natural Text size inside the fixed complete viewport.
++     */
++    @State(Scope.Thread)
++    public open class TextState {
++        /**
++         * Exactly the 24 original source geometries, including transparent empty padding.
++         */
++        @JvmField
++        @Param
++        public var fixture: UnihexBoundsFixture = UnihexBoundsFixture.W8Empty
++
++        /**
++         * Both actual integer and fractional advance contracts.
++         */
++        @JvmField
++        @Param("false", "true")
++        public var fractional: Boolean = false
++        private lateinit var host: MinecraftUiHost
++        private lateinit var source: StressStateSource<String>
++        private var monitor: RuntimeWorkMonitor? = null
++        private var phase = false
++        private var backends = 0
++
++        /**
++         * Fixed complete logical viewport; physical density is independently checked outside CPU timing.
++         */
++        public val viewport: IntSize = IntSize(320, 40)
++
++        /**
++         * Detached untimed diagnostics; no per-frame diagnostic work enters ordinary JMH sampling.
++         */
++        public val work: JsonObject get() = checkNotNull(monitor).snapshot()
++
++        /**
++         * Live source subscription count and independent backend ownership for retention checks.
++         */
++        public val ownership: List<Int> get() = listOf(source.subscriptions, backends)
++
++        /**
++         * Prepares immutable profile inputs, attaches and primes both declared scalars with actual Text frames.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            val profile = ComponentProfile.create(UnihexBoundsAssets.snapshot(fixture, fractional))
++            source = StressStateSource("A")
++            host = createMinecraftUiHost(UiDefinition("Unihex bounds Text") { Stack { Text(source, style = TextStyle.ContainerLabel) } }, profile, fontBackend = portableBackend { backends += it })
++            host.attach()
++            idle()
++            update()
++            update()
++        }
++
++        /**
++         * Uses the shared bounded monitor only during untimed structural admission.
++         */
++        public fun monitorWork() {
++            check(monitor == null)
++            monitor = RuntimeWorkMonitor(host, checkpointSamples = 16, maxNodeRecords = 32)
++        }
++
++        /**
++         * Returns the current clean frame without changing source or host time.
++         */
++        public fun idle(): RuntimeUiFrame = measured { host.frame(viewport) }
++
++        /**
++         * Alternates equal-metric A/B through public observation and performs a complete dirty frame.
++         */
++        public fun update(): RuntimeUiFrame =
++            measured {
++                phase = phase.not()
++                source.publish(if (phase) "B" else "A")
++                host.frame(viewport)
++            }
++
++        /**
++         * Exercises real detachment and reattachment without replacing immutable source data.
++         */
++        public fun reattach(): RuntimeUiFrame {
++            host.detach()
++            host.attach()
++            return host.frame(viewport)
++        }
++
++        /**
++         * An ordinary display label has no eligible input behavior after its actual geometry is committed.
++         */
++        public fun pointer(): InputResult = host.dispatchPointer(PointerEvent.Move(IntOffset(0, 0)))
++
++        /**
++         * Releases monitoring, subscription, host and backend even if an independent assertion fails.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            try {
++                monitor?.close()
++            } finally {
++                monitor = null
++                host.close()
++            }
++            check(ownership == listOf(0, 0))
++        }
++
++        private inline fun measured(crossinline operation: () -> RuntimeUiFrame): RuntimeUiFrame = monitor?.sample { operation() } ?: operation()
++    }
++}
++
++/**
++ * Supplies only CPU-neutral ordering for Unihex fixtures and explicit terminal ownership; no native font is opened.
++ * Called outside sampled operations except for the explicitly measured lifecycle controls.
++ */
++internal fun portableBackend(ownership: (Int) -> Unit): MinecraftFontBackendFactory =
++    MinecraftFontBackendFactory {
++        ownership(1)
++        object : MinecraftFontBackend {
++            override fun decodePng(bytes: ByteArray): DrawImage = error("Unihex fixtures do not decode PNGs")
++
++            override fun openTrueType(
++                bytes: ByteArray,
++                settings: MinecraftTrueTypeSettings,
++            ): MinecraftTrueTypeFace = error("Unihex fixtures do not open native faces")
++
++            override fun close() {
++                ownership(-1)
++            }
++        }
++    }
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControl.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControl.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..712ae45dd824797abc1ac96c2aefd828065bd8d2
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControl.kt
+@@ -0,0 +1,20 @@
++package dev.s7a.strata.quality.benchmark
++
++/**
++ * Twelve single-row consumer controls, retained regardless of whether packed natural bounds can benefit them.
++ * Full source loading and terminal operations remain inside their explicitly named measurement boundaries.
++ */
++public enum class UnihexBoundsControl {
++    Evicted8Integer,
++    Evicted32Fractional,
++    WarmRasterHit,
++    AbsentSparseGlyph,
++    MatchingOverride,
++    NoMatchingOverride,
++    TrueType,
++    Bitmap,
++    SnapshotLoad,
++    EngineLifecycle,
++    CleanTextFrame,
++    SnapshotReplacement,
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..75c05c68ab6340167ec025b441c64d23bdb9c62d
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlBenchmark.kt
+@@ -0,0 +1,227 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.component.Stack
++import dev.s7a.strata.component.Text
++import dev.s7a.strata.component.TextStyle
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
++import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.ui.UiDefinition
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++import java.nio.file.Files
++import java.nio.file.Path
++
++/**
++ * Twelve unchanged consumer controls, including real native CPU fonts and complete load/replacement lifetimes.
++ * Every control remains in the registry when it has no natural-bound opportunity or measures slower.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class UnihexBoundsControlBenchmark {
++    /**
++     * Performs the declared complete consumer operation with setup and reset transitions fixed by the table.
++     */
++    @Benchmark
++    public fun control(state: ControlState): Any = state.operation()
++
++    /**
++     * Generic discovery admits this corpus together with all geometry rows.
++     */
++    public companion object {
++        /**
++         * Independent work checks run before the shared JMH collector starts any fork.
++         */
++        @JvmStatic
++        public fun verifyWork(): Unit = UnihexBoundsWorkEvidence.verify()
++    }
++
++    /**
++     * One worker owns its prepared sources and current engine or Text host; it retains no result history.
++     */
++    @State(Scope.Thread)
++    public open class ControlState {
++        /**
++         * Exactly the twelve frozen single-row operations.
++         */
++        @JvmField
++        @Param
++        public var control: UnihexBoundsControl = UnihexBoundsControl.Evicted8Integer
++        private lateinit var source: MinecraftMemoryFontAssetSource
++        private lateinit var alternative: MinecraftMemoryFontAssetSource
++        private lateinit var snapshot: MinecraftFontSnapshot
++        private var engine: MinecraftFontEngine? = null
++        private var text: UnihexBoundsBenchmark.TextState? = null
++        private var phase = false
++        private var backends = 0
++
++        /**
++         * The independently selected source fixture for untimed scalar/pixel reference checks.
++         */
++        public val fixture: UnihexBoundsFixture
++            get() = if (control == UnihexBoundsControl.Evicted8Integer) UnihexBoundsFixture.W8DisjointExtrema else UnihexBoundsFixture.W32DisjointExtrema
++
++        /**
++         * The exact integer/fractional capability used by the public control.
++         */
++        public val fractional: Boolean get() = control != UnihexBoundsControl.Evicted8Integer
++
++        /**
++         * Bounded current cache gauges; no historical counter state is added to the runtime.
++         */
++        public val retained: List<Long>
++            get() = engine?.let { listOf(it.retainedRasterEntries.toLong(), it.retainedRasterBytes, it.retainedFaces.toLong()) } ?: listOf(0L, 0L, 0L)
++
++        /**
++         * Acquires original bytes outside timing and primes only the transitions declared in the frozen table.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            source = source()
++            alternative = UnihexBoundsAssets.source(UnihexBoundsFixture.W32CenteredSparse)
++            snapshot = UnihexBoundsAssets.load(source, fractional)
++            when (control) {
++                UnihexBoundsControl.CleanTextFrame -> {
++                    text =
++                        UnihexBoundsBenchmark.TextState().also {
++                            it.fixture = fixture
++                            it.fractional = fractional
++                            it.setup()
++                        }
++                }
++
++                UnihexBoundsControl.SnapshotLoad, UnihexBoundsControl.EngineLifecycle, UnihexBoundsControl.SnapshotReplacement -> {}
++
++                else -> {
++                    val entries =
++                        when (control) {
++                            UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> 1
++                            UnihexBoundsControl.WarmRasterHit -> 4096
++                            else -> 0
++                        }
++                    engine = createEngine(entries)
++                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'A'.code)
++                }
++            }
++        }
++
++        /**
++         * Returns the real output to JMH without hashing, pixel extraction or timing thresholds.
++         */
++        public fun operation(): Any =
++            when (control) {
++                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> {
++                    phase = phase.not()
++                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, if (phase) 'B'.code else 'A'.code)
++                }
++
++                UnihexBoundsControl.AbsentSparseGlyph -> {
++                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'C'.code)
++                }
++
++                UnihexBoundsControl.SnapshotLoad -> {
++                    UnihexBoundsAssets.load(source, fractional)
++                }
++
++                UnihexBoundsControl.EngineLifecycle -> {
++                    createEngine(0).use { it.glyph(UnihexBoundsAssets.font, 'A'.code) }
++                }
++
++                UnihexBoundsControl.CleanTextFrame -> {
++                    checkNotNull(text).idle()
++                }
++
++                UnihexBoundsControl.SnapshotReplacement -> {
++                    phase = phase.not()
++                    val next = UnihexBoundsAssets.load(if (phase) alternative else source, fractional)
++                    val profile = ComponentProfile.create(next)
++                    createMinecraftUiHost(UiDefinition("Unihex snapshot replacement") { Stack { Text("A", style = TextStyle.ContainerLabel) } }, profile, fontBackend = portableBackend { backends += it }).use {
++                        it.attach()
++                        it.frame(IntSize(320, 40))
++                    }
++                }
++
++                else -> {
++                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'A'.code)
++                }
++            }
++
++        /**
++         * Releases every current owner and checks terminal cache and backend gauges after ordinary or failed use.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            try {
++                text?.close()
++            } finally {
++                text = null
++                engine?.close()
++            }
++            check(retained == listOf(0L, 0L, 0L) && backends == 0)
++            engine = null
++        }
++
++        private fun createEngine(entries: Int): MinecraftFontEngine {
++            val native = control == UnihexBoundsControl.TrueType || control == UnihexBoundsControl.Bitmap
++            val backend = if (native) nativeBackend() else portableBackend { backends += it }
++            return MinecraftFontEngine(snapshot, backend, cacheEntries = entries)
++        }
++
++        private fun nativeBackend(): MinecraftFontBackendFactory =
++            MinecraftFontBackendFactory { capabilities ->
++                val delegate = LwjglMinecraftFontBackendFactory.open(capabilities)
++                backends += 1
++                object : MinecraftFontBackend by delegate {
++                    override fun close() {
++                        delegate.close()
++                        backends -= 1
++                    }
++                }
++            }
++
++        private fun source(): MinecraftMemoryFontAssetSource =
++            when (control) {
++                UnihexBoundsControl.MatchingOverride -> {
++                    UnihexBoundsAssets.source(fixture, "matching.json")
++                }
++
++                UnihexBoundsControl.NoMatchingOverride -> {
++                    UnihexBoundsAssets.source(fixture, "nonmatching.json")
++                }
++
++                UnihexBoundsControl.Bitmap -> {
++                    MinecraftMemoryFontAssetSource(
++                        "unihex-bitmap-control-v1",
++                        mapOf(
++                            "assets/minecraft/font/default.json" to UnihexBoundsAssets.bundle("bitmap.json"),
++                            "assets/strata_benchmark/textures/font/control.png" to UnihexBoundsAssets.bundle("control.png"),
++                        ),
++                    )
++                }
++
++                UnihexBoundsControl.TrueType -> {
++                    MinecraftMemoryFontAssetSource(
++                        "unihex-truetype-control-v1",
++                        mapOf(
++                            "assets/minecraft/font/default.json" to UnihexBoundsAssets.bundle("truetype.json"),
++                            "assets/strata_benchmark/font/control.ttf" to Files.readAllBytes(Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture")))),
++                        ),
++                    )
++                }
++
++                else -> {
++                    UnihexBoundsAssets.source(fixture)
++                }
++            }
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlGlyphs.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlGlyphs.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..05ae340b59696936a1557aba7a170528e61500f0
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsControlGlyphs.kt
+@@ -0,0 +1,32 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++
++/**
++ * Independent glyph-output checks for the unchanged bitmap and TrueType consumer controls.
++ * Complete native parity remains separate acceptance evidence.
++ */
++internal object UnihexBoundsControlGlyphs {
++    /**
++     * Checks every straight-ARGB bitmap texel against the frozen checkerboard source.
++     */
++    internal fun bitmap(glyph: MinecraftFontGlyph) {
++        val image = checkNotNull(glyph.image)
++        check(image.size == IntSize(8, 8))
++        val expected = IntArray(64) { index -> if ((index % 8 + index / 8) % 2 == 0) -1 else 0x00ffffff }
++        check(image.copyArgb().contentEquals(expected))
++    }
++
++    /**
++     * Checks uncached native TrueType raster and metric repeat stability alongside independent native parity.
++     */
++    internal fun trueType(
++        first: Any,
++        second: Any,
++    ) {
++        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
++        check(checkNotNull(first.image).copyArgb().contentEquals(checkNotNull(second.image).copyArgb()))
++        check(first.copy(image = null) == second.copy(image = null))
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsCpuProfiler.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsCpuProfiler.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb4e66ac70d4e486638b275db6411f66fd5d885b
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsCpuProfiler.kt
+@@ -0,0 +1,45 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JvmPerformanceMeter
++import org.openjdk.jmh.infra.BenchmarkParams
++import org.openjdk.jmh.infra.IterationParams
++import org.openjdk.jmh.profile.InternalProfiler
++import org.openjdk.jmh.results.AggregationPolicy
++import org.openjdk.jmh.results.IterationResult
++import org.openjdk.jmh.results.Result
++import org.openjdk.jmh.results.ScalarResult
++
++/**
++ * Adapts the existing shared JDK meter to one JMH iteration without introducing a sampler or execution controller.
++ * Process CPU includes benchmark workers, fork bookkeeping, JIT and GC during that iteration.
++ * It is normalized by JMH's actual all-operation count, separately from elapsed latency and GC allocation.
++ * The profiler controller thread's CPU is deliberately not reported as workload CPU.
++ */
++public class UnihexBoundsCpuProfiler : InternalProfiler {
++    private var meter: JvmPerformanceMeter? = null
++
++    override fun getDescription(): String = "Shared-meter fork process CPU per actual JMH iteration operation."
++
++    override fun beforeIteration(
++        benchmarkParams: BenchmarkParams,
++        iterationParams: IterationParams,
++    ) {
++        check(meter == null)
++        meter = JvmPerformanceMeter(benchmarkParams.benchmark, 1).also { it.begin() }
++    }
++
++    override fun afterIteration(
++        benchmarkParams: BenchmarkParams,
++        iterationParams: IterationParams,
++        result: IterationResult,
++    ): Collection<Result<*>> {
++        val current = checkNotNull(meter)
++        current.end()
++        meter = null
++        val cpu = current.result().get("process_cpu_ns")
++        check(cpu != null && cpu.isJsonNull.not()) { "Qualified host must expose process CPU time" }
++        val operations = result.metadata.allOps
++        check(0 < operations)
++        return listOf(ScalarResult("unihex.processCpu", cpu.asLong.toDouble() / operations, "ns/op", AggregationPolicy.AVG))
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsFixture.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsFixture.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..6110280c220dd78d5b0388da7a1a7a2e3540364a
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsFixture.kt
+@@ -0,0 +1,36 @@
++package dev.s7a.strata.quality.benchmark
++
++/**
++ * The frozen 24 geometry inputs: four admitted widths crossed with six independent packed-row patterns.
++ * Names address external fixture records; they do not select runtime component behavior.
++ *
++ * @property width decoded source columns.
++ */
++public enum class UnihexBoundsFixture(
++    public val width: Int,
++) {
++    W8Empty(8),
++    W8AllInk(8),
++    W8LeftEdge(8),
++    W8RightEdge(8),
++    W8CenteredSparse(8),
++    W8DisjointExtrema(8),
++    W16Empty(16),
++    W16AllInk(16),
++    W16LeftEdge(16),
++    W16RightEdge(16),
++    W16CenteredSparse(16),
++    W16DisjointExtrema(16),
++    W24Empty(24),
++    W24AllInk(24),
++    W24LeftEdge(24),
++    W24RightEdge(24),
++    W24CenteredSparse(24),
++    W24DisjointExtrema(24),
++    W32Empty(32),
++    W32AllInk(32),
++    W32LeftEdge(32),
++    W32RightEdge(32),
++    W32CenteredSparse(32),
++    W32DisjointExtrema(32),
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsRow.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsRow.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..3e811723291f27022994a655dd6a0416b310b531
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsRow.kt
+@@ -0,0 +1,91 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JmhPerformanceRunner
++
++/**
++ * Typed decoding boundary for the frozen comparison table, shared by registry admission and untimed method tracing.
++ * External operation/advance names are decoded once; runtime workload selection uses these enums.
++ *
++ * @property id immutable comparison-row identity.
++ * @property fixture geometry enum, absent for a single-row control.
++ * @property control control enum, absent for a geometry operation.
++ * @property operation complete measured consumer boundary.
++ * @property advance release capability, or explicitly not applicable to a scalar/control operation.
++ */
++internal data class UnihexBoundsRow(
++    val id: String,
++    val fixture: UnihexBoundsFixture?,
++    val control: UnihexBoundsControl?,
++    val operation: Operation,
++    val advance: Advance,
++) {
++    /**
++     * Exact generated JMH identity for the standard average-time mode.
++     */
++    internal fun identity(): String {
++        val parameters =
++            buildMap {
++                control?.let { put("control", it.name) }
++                fixture?.let { put("fixture", it.name) }
++                if (control == null && advance != Advance.NotApplicable) put("fractional", (advance == Advance.Fractional).toString())
++            }
++        val method =
++            when (operation) {
++                Operation.NaturalBounds -> "UnihexBoundsBenchmark.naturalBounds"
++                Operation.PublicUncachedGlyph -> "UnihexBoundsBenchmark.publicUncachedGlyph"
++                Operation.CompleteDirtyTextFrame -> "UnihexBoundsBenchmark.completeDirtyTextFrame"
++                Operation.Control -> "UnihexBoundsControlBenchmark.control"
++            }
++        return JmhPerformanceRunner.workloadIdentity("dev.s7a.strata.quality.benchmark.$method", "avgt", parameters)
++    }
++
++    /**
++     * Consumer boundaries named by the external comparison table.
++     */
++    internal enum class Operation {
++        NaturalBounds,
++        PublicUncachedGlyph,
++        CompleteDirtyTextFrame,
++        Control,
++    }
++
++    /**
++     * Actual native advance capability, independent of source geometry.
++     *
++     * @property wireName external table spelling decoded at this boundary.
++     */
++    internal enum class Advance(
++        val wireName: String,
++    ) {
++        NotApplicable("N/A"),
++        Integer("Integer"),
++        Fractional("Fractional"),
++    }
++
++    /**
++     * Reads detached immutable rows; it adds no runtime cache or request-history state.
++     */
++    internal companion object {
++        /**
++         * Decodes original external text into the fixed typed consumer registry.
++         */
++        internal fun read(): List<UnihexBoundsRow> =
++            UnihexBoundsAssets
++                .bytes("comparisons.tsv")
++                .toString(Charsets.UTF_8)
++                .lineSequence()
++                .drop(1)
++                .filter { it.isNotEmpty() }
++                .map { line ->
++                    val values = line.split('\t')
++                    val operation = Operation.valueOf(values[2])
++                    UnihexBoundsRow(
++                        values[0],
++                        if (operation == Operation.Control) null else UnihexBoundsFixture.valueOf(values[1]),
++                        if (operation == Operation.Control) UnihexBoundsControl.valueOf(values[1]) else null,
++                        operation,
++                        Advance.entries.single { it.wireName == values[3] },
++                    )
++                }.toList()
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTrace.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTrace.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..73eb3ae0f171f1b5d7c6876259bfa4df6e1b92aa
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTrace.kt
+@@ -0,0 +1,23 @@
++package dev.s7a.strata.quality.benchmark
++
++/**
++ * Executes the natural-bounds row inside its external untimed trace boundary.
++ */
++internal object UnihexBoundsTrace {
++    /**
++     * Prepares the bounds state before [begin], then passes exactly one bounds result to [end].
++     */
++    internal fun naturalBounds(
++        fixture: UnihexBoundsFixture?,
++        begin: () -> Unit,
++        end: (Any) -> Unit,
++    ) {
++        val state =
++            UnihexBoundsBenchmark.BoundsState().also {
++                it.fixture = checkNotNull(fixture)
++                it.setup()
++            }
++        begin()
++        end(state.bounds())
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsWorkEvidence.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsWorkEvidence.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d470bb0cebd9afad9e70470c154d0955cdcd155
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsWorkEvidence.kt
+@@ -0,0 +1,316 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.PerformanceJson
++import dev.s7a.strata.performance.WorkExpectation
++import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
++import dev.s7a.strata.runtime.headless.rasterizeHeadless
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.semantics.SemanticsRole
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.UiText
++import kotlin.math.ceil
++import kotlin.math.floor
++
++/**
++ * Independent scalar ARGB/metric and complete Text checks for every frozen comparison row.
++ * This verifier never certifies pending external method traces, owner/failure test runs or loaded native parity.
++ * Those independent controls remain separate acceptance evidence and cannot be replaced by fixture construction.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public object UnihexBoundsWorkEvidence {
++    /**
++     * Runs deterministic fixture admission with the already packaged JMH registry; no sampling loop is owned here.
++     */
++    @JvmStatic
++    public fun verify() {
++        val fixtures = listOf(UnihexBoundsBenchmark::class.java, UnihexBoundsControlBenchmark::class.java)
++        val expected = UnihexBoundsRow.read().map { it.identity() }.toSet()
++        check(expected.size == 132 && table("fixtures.tsv").size == 36 && table("measurements.tsv").size == 792 && table("controls.tsv").size == 30)
++        check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")) == expected)
++        for (fixture in UnihexBoundsFixture.entries) {
++            val bounds =
++                UnihexBoundsBenchmark.BoundsState().also {
++                    it.fixture = fixture
++                    it.setup()
++                }
++            val rows = UnihexBoundsAssets.rows(fixture)
++            check(bounds.bounds() == UnihexBoundsAssets.scalarBounds(fixture.width, rows))
++            for (fractional in listOf(false, true)) {
++                verifyGlyph(fixture, fractional)
++                verifyText(fixture, fractional)
++            }
++        }
++        for (control in UnihexBoundsControl.entries) verifyControl(control)
++    }
++
++    /**
++     * Executes exactly one frozen row for an external untimed JVM method trace.
++     * Setup is outside the printed begin/end boundary; a trace counts actual bounds/raster methods inside it.
++     * This entry contains no timing, profiler, controller, independent sampling loop or origin certificate.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        require(args.size == 1)
++        val row = UnihexBoundsRow.read().single { it.id == args[0] }
++        val fixture = row.fixture
++        val fractional = row.advance == UnihexBoundsRow.Advance.Fractional
++        val begin = { println("Unihex operation begin ${row.id} ${row.identity()}") }
++        val end = { output: Any -> println("Unihex operation end ${row.id} ${output.javaClass.name}") }
++        when (row.operation) {
++            UnihexBoundsRow.Operation.NaturalBounds -> {
++                UnihexBoundsTrace.naturalBounds(fixture, begin, end)
++            }
++
++            UnihexBoundsRow.Operation.PublicUncachedGlyph -> {
++                val state =
++                    UnihexBoundsBenchmark.GlyphState().also {
++                        it.fixture = checkNotNull(fixture)
++                        it.fractional = fractional
++                        it.setup()
++                    }
++                try {
++                    begin()
++                    end(state.glyph())
++                } finally {
++                    state.close()
++                }
++            }
++
++            UnihexBoundsRow.Operation.CompleteDirtyTextFrame -> {
++                val state =
++                    UnihexBoundsBenchmark.TextState().also {
++                        it.fixture = checkNotNull(fixture)
++                        it.fractional = fractional
++                        it.setup()
++                    }
++                try {
++                    state.monitorWork()
++                    begin()
++                    end(state.update())
++                    println("Unihex frame work ${row.id} ${state.work}")
++                } finally {
++                    state.close()
++                }
++            }
++
++            UnihexBoundsRow.Operation.Control -> {
++                val state =
++                    UnihexBoundsControlBenchmark.ControlState().also {
++                        it.control = checkNotNull(row.control)
++                        it.setup()
++                    }
++                try {
++                    begin()
++                    end(state.operation())
++                } finally {
++                    state.close()
++                }
++            }
++        }
++    }
++
++    private fun table(name: String): List<List<String>> =
++        UnihexBoundsAssets
++            .bytes(name)
++            .toString(Charsets.UTF_8)
++            .lineSequence()
++            .drop(1)
++            .filter { it.isNotEmpty() }
++            .map { it.split('\t') }
++            .toList()
++
++    private fun verifyGlyph(
++        fixture: UnihexBoundsFixture,
++        fractional: Boolean,
++    ) {
++        val state =
++            UnihexBoundsBenchmark.GlyphState().also {
++                it.fixture = fixture
++                it.fractional = fractional
++                it.setup()
++            }
++        val first: MinecraftFontGlyph
++        try {
++            first = state.glyph()
++            checkGlyph(fixture, fractional, first)
++            repeat(16) {
++                val next = state.glyph()
++                check(first.image !== next.image)
++                checkGlyph(fixture, fractional, next)
++            }
++        } finally {
++            state.close()
++        }
++        checkGlyph(fixture, fractional, first)
++    }
++
++    private fun verifyText(
++        fixture: UnihexBoundsFixture,
++        fractional: Boolean,
++    ) {
++        val state =
++            UnihexBoundsBenchmark.TextState().also {
++                it.fixture = fixture
++                it.fractional = fractional
++                it.setup()
++            }
++        val old: RuntimeUiFrame
++        try {
++            state.monitorWork()
++            old = state.idle()
++            check(state.idle() === old)
++            WorkExpectation(exact = mapOf(UiRenderMetric.FrameSuccess.name to 2L, UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.Measure.name to 0L, UiRenderMetric.Layout.name to 0L, UiRenderMetric.Paint.name to 0L, UiRenderMetric.Semantics.name to 0L)).verify(PerformanceJson.work(state.work))
++            checkFrame(fixture, fractional, old, "A")
++            val changed = state.update()
++            check(changed !== old)
++            checkFrame(fixture, fractional, changed, "B")
++            WorkExpectation(minimum = mapOf(UiRenderMetric.ContentEvaluation.name to 1L, UiRenderMetric.Measure.name to 1L, UiRenderMetric.Paint.name to 1L, UiRenderMetric.Semantics.name to 1L)).verify(PerformanceJson.work(state.work))
++            check(state.ownership == listOf(1, 1))
++            check(state.pointer() == InputResult.Ignored)
++            checkFrame(fixture, fractional, state.reattach(), "B")
++            println("Unihex Text ${fixture.name} fractional=$fractional work=${state.work}")
++        } finally {
++            state.close()
++        }
++        checkFrame(fixture, fractional, old, "A")
++    }
++
++    private fun verifyControl(control: UnihexBoundsControl) {
++        val state =
++            UnihexBoundsControlBenchmark.ControlState().also {
++                it.control = control
++                it.setup()
++            }
++        try {
++            val first = state.operation()
++            val second = state.operation()
++            when (control) {
++                UnihexBoundsControl.WarmRasterHit -> {
++                    checkWarmRasterHit(state, first, second)
++                }
++
++                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> {
++                    checkEvictedGlyphs(state, first, second)
++                }
++
++                UnihexBoundsControl.MatchingOverride -> {
++                    checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph, -1..33)
++                }
++
++                UnihexBoundsControl.NoMatchingOverride, UnihexBoundsControl.EngineLifecycle -> {
++                    checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph)
++                }
++
++                UnihexBoundsControl.CleanTextFrame -> {
++                    check(first === second)
++                    checkFrame(state.fixture, state.fractional, first as RuntimeUiFrame, "A")
++                }
++
++                UnihexBoundsControl.AbsentSparseGlyph -> {
++                    checkAbsentSparseGlyph(first, second)
++                }
++
++                UnihexBoundsControl.Bitmap -> {
++                    UnihexBoundsControlGlyphs.bitmap(first as MinecraftFontGlyph)
++                }
++
++                UnihexBoundsControl.TrueType -> {
++                    UnihexBoundsControlGlyphs.trueType(first, second)
++                }
++
++                UnihexBoundsControl.SnapshotLoad -> {
++                    check(first !== second)
++                }
++
++                UnihexBoundsControl.SnapshotReplacement -> {
++                    checkFrame(UnihexBoundsFixture.W32CenteredSparse, true, first as RuntimeUiFrame, "A")
++                    checkFrame(UnihexBoundsFixture.W32DisjointExtrema, true, second as RuntimeUiFrame, "A")
++                }
++            }
++        } finally {
++            state.close()
++        }
++    }
++
++    private fun checkWarmRasterHit(
++        state: UnihexBoundsControlBenchmark.ControlState,
++        first: Any,
++        second: Any,
++    ) {
++        check(first === second && first is MinecraftFontGlyph)
++        checkGlyph(state.fixture, state.fractional, first)
++    }
++
++    private fun checkEvictedGlyphs(
++        state: UnihexBoundsControlBenchmark.ControlState,
++        first: Any,
++        second: Any,
++    ) {
++        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
++        checkGlyph(state.fixture, state.fractional, first)
++        checkGlyph(state.fixture, state.fractional, second)
++        check(state.retained[0] == 1L && state.retained[1] <= 16L * 1024 * 1024 && state.retained[2] == 0L)
++    }
++
++    private fun checkAbsentSparseGlyph(
++        first: Any,
++        second: Any,
++    ) {
++        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first == second)
++        check(first.advance.toRawBits() == 6.0f.toRawBits())
++    }
++
++    private fun checkGlyph(
++        fixture: UnihexBoundsFixture,
++        fractional: Boolean,
++        glyph: MinecraftFontGlyph,
++        bounds: IntRange = UnihexBoundsAssets.scalarBounds(fixture.width, UnihexBoundsAssets.rows(fixture)),
++    ) {
++        val rows = UnihexBoundsAssets.rows(fixture)
++        val width = bounds.last - bounds.first + 1
++        val expected = IntArray(width * 16) { index -> if (UnihexBoundsAssets.scalarInk(fixture.width, rows, bounds.first + index % width, index / width)) -1 else 0 }
++        val image = checkNotNull(glyph.image)
++        check(image.size == IntSize(width, 16) && image.copyArgb().contentEquals(expected))
++        val advance = if (fractional) width / 2.0f + 1.0f else (width / 2 + 1).toFloat()
++        check(listOf(glyph.advance, glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.boldOffset, glyph.shadowOffset).map(Float::toRawBits) == listOf(advance, 0.0f, 0.0f, width / 2.0f, 8.0f, 0.5f, 0.5f).map(Float::toRawBits))
++        check(glyph.oversizedRasterSize == null)
++    }
++
++    private fun checkFrame(
++        fixture: UnihexBoundsFixture,
++        fractional: Boolean,
++        frame: RuntimeUiFrame,
++        label: String,
++    ) {
++        val rows = UnihexBoundsAssets.rows(fixture)
++        val bounds = UnihexBoundsAssets.scalarBounds(fixture.width, rows)
++        val columns = bounds.last - bounds.first + 1
++        val advance = if (fractional) columns / 2.0f + 1.0f else (columns / 2 + 1).toFloat()
++        val semantic = frame.semantics.single { it.semantics.role == SemanticsRole.Text }
++        check(semantic.semantics.label == UiText.Literal(label))
++        check(semantic.bounds == IntRect(0, 0, ceil(advance.toDouble()).toInt(), 9))
++        check(frame.size == IntSize(320, 40))
++        for (density in 1..3) {
++            val pixels =
++                IntArray(320 * density * 40 * density) { index ->
++                    val x = (index % (320 * density) + 0.5f) / density.toFloat()
++                    val y = (index / (320 * density) + 0.5f) / density.toFloat()
++                    if (x < columns / 2.0f && y < 8.0f) {
++                        val u = x / (columns / 2.0f)
++                        val v = y / 8.0f
++                        val sourceX = floor(0.01f * (1f - u) + (columns - 0.01f) * u).toInt().coerceIn(0, columns - 1)
++                        val sourceY = floor(0.01f * (1f - v) + (16 - 0.01f) * v).toInt().coerceIn(0, 15)
++                        if (UnihexBoundsAssets.scalarInk(fixture.width, rows, bounds.first + sourceX, sourceY)) 0xff404040.toInt() else 0
++                    } else {
++                        0
++                    }
++                }
++            check(rasterizeHeadless(frame.drawCommands, frame.size, density).copyArgb().contentEquals(pixels)) { "Independent full Text ARGB mismatch: $fixture fractional=$fractional density=$density" }
++        }
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/.gitattributes b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/.gitattributes
+new file mode 100644
+index 0000000000000000000000000000000000000000..6c18d0c91bf92579d11218c41a302e0c77ef9028
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/.gitattributes
+@@ -0,0 +1,5 @@
++assets.zip -text
++fixtures.tsv -text
++comparisons.tsv -text
++measurements.tsv -text
++controls.tsv -text
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2a79ae85015eb7d08ef7fa41217879c4ce0e827
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md
+@@ -0,0 +1,81 @@
++# Unihex natural-bounds comparison inputs
++
++This complete corpus compares the actual runtime natural-bound helper and public consumers while changing only `FontHexGlyph.bounds`.
++The fixed baseline is synced master `7ebd9c94f3da521cadb76eadd4312289eaf88d7e`, including the accepted complete-JMH Qodana tooling and shared paired JVM CI.
++Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
++Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
++These sources are preparation; all execution, origin qualification, controls and measurements are Pending.
++
++The committed [fixture table](fixtures.tsv) contains 36 immutable fixtures.
++The [comparison table](comparisons.tsv) expands the geometry inputs into 120 rows and retains twelve additional complete consumer controls.
++The [measurement matrix](measurements.tsv) contains exactly 792 Pending cells: 132 rows × (three independent Standard baseline collections + three independent Standard candidate collections).
++The [independent controls](controls.tsv) preserve all thirty acceptance bindings; construction or source inspection never marks them passed.
++The original detached ZIP/font documents and checkerboard PNG are stored in `assets.zip`.
++The TrueType control additionally registers the repository's original redistributable font through the existing `cc0-geometric-font` collector input.
++
++Each geometry input has exactly two records, U+0041 and U+0042, with identical sixteen-row bits.
++Width 8, 16, 24 and 32 each have Empty, AllInk, LeftEdge, RightEdge, CenteredSparse and DisjointExtrema inputs.
++The independent scalar reference retains the original unsigned Long shift, inclusive extrema and complete cropped ARGB array.
++It never calls the changed bounds or ink implementation for expected output.
++Unit tests additionally cover every single row/column, outside-width and signed bits, deterministic sparse combinations, noncodec widths, arbitrary owned row counts, defensive ownership, checked arithmetic and failure boundaries.
++
++NaturalBounds invokes the real runtime class through one identical method handle on both sides.
++PublicUncachedGlyph uses the public snapshot and engine, zero entry/byte cache bounds and provider preflight outside measurement.
++Cold provider initialization remains inside EngineLifecycle.
++CompleteDirtyTextFrame uses compiled source-backed Text, ContainerLabel styling, a 320×40 logical viewport and the ordinary default 4096-entry/16 MiB font cache.
++A top-start Stack preserves the complete viewport while admitting the Text natural size; the replacement control uses the same layout boundary.
++Setup attaches and primes A/B, then each operation publishes the alternate literal and completes a retained frame.
++These fixed dirty frames may have zero natural scans; their unchanged costs remain in the comparison.
++Full independent ARGB, layout, pointer and semantics checks use physical densities one through three outside CPU timing.
++Profile textures come from the unchanged compiled `ComponentProfile` factory; its bytes are part of the identical fixture archive.
++Default font options, complete capabilities, provider/filter order and override documents stay fixed.
++No source generation, archive creation, file reads or reference-pixel computation occurs inside a sampled glyph/frame operation.
++Source loading, profile construction, attachment, use and close stay inside their explicitly named lifecycle/replacement control boundaries.
++
++Use the existing generic generated-fixture discovery and `verifyWork()` admission.
++Select `UnihexBoundsBenchmark,UnihexBoundsControlBenchmark` through the existing `strata.performance.benchmarks` property and use the shared collector and unchanged Standard settings from [the component task](../../../../build.gradle.kts).
++Preparation/checks use the existing JVM-only model; complete acceptance uses the complete model.
++No benchmark-specific Gradle task or property is added.
++
++The [full paired manifest](../../../../../../.github/performance/paired-jvm.json) binds this complete corpus to the shared Windows CPU route.
++Its immutable source patches reconstruct the same prepared fixture and collector on both runtime sides from the accepted master; only `FontHexGlyph.kt` differs.
++The driver retains all 132 cases in each of three baseline and three candidate AverageTime collections (792 required cells), plus the separate complete SampleTime comparison (792 additional cells).
++Input attributes preserve the original five resource blobs across checkouts; predeclared compiled, dependency and Java byte pins are empty because no qualifying archives or hosted executables have yet been produced for this revision.
++Actual source archive hashes, loaded origins, CPU availability, controls, collection costs and all measurements remain Pending until this corpus completes.
++The shared CPU route supplements the existing external untimed tracing and real OpenGL/Vulkan, font ownership and supported-version acceptance; it does not replace them.
++Register `assets.zip`, `fixtures.tsv`, `comparisons.tsv`, `measurements.tsv` and `controls.tsv` through the existing `strata.performance.fixtureInputs` properties manifest, with labels `unihex-bounds-<filename>` and exact absolute regular-file paths.
++Preserve that same manifest's original files for both runtime sides.
++Additional input labels never replace the collector's required library/native/TrueType controls.
++
++Execute the existing `ComponentPerformanceEvidence` entry with the same packaged fixture/collector/harness and control classpath, substituting only the declared actual runtime archives.
++Keep the shared archive/class-tree and normal parent/fork classloader certification enabled.
++Use average-time mode, three one-second warmups, five one-second measurement iterations, one fork, one worker, GC profiling and the same `UnihexBoundsCpuProfiler` on both sides.
++Pass `-Pstrata.performance.profilers=dev.s7a.strata.quality.benchmark.UnihexBoundsCpuProfiler` to the existing component task for every baseline and candidate invocation.
++The CPU adapter uses the existing `JvmPerformanceMeter`; it owns no execution controller or sampling loop.
++Its `unihex.processCpu` metric is fork process CPU nanoseconds divided by JMH's actual all-operation count, including iteration bookkeeping, JIT and GC.
++JMH elapsed microseconds per operation and `gc.alloc.rate.norm` bytes per operation are separate metrics.
++Do not label the JMH controller thread's CPU as workload CPU, replace unsupported values with zero or infer allocation savings from bit expressions.
++See the pinned primary [JMH iteration metadata](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/results/IterationResultMetaData.java) and [GC normalization](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) for the actual-operation denominator.
++
++Before timing, use the packaged `UnihexBoundsWorkEvidence` single-row entry with R001–R132 for an external untimed JVM method trace.
++Count actual `FontHexGlyph.bounds` entries and actual cache-miss constructor paths inside each printed operation begin/end boundary, excluding setup.
++Distinguish an absent provider result from a constructed raster and distinguish raster-cache misses from public glyph requests.
++Keep trace runtime/fixture/classpath identities bound to the actual preserved archives used by collection.
++Dirty Text emits shared frame-work diagnostics through the same entry.
++The source forecast is 16×width original ink predicates versus sixteen candidate row reads/OR combinations, one width mask and two bit-extrema operations per executed nonempty scan.
++Those expressions are not total machine instructions or actual Text scan counts.
++External method tracing is separate from timed CPU/allocation collection and never instruments the measured runtime archives.
++
++Each side uses repetition indexes zero, one and two with fresh immutable output directories.
++The shared JMH evidence processor validates raw result digests, loaded collector/harness/fixture/runtime origins, controlled settings and the complete 132-row matrix.
++Preserve its validated elapsed/allocation comparison and the same raw receipt's process-CPU secondary metric.
++Record natural scans, cache misses, constructed rasters, scalar expressions, row reads and complete frame work in separate columns.
++Retain every unchanged or slower row and explicitly narrow or reject the optimization if whole-operation results do not support it.
++Scalar-only results establish no native, GPU, upload or FPS gain.
++Native timing, source/metadata/output upload bytes and offscreen-through-GUI/GUI-only GPU metrics are N/A unless an additional complete native comparison is separately qualified.
++
++Ready requires current-revision JVM/quality/ABI tests, JVM-following Kover HTML/XML, Qodana, final-head scoped CI, all 22 supported Minecraft targets and applicable OpenGL/Vulkan/native-font parity with actual owner/lifetime controls.
++Use `./gradlew check koverHtmlReport koverXmlReport -Pkover` at the required complete acceptance boundary.
++Packaging and publication are unchanged; publication inspection becomes required if that scope changes.
++Wait for CI through `gh run watch <run-id> --exit-status --interval 600`, preserving the original watch.
++The full-source Draft may precede formal collection; Ready, merge and Issue closure remain separate gates.
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/assets.zip b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/assets.zip
+new file mode 100644
+index 0000000000000000000000000000000000000000..d005f050eb334102625b2133b0fa4cc5e4fbe6bc
+GIT binary patch
+literal 15811
+zcmd5@Yitx%6keV}DdGb}F)9q=gOs{EyVSaBOrZsvA~sZQA|bG}+wNk!yY5b*w4$!j
+z7!?f~O$dUCW`BX2_(FW40TK<t5R5S~{P2Y@d}4@7jNrNV&Yin+?#x`+PCMS_?qlYj
+zd(J)IH+RmNJ#B3nGj?i-wOOGLzWQo#4}2kg67=@^rrw;fzIGs;Yqbr$`>kbvEr9`~
+zS3&RYS)WT4YE#Mna5xr;hZU^~M(OHNtu3QQPYnt4uvSn^Td7Figbl4N<HnOCqu{R|
+z-VO34WM9F)6B~c%fTN^WL+49fQ^;lpwOl^CHr<)b7qs~DLCsj7OKNegFO!A^YBd_X
+zuIx(pkYfcSpD+?DS0^(asoq5Xu6S2AV_ajJ0&auRh4esjWp-^cpNARAgex|z*kCuN
+z<@WcFa=$ZU8hUz~Gk3|3e`MFA>pUF4NYR+%6@wO4VaH>w;4j*S>iEepOMAV!)<8V}
+z_RYsG=AJ*BTC*hCWi)kmCuQINeA)eV9=@*+d;c-tdylCPOTNcindd{Hq56J`eYJsj
+zzva*04s!1^dzPiUQ!efwe@VlDhx@}3?>}?TQH{dX$6Ebz|2fqCV!46%|CRebe3AQ~
+zY_sk43zHcmnNN1M<r4XV!!_{E&TVZTAVlcK@BYd_a6eDPBl0zXwfY6ZG^aHOg2bC`
+zv*R2IW>sUluqK<%7)|{~KG~a)x1&!!Zfo*@BIbP$))^GaQTTemTK$6J0ty9QbRbx4
+ztKFL%Jt`C;y_%R6sdEW~>Ykf-bR&!)y@D{v8=-L6+_F@|6z8Qo3bq=Ir%iQ7d7X~3
+zM=s@I6up~sUj>5PM_;@<nj>dg;}%FA(%0<wfKC-6sm?R#RHIbqCFro#CUVMPKm{EQ
+zeIj*1Mq-1p!CsCXjRhig?xEQ8(=R{ffnGga5<}?>y`juNWF_>l)qbHzV~H|%1#<0e
+zx^l+}j-P3eh;F0=^6=X?z2^ZSc#i}L6?bdrtat{ZT>=nW?H7RO!bEVF5&jAU!HKJ8
+zwQ&S#3=*kRg@cW!{v7mzkwtpoOX5!Ub|#-q7%Pypbb+h{BevQv7-<Y6IV}(@zuq(P
+z5XaIq3&&Q{HM#YPOWQrbRD_C_$6Y?0Ucl)hY#r7mFtOEsfjOOBlh|v4p!wsb)z2<~
+zXq5D7VwWCsiAdKSzi#&d7(x0lM5GoDE+4FY*X6uFhb0c+Rm0+GQ$@7L=_o}+%Y7XP
+z@=NA!ImMBu5v?9`i)dRWrEc_qUKMK&^*n=qsI#c#CFt?0P2`mku?l(`5nIj<1pCAH
+zCH8XcX+*5Y+#})xd!9b!fj)^xSxh`UuMGWR*Mgr$;8pvDJ`G^Y+#Lx1tw(0A;`o~e
+zi3m};dr$xN-upcWK=EgR)Udpk?fk<sKeJ!D{PC*&A^?rZ^_cK?APo3E`{_5F0W>1l
+zW2%V!-{vC^dD4KPL)~e<_<4lWz|T3$ZDnbML<78Pzi2>1XUXY-aN)x(k3Gz}V48(v
+zQ)y55r|{tC9%L9|L~qAM{^n1_FVAZ~B4-46)qatIW(0Z+dp!^~<PR*q<pIbBNUw$k
+zwnufBjG)=L`?YE^3VHw;fgLRQ8{aVGGb4FK+EB39PM1S5@UmB_0gd4~R)H|5bK$|U
+zoH?d7ZW+bZ-)5UVsH2M2hx<IE&Twl{%`Z_0d(AKE(2OLi2l<SC{?3<<bMDZLB&xe-
+zBr`s%+ULO@mMidVWaQr&djhutXEfMrezAup5M^)$viBUDviSt(k7<yIu%+lF_G;gE
+z9t1M)4?NNw@ps#uYs9tl)l1tC_L^S=q8U+C7kCB2po`)=*K!8Yj3}zBGNPG-C+B$6
+zh=YeCjuAO-(P%`p;U&U%s#l^B_L^TbqN$4nS|D7S)ALN0bICLd$M({m^y38MRu3`_
+zb4KNWp6$@cWL!3t4qxPq413KlGSQ4Is$<jwVbkOl+aq7X!bm4^b#KDxNToB~wIg87
+zpw^Yo_Ch)GoltLVWZ}aAeCUBnRxKW`(ek9IQj13;8)~eP4SeK6YvjC$7#ejNy1*J*
+zHYpS{<8tO#7cD*d2DpH9a+}X&GyijMG;(h&vX)rp42LBeMs`LHmPR_MlwX}TdJ{P>
+ztl0>d-m`MN1Iowq*`C^5rW=N)k_@@}8ZA-ifYMAYer=7`k%HPxs3X@JG}-r)2Ig<O
+z6$~Ps7*;mnBdtppPp+Cl9s*2mzPWK3yiXu~0x6c?H)Z!@@OD9SW5aFzTRZ-qGOBu4
+zYWzJ<_4l29_4%R3X<y9R)!(-qMueK1mNve;VATWmpUoa$H#@Nc&XP{(Z{+)uq;B5J
+zC5F-E;SX*(8%3(<wRi+jA*J+%L~oAN-$y9-?EfWz|A_&Np^g0*$m{&+&TbbhuVo|8
+zRCp^De}a!(kX+6<Xvg*YLb4y82Ur#E3Z2Alyp@Wbqst_nl;YBLA^HauwP$ATOC^aM
+zZ>8dwV~AQy)=4q0+7`mOu|!yeh>8W1y@9t<apgF>u#;+Buq>p1r_xTbp!>>60Lfda
+zcmys3sQ}u^2wbZxrWiPjOo4Al3NMh*gSS#K3zwukg_9Y$OjXP=ej?1l3o#Yi?WEIT
+zbFd_xl;R3Yq4WbLTK+7_-SgyG25+U}FR)R8*0LuX_yWVlfkO5kxKcsZBCKM$cFOI5
+z)t3u9tr*v}3Dq~iDnR<Q=}s~z-b%$DxbAGyPRemfmJmP5#LtZIcB)0eAg};U;baD`
+zCK6`sXLFn(<w@Me8*IzxQ#<e+PKMw@7%|CaG6^r$P>{gR`LVDKSdvakaSeu0`V<qb
+zg!88W3()GpdHnOgQ2PY<4`eIj{J$64g`HN6e|aubeG!$ekn<;JAZaJ%_(xBneAC5L
+z91&Ilww?3iE^(T|$qf8^n=oT5n*;MzVTYab=Uqnaz;iemf`94}hHNL3@E;Qt>g}Ar
+zV^*1@lT!REflzvciB`h-CudWw9-PMyn1$Mzms8owIDc@CUD#>G_}QdTz3K`oT_NYs
+zxe7@;DaVhsgz^`d_)s|CK9^d6rf@O?KM@gT{L1FQd{vOn&iPUewFA%LWC%{Cg&{Z0
+zL#Z_m6>#z?L>Je}sVJ7ld7Y4+dyOs2!-6>P5`ud{kmoXx)?q=MI0?b)!zhj7|JOV}
+PG(U6{;-0-QAQbu!@jm7y
+
+literal 0
+HcmV?d00001
+
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/comparisons.tsv b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/comparisons.tsv
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d16d6b29f488d71e4eb5b964baa59da3422640c
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/comparisons.tsv
+@@ -0,0 +1,133 @@
++row	fixture	operation	advance	cacheEntries	cacheBytes	reset	frame
++R001	W8Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R002	W8Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R003	W8Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R004	W8Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R005	W8Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R006	W8AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R007	W8AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R008	W8AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R009	W8AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R010	W8AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R011	W8LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R012	W8LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R013	W8LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R014	W8LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R015	W8LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R016	W8RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R017	W8RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R018	W8RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R019	W8RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R020	W8RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R021	W8CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R022	W8CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R023	W8CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R024	W8CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R025	W8CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R026	W8DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R027	W8DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R028	W8DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R029	W8DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R030	W8DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R031	W16Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R032	W16Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R033	W16Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R034	W16Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R035	W16Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R036	W16AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R037	W16AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R038	W16AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R039	W16AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R040	W16AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R041	W16LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R042	W16LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R043	W16LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R044	W16LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R045	W16LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R046	W16RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R047	W16RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R048	W16RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R049	W16RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R050	W16RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R051	W16CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R052	W16CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R053	W16CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R054	W16CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R055	W16CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R056	W16DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R057	W16DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R058	W16DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R059	W16DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R060	W16DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R061	W24Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R062	W24Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R063	W24Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R064	W24Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R065	W24Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R066	W24AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R067	W24AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R068	W24AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R069	W24AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R070	W24AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R071	W24LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R072	W24LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R073	W24LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R074	W24LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R075	W24LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R076	W24RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R077	W24RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R078	W24RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R079	W24RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R080	W24RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R081	W24CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R082	W24CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R083	W24CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R084	W24CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R085	W24CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R086	W24DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R087	W24DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R088	W24DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R089	W24DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R090	W24DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R091	W32Empty	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R092	W32Empty	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R093	W32Empty	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R094	W32Empty	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R095	W32Empty	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R096	W32AllInk	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R097	W32AllInk	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R098	W32AllInk	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R099	W32AllInk	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R100	W32AllInk	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R101	W32LeftEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R102	W32LeftEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R103	W32LeftEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R104	W32LeftEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R105	W32LeftEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R106	W32RightEdge	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R107	W32RightEdge	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R108	W32RightEdge	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R109	W32RightEdge	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R110	W32RightEdge	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R111	W32CenteredSparse	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R112	W32CenteredSparse	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R113	W32CenteredSparse	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R114	W32CenteredSparse	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R115	W32CenteredSparse	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R116	W32DisjointExtrema	NaturalBounds	N/A	0	0	one real runtime bounds invocation	N/A
++R117	W32DisjointExtrema	PublicUncachedGlyph	Integer	0	0	glyph A repeated; no primed raster	N/A
++R118	W32DisjointExtrema	CompleteDirtyTextFrame	Integer	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R119	W32DisjointExtrema	PublicUncachedGlyph	Fractional	0	0	glyph A repeated; no primed raster	N/A
++R120	W32DisjointExtrema	CompleteDirtyTextFrame	Fractional	4096	16777216	prime A and B; publish alternate A/B; one complete frame	320x40; headless density1,2,3 admission
++R121	Evicted8Integer	Control	Integer	1	16777216	alternate A/B through one-entry cache	N/A
++R122	Evicted32Fractional	Control	Fractional	1	16777216	alternate A/B through one-entry cache	N/A
++R123	WarmRasterHit	Control	Fractional	4096	16777216	prime A in default bounded cache	N/A
++R124	AbsentSparseGlyph	Control	Fractional	0	16777216	request absent C	N/A
++R125	MatchingOverride	Control	Fractional	0	16777216	first matching inclusive ordered range	N/A
++R126	NoMatchingOverride	Control	Fractional	0	16777216	scan frozen nonwinning ordered ranges	N/A
++R127	TrueType	Control	N/A	0	16777216	uncached A after real native preflight	N/A
++R128	Bitmap	Control	N/A	0	16777216	uncached A after real PNG preflight	N/A
++R129	SnapshotLoad	Control	Fractional	0	16777216	complete public load from prepared source	N/A
++R130	EngineLifecycle	Control	Fractional	0	16777216	open/use/close independent engine	N/A
++R131	CleanTextFrame	Control	Fractional	4096	16777216	prime A/B and repeat unchanged frame	320x40; density1,2,3 admission
++R132	SnapshotReplacement	Control	Fractional	4096	16777216	load/profile/open/attach/frame/close alternating prepared source	320x40; density1,2,3 admission
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/controls.tsv b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/controls.tsv
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d6fa37f87c1fb98cd17cf80e8e25be28181d7df
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/controls.tsv
+@@ -0,0 +1,31 @@
++id	assertion	independentTest	fixtureBinding	qualification	status
++01	All decoded widths	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	UnihexBoundsWorkEvidence.verify	Loaded font raw metrics	Pending
++02	First source column	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	LeftEdge rows R011-R015,R041-R045,R071-R075,R101-R105	Scalar bit oracle	Pending
++03	Final source column	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	RightEdge rows R016-R020,R046-R050,R076-R080,R106-R110	Scalar bit oracle	Pending
++04	Isolated interior inclusive bounds	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	CenteredSparse geometry rows	Scalar bit/pixel oracle	Pending
++05	Disjoint row extrema	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	DisjointExtrema geometry rows	Scalar bit/pixel oracle	Pending
++06	Zero rows and extra transparent column	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	Empty geometry rows	Exact complete ARGB/Float bits	Pending
++07	Full rows and width32 high bit	FontHexGlyphBoundsTest.upperUnusedBitsAndSignedRowsCannotCreateSourceInk	AllInk geometry rows	Unsigned Long scalar reference	Pending
++08	First/last row only	FontHexGlyphBoundsTest.everyAdmittedColumnAndRowMatchesOriginalScalarBounds	Single-column all-row unit corpus	All sixteen rows independently	Pending
++09	Alternating full/empty	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	patterns(width) alternating input	Scalar bit/pixel oracle	Pending
++10	Deterministic sparse combinations	FontHexGlyphBoundsTest.upperUnusedBitsAndSignedRowsCannotCreateSourceInk;FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	Fixed Random seeds 286 and 286+width	Scalar bit/pixel oracle	Pending
++11	Independent original scalar oracle	FontHexGlyphBoundsTest.scalarInk;FontHexGlyphBoundsTest.scalarBounds	UnihexBoundsAssets.scalarInk;UnihexBoundsAssets.scalarBounds	Never calls changed ink/bounds as expected-value source	Pending
++12	Defensive copied row ownership	FontHexGlyphBoundsTest.callerMutationCannotChangeAnyOwnedRowOrOldBounds	Old glyph after caller-array mutation	Exact old bound and source-bit checks	Pending
++13	Noncodec input and unused bits	FontHexGlyphBoundsTest.nonCodecWidthsKeepOriginalShiftWrappingAndColumnCutoff;FontHexGlyphBoundsTest.upperUnusedBitsAndSignedRowsCannotCreateSourceInk	Negative/zero/nonstandard widths; row counts 0,1,15,16,17	Original scalar fallback and JVM shift semantics	Pending
++14	Absent sparse early return	MinecraftFontGlyphTest.missingGlyphOutlineIsNativeAndSpaceProvidersHaveNoPixels	R124 AbsentSparseGlyph; WorkEvidence.main R124	External actual bounds/resolveGlyph trace	Pending
++15	First winning override bypass	FontHexGlyphBoundsTest.orderedNonwinningAndOverlappingOverridesKeepInclusivePadding	R125 MatchingOverride; WorkEvidence.main R125	External actual bounds/resolveGlyph trace	Pending
++16	Ordered nonwinner natural path	FontHexGlyphBoundsTest.orderedNonwinningAndOverlappingOverridesKeepInclusivePadding	R126 NoMatchingOverride; WorkEvidence.main R126	External actual bounds/resolveGlyph trace	Pending
++17	Unsorted overlaps/endpoints/padding	FontHexGlyphBoundsTest.orderedNonwinningAndOverlappingOverridesKeepInclusivePadding;MinecraftFontGlyphTest.unihexOverridesPadBothSidesOutsideTheNativeBitfieldWithTransparency	matching.json exact ordered list	Scalar crop and endpoint A/C/D controls	Pending
++18	Integer/fractional capability	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	Every geometry PublicUncachedGlyph and CompleteDirtyTextFrame	Exact raw Float bits	Pending
++19	Complete ARGB/crop/bearing/offset	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	UnihexBoundsWorkEvidence.checkGlyph;checkFrame	Independent scalar pixels; loaded shadow/bold parity	Pending
++20	Checked width and image failure order	FontHexGlyphBoundsTest.checkedSelectedWidthFailsBeforeImageAllocationAndEmptyPaddingConsumesItsFullLimit	Extreme winning override and exact 9x16 empty payload ceiling	Expected ArithmeticException and image-limit failure	Pending
++21	Malformed source and budgets	MinecraftFontLoadLimitsTest;MinecraftFontPngLimitsTest;MinecraftFontSnapshotTest	Full affected archive/source/diagnostic test classes	Current-revision JVM results	Pending
++22	Disabled repeated raster misses	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	48 PublicUncachedGlyph rows; WorkEvidence.verifyGlyph	External actual bounds/raster trace; distinct full images	Pending
++23	Cold first use and bounded eviction	MinecraftFontEngineTest.glyphEntryAndPixelBudgetsStayBoundedAcrossArbitraryNewScalars	R121,R122,R130; WorkEvidence.verifyControl	Actual miss trace plus one-entry/current-state checks	Pending
++24	Warm cache skips natural bounds	FontHexGlyphBoundsTest.completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies	R123 WarmRasterHit; WorkEvidence.main R123	Actual zero-bounds trace; default cache primed	Pending
++25	Other providers/filter/fallback order	MinecraftFontSnapshotTest.higherPacksAndEarlierProvidersWinWhileLowerPacksSupplyMissingScalars;MinecraftFontSnapshotTest.outerReferenceFiltersOverrideInnerConditionsAtTheirOriginalPosition;MinecraftFontGlyphTest.trueTypeSettingsAndSkipScalarsAreAppliedBeforeCallingTheFace;MinecraftFontGlyphTest.invalidDisabledBitmapFailsPreflightOnceWithoutUsingEarlierSpaceProviders	R127 TrueType;R128 Bitmap	Independent real native font/PNG parity; repeat stability alone is insufficient	Pending
++26	Complete dirty/clean Text and input	MinecraftUiHostTest.focusedInputIsFirstFrameGatedAndReacquiredAfterTransientDetach	UnihexBoundsWorkEvidence.verifyText;checkFrame; TextState.pointer;R131	Independent full pixels density1,2,3; geometry/semantics/shared work traces	Pending
++27	Load/use/close/replacement costs	MinecraftUiHostTest.sharedFontSnapshotCreatesIndependentHostBackendsAndCaches	R129,R130,R132	Complete operation boundaries and actual method/work traces	Pending
++28	Wrong thread and owner isolation	FontHexGlyphBoundsTest.actualForeignThreadAndCleanupFailureCannotInvalidateDetachedUnihexPixels;MinecraftFontEngineTest.foreignThreadsCannotReadOrCloseTheOwnerEngine;MinecraftUiHostTest.everyOperationRejectsTheWrongThreadIncludingRepeatedClose	Independent engines and shared immutable source	Real foreign-thread execution; applicable native owners separately	Pending
++29	Callback/failure/detach/terminal	MinecraftUiHostTest.recursiveCloseIsNoOpWhileCleanupMetadataReadRejects;MinecraftUiHostTest.contentFailureClosesTheFontBackendBeforePlatformAndPreservesCleanupFailures;MinecraftUiHostTest.inputAndCloseFailuresPreserveExactIdentityAndCleanupOrder;MinecraftFontGlyphTest.propagatedRasterFailuresStillPermitCompleteScopedCleanup	TextState.reattach; accepted #237 prerequisite if selected identically for both sides	Actual owner/failure/callback traces and loaded native lifetime; source/JVM construction is insufficient	Pending
++30	Old glyph validity and bounded state	FontHexGlyphBoundsTest.actualForeignThreadAndCleanupFailureCannotInvalidateDetachedUnihexPixels;FontRasterOwnershipTest.uncachedUnihexKeepsCompleteInclusivePaddingAfterReplacementAndClose	WorkEvidence.verifyGlyph;verifyText;ControlState.close	Old complete image after close; current cache gauges; no new request history	Pending
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/fixtures.tsv b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/fixtures.tsv
+new file mode 100644
+index 0000000000000000000000000000000000000000..dce28c12d160ca0336e26b39c35e0f348839e076
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/fixtures.tsv
+@@ -0,0 +1,37 @@
++fixture	width	packedRows	scalars	archive	document
++W8Empty	8	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	0041,0042	W8Empty.zip	W8Empty.json
++W8AllInk	8	FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF,FF	0041,0042	W8AllInk.zip	W8AllInk.json
++W8LeftEdge	8	80,80,80,80,80,80,80,80,80,80,80,80,80,80,80,80	0041,0042	W8LeftEdge.zip	W8LeftEdge.json
++W8RightEdge	8	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1	0041,0042	W8RightEdge.zip	W8RightEdge.json
++W8CenteredSparse	8	10,0,0,10,0,0,10,0,0,10,0,0,10,0,0,10	0041,0042	W8CenteredSparse.zip	W8CenteredSparse.json
++W8DisjointExtrema	8	40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2	0041,0042	W8DisjointExtrema.zip	W8DisjointExtrema.json
++W16Empty	16	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	0041,0042	W16Empty.zip	W16Empty.json
++W16AllInk	16	FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF	0041,0042	W16AllInk.zip	W16AllInk.json
++W16LeftEdge	16	8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000,8000	0041,0042	W16LeftEdge.zip	W16LeftEdge.json
++W16RightEdge	16	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1	0041,0042	W16RightEdge.zip	W16RightEdge.json
++W16CenteredSparse	16	100,0,0,100,0,0,100,0,0,100,0,0,100,0,0,100	0041,0042	W16CenteredSparse.zip	W16CenteredSparse.json
++W16DisjointExtrema	16	4000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2	0041,0042	W16DisjointExtrema.zip	W16DisjointExtrema.json
++W24Empty	24	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	0041,0042	W24Empty.zip	W24Empty.json
++W24AllInk	24	FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF,FFFFFF	0041,0042	W24AllInk.zip	W24AllInk.json
++W24LeftEdge	24	800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000,800000	0041,0042	W24LeftEdge.zip	W24LeftEdge.json
++W24RightEdge	24	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1	0041,0042	W24RightEdge.zip	W24RightEdge.json
++W24CenteredSparse	24	1000,0,0,1000,0,0,1000,0,0,1000,0,0,1000,0,0,1000	0041,0042	W24CenteredSparse.zip	W24CenteredSparse.json
++W24DisjointExtrema	24	400000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2	0041,0042	W24DisjointExtrema.zip	W24DisjointExtrema.json
++W32Empty	32	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	0041,0042	W32Empty.zip	W32Empty.json
++W32AllInk	32	FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF,FFFFFFFF	0041,0042	W32AllInk.zip	W32AllInk.json
++W32LeftEdge	32	80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000,80000000	0041,0042	W32LeftEdge.zip	W32LeftEdge.json
++W32RightEdge	32	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1	0041,0042	W32RightEdge.zip	W32RightEdge.json
++W32CenteredSparse	32	10000,0,0,10000,0,0,10000,0,0,10000,0,0,10000,0,0,10000	0041,0042	W32CenteredSparse.zip	W32CenteredSparse.json
++W32DisjointExtrema	32	40000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++Evicted8Integer	8	control	0041,0042	W8DisjointExtrema.zip	W8DisjointExtrema.json
++Evicted32Fractional	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++WarmRasterHit	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++AbsentSparseGlyph	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++MatchingOverride	32	control	0041,0042	W32DisjointExtrema.zip	matching.json
++NoMatchingOverride	32	control	0041,0042	W32DisjointExtrema.zip	nonmatching.json
++TrueType	0	control	0041	external:cc0-geometric-font	truetype.json
++Bitmap	8	control	0041	control.png	bitmap.json
++SnapshotLoad	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++EngineLifecycle	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++CleanTextFrame	32	control	0041,0042	W32DisjointExtrema.zip	W32DisjointExtrema.json
++SnapshotReplacement	32	control	0041,0042	W32DisjointExtrema.zip,W32CenteredSparse.zip	W32DisjointExtrema.json,W32CenteredSparse.json
+diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/measurements.tsv b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/measurements.tsv
+new file mode 100644
+index 0000000000000000000000000000000000000000..5fb066079071416caf9aeaf83503053c9119f584
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/measurements.tsv
+@@ -0,0 +1,793 @@
++row	side	repetition	CPU	allocation	naturalScans	rasterMisses	frameWork	receipt
++R001	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R001	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R001	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R001	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R001	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R001	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R002	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R003	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R004	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R005	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R006	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R007	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R008	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R009	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R010	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R011	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R012	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R013	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R014	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R015	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R016	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R017	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R018	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R019	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R020	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R021	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R022	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R023	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R024	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R025	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R026	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R027	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R028	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R029	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R030	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R031	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R032	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R033	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R034	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R035	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R036	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R037	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R038	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R039	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R040	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R041	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R042	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R043	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R044	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R045	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R046	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R047	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R048	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R049	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R050	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R051	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R052	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R053	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R054	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R055	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R056	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R057	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R058	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R059	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R060	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R061	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R062	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R063	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R064	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R065	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R066	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R067	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R068	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R069	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R070	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R071	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R072	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R073	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R074	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R075	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R076	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R077	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R078	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R079	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R080	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R081	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R082	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R083	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R084	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R085	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R086	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R087	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R088	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R089	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R090	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R091	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R092	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R093	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R094	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R095	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R096	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R097	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R098	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R099	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R100	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R101	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R102	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R103	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R104	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R105	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R106	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R107	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R108	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R109	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R110	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R111	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R112	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R113	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R114	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R115	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R116	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R117	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R118	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R119	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R120	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R121	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R122	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R123	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R124	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R125	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R126	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R127	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R128	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R129	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R130	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R131	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Baseline	0	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Baseline	1	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Baseline	2	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
++R132	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
+diff --git a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt
+index 69557cd691c2d0aae60a494c9f490ecf6e60eea0..2dc316e6db268a0338c072ad2fcc0ae2d53765f4 100644
+--- a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt
++++ b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt
+@@ -22,8 +22,19 @@ internal class FontHexGlyph(
+ 
+     /**
+      * Finds inclusive natural ink bounds; native empty rows retain one extra transparent column.
++     * Packed admitted widths use the union of source columns across every owned row.
++     * Other internal widths retain the original scalar shift semantics.
+      */
+     fun bounds(): IntRange {
++        if (width in 8..32 && width % 8 == 0) {
++            var columns = 0L
++            for (row in rows) columns = columns or row
++            columns = columns and ((1L shl width) - 1L)
++            if (columns == 0L) return 0..width
++            return (columns.countLeadingZeroBits() - (Long.SIZE_BITS - width))..(width - 1 - columns.countTrailingZeroBits())
++        }
++
++        // Other internal widths retain the original JVM shift and source-column semantics.
+         var left = width
+         var right = -1
+         for (y in rows.indices) {
+diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyphBoundsTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyphBoundsTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb4a855f5e2bb73a2f646553cb8c9fb41bc98e27
+--- /dev/null
++++ b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyphBoundsTest.kt
+@@ -0,0 +1,279 @@
++package dev.s7a.strata.runtime.minecraft.font
++
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.render.SampledImageOrientation
++import org.junit.jupiter.api.Assertions.assertArrayEquals
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertNotSame
++import org.junit.jupiter.api.Assertions.assertSame
++import org.junit.jupiter.api.Assertions.assertThrows
++import org.junit.jupiter.api.Test
++import java.util.Locale
++import java.util.concurrent.FutureTask
++import java.util.concurrent.TimeUnit
++import kotlin.random.Random
++
++/**
++ * Compares packed natural bounds and the public consumer with the original scalar shift/pixel oracle.
++ * Expected columns never call either runtime ink or bounds.
++ */
++internal class FontHexGlyphBoundsTest {
++    @Test
++    fun everyAdmittedColumnAndRowMatchesOriginalScalarBounds() {
++        for (width in listOf(8, 16, 24, 32)) {
++            for (y in 0 until 16) {
++                for (x in 0 until width) {
++                    val rows = LongArray(16)
++                    rows[y] = 1L shl (width - 1 - x)
++                    assertEquals(x..x, FontHexGlyph(width, rows).bounds())
++                    assertEquals(scalarBounds(width, rows), FontHexGlyph(width, rows).bounds())
++                }
++            }
++            for (rows in patterns(width)) assertEquals(scalarBounds(width, rows), FontHexGlyph(width, rows).bounds())
++        }
++    }
++
++    @Test
++    fun upperUnusedBitsAndSignedRowsCannotCreateSourceInk() {
++        val random = Random(286)
++        for (width in listOf(8, 16, 24, 32)) {
++            val mask = (1L shl width) - 1L
++            assertEquals(0..width, FontHexGlyph(width, LongArray(16) { mask.inv() }).bounds())
++            assertEquals(0..0, FontHexGlyph(width, LongArray(16) { mask.inv() or (1L shl (width - 1)) }).bounds())
++            for (count in listOf(0, 1, 15, 16, 17)) {
++                repeat(128) {
++                    val rows = LongArray(count) { random.nextLong() }
++                    assertEquals(scalarBounds(width, rows), FontHexGlyph(width, rows).bounds())
++                }
++            }
++        }
++    }
++
++    @Test
++    fun nonCodecWidthsKeepOriginalShiftWrappingAndColumnCutoff() {
++        val random = Random(28_613)
++        for (width in listOf(Int.MIN_VALUE, -65, -1, 0, 1, 7, 9, 15, 17, 23, 25, 31, 33, 40, 63, 64, 65)) {
++            for (count in listOf(0, 1, 16, 17)) {
++                repeat(32) {
++                    val rows = LongArray(count) { random.nextLong() }
++                    assertEquals(scalarBounds(width, rows), FontHexGlyph(width, rows).bounds())
++                }
++            }
++        }
++    }
++
++    @Test
++    fun callerMutationCannotChangeAnyOwnedRowOrOldBounds() {
++        for (width in listOf(8, 16, 24, 32)) {
++            val rows = LongArray(16)
++            rows[0] = 1L shl (width - 2)
++            rows[15] = 2L
++            val glyph = FontHexGlyph(width, rows)
++            val old = glyph.bounds()
++            rows.fill(-1L)
++            assertEquals(1..(width - 2), old)
++            assertEquals(old, glyph.bounds())
++            assertEquals(false, glyph.ink(0, 0))
++            assertEquals(true, glyph.ink(1, 0))
++        }
++    }
++
++    @Test
++    fun completePublicRastersAndRawMetricBitsMatchAcrossCachePolicies() {
++        for (width in listOf(8, 16, 24, 32)) {
++            val rows = patterns(width)
++            for (fractional in listOf(false, true)) {
++                val records = rows.mapIndexed { index, bits -> record(0x100 + index, width, bits) }.joinToString("")
++                val snapshot = snapshot(records, fractional)
++                for (entries in listOf(0, 1, 4096)) {
++                    val backend = FontTestBackend()
++                    var retained: MinecraftFontGlyph? = null
++                    MinecraftFontEngine(snapshot, { backend }, cacheEntries = entries).use { engine ->
++                        repeat(2) {
++                            rows.forEachIndexed { index, bits ->
++                                val glyph = engine.glyph(FontTestResources.defaultFont, 0x100 + index)
++                                assertGlyph(width, bits, fractional, glyph)
++                                val again = engine.glyph(FontTestResources.defaultFont, 0x100 + index)
++                                assertGlyph(width, bits, fractional, again)
++                                if (entries == 0) assertNotSame(glyph.image, again.image) else assertSame(glyph, again)
++                                if (index == 0) retained = glyph
++                            }
++                        }
++                        assertEquals(true, engine.retainedRasterEntries <= entries)
++                        assertEquals(true, engine.retainedRasterBytes <= 16L * 1024 * 1024)
++                    }
++                    assertEquals(1, backend.closeCalls)
++                    assertEquals(0, backend.openCalls)
++                    assertEquals(0, backend.decodeCalls)
++                    assertGlyph(width, rows.first(), fractional, checkNotNull(retained))
++                }
++            }
++        }
++    }
++
++    @Test
++    fun orderedNonwinningAndOverlappingOverridesKeepInclusivePadding() {
++        val rows = LongArray(16) { 0x80000001L }
++        val overrides =
++            """[{"from":"Z","to":"z","left":0,"right":31},
++                {"from":"A","to":"C","left":-1,"right":33},
++                {"from":"A","to":"B","left":0,"right":3}]"""
++        val snapshot = snapshot(record('A'.code, 32, rows) + record('C'.code, 32, rows) + record('D'.code, 32, rows), true, overrides)
++        MinecraftFontEngine(snapshot, { FontTestBackend() }, cacheEntries = 0).use { engine ->
++            assertGlyph(32, rows, true, engine.glyph(FontTestResources.defaultFont, 'A'.code), -1..33)
++            assertGlyph(32, rows, true, engine.glyph(FontTestResources.defaultFont, 'C'.code), -1..33)
++            assertGlyph(32, rows, true, engine.glyph(FontTestResources.defaultFont, 'D'.code))
++        }
++    }
++
++    @Test
++    fun checkedSelectedWidthFailsBeforeImageAllocationAndEmptyPaddingConsumesItsFullLimit() {
++        val rows = LongArray(16)
++        val records = record('A'.code, 8, rows)
++        val overflow = """[{"from":"A","to":"B","left":-2147483648,"right":2147483647}]"""
++        val snapshot = snapshot(records, true, overflow)
++        MinecraftFontEngine(snapshot, { FontTestBackend() }, cacheEntries = 0).use { engine ->
++            assertThrows(ArithmeticException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
++            assertEquals(0, engine.retainedRasterEntries)
++        }
++        for (bytes in listOf(9L * 16 * 4, 9L * 16 * 4 - 1)) {
++            val limited =
++                MinecraftFontSnapshot.load(
++                    listOf(
++                        FontTestResources.source(
++                            FontTestResources.font("default", """{"type":"unihex","hex_file":"test:font/limits.zip"}"""),
++                            "assets/test/font/limits.zip" to FontTestResources.archive("limits.hex" to records.toByteArray()),
++                        ),
++                    ),
++                    FontTestResources.compatibility,
++                    MinecraftFontOptions(),
++                    MinecraftFontLoadLimits(maxImageBytes = bytes),
++                )
++            MinecraftFontEngine(limited, { FontTestBackend() }, cacheEntries = 0).use { engine ->
++                if (bytes == 9L * 16 * 4) {
++                    assertGlyph(8, rows, true, engine.glyph(FontTestResources.defaultFont, 'A'.code))
++                } else {
++                    assertThrows(MinecraftFontLoadLimitException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
++                    assertEquals(0, engine.retainedRasterEntries)
++                }
++            }
++        }
++    }
++
++    @Test
++    fun actualForeignThreadAndCleanupFailureCannotInvalidateDetachedUnihexPixels() {
++        val rows = LongArray(16) { 0x80000001L }
++        val failure = IllegalStateException("Unihex backend cleanup")
++        val backend = FontTestBackend(release = { throw failure })
++        val engine = MinecraftFontEngine(snapshot(record('A'.code, 32, rows), true), { backend })
++        val old = engine.glyph(FontTestResources.defaultFont, 'A'.code)
++        try {
++            val foreign =
++                FutureTask {
++                    assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
++                    assertThrows(IllegalStateException::class.java) { engine.close() }
++                }
++            val thread = Thread(foreign)
++            thread.start()
++            foreign.get(10, TimeUnit.SECONDS)
++            thread.join(10_000)
++            assertSame(old, engine.glyph(FontTestResources.defaultFont, 'A'.code))
++        } finally {
++            assertSame(failure, assertThrows(IllegalStateException::class.java) { engine.close() })
++        }
++        assertEquals(1, backend.closeCalls)
++        assertEquals(0, engine.retainedRasterEntries)
++        assertEquals(0L, engine.retainedRasterBytes)
++        assertGlyph(32, rows, true, old)
++        assertThrows(IllegalStateException::class.java) { engine.glyph(FontTestResources.defaultFont, 'A'.code) }
++    }
++
++    private fun snapshot(
++        records: String,
++        fractional: Boolean,
++        overrides: String = "[]",
++    ): MinecraftFontSnapshot =
++        FontTestResources.snapshot(
++            FontTestResources.font("default", """{"type":"unihex","hex_file":"test:font/bounds.zip","size_overrides":$overrides}"""),
++            "assets/test/font/bounds.zip" to FontTestResources.archive("bounds.hex" to records.toByteArray(Charsets.US_ASCII)),
++            capabilities = FontTestResources.compatibility.copy(fractionalUnihexAdvance = fractional),
++        )
++
++    private fun record(
++        scalar: Int,
++        width: Int,
++        rows: LongArray,
++    ): String = "%04X:".format(Locale.ROOT, scalar) + rows.joinToString("") { "%0${width / 4}X".format(Locale.ROOT, it) } + "\n"
++
++    private fun patterns(width: Int): List<LongArray> {
++        val mask = (1L shl width) - 1L
++        val random = Random(286 + width)
++        return listOf(
++            LongArray(16),
++            LongArray(16) { mask },
++            LongArray(16) { 1L shl (width - 1) },
++            LongArray(16) { 1L },
++            LongArray(16) { if (it % 3 == 0) 1L shl (width / 2) else 0L },
++            LongArray(16) {
++                if (it == 0) {
++                    1L shl (width - 2)
++                } else if (it == 15) {
++                    2L
++                } else {
++                    0L
++                }
++            },
++            LongArray(16) { if (it % 2 == 0) mask else 0L },
++            LongArray(16) { random.nextLong() and random.nextLong() and mask },
++        )
++    }
++
++    private fun scalarInk(
++        width: Int,
++        rows: LongArray,
++        x: Int,
++        y: Int,
++    ): Boolean = x in 0..31 && ((rows[y] shl (32 - width)) ushr (31 - x)) and 1L != 0L
++
++    private fun scalarBounds(
++        width: Int,
++        rows: LongArray,
++    ): IntRange {
++        var left = width
++        var right = -1
++        for (y in rows.indices) {
++            for (x in 0 until width) {
++                if (scalarInk(width, rows, x, y)) {
++                    left = minOf(left, x)
++                    right = maxOf(right, x)
++                }
++            }
++        }
++        return if (right < left) 0..width else left..right
++    }
++
++    private fun assertGlyph(
++        width: Int,
++        rows: LongArray,
++        fractional: Boolean,
++        actual: MinecraftFontGlyph,
++        bounds: IntRange = scalarBounds(width, rows),
++    ) {
++        val columns = bounds.last - bounds.first + 1
++        val expected = IntArray(columns * 16) { index -> if (scalarInk(width, rows, bounds.first + index % columns, index / columns)) -1 else 0 }
++        val image = checkNotNull(actual.image)
++        assertEquals(IntSize(columns, 16), image.size)
++        assertArrayEquals(expected, image.copyArgb())
++        val advance = if (fractional) columns / 2.0f + 1.0f else (columns / 2 + 1).toFloat()
++        assertEquals(advance.toRawBits(), actual.advance.toRawBits())
++        assertEquals(0.0f.toRawBits(), actual.left.toRawBits())
++        assertEquals(0.0f.toRawBits(), actual.top.toRawBits())
++        assertEquals((columns / 2.0f).toRawBits(), actual.right.toRawBits())
++        assertEquals(8.0f.toRawBits(), actual.bottom.toRawBits())
++        assertEquals(0.5f.toRawBits(), actual.boldOffset.toRawBits())
++        assertEquals(0.5f.toRawBits(), actual.shadowOffset.toRawBits())
++        assertEquals(SampledImageOrientation.Normal, actual.orientation)
++        assertEquals(MinecraftGlyphChannel.Color, actual.channel)
++        assertEquals(null, actual.oversizedRasterSize)
++    }
++}
+diff --git a/tools/prepare-unihex-bounds-fixtures.py b/tools/prepare-unihex-bounds-fixtures.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ea2909fd6e21f74b3052d8877196322ebb0c40f
+--- /dev/null
++++ b/tools/prepare-unihex-bounds-fixtures.py
+@@ -0,0 +1,112 @@
++"""Prepare the complete frozen Unihex bounds corpus; never run during measurement."""
++
++import csv
++import io
++import json
++import struct
++import sys
++import zipfile
++import zlib
++from pathlib import Path
++
++
++def archive(entries):
++    """Return stable stored ZIP bytes with explicit metadata and entry order."""
++    output = io.BytesIO()
++    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as bundle:
++        for name, contents in entries:
++            entry = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
++            entry.external_attr = 0o100644 << 16
++            bundle.writestr(entry, contents)
++    return output.getvalue()
++
++
++def png():
++    """Encode the independent opaque checkerboard bitmap control without a native decoder."""
++    def chunk(name, payload):
++        return struct.pack(">I", len(payload)) + name + payload + struct.pack(">I", zlib.crc32(name + payload))
++
++    raw = b"".join(b"\x00" + b"".join(bytes((255, 255, 255, 255 if (x + y) % 2 == 0 else 0)) for x in range(8)) for y in range(8))
++    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 8, 8, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
++
++
++def document(overrides):
++    """Keep provider order, filters and the complete ordered override list in frozen original bytes."""
++    return json.dumps({"providers": [{"type": "unihex", "hex_file": "strata_benchmark:font/glyphs.zip", "size_overrides": overrides}]}, separators=(",", ":")).encode()
++
++
++def table(columns, rows):
++    """Return a stable UTF-8 TSV with exactly one semantic row per line."""
++    output = io.StringIO(newline="")
++    writer = csv.writer(output, delimiter="\t", lineterminator="\n")
++    writer.writerow(columns)
++    writer.writerows(rows)
++    return output.getvalue().encode()
++
++
++def prepare(destination):
++    """Freeze all 36 fixtures, 132 rows and 792 Pending cells; control bindings are reviewed separately."""
++    destination.mkdir(parents=True, exist_ok=False)
++    assets = []
++    fixtures = []
++    comparisons = []
++    patterns = ("Empty", "AllInk", "LeftEdge", "RightEdge", "CenteredSparse", "DisjointExtrema")
++    for width in (8, 16, 24, 32):
++        for pattern in patterns:
++            name = f"W{width}{pattern}"
++            rows = []
++            for y in range(16):
++                value = {
++                    "Empty": 0,
++                    "AllInk": (1 << width) - 1,
++                    "LeftEdge": 1 << (width - 1),
++                    "RightEdge": 1,
++                    "CenteredSparse": (1 << (width // 2)) if y % 3 == 0 else 0,
++                    "DisjointExtrema": (1 << (width - 2)) if y == 0 else (2 if y == 15 else 0),
++                }[pattern]
++                rows.append(value)
++            packed = "".join(f"{row:0{width // 4}X}" for row in rows)
++            records = f"0041:{packed}\n0042:{packed}\n".encode("ascii")
++            assets.extend(((f"{name}.zip", archive((("glyphs.hex", records),))), (f"{name}.json", document([]))))
++            fixtures.append((name, width, ",".join(f"{row:X}" for row in rows), "0041,0042", f"{name}.zip", f"{name}.json"))
++            comparisons.append((name, "NaturalBounds", "N/A", 0, 0, "one real runtime bounds invocation", "N/A"))
++            for mode in ("Integer", "Fractional"):
++                comparisons.append((name, "PublicUncachedGlyph", mode, 0, 0, "glyph A repeated; no primed raster", "N/A"))
++                comparisons.append((name, "CompleteDirtyTextFrame", mode, 4096, 16777216, "prime A and B; publish alternate A/B; one complete frame", "320x40; headless density1,2,3 admission"))
++
++    control_names = ("Evicted8Integer", "Evicted32Fractional", "WarmRasterHit", "AbsentSparseGlyph", "MatchingOverride", "NoMatchingOverride", "TrueType", "Bitmap", "SnapshotLoad", "EngineLifecycle", "CleanTextFrame", "SnapshotReplacement")
++    control_widths = (8, 32, 32, 32, 32, 32, 0, 8, 32, 32, 32, 32)
++    control_modes = ("Integer", "Fractional", "Fractional", "Fractional", "Fractional", "Fractional", "N/A", "N/A", "Fractional", "Fractional", "Fractional", "Fractional")
++    transitions = ("alternate A/B through one-entry cache", "alternate A/B through one-entry cache", "prime A in default bounded cache", "request absent C", "first matching inclusive ordered range", "scan frozen nonwinning ordered ranges", "uncached A after real native preflight", "uncached A after real PNG preflight", "complete public load from prepared source", "open/use/close independent engine", "prime A/B and repeat unchanged frame", "load/profile/open/attach/frame/close alternating prepared source")
++    for name, width, mode, transition in zip(control_names, control_widths, control_modes, transitions):
++        fixture = "W8DisjointExtrema" if name == "Evicted8Integer" else "W32DisjointExtrema"
++        original = {
++            "TrueType": ("0041", "external:cc0-geometric-font", "truetype.json"),
++            "Bitmap": ("0041", "control.png", "bitmap.json"),
++            "MatchingOverride": ("0041,0042", fixture + ".zip", "matching.json"),
++            "NoMatchingOverride": ("0041,0042", fixture + ".zip", "nonmatching.json"),
++            "SnapshotReplacement": ("0041,0042", fixture + ".zip,W32CenteredSparse.zip", fixture + ".json,W32CenteredSparse.json"),
++        }.get(name, ("0041,0042", fixture + ".zip", fixture + ".json"))
++        fixtures.append((name, width, "control", *original))
++        entries = 1 if name.startswith("Evicted") else 4096 if name in ("WarmRasterHit", "CleanTextFrame", "SnapshotReplacement") else 0
++        comparisons.append((name, "Control", mode, entries, 16777216, transition, "320x40; density1,2,3 admission" if name in ("CleanTextFrame", "SnapshotReplacement") else "N/A"))
++
++    assets.extend((
++        ("matching.json", document([{"from": "Z", "to": "z", "left": 0, "right": 31}, {"from": "A", "to": "C", "left": -1, "right": 33}, {"from": "A", "to": "B", "left": 0, "right": 3}])),
++        ("nonmatching.json", document([{"from": "Z", "to": "z", "left": 0, "right": 31}, {"from": "D", "to": "F", "left": 1, "right": 3}])),
++        ("bitmap.json", b'{"providers":[{"type":"bitmap","file":"strata_benchmark:font/control.png","height":8,"ascent":7,"chars":["A"]}]}'),
++        ("control.png", png()),
++        ("truetype.json", b'{"providers":[{"type":"ttf","file":"strata_benchmark:control.ttf","size":11,"oversample":1}]}'),
++    ))
++    assert len(fixtures) == 36 and len(comparisons) == 132
++    (destination / "assets.zip").write_bytes(archive(assets))
++    (destination / "fixtures.tsv").write_bytes(table(("fixture", "width", "packedRows", "scalars", "archive", "document"), fixtures))
++    indexed = [(f"R{index:03}", *row) for index, row in enumerate(comparisons, 1)]
++    (destination / "comparisons.tsv").write_bytes(table(("row", "fixture", "operation", "advance", "cacheEntries", "cacheBytes", "reset", "frame"), indexed))
++    cells = [(row[0], side, repetition, "Pending", "Pending", "Pending", "Pending", "Pending", "Pending") for row in indexed for side in ("Baseline", "Candidate") for repetition in range(3)]
++    assert len(cells) == 792
++    (destination / "measurements.tsv").write_bytes(table(("row", "side", "repetition", "CPU", "allocation", "naturalScans", "rasterMisses", "frameWork", "receipt"), cells))
++
++
++if __name__ == "__main__":
++    prepare(Path(sys.argv[1]))
