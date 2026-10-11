@@ -12,6 +12,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
+import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.projection.BuiltinProjection
 import dev.s7a.strata.projection.DeclarationProjection
@@ -56,6 +57,9 @@ internal class GridElement(
     /**
      * Retained node that measures and places one fixed-column grid.
      *
+     * The tree owner thread retains only the current successful measure's column and row maxima.
+     * See the [measured-track contract](https://github.com/sya-ri/strata/blob/master/docs/development/performance.md#measured-grid-tracks) for exact validity, storage and release guarantees.
+     *
      * @param columns initial positive number of columns.
      * @param horizontalSpacing initial horizontal track spacing.
      * @param verticalSpacing initial vertical track spacing.
@@ -68,11 +72,17 @@ internal class GridElement(
         private var contentAlignment: Alignment,
     ) : RetainedNode(),
         MeasureNode,
-        LayoutNode {
+        LayoutNode,
+        LifecycleNode {
+        // The completed measure is the validity token; core requires fresh measure after geometry invalidation.
+        private var columnWidths: IntArray? = null
+        private var rowHeights: IntArray? = null
+
         override fun measure(
             scope: MeasureScope,
             constraints: Constraints,
         ): IntSize {
+            clearTracks()
             val columnWidths = IntArray(minOf(columns, scope.childCount))
             val rowHeights = IntArray(rowCount(scope.childCount, columns))
             val childConstraints =
@@ -86,15 +96,15 @@ internal class GridElement(
                 val childSize = scope.measureChild(index, childConstraints)
                 recordTrackExtents(index, childSize, columnWidths, rowHeights)
             }
-            return constraints.constrain(naturalSize(columnWidths, rowHeights))
+            val size = constraints.constrain(naturalSize(columnWidths, rowHeights))
+            this.columnWidths = columnWidths
+            this.rowHeights = rowHeights
+            return size
         }
 
         override fun layout(scope: LayoutScope) {
-            val columnWidths = IntArray(minOf(columns, scope.childCount))
-            val rowHeights = IntArray(rowCount(scope.childCount, columns))
-            for (index in 0 until scope.childCount) {
-                recordTrackExtents(index, scope.measuredChildSize(index), columnWidths, rowHeights)
-            }
+            val columnWidths = checkNotNull(columnWidths) { "Grid must complete measurement before layout." }
+            val rowHeights = checkNotNull(rowHeights) { "Grid must complete measurement before layout." }
             val columnOffsets = trackOffsets(columnWidths, horizontalSpacing)
             val rowOffsets = trackOffsets(rowHeights, verticalSpacing)
             for (index in 0 until scope.childCount) {
@@ -132,6 +142,7 @@ internal class GridElement(
                 previous.horizontalSpacing != current.horizontalSpacing ||
                 previous.verticalSpacing != current.verticalSpacing
             ) {
+                clearTracks()
                 dirty += DirtyMask.of(DirtyPhase.Measure)
             } else if (previous.contentAlignment != current.contentAlignment) {
                 dirty += DirtyMask.of(DirtyPhase.Layout)
@@ -141,6 +152,21 @@ internal class GridElement(
             verticalSpacing = current.verticalSpacing
             contentAlignment = current.contentAlignment
             return dirty
+        }
+
+        override fun attach() = Unit
+
+        override fun detach() {
+            clearTracks()
+        }
+
+        override fun dispose() {
+            clearTracks()
+        }
+
+        private fun clearTracks() {
+            columnWidths = null
+            rowHeights = null
         }
 
         private fun recordTrackExtents(
