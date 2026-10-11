@@ -109,19 +109,7 @@ internal class MinecraftTextFieldPreeditRangeTest {
             Fixture().use { fixture ->
                 val references = ephemeralInput(fixture::input)
                 assertNotNull(fixture.composition())
-                when (cutoff) {
-                    Cutoff.Replacement -> fixture.input(TextInputEvent.Preedit("C", 1, listOf("C"), 0))
-                    Cutoff.Empty -> fixture.input(TextInputEvent.Preedit("", 0, emptyList(), -1))
-                    Cutoff.Focus -> (fixture.node as FocusTargetNode).onFocusChanged(false)
-                    Cutoff.Disable -> fixture.update(enabled = false)
-                    Cutoff.State -> fixture.update(state = TextFieldState("D"))
-                    Cutoff.ExternalState -> fixture.state.value = "D"
-                    Cutoff.Cursor -> (fixture.node as KeyboardInputNode).onKeyboardEvent(KeyboardEvent.Press(KeyCode.Home, 0))
-                    Cutoff.Character -> (fixture.node as TextInputNode).onTextInput(TextInputEvent.Character('D'.code))
-                    Cutoff.Pointer -> (fixture.node as PointerInputNode).onPointerEvent(PointerEvent.Press(IntOffset(4, 10), PointerButton.Primary), IntOffset(4, 10))
-                    Cutoff.Detach -> (fixture.node as LifecycleNode).detach()
-                    Cutoff.Dispose -> (fixture.node as LifecycleNode).dispose()
-                }
+                applyCutoff(cutoff, fixture)
                 if (cutoff != Cutoff.Replacement) assertNull(fixture.composition())
                 FontTestReferences.assertCollected(*references.toTypedArray())
                 Reference.reachabilityFence(fixture.node)
@@ -149,6 +137,25 @@ internal class MinecraftTextFieldPreeditRangeTest {
             Reference.reachabilityFence(host)
         } finally {
             host.close()
+        }
+    }
+
+    /**
+     * Applies each release boundary through the production node or state while the fixture stays reachable.
+     */
+    private fun applyCutoff(cutoff: Cutoff, fixture: Fixture) {
+        when (cutoff) {
+            Cutoff.Replacement -> fixture.input(TextInputEvent.Preedit("C", 1, listOf("C"), 0))
+            Cutoff.Empty -> fixture.input(TextInputEvent.Preedit("", 0, emptyList(), -1))
+            Cutoff.Focus -> (fixture.node as FocusTargetNode).onFocusChanged(false)
+            Cutoff.Disable -> fixture.update(enabled = false)
+            Cutoff.State -> fixture.update(state = TextFieldState("D"))
+            Cutoff.ExternalState -> fixture.state.value = "D"
+            Cutoff.Cursor -> (fixture.node as KeyboardInputNode).onKeyboardEvent(KeyboardEvent.Press(KeyCode.Home, 0))
+            Cutoff.Character -> (fixture.node as TextInputNode).onTextInput(TextInputEvent.Character('D'.code))
+            Cutoff.Pointer -> (fixture.node as PointerInputNode).onPointerEvent(PointerEvent.Press(IntOffset(4, 10), PointerButton.Primary), IntOffset(4, 10))
+            Cutoff.Detach -> (fixture.node as LifecycleNode).detach()
+            Cutoff.Dispose -> (fixture.node as LifecycleNode).dispose()
         }
     }
 
