@@ -44,13 +44,7 @@ internal class HeadlessDescriptionValidationTest {
                 assertSame(commands, tree.paint())
                 assertEquals(semantics, tree.semantics())
                 val after = rasterizeHeadless(tree.paint(), viewport, scale)
-                for (y in 0 until before.size.height) {
-                    for (x in 0 until before.size.width) {
-                        val expected = if (x < 2 * scale) 0xFFFF0000.toInt() else 0xFF0000FF.toInt()
-                        assertEquals(expected, before.argbAt(x, y))
-                        assertEquals(expected, after.argbAt(x, y))
-                    }
-                }
+                assertExactPixels(before, after, scale)
             }
             assertEquals(lifecycle, probe.lifecycle)
             assertEquals(creations, probe.creations)
@@ -58,6 +52,21 @@ internal class HeadlessDescriptionValidationTest {
             assertEquals(2, probe.layouts)
             tree.update(description(false))
             assertEquals(creations, probe.creations)
+        }
+    }
+
+    /** Checks every before and after pixel against the independent literal ARGB oracle. */
+    private fun assertExactPixels(
+        before: HeadlessImage,
+        after: HeadlessImage,
+        scale: Int,
+    ) {
+        for (y in 0 until before.size.height) {
+            for (x in 0 until before.size.width) {
+                val expected = if (x < 2 * scale) 0xFFFF0000.toInt() else 0xFF0000FF.toInt()
+                assertEquals(expected, before.argbAt(x, y))
+                assertEquals(expected, after.argbAt(x, y))
+            }
         }
     }
 }
