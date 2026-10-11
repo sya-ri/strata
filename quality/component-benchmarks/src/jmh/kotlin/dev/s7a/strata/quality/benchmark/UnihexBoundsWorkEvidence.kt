@@ -120,14 +120,15 @@ public object UnihexBoundsWorkEvidence {
         }
     }
 
-    private fun table(name: String): List<List<String>> = UnihexBoundsAssets
-        .bytes(name)
-        .toString(Charsets.UTF_8)
-        .lineSequence()
-        .drop(1)
-        .filter { it.isNotEmpty() }
-        .map { it.split('\t') }
-        .toList()
+    private fun table(name: String): List<List<String>> =
+        UnihexBoundsAssets
+            .bytes(name)
+            .toString(Charsets.UTF_8)
+            .lineSequence()
+            .drop(1)
+            .filter { it.isNotEmpty() }
+            .map { it.split('\t') }
+            .toList()
 
     private fun verifyGlyph(
         fixture: UnihexBoundsFixture,
