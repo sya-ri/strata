@@ -1,0 +1,2902 @@
+[
+  {
+    "id": "V01",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V01",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V02",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V02",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V03",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V03",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V04",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide16None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V04",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide16None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V05",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide16All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V05",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide16All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V06",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V06",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V07",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide128None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V07",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide128None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V08",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide128All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V08",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide128All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V09",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V09",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V10",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V10",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V11",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V11",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V12",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionWide1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V12",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionWide1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V13",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V13",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V14",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V14",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V15",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V15",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V16",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V16",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V17",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V17",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V18",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V18",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V19",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V19",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V20",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V20",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V21",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V21",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V22",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V22",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V23",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V23",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V24",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V24",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionChainGroups16Count1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V25",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V25",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V26",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V26",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V27",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V27",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V28",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V28",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V29",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V29",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V30",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V30",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary16Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V31",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V31",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V32",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V32",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V33",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V33",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary128Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V34",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V34",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024None"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V35",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V35",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024All"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V36",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V36",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "RootDefinitionBalancedBinary1024Alternate"
+    },
+    "route": "RootDefinition",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V37",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V37",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V38",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V38",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V39",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V39",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V40",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V40",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V41",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V41",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V42",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V42",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V43",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V43",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V44",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V44",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V45",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V45",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V46",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V46",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V47",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V47",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V48",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildWide1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V48",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildWide1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V49",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V49",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V50",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V50",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V51",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V51",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V52",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V52",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V53",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V53",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V54",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V54",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V55",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V55",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V56",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V56",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V57",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V57",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V58",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V58",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V59",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V59",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V60",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V60",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildChainGroups16Count1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "ChainGroups16",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V61",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V61",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V62",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V62",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V63",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V63",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V64",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V64",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V65",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V65",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V66",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V66",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary16Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 16,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V67",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V67",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V68",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V68",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V69",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V69",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary128Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 128,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V70",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V70",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024None"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V71",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V71",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024All"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "All",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V72",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V72",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "ObserveRebuildBalancedBinary1024Alternate"
+    },
+    "route": "ObserveRebuild",
+    "shape": "BalancedBinary",
+    "descendants": 1024,
+    "keys": "Alternate",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V73",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "EmptyRootRebuild"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V73",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "EmptyRootRebuild"
+    },
+    "route": "RootDefinition",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V74",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "EmptyObservedRebuild"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V74",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "EmptyObservedRebuild"
+    },
+    "route": "ObserveRebuild",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V75",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "SameDescriptionRootReevaluation"
+    },
+    "route": "SameDescription",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V75",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "SameDescriptionRootReevaluation"
+    },
+    "route": "SameDescription",
+    "shape": "Wide",
+    "descendants": 128,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V76",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "avgt",
+    "params": {
+      "case": "CleanSettledFrame"
+    },
+    "route": "Clean",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "V76",
+    "benchmark": "DescriptionValidationBenchmark.validationFrame",
+    "mode": "sample",
+    "params": {
+      "case": "CleanSettledFrame"
+    },
+    "route": "Clean",
+    "shape": "Wide",
+    "descendants": 0,
+    "keys": "None",
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R01",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Static",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R01",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Static",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R02",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Static",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R02",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Static",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R03",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Single",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R03",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Single",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R04",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Single",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R04",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Single",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R05",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "MapEqual",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R05",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "MapEqual",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R06",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "MapEqual",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R06",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "MapEqual",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R07",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "MapChanged",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R07",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "MapChanged",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R08",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "MapChanged",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R08",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "MapChanged",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R09",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Nested",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R09",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Nested",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R10",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Nested",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R10",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Nested",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R11",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Independent128",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R11",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Independent128",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R12",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "Independent128",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R12",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "Independent128",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R13",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "FanOut128",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R13",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "FanOut128",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R14",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "FanOut128",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R14",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "FanOut128",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R15",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "ListAppend",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R15",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "ListAppend",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R16",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "ListAppend",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R16",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "ListAppend",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R17",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "ListPrepend",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R17",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "ListPrepend",
+      "monitoring": "false"
+    },
+    "monitoring": false,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R18",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "avgt",
+    "params": {
+      "scenario": "ListPrepend",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  },
+  {
+    "id": "R18",
+    "benchmark": "ReactiveRenderingBenchmark.reactiveFrame",
+    "mode": "sample",
+    "params": {
+      "scenario": "ListPrepend",
+      "monitoring": "true"
+    },
+    "monitoring": true,
+    "baseline": "Pending",
+    "candidate": "Pending",
+    "delta": "Pending"
+  }
+]

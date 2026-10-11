@@ -1,0 +1,6 @@
+baseline.patch -text
+candidate.patch -text
+# Preserve frozen JSON bytes and recognize their original CRLF line endings.
+formal-rows.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+controls.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+source-provenance.json -text

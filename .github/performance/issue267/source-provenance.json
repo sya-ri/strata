@@ -1,0 +1,75 @@
+{
+  "schema": "strata-description-validation-source-provenance-v1",
+  "mergedMasterCommit": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+  "productionBaselineCommit": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+  "productionCandidateCommit": "f070a99d9271d29df5846076f0b5a27f2b8dd59b",
+  "candidateSourceTree": "26d3ae165bc92bb77e7773e2e61c1e2de27a6629",
+  "baselineSourceTree": "b3897c79928c5c610f185248355d9fbb0e7167b1",
+  "sourceReconstruction": "Both source trees use the actual merged master and the identical twelve frozen fixture/control sources. The only baseline/candidate source difference is the production DescriptionValidator. Measurement metadata is outside both frozen code trees; neither source tree includes its own manifest or patch bytes.",
+  "commonFixtureAndControls": {
+    "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationBenchmark.kt": "294d20ebf89dcc756336424fc645be2e1974fdf68aff0a029b0451bc26b3b0e2",
+    "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationCase.kt": "5a20de6baf26cc9936d94ffc540c9309049c25b5b1332d2b8aacb551219c8561",
+    "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationElement.kt": "20c22e5862be4e63ebfceac0df91831175eb9db3aea49febd957905902f29cb4",
+    "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationFixture.kt": "cc18428b2ef743095ec9529fff79254fc5dd533568dbf96b58f037b66af9e4f7",
+    "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationNode.kt": "e6ee1dea29e32b96087f935c1aea68a0411130e09c9b1c2023f0186f3a79d666",
+    "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationProbe.kt": "c0679d98cc4137ef54d4299b68cf91461c30744e6350bed62c99d1e06a69330f",
+    "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationRetainedTest.kt": "d0ea9395f5bc8c82c97a78a7fddcbce0128a04d9cf01f6b21008abd8fffb9050",
+    "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationSource.kt": "3784015ebf9a17c03c660766884dd81701c11ad7f770d3c525f686bdbe990a6d",
+    "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidatorParityTest.kt": "ff29a5ca197f9c275cfcea38440f2d92647c99e4b1806b61f96a4a07e0504b6d",
+    "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/OriginalDescriptionValidator.kt": "01eb476218bcc3dfd5fdcf3885d5c220a4d818bfa55a419c4be7d210b8f12ebd",
+    "runtime/core/src/test/kotlin/dev/s7a/strata/runtime/DescriptionValidationOwnershipTest.kt": "7301e3c71066f8ceb0c88c34dbc3373ba7bc87bf5717f007b19d1e6b3003cc02",
+    "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt": "be718823bbd48d62d73366f4c0149cdbd23a4fc8db97ddf96a2c875af941529a"
+  },
+  "productionValidator": {
+    "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/DescriptionValidator.kt",
+    "baselineSha256": "b0dd89f5ea8c0d730112cb2715d1a6c62e7a59bfcf49782a9450515cd54df8d3",
+    "candidateSha256": "d02db370a5f3a4a154aee1b6f078a35aae5e62e7d51c66531a0ce5298c861884",
+    "inverseLazySetNormalizationEqualsBaseline": true,
+    "originalReferenceEqualsBaseline": true
+  },
+  "formalRows": {
+    "sha256": "a7b640e4a44a5be63c8e64e0c37d89d969fb435dbd091013185524efa2344573",
+    "count": 188,
+    "casesPerMode": 94,
+    "modes": [
+      "avgt",
+      "sample"
+    ],
+    "descriptionValidationCases": 76,
+    "unchangedReactiveCases": 18,
+    "requiredRowRepetitionResults": 1128
+  },
+  "controls": {
+    "sha256": "45e0c9cd83e64b22eabf571558303b8dad080a3e89cec6d102d14b4522c91b83",
+    "count": 44,
+    "c32": {
+      "status": "Source-reviewed; supported immutable public Element construction cannot create cycles.",
+      "source": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/DescriptionValidator.kt",
+      "facts": [
+        "Element snapshots children.toList()",
+        "identitySet active.add and active.remove and traversal order unchanged"
+      ],
+      "execution": "N/A: no production test escape hatch"
+    },
+    "c41": {
+      "file": "runtime/core/src/test/kotlin/dev/s7a/strata/runtime/DescriptionValidationOwnershipTest.kt",
+      "method": "c41WrongJvmThread"
+    },
+    "execution": "Pending; metadata does not substitute for independent control execution."
+  },
+  "sharedCollector": {
+    "sourceMasterRevision": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+    "kotlinSourceTreeSha256": "70766e8ac1dbef047acdc6822f6fa9e8e466df072d1f616a8bca5eb69076e8be",
+    "commonCompilation": "One candidate fixture/generated harness/collector build; actual api/core/headless runtime archives are rebound for both full work gates and each loaded fork/iteration."
+  },
+  "measurementScope": {
+    "allocation": "Stock JMH GC-profiler values include invocation fixture preparation. No operation-only allocation or CPU claim is made.",
+    "time": "Primary score and SampleTime distributions for the declared validation/reactive frame batch.",
+    "threadCpuPerOperation": "N/A: the current collector does not collect thread CPU per operation.",
+    "actualFullPerRowIntervalElapsed": "N/A: configured iteration duration is not actual full per-row elapsed.",
+    "jobCpuAndTotalCost": "Actual Windows Job and complete attempt phase CPU/elapsed records required, including preparation and descendants.",
+    "gpuUploadGuiConsumption": "N/A for the platform-neutral CPU job; current-head all22/native/browser checks remain separate."
+  },
+  "actualArtifactPins": "Predeclared compiled/dependency/Windows Java bytes are unavailable and are not invented. The hosted driver freezes actual executable/release hashes, runtime archive manifests, common fixture closure and dependency/input provenance before collection and verifies actual loaded bytes in every measured fork/iteration.",
+  "acceptance": "Pending all complete B0/C0/B1/C1/B2/C2 results per mode, independent controls and final-head quality/ABI/ordered Kover/Qodana/all22/applicable native/browser checks."
+}

@@ -55,7 +55,9 @@ internal class HeadlessDescriptionValidationTest {
         }
     }
 
-    /** Checks every before and after pixel against the independent literal ARGB oracle. */
+    /**
+     * Checks every before and after pixel against the independent literal ARGB oracle.
+     */
     private fun assertExactPixels(
         before: HeadlessImage,
         after: HeadlessImage,

@@ -1,0 +1,1756 @@
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationBenchmark.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..56d15338f4d0e9021b686e97ede352e3d8aee7fe
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationBenchmark.kt
+@@ -0,0 +1,93 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JmhPerformanceRunner
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++
++/**
++ * Public frame consumers for declaration validation, collected by the existing ordinary shared JMH selector.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class DescriptionValidationBenchmark {
++    /**
++     * Completes one genuine assignment/publication and retained frame with monitoring disabled.
++     */
++    @Benchmark
++    public fun validationFrame(state: Scene): RuntimeUiFrame = state.nextFrame()
++
++    /**
++     * One settled session per JMH worker; declaration topology is fixed before timing.
++     */
++    @State(Scope.Thread)
++    public open class Scene {
++        /**
++         * Complete 76-case parameter inventory inferred from the compiled enum by JMH.
++         */
++        @JvmField
++        @Param
++        public var case: DescriptionValidationCase = DescriptionValidationCase.RootDefinitionWide1None
++
++        private lateinit var fixture: DescriptionValidationFixture
++
++        /**
++         * Attaches and settles the public session outside sampling.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            fixture = DescriptionValidationFixture(case)
++        }
++
++        /**
++         * Runs the complete frame operation without diagnostic instrumentation.
++         */
++        public fun nextFrame(): RuntimeUiFrame = fixture.nextFrame()
++
++        /**
++         * Releases every session/source owner outside sampling.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            fixture.close()
++        }
++    }
++
++    /**
++     * Generated matrix admission and independent untimed work controls use the existing kit.
++     */
++    public companion object {
++        /**
++         * Rejects missing, extra and duplicate method/parameter rows for both complete fixture families.
++         */
++        @JvmStatic
++        public fun verifyWork() {
++            val modes = setOf("avgt", "sample")
++            val expected =
++                buildSet {
++                    modes.forEach { mode ->
++                        DescriptionValidationCase.entries.forEach { case ->
++                            add(JmhPerformanceRunner.workloadIdentity(DescriptionValidationBenchmark::class.java.name + ".validationFrame", mode, mapOf("case" to case.name)))
++                        }
++                        ReactiveWorkload.entries.forEach { scenario ->
++                            listOf(false, true).forEach { monitoring ->
++                                add(JmhPerformanceRunner.workloadIdentity(ReactiveRenderingBenchmark::class.java.name + ".reactiveFrame", mode, mapOf("scenario" to scenario.name, "monitoring" to monitoring.toString())))
++                            }
++                        }
++                    }
++                }
++            check(expected.size == 188)
++            check(JmhWorkloadInventory.capture(listOf(DescriptionValidationBenchmark::class.java, ReactiveRenderingBenchmark::class.java), modes) == expected)
++            DescriptionValidationCase.entries.forEach { case ->
++                DescriptionValidationFixture(case).use { it.verifyWork() }
++            }
++            ReactiveWorkEvidence.main(emptyArray())
++        }
++    }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationCase.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationCase.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e58308073ad304876f976ab812b605aa4c5c3f4
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationCase.kt
+@@ -0,0 +1,131 @@
++package dev.s7a.strata.quality.benchmark
++
++/**
++ * Frozen complete declaration corpus: two public frame routes, three shapes, four sizes and three key arrangements.
++ * Four explicit controls follow the 72 data cases; descendants exclude the one emitted root.
++ */
++public enum class DescriptionValidationCase(
++    public val route: Route,
++    public val shape: Shape,
++    public val descendants: Int,
++    public val keys: Keys,
++) {
++    RootDefinitionWide1None(Route.RootDefinition, Shape.Wide, 1, Keys.None),
++    RootDefinitionWide1All(Route.RootDefinition, Shape.Wide, 1, Keys.All),
++    RootDefinitionWide1Alternate(Route.RootDefinition, Shape.Wide, 1, Keys.Alternate),
++    RootDefinitionWide16None(Route.RootDefinition, Shape.Wide, 16, Keys.None),
++    RootDefinitionWide16All(Route.RootDefinition, Shape.Wide, 16, Keys.All),
++    RootDefinitionWide16Alternate(Route.RootDefinition, Shape.Wide, 16, Keys.Alternate),
++    RootDefinitionWide128None(Route.RootDefinition, Shape.Wide, 128, Keys.None),
++    RootDefinitionWide128All(Route.RootDefinition, Shape.Wide, 128, Keys.All),
++    RootDefinitionWide128Alternate(Route.RootDefinition, Shape.Wide, 128, Keys.Alternate),
++    RootDefinitionWide1024None(Route.RootDefinition, Shape.Wide, 1024, Keys.None),
++    RootDefinitionWide1024All(Route.RootDefinition, Shape.Wide, 1024, Keys.All),
++    RootDefinitionWide1024Alternate(Route.RootDefinition, Shape.Wide, 1024, Keys.Alternate),
++    RootDefinitionChainGroups16Count1None(Route.RootDefinition, Shape.ChainGroups16, 1, Keys.None),
++    RootDefinitionChainGroups16Count1All(Route.RootDefinition, Shape.ChainGroups16, 1, Keys.All),
++    RootDefinitionChainGroups16Count1Alternate(Route.RootDefinition, Shape.ChainGroups16, 1, Keys.Alternate),
++    RootDefinitionChainGroups16Count16None(Route.RootDefinition, Shape.ChainGroups16, 16, Keys.None),
++    RootDefinitionChainGroups16Count16All(Route.RootDefinition, Shape.ChainGroups16, 16, Keys.All),
++    RootDefinitionChainGroups16Count16Alternate(Route.RootDefinition, Shape.ChainGroups16, 16, Keys.Alternate),
++    RootDefinitionChainGroups16Count128None(Route.RootDefinition, Shape.ChainGroups16, 128, Keys.None),
++    RootDefinitionChainGroups16Count128All(Route.RootDefinition, Shape.ChainGroups16, 128, Keys.All),
++    RootDefinitionChainGroups16Count128Alternate(Route.RootDefinition, Shape.ChainGroups16, 128, Keys.Alternate),
++    RootDefinitionChainGroups16Count1024None(Route.RootDefinition, Shape.ChainGroups16, 1024, Keys.None),
++    RootDefinitionChainGroups16Count1024All(Route.RootDefinition, Shape.ChainGroups16, 1024, Keys.All),
++    RootDefinitionChainGroups16Count1024Alternate(Route.RootDefinition, Shape.ChainGroups16, 1024, Keys.Alternate),
++    RootDefinitionBalancedBinary1None(Route.RootDefinition, Shape.BalancedBinary, 1, Keys.None),
++    RootDefinitionBalancedBinary1All(Route.RootDefinition, Shape.BalancedBinary, 1, Keys.All),
++    RootDefinitionBalancedBinary1Alternate(Route.RootDefinition, Shape.BalancedBinary, 1, Keys.Alternate),
++    RootDefinitionBalancedBinary16None(Route.RootDefinition, Shape.BalancedBinary, 16, Keys.None),
++    RootDefinitionBalancedBinary16All(Route.RootDefinition, Shape.BalancedBinary, 16, Keys.All),
++    RootDefinitionBalancedBinary16Alternate(Route.RootDefinition, Shape.BalancedBinary, 16, Keys.Alternate),
++    RootDefinitionBalancedBinary128None(Route.RootDefinition, Shape.BalancedBinary, 128, Keys.None),
++    RootDefinitionBalancedBinary128All(Route.RootDefinition, Shape.BalancedBinary, 128, Keys.All),
++    RootDefinitionBalancedBinary128Alternate(Route.RootDefinition, Shape.BalancedBinary, 128, Keys.Alternate),
++    RootDefinitionBalancedBinary1024None(Route.RootDefinition, Shape.BalancedBinary, 1024, Keys.None),
++    RootDefinitionBalancedBinary1024All(Route.RootDefinition, Shape.BalancedBinary, 1024, Keys.All),
++    RootDefinitionBalancedBinary1024Alternate(Route.RootDefinition, Shape.BalancedBinary, 1024, Keys.Alternate),
++    ObserveRebuildWide1None(Route.ObserveRebuild, Shape.Wide, 1, Keys.None),
++    ObserveRebuildWide1All(Route.ObserveRebuild, Shape.Wide, 1, Keys.All),
++    ObserveRebuildWide1Alternate(Route.ObserveRebuild, Shape.Wide, 1, Keys.Alternate),
++    ObserveRebuildWide16None(Route.ObserveRebuild, Shape.Wide, 16, Keys.None),
++    ObserveRebuildWide16All(Route.ObserveRebuild, Shape.Wide, 16, Keys.All),
++    ObserveRebuildWide16Alternate(Route.ObserveRebuild, Shape.Wide, 16, Keys.Alternate),
++    ObserveRebuildWide128None(Route.ObserveRebuild, Shape.Wide, 128, Keys.None),
++    ObserveRebuildWide128All(Route.ObserveRebuild, Shape.Wide, 128, Keys.All),
++    ObserveRebuildWide128Alternate(Route.ObserveRebuild, Shape.Wide, 128, Keys.Alternate),
++    ObserveRebuildWide1024None(Route.ObserveRebuild, Shape.Wide, 1024, Keys.None),
++    ObserveRebuildWide1024All(Route.ObserveRebuild, Shape.Wide, 1024, Keys.All),
++    ObserveRebuildWide1024Alternate(Route.ObserveRebuild, Shape.Wide, 1024, Keys.Alternate),
++    ObserveRebuildChainGroups16Count1None(Route.ObserveRebuild, Shape.ChainGroups16, 1, Keys.None),
++    ObserveRebuildChainGroups16Count1All(Route.ObserveRebuild, Shape.ChainGroups16, 1, Keys.All),
++    ObserveRebuildChainGroups16Count1Alternate(Route.ObserveRebuild, Shape.ChainGroups16, 1, Keys.Alternate),
++    ObserveRebuildChainGroups16Count16None(Route.ObserveRebuild, Shape.ChainGroups16, 16, Keys.None),
++    ObserveRebuildChainGroups16Count16All(Route.ObserveRebuild, Shape.ChainGroups16, 16, Keys.All),
++    ObserveRebuildChainGroups16Count16Alternate(Route.ObserveRebuild, Shape.ChainGroups16, 16, Keys.Alternate),
++    ObserveRebuildChainGroups16Count128None(Route.ObserveRebuild, Shape.ChainGroups16, 128, Keys.None),
++    ObserveRebuildChainGroups16Count128All(Route.ObserveRebuild, Shape.ChainGroups16, 128, Keys.All),
++    ObserveRebuildChainGroups16Count128Alternate(Route.ObserveRebuild, Shape.ChainGroups16, 128, Keys.Alternate),
++    ObserveRebuildChainGroups16Count1024None(Route.ObserveRebuild, Shape.ChainGroups16, 1024, Keys.None),
++    ObserveRebuildChainGroups16Count1024All(Route.ObserveRebuild, Shape.ChainGroups16, 1024, Keys.All),
++    ObserveRebuildChainGroups16Count1024Alternate(Route.ObserveRebuild, Shape.ChainGroups16, 1024, Keys.Alternate),
++    ObserveRebuildBalancedBinary1None(Route.ObserveRebuild, Shape.BalancedBinary, 1, Keys.None),
++    ObserveRebuildBalancedBinary1All(Route.ObserveRebuild, Shape.BalancedBinary, 1, Keys.All),
++    ObserveRebuildBalancedBinary1Alternate(Route.ObserveRebuild, Shape.BalancedBinary, 1, Keys.Alternate),
++    ObserveRebuildBalancedBinary16None(Route.ObserveRebuild, Shape.BalancedBinary, 16, Keys.None),
++    ObserveRebuildBalancedBinary16All(Route.ObserveRebuild, Shape.BalancedBinary, 16, Keys.All),
++    ObserveRebuildBalancedBinary16Alternate(Route.ObserveRebuild, Shape.BalancedBinary, 16, Keys.Alternate),
++    ObserveRebuildBalancedBinary128None(Route.ObserveRebuild, Shape.BalancedBinary, 128, Keys.None),
++    ObserveRebuildBalancedBinary128All(Route.ObserveRebuild, Shape.BalancedBinary, 128, Keys.All),
++    ObserveRebuildBalancedBinary128Alternate(Route.ObserveRebuild, Shape.BalancedBinary, 128, Keys.Alternate),
++    ObserveRebuildBalancedBinary1024None(Route.ObserveRebuild, Shape.BalancedBinary, 1024, Keys.None),
++    ObserveRebuildBalancedBinary1024All(Route.ObserveRebuild, Shape.BalancedBinary, 1024, Keys.All),
++    ObserveRebuildBalancedBinary1024Alternate(Route.ObserveRebuild, Shape.BalancedBinary, 1024, Keys.Alternate),
++
++    EmptyRootRebuild(Route.RootDefinition, Shape.Wide, 0, Keys.None),
++    EmptyObservedRebuild(Route.ObserveRebuild, Shape.Wide, 0, Keys.None),
++    SameDescriptionRootReevaluation(Route.SameDescription, Shape.Wide, 128, Keys.None),
++    CleanSettledFrame(Route.Clean, Shape.Wide, 0, Keys.None),
++    ;
++
++    /**
++     * Public phase whose assignment/publication and completed frame are inside timing.
++     */
++    public enum class Route {
++        RootDefinition,
++        ObserveRebuild,
++
++        /**
++         * Invalidates root content while returning an identical prepared description.
++         */
++        SameDescription,
++
++        /**
++         * Changes no state after settling.
++         */
++        Clean,
++    }
++
++    /**
++     * Ordered membership constructed before the trial; chains have at most sixteen descendants.
++     */
++    public enum class Shape {
++        Wide,
++        ChainGroups16,
++
++        /**
++         * Breadth-first indices with at most two children per parent.
++         */
++        BalancedBinary,
++    }
++
++    /**
++     * Stable distinct sibling keys; Alternate keys the second, fourth and subsequent even-positioned children.
++     */
++    public enum class Keys {
++        None,
++        All,
++        Alternate,
++    }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationElement.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationElement.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..e097439c6858b34fb51fbf59275c15cc56d6662f
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationElement.kt
+@@ -0,0 +1,38 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementType
++import dev.s7a.strata.node.DirtyMask
++import dev.s7a.strata.node.DirtyPhase
++
++/**
++ * Immutable external primitive with one alternating geometry/paint value and stable membership.
++ */
++internal class DescriptionValidationElement(
++    val index: Int,
++    val value: Int,
++    identity: ElementIdentity,
++    children: List<Element>,
++) : Element(identity, TYPE, children) {
++    /**
++     * Stable token shared by every declared primitive in the fixture.
++     */
++    companion object {
++        private val TYPE =
++            ElementType(
++                elementClass = DescriptionValidationElement::class,
++                nodeClass = DescriptionValidationNode::class,
++                validateLocal = { element -> require(element.value in 0..1) },
++                createNode = { element -> DescriptionValidationNode(element.index, element.value) },
++                updateNode = { previous, current, node ->
++                    if (previous.value == current.value) {
++                        DirtyMask.None
++                    } else {
++                        node.value = current.value
++                        DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Paint, DirtyPhase.Semantics)
++                    }
++                },
++            )
++    }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationFixture.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationFixture.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..f8d816db8207bebdabf584e05ea033a45cf69dbe
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationFixture.kt
+@@ -0,0 +1,181 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.component.Observe
++import dev.s7a.strata.component.evaluateComponentTree
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementKey
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.performance.RuntimeWorkMonitor
++import dev.s7a.strata.performance.WorkExpectation
++import dev.s7a.strata.render.ArgbColor
++import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
++import dev.s7a.strata.runtime.render.DrawCommand
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.runtime.spi.RuntimeUiSession
++import dev.s7a.strata.runtime.spi.createRuntimeUiSession
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.state.mutableStateOf
++import dev.s7a.strata.text.UiText
++
++/**
++ * One public owner-thread session with topology and stable keys prepared outside steady-frame timing.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class DescriptionValidationFixture(
++    private val case: DescriptionValidationCase,
++) : AutoCloseable {
++    private val state = mutableStateOf(0)
++    private val source = BenchmarkStateSource(0)
++    private val constraints = Constraints.fixed(320, 180)
++    private val membership = List(case.descendants + 1) { ArrayList<Int>() }
++    private val identities = Array<ElementIdentity>(case.descendants + 1) { ElementIdentity.Positional }
++    private val prepared: Element?
++    private var revision = 0
++    private val session: RuntimeUiSession
++
++    init {
++        for (index in 1..case.descendants) {
++            val parent =
++                when (case.shape) {
++                    DescriptionValidationCase.Shape.Wide -> 0
++                    DescriptionValidationCase.Shape.ChainGroups16 -> if ((index - 1) % 16 == 0) 0 else index - 1
++                    DescriptionValidationCase.Shape.BalancedBinary -> (index - 1) / 2
++                }
++            val siblings = membership[parent]
++            val keyed =
++                when (case.keys) {
++                    DescriptionValidationCase.Keys.None -> false
++                    DescriptionValidationCase.Keys.All -> true
++                    DescriptionValidationCase.Keys.Alternate -> siblings.size % 2 == 1
++                }
++            if (keyed) identities[index] = ElementIdentity.Keyed(ElementKey(Key(index)))
++            siblings.add(index)
++        }
++        prepared = if (case.route == DescriptionValidationCase.Route.SameDescription || case.route == DescriptionValidationCase.Route.Clean) description(0) else null
++        session =
++            createRuntimeUiSession {
++                when (case.route) {
++                    DescriptionValidationCase.Route.RootDefinition -> {
++                        description(state.value)
++                    }
++
++                    DescriptionValidationCase.Route.ObserveRebuild -> {
++                        evaluateComponentTree {
++                            Observe(source) { element(description(it % 2)) }
++                        }
++                    }
++
++                    DescriptionValidationCase.Route.SameDescription -> {
++                        state.value
++                        checkNotNull(prepared)
++                    }
++
++                    DescriptionValidationCase.Route.Clean -> {
++                        checkNotNull(prepared)
++                    }
++                }
++            }
++        session.attach()
++        session.frame(constraints)
++    }
++
++    /**
++     * Includes actual caller assignment/source publication, declaration construction and a complete retained frame.
++     */
++    fun nextFrame(): RuntimeUiFrame {
++        revision += 1
++        when (case.route) {
++            DescriptionValidationCase.Route.RootDefinition, DescriptionValidationCase.Route.SameDescription -> state.value = revision % 2
++            DescriptionValidationCase.Route.ObserveRebuild -> source.publish(revision)
++            DescriptionValidationCase.Route.Clean -> Unit
++        }
++        return session.frame(constraints)
++    }
++
++    /**
++     * Checks the real public phase, all placed descendants, equal-result reuse and bounded release outside timing.
++     */
++    fun verifyWork() {
++        RuntimeWorkMonitor(session).use { monitor ->
++            repeat(4) {
++                monitor.checkpoint()
++                val frame = nextFrame()
++                val changed = case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.ObserveRebuild
++                check(frame.drawCommands.size == case.descendants + 1)
++                check(frame.semantics.size == case.descendants + 1)
++                verifyPresentation(frame, if (changed) revision % 2 else 0)
++                monitor.verify(
++                    WorkExpectation(
++                        exact =
++                            mapOf(
++                                UiRenderMetric.FrameSuccess.name to 1L,
++                                UiRenderMetric.RootEvaluation.name to if (case.route == DescriptionValidationCase.Route.RootDefinition || case.route == DescriptionValidationCase.Route.SameDescription) 1L else 0L,
++                                UiRenderMetric.ContentEvaluation.name to if (case.route == DescriptionValidationCase.Route.ObserveRebuild) 1L else 0L,
++                                UiRenderMetric.NodeUpdate.name to if (changed) case.descendants + 1L else 0L,
++                                UiRenderMetric.NodeCreate.name to 0L,
++                                UiRenderMetric.NodeDispose.name to 0L,
++                                UiRenderMetric.Paint.name to if (changed) case.descendants + 1L else 0L,
++                                UiRenderMetric.Semantics.name to if (changed) case.descendants + 1L else 0L,
++                            ),
++                    ),
++                )
++                monitor.checkpoint()
++                check(session.frame(constraints) === frame)
++                monitor.verify(
++                    WorkExpectation(exact = mapOf(UiRenderMetric.RootEvaluation.name to 0L, UiRenderMetric.ContentEvaluation.name to 0L, UiRenderMetric.NodeUpdate.name to 0L)),
++                )
++            }
++        }
++        check(source.subscribed == (case.route == DescriptionValidationCase.Route.ObserveRebuild))
++    }
++
++    private fun verifyPresentation(
++        frame: RuntimeUiFrame,
++        value: Int,
++    ) {
++        val order = ArrayList<Int>()
++
++        fun visit(index: Int) {
++            order.add(index)
++            when (case.shape) {
++                DescriptionValidationCase.Shape.BalancedBinary -> {
++                    for (child in index * 2 + 1..index * 2 + 2) {
++                        if (child <= case.descendants) visit(child)
++                    }
++                }
++
++                DescriptionValidationCase.Shape.Wide, DescriptionValidationCase.Shape.ChainGroups16 -> {
++                    if (index == 0) order.addAll(1..case.descendants)
++                }
++            }
++        }
++        visit(0)
++        check(frame.semantics.map { it.semantics.label } == order.map { UiText.Literal("$it:$value") })
++        val rectangle = IntRect(0, 0, value + 1, value + 1)
++        val color = ArgbColor(if (value == 0) 0xFF112233.toInt() else 0xFF445566.toInt())
++        check(frame.drawCommands.all { it == DrawCommand.FillRectangle(rectangle, color) })
++        check(frame.semantics.drop(1).all { it.bounds == rectangle })
++    }
++
++    private fun description(value: Int): Element {
++        val elements = arrayOfNulls<Element>(case.descendants + 1)
++        for (index in case.descendants downTo 0) {
++            elements[index] = DescriptionValidationElement(index, value, identities[index], membership[index].map { checkNotNull(elements[it]) })
++        }
++        return checkNotNull(elements[0])
++    }
++
++    override fun close() {
++        session.close()
++        check(source.subscribed.not())
++    }
++
++    /**
++     * Stable typed key prepared once rather than publishing changing key identities.
++     */
++    private data class Key(
++        val index: Int,
++    )
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationNode.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationNode.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..e624245d3575f3dc4f134ecb1f2828ea33823938
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DescriptionValidationNode.kt
+@@ -0,0 +1,57 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.layout.LayoutScope
++import dev.s7a.strata.layout.MeasureScope
++import dev.s7a.strata.node.LayoutNode
++import dev.s7a.strata.node.MeasureNode
++import dev.s7a.strata.node.Node
++import dev.s7a.strata.node.PaintNode
++import dev.s7a.strata.node.SemanticsNode
++import dev.s7a.strata.render.ArgbColor
++import dev.s7a.strata.render.PaintScope
++import dev.s7a.strata.semantics.Semantics
++import dev.s7a.strata.semantics.SemanticsScope
++import dev.s7a.strata.text.UiText
++
++/**
++ * Retained external primitive that measures/places every child and emits one ordered rectangle and semantic entry.
++ */
++internal class DescriptionValidationNode(
++    private val index: Int,
++    var value: Int,
++) : Node(),
++    MeasureNode,
++    LayoutNode,
++    PaintNode,
++    SemanticsNode {
++    override fun measure(
++        scope: MeasureScope,
++        constraints: Constraints,
++    ): IntSize {
++        for (child in 0 until scope.childCount) scope.measureChild(child, CHILD_CONSTRAINTS)
++        return constraints.constrain(IntSize(value + 1, value + 1))
++    }
++
++    override fun layout(scope: LayoutScope) {
++        for (child in 0 until scope.childCount) scope.placeChild(child, IntOffset.Zero)
++    }
++
++    override fun paint(scope: PaintScope) {
++        scope.fillRectangle(IntRect(0, 0, value + 1, value + 1), ArgbColor(if (value == 0) 0xFF112233.toInt() else 0xFF445566.toInt()))
++    }
++
++    override fun semantics(scope: SemanticsScope) {
++        scope.emit(Semantics(label = UiText.Literal("$index:$value")))
++    }
++
++    /**
++     * Fixed child constraints keep every declared descendant placed and visible.
++     */
++    private companion object {
++        val CHILD_CONSTRAINTS = Constraints(maxWidth = 2, maxHeight = 2)
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationProbe.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationProbe.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..eda16efd2513a75b11faee2aa09742d6ea5af819
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationProbe.kt
+@@ -0,0 +1,350 @@
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementKey
++import dev.s7a.strata.element.ElementType
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.PointerEvent
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.layout.LayoutScope
++import dev.s7a.strata.layout.MeasureScope
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.modifier.ModifierElement
++import dev.s7a.strata.modifier.ModifierNodeType
++import dev.s7a.strata.node.DirtyMask
++import dev.s7a.strata.node.DirtyPhase
++import dev.s7a.strata.node.FocusTargetNode
++import dev.s7a.strata.node.LayoutNode
++import dev.s7a.strata.node.LifecycleNode
++import dev.s7a.strata.node.MeasureNode
++import dev.s7a.strata.node.ModifierNode
++import dev.s7a.strata.node.Node
++import dev.s7a.strata.node.PaintNode
++import dev.s7a.strata.node.PointerInputNode
++import dev.s7a.strata.node.SemanticsNode
++import dev.s7a.strata.node.TextInputNode
++import dev.s7a.strata.render.ArgbColor
++import dev.s7a.strata.render.PaintScope
++import dev.s7a.strata.semantics.Semantics
++import dev.s7a.strata.semantics.SemanticsScope
++import dev.s7a.strata.text.UiText
++
++/**
++ * Independent callback/key/lifecycle trace and externally shaped primitives shared by JVM and JavaScript controls.
++ */
++internal class DescriptionValidationProbe {
++    /**
++     * Ordered observations; test assertions never decode string discriminators.
++     */
++    val trace = ArrayList<Event>()
++
++    /**
++     * Fresh retained node identities returned to the tree.
++     */
++    val nodes = ArrayList<ProbeNode>()
++
++    /**
++     * Constructs a description whose local validation may execute or throw an application callback.
++     */
++    fun element(
++        id: Int,
++        children: List<Element> = emptyList(),
++        key: Key? = null,
++        modifier: Modifier = Modifier.Empty,
++        validate: () -> Unit = {},
++        dispose: () -> Unit = {},
++    ): ProbeElement = ProbeElement(this, id, children, key, modifier, validate, dispose)
++
++    /**
++     * Creates a stable caller key with explicit equality/hash behavior and optional exact failures.
++     */
++    fun key(
++        id: Int,
++        value: Int = id,
++        hash: Int = 7,
++        hashFailure: Throwable? = null,
++        equalityFailure: Throwable? = null,
++    ): Key = Key(this, id, value, hash, hashFailure, equalityFailure)
++
++    /**
++     * Creates one active modifier description with an independently observed validation hook.
++     */
++    fun modifier(
++        id: Int,
++        validate: () -> Unit = {},
++        dispose: () -> Unit = {},
++    ): ProbeModifier = ProbeModifier(this, id, validate, dispose)
++
++    /**
++     * Typed independent observations of application hooks and ownership.
++     */
++    sealed interface Event {
++        /**
++         * Local description validation.
++         */
++        data class Local(
++            val id: Int,
++        ) : Event
++
++        /**
++         * Immutable modifier validation.
++         */
++        data class ModifierValidation(
++            val id: Int,
++        ) : Event
++
++        /**
++         * Caller key hash invocation.
++         */
++        data class Hash(
++            val id: Int,
++        ) : Event
++
++        /**
++         * Caller key equality invocation, preserving receiver direction.
++         */
++        data class Equality(
++            val receiver: Int,
++            val argument: Int?,
++        ) : Event
++
++        /**
++         * Retained ownership callback.
++         */
++        data class Ownership(
++            val phase: Phase,
++            val id: Int,
++        ) : Event
++    }
++
++    /**
++     * Application lifecycle and diff hooks observed separately from validation.
++     */
++    enum class Phase {
++        Create,
++        Update,
++        Attach,
++        Detach,
++        Dispose,
++        ModifierCreate,
++        ModifierUpdate,
++        ModifierAttach,
++        ModifierDetach,
++        ModifierDispose,
++    }
++
++    /**
++     * A callback-observable key; wrapped values remain stable while validation is running.
++     */
++    class Key(
++        private val probe: DescriptionValidationProbe,
++        private val id: Int,
++        private val value: Int,
++        private val hash: Int,
++        private val hashFailure: Throwable?,
++        private val equalityFailure: Throwable?,
++    ) {
++        override fun hashCode(): Int {
++            probe.trace.add(Event.Hash(id))
++            propagateFailure(hashFailure)
++            return hash
++        }
++
++        override fun equals(other: Any?): Boolean {
++            probe.trace.add(Event.Equality(id, (other as? Key)?.id))
++            propagateFailure(equalityFailure)
++            return other is Key && value == other.value
++        }
++
++        override fun toString(): String = "key-$id"
++
++        /**
++         * Propagates an injected failure unchanged after the key callback has been recorded.
++         */
++        private fun propagateFailure(failure: Throwable?) {
++            if (failure != null) throw failure
++        }
++    }
++
++    /**
++     * Detached immutable test description; callbacks belong to this test's probe.
++     */
++    class ProbeElement(
++        val probe: DescriptionValidationProbe,
++        val id: Int,
++        children: List<Element>,
++        key: Key?,
++        modifier: Modifier,
++        val validate: () -> Unit,
++        val dispose: () -> Unit,
++    ) : Element(key?.let { ElementIdentity.Keyed(ElementKey(it)) } ?: ElementIdentity.Positional, TYPE, children, modifier) {
++        /**
++         * Stable externally shaped token preserves validation-before-create observations.
++         */
++        companion object {
++            private val TYPE =
++                ElementType(
++                    elementClass = ProbeElement::class,
++                    nodeClass = ProbeNode::class,
++                    validateLocal = {
++                        it.probe.trace.add(Event.Local(it.id))
++                        it.validate()
++                    },
++                    createNode = {
++                        it.probe.trace.add(Event.Ownership(Phase.Create, it.id))
++                        ProbeNode(it.probe, it.id, it.dispose).also(it.probe.nodes::add)
++                    },
++                    updateNode = { _, current, node ->
++                        current.probe.trace.add(Event.Ownership(Phase.Update, current.id))
++                        node.id = current.id
++                        node.onDispose = current.dispose
++                        DirtyMask.of(DirtyPhase.Semantics)
++                    },
++                )
++        }
++    }
++
++    /**
++     * Fully placed primitive with deterministic rectangles, semantics, pointer results and retained editing data.
++     */
++    class ProbeNode(
++        private val probe: DescriptionValidationProbe,
++        var id: Int,
++        var onDispose: () -> Unit,
++    ) : Node(),
++        MeasureNode,
++        LayoutNode,
++        PaintNode,
++        SemanticsNode,
++        PointerInputNode,
++        TextInputNode,
++        FocusTargetNode,
++        LifecycleNode {
++        /**
++         * Caller editing state must survive compatible updates and rejected descriptions.
++         */
++        var editing = 0
++
++        /**
++         * Actual logical focus ownership, preserved across rejected declarations.
++         */
++        var focused = false
++            private set
++
++        override val acceptsFocus: Boolean get() = true
++        override val requestsInitialFocus: Boolean get() = false
++        override val requiresTextInput: Boolean get() = true
++
++        override fun onFocusChanged(focused: Boolean) {
++            this.focused = focused
++        }
++
++        override fun onTextInput(event: TextInputEvent): InputResult {
++            if (event is TextInputEvent.Character) editing += event.codePoint
++            return InputResult.Consumed
++        }
++
++        override fun measure(
++            scope: MeasureScope,
++            constraints: Constraints,
++        ): IntSize {
++            for (child in 0 until scope.childCount) scope.measureChild(child, Constraints(maxWidth = 2, maxHeight = 2))
++            return constraints.constrain(IntSize(2, 2))
++        }
++
++        override fun layout(scope: LayoutScope) {
++            for (child in 0 until scope.childCount) scope.placeChild(child, IntOffset.Zero)
++        }
++
++        override fun paint(scope: PaintScope) {
++            scope.fillRectangle(IntRect(0, 0, 2, 2), ArgbColor(0xFF112233.toInt()))
++        }
++
++        override fun semantics(scope: SemanticsScope) {
++            scope.emit(Semantics(label = UiText.Literal("node-$id")))
++        }
++
++        override fun onPointerEvent(
++            event: PointerEvent,
++            localPosition: IntOffset,
++        ): InputResult = InputResult.Consumed
++
++        override fun attach() {
++            probe.trace.add(Event.Ownership(Phase.Attach, id))
++        }
++
++        override fun detach() {
++            probe.trace.add(Event.Ownership(Phase.Detach, id))
++        }
++
++        override fun dispose() {
++            probe.trace.add(Event.Ownership(Phase.Dispose, id))
++            onDispose()
++        }
++    }
++
++    /**
++     * Active pass-through modifier with observable local validation and lifecycle.
++     */
++    class ProbeModifier(
++        val probe: DescriptionValidationProbe,
++        val id: Int,
++        val validate: () -> Unit,
++        val dispose: () -> Unit,
++    ) : ModifierElement {
++        override val type: ModifierNodeType<*, *> get() = TYPE
++
++        /**
++         * Stable modifier kind shared by all descriptions; distinct replacements keep the component identity.
++         */
++        companion object {
++            private val TYPE =
++                ModifierNodeType(
++                    elementClass = ProbeModifier::class,
++                    nodeClass = ProbeModifierNode::class,
++                    validateLocal = {
++                        it.probe.trace.add(Event.ModifierValidation(it.id))
++                        it.validate()
++                    },
++                    createNode = {
++                        it.probe.trace.add(Event.Ownership(Phase.ModifierCreate, it.id))
++                        ProbeModifierNode(it.probe, it.id, it.dispose)
++                    },
++                    updateNode = { _, current, node ->
++                        current.probe.trace.add(Event.Ownership(Phase.ModifierUpdate, current.id))
++                        node.id = current.id
++                        node.onDispose = current.dispose
++                        DirtyMask.None
++                    },
++                )
++        }
++    }
++
++    /**
++     * Retained active modifier owner, independent of component hooks.
++     */
++    class ProbeModifierNode(
++        private val probe: DescriptionValidationProbe,
++        var id: Int,
++        var onDispose: () -> Unit,
++    ) : ModifierNode(),
++        LifecycleNode {
++        override fun attach() {
++            probe.trace.add(Event.Ownership(Phase.ModifierAttach, id))
++        }
++
++        override fun detach() {
++            probe.trace.add(Event.Ownership(Phase.ModifierDetach, id))
++        }
++
++        override fun dispose() {
++            probe.trace.add(Event.Ownership(Phase.ModifierDispose, id))
++            onDispose()
++        }
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationRetainedTest.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationRetainedTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..d8b3351230c76a56868e9cd82062aa91ba4a2b84
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationRetainedTest.kt
+@@ -0,0 +1,385 @@
++@file:OptIn(InternalStrataRuntimeApi::class)
++
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.component.Observe
++import dev.s7a.strata.component.evaluateComponentTree
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.PointerButton
++import dev.s7a.strata.input.PointerEvent
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
++import dev.s7a.strata.runtime.spi.createRuntimeUiSession
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.state.map
++import dev.s7a.strata.state.mutableStateOf
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertNotSame
++import kotlin.test.assertSame
++import kotlin.test.assertTrue
++
++/**
++ * Public retained outcomes independently check mutation cutoff, retries, observed failure, lifecycle and clean work.
++ */
++internal class DescriptionValidationRetainedTest {
++    @Test
++    fun c25ValidationReentry() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0))
++            val invalid =
++                probe.element(
++                    1,
++                    validate = {
++                        assertFailsWith<IllegalStateException> { tree.close() }
++                        tree.update(probe.element(2))
++                    },
++                )
++            assertFailsWith<IllegalStateException> { tree.update(invalid) }
++            assertEquals(TreeState.Active, tree.state)
++            tree.update(probe.element(3))
++            assertEquals(1, probe.nodes.size)
++        }
++    }
++
++    @Test
++    fun c26ValidationStateWrite() {
++        val state = mutableStateOf(0)
++        val probe = DescriptionValidationProbe()
++        val failure =
++            assertFailsWith<IllegalStateException> {
++                createRuntimeUiSession {
++                    val value = state.value
++                    probe.element(value, validate = { state.value += 1 })
++                }.use { session ->
++                    session.attach()
++                    session.frame(Constraints.fixed(2, 2))
++                }
++            }
++        assertTrue(checkNotNull(failure.message).isNotEmpty())
++        assertEquals(0, state.value)
++        assertTrue(probe.nodes.isEmpty())
++    }
++
++    @Test
++    fun c27RetainedRetry() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1)))))
++            assertEquals(IntSize(2, 2), tree.measure(Constraints.fixed(2, 2)))
++            tree.layout()
++            val paint = tree.paint()
++            val semantics = tree.semantics()
++            val nodes = probe.nodes.toList()
++            assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)))
++            val focus = nodes.map { it.focused }
++            assertEquals(listOf(false, true), focus)
++            assertEquals(InputResult.Consumed, tree.dispatchTextInput(TextInputEvent.Character(65)))
++            val editing = nodes.map { it.editing }
++            val history = probe.trace.toList()
++            assertFailsWith<IllegalArgumentException> {
++                tree.update(probe.element(2, listOf(probe.element(3, key = probe.key(3, value = 0)), probe.element(4, key = probe.key(4, value = 0)))))
++            }
++            assertEquals(TreeState.Active, tree.state)
++            assertEquals(nodes, probe.nodes)
++            assertEquals(focus, nodes.map { it.focused })
++            assertEquals(editing, nodes.map { it.editing })
++            assertEquals(history.filterIsInstance<DescriptionValidationProbe.Event.Ownership>(), probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Ownership>())
++            assertSame(paint, tree.paint())
++            assertEquals(semantics, tree.semantics())
++            assertEquals(InputResult.Consumed, tree.dispatchPointer(PointerEvent.Move(IntOffset.Zero)))
++            assertEquals(InputResult.Consumed, tree.dispatchTextInput(TextInputEvent.Character(66)))
++            assertEquals(editing.sum() + 66, nodes.sumOf { it.editing })
++        }
++    }
++
++    @Test
++    fun c28RetryValidRoot() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            val key = probe.key(1)
++            tree.update(probe.element(0, listOf(probe.element(1, key = key))))
++            val node = probe.nodes.last()
++            node.editing = 12
++            assertFailsWith<IllegalArgumentException> { tree.update(probe.element(2, listOf(probe.element(3, key = key), probe.element(4, key = key)))) }
++            tree.update(probe.element(5, listOf(probe.element(6, key = key))))
++            assertSame(node, probe.nodes.last())
++            assertEquals(6, node.id)
++            assertEquals(12, node.editing)
++        }
++    }
++
++    @Test
++    fun c29DynamicDuplicate() {
++        val probe = DescriptionValidationProbe()
++        val source = DescriptionValidationSource(false)
++        val session =
++            createRuntimeUiSession {
++                evaluateComponentTree {
++                    Observe(source) { duplicate ->
++                        element(probe.element(1, key = probe.key(1)))
++                        if (duplicate) element(probe.element(2, key = probe.key(2, value = 1)))
++                    }
++                }
++            }
++        session.attach()
++        session.frame(Constraints.fixed(2, 2))
++        val nodes = probe.nodes.toList()
++        source.publish(true)
++        assertFailsWith<IllegalArgumentException> { session.frame(Constraints.fixed(2, 2)) }
++        assertEquals(nodes, probe.nodes)
++        assertEquals(1, source.releases)
++        assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(2, 2)) }
++        val cleaned = probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Ownership>()
++        session.close()
++        assertEquals(cleaned, probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Ownership>())
++    }
++
++    @Test
++    fun c30DynamicLocalFailure() {
++        val primary = IllegalStateException("dynamic validation")
++        val later = IllegalStateException("dispose")
++        val source = DescriptionValidationSource(false)
++        val probe = DescriptionValidationProbe()
++        val session =
++            createRuntimeUiSession {
++                evaluateComponentTree {
++                    Observe(source) { fail ->
++                        element(probe.element(1, validate = { if (fail) throw primary }, dispose = { throw later }))
++                    }
++                }
++            }
++        session.attach()
++        session.frame(Constraints.fixed(2, 2))
++        source.publish(true)
++        assertSame(primary, assertFailsWith<IllegalStateException> { session.frame(Constraints.fixed(2, 2)) })
++        assertEquals(listOf(later), primary.suppressedExceptions)
++        assertEquals(1, source.releases)
++        session.close()
++    }
++
++    @Test
++    fun c33KeyedReorder() {
++        val probe = DescriptionValidationProbe()
++        val keys = List(3) { probe.key(it) }
++        UiTree().use { tree ->
++            tree.update(probe.element(9, List(3) { probe.element(it, key = keys[it]) }))
++            val children = probe.nodes.drop(1)
++            children.forEachIndexed { index, node -> node.editing = index + 10 }
++            probe.trace.clear()
++            tree.update(probe.element(9, listOf(2, 0, 1).map { probe.element(it, key = keys[it]) }))
++            assertEquals(4, probe.nodes.size)
++            assertEquals(
++                listOf(2, 0, 1),
++                probe.trace
++                    .filterIsInstance<DescriptionValidationProbe.Event.Ownership>()
++                    .filter { it.phase == DescriptionValidationProbe.Phase.Update && it.id != 9 }
++                    .map { it.id },
++            )
++            assertEquals(listOf(10, 11, 12), children.map { it.editing })
++        }
++    }
++
++    @Test
++    fun c34KeyReplacement() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1)))))
++            val old = probe.nodes.last()
++            old.editing = 17
++            tree.update(probe.element(0, listOf(probe.element(2, key = probe.key(2)))))
++            assertNotSame(old, probe.nodes.last())
++            assertEquals(0, probe.nodes.last().editing)
++            assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.Dispose, 1) })
++        }
++    }
++
++    @Test
++    fun c35ModifierReplacement() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0, modifier = Modifier.Empty.then(probe.modifier(1))))
++            val component = probe.nodes.single()
++            tree.update(probe.element(0))
++            tree.update(probe.element(0, modifier = Modifier.Empty.then(probe.modifier(2))))
++            assertSame(component, probe.nodes.single())
++            assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.ModifierDispose, 1) })
++            assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.ModifierAttach, 2) })
++        }
++    }
++
++    @Test
++    fun c36InitialAttach() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0, listOf(probe.element(1)), modifier = Modifier.Empty.then(probe.modifier(2))))
++            val firstCreate = probe.trace.indexOfFirst { it is DescriptionValidationProbe.Event.Ownership }
++            assertEquals(listOf(DescriptionValidationProbe.Event.Local(0), DescriptionValidationProbe.Event.ModifierValidation(2), DescriptionValidationProbe.Event.Local(1)), probe.trace.take(firstCreate))
++        }
++    }
++
++    @Test
++    fun c37Removal() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1)))))
++            tree.update(probe.element(0))
++            assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.Detach, 1) })
++            assertEquals(1, probe.trace.count { it == DescriptionValidationProbe.Event.Ownership(DescriptionValidationProbe.Phase.Dispose, 1) })
++        }
++    }
++
++    @Test
++    fun c38DetachReattach() {
++        val probe = DescriptionValidationProbe()
++        val source = DescriptionValidationSource(0)
++        createRuntimeUiSession {
++            evaluateComponentTree { Observe(source) { element(probe.element(it, key = probe.key(1))) } }
++        }.use { session ->
++            session.attach()
++            session.frame(Constraints.fixed(2, 2))
++            val node = probe.nodes.single()
++            session.detach()
++            source.publish(1)
++            source.publish(2)
++            session.attach()
++            session.frame(Constraints.fixed(2, 2))
++            assertSame(node, probe.nodes.single())
++            assertEquals(2, node.id)
++            assertEquals(1, source.subscriptions)
++            assertEquals(0, source.releases)
++            assertTrue(DescriptionValidationProbe.Event.Local(2) in probe.trace)
++        }
++        assertEquals(1, source.releases)
++    }
++
++    @Test
++    fun c39TerminalClose() {
++        val probe = DescriptionValidationProbe()
++        val source = DescriptionValidationSource(0)
++        val session = createRuntimeUiSession { evaluateComponentTree { Observe(source) { element(probe.element(it, key = probe.key(1))) } } }
++        session.attach()
++        session.frame(Constraints.fixed(2, 2))
++        repeat(16) {
++            source.publish(it + 1)
++            session.frame(Constraints.fixed(2, 2))
++        }
++        session.close()
++        val trace = probe.trace.toList()
++        source.publish(99)
++        session.close()
++        assertEquals(trace, probe.trace)
++        assertEquals(1, source.releases)
++        assertEquals(1, probe.nodes.size)
++    }
++
++    @Test
++    fun c40TerminalFailure() {
++        fun failingCleanup(failure: IllegalStateException): () -> Unit = { throw failure }
++
++        val first = IllegalStateException("last child cleanup")
++        val second = IllegalStateException("first child cleanup")
++        val last = IllegalStateException("root cleanup")
++        val probe = DescriptionValidationProbe()
++        val tree = UiTree()
++        tree.update(probe.element(0, listOf(probe.element(1, key = probe.key(1), dispose = failingCleanup(second)), probe.element(2, key = probe.key(2), dispose = failingCleanup(first))), dispose = failingCleanup(last)))
++        assertSame(first, assertFailsWith<IllegalStateException> { tree.close() })
++        assertEquals(listOf(second, last), first.suppressedExceptions)
++        val events = probe.trace.toList()
++        tree.close()
++        assertEquals(events, probe.trace)
++        assertEquals(TreeState.Closed, tree.state)
++    }
++
++    @Test
++    fun c42EqualSourceRevision() {
++        val probe = DescriptionValidationProbe()
++        val source = DescriptionValidationSource(0)
++        createRuntimeUiSession { evaluateComponentTree { Observe(source.map { it % 2 }) { element(probe.element(it)) } } }.use { session ->
++            session.attach()
++            val initial = session.frame(Constraints.fixed(2, 2))
++            val trace = probe.trace.toList()
++            source.publish(2)
++            assertSame(initial, session.frame(Constraints.fixed(2, 2)))
++            assertEquals(trace, probe.trace)
++        }
++    }
++
++    @Test
++    fun c43NestedObservedCutoff() {
++        val source = DescriptionValidationSource(0)
++        val probe = DescriptionValidationProbe()
++        val values = ArrayList<Pair<Int, Int>>()
++        createRuntimeUiSession {
++            evaluateComponentTree {
++                Observe(source) { parent ->
++                    Observe(source) { child ->
++                        values.add(parent to child)
++                        element(probe.element(child))
++                    }
++                }
++            }
++        }.use { session ->
++            session.attach()
++            session.frame(Constraints.fixed(2, 2))
++            source.publish(1)
++            source.publish(2)
++            session.frame(Constraints.fixed(2, 2))
++            assertEquals(listOf(0 to 0, 2 to 2), values)
++            assertEquals(listOf(0, 2), probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Local>().map { it.id })
++            assertEquals(1, source.subscriptions)
++        }
++        assertEquals(1, source.releases)
++    }
++
++    @Test
++    fun c44CleanFrameAndCachedDynamicIdentity() {
++        val probe = DescriptionValidationProbe()
++        val source = DescriptionValidationSource(0)
++        createRuntimeUiSession { evaluateComponentTree { Observe(source) { element(probe.element(it)) } } }.use { session ->
++            session.attach()
++            val frame = session.frame(Constraints.fixed(2, 2))
++            val trace = probe.trace.toList()
++            val monitor = session.startRenderMonitoring()
++            try {
++                repeat(16) { assertSame(frame, session.frame(Constraints.fixed(2, 2))) }
++                assertEquals(trace, probe.trace)
++                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
++                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.RootEvaluation])
++                session.frame(Constraints.fixed(3, 3))
++                assertEquals(trace, probe.trace)
++                assertEquals(0L, monitor.snapshot().counts[UiRenderMetric.ContentEvaluation])
++            } finally {
++                monitor.close()
++            }
++        }
++    }
++
++    @Test
++    fun identicalDescriptionRootReevaluationStillValidatesAllDescendants() {
++        val probe = DescriptionValidationProbe()
++        val state = mutableStateOf(0)
++        val root: Element = probe.element(0, List(128) { probe.element(it + 1) })
++        createRuntimeUiSession {
++            state.value
++            root
++        }.use { session ->
++            session.attach()
++            session.frame(Constraints.fixed(2, 2))
++            val nodes = probe.nodes.toList()
++            probe.trace.clear()
++            state.value = 1
++            session.frame(Constraints.fixed(2, 2))
++            assertEquals((0..128).toList(), probe.trace.filterIsInstance<DescriptionValidationProbe.Event.Local>().map { it.id })
++            assertEquals(nodes, probe.nodes)
++            assertTrue(probe.trace.none { it is DescriptionValidationProbe.Event.Ownership })
++        }
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationSource.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationSource.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3ab46f4bd9ead90e8af0889328221f9a63db62a
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidationSource.kt
+@@ -0,0 +1,46 @@
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.state.StateRevision
++import dev.s7a.strata.state.StateSnapshot
++import dev.s7a.strata.state.StateSource
++import dev.s7a.strata.state.StateSubscription
++
++/**
++ * One caller-owned source with independently asserted publication and release for portable validation controls.
++ */
++internal class DescriptionValidationSource<T>(
++    initial: T,
++) : StateSource<T> {
++    private var snapshot = StateSnapshot(StateRevision(0), initial)
++    private var observer: ((StateSnapshot<T>) -> Unit)? = null
++
++    /**
++     * Total actual upstream subscription acquisitions.
++     */
++    var subscriptions = 0
++        private set
++
++    /**
++     * Total actual upstream terminal/removal releases.
++     */
++    var releases = 0
++        private set
++
++    override fun subscribe(observer: (StateSnapshot<T>) -> Unit): StateSubscription<T> {
++        check(this.observer == null)
++        subscriptions += 1
++        this.observer = observer
++        return StateSubscription(snapshot) {
++            releases += 1
++            this.observer = null
++        }
++    }
++
++    /**
++     * Publishes a strictly later revision through the external callback boundary.
++     */
++    fun publish(value: T) {
++        snapshot = StateSnapshot(StateRevision(snapshot.revision.value + 1), value)
++        observer?.invoke(snapshot)
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidatorParityTest.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidatorParityTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..3df6cb53024fc62fee0e8466eef95d539ec62f31
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/DescriptionValidatorParityTest.kt
+@@ -0,0 +1,171 @@
++@file:OptIn(InternalStrataRuntimeApi::class)
++
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertSame
++import kotlin.test.assertTrue
++
++/**
++ * Independent old-algorithm comparison for every key and validation-order boundary, on both backends.
++ */
++internal class DescriptionValidatorParityTest {
++    @Test
++    fun c01KeylessLeaf() = compare { listOf(it.element(0, modifier = Modifier.Empty.then(it.modifier(0)))) }
++
++    @Test
++    fun c02KeylessWide() = compare { probe -> listOf(probe.element(0, List(128) { probe.element(it + 1) })) }
++
++    @Test
++    fun c03KeylessChainGroups() =
++        compare { probe ->
++            listOf(probe.element(0, List(8) { group -> (16 downTo 1).fold(emptyList<Element>()) { children, depth -> listOf(probe.element(group * 16 + depth, children)) }.single() }))
++        }
++
++    @Test
++    fun c04KeylessBalanced() =
++        compare { probe ->
++            val elements = arrayOfNulls<Element>(129)
++            for (id in 128 downTo 0) {
++                val children = (id * 2 + 1..id * 2 + 2).filter { it <= 128 }.map { checkNotNull(elements[it]) }
++                elements[id] = probe.element(id, children)
++            }
++            listOf(checkNotNull(elements[0]))
++        }
++
++    @Test
++    fun c05EmptyDynamicSiblings() = compare { emptyList() }
++
++    @Test
++    fun c06OneKeyedChild() = compare { listOf(it.element(1, key = it.key(1))) }
++
++    @Test
++    fun c07AllDistinctKeys() = compare { probe -> List(16) { probe.element(it, key = probe.key(it, hash = it)) } }
++
++    @Test
++    fun c08MixedKeys() = compare { probe -> List(16) { probe.element(it, key = if (it % 2 == 0) probe.key(it) else null) } }
++
++    @Test
++    fun c09SparseLeadingKey() = compare { probe -> List(16) { probe.element(it, key = if (it == 0) probe.key(it) else null) } }
++
++    @Test
++    fun c10SparseTrailingKey() = compare { probe -> List(16) { probe.element(it, key = if (it == 15) probe.key(it) else null) } }
++
++    @Test
++    fun c11EqualDistinctKeyObjects() = compare(rejects = true) { listOf(it.element(1, key = it.key(1, value = 0)), it.element(2, key = it.key(2, value = 0))) }
++
++    @Test
++    fun c12RepeatedSameKeyObject() =
++        compare(rejects = true) { probe ->
++            val key = probe.key(1)
++            listOf(probe.element(1, key = key), probe.element(2, key = key))
++        }
++
++    @Test
++    fun c13HashCollisionsDistinct() = compare { probe -> List(16) { probe.element(it, key = probe.key(it)) } }
++
++    @Test
++    fun c14SameKeyDifferentParents() =
++        compare { probe ->
++            listOf(probe.element(0, List(2) { probe.element(it + 1, listOf(probe.element(it + 3, key = probe.key(it, value = 0)))) }))
++        }
++
++    @Test
++    fun c15HashThrows() {
++        val failure = IllegalStateException("hash failure")
++        compare(failure) { listOf(it.element(1, key = it.key(1, hashFailure = failure))) }
++    }
++
++    @Test
++    fun c16EqualityThrows() {
++        val failure = IllegalStateException("equality failure")
++        compare(failure) { listOf(it.element(1, key = it.key(1, equalityFailure = failure)), it.element(2, key = it.key(2, equalityFailure = failure))) }
++    }
++
++    @Test
++    fun c17HashTrace() = compare { probe -> List(8) { probe.element(it, key = probe.key(it, hash = it * 31)) } }
++
++    @Test
++    fun c18EqualityTrace() = compare { probe -> List(8) { probe.element(it, key = probe.key(it)) } }
++
++    @Test
++    fun c19ElementValidationOrder() = compare { probe -> listOf(probe.element(0, listOf(probe.element(1, listOf(probe.element(2))), probe.element(3)))) }
++
++    @Test
++    fun c20ModifierValidationOrder() =
++        compare { probe ->
++            listOf(probe.element(0, listOf(probe.element(1, modifier = Modifier.Empty.then(probe.modifier(3)))), modifier = Modifier.Empty.then(probe.modifier(1)).then(probe.modifier(2))))
++        }
++
++    @Test
++    fun c21ElementValidationFailure() {
++        val failure = IllegalStateException("local failure")
++        compare(failure) { listOf(it.element(1, validate = { throw failure })) }
++    }
++
++    @Test
++    fun c22ModifierValidationFailure() {
++        val failure = IllegalStateException("modifier failure")
++        compare(failure) { listOf(it.element(1, modifier = Modifier.Empty.then(it.modifier(1, validate = { throw failure })))) }
++    }
++
++    @Test
++    fun c23DuplicateBeforeDescendantFailure() =
++        compare(rejects = true) { probe ->
++            listOf(probe.element(1, key = probe.key(1, value = 0)), probe.element(2, key = probe.key(2, value = 0), validate = { error("unreached duplicate child") }))
++        }
++
++    @Test
++    fun c24EarlierInvalidSiblingBeforeDuplicate() {
++        val failure = IllegalStateException("earlier local failure")
++        compare(failure) { probe ->
++            listOf(probe.element(1, key = probe.key(1, value = 0), validate = { throw failure }), probe.element(2, key = probe.key(2, value = 0)))
++        }
++    }
++
++    @Test
++    fun c31SharedPositionalDescription() =
++        compare { probe ->
++            val shared = probe.element(3)
++            listOf(probe.element(0, listOf(probe.element(1, listOf(shared)), probe.element(2, listOf(shared)))))
++        }
++
++    /**
++     * Replays immutable descriptions through independent algorithms and compares complete traces at both sibling entry points.
++     * Reusing the same key objects fixes identity-sensitive collision ordering between executions.
++     */
++    private fun compare(
++        exactFailure: Throwable? = null,
++        rejects: Boolean = exactFailure != null,
++        build: (DescriptionValidationProbe) -> List<Element>,
++    ) {
++        for (dynamic in listOf(false, true)) {
++            val probe = DescriptionValidationProbe()
++            val children = build(probe)
++            val root = probe.element(-1, children)
++            val expected =
++                runCatching {
++                    if (dynamic) OriginalDescriptionValidator().validateChildren(children) else OriginalDescriptionValidator().validate(root)
++                }.exceptionOrNull()
++            val expectedTrace = probe.trace.toList()
++            probe.trace.clear()
++            val actual =
++                runCatching {
++                    if (dynamic) DescriptionValidator().validateChildren(children) else DescriptionValidator().validate(root)
++                }.exceptionOrNull()
++            assertEquals(expectedTrace, probe.trace)
++            assertEquals(rejects, actual != null)
++            assertEquals(expected?.let { it::class }, actual?.let { it::class })
++            assertEquals(expected?.message, actual?.message)
++            if (exactFailure != null) {
++                assertSame(exactFailure, expected)
++                assertSame(exactFailure, actual)
++            }
++            if (actual == null && children.isNotEmpty()) assertTrue(expectedTrace.any { it is DescriptionValidationProbe.Event.Local })
++        }
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/OriginalDescriptionValidator.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/OriginalDescriptionValidator.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..919c6a044b118bfd65eb6799b25131f842765c3d
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/OriginalDescriptionValidator.kt
+@@ -0,0 +1,55 @@
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementKey
++import dev.s7a.strata.runtime.platform.identitySet
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++
++/**
++ * Independent frozen pre-change validator from master 414cb972ffa8c89a4aee2102d1dc2834dbe32eae.
++ * Keep the eager sibling sets: the controls compare exact keyed callbacks and first failure with production.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class OriginalDescriptionValidator {
++    /**
++     * Validates the complete proposed root with the original eager algorithm.
++     */
++    fun validate(root: Element) {
++        val active = identitySet<Element>()
++        visit(root, active)
++    }
++
++    /**
++     * Validates a fresh dynamic list with the original eager algorithm.
++     */
++    fun validateChildren(children: List<Element>) {
++        val active = identitySet<Element>()
++        val keys = HashSet<ElementKey<*>>()
++        children.forEach { child ->
++            val identity = child.identity
++            if (identity is ElementIdentity.Keyed) {
++                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
++            }
++            visit(child, active)
++        }
++    }
++
++    private fun visit(
++        element: Element,
++        active: MutableSet<Element>,
++    ) {
++        require(active.add(element)) { "An element description contains a cycle." }
++        element.type.validateErased(element)
++        element.modifier.elements().forEach { modifier -> modifier.type.validateErased(modifier) }
++        val keys = HashSet<ElementKey<*>>()
++        element.children.forEach { child ->
++            val identity = child.identity
++            if (identity is ElementIdentity.Keyed) {
++                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
++            }
++            visit(child, active)
++        }
++        active.remove(element)
++    }
++}
+diff --git a/runtime/core/src/test/kotlin/dev/s7a/strata/runtime/DescriptionValidationOwnershipTest.kt b/runtime/core/src/test/kotlin/dev/s7a/strata/runtime/DescriptionValidationOwnershipTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..11a9d1a272d743f0d7fc438779b36c4051e484b7
+--- /dev/null
++++ b/runtime/core/src/test/kotlin/dev/s7a/strata/runtime/DescriptionValidationOwnershipTest.kt
+@@ -0,0 +1,103 @@
++@file:OptIn(InternalStrataRuntimeApi::class)
++
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.component.Observe
++import dev.s7a.strata.component.evaluateComponentTree
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.runtime.spi.RuntimeUiSession
++import dev.s7a.strata.runtime.spi.createRuntimeUiSession
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import java.lang.ref.WeakReference
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertNull
++import kotlin.test.assertTrue
++
++/**
++ * JVM execution-owner rejection and collection of retired keys/descriptions while terminal owners remain reachable.
++ */
++internal class DescriptionValidationOwnershipTest {
++    @Test
++    fun c41WrongJvmThread() {
++        val probe = DescriptionValidationProbe()
++        UiTree().use { tree ->
++            tree.update(probe.element(0))
++            val history = probe.trace.toList()
++            val failures = ArrayList<Throwable?>()
++            val thread =
++                Thread {
++                    failures.add(runCatching { tree.update(probe.element(1, key = probe.key(1))) }.exceptionOrNull())
++                    failures.add(runCatching { tree.close() }.exceptionOrNull())
++                }
++            thread.start()
++            thread.join()
++            assertTrue(failures.all { it is IllegalStateException })
++            assertEquals(history, probe.trace)
++            assertEquals(TreeState.Active, tree.state)
++        }
++    }
++
++    @Test
++    fun terminalAndRemovedDescriptionsDoNotRetainKeyHistory() {
++        val released = removedKey()
++        val terminal = closedObservedSession()
++        repeat(50) {
++            if (released.key.get() != null || terminal.key.get() != null || terminal.source.get() != null) {
++                System.gc()
++                Thread.sleep(10)
++            }
++        }
++        assertNull(released.key.get())
++        assertNull(terminal.key.get())
++        assertNull(terminal.source.get())
++        // Both owner objects stay strongly reachable across the collection assertions.
++        assertEquals(TreeState.Active, released.tree.state)
++        released.tree.close()
++        terminal.session.close()
++        assertFailsWith<IllegalStateException> { terminal.session.frame(Constraints.fixed(2, 2)) }
++    }
++
++    private fun removedKey(): Removed {
++        val probe = DescriptionValidationProbe()
++        val key = probe.key(1)
++        val tree = UiTree()
++        tree.update(probe.element(0, listOf(probe.element(1, key = key))))
++        repeat(16) { tree.update(probe.element(0, listOf(probe.element(it + 2, key = probe.key(it + 2))))) }
++        tree.update(probe.element(0))
++        return Removed(tree, WeakReference(key))
++    }
++
++    private fun closedObservedSession(): Terminal {
++        val probe = DescriptionValidationProbe()
++        val key = probe.key(1)
++        val source = DescriptionValidationSource(key)
++        val session =
++            createRuntimeUiSession {
++                evaluateComponentTree { Observe(source) { element(probe.element(1, key = it)) } }
++            }
++        session.attach()
++        session.frame(Constraints.fixed(2, 2))
++        session.close()
++        assertEquals(1, source.releases)
++        return Terminal(session, WeakReference(key), WeakReference(source))
++    }
++
++    /**
++     * Live tree with its retired key represented only by a weak reference.
++     */
++    private data class Removed(
++        val tree: UiTree,
++        val key: WeakReference<DescriptionValidationProbe.Key>,
++    )
++
++    /**
++     * Closed owner plus weak caller objects; no test closure captures either caller object.
++     */
++    private data class Terminal(
++        val session: RuntimeUiSession,
++        val key: WeakReference<DescriptionValidationProbe.Key>,
++        val source: WeakReference<DescriptionValidationSource<DescriptionValidationProbe.Key>>,
++    )
++}
+diff --git a/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt b/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..5a182ea9f85eda466da187507adb88795ccd1c69
+--- /dev/null
++++ b/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt
+@@ -0,0 +1,74 @@
++@file:OptIn(InternalStrataRuntimeApi::class)
++
++package dev.s7a.strata.runtime.headless
++
++import dev.s7a.strata.component.Row
++import dev.s7a.strata.component.evaluateComponentTree
++import dev.s7a.strata.element.ElementKey
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.render.ArgbColor
++import dev.s7a.strata.runtime.UiTree
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertSame
++import org.junit.jupiter.api.Test
++import org.junit.jupiter.api.assertThrows
++
++/**
++ * Independent exact portable pixels and geometry remain unchanged after complete root validation rejects a duplicate.
++ */
++internal class HeadlessDescriptionValidationTest {
++    @Test
++    fun rejectedRootPreservesExactPixelsGeometrySemanticsAndLifecycle() {
++        val probe = HeadlessProbe()
++        fun description(duplicate: Boolean) =
++            evaluateComponentTree {
++                Row {
++                    element(HeadlessPrimitive(probe, color = ArgbColor(0xFFFF0000.toInt()), label = "red", key = ElementKey(0)))
++                    element(HeadlessPrimitive(probe, color = ArgbColor(0xFF0000FF.toInt()), label = "blue", key = ElementKey(if (duplicate) 0 else 1)))
++                }
++            }
++        UiTree().use { tree ->
++            tree.update(description(false))
++            val viewport = IntSize(4, 2)
++            assertEquals(viewport, tree.measure(Constraints.fixed(viewport.width, viewport.height)))
++            tree.layout()
++            val commands = tree.paint()
++            val semantics = tree.semantics()
++            val lifecycle = probe.lifecycle.toList()
++            val creations = probe.creations
++            for (scale in 1..3) {
++                val before = rasterizeHeadless(commands, viewport, scale)
++                assertThrows<IllegalArgumentException> { tree.update(description(true)) }
++                assertSame(commands, tree.paint())
++                assertEquals(semantics, tree.semantics())
++                val after = rasterizeHeadless(tree.paint(), viewport, scale)
++                assertExactPixels(before, after, scale)
++            }
++            assertEquals(lifecycle, probe.lifecycle)
++            assertEquals(creations, probe.creations)
++            assertEquals(2, probe.measures)
++            assertEquals(2, probe.layouts)
++            tree.update(description(false))
++            assertEquals(creations, probe.creations)
++        }
++    }
++
++    /**
++     * Checks every before and after pixel against the independent literal ARGB oracle.
++     */
++    private fun assertExactPixels(
++        before: HeadlessImage,
++        after: HeadlessImage,
++        scale: Int,
++    ) {
++        for (y in 0 until before.size.height) {
++            for (x in 0 until before.size.width) {
++                val expected = if (x < 2 * scale) 0xFFFF0000.toInt() else 0xFF0000FF.toInt()
++                assertEquals(expected, before.argbAt(x, y))
++                assertEquals(expected, after.argbAt(x, y))
++            }
++        }
++    }
++}
