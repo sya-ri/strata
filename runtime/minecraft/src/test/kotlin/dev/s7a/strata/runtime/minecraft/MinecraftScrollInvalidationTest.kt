@@ -244,7 +244,8 @@ internal class MinecraftScrollInvalidationTest {
             fixture.host.detach()
             fixture.host.attach()
             fixture.frame()
-            assertEquals(InputResult.Ignored, fixture.drag(20, 0.25))
+            // This bar has no capture, focus, or session-attachment cleanup, so its drag flag survives session detach.
+            assertEquals(InputResult.Consumed, fixture.drag(20, 0.25))
             fixture.verifyPixels()
         }
     }
