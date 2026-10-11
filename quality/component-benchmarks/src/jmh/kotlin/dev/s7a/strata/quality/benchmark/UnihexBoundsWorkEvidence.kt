@@ -194,9 +194,9 @@ public object UnihexBoundsWorkEvidence {
 
                 UnihexBoundsControl.AbsentSparseGlyph -> checkAbsentSparseGlyph(first, second)
 
-                UnihexBoundsControl.Bitmap -> checkBitmapGlyph(first as MinecraftFontGlyph)
+                UnihexBoundsControl.Bitmap -> UnihexBoundsControlGlyphs.bitmap(first as MinecraftFontGlyph)
 
-                UnihexBoundsControl.TrueType -> checkTrueTypeGlyphs(first, second)
+                UnihexBoundsControl.TrueType -> UnihexBoundsControlGlyphs.trueType(first, second)
 
                 UnihexBoundsControl.SnapshotLoad -> check(first !== second)
                 UnihexBoundsControl.SnapshotReplacement -> {
@@ -235,22 +235,6 @@ public object UnihexBoundsWorkEvidence {
     ) {
         check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first == second)
         check(first.advance.toRawBits() == 6.0f.toRawBits())
-    }
-
-    private fun checkBitmapGlyph(glyph: MinecraftFontGlyph) {
-        val image = checkNotNull(glyph.image)
-        check(image.size == IntSize(8, 8))
-        val expected = IntArray(64) { index -> if ((index % 8 + index / 8) % 2 == 0) -1 else 0x00ffffff }
-        check(image.copyArgb().contentEquals(expected))
-    }
-
-    private fun checkTrueTypeGlyphs(
-        first: Any,
-        second: Any,
-    ) {
-        check(first is MinecraftFontGlyph && second is MinecraftFontGlyph && first.image !== second.image)
-        check(checkNotNull(first.image).copyArgb().contentEquals(checkNotNull(second.image).copyArgb()))
-        check(first.copy(image = null) == second.copy(image = null))
     }
 
     private fun checkGlyph(
