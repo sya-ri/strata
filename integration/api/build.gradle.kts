@@ -1,4 +1,5 @@
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.io.File
@@ -18,12 +19,19 @@ val sharedApiExamples = objects.sourceDirectorySet("sharedApiExamples", "Shipped
     include("**/*Example.kt")
     exclude("**/MinecraftInventoryExample.kt", "**/MinecraftSocialExample.kt")
 }
+val stagedSharedApiExamples = layout.buildDirectory.dir("generated/shared-api-examples/kotlin")
+val stageSharedApiExamples = tasks.register<Sync>("stageSharedApiExamples") {
+    description = "Stages the selected shipped examples under the API-only consumer's own source root."
+    from(sharedApiExamples)
+    into(stagedSharedApiExamples)
+}
 extensions.configure<KotlinJvmProjectExtension> {
-    sourceSets.named("main") { kotlin.source(sharedApiExamples) }
+    sourceSets.named("main") { kotlin.srcDir(stageSharedApiExamples) }
 }
 tasks.named<Test>("test") {
     inputs.files(sharedApiExamples)
     systemProperty("strata.sharedApiExampleSources", sharedApiExamples.files.map { it.absolutePath }.sorted().joinToString(File.pathSeparator))
+    systemProperty("strata.stagedSharedApiExamples", stagedSharedApiExamples.get().asFile.absolutePath)
 }
 
 val checkApiOnlyClasspath =

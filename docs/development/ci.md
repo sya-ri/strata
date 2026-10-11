@@ -98,6 +98,8 @@ One `--no-daemon` Gradle invocation compiles `classes` and `gametestClasses`, as
 Its JVM exits before analysis; compiled inputs remain available without assembling remapped distributions.
 API/core use their `jvmJar` tasks, and multiplatform JVM modules expose common and JVM production/test roots with their real JVM classpaths.
 Qodana's JVM model covers that JVM view; JavaScript-specific sources are checked by Detekt, the Kotlin/JS compiler, and browser tests.
+The API-only authoring contract stages its selected shipped examples under its own generated main source root before compilation, preserving the canonical shared-root owners in the IDEA model.
+Its regression test checks the exact staged bytes and compiled facades against the actual selected examples.
 Each versioned native integration links exactly one canonical component `TestSource` from the component benchmark corpus.
 The verifier admits only that exact shared root for native consumers and retains the benchmark module's ordinary ownership; missing, duplicated, misclassified or broader roots fail verification.
 The generated model co-locates common and JVM declarations without KMP source-set relationships, so `UnusedSymbol` can miss real calls across `expect`/`actual` declarations and typealiases.
