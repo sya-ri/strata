@@ -77,32 +77,43 @@ internal object WebButtonMeasurementCheck {
                 WebButtonMeasurementControl.ObservedStringBoth,
                 WebButtonMeasurementControl.EqualSourcePublication,
                 -> context.observed(control)
+
                 WebButtonMeasurementControl.NegativeWidth,
                 WebButtonMeasurementControl.TranslatedArguments,
                 WebButtonMeasurementControl.ResourceFontRejection,
                 WebButtonMeasurementControl.PlatformTextRejection,
                 -> context.rejection(control)
+
                 WebButtonMeasurementControl.AutomaticTextMeasureFailure,
                 WebButtonMeasurementControl.AutomaticTextNullContext,
                 WebButtonMeasurementControl.ButtonNullContext,
                 WebButtonMeasurementControl.ButtonMeasureFailure,
                 WebButtonMeasurementControl.ButtonCanvasCreationFailure,
                 -> context.canvasFailure(control, fixedWidth)
+
                 WebButtonMeasurementControl.AutomaticTextWidth -> context.automaticText()
+
                 WebButtonMeasurementControl.EnabledPointerActivation,
                 WebButtonMeasurementControl.DisabledPointerActivation,
                 WebButtonMeasurementControl.FocusedKeyboardActivation,
                 -> context.activation(control)
+
                 WebButtonMeasurementControl.KeyedReorder,
                 WebButtonMeasurementControl.RemoveInsert,
                 -> context.topology(control)
+
                 WebButtonMeasurementControl.InitialHtmlAdoption,
                 WebButtonMeasurementControl.HydrationRejection,
                 -> context.adoption(control)
+
                 WebButtonMeasurementControl.IndependentHostThemes -> context.themes()
+
                 WebButtonMeasurementControl.ModifierConstraints -> context.constraints()
+
                 WebButtonMeasurementControl.IdleResize -> context.idleResize()
+
                 WebButtonMeasurementControl.FailureCloseRelease -> context.failureRelease()
+
                 else -> context.literal(control)
             }
             check(document.querySelectorAll("style").length == styles) { "A control retained a stylesheet" }
@@ -149,12 +160,14 @@ internal object WebButtonMeasurementCheck {
                     else -> UiText.Literal("Initial") to 150
                 }
             val inputs = mutableStateOf(initial)
-            fun definition(): UiDefinition = UiDefinition {
-                val (label, width) = inputs.value
-                Column {
-                    if (control == WebButtonMeasurementControl.LiteralString) Button((label as UiText.Literal).value, width) else Button(label, width)
+
+            fun definition(): UiDefinition =
+                UiDefinition {
+                    val (label, width) = inputs.value
+                    Column {
+                        if (control == WebButtonMeasurementControl.LiteralString) Button((label as UiText.Literal).value, width) else Button(label, width)
+                    }
                 }
-            }
             val root = root()
             val host = work(1) { mountWeb(definition(), root, viewport, theme) }
             try {
@@ -217,6 +230,7 @@ internal object WebButtonMeasurementCheck {
             val text = WebButtonMeasurementSource("Initial")
             val enabled = WebButtonMeasurementSource(true)
             val root = root()
+
             fun definition(): UiDefinition = UiDefinition { Column { emitObserved(control, ui, text, enabled) } }
             val host = work(1) { mountWeb(definition(), root, viewport, theme) }
             try {
@@ -266,9 +280,10 @@ internal object WebButtonMeasurementCheck {
                     else -> UiText.Literal("Negative")
                 }
             val root = root()
-            val failure = work(if (control == WebButtonMeasurementControl.NegativeWidth) 1 else 0) {
-                runCatching { mountWeb(UiDefinition { Button(label, if (control == WebButtonMeasurementControl.NegativeWidth) -1 else 150) }, root, viewport, theme) }.exceptionOrNull()
-            }
+            val failure =
+                work(if (control == WebButtonMeasurementControl.NegativeWidth) 1 else 0) {
+                    runCatching { mountWeb(UiDefinition { Button(label, if (control == WebButtonMeasurementControl.NegativeWidth) -1 else 150) }, root, viewport, theme) }.exceptionOrNull()
+                }
             checkNotNull(failure)
             when (control) {
                 WebButtonMeasurementControl.ResourceFontRejection, WebButtonMeasurementControl.PlatformTextRejection -> check(failure is UnsupportedOperationException)
@@ -290,9 +305,10 @@ internal object WebButtonMeasurementCheck {
             val text = control in setOf(WebButtonMeasurementControl.AutomaticTextMeasureFailure, WebButtonMeasurementControl.AutomaticTextNullContext)
             val root = root()
             var host: WebUiHost? = null
-            val result = work(if (text) 0 else 1, if (text) 1 else 0) {
-                runCatching { mountWeb(UiDefinition { Column { if (text) Text("Automatic") else Button("Fixed", 96) } }, root, viewport, theme).also { host = it } }
-            }
+            val result =
+                work(if (text) 0 else 1, if (text) 1 else 0) {
+                    runCatching { mountWeb(UiDefinition { Column { if (text) Text("Automatic") else Button("Fixed", 96) } }, root, viewport, theme).also { host = it } }
+                }
             try {
                 if (text || fixedWidth.not()) {
                     val failure = checkNotNull(result.exceptionOrNull())
@@ -316,13 +332,14 @@ internal object WebButtonMeasurementCheck {
          * Natural Text width still uses actual themed Canvas, including a width-modified Text control.
          */
         fun automaticText() {
-            fun definition(): UiDefinition = UiDefinition {
-                Column {
-                    Button("Fixed", 96)
-                    Text("Automatic")
-                    Text("Width modified", modifier = Modifier.Empty.width(80))
+            fun definition(): UiDefinition =
+                UiDefinition {
+                    Column {
+                        Button("Fixed", 96)
+                        Text("Automatic")
+                        Text("Width modified", modifier = Modifier.Empty.width(80))
+                    }
                 }
-            }
             val root = root()
             val host = work(1, 2) { mountWeb(definition(), root, viewport, theme) }
             try {
@@ -334,9 +351,13 @@ internal object WebButtonMeasurementCheck {
                     context.font = window.getComputedStyle(text).font
                     check(measuredSize(text).width == ceil(context.measureText("Automatic").width).toInt())
                     check(measuredSize(element(root, 2)).width == 80)
-                } finally { probe.resume() }
+                } finally {
+                    probe.resume()
+                }
                 compare(root, definition(), "automatic-and-modified-text")
-            } finally { close(host, root) }
+            } finally {
+                close(host, root)
+            }
         }
 
         /**
@@ -345,6 +366,7 @@ internal object WebButtonMeasurementCheck {
         fun activation(control: WebButtonMeasurementControl) {
             val enabled = control != WebButtonMeasurementControl.DisabledPointerActivation
             val clicks = mutableStateOf(0)
+
             fun definition(): UiDefinition = UiDefinition { Column { Button("Clicks ${clicks.value}", enabled = enabled, modifier = Modifier.Empty.onActivate(enabled) { clicks.value += 1 }) } }
             val root = root()
             val host = work(1) { mountWeb(definition(), root, viewport, theme) }
@@ -367,7 +389,9 @@ internal object WebButtonMeasurementCheck {
                     check(root.firstElementChild === button)
                 }
                 compare(root, definition(), "activation")
-            } finally { close(host, root) }
+            } finally {
+                close(host, root)
+            }
         }
 
         /**
@@ -375,6 +399,7 @@ internal object WebButtonMeasurementCheck {
          */
         fun topology(control: WebButtonMeasurementControl) {
             val order = mutableStateOf(listOf(1, 2, 3))
+
             fun definition(): UiDefinition = UiDefinition { Column { order.value.forEach { Button("Button $it", 100, key = ElementKey(it)) } } }
             val root = root()
             val host = work(3) { mountWeb(definition(), root, viewport, theme) }
@@ -395,7 +420,9 @@ internal object WebButtonMeasurementCheck {
                     check(element(root, 2) !== original[1])
                     compare(root, definition(), "fresh-insertion")
                 }
-            } finally { close(host, root) }
+            } finally {
+                close(host, root)
+            }
         }
 
         /**
@@ -436,7 +463,9 @@ internal object WebButtonMeasurementCheck {
                 roots.forEachIndexed { index, root -> compare(root, UiDefinition { Column { Button("Independent", 96) } }, "host-$index", themes[index]) }
                 close(hosts[0], roots[0])
                 check(roots[1].hasChildNodes())
-            } finally { hosts.forEachIndexed { index, host -> close(host, roots[index]) } }
+            } finally {
+                hosts.forEachIndexed { index, host -> close(host, roots[index]) }
+            }
         }
 
         /**
@@ -444,13 +473,16 @@ internal object WebButtonMeasurementCheck {
          */
         fun constraints() {
             val small = IntSize(84, 15)
+
             fun definition(): UiDefinition = UiDefinition { Column { Button("Constrained", 150, modifier = Modifier.Empty.size(100, 20)) } }
             val root = root()
             val host = work(1) { mountWeb(definition(), root, small, theme) }
             try {
                 check(measuredSize(element(root, 0)) == small)
                 compare(root, definition(), "constrained", size = small)
-            } finally { close(host, root) }
+            } finally {
+                close(host, root)
+            }
         }
 
         /**
@@ -458,6 +490,7 @@ internal object WebButtonMeasurementCheck {
          */
         fun idleResize() {
             val source = WebButtonMeasurementSource("Idle")
+
             fun definition(): UiDefinition = UiDefinition { Column { Button(source) } }
             val root = root()
             val host = work(1) { mountWeb(definition(), root, viewport, theme) }
@@ -484,19 +517,20 @@ internal object WebButtonMeasurementCheck {
             val source = WebButtonMeasurementSource("Ready", cleanup)
             val fail = mutableStateOf(false)
             val root = root()
-            val host = work(1) {
-                mountWeb(
-                    UiDefinition {
-                        Column {
-                            Button(source)
-                            if (fail.value) throw primary
-                        }
-                    },
-                    root,
-                    viewport,
-                    theme,
-                )
-            }
+            val host =
+                work(1) {
+                    mountWeb(
+                        UiDefinition {
+                            Column {
+                                Button(source)
+                                if (fail.value) throw primary
+                            }
+                        },
+                        root,
+                        viewport,
+                        theme,
+                    )
+                }
             compare(root, UiDefinition { Column { Button("Ready") } }, "before-declaration-failure")
             fail.value = true
             val failure = work(0) { runCatching { host.render(viewport) }.exceptionOrNull() }
@@ -514,7 +548,9 @@ internal object WebButtonMeasurementCheck {
                 val renderFailure = work(1) { runCatching { mountWeb(UiDefinition { Button(renderSource) }, renderRoot, viewport, theme) }.exceptionOrNull() }
                 check(renderFailure === rendering)
                 check(renderRoot.hasChildNodes().not() && renderSource.active == 0)
-            } finally { renderRoot.asDynamic().insertBefore = native }
+            } finally {
+                renderRoot.asDynamic().insertBefore = native
+            }
             checks["primary_and_suppression_order"] = true
         }
 
@@ -547,7 +583,10 @@ internal object WebButtonMeasurementCheck {
         /**
          * Checks repeated terminal close and immediate native child release.
          */
-        private fun close(host: WebUiHost, root: HTMLElement) {
+        private fun close(
+            host: WebUiHost,
+            root: HTMLElement,
+        ) {
             host.close()
             host.close()
             check(root.hasChildNodes().not())
@@ -584,30 +623,40 @@ internal object WebButtonMeasurementCheck {
         /**
          * Compares all rendered styles/native properties while identity remains a separate live oracle.
          */
-        private fun properties(root: HTMLElement): List<List<Any?>> = (0 until root.children.length).map { index ->
-            val element = element(root, index)
-            listOf(element.tagName, element.textContent, element.style.cssText, element.getAttribute("data-strata-theme"), (element as? HTMLButtonElement)?.type, (element as? HTMLButtonElement)?.disabled)
-        }
+        private fun properties(root: HTMLElement): List<List<Any?>> =
+            (0 until root.children.length).map { index ->
+                val element = element(root, index)
+                listOf(element.tagName, element.textContent, element.style.cssText, element.getAttribute("data-strata-theme"), (element as? HTMLButtonElement)?.type, (element as? HTMLButtonElement)?.disabled)
+            }
 
         /**
          * Converts the renderer's integer pixel dimensions into the existing typed geometry oracle.
          */
         private fun measuredSize(element: HTMLElement): IntSize =
             IntSize(
-                element.style.width.removeSuffix("px").toInt(),
-                element.style.height.removeSuffix("px").toInt(),
+                element.style.width
+                    .removeSuffix("px")
+                    .toInt(),
+                element.style.height
+                    .removeSuffix("px")
+                    .toInt(),
             )
 
         /**
          * Retrieves one required native presentation child.
          */
-        private fun element(root: HTMLElement, index: Int): HTMLElement = checkNotNull(root.children.item(index)) as HTMLElement
+        private fun element(
+            root: HTMLElement,
+            index: Int,
+        ): HTMLElement = checkNotNull(root.children.item(index)) as HTMLElement
 
         /**
          * Selects one actual action surface by its resolved external DOM label.
          */
-        private fun button(root: HTMLElement, label: String): HTMLButtonElement =
-            (0 until root.children.length).map { element(root, it) }.filterIsInstance<HTMLButtonElement>().single { it.textContent == label }
+        private fun button(
+            root: HTMLElement,
+            label: String,
+        ): HTMLButtonElement = (0 until root.children.length).map { element(root, it) }.filterIsInstance<HTMLButtonElement>().single { it.textContent == label }
 
         /**
          * Delivers the existing native pointer route with root-relative actual geometry.
@@ -620,16 +669,27 @@ internal object WebButtonMeasurementCheck {
         /**
          * Independent expected labels for successful resolver controls only.
          */
-        private fun resolve(text: UiText): String = when (text) {
-            is UiText.Literal -> text.value
-            is UiText.Translated ->
-                when (val fallback = text.fallback) {
-                    is TranslationFallback.Literal -> fallback.value
-                    else -> text.key
+        private fun resolve(text: UiText): String =
+            when (text) {
+                is UiText.Literal -> {
+                    text.value
                 }
-            is UiText.Concatenated -> text.parts.joinToString("") { resolve(it) }
-            else -> error("No rejected text belongs to a successful literal control")
-        }
+
+                is UiText.Translated -> {
+                    when (val fallback = text.fallback) {
+                        is TranslationFallback.Literal -> fallback.value
+                        else -> text.key
+                    }
+                }
+
+                is UiText.Concatenated -> {
+                    text.parts.joinToString("") { resolve(it) }
+                }
+
+                else -> {
+                    error("No rejected text belongs to a successful literal control")
+                }
+            }
 
         /**
          * Calls each public source overload directly rather than erasing it behind a literal wrapper.
