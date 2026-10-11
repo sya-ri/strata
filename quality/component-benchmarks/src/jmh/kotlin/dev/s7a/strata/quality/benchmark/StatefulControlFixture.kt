@@ -8,6 +8,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.CycleButton
 import dev.s7a.strata.component.CycleButtonState
 import dev.s7a.strata.component.Image
+import dev.s7a.strata.component.ImageSource
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Slider
 import dev.s7a.strata.component.SliderState
@@ -53,7 +54,7 @@ internal class StatefulControlFixture(
     private val checkbox = List(count) { CheckboxState() }
     private val slider = List(count) { SliderState(0.0) }
     private val cycle = List(count) { CycleButtonState((0 until choices.size).toList()) }
-    private val statuses = listOf(0xFF707080.toInt(), 0xFF808090.toInt()).map { StatefulControlProfile.image(150, 1, it) }
+    private val statuses = listOf(0xFF707080.toInt(), 0xFF808090.toInt()).map { ImageSource.Pixels(StatefulControlProfile.image(150, 1, it)) }
     private val viewport = IntSize(150, count * 20 + 1)
     private var cachedControls: List<Element>? = null
     private var current = 0
@@ -79,25 +80,23 @@ internal class StatefulControlFixture(
 
     init {
         session =
-            try {
+            runCatching {
                 val field = host.javaClass.getDeclaredField("session")
                 field.isAccessible = true
                 field.get(host) as RuntimeUiSession
-            } catch (failure: Throwable) {
+            }.onFailure { failure ->
                 runCatching { host.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
-                throw failure
-            }
-        try {
+            }.getOrThrow()
+        runCatching {
             host.attach()
             host.frame(viewport)
             val controls = session.projectDeclarations { it.children.take(count).map { child -> child.element } }
             check(controls.size == count)
             cachedControls = controls
             verifyFrame(host.frame(viewport))
-        } catch (failure: Throwable) {
+        }.onFailure { failure ->
             runCatching { host.close() }.exceptionOrNull()?.let { cleanup -> if (cleanup !== failure) failure.addSuppressed(cleanup) }
-            throw failure
-        }
+        }.getOrThrow()
     }
 
     /**
