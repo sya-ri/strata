@@ -90,6 +90,12 @@ gradle.projectsEvaluated {
                     check(archives.toSet().size == targets.size && archives.all { it.isFile && it.extension == "jar" })
                     classpath = project.files(classpath.files.filter { it.canonicalFile !in replaced }) + project.files(archives)
                 }
+                rootProject.providers.gradleProperty("strata.performance.operationRequest").orNull?.let { request ->
+                    if (name in setOf("jmhHistorical", "jmhComponents", "jmhRemote")) {
+                        mainClass.set("dev.s7a.strata.performance.JvmOperationReports")
+                        setArgs(listOf(rootProject.file(request).absolutePath))
+                    }
+                }
                 logger.lifecycle("paired.jvm.origin {}", JsonOutput.toJson(mapOf("task" to path, "main" to mainClass.get(), "executable" to javaLauncher.get().executablePath.asFile.absolutePath, "classpath" to classpath.asPath)))
             }
         }

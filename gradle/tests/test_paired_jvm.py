@@ -63,11 +63,38 @@ class PairedJvmTest(unittest.TestCase):
             changed["inputs"][0]["label"] = label
             with self.subTest(label=label), self.assertRaises(ValueError):
                 self.load(changed)
+
         for profilers in (["gc"], ["bad;command.Profiler"], ["example..Profiler"], ["example.Profiler", "example.Profiler"]):
             changed = copy.deepcopy(value)
             changed["suites"][0]["profilers"] = profilers
             with self.subTest(profilers=profilers), self.assertRaises(ValueError):
                 self.load(changed)
+
+    def test_operation_connection_is_optional_and_rejects_partial_or_stale_registration(self):
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["operation_reports"] = {"adapters": {"example.Fixture": "example.Adapter"}, "warmup": 30,
+                                                  "samples": 60, "expected_rows": 2, "expected_controls": 1}
+        self.assertEqual(self.load(value), value)
+        for key, invalid in (("samples", 0), ("samples", True), ("warmup", -1), ("expected_rows", 1),
+                             ("expected_controls", 3), ("adapters", {}), ("adapters", {"example.Fixture": "bad;Adapter"})):
+            changed = copy.deepcopy(value)
+            changed["suites"][0]["operation_reports"][key] = invalid
+            with self.subTest(key=key, invalid=invalid), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def test_operation_table_keeps_nullable_processor_deltas_and_units(self):
+        comparison = {"phases": [{"operation_id": "complete", "before": {"owner_thread_cpu_ns_per_sample": None,
+                                                                                 "owner_thread_allocated_bytes_per_sample": 10.0},
+                                  "after": {"owner_thread_cpu_ns_per_sample": None, "owner_thread_allocated_bytes_per_sample": 6.0},
+                                  "delta": {"owner_thread_cpu_ns_per_sample": None, "owner_thread_allocated_bytes_per_sample": -4.0}}]}
+        PAIRED.table(self.root, [], [], [("full", comparison)])
+        with (self.root / "table.csv").open(encoding="utf-8", newline="") as source:
+            rows = list(csv.DictReader(source))
+        self.assertEqual(rows[0]["baseline"], "")
+        self.assertEqual(rows[0]["unit"], "ns/sample")
+        self.assertEqual(rows[1]["unit"], "B/sample")
+        self.assertEqual(rows[1]["delta"], "-4.0")
+        self.assertIn("unavailable", (self.root / "report.md").read_text(encoding="utf-8"))
 
     def test_reject_changed_missing_or_duplicate_inputs_and_selectors(self):
         mutations = [

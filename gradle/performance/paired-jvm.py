@@ -103,7 +103,7 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(set(suite) in (fields, fields | {"profilers"}), "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "operation_reports"}, "Invalid suite fields")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -120,6 +120,18 @@ def load_manifest(root, path):
         require(isinstance(profilers, list) and len(profilers) == len(set(profilers))
                 and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in profilers), "Use unique compiled JMH profiler class names")
     labels = set()
+    for suite in data["suites"]:
+        if "operation_reports" in suite:
+            operation = suite["operation_reports"]
+            require(set(operation) == {"adapters", "warmup", "samples", "expected_rows", "expected_controls"}, "Invalid operation report fields")
+            require(suite["benchmarks"] and isinstance(operation["adapters"], dict) and operation["adapters"], "Operation reports require explicit fixtures and required adapters")
+            require(all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*", value)
+                        for pair in operation["adapters"].items() for value in pair), "Invalid compiled operation adapter identity")
+            require(len(set(operation["adapters"].values())) == len(operation["adapters"]), "Duplicate operation adapter")
+            for key in ("warmup", "samples", "expected_rows", "expected_controls"):
+                require(isinstance(operation[key], int) and not isinstance(operation[key], bool), "Operation counts must be integers")
+            require(0 <= operation["warmup"] <= 1_000_000 and 0 < operation["samples"] <= 1_000_000
+                    and 0 <= operation["expected_controls"] <= operation["expected_rows"] == suite["expected_cases"], "Incomplete or unbounded operation inventory")
     for value in data["inputs"]:
         require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
@@ -283,7 +295,7 @@ def properties(path, values):
             target.write(f"{escape(key)}={escape(value)}\n")
 
 
-def table(output, comparisons, phases):
+def table(output, comparisons, phases, operations=()):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
     for suite, mode, comparison in comparisons:
@@ -300,6 +312,13 @@ def table(output, comparisons, phases):
                 rows.append({"suite": suite, "mode": mode, "benchmark": case["benchmark"], "params": json.dumps(case["params"], sort_keys=True),
                              "metric": f"sample_percentile_{metric}", "unit": case["primary_unit"], "baseline": before, "candidate": after, "delta": after-before,
                              "candidate_to_baseline": after / before if before != 0 else None})
+    for suite, comparison in operations:
+        for phase in comparison["phases"]:
+            for metric, before in phase["before"].items():
+                unit = "B/sample" if metric.endswith("bytes_per_sample") else "B" if metric.endswith("bytes") else "ns/sample" if metric.endswith("ns_per_sample") else "ns"
+                rows.append({"suite": suite, "mode": "owner-thread-operation", "benchmark": phase["operation_id"], "params": "{}",
+                             "metric": metric, "unit": unit, "baseline": before, "candidate": phase["after"][metric],
+                             "delta": phase["delta"][metric], "candidate_to_baseline": None})
     with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
         writer = csv.DictWriter(target, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -313,7 +332,7 @@ def table(output, comparisons, phases):
         target.write("\n| Phase | Seconds |\n| --- | ---: |\n")
         for phase in phases:
             target.write(f"| {phase['name']} | {phase['elapsed_seconds']:.3f} |\n")
-        target.write("\nThread CPU per operation is unavailable in the existing collector. Job CPU includes preparation and descendants. Additional declared JMH profiler metrics remain in raw results. CPU native font-library controls require their full work gate and actual library load/release; GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
+        target.write("\nJMH elapsed and stock GC allocation retain their harness scope. Optional owner-thread operation CPU/allocation use separate compiled reports and declared sample boundaries; absent or unsupported counters stay unavailable. Job/process/all-thread CPU and allocation include broader work. Heap-boundary samples do not prove retained-object size. Meter counter reads and adapter dispatch have collection cost; batching is declared in raw rows. Additional JMH profiler metrics remain in raw results. CPU native font-library controls require their full work gate and actual library load/release; GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
 
 
 def pack(output):
@@ -471,7 +490,7 @@ def run(root, manifest_path, output):
                 original = build / relative
                 require(original.is_dir(), "Missing common compiled fixture closure")
                 shutil.copytree(original, prepared / owner.strip(":").replace(":", "-") / relative)
-        comparisons, invocation_ids = [], set()
+        comparisons, invocation_ids, operation_comparisons, operation_ids = [], set(), [], set()
         for suite in data["suites"]:
             project, task, verifier = FixtureProject.decode(suite["project"]).value
             selectors = [f"-Pstrata.performance.{key}={','.join(suite[key])}" for key in ("benchmarks", "workloads") if suite[key]]
@@ -482,6 +501,7 @@ def run(root, manifest_path, output):
             selectors += [f"-Pstrata.performance.fixtureInputs={inputs}"]
             for side in ("baseline", "candidate"):
                 phase(f"admit-{suite['name']}-{side}", fixture, [project + ":" + verifier, f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors)
+            bindings = {"baseline": [], "candidate": []}
             for mode in ("avgt", "sample"):
                 runs = {"baseline": [], "candidate": []}
                 for repetition in range(3):
@@ -505,6 +525,8 @@ def run(root, manifest_path, output):
                                 "Missing cases, fork proof or independent invocation")
                         invocation_ids.add(receipt["run_id"])
                         runs[side].append(str(destination))
+                        if mode == "avgt":
+                            bindings[side].append(str(destination))
                 request_path = output / f"{suite['name']}-{mode}-request.json"
                 comparison_path = output / f"{suite['name']}-{mode}-comparison.json"
                 write_new(request_path, {"command": "jmh-comparison", "collector": str(collector), "baseline": runs["baseline"], "candidate": runs["candidate"],
@@ -513,6 +535,34 @@ def run(root, manifest_path, output):
                 comparison = read_json(comparison_path)
                 require(comparison["status"] == "passed" and len(comparison["cases"]) == suite["expected_cases"], "Incomplete paired comparison")
                 comparisons.append((suite["name"], mode, comparison))
+            if "operation_reports" in suite:
+                operation = suite["operation_reports"]
+                runs = {"baseline": [], "candidate": []}
+                for repetition in range(3):
+                    for side in ("baseline", "candidate"):
+                        for key, workspace in workspaces.items():
+                            source_guard(workspace, data["sources"][key]["tree"])
+                        destination = output / "raw" / suite["name"] / "operations" / side / f"run-{repetition}"
+                        request_path = output / f"{suite['name']}-operations-{side}-{repetition}-request.json"
+                        write_new(request_path, {**operation, "collector": str(collector), "jmh_directory": bindings[side][repetition],
+                                                 "output": str(destination), "repetition": repetition, "source_bindings": record["sources"]})
+                        phase(f"collect-{suite['name']}-operations-{side}-{repetition}", fixture,
+                              [project + ":" + task, f"-Pstrata.performance.operationRequest={request_path}",
+                               f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors, 0)
+                        report = read_json(destination / "report.json")
+                        require(report["status"] == "passed" and len(report["phases"]) == operation["expected_rows"]
+                                and sum(row["control"] for row in report["phases"]) == operation["expected_controls"]
+                                and report["run_id"] not in invocation_ids | operation_ids, "Incomplete or reused operation invocation")
+                        operation_ids.add(report["run_id"])
+                        runs[side].append(str(destination / "report.json"))
+                request_path = output / f"{suite['name']}-operations-comparison-request.json"
+                comparison_path = output / f"{suite['name']}-operations-comparison.json"
+                write_new(request_path, {"command": "operation-comparison", "collector": str(collector),
+                                         "baseline": runs["baseline"], "candidate": runs["candidate"], "output": str(comparison_path)})
+                phase(f"compare-{suite['name']}-operations", fixture, [":performance-testkit:processEvidence", f"-Pstrata.performance.request={request_path}"])
+                comparison = read_json(comparison_path)
+                require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
+                operation_comparisons.append((suite["name"], comparison))
         for side, workspace in workspaces.items():
             source_guard(workspace, data["sources"][side]["tree"])
             for value in data["compiled_pins"][side]:
@@ -520,8 +570,10 @@ def run(root, manifest_path, output):
         for item in data["dependency_pins"]:
             pin(gradle_cache, item)
         require(len(invocation_ids) == len(data["suites"]) * 12 and len(comparisons) == len(data["suites"]) * 2, "Whole attempt incomplete")
+        require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
         record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
-        table(output, comparisons, record["phases"])
+        record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
+        table(output, comparisons, record["phases"], operation_comparisons)
         record["status"] = "passed"
     except BaseException as failure:
         record["error"] = f"{type(failure).__name__}: {failure}"

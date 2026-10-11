@@ -96,6 +96,32 @@ public object JmhFixtureSelection {
     }
 
     /**
+     * Resolves required supplemental hooks before collection; opt-out callers never invoke them.
+     */
+    internal fun operationAdapters(
+        fixtures: List<Class<*>>,
+        expected: Map<String, String>,
+    ): List<JvmOperationReportAdapter> {
+        require(fixtures.map { it.name }.toSet() == expected.keys) { "Operation adapter fixture inventory differs" }
+        return fixtures.map { fixture ->
+            val hooks = fixture.methods.filter { it.name.contentEquals("operationReport") }
+            require(hooks.size == 1) { "Missing or ambiguous operation report hook: ${fixture.name}" }
+            val hook = hooks.single()
+            require(Modifier.isStatic(hook.modifiers) && hook.parameterCount == 0 && JvmOperationReportAdapter::class.java.isAssignableFrom(hook.returnType)) { "Invalid operation report hook: ${fixture.name}" }
+            val adapter =
+                try {
+                    hook.invoke(null) as JvmOperationReportAdapter
+                } catch (failure: InvocationTargetException) {
+                    throw failure.cause ?: failure
+                }
+            require(adapter.javaClass.name.contentEquals(expected.getValue(fixture.name))) { "Stale operation adapter: ${fixture.name}" }
+            adapter
+        }.also { adapters ->
+            require(adapters.map { it.javaClass.name }.distinct().size == adapters.size) { "Duplicate operation adapter" }
+        }
+    }
+
+    /**
      * Reads optional compiled-parameter subsets from a UTF-8 properties file.
      */
     public fun parameters(): Map<String, Set<String>> =
