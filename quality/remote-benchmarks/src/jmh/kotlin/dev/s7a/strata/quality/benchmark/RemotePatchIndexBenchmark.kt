@@ -125,13 +125,14 @@ public open class RemotePatchIndexBenchmark {
                 evaluateComponentTree { Spacer(context.modifier, context.key) }
             }
             registry.modifier(modifierType, { it }) { _, _ -> Modifier.Empty }
-            client = RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, before), registry, limits, send = { message ->
-                when (message) {
-                    is RemoteMessage.Applied -> applied = message.revision
-                    is RemoteMessage.Close -> closed++
-                    else -> Unit
-                }
-            })
+            client =
+                RemoteClientSession(RemoteMessage.Snapshot(1, 1, ProjectionValue.Absent, before), registry, limits, send = { message ->
+                    when (message) {
+                        is RemoteMessage.Applied -> applied = message.revision
+                        is RemoteMessage.Close -> closed++
+                        else -> Unit
+                    }
+                })
             check(prepared == nodes.toLong() && applied == 1L)
         }
 
@@ -216,16 +217,29 @@ public open class RemotePatchIndexBenchmark {
 
         private fun changedRecords(records: List<RemoteNode>): Pair<Long, List<RemoteNode>> =
             when (change) {
-                Change.Stable -> 1L to records
-                Change.Single -> 1L to records.map { if (it.declaration.identity == nodes.toLong()) node(it.declaration.identity, it.children, 1) else it }
-                Change.All -> 1L to records.map { node(it.declaration.identity, it.children, 1) }
-                Change.Reorder -> 1L to records.map { if (it.declaration.identity == 1L) node(1, it.children.reversed(), 0) else it }
+                Change.Stable -> {
+                    1L to records
+                }
+
+                Change.Single -> {
+                    1L to records.map { if (it.declaration.identity == nodes.toLong()) node(it.declaration.identity, it.children, 1) else it }
+                }
+
+                Change.All -> {
+                    1L to records.map { node(it.declaration.identity, it.children, 1) }
+                }
+
+                Change.Reorder -> {
+                    1L to records.map { if (it.declaration.identity == 1L) node(1, it.children.reversed(), 0) else it }
+                }
+
                 Change.AddRemove -> {
                     val removed = nodes.toLong()
                     val added = removed + 1
                     val current = records.filter { it.declaration.identity != removed }.map { node(it.declaration.identity, it.children.map { child -> if (child == removed) added else child }, 0) } + node(added, emptyList(), 0)
                     (if (nodes == 1) added else 1L) to current
                 }
+
                 Change.RootReplacement -> {
                     val root = nodes + 1L
                     root to (records.drop(1) + node(root, records.first().children, 0))
@@ -239,7 +253,10 @@ public open class RemotePatchIndexBenchmark {
         ): Pair<Long, Map<Long, RemoteNode>> {
             require(patch.changed.size <= limits.treeNodes && patch.removed.size <= limits.treeNodes)
             require(patch.removed.all { it in previous.nodes })
-            val records = previous.nodes.values.filter { (it.declaration.identity in patch.removed).not() }.toMutableList()
+            val records =
+                previous.nodes.values
+                    .filter { (it.declaration.identity in patch.removed).not() }
+                    .toMutableList()
             val positions = records.mapIndexed { index, record -> record.declaration.identity to index }.toMap().toMutableMap()
             for (change in patch.changed) {
                 val position = positions[change.declaration.identity]

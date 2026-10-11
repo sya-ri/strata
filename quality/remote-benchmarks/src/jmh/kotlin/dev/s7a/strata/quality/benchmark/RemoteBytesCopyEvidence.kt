@@ -51,22 +51,25 @@ public object RemoteBytesCopyEvidence {
                         val operation = RemoteBytesOperation.valueOf((arguments[1] as StringReference).value())
                         check(seen.add(corpus to operation))
                         owner = event.thread().uniqueID()
-                        current = JsonObject().apply {
-                            addProperty("corpus", corpus.name)
-                            addProperty("operation", operation.name)
-                            addProperty("constructor_snapshot_arrays", 0L)
-                            addProperty("constructor_snapshot_bytes", 0L)
-                            addProperty("extraction_snapshot_arrays", 0L)
-                            addProperty("extraction_snapshot_bytes", 0L)
-                        }
+                        current =
+                            JsonObject().apply {
+                                addProperty("corpus", corpus.name)
+                                addProperty("operation", operation.name)
+                                addProperty("constructor_snapshot_arrays", 0L)
+                                addProperty("constructor_snapshot_bytes", 0L)
+                                addProperty("extraction_snapshot_arrays", 0L)
+                                addProperty("extraction_snapshot_bytes", 0L)
+                            }
                     }
+
                     RemoteProbeMarker.Finish -> {
                         check(owner == event.thread().uniqueID() && calls.isEmpty())
                         rows.add(checkNotNull(current))
                         current = null
                         owner = null
                     }
-                    null -> Unit
+
+                    null -> {}
                 }
                 return
             }
