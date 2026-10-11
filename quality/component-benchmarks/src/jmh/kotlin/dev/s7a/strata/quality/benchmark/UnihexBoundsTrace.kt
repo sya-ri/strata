@@ -1,8 +1,12 @@
 package dev.s7a.strata.quality.benchmark
 
-/** Executes the natural-bounds row inside its external untimed trace boundary. */
+/**
+ * Executes the natural-bounds row inside its external untimed trace boundary.
+ */
 internal object UnihexBoundsTrace {
-    /** Prepares the bounds state before [begin], then passes exactly one bounds result to [end]. */
+    /**
+     * Prepares the bounds state before [begin], then passes exactly one bounds result to [end].
+     */
     internal fun naturalBounds(
         fixture: UnihexBoundsFixture?,
         begin: () -> Unit,
