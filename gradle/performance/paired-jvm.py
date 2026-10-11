@@ -201,7 +201,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
-    records, forks = [], []
+    records, forks, version_probes = [], [], []
     for path in files:
         require(path.stat().st_size <= 1024 * 1024, "VM diagnostic exceeds its retained bound")
         value = path.read_text(encoding="utf-8")
@@ -211,11 +211,19 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
                 and len(re.findall(r"<hotspot_log_done\b[^>]*/>", value)) == 1, "VM diagnostic lacks natural terminal proof")
         commands = re.findall(r"<command>\s*([^<]+?)\s*</command>", blocks[0])
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", blocks[0])
-        classpaths = re.findall(r"(?m)^java\.class\.path=([^\r\n]+)", blocks[0])
-        require(len(commands) == len(homes) == len(classpaths) == 1, "VM actual main/home/classpath missing")
-        command = html.unescape(commands[0].strip())
-        main = command.split(" ", 1)[0]
-        if main.endswith("gradle-wrapper.jar") or main == "org.gradle.wrapper.GradleWrapperMain":
+        classpaths = re.findall(r"(?m)^java\.class\.path=([^\r\n]*)", blocks[0])
+        version_probe = not commands and "<command" not in blocks[0] and classpaths == [""]
+        require(len(homes) == len(classpaths) == 1 and (len(commands) == 1 and bool(classpaths[0]) or version_probe), "VM actual main/home/classpath missing")
+        command = html.unescape(commands[0].strip()) if commands else None
+        main = command.split(" ", 1)[0] if command else None
+        if version_probe:
+            environment = read_json(directory / "request.json")["environment"]["JAVA_TOOL_OPTIONS"]
+            arguments = re.findall(r"<args>\s*([^<]+?)\s*</args>", blocks[0])
+            require(environment.startswith("-Xmx32m -XX:MaxMetaspaceSize=256m ") and len(arguments) == 1
+                    and html.unescape(arguments[0].strip()) in {environment + " -XX:+UnlockExperimentalVMOptions " + quiet + "-XX:CompileCommand=blackhole,some/fake/Class.method"
+                                                for quiet in ("", "-XX:CompileCommand=quiet ")}, "Unbound JMH compiler-blackhole version probe")
+            role = "probe"
+        elif main.endswith("gradle-wrapper.jar") or main == "org.gradle.wrapper.GradleWrapperMain":
             role = "wrapper"
         elif main == "org.gradle.launcher.daemon.bootstrap.GradleDaemon":
             role = "daemon"
@@ -241,6 +249,9 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
         evidence = {"pid": pid, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+        if version_probe:
+            evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
+            version_probes.append(evidence)
         if role == "fork":
             require(member is not None and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0,
                     "Actual JMH fork generation or zero-exit proof missing")
@@ -253,6 +264,10 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
             evidence["os_generation"] = member
             forks.append(pid)
         records.append(evidence)
+    for probe in version_probes:
+        authorities = [record["pid"] for record in records if record["role"] == "java_exec" and record["home"] == probe["home"]]
+        require(any(re.search(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+", console)
+                    for pid in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
     require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or reused JMH fork")
     if expected_forks is not None:
         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
@@ -379,7 +394,7 @@ def run(root, manifest_path, output):
             directory.mkdir(parents=True, exist_ok=False)
             logs = vm_directory.as_posix()
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={logs}/vm-%p-%t.log"
-            environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
+            environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
                            "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs}
             args = arguments + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
             request = {"workspace": str(workspace), "arguments": args, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3,

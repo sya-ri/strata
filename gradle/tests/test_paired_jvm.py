@@ -211,6 +211,52 @@ class PairedJvmTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     PAIRED.verify_vms(directory, [log], actual, allowed, 1)
 
+    def test_jmh_version_probes_require_exact_arguments_caps_and_bound_compiler_hints(self):
+        home = self.root / "jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        environment = "-Xmx32m -XX:MaxMetaspaceSize=256m -XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile=owned/vm-%p-%t.log"
+        inherited = "-XX:+UnlockExperimentalVMOptions -XX:CompileCommand=blackhole,some/fake/Class.method"
+        document = ("<hotspot_log process='123' time_ms='1001'>\n<vm_arguments><args>\n"
+                    f"{environment} {{options}} </args>\n<launcher>SUN_STANDARD</launcher>\n<properties>\n"
+                    f"java.home={home}\njava.class.path=\n</properties></vm_arguments>\n"
+                    "-XX:MaxHeapSize=33554432 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        authority = ("<hotspot_log process='456' time_ms='1000'>\n<vm_arguments><command>fixture.Collector</command>\n"
+                     f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
+                     "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        origin = {"main": "fixture.Collector", "executable": str(executable), "classpath": "frozen.jar"}
+        console = "paired.jvm.origin " + json.dumps(origin) + "\n[456][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n"
+        changes = [lambda value: value, lambda value: value.replace("-XX:MaxHeapSize=33554432", "-XX:MaxHeapSize=4293590016"),
+                   lambda value: value.replace("Class.method", "Other.method"), lambda value: value.replace("<launcher>", "<command></command><launcher>"),
+                   lambda value: value.replace("java.class.path=\n", "java.class.path=unknown.jar\n")]
+        for index, change in enumerate(changes + [lambda value: value, lambda value: value]):
+            for quiet in ("", "-XX:CompileCommand=quiet "):
+                with self.subTest(change=index, quiet=quiet):
+                    directory = self.root / f"probe-{index}-{bool(quiet)}"
+                    directory.mkdir()
+                    PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
+                    actual_console = console if index != 5 else console.replace("[456]", "[999]")
+                    (directory / "console.log").write_text(actual_console, encoding="utf-8")
+                    probe = directory / "probe.log"
+                    probe.write_text(change(document.replace("{options}", inherited.replace("-XX:CompileCommand=blackhole", quiet + "-XX:CompileCommand=blackhole"))), encoding="utf-8")
+                    collector = directory / "collector.log"
+                    collector.write_text(authority if index != 6 else authority.replace("fixture.Collector", "fixture.Unknown"), encoding="utf-8")
+                    if index == 0:
+                        PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
+                        evidence = PAIRED.read_json(directory / "vms.json")
+                        self.assertEqual(evidence[0]["role"], "probe")
+                        self.assertIsNone(evidence[0]["command"])
+                        self.assertEqual(evidence[0]["classpath"], "")
+                        self.assertEqual(evidence[1]["role"], "java_exec")
+                        (directory / "vms.json").unlink()
+                        with self.assertRaisesRegex(ValueError, "Incomplete actual JMH fork"):
+                            PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 1)
+                    else:
+                        with self.assertRaises(ValueError):
+                            PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
+
     def test_early_setup_failure_preserves_failed_attempt_without_java(self):
         output = self.root / "early-failure"
         manifest = self.root / "manifest.json"

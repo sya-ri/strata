@@ -575,6 +575,9 @@ An entire suite and all twelve collections must fit those bounds.
 A selection whose required full iterations already exceed the invocation or attempt bound is unsupported; do not shorten its iterations, drop controls, select fewer cases or combine partial runs to make it fit.
 This single-runner route does not shard a corpus across distributed executors.
 The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB, probe 32/256 MiB, compiler/generator/test worker 512/256 MiB and JavaExec/JMH fork 768/384 MiB.
+The inherited Java environment supplies the probe heap cap, while each ordinary launcher retains its explicit profile.
+JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
+These probes remain separate diagnostic records and never count as measured forks.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
