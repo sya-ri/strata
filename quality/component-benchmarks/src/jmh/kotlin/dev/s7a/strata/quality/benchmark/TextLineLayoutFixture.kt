@@ -51,7 +51,13 @@ internal class TextLineLayoutFixture(
 ) : AutoCloseable {
     private val assets = TextLineLayoutAssets(shape)
     private val firstValue = assets.value().let { if (consumer === Consumer.TextArea) it.replace("\r\n", "\n") else it }
-    private val secondValue = if (firstValue.isEmpty()) "Z" else firstValue.substring(0, firstValue.offsetByCodePoints(firstValue.length, -1)) + "Z"
+    private val secondValue =
+        if (firstValue.isEmpty()) {
+            "Z"
+        } else {
+            val replacement = if (firstValue.endsWith('Z')) "Y" else "Z"
+            firstValue.substring(0, firstValue.offsetByCodePoints(firstValue.length, -1)) + replacement
+        }
     private val values = listOf(firstValue, secondValue)
     private val texts = values.map(::text)
     private val states = List(2) { TextAreaState(firstValue, maxLength = maxOf(firstValue.length, secondValue.length) + 16) }
@@ -101,6 +107,7 @@ internal class TextLineLayoutFixture(
 
     init {
         try {
+            check(firstValue != secondValue)
             host.attach()
             frame()
             layout(LayoutOperation.Edit)
@@ -181,7 +188,7 @@ internal class TextLineLayoutFixture(
         val pixels = pixels(oldFrame)
         layout(operation)
         val nextOwner = owner()
-        check(currentLayout() !== previousLayout)
+        check(currentLayout() !== previousLayout) { "Layout replacement failed for $consumer/$shape/$operation." }
         if (operation === LayoutOperation.Initial) {
             check(nextOwner !== previousOwner)
             TextLineLayoutAccess.verifyReleased(previousOwner, consumer)

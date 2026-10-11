@@ -714,7 +714,7 @@ public open class PointerCapabilityBenchmark {
         private val constraints = Constraints.fixed(20, 20)
         private val childConstraints = Constraints(maxWidth = 10, maxHeight = 10)
         private val color = ArgbColor(0xFF123456.toInt())
-        private val referenceSemantics = Semantics(label = UiText.literal("pointer fixture"))
+        private val referenceSemantics = Semantics(label = UiText.Literal("pointer fixture"))
         private val descriptionType =
             ElementType(
                 elementClass = Description::class,
