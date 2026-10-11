@@ -11,6 +11,9 @@ import dev.s7a.strata.geometry.LongRect
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -257,12 +260,20 @@ internal class PanZoomStateTest {
     fun stateAndObserverReleaseRejectAnotherThread() {
         val state = PanZoomState()
         val observer = state.observe { _ -> }
+        state.zoomTo(2.0)
+        val snapshot = observerSnapshot(state)
         val readFailure = AtomicReference<Throwable?>()
         val closeFailure = AtomicReference<Throwable?>()
+        val observeFailure = AtomicReference<Throwable?>()
+        val writeFailure = AtomicReference<Throwable?>()
+        val geometryFailure = AtomicReference<Throwable?>()
         val worker =
             Thread {
                 readFailure.set(runCatching { state.metrics }.exceptionOrNull())
                 closeFailure.set(runCatching { observer.close() }.exceptionOrNull())
+                observeFailure.set(runCatching { state.observe { _ -> } }.exceptionOrNull())
+                writeFailure.set(runCatching { state.zoomTo(3.0) }.exceptionOrNull())
+                geometryFailure.set(runCatching { state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Contain, observer) }.exceptionOrNull())
             }
 
         worker.start()
@@ -270,6 +281,10 @@ internal class PanZoomStateTest {
 
         assertTrue(readFailure.get() is IllegalStateException)
         assertTrue(closeFailure.get() is IllegalStateException)
+        assertTrue(observeFailure.get() is IllegalStateException)
+        assertTrue(writeFailure.get() is IllegalStateException)
+        assertTrue(geometryFailure.get() is IllegalStateException)
+        assertSame(snapshot, observerSnapshot(state))
         observer.close()
     }
 
@@ -291,6 +306,177 @@ internal class PanZoomStateTest {
         assertFalse(DoubleOffset(Math.addExact(exactDoubleInteger, 2L).toDouble(), 0.0) in precisionBoundary)
         assertTrue(DoubleOffset(Long.MIN_VALUE.toDouble(), 0.0) in LongRect(Long.MIN_VALUE, 0L, Long.MIN_VALUE + 1L, 1L))
         assertFalse(DoubleOffset(Long.MAX_VALUE.toDouble(), 0.0) in LongRect(Long.MAX_VALUE - 1L, 0L, Long.MAX_VALUE, 1L))
+    }
+
+    @Test
+    fun stableOrderedSnapshotIsReusedAndEveryMembershipMutationDropsItImmediately() {
+        val state = PanZoomState()
+        var calls = 0
+        val callback: (PanZoomMetrics) -> Unit = { calls += 1 }
+        val first = state.observe(callback)
+        assertNull(observerSnapshot(state))
+        state.zoomTo(2.0)
+        val singleton = checkNotNull(observerSnapshot(state))
+        assertSame(callback, (singleton.single() as Pair<*, *>).second)
+        state.zoomTo(3.0)
+        assertSame(singleton, observerSnapshot(state))
+        assertEquals(2, calls)
+
+        val second = state.observe(callback)
+        assertNull(observerSnapshot(state))
+        state.zoomTo(4.0)
+        val pair = checkNotNull(observerSnapshot(state))
+        assertNotSame(singleton, pair)
+        assertEquals(2, pair.size)
+        first.close()
+        assertNull(observerSnapshot(state))
+        state.zoomTo(5.0)
+        val remaining = checkNotNull(observerSnapshot(state))
+        assertEquals(1, remaining.size)
+        first.close()
+        assertSame(remaining, observerSnapshot(state))
+        second.close()
+        assertNull(observerSnapshot(state))
+        state.zoomTo(6.0)
+        assertTrue(checkNotNull(observerSnapshot(state)).isEmpty())
+        assertEquals(5, calls)
+    }
+
+    @Test
+    fun equalMetricsDoNotBuildOrReplaceAnyMembershipSnapshot() {
+        val state = PanZoomState()
+        state.zoomTo(1.0)
+        assertNull(observerSnapshot(state))
+        val observer = state.observe { _ -> }
+        state.zoomTo(1.0)
+        assertNull(observerSnapshot(state))
+        state.zoomTo(2.0)
+        val snapshot = observerSnapshot(state)
+        state.zoomTo(2.0)
+        assertSame(snapshot, observerSnapshot(state))
+        observer.close()
+        state.zoomTo(2.0)
+        assertNull(observerSnapshot(state))
+    }
+
+    @Test
+    fun callbackInvalidationKeepsOnlyTheLocalInvocationAndTheNextPublicationUsesNewMembership() {
+        val state = PanZoomState()
+        var addedCalls = 0
+        var lastCalls = 0
+        var added: AutoCloseable? = null
+        val first =
+            state.observe {
+                assertEquals(2, checkNotNull(observerSnapshot(state)).size)
+                added = state.observe { addedCalls += 1 }
+                assertNull(observerSnapshot(state))
+            }
+        val last =
+            state.observe {
+                lastCalls += 1
+                assertNull(observerSnapshot(state))
+            }
+
+        state.zoomTo(2.0)
+        assertEquals(1, lastCalls)
+        assertEquals(0, addedCalls)
+        assertNull(observerSnapshot(state))
+        first.close()
+        last.close()
+        state.zoomTo(3.0)
+        assertEquals(1, addedCalls)
+        assertEquals(1, checkNotNull(observerSnapshot(state)).size)
+        added?.close()
+        assertNull(observerSnapshot(state))
+    }
+
+    @Test
+    fun churnShrinksToCurrentMembershipAndLastReleaseLeavesTheReachableStateWithoutCallbacks() {
+        val state = PanZoomState()
+        repeat(100) { cycle ->
+            val handles = List(128) { state.observe { _ -> } }
+            state.zoomTo(if (cycle % 2 == 0) 2.0 else 3.0)
+            assertEquals(128, checkNotNull(observerSnapshot(state)).size)
+            handles.drop(1).forEach(AutoCloseable::close)
+            assertNull(observerSnapshot(state))
+            state.centerOn(DoubleOffset(cycle.toDouble() + 1.0, 1.0))
+            assertEquals(1, checkNotNull(observerSnapshot(state)).size)
+            handles.first().close()
+            handles.first().close()
+            assertNull(observerSnapshot(state))
+            val field = PanZoomState::class.java.getDeclaredField("observers")
+            field.isAccessible = true
+            assertTrue((field.get(state) as Map<*, *>).isEmpty())
+        }
+        assertEquals(100.0, state.metrics.center.x)
+    }
+
+    @Test
+    fun geometryAndOrdinaryPublicationsReuseMembershipWhileReleasedOwnerCannotPublish() {
+        val state = PanZoomState()
+        val first = state.observe { _ -> }
+        val second = state.observe { _ -> }
+        state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Contain, first)
+        val snapshot = observerSnapshot(state)
+        state.zoomTo(2.0)
+        assertSame(snapshot, observerSnapshot(state))
+        state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Cover, first)
+        assertSame(snapshot, observerSnapshot(state))
+        first.close()
+        assertNull(observerSnapshot(state))
+        assertThrows(IllegalStateException::class.java) { state.updateGeometry(BOUNDS, VIEWPORT, PanZoomFit.Cover, first) }
+        assertNull(observerSnapshot(state))
+        state.updateGeometry(BOUNDS, IntSize(100, 100), PanZoomFit.Cover, second)
+        assertEquals(1, checkNotNull(observerSnapshot(state)).size)
+        second.close()
+        assertNull(observerSnapshot(state))
+    }
+
+    private fun observerSnapshot(state: PanZoomState): List<*>? {
+        val field = PanZoomState::class.java.getDeclaredField("observerSnapshot")
+        field.isAccessible = true
+        return field.get(state) as List<*>?
+    }
+
+    @Test
+    fun lastReleaseDuringDeliveryDropsTheRetainedSnapshotEvenWhenTheCallbackFails() {
+        val state = PanZoomState()
+        val primary = IllegalArgumentException("released observer")
+        var observer: AutoCloseable? = null
+        var calls = 0
+        observer =
+            state.observe {
+                calls += 1
+                assertEquals(1, checkNotNull(observerSnapshot(state)).size)
+                observer?.close()
+                assertNull(observerSnapshot(state))
+                throw primary
+            }
+
+        assertSame(primary, assertThrows(IllegalArgumentException::class.java) { state.zoomTo(2.0) })
+        assertNull(observerSnapshot(state))
+        checkNotNull(observer).close()
+        state.zoomTo(3.0)
+        assertTrue(checkNotNull(observerSnapshot(state)).isEmpty())
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun failureDoesNotCacheMetricsOrFailureStateAndRecoveryReusesUnchangedMembership() {
+        val state = PanZoomState()
+        val primary = IllegalArgumentException("first publication")
+        val observer =
+            state.observe {
+                assertSame(it, state.metrics)
+                if (it.zoom == 2.0) throw primary
+            }
+        assertSame(primary, assertThrows(IllegalArgumentException::class.java) { state.zoomTo(2.0) })
+        val snapshot = observerSnapshot(state)
+        state.zoomTo(3.0)
+        assertSame(snapshot, observerSnapshot(state))
+        assertEquals(3.0, state.metrics.zoom)
+        observer.close()
+        assertNull(observerSnapshot(state))
     }
 
     private fun assertMetrics(

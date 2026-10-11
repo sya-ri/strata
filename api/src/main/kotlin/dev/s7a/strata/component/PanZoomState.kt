@@ -34,6 +34,8 @@ public class PanZoomState(
 ) {
     private val owner = currentOwner()
     private val observers: MutableMap<Any, (PanZoomMetrics) -> Unit> = LinkedHashMap()
+    // Keyed by current ordered token/callback membership; mutations drop the sole owner-confined snapshot immediately.
+    private var observerSnapshot: List<Pair<Any, (PanZoomMetrics) -> Unit>>? = null
     private var geometryOwner: Any? = null
     private var centerRequested: Boolean = initialCenter != null
     private var currentMetrics: PanZoomMetrics
@@ -231,11 +233,13 @@ public class PanZoomState(
         checkOwner()
         val token = Any()
         observers[token] = callback
+        observerSnapshot = null
         return PanZoomStateObserver(
             token = token,
             release = {
                 checkOwner()
                 val removedCallback = checkNotNull(observers.remove(token)) { "Pan-and-zoom observer was already released." }
+                observerSnapshot = null
                 check(removedCallback === callback) { "Pan-and-zoom observer callback identity changed." }
                 if (geometryOwner === token) geometryOwner = null
             },
@@ -338,7 +342,9 @@ public class PanZoomState(
         notifyingObservers = true
         var failure: Throwable? = null
         try {
-            observers.toList().forEach { (token, callback) ->
+            // Callback-time changes invalidate retention, while this invocation keeps its original ordered membership until it unwinds.
+            val snapshot = observerSnapshot ?: observers.toList().also { observerSnapshot = it }
+            snapshot.forEach { (token, callback) ->
                 failure = combineObserverFailure(failure, notifyObserver(token, callback, next, origin))
             }
         } finally {

@@ -48,6 +48,28 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Pan-and-zoom notification membership
+
+PanZoomState retains at most one ordered token/callback snapshot derived from its current authoritative observer map.
+The exact current ordered membership is its key; every successful registration or removal immediately drops the retained snapshot, including changes made during delivery.
+A changed publication builds it lazily, while equal metrics return before snapshot selection.
+Shrinking membership replaces the list with exactly the current entries instead of preserving historical capacity.
+The state and snapshot remain confined to the state's construction execution owner.
+Closing the last observer drops all cached callback references, while an already executing publication may retain its local iteration snapshot only until it unwinds.
+Viewport detachment, close and failure use the ordinary observer handle release path.
+
+Each publication still commits fresh authoritative metrics before callbacks, checks the live map's callback identity, suppresses only its current geometry origin and visits observers in insertion order.
+Callback-time admission begins on the next publication; release can prevent a later callback in the current publication.
+Synchronous state writes remain rejected, and delivery attempts every still-live observer before the first failure escapes with later distinct failures suppressed.
+Metrics, origins, callback results and failures are never cached.
+Stable-plan identity, immediate invalidation, empty and singleton membership, bounded churn, owner rejection and retained viewport cleanup have independent tests, with callback mutation and failure parity also exercised on both shared targets.
+
+The supplemental `PanZoomPublicationBenchmark` has twenty-four cases selected through the existing generated-fixture mechanism.
+Equal zoom, changed zoom, changed centers and admission/publication/release churn use 0, 1, 16 or 128 stable observers; churn adds one notified transient observer.
+Geometry uses the same notified counts plus one suppressed origin, and the separate retained TiledImage/PanZoom session uses two runtime observers for its viewport and tile layer in addition to navigation membership.
+The session control includes frame construction and a complete fresh 64-by-64 headless raster; its rendering cost is separate from membership snapshot construction.
+All setup and teardown are outside timing, notification counters retain fixed scalar values, and untimed fixture checks require exact callback work, uniform output pixels, clean-frame identity and balanced source release.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
