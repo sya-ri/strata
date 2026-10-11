@@ -256,6 +256,36 @@ internal class RemoteInputSubscriptionTest {
         }
     }
 
+    @Test
+    fun rejectsTrailingPayloadFieldsBeforeHandlersAndReleasesTheCurrentDeclaration() {
+        val factories: List<(() -> Unit) -> Modifier> =
+            listOf(
+                { callback -> Modifier.Empty.initialFocus().onKeyPress(InputResult.Consumed) { callback() } },
+                { callback -> Modifier.Empty.onPointerEvent(InputResult.Ignored) { _, _ -> callback() } },
+                { callback -> Modifier.Empty.initialFocus().onPreedit(InputResult.Ignored) { callback() } },
+            )
+        val dispatches: List<(RuntimeUiSession) -> Unit> =
+            listOf(
+                { it.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 28, KeyboardModifiers(true, true, true, true, true, true))) },
+                { it.dispatchPointer(PointerEvent.Press(IntOffset(3, 4), PointerButton.Secondary)) },
+                { it.dispatchTextInput(TextInputEvent.Preedit("ab", 1, listOf("a", "b"), 1)) },
+            )
+        factories.zip(dispatches).forEach { (factory, dispatch) ->
+            var calls = 0
+            Harness { factory { calls += 1 } }.use { fixture ->
+                dispatch(fixture.host)
+                val action = fixture.actions().single()
+                val fields = (action.value as ProjectionValue.Sequence).values
+                val malformed = ProjectionValue.Sequence(fields + ProjectionValue.Absent)
+                assertThrows(RemoteProtocolException::class.java) {
+                    fixture.server.receive(action.copy(value = malformed))
+                }
+                assertEquals(0, calls)
+                assertEquals(RemoteSessionStatus.Closed(RemoteFailure.InvalidMessage), fixture.server.status)
+                assertEquals(0, fixture.server.nodeCount)
+            }
+        }
+    }
     /**
      * Owns an isolated client, server, binary channel, and retained host on the test thread.
      */

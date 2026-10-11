@@ -63,4 +63,83 @@ class ProjectionInputCodecTest {
         val button = ProjectionInputCodec.button(PointerButton.Auxiliary(0)) as ProjectionValue.Sequence
         assertFailsWith<IllegalArgumentException> { ProjectionInputCodec.button(ProjectionValue.Sequence(listOf(button.values.first(), ProjectionValue.Integer(-1)))) }
     }
+
+    @Test
+    fun keyboardFieldsHaveLiteralOrderAndIndependentNestedModifierSnapshots() {
+        val all = KeyboardModifiers(true, true, true, true, true, true)
+        val flags = sequence(ProjectionValue.Flag(true), ProjectionValue.Flag(true), ProjectionValue.Flag(true), ProjectionValue.Flag(true), ProjectionValue.Flag(true), ProjectionValue.Flag(true))
+        val old = ProjectionInputCodec.keyboard(KeyboardEvent.Press(KeyCode.Enter, 28, all))
+        assertEquals(sequence(number(0), number(KeyCode.Enter.value), number(28), flags), old)
+        val fresh = ProjectionInputCodec.keyboard(KeyboardEvent.Release(KeyCode.Unknown, -1))
+        assertEquals(sequence(number(1), number(-1), number(-1), sequence(ProjectionValue.Flag(false), ProjectionValue.Flag(false), ProjectionValue.Flag(false), ProjectionValue.Flag(false), ProjectionValue.Flag(false), ProjectionValue.Flag(false))), fresh)
+        assertEquals(sequence(number(0), number(KeyCode.Enter.value), number(28), flags), old)
+    }
+
+    @Test
+    fun textButtonsAndFiltersPreserveLiteralSchemasIncludingSmallControls() {
+        listOf(65, 0x1F642).forEach { codePoint ->
+            assertEquals(sequence(number(0), number(codePoint)), ProjectionInputCodec.text(TextInputEvent.Character(codePoint)))
+        }
+        listOf(
+            TextInputEvent.Preedit("", 0, emptyList(), -1),
+            TextInputEvent.Preedit("a", 1, listOf("a"), 0),
+            TextInputEvent.Preedit("ab", 1, listOf("a", "b"), 1),
+        ).forEach { event ->
+            assertEquals(sequence(number(1), ProjectionValue.Text(event.fullText), number(event.caretPosition), ProjectionValue.Sequence(event.blocks.map(ProjectionValue::Text)), number(event.focusedBlock)), ProjectionInputCodec.text(event))
+        }
+        listOf(
+            PointerButton.Primary to sequence(number(0)),
+            PointerButton.Secondary to sequence(number(1)),
+            PointerButton.Middle to sequence(number(2)),
+            PointerButton.Auxiliary(8) to sequence(number(3), number(8)),
+        ).forEach { (button, expected) -> assertEquals(expected, ProjectionInputCodec.button(button)) }
+        listOf(emptySet(), setOf(KeyCode.Enter), setOf(KeyCode.Space, KeyCode.Enter, KeyCode.Unknown)).forEach { keys ->
+            assertEquals(sequence(ProjectionValue.Sequence(keys.sortedBy(KeyCode::value).map { number(it.value) }), ProjectionValue.Absent), ProjectionInputCodec.filter(KeyboardInputFilter(keys)))
+        }
+    }
+
+    @Test
+    fun pointerControlsPreserveLiteralTreeAndOutOfBoundsLocalCoordinates() {
+        val position = IntOffset(4, 5)
+        val local = IntOffset(-34, 72)
+        val prefix = listOf(number(4), number(5), number(-34), number(72))
+        val cases =
+            listOf(
+                PointerEvent.Press(position, PointerButton.Primary) to listOf(number(0), sequence(number(0))),
+                PointerEvent.Release(position, PointerButton.Secondary) to listOf(number(1), sequence(number(1))),
+                PointerEvent.Move(position) to listOf(number(2)),
+                PointerEvent.Drag(position, PointerButton.Auxiliary(8), -0.25, 10.5) to listOf(number(3), sequence(number(3), number(8)), ProjectionValue.Real(-0.25), ProjectionValue.Real(10.5)),
+                PointerEvent.Scroll(position, 0.5, -3.75) to listOf(number(4), ProjectionValue.Real(0.5), ProjectionValue.Real(-3.75)),
+            )
+        cases.forEach { (event, expected) ->
+            assertEquals(ProjectionValue.Sequence(listOf(expected.first()) + prefix + expected.drop(1)), ProjectionInputCodec.pointer(event, local))
+        }
+    }
+
+    @Test
+    fun everyDecoderRejectsTrailingFieldsAndWrongNestedFieldTypes() {
+        val samples: List<Pair<ProjectionValue, (ProjectionValue) -> Any>> =
+            listOf(
+                ProjectionInputCodec.keyboard(KeyboardEvent.Press(KeyCode.Enter, 28)) to { value: ProjectionValue -> ProjectionInputCodec.keyboard(value) },
+                ProjectionInputCodec.pointer(PointerEvent.Move(IntOffset(4, 5)), IntOffset(-34, 72)) to { value: ProjectionValue -> ProjectionInputCodec.pointer(value) },
+                ProjectionInputCodec.text(TextInputEvent.Preedit("", 0, emptyList(), -1)) to { value: ProjectionValue -> ProjectionInputCodec.text(value) },
+                ProjectionInputCodec.filter(KeyboardInputFilter()) to { value: ProjectionValue -> ProjectionInputCodec.filter(value) },
+                ProjectionInputCodec.button(PointerButton.Primary) to { value: ProjectionValue -> ProjectionInputCodec.button(value) },
+            )
+        samples.forEach { (encoded, decode) ->
+            val fields = (encoded as ProjectionValue.Sequence).values
+            assertFailsWith<IllegalArgumentException> { decode(ProjectionValue.Sequence(fields + ProjectionValue.Absent)) }
+            assertFailsWith<IllegalArgumentException> { decode(ProjectionValue.Sequence(fields.dropLast(1))) }
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ProjectionInputCodec.keyboard(sequence(number(0), number(KeyCode.Enter.value), number(28), sequence(ProjectionValue.Flag(true))))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ProjectionInputCodec.filter(sequence(sequence(number(KeyCode.Enter.value), number(KeyCode.Enter.value)), ProjectionValue.Absent))
+        }
+    }
+
+    private fun number(value: Int): ProjectionValue = ProjectionValue.Integer(value.toLong())
+
+    private fun sequence(vararg values: ProjectionValue): ProjectionValue.Sequence = ProjectionValue.Sequence(values.toList())
 }

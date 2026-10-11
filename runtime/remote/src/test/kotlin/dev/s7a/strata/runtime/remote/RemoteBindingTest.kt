@@ -16,6 +16,7 @@ import dev.s7a.strata.text.UiText
 import dev.s7a.strata.ui.UiPresentation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -81,6 +82,26 @@ internal class RemoteBindingTest {
         scope.actions.last().dispatch(eventSession, old.edit(ProjectionValue.Text("stale")))
         assertEquals("new", current.text)
         bindings.close()
+    }
+
+    @Test
+    fun bindingRecordsKeepIndependentSnapshotsAndRejectMalformedOrTrailingFields() {
+        val codec = RemoteValueCodec()
+        val expected = ProjectionValue.Sequence(listOf(ProjectionValue.Integer(1), ProjectionValue.Integer(2), ProjectionValue.Integer(3), ProjectionValue.Text("old"), ProjectionValue.Integer(4)))
+        val old = RemoteProperties.record(ProjectionValue.Integer(1), ProjectionValue.Integer(2), ProjectionValue.Integer(3), ProjectionValue.Text("old"), ProjectionValue.Integer(4))
+        val fresh = RemoteProperties.record(ProjectionValue.Integer(1), ProjectionValue.Integer(3), ProjectionValue.Integer(3), ProjectionValue.Text("new"), ProjectionValue.Integer(5))
+        assertEquals(expected, old)
+        assertEquals(codec.encode(expected).toList(), codec.encode(old).toList())
+        assertEquals(RemoteBindingSnapshot(1, 2, 3, ProjectionValue.Text("old"), 4), RemoteBindingSnapshot.decode(old))
+        assertEquals(RemoteBindingSnapshot(1, 3, 3, ProjectionValue.Text("new"), 5), RemoteBindingSnapshot.decode(fresh))
+        val fields = (old as ProjectionValue.Sequence).values
+        assertThrows(IllegalArgumentException::class.java) {
+            RemoteBindingSnapshot.decode(ProjectionValue.Sequence(fields + ProjectionValue.Absent))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            RemoteBindingSnapshot.decode(ProjectionValue.Sequence(fields.dropLast(1)))
+        }
+        assertEquals(expected, old)
     }
 
     private fun project(

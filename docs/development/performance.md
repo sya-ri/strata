@@ -629,6 +629,24 @@ Empty and singleton snapshots use their exact list forms without intermediate ma
 Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
 The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
 
+### Projection field snapshots
+
+Positional built-in properties, declared input policies/endpoints, standard input encoders and remote profile property records pass a transient array view directly to the defensive `ProjectionValue.Sequence` constructor when they contain multiple fields.
+The constructor still snapshots membership synchronously; only its detached result can be captured by a declaration encoder.
+Empty and singleton varargs retain their original specialized-list path.
+Caller mutation, duplicate references, nested values, schemas and endpoint ownership obey the unchanged [declaration projection](../reference/declaration-projection.md) contract.
+
+The supplemental `ProjectionFieldSnapshotBenchmark` uses the existing remote collector with `:quality:remote-benchmarks:jmhRemote -Pstrata.performance.benchmarks=ProjectionFieldSnapshotBenchmark -Pstrata.performance.suite=projection-field-snapshots`.
+It is separate from the default protocol/session and historical/component matrices.
+Its complete inventory includes six positional field counts, six ordinary defensive-sequence controls, nineteen public input encoders including the unchanged pointer path, thirteen policy constructions and thirteen endpoint projections, six remote profile projections and six complete profile evaluations, plus four actual retained-owner operations.
+Inputs, events, filters, callbacks, scopes and independent sources are prepared outside timing; actual construction/encoding and returned outputs remain inside each operation.
+The fixed projection scope resets its endpoint positions and retains no handlers or prior output; retained-owner rows keep one current outbound message and check two nodes, one subscription and terminal failure/close release.
+The empty menu-background and singleton loading-record controls remain even when nested records contain multiple fields.
+
+Only redundant intermediate membership materialization is removed; vararg/spread arrays, property values, the final defensive snapshot and complete encoding remain.
+Review all small-case, pointer, direct-sequence and retained-owner controls alongside average/sample time and normalized allocation from separate standard B3/C3 suites.
+Array-view overhead and escape analysis determine the net result, so source operation counts are not measured allocation or application speedups.
+
 ### Remote topology allocation
 
 Tree validation uses one declaration identity set for component and modifier uniqueness, a component visit count for connectivity, and parallel primitive identity/depth stacks bounded by the admitted node count.

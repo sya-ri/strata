@@ -59,5 +59,5 @@ public enum class BuiltinProjection(
     /**
      * Creates a detached positional property snapshot without a server event endpoint.
      */
-    public fun properties(vararg values: ProjectionValue): DeclarationProjection<ProjectionValue.Sequence> = DeclarationProjection(type, ProjectionValue.Sequence(values.toList())) { value, _ -> value }
+    public fun properties(vararg values: ProjectionValue): DeclarationProjection<ProjectionValue.Sequence> = DeclarationProjection(type, ProjectionValue.Sequence(if (values.size <= 1) values.toList() else values.asList())) { value, _ -> value }
 }

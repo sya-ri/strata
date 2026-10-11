@@ -131,5 +131,5 @@ internal object DeclaredInputProjection {
 
     private fun result(value: InputResult): ProjectionValue = ProjectionValue.Integer(value.ordinal.toLong())
 
-    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence(values.toList())
+    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence(if (values.size <= 1) values.toList() else values.asList())
 }
