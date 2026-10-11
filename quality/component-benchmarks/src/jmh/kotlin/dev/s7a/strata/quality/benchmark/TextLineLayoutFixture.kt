@@ -333,7 +333,7 @@ internal class TextLineLayoutFixture(
             host.detach()
             TextLineLayoutAccess.verifySnapshot(layout, snapshot)
             check(host.textInputFocus == null)
-            states.forEach { state -> state.observe { }.close() }
+            check(owner() === current)
         } finally {
             host.close()
         }
