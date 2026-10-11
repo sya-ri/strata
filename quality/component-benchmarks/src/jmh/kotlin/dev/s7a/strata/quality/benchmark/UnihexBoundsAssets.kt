@@ -25,7 +25,11 @@ internal object UnihexBoundsAssets {
      */
     internal fun rows(fixture: UnihexBoundsFixture): LongArray {
         val line = bytes("fixtures.tsv").toString(Charsets.UTF_8).lineSequence().single { it.substringBefore('\t') == fixture.name }
-        return line.split('\t')[2].split(',').map { it.toLong(16) }.toLongArray()
+        return line
+            .split('\t')[2]
+            .split(',')
+            .map { it.toLong(16) }
+            .toLongArray()
     }
 
     /**
@@ -66,8 +70,7 @@ internal object UnihexBoundsAssets {
     /**
      * The two real advance capabilities are crossed independently with the same source bytes.
      */
-    internal fun compatibility(fractional: Boolean): MinecraftFontCompatibility =
-        MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = fractional, rejectMalformedOverlayMetadata = true)
+    internal fun compatibility(fractional: Boolean): MinecraftFontCompatibility = MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = fractional, rejectMalformedOverlayMetadata = true)
 
     /**
      * Reads a registered external original or the same committed development resource outside timing.

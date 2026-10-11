@@ -23,11 +23,12 @@ internal data class UnihexBoundsRow(
      * Exact generated JMH identity for the standard average-time mode.
      */
     internal fun identity(): String {
-        val parameters = buildMap {
-            control?.let { put("control", it.name) }
-            fixture?.let { put("fixture", it.name) }
-            if (control == null && advance != Advance.NotApplicable) put("fractional", (advance == Advance.Fractional).toString())
-        }
+        val parameters =
+            buildMap {
+                control?.let { put("control", it.name) }
+                fixture?.let { put("fixture", it.name) }
+                if (control == null && advance != Advance.NotApplicable) put("fractional", (advance == Advance.Fractional).toString())
+            }
         val method =
             when (operation) {
                 Operation.NaturalBounds -> "UnihexBoundsBenchmark.naturalBounds"

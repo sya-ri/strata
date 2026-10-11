@@ -91,11 +91,12 @@ public open class UnihexBoundsControlBenchmark {
             snapshot = UnihexBoundsAssets.load(source, fractional)
             when (control) {
                 UnihexBoundsControl.CleanTextFrame -> {
-                    text = UnihexBoundsBenchmark.TextState().also {
-                        it.fixture = fixture
-                        it.fractional = fractional
-                        it.setup()
-                    }
+                    text =
+                        UnihexBoundsBenchmark.TextState().also {
+                            it.fixture = fixture
+                            it.fractional = fractional
+                            it.setup()
+                        }
                 }
 
                 UnihexBoundsControl.SnapshotLoad, UnihexBoundsControl.EngineLifecycle, UnihexBoundsControl.SnapshotReplacement -> {}
@@ -123,10 +124,22 @@ public open class UnihexBoundsControlBenchmark {
                     checkNotNull(engine).glyph(UnihexBoundsAssets.font, if (phase) 'B'.code else 'A'.code)
                 }
 
-                UnihexBoundsControl.AbsentSparseGlyph -> checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'C'.code)
-                UnihexBoundsControl.SnapshotLoad -> UnihexBoundsAssets.load(source, fractional)
-                UnihexBoundsControl.EngineLifecycle -> createEngine(0).use { it.glyph(UnihexBoundsAssets.font, 'A'.code) }
-                UnihexBoundsControl.CleanTextFrame -> checkNotNull(text).idle()
+                UnihexBoundsControl.AbsentSparseGlyph -> {
+                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'C'.code)
+                }
+
+                UnihexBoundsControl.SnapshotLoad -> {
+                    UnihexBoundsAssets.load(source, fractional)
+                }
+
+                UnihexBoundsControl.EngineLifecycle -> {
+                    createEngine(0).use { it.glyph(UnihexBoundsAssets.font, 'A'.code) }
+                }
+
+                UnihexBoundsControl.CleanTextFrame -> {
+                    checkNotNull(text).idle()
+                }
+
                 UnihexBoundsControl.SnapshotReplacement -> {
                     phase = phase.not()
                     val next = UnihexBoundsAssets.load(if (phase) alternative else source, fractional)
@@ -137,7 +150,9 @@ public open class UnihexBoundsControlBenchmark {
                     }
                 }
 
-                else -> checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'A'.code)
+                else -> {
+                    checkNotNull(engine).glyph(UnihexBoundsAssets.font, 'A'.code)
+                }
             }
 
         /**
@@ -175,9 +190,15 @@ public open class UnihexBoundsControlBenchmark {
 
         private fun source(): MinecraftMemoryFontAssetSource =
             when (control) {
-                UnihexBoundsControl.MatchingOverride -> UnihexBoundsAssets.source(fixture, "matching.json")
-                UnihexBoundsControl.NoMatchingOverride -> UnihexBoundsAssets.source(fixture, "nonmatching.json")
-                UnihexBoundsControl.Bitmap ->
+                UnihexBoundsControl.MatchingOverride -> {
+                    UnihexBoundsAssets.source(fixture, "matching.json")
+                }
+
+                UnihexBoundsControl.NoMatchingOverride -> {
+                    UnihexBoundsAssets.source(fixture, "nonmatching.json")
+                }
+
+                UnihexBoundsControl.Bitmap -> {
                     MinecraftMemoryFontAssetSource(
                         "unihex-bitmap-control-v1",
                         mapOf(
@@ -185,8 +206,9 @@ public open class UnihexBoundsControlBenchmark {
                             "assets/strata_benchmark/textures/font/control.png" to UnihexBoundsAssets.bundle("control.png"),
                         ),
                     )
+                }
 
-                UnihexBoundsControl.TrueType ->
+                UnihexBoundsControl.TrueType -> {
                     MinecraftMemoryFontAssetSource(
                         "unihex-truetype-control-v1",
                         mapOf(
@@ -194,8 +216,11 @@ public open class UnihexBoundsControlBenchmark {
                             "assets/strata_benchmark/font/control.ttf" to Files.readAllBytes(Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture")))),
                         ),
                     )
+                }
 
-                else -> UnihexBoundsAssets.source(fixture)
+                else -> {
+                    UnihexBoundsAssets.source(fixture)
+                }
             }
     }
 }

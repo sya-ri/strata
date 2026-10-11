@@ -33,10 +33,11 @@ public object UnihexBoundsWorkEvidence {
         check(expected.size == 132 && table("fixtures.tsv").size == 36 && table("measurements.tsv").size == 792 && table("controls.tsv").size == 30)
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")) == expected)
         for (fixture in UnihexBoundsFixture.entries) {
-            val bounds = UnihexBoundsBenchmark.BoundsState().also {
-                it.fixture = fixture
-                it.setup()
-            }
+            val bounds =
+                UnihexBoundsBenchmark.BoundsState().also {
+                    it.fixture = fixture
+                    it.setup()
+                }
             val rows = UnihexBoundsAssets.rows(fixture)
             check(bounds.bounds() == UnihexBoundsAssets.scalarBounds(fixture.width, rows))
             for (fractional in listOf(false, true)) {
@@ -62,20 +63,22 @@ public object UnihexBoundsWorkEvidence {
         val end = { output: Any -> println("Unihex operation end ${row.id} ${output.javaClass.name}") }
         when (row.operation) {
             UnihexBoundsRow.Operation.NaturalBounds -> {
-                val state = UnihexBoundsBenchmark.BoundsState().also {
-                    it.fixture = checkNotNull(fixture)
-                    it.setup()
-                }
+                val state =
+                    UnihexBoundsBenchmark.BoundsState().also {
+                        it.fixture = checkNotNull(fixture)
+                        it.setup()
+                    }
                 begin()
                 end(state.bounds())
             }
 
             UnihexBoundsRow.Operation.PublicUncachedGlyph -> {
-                val state = UnihexBoundsBenchmark.GlyphState().also {
-                    it.fixture = checkNotNull(fixture)
-                    it.fractional = fractional
-                    it.setup()
-                }
+                val state =
+                    UnihexBoundsBenchmark.GlyphState().also {
+                        it.fixture = checkNotNull(fixture)
+                        it.fractional = fractional
+                        it.setup()
+                    }
                 try {
                     begin()
                     end(state.glyph())
@@ -85,11 +88,12 @@ public object UnihexBoundsWorkEvidence {
             }
 
             UnihexBoundsRow.Operation.CompleteDirtyTextFrame -> {
-                val state = UnihexBoundsBenchmark.TextState().also {
-                    it.fixture = checkNotNull(fixture)
-                    it.fractional = fractional
-                    it.setup()
-                }
+                val state =
+                    UnihexBoundsBenchmark.TextState().also {
+                        it.fixture = checkNotNull(fixture)
+                        it.fractional = fractional
+                        it.setup()
+                    }
                 try {
                     state.monitorWork()
                     begin()
@@ -101,10 +105,11 @@ public object UnihexBoundsWorkEvidence {
             }
 
             UnihexBoundsRow.Operation.Control -> {
-                val state = UnihexBoundsControlBenchmark.ControlState().also {
-                    it.control = checkNotNull(row.control)
-                    it.setup()
-                }
+                val state =
+                    UnihexBoundsControlBenchmark.ControlState().also {
+                        it.control = checkNotNull(row.control)
+                        it.setup()
+                    }
                 try {
                     begin()
                     end(state.operation())
@@ -115,18 +120,25 @@ public object UnihexBoundsWorkEvidence {
         }
     }
 
-    private fun table(name: String): List<List<String>> =
-        UnihexBoundsAssets.bytes(name).toString(Charsets.UTF_8).lineSequence().drop(1).filter { it.isNotEmpty() }.map { it.split('\t') }.toList()
+    private fun table(name: String): List<List<String>> = UnihexBoundsAssets
+        .bytes(name)
+        .toString(Charsets.UTF_8)
+        .lineSequence()
+        .drop(1)
+        .filter { it.isNotEmpty() }
+        .map { it.split('\t') }
+        .toList()
 
     private fun verifyGlyph(
         fixture: UnihexBoundsFixture,
         fractional: Boolean,
     ) {
-        val state = UnihexBoundsBenchmark.GlyphState().also {
-            it.fixture = fixture
-            it.fractional = fractional
-            it.setup()
-        }
+        val state =
+            UnihexBoundsBenchmark.GlyphState().also {
+                it.fixture = fixture
+                it.fractional = fractional
+                it.setup()
+            }
         val first: MinecraftFontGlyph
         try {
             first = state.glyph()
@@ -146,11 +158,12 @@ public object UnihexBoundsWorkEvidence {
         fixture: UnihexBoundsFixture,
         fractional: Boolean,
     ) {
-        val state = UnihexBoundsBenchmark.TextState().also {
-            it.fixture = fixture
-            it.fractional = fractional
-            it.setup()
-        }
+        val state =
+            UnihexBoundsBenchmark.TextState().also {
+                it.fixture = fixture
+                it.fractional = fractional
+                it.setup()
+            }
         val old: RuntimeUiFrame
         try {
             state.monitorWork()
@@ -173,32 +186,52 @@ public object UnihexBoundsWorkEvidence {
     }
 
     private fun verifyControl(control: UnihexBoundsControl) {
-        val state = UnihexBoundsControlBenchmark.ControlState().also {
-            it.control = control
-            it.setup()
-        }
+        val state =
+            UnihexBoundsControlBenchmark.ControlState().also {
+                it.control = control
+                it.setup()
+            }
         try {
             val first = state.operation()
             val second = state.operation()
             when (control) {
-                UnihexBoundsControl.WarmRasterHit -> checkWarmRasterHit(state, first, second)
+                UnihexBoundsControl.WarmRasterHit -> {
+                    checkWarmRasterHit(state, first, second)
+                }
 
-                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> checkEvictedGlyphs(state, first, second)
+                UnihexBoundsControl.Evicted8Integer, UnihexBoundsControl.Evicted32Fractional -> {
+                    checkEvictedGlyphs(state, first, second)
+                }
 
-                UnihexBoundsControl.MatchingOverride -> checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph, -1..33)
-                UnihexBoundsControl.NoMatchingOverride, UnihexBoundsControl.EngineLifecycle -> checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph)
+                UnihexBoundsControl.MatchingOverride -> {
+                    checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph, -1..33)
+                }
+
+                UnihexBoundsControl.NoMatchingOverride, UnihexBoundsControl.EngineLifecycle -> {
+                    checkGlyph(state.fixture, state.fractional, first as MinecraftFontGlyph)
+                }
+
                 UnihexBoundsControl.CleanTextFrame -> {
                     check(first === second)
                     checkFrame(state.fixture, state.fractional, first as RuntimeUiFrame, "A")
                 }
 
-                UnihexBoundsControl.AbsentSparseGlyph -> checkAbsentSparseGlyph(first, second)
+                UnihexBoundsControl.AbsentSparseGlyph -> {
+                    checkAbsentSparseGlyph(first, second)
+                }
 
-                UnihexBoundsControl.Bitmap -> UnihexBoundsControlGlyphs.bitmap(first as MinecraftFontGlyph)
+                UnihexBoundsControl.Bitmap -> {
+                    UnihexBoundsControlGlyphs.bitmap(first as MinecraftFontGlyph)
+                }
 
-                UnihexBoundsControl.TrueType -> UnihexBoundsControlGlyphs.trueType(first, second)
+                UnihexBoundsControl.TrueType -> {
+                    UnihexBoundsControlGlyphs.trueType(first, second)
+                }
 
-                UnihexBoundsControl.SnapshotLoad -> check(first !== second)
+                UnihexBoundsControl.SnapshotLoad -> {
+                    check(first !== second)
+                }
+
                 UnihexBoundsControl.SnapshotReplacement -> {
                     checkFrame(UnihexBoundsFixture.W32CenteredSparse, true, first as RuntimeUiFrame, "A")
                     checkFrame(UnihexBoundsFixture.W32DisjointExtrema, true, second as RuntimeUiFrame, "A")
@@ -268,19 +301,20 @@ public object UnihexBoundsWorkEvidence {
         check(semantic.bounds == IntRect(0, 0, ceil(advance.toDouble()).toInt(), 9))
         check(frame.size == IntSize(320, 40))
         for (density in 1..3) {
-            val pixels = IntArray(320 * density * 40 * density) { index ->
-                val x = (index % (320 * density) + 0.5f) / density.toFloat()
-                val y = (index / (320 * density) + 0.5f) / density.toFloat()
-                if (x < columns / 2.0f && y < 8.0f) {
-                    val u = x / (columns / 2.0f)
-                    val v = y / 8.0f
-                    val sourceX = floor(0.01f * (1f - u) + (columns - 0.01f) * u).toInt().coerceIn(0, columns - 1)
-                    val sourceY = floor(0.01f * (1f - v) + (16 - 0.01f) * v).toInt().coerceIn(0, 15)
-                    if (UnihexBoundsAssets.scalarInk(fixture.width, rows, bounds.first + sourceX, sourceY)) 0xff404040.toInt() else 0
-                } else {
-                    0
+            val pixels =
+                IntArray(320 * density * 40 * density) { index ->
+                    val x = (index % (320 * density) + 0.5f) / density.toFloat()
+                    val y = (index / (320 * density) + 0.5f) / density.toFloat()
+                    if (x < columns / 2.0f && y < 8.0f) {
+                        val u = x / (columns / 2.0f)
+                        val v = y / 8.0f
+                        val sourceX = floor(0.01f * (1f - u) + (columns - 0.01f) * u).toInt().coerceIn(0, columns - 1)
+                        val sourceY = floor(0.01f * (1f - v) + (16 - 0.01f) * v).toInt().coerceIn(0, 15)
+                        if (UnihexBoundsAssets.scalarInk(fixture.width, rows, bounds.first + sourceX, sourceY)) 0xff404040.toInt() else 0
+                    } else {
+                        0
+                    }
                 }
-            }
             check(rasterizeHeadless(frame.drawCommands, frame.size, density).copyArgb().contentEquals(pixels)) { "Independent full Text ARGB mismatch: $fixture fractional=$fractional density=$density" }
         }
     }
