@@ -62,6 +62,11 @@ The separate CycleButton selection corpus registers nine immutable option-count/
 Its deterministic admission compares typed input, action and observer order, semantics, command geometry and actual detached Headless pixels; loaded adapter input and presentation require their own native evidence.
 Use the shared collection and comparison contract for all forty-eight rows, including the clean and one-option controls, without an elapsed-time CI threshold.
 
+The existing loaded-client suite separately runs sixteen independent CycleButton adapter cases through version-owned screen callbacks and real native cursor movement.
+It checks selection, callback consumption, notification and action order, native semantics, state and label replacement, detach/reattach, and exact full-viewport screenshots against fresh literal-input Headless references.
+Completed host frames fence every capture, and each case writes its own native PNG, Headless PNG and parity receipt in the ordinary runner output directory.
+These checks establish native adapter callback and presentation parity; operating-system device input and operation performance require their own evidence.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.

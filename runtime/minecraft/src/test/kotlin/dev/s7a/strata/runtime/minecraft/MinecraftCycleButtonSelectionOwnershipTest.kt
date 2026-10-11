@@ -78,13 +78,17 @@ internal class MinecraftCycleButtonSelectionOwnershipTest {
         }
     }
 
-    private fun element(state: CycleButtonState<String>, prefix: String = ""): Element {
+    private fun element(
+        state: CycleButtonState<String>,
+        prefix: String = "",
+    ): Element {
         val pixels = createDrawImage(IntSize(8, 8), IntArray(64) { -1 })
         val glyph = MinecraftGlyphSnapshot.create(2, pixels, pixels, pixels, pixels, pixels, pixels, pixels, pixels, pixels)
-        val labels = state.values.map {
-            val text = UiText.Literal(prefix + it)
-            MinecraftTextRun.createNormal(text) { glyph } to MinecraftTextRun.createInactive(text) { glyph }
-        }
+        val labels =
+            state.values.map {
+                val text = UiText.Literal(prefix + it)
+                MinecraftTextRun.createNormal(text) { glyph } to MinecraftTextRun.createInactive(text) { glyph }
+            }
         val sprite = MinecraftButtonSpriteSnapshot.create(createDrawImage(IntSize(200, 20), IntArray(4_000) { -1 }), 3, NineSliceCenterMode.Tiled)
         return createMinecraftCycleButtonElement(sprite, sprite, sprite, state, labels, 80, true, Modifier.Empty.actionDispatcher(), Modifier.Empty, null)
     }
@@ -96,7 +100,10 @@ internal class MinecraftCycleButtonSelectionOwnershipTest {
         return (pair.first as MinecraftTextRun).text
     }
 
-    private fun field(instance: Any, name: String): Any? {
+    private fun field(
+        instance: Any,
+        name: String,
+    ): Any? {
         val field = instance.javaClass.getDeclaredField(name)
         field.isAccessible = true
         return field.get(instance)

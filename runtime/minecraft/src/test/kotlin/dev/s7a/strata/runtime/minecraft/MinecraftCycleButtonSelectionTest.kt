@@ -136,12 +136,27 @@ internal class MinecraftCycleButtonSelectionTest {
         val values = List(8) { Choice(it) {} }
         val state = CycleButtonState(values)
         val actions = ArrayList<Choice>()
-        val host = host(state, Modifier.Empty.onCycle<Choice>({ value -> actions.add(value); state.value = values[6] }))
+        val host =
+            host(
+                state,
+                Modifier.Empty.onCycle<Choice>(
+                    { value ->
+                        actions.add(value)
+                        state.value = values[6]
+                    },
+                ),
+            )
         host.use {
             host.attach()
             host.frame(SIZE)
             var nested = false
-            val later = state.observe { if (nested.not()) { nested = true; state.value = values[7] } }
+            val later =
+                state.observe {
+                    if (nested.not()) {
+                        nested = true
+                        state.value = values[7]
+                    }
+                }
             try {
                 state.value = values[2]
                 assertLabel(host.frame(SIZE), "V000007")
@@ -188,7 +203,10 @@ internal class MinecraftCycleButtonSelectionTest {
         }
     }
 
-    private class Choice(val id: Int, private val compared: () -> Unit) {
+    private class Choice(
+        val id: Int,
+        private val compared: () -> Unit,
+    ) {
         override fun equals(other: Any?): Boolean {
             compared()
             return other is Choice && id == other.id
@@ -197,18 +215,36 @@ internal class MinecraftCycleButtonSelectionTest {
         override fun hashCode(): Int = id
     }
 
-    private class AliasChoice(val id: Int, private val matches: Set<Int>) {
+    private class AliasChoice(
+        val id: Int,
+        private val matches: Set<Int>,
+    ) {
         override fun equals(other: Any?): Boolean = this === other || (other is AliasChoice && other.id in matches)
 
         override fun hashCode(): Int = id
     }
 
-    private fun host(state: CycleButtonState<Choice>, modifier: Modifier = Modifier.Empty): MinecraftUiHost =
-        createMinecraftUiHost(UiDefinition("Selection") { Stack { CycleButton(state, width = 80, modifier = modifier, label = { UiText.Literal("V" + it.id.toString().padStart(6, '0')) }) } }, MinecraftProfileFixture.create())
+    private fun host(
+        state: CycleButtonState<Choice>,
+        modifier: Modifier = Modifier.Empty,
+    ): MinecraftUiHost = createMinecraftUiHost(UiDefinition("Selection") { Stack { CycleButton(state, width = 80, modifier = modifier, label = { UiText.Literal("V" + it.id.toString().padStart(6, '0')) }) } }, MinecraftProfileFixture.create())
 
-    private fun assertLabel(frame: RuntimeUiFrame, value: String) {
-        assertEquals(UiText.Literal(value), frame.semantics.single().semantics.label)
-        assertEquals(UiText.Literal(value), frame.semantics.single().semantics.value)
+    private fun assertLabel(
+        frame: RuntimeUiFrame,
+        value: String,
+    ) {
+        assertEquals(
+            UiText.Literal(value),
+            frame.semantics
+                .single()
+                .semantics.label,
+        )
+        assertEquals(
+            UiText.Literal(value),
+            frame.semantics
+                .single()
+                .semantics.value,
+        )
     }
 
     private fun pixels(frame: RuntimeUiFrame): IntArray = rasterizeHeadless(frame.drawCommands, SIZE).copyArgb()
