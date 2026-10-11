@@ -297,7 +297,6 @@ public open class SamplingCompositionBenchmark {
                     }
 
                     is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
-                        Unit
                     }
 
                     is DrawCommand.SampledImage -> {
