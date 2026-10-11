@@ -112,7 +112,10 @@ internal object JmhEvidenceAggregation {
         }
     }
 
-    private fun secondaryComparison(before: JsonObject, after: JsonObject): JsonObject {
+    private fun secondaryComparison(
+        before: JsonObject,
+        after: JsonObject,
+    ): JsonObject {
         require(before.keySet() == after.keySet()) { "Changed additional JMH metric inventory" }
         return JsonObject().apply {
             before.keySet().sorted().forEach { name ->

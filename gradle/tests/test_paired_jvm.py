@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 import textwrap
 import unittest
@@ -135,6 +136,45 @@ class PairedJvmTest(unittest.TestCase):
             PAIRED.write_new(output / "attempt.json", {"status": "passed"})
         with self.assertRaises(FileExistsError):
             PAIRED.pack(output)
+
+    def test_frozen_crlf_blob_retains_raw_bytes_and_rejects_checkout_or_index_changes(self):
+        repository = self.root / "raw-checkout"
+        subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        PAIRED.git(repository, "config", "core.autocrlf", "false")
+        (repository / ".gitattributes").write_bytes(b"* text eol=crlf\n")
+        batch = repository / "gradlew.bat"
+        original = b"@echo off\r\necho frozen\r\n"
+        batch.write_bytes(original)
+        (repository / "provider").write_bytes(b"fixture.Provider\n")
+        # Model an older published CRLF blob without normalizing it while constructing the index.
+        for name in (".gitattributes", "gradlew.bat", "provider"):
+            blob = PAIRED.git(repository, "hash-object", "-w", "--no-filters", "--", name)
+            PAIRED.git(repository, "update-index", "--add", "--cacheinfo", f"100644,{blob},{name}")
+        tree = PAIRED.git(repository, "write-tree")
+        # A synthetic fixture object avoids invoking any commit/signing machinery in this test.
+        commit = subprocess.check_output(
+            ["git", "-C", str(repository), "hash-object", "-w", "-t", "commit", "--stdin"],
+            input=f"tree {tree}\nauthor Fixture <fixture@example.invalid> 0 +0000\ncommitter Fixture <fixture@example.invalid> 0 +0000\n\nFreeze synthetic source fixture\n".encode(),
+        ).decode().strip()
+        output = self.root / "materialized"
+        output.mkdir()
+        repository, source = PAIRED.materialize(repository, output, "fixture", {"ref": commit, "tree": tree, "patches": []})
+        batch = repository / "gradlew.bat"
+        attributes = repository / ".git/info/attributes"
+        PAIRED.source_guard(repository, tree)
+        self.assertEqual(batch.read_bytes(), original)
+        self.assertEqual((repository / "provider").read_bytes(), b"fixture.Provider\n")
+        self.assertEqual(source["raw_checkout_attributes_sha256"], PAIRED.digest(attributes))
+        batch.write_bytes(original.replace(b"\r\n", b"\n"))
+        with self.assertRaises(subprocess.CalledProcessError):
+            PAIRED.source_guard(repository, tree)
+        attributes.write_bytes(b"* text\n")
+        with self.assertRaisesRegex(ValueError, "Frozen checkout attributes changed"):
+            PAIRED.source_guard(repository, tree)
+        attributes.write_bytes(b"* -text\n")
+        PAIRED.git(repository, "add", "gradlew.bat")
+        with self.assertRaisesRegex(ValueError, "Frozen source index changed"):
+            PAIRED.source_guard(repository, tree)
 
     def test_properties_preserve_colons_and_windows_paths(self):
         output = self.root / "runtime.properties"

@@ -156,6 +156,7 @@ def git(root, *arguments):
 def source_guard(workspace, tree):
     """Require the complete staged source tree and unchanged raw working files outside the owned Java phase."""
     require(git(workspace, "write-tree") == tree, "Frozen source index changed")
+    require((workspace / ".git/info/attributes").read_bytes() == b"* -text\n", "Frozen checkout attributes changed")
     subprocess.run(["git", "-C", str(workspace), "diff", "--exit-code", "--no-ext-diff"], check=True)
 
 
@@ -167,6 +168,10 @@ def materialize(root, output, side, source):
     subprocess.run(["git", "clone", "--quiet", "--shared", "--no-checkout", str(root), str(workspace)], check=True)
     git(workspace, "config", "core.autocrlf", "false")
     git(workspace, "config", "core.longpaths", "true")
+    # Preserve frozen blob bytes before the first checkout can convert older text.
+    attributes = workspace / ".git/info/attributes"
+    attributes.parent.mkdir(parents=True, exist_ok=True)
+    attributes.write_bytes(b"* -text\n")
     git(workspace, "checkout", "--quiet", "--detach", source["ref"])
     for patch in source["patches"]:
         subprocess.run(["git", "-C", str(workspace), "apply", "--index", "--binary", str(pin(root, patch))], check=True)
@@ -175,7 +180,7 @@ def materialize(root, output, side, source):
     source_guard(workspace, source["tree"])
     archive = output / f"source-{side}.zip"
     git(workspace, "archive", "--format=zip", f"--output={archive}", source["tree"])
-    return workspace, {"ref": source["ref"], "tree": source["tree"], "archive_sha256": digest(archive), "patches": source["patches"]}
+    return workspace, {"ref": source["ref"], "tree": source["tree"], "archive_sha256": digest(archive), "patches": source["patches"], "raw_checkout_attributes_sha256": digest(attributes)}
 
 
 def archive_task(project):

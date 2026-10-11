@@ -552,6 +552,8 @@ It also does not reproduce an unrestricted toolchain-discovery control or change
 Such owners retain their existing complete evidence routes; JVM success cannot substitute for those domains, and a changed measurement environment cannot be presented as the same comparison.
 
 Each source is reconstructed in a private checkout with `core.autocrlf=false`, staged patches and an exact `git write-tree` guard.
+Private checkout attributes disable text conversion so working files preserve the frozen Git blob bytes, including older nonnormalized CRLF blobs.
+Both those attributes and the complete working tree remain guarded between invocations.
 The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
 No old workstation owner directory, private index or missing historical metadata file is a prerequisite.
 The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
