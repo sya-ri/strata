@@ -151,8 +151,16 @@ public object EmptyChildControls {
         val children = workload.payload == Payload.NonemptyToNonempty
         val changingEmptiness = workload.payload == Payload.EmptyToOne || workload.payload == Payload.OneToEmpty
         val transition = changingEmptiness || children
+        val misses =
+            if (idle) {
+                0
+            } else if (transition) {
+                n + 1
+            } else {
+                1
+            }
         checkCount(fixture, Stage.EligibleUpdate, if (idle || changingEmptiness) 0 else n)
-        checkCount(fixture, Stage.NonemptyUpdate, if (idle) 0 else if (transition) n + 1 else 1)
+        checkCount(fixture, Stage.NonemptyUpdate, misses)
         verifyMatchingRoles(fixture)
     }
 
@@ -559,9 +567,9 @@ public object EmptyChildControls {
                     }
                 }
             }
-        val monitor = session.startRenderMonitoring()
         session.use {
             session.attach()
+            val monitor = session.startRenderMonitoring()
             session.frame(Constraints())
             monitor.checkpoint()
             source.publish(Output.Empty)

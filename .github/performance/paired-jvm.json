@@ -1,0 +1,103 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "c760a395f1015d5b4cac1c76a2ba7a9e80659236",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/candidate.patch",
+          "sha256": "a1e6b1f57036128362e3ca05e2f3fae8afa89dc2623a7aa417e89d761365f55d"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "37498631c2c7e7854a94286a73b9f97f794707df",
+      "patches": []
+    },
+    "candidate": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "c760a395f1015d5b4cac1c76a2ba7a9e80659236",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/candidate.patch",
+          "sha256": "a1e6b1f57036128362e3ca05e2f3fae8afa89dc2623a7aa417e89d761365f55d"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "empty-child",
+      "benchmarks": [
+        "EmptyChildBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {
+        "workload": [
+          "DirectChanged1",
+          "DirectChanged128",
+          "DirectChanged4096",
+          "ObservedChanged1",
+          "ObservedChanged128",
+          "ObservedChanged4096",
+          "DirectEqual1",
+          "DirectEqual128",
+          "DirectEqual4096",
+          "ObservedEqual1",
+          "ObservedEqual128",
+          "ObservedEqual4096",
+          "Same1",
+          "Same128",
+          "Same4096",
+          "Clean1",
+          "Clean128",
+          "Clean4096",
+          "DirectEmptyToOne1",
+          "DirectEmptyToOne128",
+          "ObservedEmptyToOne1",
+          "ObservedEmptyToOne128",
+          "DirectOneToEmpty1",
+          "DirectOneToEmpty128",
+          "ObservedOneToEmpty1",
+          "ObservedOneToEmpty128",
+          "DirectNonempty1",
+          "DirectNonempty128",
+          "ObservedNonempty1",
+          "ObservedNonempty128"
+        ],
+        "monitoring": [
+          "false",
+          "true"
+        ]
+      },
+      "expected_cases": 60
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": [
+    {
+      "role": "toolchain",
+      "executable_sha256": "5369cf92fc590944793e47cc9c9fef7955ce1a68de22ba22023cdd3513e87c2b",
+      "release_sha256": "666094d10d8d978e4b72e7a492c07fde713cc15db2d8d02be802e0170ec878d6"
+    },
+    {
+      "role": "launcher",
+      "executable_sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+      "release_sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62"
+    }
+  ]
+}

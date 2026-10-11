@@ -43,36 +43,38 @@ public object EmptyChildInputControl {
         val state = mutableStateOf(false)
         val probe = Probe()
         val session = createRuntimeUiSession { InputElement(probe, state.value) }
-        session.attach()
-        val initial = session.frame(Constraints())
-        check(
-            initial.semantics
-                .single()
-                .semantics.label == UiText.Literal("leaf"),
-        )
-        check(probe.focus == listOf(true))
-        val focus = checkNotNull(session.textInputFocus)
-        check(session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) == InputResult.Consumed)
-        check(session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)) == InputResult.Consumed)
-        check(probe.acquisitions == 1 && probe.hover.last())
-        state.value = true
-        val changed = session.frame(Constraints())
-        check(
-            changed.semantics
-                .single()
-                .semantics.value == UiText.Literal("true"),
-        )
-        check(session.textInputFocus == focus && probe.focus == listOf(true))
-        check(probe.updates == 1 && probe.validations == 2 && probe.creations == 1)
-        check(session.dispatchPointer(PointerEvent.Drag(IntOffset(5, 6), PointerButton.Primary, 5.0, 6.0)) == InputResult.Consumed)
-        check(probe.positions.last() == IntOffset(5, 6))
-        check(session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)) == InputResult.Consumed)
-        check(session.dispatchTextInput(TextInputEvent.Character(65)) == InputResult.Consumed)
-        check(probe.keys == 1 && probe.text == 1 && probe.cancellations == 0)
-        session.close()
-        check(probe.cancellations == 1 && probe.focus == listOf(true, false) && probe.hover.last().not())
-        session.close()
-        check(probe.cancellations == 1)
+        session.use {
+            session.attach()
+            val initial = session.frame(Constraints())
+            check(
+                initial.semantics
+                    .single()
+                    .semantics.label == UiText.Literal("leaf"),
+            ) { "Initial flattened semantics label: ${initial.semantics}" }
+            check(probe.focus == listOf(true)) { "Initial focus callbacks: ${probe.focus}" }
+            val focus = checkNotNull(session.textInputFocus) { "Initial editable focus must be present" }
+            check(session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) == InputResult.Consumed) { "Initial pointer move must be consumed" }
+            check(session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)) == InputResult.Consumed) { "Primary press must be consumed" }
+            check(probe.acquisitions == 1 && probe.hover.last()) { "Capture acquisitions=${probe.acquisitions}, hover=${probe.hover}" }
+            state.value = true
+            val changed = session.frame(Constraints())
+            check(
+                changed.semantics
+                    .single()
+                    .semantics.value == UiText.Literal("true"),
+            ) { "Changed flattened semantics value: ${changed.semantics}" }
+            check(session.textInputFocus == focus && probe.focus == listOf(true)) { "Retained editable focus=${session.textInputFocus}, callbacks=${probe.focus}" }
+            check(probe.updates == 1 && probe.validations == 2 && probe.creations == 1) { "Compatible work: updates=${probe.updates}, validations=${probe.validations}, creations=${probe.creations}" }
+            check(session.dispatchPointer(PointerEvent.Drag(IntOffset(5, 6), PointerButton.Primary, 5.0, 6.0)) == InputResult.Consumed) { "Captured drag must be consumed outside the leaf" }
+            check(probe.positions.last() == IntOffset(5, 6)) { "Captured local pointer positions: ${probe.positions}" }
+            check(session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 0)) == InputResult.Consumed) { "Focused Enter key must be consumed" }
+            check(session.dispatchTextInput(TextInputEvent.Character(65)) == InputResult.Consumed) { "Focused text character must be consumed" }
+            check(probe.keys == 1 && probe.text == 1 && probe.cancellations == 0) { "Active input: keys=${probe.keys}, text=${probe.text}, cancellations=${probe.cancellations}" }
+            session.close()
+            check(probe.cancellations == 1 && probe.focus == listOf(true, false) && probe.hover.last().not()) { "Terminal input: cancellations=${probe.cancellations}, focus=${probe.focus}, hover=${probe.hover}" }
+            session.close()
+            check(probe.cancellations == 1) { "Repeated close cancellation count: ${probe.cancellations}" }
+        }
     }
 
     /**

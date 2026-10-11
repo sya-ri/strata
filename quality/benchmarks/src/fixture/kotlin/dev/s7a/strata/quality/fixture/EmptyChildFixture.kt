@@ -71,8 +71,8 @@ public class EmptyChildFixture(
                             Observe(source) { changed -> element(declaration(changed)) }
                         }
                     }
-                monitor = if (monitoring) session.startRenderMonitoring(16_384) else null
                 session.attach()
+                monitor = if (monitoring) session.startRenderMonitoring(16_384) else null
                 initialFrame = session.frame(constraints)
             }
         }
