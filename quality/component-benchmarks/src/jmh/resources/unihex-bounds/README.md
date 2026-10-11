@@ -1,7 +1,8 @@
 # Unihex natural-bounds comparison inputs
 
 This complete corpus compares the actual runtime natural-bound helper and public consumers while changing only `FontHexGlyph.bounds`.
-The fixed baseline is synced master `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`.
+The fixed baseline is synced master `5ddad0f7d05651bd5a44e16ba7d17ae3e8ca1ff8`, including the accepted complete-JMH Qodana tooling from #287.
+Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
 These sources are preparation; all execution, origin qualification, controls and measurements are Pending.
 
@@ -22,6 +23,7 @@ NaturalBounds invokes the real runtime class through one identical method handle
 PublicUncachedGlyph uses the public snapshot and engine, zero entry/byte cache bounds and provider preflight outside measurement.
 Cold provider initialization remains inside EngineLifecycle.
 CompleteDirtyTextFrame uses compiled source-backed Text, ContainerLabel styling, a 320×40 logical viewport and the ordinary default 4096-entry/16 MiB font cache.
+A top-start Stack preserves the complete viewport while admitting the Text natural size; the replacement control uses the same layout boundary.
 Setup attaches and primes A/B, then each operation publishes the alternate literal and completes a retained frame.
 These fixed dirty frames may have zero natural scans; their unchanged costs remain in the comparison.
 Full independent ARGB, layout, pointer and semantics checks use physical densities one through three outside CPU timing.

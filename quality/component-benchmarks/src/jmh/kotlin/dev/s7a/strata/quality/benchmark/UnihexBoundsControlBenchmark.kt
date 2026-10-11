@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntSize
@@ -144,7 +145,7 @@ public open class UnihexBoundsControlBenchmark {
                     phase = phase.not()
                     val next = UnihexBoundsAssets.load(if (phase) alternative else source, fractional)
                     val profile = ComponentProfile.create(next)
-                    createMinecraftUiHost(UiDefinition("Unihex snapshot replacement") { Text("A", style = TextStyle.ContainerLabel) }, profile, fontBackend = portableBackend { backends += it }).use {
+                    createMinecraftUiHost(UiDefinition("Unihex snapshot replacement") { Stack { Text("A", style = TextStyle.ContainerLabel) } }, profile, fontBackend = portableBackend { backends += it }).use {
                         it.attach()
                         it.frame(IntSize(320, 40))
                     }

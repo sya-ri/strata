@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.component.Stack
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.component.TextStyle
 import dev.s7a.strata.geometry.IntOffset
@@ -148,6 +149,7 @@ public open class UnihexBoundsBenchmark {
     /**
      * Current Text and one host with the unchanged default raster cache.
      * Both scalar rasters are primed; dirty content still executes normal layout/paint while natural work may be zero.
+     * The top-start Stack admits natural Text size inside the fixed complete viewport.
      */
     @State(Scope.Thread)
     public open class TextState {
@@ -192,7 +194,7 @@ public open class UnihexBoundsBenchmark {
         public fun setup() {
             val profile = ComponentProfile.create(UnihexBoundsAssets.snapshot(fixture, fractional))
             source = StressStateSource("A")
-            host = createMinecraftUiHost(UiDefinition("Unihex bounds Text") { Text(source, style = TextStyle.ContainerLabel) }, profile, fontBackend = portableBackend { backends += it })
+            host = createMinecraftUiHost(UiDefinition("Unihex bounds Text") { Stack { Text(source, style = TextStyle.ContainerLabel) } }, profile, fontBackend = portableBackend { backends += it })
             host.attach()
             idle()
             update()
