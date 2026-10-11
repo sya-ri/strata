@@ -41,6 +41,7 @@ Additional input labels never replace the collector's required library/native/Tr
 Execute the existing `ComponentPerformanceEvidence` entry with the same packaged fixture/collector/harness and control classpath, substituting only the declared actual runtime archives.
 Keep the shared archive/class-tree and normal parent/fork classloader certification enabled.
 Use average-time mode, three one-second warmups, five one-second measurement iterations, one fork, one worker, GC profiling and the same `UnihexBoundsCpuProfiler` on both sides.
+Pass `-Pstrata.performance.profilers=dev.s7a.strata.quality.benchmark.UnihexBoundsCpuProfiler` to the existing component task for every baseline and candidate invocation.
 The CPU adapter uses the existing `JvmPerformanceMeter`; it owns no execution controller or sampling loop.
 Its `unihex.processCpu` metric is fork process CPU nanoseconds divided by JMH's actual all-operation count, including iteration bookkeeping, JIT and GC.
 JMH elapsed microseconds per operation and `gc.alloc.rate.norm` bytes per operation are separate metrics.

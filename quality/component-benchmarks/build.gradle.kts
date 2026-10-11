@@ -129,6 +129,9 @@ tasks.register<JavaExec>("jmhComponents") {
     fixtureInputs?.let { systemProperty("strata.performance.fixtureInputs", rootProject.file(it).absolutePath) }
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     args(result.get().absolutePath, repetition.toString(), if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    val profilers = providers.gradleProperty("strata.performance.profilers").orNull?.split(',')?.map(String::trim).orEmpty()
+    require(profilers.all(String::isNotBlank) && profilers.distinct().size == profilers.size) { "Additional JMH profiler identifiers must be nonblank and unique" }
+    profilers.forEach { args("-prof", it) }
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
