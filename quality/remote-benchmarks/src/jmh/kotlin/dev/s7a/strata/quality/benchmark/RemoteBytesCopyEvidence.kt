@@ -163,9 +163,7 @@ public object RemoteBytesCopyEvidence {
                         owner = null
                     }
 
-                    null -> {
-                        Unit
-                    }
+                    null -> {}
                 }
                 return
             }

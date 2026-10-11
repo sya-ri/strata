@@ -352,7 +352,7 @@ public open class RemoteClientStatesBenchmark {
             val EVENT = ProjectionType(ResourceId("benchmark", "edit"))
             val EDITABLE = RemoteStateKey(RemoteEditingState::class)
             val PASSIVE = RemoteStateKey(Cell::class)
-            val BUSINESS = 100_000L
+            const val BUSINESS = 100_000L
 
             fun integer(value: ProjectionValue): Long = requireNotNull(value as? ProjectionValue.Integer).value
 

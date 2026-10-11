@@ -267,26 +267,31 @@ public open class RemoteBytesBenchmark {
                     output.writeByte(1)
                     output.writeBoolean(value.value)
                 }
+
                 is ProjectionValue.Integer -> {
                     output.writeByte(2)
                     output.writeLong(value.value)
                 }
+
                 is ProjectionValue.Real -> {
                     output.writeByte(3)
                     output.writeDouble(value.value)
                 }
+
                 is ProjectionValue.Text -> {
                     val bytes = value.value.encodeToByteArray(throwOnInvalidSequence = true)
                     output.writeByte(4)
                     output.writeInt(bytes.size)
                     output.write(bytes)
                 }
+
                 is ProjectionValue.Bytes -> {
                     val bytes = value.toByteArray()
                     output.writeByte(5)
                     output.writeInt(bytes.size)
                     output.write(bytes)
                 }
+
                 is ProjectionValue.Sequence -> {
                     output.writeByte(6)
                     output.writeInt(value.values.size)
