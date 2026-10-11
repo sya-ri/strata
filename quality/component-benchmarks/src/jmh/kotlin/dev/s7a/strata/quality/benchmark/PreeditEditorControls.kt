@@ -58,7 +58,20 @@ internal object PreeditEditorControls {
                     monitor.checkpoint()
                     check(editor.input(event) == reference.input(event))
                     PreeditWorkEvidence.assertFrame(editor, reference, editor.frame())
-                    monitor.verify(WorkExpectation(minimum = mapOf("Paint" to 1L), exact = if (index == 1) mapOf("Measure" to 0L, "Layout" to 0L, "Semantics" to 0L) else mapOf("Semantics" to 0L)))
+                    // Caret-follow measurement expands into layout and semantics even with unchanged committed text.
+                    val expectation =
+                        if (index == 0) {
+                            WorkExpectation(
+                                minimum = mapOf("Measure" to 1L, "Layout" to 1L, "Paint" to 1L),
+                                exact = mapOf("Semantics" to 1L),
+                            )
+                        } else {
+                            WorkExpectation(
+                                minimum = mapOf("Paint" to 1L),
+                                exact = mapOf("Measure" to 0L, "Layout" to 0L, "Semantics" to 0L),
+                            )
+                        }
+                    monitor.verify(expectation)
                     check(editor.glyphCalls == glyphs)
                 }
             }
