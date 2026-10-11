@@ -1753,12 +1753,18 @@ final class <#A: kotlin/Any> dev.s7a.strata.projection/ProjectionBinding { // de
 final class <#A: kotlin/Any?> dev.s7a.strata.projection/DeclarationProjection { // dev.s7a.strata.projection/DeclarationProjection|null[0]
     constructor <init>(dev.s7a.strata.projection/ProjectionType, #A, kotlin/Boolean = ..., kotlin/Function2<#A, dev.s7a.strata.projection/ProjectionScope, dev.s7a.strata.projection/ProjectionValue>) // dev.s7a.strata.projection/DeclarationProjection.<init>|<init>(dev.s7a.strata.projection.ProjectionType;1:0;kotlin.Boolean;kotlin.Function2<1:0,dev.s7a.strata.projection.ProjectionScope,dev.s7a.strata.projection.ProjectionValue>){}[0]
 
+    final val fixedValue // dev.s7a.strata.projection/DeclarationProjection.fixedValue|{}fixedValue[0]
+        final fun <get-fixedValue>(): dev.s7a.strata.projection/ProjectionValue? // dev.s7a.strata.projection/DeclarationProjection.fixedValue.<get-fixedValue>|<get-fixedValue>(){}[0]
     final val inputEnabled // dev.s7a.strata.projection/DeclarationProjection.inputEnabled|{}inputEnabled[0]
         final fun <get-inputEnabled>(): kotlin/Boolean // dev.s7a.strata.projection/DeclarationProjection.inputEnabled.<get-inputEnabled>|<get-inputEnabled>(){}[0]
     final val type // dev.s7a.strata.projection/DeclarationProjection.type|{}type[0]
         final fun <get-type>(): dev.s7a.strata.projection/ProjectionType // dev.s7a.strata.projection/DeclarationProjection.type.<get-type>|<get-type>(){}[0]
 
     final fun encode(dev.s7a.strata.projection/ProjectionScope): dev.s7a.strata.projection/ProjectionValue // dev.s7a.strata.projection/DeclarationProjection.encode|encode(dev.s7a.strata.projection.ProjectionScope){}[0]
+
+    final object Companion { // dev.s7a.strata.projection/DeclarationProjection.Companion|null[0]
+        final fun <#A2: dev.s7a.strata.projection/ProjectionValue> fixed(dev.s7a.strata.projection/ProjectionType, #A2, kotlin/Boolean = ...): dev.s7a.strata.projection/DeclarationProjection<#A2> // dev.s7a.strata.projection/DeclarationProjection.Companion.fixed|fixed(dev.s7a.strata.projection.ProjectionType;0:0;kotlin.Boolean){0§<dev.s7a.strata.projection.ProjectionValue>}[0]
+    }
 }
 
 final class <#A: kotlin/Any?> dev.s7a.strata.state/MutableState : dev.s7a.strata.state/State<#A> { // dev.s7a.strata.state/MutableState|null[0]

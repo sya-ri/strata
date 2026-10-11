@@ -69,5 +69,5 @@ public object RemoteImageProbe {
      * Ends production observation before fixture cleanup and provenance publication.
      */
     @JvmStatic
-    public fun finish() = Unit
+    public fun finish(): Unit = Unit
 }

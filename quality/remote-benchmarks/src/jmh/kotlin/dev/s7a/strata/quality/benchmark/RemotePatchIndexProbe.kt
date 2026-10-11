@@ -51,7 +51,14 @@ public object RemotePatchIndexProbe {
                 addProperty("workload_id", "remote-patch-index-observation-v1")
                 addProperty("status", "passed")
                 addProperty("reconstruction_millis", 60000)
-                val executable = Path.of(ProcessHandle.current().info().command().orElseThrow())
+                val executable =
+                    Path.of(
+                        ProcessHandle
+                            .current()
+                            .info()
+                            .command()
+                            .orElseThrow(),
+                    )
                 addProperty("java_executable", executable.toString())
                 addProperty("java_executable_sha256", ArtifactIdentity.file(executable))
                 addProperty("java_version", System.getProperty("java.version"))

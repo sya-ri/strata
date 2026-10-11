@@ -83,18 +83,20 @@ internal object RemoteUntimedObservation {
         observation: RemoteProbeObservation,
     ) {
         require(vm.canGetMethodReturnValues()) { "The probe requires JDI method return values" }
-        val entries = observedClasses.map { name ->
-            vm.eventRequestManager().createMethodEntryRequest().apply {
-                addClassFilter(name)
-                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+        val entries =
+            observedClasses.map { name ->
+                vm.eventRequestManager().createMethodEntryRequest().apply {
+                    addClassFilter(name)
+                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+                }
             }
-        }
-        val exits = observedClasses.map { name ->
-            vm.eventRequestManager().createMethodExitRequest().apply {
-                addClassFilter(name)
-                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+        val exits =
+            observedClasses.map { name ->
+                vm.eventRequestManager().createMethodExitRequest().apply {
+                    addClassFilter(name)
+                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
+                }
             }
-        }
         vm.eventRequestManager().createMethodEntryRequest().apply {
             addClassFilter(probeClass.name)
             setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
