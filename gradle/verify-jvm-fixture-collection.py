@@ -93,15 +93,16 @@ def main():
     multiplatform = {":api", ":runtime:core", ":performance-testkit"}
     benchmarks = {":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks"}
     projects = multiplatform | benchmarks | {
-        ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote", ":quality:detekt-rules",
+        ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote", ":quality:detekt-rules", ":integration:api",
     }
-    published = projects - benchmarks - {":quality:detekt-rules"}
+    published = projects - benchmarks - {":quality:detekt-rules", ":integration:api"}
     tasks = [f"{owner}:{task}" for owner in sorted(projects) for task in ("formatKotlin", "lintKotlin", "detekt", "classes")]
     tasks += [f"{owner}:{task}" for owner in sorted(published) for task in ("checkKotlinAbi", "updateKotlinAbi")]
     tasks += [f"{owner}:{task}" for owner in sorted(multiplatform) for task in ("jvmTest", "jvmJar")]
     tasks += [f"{owner}:{task}" for owner in sorted(projects - multiplatform) for task in ("test", "jar")]
     tasks += [f"{owner}:{task}" for owner in sorted(benchmarks) for task in ("jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses")]
     tasks += [":quality:benchmarks:jmhHistorical", ":quality:component-benchmarks:jmhComponents", ":quality:remote-benchmarks:jmhRemote", ":performance-testkit:processEvidence"]
+    tasks += [":quality:benchmarks:verifyHistoricalWorkloads", ":quality:component-benchmarks:verifyComponentRenderingWork", ":integration:api:checkApiOnlyClasspath"]
     init = evidence / "project-model.init.gradle"
     init.write_text("gradle.projectsEvaluated {\n" + f"    if (gradle.rootProject.projectDir.canonicalFile != new File({json.dumps(root.as_posix())}).canonicalFile) return\n" + """
     def paths = gradle.rootProject.allprojects.findAll { it.file('build.gradle.kts').isFile() }.collect { it.path }.findAll { it != ':' }.sort()

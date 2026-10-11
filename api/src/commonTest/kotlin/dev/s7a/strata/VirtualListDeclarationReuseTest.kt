@@ -146,6 +146,25 @@ internal class VirtualListDeclarationReuseTest {
     }
 
     @Test
+    fun errorsReleaseTheReuseWindowAndPropagateTheirIdentity() {
+        val failure = Error("Row construction failed")
+        var failing = false
+        Fixture {
+            if (failing) throw failure
+            Spacer()
+        }.use { fixture ->
+            val original = fixture.window(1_000.0)
+            failing = true
+            assertSame(failure, assertFailsWith<Error> { fixture.window(1_010.0) })
+            failing = false
+            fixture.resetWork()
+            val recovered = fixture.window(1_000.0)
+            assertEquals(40, fixture.constructed.size)
+            for (index in original.indices) assertNotSame(original[index], recovered[index])
+        }
+    }
+
+    @Test
     fun independentOwnersNeverShareCachedDeclarations() {
         Fixture().use { first ->
             Fixture().use { second ->

@@ -150,12 +150,12 @@ internal class VirtualListElement(
             if (cachedChildren.isNotEmpty() && cachedStart == visibleStart && cachedEndExclusive == endExclusive) {
                 return cachedChildren
             }
+            var completed = false
             val rows =
                 try {
-                    (visibleStart until endExclusive).map(::rowAt)
-                } catch (failure: Throwable) {
-                    clearCachedChildren()
-                    throw failure
+                    (visibleStart until endExclusive).map(::rowAt).also { completed = true }
+                } finally {
+                    if (completed.not()) clearCachedChildren()
                 }
             cachedStart = visibleStart
             cachedEndExclusive = endExclusive
@@ -167,8 +167,8 @@ internal class VirtualListElement(
         private fun rowAt(index: Int): CachedRow {
             val item = itemAt(index)
             val itemKey = keyAt(index)
-            val previous = cachedRows.getOrNull(index - cachedStart)
-            if (previous != null && previous.reusable && previous.item === item && StateObservation.compare { previous.key == itemKey }) {
+            val previous = cachedRows.getOrNull(index - cachedStart)?.takeIf { it.reusable && it.item === item }
+            if (previous != null && StateObservation.compare { previous.key == itemKey }) {
                 return previous
             }
             contentWorkObserver?.invoke(ContentWork.RowEvaluation)

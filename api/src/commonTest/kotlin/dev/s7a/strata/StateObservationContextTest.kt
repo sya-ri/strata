@@ -74,6 +74,52 @@ internal class StateObservationContextTest {
     }
 
     @Test
+    fun nestedReadCaptureFailurePreservesOperationOrderingAndRelease() {
+        val calls = ArrayList<Int>()
+        val state = mutableStateOf(0)
+        val outer = StateObservation({}, {}, {}, { calls.add(0) })
+        val inner = StateObservation({}, {}, {}, { calls.add(1) })
+        val failure = IllegalStateException("Nested capture failed")
+        try {
+            outer.enterOperation()
+            try {
+                inner.enterOperation()
+                try {
+                    val (_, read) =
+                        StateObservation.captureReads {
+                            assertSame(
+                                failure,
+                                assertFailsWith<IllegalStateException> {
+                                    StateObservation.captureReads {
+                                        state.value
+                                        throw failure
+                                    }
+                                },
+                            )
+                            state.value = 1
+                        }
+                    assertTrue(read)
+                    assertEquals(listOf(0, 1), calls)
+                    assertFalse(StateObservation.captureReads { 42 }.second)
+                } finally {
+                    inner.leaveOperation()
+                }
+                calls.clear()
+                state.value = 2
+                assertEquals(listOf(0), calls)
+            } finally {
+                outer.leaveOperation()
+            }
+            calls.clear()
+            state.value = 3
+            assertEquals(emptyList(), calls)
+        } finally {
+            inner.close()
+            outer.close()
+        }
+    }
+
+    @Test
     fun failedNestedEvaluationRestoresOuterTrackingAndReleasesItsMutationGuard() {
         val before = mutableStateOf(0)
         val inside = mutableStateOf(0)
