@@ -156,7 +156,7 @@ def git(root, *arguments):
 def source_guard(workspace, tree):
     """Require the complete staged source tree and unchanged raw working files outside the owned Java phase."""
     require(git(workspace, "write-tree") == tree, "Frozen source index changed")
-    subprocess.run(["git", "-C", str(workspace), "diff", "--exit-code", "--no-ext-diff"], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(["git", "-C", str(workspace), "diff", "--exit-code", "--no-ext-diff"], check=True)
 
 
 def materialize(root, output, side, source):
@@ -170,6 +170,8 @@ def materialize(root, output, side, source):
     git(workspace, "checkout", "--quiet", "--detach", source["ref"])
     for patch in source["patches"]:
         subprocess.run(["git", "-C", str(workspace), "apply", "--index", "--binary", str(pin(root, patch))], check=True)
+    require(git(workspace, "write-tree") == source["tree"], "Frozen patched index changed")
+    git(workspace, "checkout-index", "--all", "--force")
     source_guard(workspace, source["tree"])
     archive = output / f"source-{side}.zip"
     git(workspace, "archive", "--format=zip", f"--output={archive}", source["tree"])

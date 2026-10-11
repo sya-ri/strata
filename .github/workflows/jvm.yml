@@ -77,22 +77,11 @@ jobs:
       run: |
         New-Item -ItemType Directory -Force -Path build/performance-ci > $null
         @{run=$env:GITHUB_RUN_ID; attempt=$env:GITHUB_RUN_ATTEMPT; head=$env:GITHUB_SHA; status='pending'; runner=$env:RUNNER_NAME} | ConvertTo-Json | Set-Content build/performance-ci/bootstrap.json
-    - name: Read fixed Java profile
+    - name: Install the catalog-backed fixed Java profile
       id: java
-      shell: pwsh
-      run: |
-        python -B -c "import os,tomllib; v=tomllib.load(open('gradle/libs.versions.toml','rb'))['versions']; f=open(os.environ['GITHUB_OUTPUT'],'a'); f.write('toolchain='+v['performance-toolchain']+'\nlauncher='+v['performance-launcher']+'\n'); f.close()"
-    - name: Install fixed fixture toolchain
-      id: toolchain
-      uses: actions/setup-java@v6
+      uses: ./.github/actions/setup-strata-java
       with:
-        distribution: temurin
-        java-version: ${{ steps.java.outputs.toolchain }}
-    - name: Install fixed Gradle launcher
-      uses: actions/setup-java@v6
-      with:
-        distribution: oracle-openjdk
-        java-version: ${{ steps.java.outputs.launcher }}
+        paired: 'true'
     - name: Set up Gradle intermediates
       uses: gradle/actions/setup-gradle@v6
       with:
@@ -102,7 +91,7 @@ jobs:
       shell: pwsh
       env:
         MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
-        STRATA_PAIRED_TOOLCHAIN: ${{ steps.toolchain.outputs.path }}
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
       run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Verify owned invocation failure and terminal cleanup
       shell: pwsh

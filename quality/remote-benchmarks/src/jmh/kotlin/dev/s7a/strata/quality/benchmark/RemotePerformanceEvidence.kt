@@ -65,9 +65,7 @@ public object RemotePerformanceEvidence {
         JmhFixtureSelection.verifyWork(fixtures)
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
         JmhFixtureSelection.verifyIncludes(expected, includes)
-        val inputs = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI()))
-        val fixtureInputs = JmhFixtureSelection.inputs()
-        require(inputs.keys.intersect(fixtureInputs.keys).isEmpty()) { "Duplicate external fixture input labels" }
+        val inputs = inputs()
         JmhPerformanceRunner.run(
             options.toTypedArray(),
             fixtures,
@@ -75,7 +73,14 @@ public object RemotePerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             expected,
-            inputs + fixtureInputs,
+            inputs,
         )
+    }
+
+    private fun inputs(): Map<String, Path> {
+        val required = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI()))
+        val fixtures = JmhFixtureSelection.inputs()
+        require(required.keys.intersect(fixtures.keys).isEmpty()) { "Duplicate external fixture input labels" }
+        return required + fixtures
     }
 }
