@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -15,6 +16,7 @@ import org.openjdk.jmh.annotations.TearDown
  * Profiles, geometry, keys and immutable events are prepared before timing; every score includes its stated frame boundary.
  * Restoring cycles include all restoration work in both CPU and allocation and do not measure isolated event latency.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public open class ScrollInputBenchmark {
     /**
      * Executes the selected complete input/frame opportunity or restoring changed-state cycle.
