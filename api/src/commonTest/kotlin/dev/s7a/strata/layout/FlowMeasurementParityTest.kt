@@ -159,10 +159,11 @@ internal class FlowMeasurementParityTest {
         layout: LayoutNode,
         scope: FlowMeasurementScope,
         bounds: Constraints,
-    ): Result<IntSize> = runCatching {
-        measure.measure(scope, bounds).also {
-            scope.size = it
-            layout.layout(scope)
+    ): Result<IntSize> =
+        runCatching {
+            measure.measure(scope, bounds).also {
+                scope.size = it
+                layout.layout(scope)
+            }
         }
-    }
 }
