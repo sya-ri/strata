@@ -264,7 +264,7 @@ public open class PanZoomPublicationBenchmark {
                             publication.state,
                             VIEWPORT,
                             fit = PanZoomFit.Cover,
-                            modifier = Modifier.panZoom(publication.state),
+                            modifier = Modifier.Empty.panZoom(publication.state),
                             cachePolicy = TiledImageCachePolicy(maxEntries = 1, maxBytes = 1024L, overscanTiles = 0),
                         )
                     }
@@ -362,7 +362,9 @@ public open class PanZoomPublicationBenchmark {
     /**
      * Keeps only fixed scalar counters and the current value for each observer.
      */
-    private class Publication(count: Int) : AutoCloseable {
+    private class Publication(
+        count: Int,
+    ) : AutoCloseable {
         val state = PanZoomState()
         private val counts = LongArray(count)
         private val zooms = DoubleArray(count)
