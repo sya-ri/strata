@@ -140,3 +140,6 @@ Checks do not enforce workflow prose or source statement order.
 Documentation inputs trigger Pages separately after merge; the checked site is generated once and old rendered versions come from `gh-pages`.
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
 Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.
+
+The JVM workflow also supports an explicit paired measurement manifest; ordinary PRs without the default opt-in file skip its Windows job.
+See [paired JVM CI](performance-testkit.md#opt-in-paired-jvm-ci) for frozen inputs, supported collectors, process bounds and complete-attempt acceptance.

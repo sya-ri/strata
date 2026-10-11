@@ -1,0 +1,285 @@
+{
+  "schema": "strata-owned-paired-source-provenance-v1",
+  "issue": 132,
+  "pr": 165,
+  "purpose": "Fresh complete measurement of this Issue using the actually merged shared driver.",
+  "merged_shared_source": {
+    "pr287": "5ddad0f7d05651bd5a44e16ba7d17ae3e8ca1ff8",
+    "pr302": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e"
+  },
+  "sources": {
+    "fixture": {
+      "ref": "c254f5e5fd171800dea56b9cf9ff1e7ff98ac833",
+      "tree": "a45aa307573bfbaffb7fce40990aa7db0c5cf361",
+      "patches": []
+    },
+    "baseline": {
+      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
+      "tree": "37498631c2c7e7854a94286a73b9f97f794707df",
+      "patches": []
+    },
+    "candidate": {
+      "ref": "c254f5e5fd171800dea56b9cf9ff1e7ff98ac833",
+      "tree": "a45aa307573bfbaffb7fce40990aa7db0c5cf361",
+      "patches": []
+    }
+  },
+  "owned_source_pins": [
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasGameTest.kt",
+      "git_blob": "19ca070d587f6090247d3b39c56d560160c72d27",
+      "sha256": "07be62317bbeb338e7d53a918d445c19be965b337665ac9720bbe59aa6961d1c"
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftDestinationPaletteGameTest.kt",
+      "git_blob": "686b2c2069ba8cfbfc12baf217fd6547adb21ca0",
+      "sha256": "03cea19d795bdbf501043f92d95d3e73e5ec0a5242daf99d5b15255dc9674ebe"
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceProbe.kt",
+      "git_blob": "7a16fe5b40ca786745e4bf09bfdf761c1ead7d44",
+      "sha256": "530db5557ecfad464e4170b6037f274a8b45efe8f777a339240a9ddc86e98abb"
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/VerificationViewport.kt",
+      "git_blob": "f6f670b9abb3ff2618ebf0ac4688f86f17c11bcb",
+      "sha256": "8e9384dfda432d394bf38430427cb4a8d2bc600a5792526bdb9b146d4ea75002"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DestinationPaletteBenchmark.kt",
+      "git_blob": "5519d8ae245ec6a58a53e820570799493392ed74",
+      "sha256": "e6a619d06aa46de7e43db01af589ae7e92c27c1053f8d809ba393dc56ff5eb96"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentPerformanceEvidence.kt",
+      "git_blob": "2c4fe1a82d6bf62a7fdbcda621de0abc995a849c",
+      "sha256": "d5b25f27e57796e8a16d0305cfdbc184264929423bc0f371b255b3293ce2e4b6"
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentPerformanceEvidence.kt",
+      "git_blob": "915165eb903687ad2b787d720caad6e9ba66c538",
+      "sha256": "c897dda2ffe2e2482a7e399085ec8b20f3f160985277a60c502e5b7e5b18b1e0"
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentPerformanceEvidenceTest.kt",
+      "git_blob": "c350ed49e7490c7c6be6f46af7a03c8324df889b",
+      "sha256": "45b0513300466c1490dfb732f157260f4530c36844ebc962c0c8a222a9970d34"
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativeCpuProvenanceTest.kt",
+      "git_blob": "551ab06306903b0516fc9849d19d96b5968aa468",
+      "sha256": "f7b82dd873cef60dd29b13589f297d59ec4c39b124dfb39ccb9242cf989b5ce3"
+    },
+    {
+      "path": "runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt",
+      "git_blob": "2e20f6bf2d6498467cf2a160a1e71bcdc782469f",
+      "sha256": "ef458d34069effae4fcd5e8a7249a9429a51526453de04f88387f98e0bf67dd8"
+    },
+    {
+      "path": "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDestinationPaletteTest.kt",
+      "git_blob": "dfed02b5028359839e17efd386cd5b7e752bba45",
+      "sha256": "a07ceea55aee326abc0711b3d1676bb86a095810954b551ce2cacda02266e281"
+    },
+    {
+      "path": "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessSampledRasterParityTest.kt",
+      "git_blob": "4d910f479a98b4e58bf5efc23eac07e29b943505",
+      "sha256": "0626a3ddb07d5dab48d9e11a2ecf3be8f2996df468841b2fb6cf4b9b62a3192e"
+    }
+  ],
+  "published_source_equivalence": "The actually merged driver is on this PR; its measurement runtime, fixture and native-control paths retain exactly the previous signed public head bytes. The shared driver compiles the original common collector rather than silently replacing its frozen input source.",
+  "full_case_inventory": [
+    {
+      "alphas": 1,
+      "background": "Transparent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 1,
+      "background": "Translucent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 1,
+      "background": "Opaque",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 1,
+      "background": "Heterogeneous",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 1,
+      "background": "EarlyChange",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 16,
+      "background": "Transparent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 16,
+      "background": "Translucent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 16,
+      "background": "Opaque",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 16,
+      "background": "Heterogeneous",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 16,
+      "background": "EarlyChange",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 256,
+      "background": "Transparent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 256,
+      "background": "Translucent",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 256,
+      "background": "Opaque",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 256,
+      "background": "Heterogeneous",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    },
+    {
+      "alphas": 256,
+      "background": "EarlyChange",
+      "outputWidth": 128,
+      "outputHeight": 64,
+      "invocationPixelChecks": 2,
+      "timing": "Pending",
+      "allocation": "Pending",
+      "work": "Pending"
+    }
+  ],
+  "fixture_work_gate": "Existing public static verifyWork via generated JmhFixtureSelection; actual compilation and execution Pending",
+  "expected_measurement": {
+    "cases": 15,
+    "modes": [
+      "AverageTime",
+      "SampleTime"
+    ],
+    "order_per_mode": [
+      "B0",
+      "C0",
+      "B1",
+      "C1",
+      "B2",
+      "C2"
+    ],
+    "collections": 12,
+    "score_cells": 180,
+    "comparisons": 2
+  },
+  "common_compile_control": {
+    "fixed_collector_source_matches_actual_observed_compiled_control": true,
+    "api_core_sources_and_production_conventions_match_observed_compiled_controls": true,
+    "baseline_headless_source_matches_observed_compiled_control": true,
+    "root_build_change": "The shared declaration/IDE additions apply only to completeIdeaModelActive, which is false for the existing scoped paired preparation.",
+    "java_and_dependency_pins": "Actual bytes observed in accepted shared-driver CI artifact; only immutable input identities are reused, never pilot measurements.",
+    "observation_run": 38119414726,
+    "observation_archive_sha256": "1c921068fb40acf5ee440b3eb7c71295e5958a73c47da4cced365e89f1550c02"
+  },
+  "fresh_compiled_inputs": {
+    "selected_fixture_closure": "No existing matching generated fixture bytes; the full attempt freshly compiles and freezes the full fixture closure before either work gate or collection, then certifies unchanged archives in every fork and iteration.",
+    "candidate_headless": "Freshly built and SHA-bound in attempt.json, loaded-runtime receipts and retained archives; no historical hash is substituted."
+  },
+  "historical_missing_binary_policy": "Fresh compilation creates new identities; no reconstruction of missing old raw runs or binaries",
+  "measurement_interpretation": {
+    "time": "Per complete declared fixture batch.",
+    "gc": "Stock JMH GC includes fixture preparation.",
+    "thread_cpu_per_operation": "Unavailable in this collector.",
+    "job_cpu": "Includes preparation and descendants.",
+    "loaded_game_gpu_fps_upload": "N/A in this CPU route; applicable physical native acceptance remains separately Pending."
+  },
+  "result_status": "Pending fresh complete attempt",
+  "runtime_acceptance_status": "Pending whole Issue evidence",
+  "ready_for_review": false
+}
