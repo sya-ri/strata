@@ -76,7 +76,10 @@ public open class GridTrackBenchmark {
     /**
      * Fixed empty/single, one-column, partial-row and large-square controls.
      */
-    public enum class Workload(public val children: Int, public val columns: Int) {
+    public enum class Workload(
+        public val children: Int,
+        public val columns: Int,
+    ) {
         Empty(0, 1),
         Single(1, 1),
         OneColumn128(128, 1),
@@ -116,13 +119,14 @@ public open class GridTrackBenchmark {
         public fun setUp() {
             leaves = List(workload.children) { LeafNode(it) }
             descriptions = leaves.map(::LeafElement)
-            session = createRuntimeUiSession {
-                evaluateComponentTree {
-                    Grid(workload.columns, horizontalSpacing = 1, verticalSpacing = 2, contentAlignment = alignment.value) {
-                        descriptions.forEach { element(it) }
+            session =
+                createRuntimeUiSession {
+                    evaluateComponentTree {
+                        Grid(workload.columns, horizontalSpacing = 1, verticalSpacing = 2, contentAlignment = alignment.value) {
+                            descriptions.forEach { element(it) }
+                        }
                     }
                 }
-            }
             session.attach()
             session.frame(constraints)
             grid = gridNode(session)
@@ -205,9 +209,10 @@ public open class GridTrackBenchmark {
         // Each track is scanned independently; this does not duplicate Grid's aggregation traversal.
         private fun expectedBounds(): List<IntRect> {
             val columns = workload.columns
-            val widths = List(minOf(columns, leaves.size)) { column ->
-                leaves.filterIndexed { index, _ -> index % columns == column }.maxOf { it.size.width }
-            }
+            val widths =
+                List(minOf(columns, leaves.size)) { column ->
+                    leaves.filterIndexed { index, _ -> index % columns == column }.maxOf { it.size.width }
+                }
             val heights = leaves.chunked(columns).map { row -> row.maxOf { it.size.height } }
             val columnStarts = widths.runningFold(0) { offset, width -> offset + width + 1 }
             val rowStarts = heights.runningFold(0) { offset, height -> offset + height + 2 }
@@ -254,9 +259,21 @@ public open class GridTrackBenchmark {
         }
 
         private fun gridNode(session: RuntimeUiSession): Node {
-            val owner = session.javaClass.getDeclaredField("session").apply { isAccessible = true }.get(session)
-            val tree = owner.javaClass.getDeclaredField("tree").apply { isAccessible = true }.get(owner)
-            val root = tree.javaClass.getDeclaredField("root").apply { isAccessible = true }.get(tree)
+            val owner =
+                session.javaClass
+                    .getDeclaredField("session")
+                    .apply { isAccessible = true }
+                    .get(session)
+            val tree =
+                owner.javaClass
+                    .getDeclaredField("tree")
+                    .apply { isAccessible = true }
+                    .get(owner)
+            val root =
+                tree.javaClass
+                    .getDeclaredField("root")
+                    .apply { isAccessible = true }
+                    .get(tree)
             return root.javaClass.getMethod("getNode").invoke(root) as Node
         }
 
@@ -270,43 +287,61 @@ public open class GridTrackBenchmark {
     /**
      * Counts actual loaded-node size reads and checks every placement against independent geometry.
      */
-    private class CountingLayout(private val sizes: List<IntSize>, private val offsets: List<IntOffset>) : LayoutScope {
+    private class CountingLayout(
+        private val sizes: List<IntSize>,
+        private val offsets: List<IntOffset>,
+    ) : LayoutScope {
         var reads = 0
         var placements = 0
         override val size: IntSize = IntSize.Zero
         override val childCount: Int get() = sizes.size
+
         override fun measuredChildSize(index: Int): IntSize {
             reads += 1
             return sizes[index]
         }
 
-        override fun placeChild(index: Int, offset: IntOffset) {
+        override fun placeChild(
+            index: Int,
+            offset: IntOffset,
+        ) {
             check(index == placements && offsets[index] == offset)
             placements += 1
         }
 
-        override fun <D : Any> childParentData(index: Int, key: ParentDataKey<D>): D? = null
+        override fun <D : Any> childParentData(
+            index: Int,
+            key: ParentDataKey<D>,
+        ): D? = null
     }
 
     /**
      * Static child description reused across alignment-only declaration rebuilding.
      */
-    private class LeafElement(val node: LeafNode) : Element(ElementIdentity.Positional, TYPE) {
+    private class LeafElement(
+        val node: LeafNode,
+    ) : Element(ElementIdentity.Positional, TYPE) {
         companion object {
-            val TYPE: ElementType<LeafElement, LeafNode> = ElementType(
-                elementClass = LeafElement::class,
-                nodeClass = LeafNode::class,
-                validateLocal = {},
-                createNode = { it.node },
-                updateNode = { _, _, _ -> DirtyMask.None },
-            )
+            val TYPE: ElementType<LeafElement, LeafNode> =
+                ElementType(
+                    elementClass = LeafElement::class,
+                    nodeClass = LeafNode::class,
+                    validateLocal = {},
+                    createNode = { it.node },
+                    updateNode = { _, _, _ -> DirtyMask.None },
+                )
         }
     }
 
     /**
      * A size-changing retained first leaf and cached nonuniform siblings, with detached paint/semantics.
      */
-    private class LeafNode(private val index: Int) : Node(), MeasureNode, PaintNode, SemanticsNode {
+    private class LeafNode(
+        private val index: Int,
+    ) : Node(),
+        MeasureNode,
+        PaintNode,
+        SemanticsNode {
         var measures = 0
         private var enlarged = false
         var size: IntSize = if (index == 0) IntSize(9, 9) else IntSize(index % 5 + 2, index % 3 + 2)
@@ -324,7 +359,10 @@ public open class GridTrackBenchmark {
             invalidate(DirtyMask.of(DirtyPhase.Measure))
         }
 
-        override fun measure(scope: MeasureScope, constraints: Constraints): IntSize {
+        override fun measure(
+            scope: MeasureScope,
+            constraints: Constraints,
+        ): IntSize {
             measures += 1
             return constraints.constrain(size)
         }
