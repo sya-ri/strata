@@ -19,9 +19,10 @@ internal object CycleSelectionFontAssets {
         val default = checkNotNull(files["assets/minecraft/font/default.json"]).toString(Charsets.UTF_8)
         files["assets/strata_benchmark/font/alternate.json"] = default.replace("\"ascent\":7", "\"ascent\":6").toByteArray(Charsets.UTF_8)
         check(files.getValue("assets/strata_benchmark/font/alternate.json").contentEquals(files.getValue("assets/minecraft/font/default.json")).not())
-        return MinecraftFontSnapshot.load(
-            listOf(MinecraftMemoryFontAssetSource("cycle-selection-bitmap-v1", files)),
-            MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = true),
-        ).also { check(it.diagnostics.isEmpty()) }
+        return MinecraftFontSnapshot
+            .load(
+                listOf(MinecraftMemoryFontAssetSource("cycle-selection-bitmap-v1", files)),
+                MinecraftFontCompatibility(MinecraftTrueTypeRasterizer.FreeType, 84, fractionalUnihexAdvance = true),
+            ).also { check(it.diagnostics.isEmpty()) }
     }
 }

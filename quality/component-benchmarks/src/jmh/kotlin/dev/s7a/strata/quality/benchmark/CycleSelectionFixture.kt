@@ -85,11 +85,12 @@ internal class CycleSelectionFixture(
 
     init {
         if (control in setOf(CycleSelectionControl.ForwardWrap, CycleSelectionControl.EqualDistinctNoOpWrite)) state.value = choices.last()
-        observer = state.observe {
-            notifications += 1
-            if (verify) events.add(Event.Observer to it.id)
-            if (control == CycleSelectionControl.EarlierObserverThrows) throw failure
-        }
+        observer =
+            state.observe {
+                notifications += 1
+                if (verify) events.add(Event.Observer to it.id)
+                if (control == CycleSelectionControl.EarlierObserverThrows) throw failure
+            }
         host = if (control == CycleSelectionControl.MutationBeforeAttach) declaredHost() else freshHost { state }
         if (control != CycleSelectionControl.MutationBeforeAttach) {
             currentHost.attach()
@@ -101,13 +102,14 @@ internal class CycleSelectionFixture(
             lastFrame = currentHost.frame(viewport, time)
         }
         if (control == CycleSelectionControl.LaterObserverReentersSelection) {
-            later = state.observe {
-                if (verify) events.add(Event.LaterObserver to it.id)
-                if (nested.not()) {
-                    nested = true
-                    state.value = choices.last()
+            later =
+                state.observe {
+                    if (verify) events.add(Event.LaterObserver to it.id)
+                    if (nested.not()) {
+                        nested = true
+                        state.value = choices.last()
+                    }
                 }
-            }
         }
         if (control == CycleSelectionControl.EqualDistinctNoOpWrite) {
             aliasState = CycleButtonState(listOf(Choice(0), Choice(1)), aliasLater)
@@ -149,23 +151,63 @@ internal class CycleSelectionFixture(
     @Suppress("CyclomaticComplexMethod", "LongMethod") // Every frozen independent transition is explicit in this shared complete-operation boundary.
     internal fun control(): RuntimeUiFrame {
         when (checkNotNull(control)) {
-            CycleSelectionControl.CleanRetainedFrame -> Unit
-            CycleSelectionControl.OneOptionUnchangedFrame -> return hover()
+            CycleSelectionControl.CleanRetainedFrame -> {
+                Unit
+            }
+
+            CycleSelectionControl.OneOptionUnchangedFrame -> {
+                return hover()
+            }
+
             CycleSelectionControl.DisabledIgnoredInput -> {
                 pointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Primary), InputResult.Ignored)
                 for (key in listOf(KeyCode.Left, KeyCode.Right, KeyCode.Space, KeyCode.Enter)) key(key, InputResult.Ignored)
             }
-            CycleSelectionControl.IgnoredPointerButton -> pointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Secondary), InputResult.Ignored)
-            CycleSelectionControl.ZeroScroll -> pointer(PointerEvent.Scroll(IntOffset(2, 2), 0.0, 0.0), InputResult.Ignored)
-            CycleSelectionControl.ForwardWrap, CycleSelectionControl.PointerPrimaryCycle -> press()
-            CycleSelectionControl.BackwardWrap, CycleSelectionControl.ScrollBackward -> scroll(-1.0)
-            CycleSelectionControl.ScrollForward -> scroll(1.0)
-            CycleSelectionControl.KeyLeft -> key(KeyCode.Left)
-            CycleSelectionControl.KeyRight -> key(KeyCode.Right)
-            CycleSelectionControl.KeySpace -> key(KeyCode.Space)
-            CycleSelectionControl.KeyEnter -> key(KeyCode.Enter)
-            CycleSelectionControl.ExternalSelectedWrite -> state.value = checkNotNull(alternate)
-            CycleSelectionControl.EqualDistinctNoOpWrite -> return equalAndAliasSequence()
+
+            CycleSelectionControl.IgnoredPointerButton -> {
+                pointer(PointerEvent.Press(IntOffset(2, 2), PointerButton.Secondary), InputResult.Ignored)
+            }
+
+            CycleSelectionControl.ZeroScroll -> {
+                pointer(PointerEvent.Scroll(IntOffset(2, 2), 0.0, 0.0), InputResult.Ignored)
+            }
+
+            CycleSelectionControl.ForwardWrap, CycleSelectionControl.PointerPrimaryCycle -> {
+                press()
+            }
+
+            CycleSelectionControl.BackwardWrap, CycleSelectionControl.ScrollBackward -> {
+                scroll(-1.0)
+            }
+
+            CycleSelectionControl.ScrollForward -> {
+                scroll(1.0)
+            }
+
+            CycleSelectionControl.KeyLeft -> {
+                key(KeyCode.Left)
+            }
+
+            CycleSelectionControl.KeyRight -> {
+                key(KeyCode.Right)
+            }
+
+            CycleSelectionControl.KeySpace -> {
+                key(KeyCode.Space)
+            }
+
+            CycleSelectionControl.KeyEnter -> {
+                key(KeyCode.Enter)
+            }
+
+            CycleSelectionControl.ExternalSelectedWrite -> {
+                state.value = checkNotNull(alternate)
+            }
+
+            CycleSelectionControl.EqualDistinctNoOpWrite -> {
+                return equalAndAliasSequence()
+            }
+
             CycleSelectionControl.InvalidOutsideValueRejected -> {
                 try {
                     state.value = outside
@@ -175,7 +217,11 @@ internal class CycleSelectionFixture(
                 }
                 return hover()
             }
-            CycleSelectionControl.LabelsSameTextDifferentValues, CycleSelectionControl.EmptyLabels -> state.value = checkNotNull(alternate)
+
+            CycleSelectionControl.LabelsSameTextDifferentValues, CycleSelectionControl.EmptyLabels -> {
+                state.value = checkNotNull(alternate)
+            }
+
             CycleSelectionControl.NormalInactiveGeometryParity -> {
                 enabled = false
                 redeclare()
@@ -183,14 +229,17 @@ internal class CycleSelectionFixture(
                 enabled = true
                 redeclare()
             }
+
             CycleSelectionControl.WidthOnlyRedeclaration -> {
                 width = 90
                 redeclare()
             }
+
             CycleSelectionControl.LabelAndGlyphReplacement -> {
                 alternateLabel = true
                 redeclare()
             }
+
             CycleSelectionControl.StateReplacementSameSelection, CycleSelectionControl.StateReplacementDifferentOrder -> {
                 val previous = state
                 checkNotNull(selection).value = checkNotNull(replacement)
@@ -198,15 +247,18 @@ internal class CycleSelectionFixture(
                 complete()
                 previous.value = checkNotNull(alternate)
             }
+
             CycleSelectionControl.MutationBeforeAttach -> {
                 state.value = choices.last()
                 currentHost.attach()
             }
+
             CycleSelectionControl.MutationDuringDetachReattach -> {
                 currentHost.detach()
                 state.value = choices.last()
                 currentHost.attach()
             }
+
             CycleSelectionControl.EarlierObserverThrows -> {
                 try {
                     state.value = choices.last()
@@ -216,8 +268,15 @@ internal class CycleSelectionFixture(
                 }
                 return hover()
             }
-            CycleSelectionControl.LaterObserverReentersSelection -> state.value = checkNotNull(alternate)
-            CycleSelectionControl.ActionCallbackReentersSelection -> press()
+
+            CycleSelectionControl.LaterObserverReentersSelection -> {
+                state.value = checkNotNull(alternate)
+            }
+
+            CycleSelectionControl.ActionCallbackReentersSelection -> {
+                press()
+            }
+
             CycleSelectionControl.DisposeCloseRelease -> {
                 released.add(WeakReference<Any>(state))
                 choices.forEach { released.add(WeakReference<Any>(it)) }
@@ -255,11 +314,17 @@ internal class CycleSelectionFixture(
         pointer(PointerEvent.Scroll(IntOffset(2, 2), 0.0, delta))
     }
 
-    private fun pointer(event: PointerEvent, expected: InputResult = InputResult.Consumed) {
+    private fun pointer(
+        event: PointerEvent,
+        expected: InputResult = InputResult.Consumed,
+    ) {
         check(currentHost.dispatchPointer(event) == expected)
     }
 
-    private fun key(key: KeyCode, expected: InputResult = InputResult.Consumed) {
+    private fun key(
+        key: KeyCode,
+        expected: InputResult = InputResult.Consumed,
+    ) {
         check(currentHost.dispatchKeyboard(KeyboardEvent.Press(key, 0)) == expected)
     }
 
@@ -282,13 +347,20 @@ internal class CycleSelectionFixture(
             UiDefinition("Frozen cycle selection") {
                 checkNotNull(settings).value
                 Stack {
-                    CycleButton(selected(), width = width, enabled = enabled, modifier = Modifier.Empty.onCycle<Choice>({ value ->
-                        if (verify) {
-                            events.add(Event.Action to value.id)
-                            actionValues.add(value)
-                        }
-                        if (control == CycleSelectionControl.ActionCallbackReentersSelection) state.value = choices.last()
-                    }), label = ::label)
+                    CycleButton(
+                        selected(),
+                        width = width,
+                        enabled = enabled,
+                        modifier =
+                            Modifier.Empty.onCycle<Choice>({ value ->
+                                if (verify) {
+                                    events.add(Event.Action to value.id)
+                                    actionValues.add(value)
+                                }
+                                if (control == CycleSelectionControl.ActionCallbackReentersSelection) state.value = choices.last()
+                            }),
+                        label = ::label,
+                    )
                 }
             },
             checkNotNull(profile),
@@ -308,13 +380,14 @@ internal class CycleSelectionFixture(
     }
 
     private fun label(value: Choice): UiText {
-        val literal = UiText.Literal(
-            when (control) {
-                CycleSelectionControl.LabelsSameTextDifferentValues -> "Same"
-                CycleSelectionControl.EmptyLabels -> ""
-                else -> (if (alternateLabel) "W" else "V") + value.id.toString().padStart(6, '0')
-            },
-        )
+        val literal =
+            UiText.Literal(
+                when (control) {
+                    CycleSelectionControl.LabelsSameTextDifferentValues -> "Same"
+                    CycleSelectionControl.EmptyLabels -> ""
+                    else -> (if (alternateLabel) "W" else "V") + value.id.toString().padStart(6, '0')
+                },
+            )
         return if (alternateLabel) UiText.WithFont(literal, ResourceId("strata_benchmark", "alternate")) else literal
     }
 
@@ -339,17 +412,22 @@ internal class CycleSelectionFixture(
             val independent = host.frame(viewport, time)
             check(frame.drawCommands.size == independent.drawCommands.size)
             frame.drawCommands.zip(independent.drawCommands).forEach { (actual, expectedCommand) ->
-                val normalized = when {
-                    actual is DrawCommand.BlitImage && expectedCommand is DrawCommand.BlitImage -> {
-                        check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
-                        actual.copy(image = expectedCommand.image)
+                val normalized =
+                    when {
+                        actual is DrawCommand.BlitImage && expectedCommand is DrawCommand.BlitImage -> {
+                            check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
+                            actual.copy(image = expectedCommand.image)
+                        }
+
+                        actual is DrawCommand.SampledImage && expectedCommand is DrawCommand.SampledImage -> {
+                            check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
+                            actual.copy(image = expectedCommand.image)
+                        }
+
+                        else -> {
+                            actual
+                        }
                     }
-                    actual is DrawCommand.SampledImage && expectedCommand is DrawCommand.SampledImage -> {
-                        check(actual.image.copyArgb().contentEquals(expectedCommand.image.copyArgb()))
-                        actual.copy(image = expectedCommand.image)
-                    }
-                    else -> actual
-                }
                 check(normalized == expectedCommand) { "Cycle selection command order or payload changed" }
             }
             check(rasterizeHeadless(frame.drawCommands, viewport).copyArgb().contentEquals(rasterizeHeadless(independent.drawCommands, viewport).copyArgb())) { "Cycle selection detached pixels changed" }
@@ -396,9 +474,13 @@ internal class CycleSelectionFixture(
         val actionIndex =
             when (control) {
                 CycleSelectionControl.ForwardWrap -> 0
+
                 CycleSelectionControl.BackwardWrap, CycleSelectionControl.ScrollBackward, CycleSelectionControl.KeyLeft -> choices.lastIndex
+
                 CycleSelectionControl.PointerPrimaryCycle, CycleSelectionControl.ScrollForward,
-                CycleSelectionControl.KeyRight, CycleSelectionControl.KeySpace, CycleSelectionControl.KeyEnter -> 1
+                CycleSelectionControl.KeyRight, CycleSelectionControl.KeySpace, CycleSelectionControl.KeyEnter,
+                -> 1
+
                 else -> null
             }
         if (actionIndex != null) {
@@ -457,7 +539,10 @@ internal class CycleSelectionFixture(
         }
     }
 
-    private class Choice(val id: Int, private val matches: Set<Int> = setOf(id)) {
+    private class Choice(
+        val id: Int,
+        private val matches: Set<Int> = setOf(id),
+    ) {
         override fun equals(other: Any?): Boolean = this === other || (other is Choice && other.id in matches)
 
         override fun hashCode(): Int = id
