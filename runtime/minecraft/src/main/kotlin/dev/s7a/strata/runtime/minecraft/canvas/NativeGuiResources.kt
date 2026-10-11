@@ -471,28 +471,29 @@ public class NativeGuiResources internal constructor(
         if (sets.size < 64 && ownerCount < 3) return
         val primary = IllegalStateException("Portable GUI resource-set capacity is exhausted before presentation.")
         try {
-            val diagnostic = buildString {
-                append("Portable GUI reservation state: device=").append(deviceId)
-                append(", owner=").append(ownerId.value)
-                append(", ownerSets=").append(ownerCount).append("/3")
-                append(", deviceSets=").append(sets.size).append("/64")
-                sets.values.forEach { record ->
-                    append("\nset=").append(record.token.value).append(", owner=").append(record.owner)
-                    append(", sealed=").append(record.sealed).append(", retired=").append(record.retired)
-                    append(", pins=").append(record.pins).append(", pendingGui=").append(record.pendingGui)
-                    append(", initializationOutstanding=").append(record.initializationFence != null)
-                    append(", guiCompletionOutstanding=").append(record.guiCompletion != null)
-                    append(", quarantined=").append(record.quarantined)
-                    append(", referencesReleased=").append(record.referencesReleased)
-                    append(", layers=").append(record.extents.size).append(", resourceReferences=").append(record.resources.size)
-                    val sampledResources = record.resources.take(8)
-                    sampledResources.forEachIndexed { index, resource ->
-                        append(", resourceSample").append(index).append("Release=").append(resource.release)
-                        append(", resourceSample").append(index).append("References=").append(resource.references)
+            val diagnostic =
+                buildString {
+                    append("Portable GUI reservation state: device=").append(deviceId)
+                    append(", owner=").append(ownerId.value)
+                    append(", ownerSets=").append(ownerCount).append("/3")
+                    append(", deviceSets=").append(sets.size).append("/64")
+                    sets.values.forEach { record ->
+                        append("\nset=").append(record.token.value).append(", owner=").append(record.owner)
+                        append(", sealed=").append(record.sealed).append(", retired=").append(record.retired)
+                        append(", pins=").append(record.pins).append(", pendingGui=").append(record.pendingGui)
+                        append(", initializationOutstanding=").append(record.initializationFence != null)
+                        append(", guiCompletionOutstanding=").append(record.guiCompletion != null)
+                        append(", quarantined=").append(record.quarantined)
+                        append(", referencesReleased=").append(record.referencesReleased)
+                        append(", layers=").append(record.extents.size).append(", resourceReferences=").append(record.resources.size)
+                        val sampledResources = record.resources.take(8)
+                        sampledResources.forEachIndexed { index, resource ->
+                            append(", resourceSample").append(index).append("Release=").append(resource.release)
+                            append(", resourceSample").append(index).append("References=").append(resource.references)
+                        }
+                        append(", unsampledResourceReferences=").append(record.resources.size - sampledResources.size)
                     }
-                    append(", unsampledResourceReferences=").append(record.resources.size - sampledResources.size)
                 }
-            }
             primary.addSuppressed(IllegalStateException(diagnostic))
         } catch (failure: Throwable) {
             primary.addSuppressed(failure)
