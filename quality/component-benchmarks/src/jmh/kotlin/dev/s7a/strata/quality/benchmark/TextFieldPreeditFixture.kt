@@ -229,8 +229,6 @@ internal class TextFieldPreeditFixture(
 
     private fun lifetime(): RuntimeUiFrame {
         if (closedHost) {
-            monitor?.close()
-            monitor = null
             host = open()
         }
         closedHost = false
@@ -243,6 +241,8 @@ internal class TextFieldPreeditFixture(
         input(events[phase])
         val frame = host.frame(viewport)
         host.close()
+        monitor?.close()
+        monitor = null
         closedHost = true
         check(source.subscriptions == 0)
         return frame
