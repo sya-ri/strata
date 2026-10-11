@@ -354,6 +354,8 @@ final class dev.s7a.strata.runtime.spi/RuntimeDeclaration { // dev.s7a.strata.ru
         final fun <get-modifiers>(): kotlin.collections/List<dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier> // dev.s7a.strata.runtime.spi/RuntimeDeclaration.modifiers.<get-modifiers>|<get-modifiers>(){}[0]
     final val projection // dev.s7a.strata.runtime.spi/RuntimeDeclaration.projection|{}projection[0]
         final fun <get-projection>(): dev.s7a.strata.projection/DeclarationProjection<*>? // dev.s7a.strata.runtime.spi/RuntimeDeclaration.projection.<get-projection>|<get-projection>(){}[0]
+    final val revision // dev.s7a.strata.runtime.spi/RuntimeDeclaration.revision|{}revision[0]
+        final fun <get-revision>(): kotlin/Long // dev.s7a.strata.runtime.spi/RuntimeDeclaration.revision.<get-revision>|<get-revision>(){}[0]
 
     final class Modifier { // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier|null[0]
         final val element // dev.s7a.strata.runtime.spi/RuntimeDeclaration.Modifier.element|{}element[0]

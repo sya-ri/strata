@@ -43,22 +43,27 @@ public object RemoteImageEncodingEvidence {
                         val workload = RemoteImageBenchmark.Workload.valueOf((args[1] as StringReference).value())
                         check(seen.add(extent to workload))
                         owner = event.thread().uniqueID()
-                        current = JsonObject().apply {
-                            addProperty("extent", extent.name)
-                            addProperty("workload", workload.name)
-                            addProperty("observed_operations", 2)
-                            addProperty("pixel_encoding_calls", 0L)
-                            addProperty("source_snapshot_arrays", 0L)
-                            addProperty("source_snapshot_bytes", 0L)
-                        }
+                        current =
+                            JsonObject().apply {
+                                addProperty("extent", extent.name)
+                                addProperty("workload", workload.name)
+                                addProperty("observed_operations", 2)
+                                addProperty("pixel_encoding_calls", 0L)
+                                addProperty("source_snapshot_arrays", 0L)
+                                addProperty("source_snapshot_bytes", 0L)
+                            }
                     }
+
                     RemoteProbeMarker.Finish -> {
                         check(owner == event.thread().uniqueID())
                         rows.add(checkNotNull(current))
                         current = null
                         owner = null
                     }
-                    null -> Unit
+
+                    null -> {
+                        Unit
+                    }
                 }
                 return
             }

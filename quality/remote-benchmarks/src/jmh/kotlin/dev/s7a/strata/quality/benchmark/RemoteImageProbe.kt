@@ -45,7 +45,14 @@ public object RemoteImageProbe {
                 addProperty("status", "passed")
                 addProperty("observed_operations_per_case", 2)
                 addProperty("reconstruction_millis", 60000)
-                val executable = Path.of(ProcessHandle.current().info().command().orElseThrow())
+                val executable =
+                    Path.of(
+                        ProcessHandle
+                            .current()
+                            .info()
+                            .command()
+                            .orElseThrow(),
+                    )
                 addProperty("java_executable", executable.toString())
                 addProperty("java_executable_sha256", ArtifactIdentity.file(executable))
                 addProperty("java_version", System.getProperty("java.version"))
@@ -61,7 +68,10 @@ public object RemoteImageProbe {
      * Supplies typed case names to the standard debugger without retaining a production callback.
      */
     @JvmStatic
-    public fun begin(extent: String, workload: String) {
+    public fun begin(
+        extent: String,
+        workload: String,
+    ) {
         require(extent.isNotEmpty() && workload.isNotEmpty())
     }
 

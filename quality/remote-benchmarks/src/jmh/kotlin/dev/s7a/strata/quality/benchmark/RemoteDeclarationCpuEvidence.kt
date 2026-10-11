@@ -34,7 +34,7 @@ public object RemoteDeclarationCpuEvidence {
         val identity = ArtifactIdentity.applicationTrees(fixtures)
         val inputFiles = externalInputs()
         val inputs = inputFiles.mapValues { ArtifactIdentity.file(it.value) }
-        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, identity, inputFiles, RemoteDeclarationBenchmark::class.java)
+        val pair = RemoteCpuPair(Path.of(args[2]), Path.of(args[3]), repetition, runtime, inputFiles, RemoteDeclarationBenchmark::class.java)
         val plan = PerformancePlan(warmup = 100, samples = 200)
         val phases = JsonArray()
         for (size in RemoteDeclarationBenchmark.Size.entries) {
