@@ -39,39 +39,49 @@ public object EmptyChildControls {
     /**
      * All 32 frozen acceptance groups, with one independently invoked control for each group.
      */
-    public enum class Control {
-        FreshEquivalentLeaf,
-        ChangedLeafPayload,
-        SameDescription,
-        ColdCreation,
-        EmptyToOne,
-        OneToEmpty,
-        NonemptyToNonempty,
-        KeyedInsertion,
-        KeyedRemoval,
-        KeyedReorder,
-        PositionalReplacement,
-        KeyedTypeReplacement,
-        InvalidDuplicateKeys,
-        LocalValidationFailure,
-        ComponentUpdateFailure,
-        ModifierUpdateFailure,
-        CreateFailure,
-        AttachFailure,
-        DetachFailure,
-        DisposeFailure,
-        ModifierIdentity,
-        EffectiveAncestry,
-        DynamicEmptyOutput,
-        DeferredEmptyOutput,
-        DynamicChangedOutput,
-        LocalizedUpdates,
-        FrameIdentity,
-        PixelsAndGeometry,
-        InputAndSemantics,
-        MonitoringParity,
-        OwnerIsolation,
-        TerminalRetention,
+    public enum class Control(
+        private val action: () -> Unit,
+    ) {
+        FreshEquivalentLeaf(EmptyChildControls::freshLeaf),
+        ChangedLeafPayload(EmptyChildControls::changedMasks),
+        SameDescription(EmptyChildControls::sameDescription),
+        ColdCreation(EmptyChildControls::coldCreation),
+        EmptyToOne({ transition(Payload.EmptyToOne) }),
+        OneToEmpty({ transition(Payload.OneToEmpty) }),
+        NonemptyToNonempty({ transition(Payload.NonemptyToNonempty) }),
+        KeyedInsertion(EmptyChildControls::keyedInsertion),
+        KeyedRemoval(EmptyChildControls::keyedRemoval),
+        KeyedReorder({ reorder(false) }),
+        PositionalReplacement({ replacement(false) }),
+        KeyedTypeReplacement({ replacement(true) }),
+        InvalidDuplicateKeys({ validation(true) }),
+        LocalValidationFailure({ validation(false) }),
+        ComponentUpdateFailure({ failure(Stage.Update) }),
+        ModifierUpdateFailure({ failure(Stage.ModifierUpdate) }),
+        CreateFailure({ failure(Stage.Create) }),
+        AttachFailure({ failure(Stage.Attach) }),
+        DetachFailure({ failure(Stage.Detach) }),
+        DisposeFailure({ failure(Stage.Dispose) }),
+        ModifierIdentity(EmptyChildControls::modifierIdentity),
+        EffectiveAncestry({ reorder(true) }),
+        DynamicEmptyOutput(EmptyChildControls::dynamicEmpty),
+        DeferredEmptyOutput(EmptyChildControls::deferredEmpty),
+        DynamicChangedOutput(EmptyChildControls::dynamicOscillation),
+        LocalizedUpdates(EmptyChildControls::localized),
+        FrameIdentity(EmptyChildControls::frameIdentity),
+        PixelsAndGeometry({ EmptyChildPresentationControl.verify() }),
+        InputAndSemantics(EmptyChildInputControl::verify),
+        MonitoringParity(EmptyChildControls::monitoringParity),
+        OwnerIsolation(EmptyChildControls::ownerIsolation),
+        TerminalRetention(EmptyChildControls::terminal),
+        ;
+
+        /**
+         * Executes this control without retaining invocation owners or observations.
+         */
+        internal fun verify() {
+            action()
+        }
     }
 
     /**
@@ -86,40 +96,7 @@ public object EmptyChildControls {
      * Runs exactly one independently identified acceptance group.
      */
     public fun verify(control: Control) {
-        when (control) {
-            Control.FreshEquivalentLeaf -> freshLeaf()
-            Control.ChangedLeafPayload -> changedMasks()
-            Control.SameDescription -> sameDescription()
-            Control.ColdCreation -> coldCreation()
-            Control.EmptyToOne -> transition(Payload.EmptyToOne)
-            Control.OneToEmpty -> transition(Payload.OneToEmpty)
-            Control.NonemptyToNonempty -> transition(Payload.NonemptyToNonempty)
-            Control.KeyedInsertion -> keyedInsertion()
-            Control.KeyedRemoval -> keyedRemoval()
-            Control.KeyedReorder -> reorder(false)
-            Control.PositionalReplacement -> replacement(false)
-            Control.KeyedTypeReplacement -> replacement(true)
-            Control.InvalidDuplicateKeys -> validation(true)
-            Control.LocalValidationFailure -> validation(false)
-            Control.ComponentUpdateFailure -> failure(Stage.Update)
-            Control.ModifierUpdateFailure -> failure(Stage.ModifierUpdate)
-            Control.CreateFailure -> failure(Stage.Create)
-            Control.AttachFailure -> failure(Stage.Attach)
-            Control.DetachFailure -> failure(Stage.Detach)
-            Control.DisposeFailure -> failure(Stage.Dispose)
-            Control.ModifierIdentity -> modifierIdentity()
-            Control.EffectiveAncestry -> reorder(true)
-            Control.DynamicEmptyOutput -> dynamicEmpty()
-            Control.DeferredEmptyOutput -> deferredEmpty()
-            Control.DynamicChangedOutput -> dynamicOscillation()
-            Control.LocalizedUpdates -> localized()
-            Control.FrameIdentity -> frameIdentity()
-            Control.PixelsAndGeometry -> EmptyChildPresentationControl.verify()
-            Control.InputAndSemantics -> EmptyChildInputControl.verify()
-            Control.MonitoringParity -> monitoringParity()
-            Control.OwnerIsolation -> ownerIsolation()
-            Control.TerminalRetention -> terminal()
-        }
+        control.verify()
     }
 
     /**
@@ -128,54 +105,111 @@ public object EmptyChildControls {
     public fun verifyInventory() {
         check(EmptyChildWorkload.entries.size == 30)
         EmptyChildWorkload.entries.forEach { workload ->
-            listOf(false, true).forEach { enabled ->
-                EmptyChildFixture(workload, enabled).use { fixture ->
-                    val before = fixture.probe.nodes.toList()
-                    val result = fixture.execute()
-                    val n = workload.count
-                    val clean = workload.operation == Operation.CleanSessionFrame
-                    val same = workload.operation == Operation.SameDescriptionTreeUpdate
-                    val children = workload.payload == Payload.NonemptyToNonempty
-                    val adding = workload.payload == Payload.EmptyToOne
-                    val removing = workload.payload == Payload.OneToEmpty
-                    val expectedUpdates = if (clean || same) 0 else n + 1 + if (children) n else 0
-                    val expectedValidations = if (clean) 0 else n + 1 + if (children || adding) n else 0
-                    check(fixture.probe.count(Stage.Update) == expectedUpdates) { "Wrong component work: $workload/$enabled" }
-                    check(fixture.probe.count(Stage.Validate) == expectedValidations) { "Wrong complete validation: $workload/$enabled" }
-                    check(fixture.probe.count(Stage.ModifierUpdate) == if (clean || same) 0 else n)
-                    check(fixture.probe.count(Stage.ModifierValidate) == if (clean) 0 else n)
-                    val eligible = if (clean || same || adding || removing) 0 else n
-                    val misses =
-                        if (clean || same) {
-                            0
-                        } else if (adding || removing || children) {
-                            n + 1
-                        } else {
-                            1
-                        }
-                    check(fixture.probe.count(Stage.EligibleUpdate) == eligible)
-                    check(fixture.probe.count(Stage.NonemptyUpdate) == misses)
-                    check(fixture.probe.count(Stage.TargetEligibleUpdate) == if (clean || same || adding || removing || children) 0 else n)
-                    check(fixture.probe.count(Stage.TargetMissUpdate) == if (clean || same || (adding || removing || children).not()) 0 else n)
-                    check(fixture.probe.count(Stage.DescendantEligibleUpdate) == if (children && (clean || same).not()) n else 0)
-                    check(fixture.probe.count(Stage.DescendantMissUpdate) == 0)
-                    check(fixture.probe.count(Stage.SurroundingMissUpdate) == if (clean || same) 0 else 1)
-                    check(fixture.probe.count(Stage.Create) == if (adding && (clean || same).not()) n else 0)
-                    check(fixture.probe.count(Stage.Attach) == if (adding && (clean || same).not()) n else 0)
-                    check(fixture.probe.count(Stage.Detach) == if (removing && (clean || same).not()) n else 0)
-                    check(fixture.probe.count(Stage.Dispose) == if (removing && (clean || same).not()) n else 0)
-                    check(before.filter { it.id < n }.all { old -> fixture.probe.nodes.any { it === old } && old.disposed.not() })
-                    if (clean) check(result === fixture.initialFrame)
-                    fixture.monitor?.snapshot()?.let { snapshot ->
-                        check(snapshot.overflowed.not())
-                        check((snapshot.counts[UiRenderMetric.NodeUpdate] ?: 0L) == (expectedUpdates + if (clean || same) 0 else n).toLong())
-                        check((snapshot.counts[UiRenderMetric.NodeCreate] ?: 0L) == if (adding && (clean || same).not()) n.toLong() else 0L)
-                        check((snapshot.counts[UiRenderMetric.NodeDispose] ?: 0L) == if (removing && (clean || same).not()) n.toLong() else 0L)
-                    }
-                    fixture.settle()
-                }
-            }
+            verifyInventoryCase(workload, false)
+            verifyInventoryCase(workload, true)
         }
+    }
+
+    private fun verifyInventoryCase(
+        workload: EmptyChildWorkload,
+        monitoring: Boolean,
+    ) {
+        EmptyChildFixture(workload, monitoring).use { fixture ->
+            val before = fixture.probe.nodes.toList()
+            val result = fixture.execute()
+            verifyCallbackWork(fixture)
+            verifyMatchingWork(fixture)
+            verifyLifecycleWork(fixture)
+            verifyRetainedNodes(fixture, before)
+            if (workload.operation == Operation.CleanSessionFrame) check(result === fixture.initialFrame)
+            verifyDiagnosticWork(fixture)
+            fixture.settle()
+        }
+    }
+
+    private fun expectedUpdates(workload: EmptyChildWorkload): Int {
+        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
+        return if (idle) 0 else workload.count + 1 + if (workload.payload == Payload.NonemptyToNonempty) workload.count else 0
+    }
+
+    private fun verifyCallbackWork(fixture: EmptyChildFixture) {
+        val workload = fixture.workload
+        val n = workload.count
+        val clean = workload.operation == Operation.CleanSessionFrame
+        val idle = clean || workload.operation == Operation.SameDescriptionTreeUpdate
+        val additionalValidation = workload.payload == Payload.NonemptyToNonempty || workload.payload == Payload.EmptyToOne
+        checkCount(fixture, Stage.Update, expectedUpdates(workload))
+        checkCount(fixture, Stage.Validate, if (clean) 0 else n + 1 + if (additionalValidation) n else 0)
+        checkCount(fixture, Stage.ModifierUpdate, if (idle) 0 else n)
+        checkCount(fixture, Stage.ModifierValidate, if (clean) 0 else n)
+    }
+
+    private fun verifyMatchingWork(fixture: EmptyChildFixture) {
+        val workload = fixture.workload
+        val n = workload.count
+        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
+        val children = workload.payload == Payload.NonemptyToNonempty
+        val changingEmptiness = workload.payload == Payload.EmptyToOne || workload.payload == Payload.OneToEmpty
+        val transition = changingEmptiness || children
+        checkCount(fixture, Stage.EligibleUpdate, if (idle || changingEmptiness) 0 else n)
+        checkCount(fixture, Stage.NonemptyUpdate, if (idle) 0 else if (transition) n + 1 else 1)
+        verifyMatchingRoles(fixture)
+    }
+
+    private fun verifyMatchingRoles(fixture: EmptyChildFixture) {
+        val workload = fixture.workload
+        val n = workload.count
+        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
+        val children = workload.payload == Payload.NonemptyToNonempty
+        val transition = workload.payload == Payload.EmptyToOne || workload.payload == Payload.OneToEmpty || children
+        checkCount(fixture, Stage.TargetEligibleUpdate, if (idle || transition) 0 else n)
+        checkCount(fixture, Stage.TargetMissUpdate, if (idle || transition.not()) 0 else n)
+        checkCount(fixture, Stage.DescendantEligibleUpdate, if (children && idle.not()) n else 0)
+        checkCount(fixture, Stage.DescendantMissUpdate, 0)
+        checkCount(fixture, Stage.SurroundingMissUpdate, if (idle) 0 else 1)
+    }
+
+    private fun verifyLifecycleWork(fixture: EmptyChildFixture) {
+        val workload = fixture.workload
+        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
+        val created = if (workload.payload == Payload.EmptyToOne && idle.not()) workload.count else 0
+        val removed = if (workload.payload == Payload.OneToEmpty && idle.not()) workload.count else 0
+        checkCount(fixture, Stage.Create, created)
+        checkCount(fixture, Stage.Attach, created)
+        checkCount(fixture, Stage.Detach, removed)
+        checkCount(fixture, Stage.Dispose, removed)
+    }
+
+    private fun verifyRetainedNodes(
+        fixture: EmptyChildFixture,
+        before: List<EmptyChildProbe.ProbeNode>,
+    ) {
+        check(
+            before.filter { it.id < fixture.workload.count }.all { old ->
+                fixture.probe.nodes.any { current -> current === old } && old.disposed.not()
+            },
+        )
+    }
+
+    private fun verifyDiagnosticWork(fixture: EmptyChildFixture) {
+        val snapshot = fixture.monitor?.snapshot() ?: return
+        val workload = fixture.workload
+        val idle = workload.operation == Operation.CleanSessionFrame || workload.operation == Operation.SameDescriptionTreeUpdate
+        val created = if (workload.payload == Payload.EmptyToOne && idle.not()) workload.count.toLong() else 0L
+        val removed = if (workload.payload == Payload.OneToEmpty && idle.not()) workload.count.toLong() else 0L
+        check(snapshot.overflowed.not())
+        check((snapshot.counts[UiRenderMetric.NodeUpdate] ?: 0L) == (expectedUpdates(workload) + if (idle) 0 else workload.count).toLong())
+        check((snapshot.counts[UiRenderMetric.NodeCreate] ?: 0L) == created)
+        check((snapshot.counts[UiRenderMetric.NodeDispose] ?: 0L) == removed)
+    }
+
+    private fun checkCount(
+        fixture: EmptyChildFixture,
+        stage: Stage,
+        expected: Int,
+    ) {
+        val actual = fixture.probe.count(stage)
+        check(actual == expected) { "Wrong $stage work for ${fixture.workload}, monitoring=${fixture.monitor != null}: expected $expected, actual $actual" }
     }
 
     private fun freshLeaf() {
@@ -464,13 +498,13 @@ public object EmptyChildControls {
             tree.update(probe.element(1))
             check(probe.nodes.single() === node && node.disposed.not())
             check(monitor.findNodes(ElementKey(1)).single() == componentId)
-            check(
+
+            val retired =
                 monitor
                     .snapshot()
                     .nodes
                     .single { it.id == modifierId }
-                    .retired,
-            )
+            check(retired.retired)
             monitor.close()
         }
     }
@@ -562,15 +596,15 @@ public object EmptyChildControls {
                     }
                 }
             }
-        session.use {
-            session.attach()
-            session.frame(Constraints())
-            val unaffected = probe.nodes.first { it.id == 99 }
+        session.use { active ->
+            active.attach()
+            active.frame(Constraints())
+            val unaffected = probe.nodes.first { node -> node.id == 99 }
             probe.checkpoint()
             source.publish(1)
-            session.frame(Constraints())
+            active.frame(Constraints())
             check(roots == 1 && regions == 2 && probe.count(Stage.Update) == 1)
-            check(probe.nodes.first { it.id == 99 } === unaffected)
+            check(probe.nodes.first { node -> node.id == 99 } === unaffected)
             check(probe.count(Stage.Measure) == 1 && probe.count(Stage.Paint) == 1 && probe.count(Stage.Semantics) == 1)
         }
     }

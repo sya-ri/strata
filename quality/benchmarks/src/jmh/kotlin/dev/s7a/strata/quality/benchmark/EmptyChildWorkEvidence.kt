@@ -43,24 +43,7 @@ public object EmptyChildWorkEvidence {
         EmptyChildControls.verifyInventory()
         verifyPixels()
         verifyTerminalReferences()
-        val work = JsonObject()
-        EmptyChildWorkload.entries.forEach { workload ->
-            listOf(false, true).forEach { monitoring ->
-                EmptyChildFixture(workload, monitoring).use { fixture ->
-                    fixture.execute()
-                    val row = JsonObject()
-                    EmptyChildProbe.Stage.entries.forEach { row.addProperty(it.name, fixture.probe.count(it)) }
-                    fixture.monitor?.snapshot()?.let { snapshot ->
-                        val diagnostics = JsonObject()
-                        snapshot.counts.toSortedMap(compareBy { it.ordinal }).forEach { (metric, count) -> diagnostics.addProperty(metric.name, count) }
-                        row.add("diagnostics", diagnostics)
-                        row.addProperty("active_subscriptions", snapshot.activeSubscriptions)
-                        row.addProperty("overflowed", snapshot.overflowed)
-                    }
-                    work.add("$workload/$monitoring", row)
-                }
-            }
-        }
+        val work = workRows()
         val runtime = JsonObject()
         listOf(Element::class.java, UiTree::class.java, HeadlessImage::class.java).forEach { type ->
             val source = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI()).toAbsolutePath().normalize()
@@ -90,6 +73,33 @@ public object EmptyChildWorkEvidence {
         Files.createDirectories(checkNotNull(output.parent))
         Files.writeString(output, GsonBuilder().setPrettyPrinting().create().toJson(result), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
     }
+
+    private fun workRows(): JsonObject {
+        val work = JsonObject()
+        EmptyChildWorkload.entries.forEach { workload ->
+            work.add("$workload/false", collectWork(workload, false))
+            work.add("$workload/true", collectWork(workload, true))
+        }
+        return work
+    }
+
+    private fun collectWork(
+        workload: EmptyChildWorkload,
+        monitoring: Boolean,
+    ): JsonObject =
+        EmptyChildFixture(workload, monitoring).use { fixture ->
+            fixture.execute()
+            val row = JsonObject()
+            EmptyChildProbe.Stage.entries.forEach { row.addProperty(it.name, fixture.probe.count(it)) }
+            fixture.monitor?.snapshot()?.let { snapshot ->
+                val diagnostics = JsonObject()
+                snapshot.counts.toSortedMap(compareBy { it.ordinal }).forEach { (metric, count) -> diagnostics.addProperty(metric.name, count) }
+                row.add("diagnostics", diagnostics)
+                row.addProperty("active_subscriptions", snapshot.activeSubscriptions)
+                row.addProperty("overflowed", snapshot.overflowed)
+            }
+            row
+        }
 
     /**
      * Compares real loaded headless pixels with an independently specified color array after equal and changed updates.

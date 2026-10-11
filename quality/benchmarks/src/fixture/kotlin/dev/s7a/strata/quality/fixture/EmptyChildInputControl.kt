@@ -51,8 +51,7 @@ public object EmptyChildInputControl {
                 .semantics.label == UiText.Literal("leaf"),
         )
         check(probe.focus == listOf(true))
-        val focus = session.textInputFocus
-        check(focus != null)
+        val focus = checkNotNull(session.textInputFocus)
         check(session.dispatchPointer(PointerEvent.Move(IntOffset.Zero)) == InputResult.Consumed)
         check(session.dispatchPointer(PointerEvent.Press(IntOffset.Zero, PointerButton.Primary)) == InputResult.Consumed)
         check(probe.acquisitions == 1 && probe.hover.last())
