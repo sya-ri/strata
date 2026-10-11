@@ -175,7 +175,9 @@ class PairedJvmTest(unittest.TestCase):
         output = self.root / "early-failure"
         manifest = self.root / "manifest.json"
         manifest.write_text("{}", encoding="utf-8")
-        with patch.object(PAIRED.os, "name", "nt"), patch.object(PAIRED, "git", return_value="a" * 40), patch.dict(os.environ, {}, clear=True):
+        with patch.object(PAIRED, "os") as platform, patch.object(PAIRED, "git", return_value="a" * 40):
+            platform.name = "nt"
+            platform.environ = {}
             with self.assertRaises(KeyError):
                 PAIRED.run(self.root, manifest, output)
         self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "failed")

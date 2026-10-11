@@ -91,7 +91,7 @@ jobs:
     - name: Install fixed Gradle launcher
       uses: actions/setup-java@v6
       with:
-        distribution: oracle
+        distribution: oracle-openjdk
         java-version: ${{ steps.java.outputs.launcher }}
     - name: Set up Gradle intermediates
       uses: gradle/actions/setup-gradle@v6
