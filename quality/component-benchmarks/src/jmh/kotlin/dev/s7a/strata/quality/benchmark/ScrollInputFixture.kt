@@ -279,13 +279,18 @@ internal class ScrollInputFixture(
         noChange: Boolean,
         repetitions: Int,
     ) {
-        val origin = if (barAction) Owner.FirstBar else if (workload.nested) Owner.Inner else Owner.Area
+        val origin =
+            when {
+                barAction -> Owner.FirstBar
+                workload.nested -> Owner.Inner
+                else -> Owner.Area
+            }
         val layout = count(monitor, origin, UiRenderMetric.Layout)
         val paint = count(monitor, origin, UiRenderMetric.Paint)
         if (noChange) {
             val opportunities = if (workload.action === Action.Clean || workload.action === Action.Overflow) 0L else 100L
             val layouts = if (workload.action === Action.CoalescedUnchanged) 400L else opportunities
-            check(layout == 0L || barAction.not() && layout == layouts)
+            check(layout == 0L || (barAction.not() && layout == layouts))
             check(paint == 0L || paint == opportunities)
             if (barAction.not()) check((layout == 0L) == (paint == 0L))
         } else if (workload.action !== Action.DirtyLeaf) {
