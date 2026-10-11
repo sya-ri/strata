@@ -1,0 +1,45 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "0000000000000000000000000000000000000000",
+      "tree": "0000000000000000000000000000000000000000",
+      "patches": []
+    },
+    "baseline": {
+      "ref": "0000000000000000000000000000000000000000",
+      "tree": "0000000000000000000000000000000000000000",
+      "patches": []
+    },
+    "candidate": {
+      "ref": "0000000000000000000000000000000000000000",
+      "tree": "0000000000000000000000000000000000000000",
+      "patches": []
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "selected",
+      "benchmarks": [
+        "YourCompiledBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 1
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

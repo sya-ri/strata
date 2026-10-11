@@ -508,3 +508,58 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+## Opt-in paired JVM CI
+
+The `JVM checks` workflow runs a complete frozen CPU comparison in one Windows runner when a paired manifest is selected.
+Ordinary pull requests skip this job unless they deliberately provide `.github/performance/paired-jvm.json`; manual runs accept another repository-relative `paired_manifest` path.
+The checked-in [fixed pilot](../../.github/performance/pilot-issue145/manifest.json) is selected only by an explicit manual request.
+Dispatch `jvm.yml` on the intended driver branch with `paired_manifest=.github/performance/pilot-issue145/manifest.json` to exercise it.
+A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
+
+Start another comparison from [the manifest template](../../.github/performance/paired-jvm.example.json).
+The schema requires these fields:
+
+| Field | Contract |
+| --- | --- |
+| `sources` | Exact commit and final tree SHAs for `fixture`, `baseline` and `candidate`; optional binary patches have repository-relative paths and SHA-256 pins. |
+| `runtime_projects` | The actual JVM project archives replaced in both the work gate and collection classpath. |
+| `suites` | Existing collector project, independent output name, generated benchmark/method selectors, compiled parameter values and complete expected case count. |
+| `inputs` | Unique input labels bound to immutable repository-relative file pins and passed to the existing provenance collector. |
+| `compiled_pins` | Optional predeclared fixture and runtime artifact pins for each source binding; a rebuild mismatch rejects the attempt. |
+| `dependency_pins` | Optional frozen control JAR pins relative to the actual Gradle user home. |
+| `java_pins` | Optional fixed Windows `java.exe` and `release` pins for the `toolchain` and `launcher` roles. |
+
+Supported collector projects are `:quality:benchmarks`, `:quality:component-benchmarks` and `:quality:remote-benchmarks`.
+They use the existing `jmhHistorical`, `jmhComponents` and `jmhRemote` tasks and full `verifyHistoricalWorkloads`, `verifyComponentRenderingWork` and `verifyRemoteWorkloads` work gates.
+Generated fixture selection does not require a central benchmark registry or a fixture-specific build-script branch.
+Remote protocol and retained-session defaults remain separate existing scopes; a supplemental compiled remote fixture uses the same generated selection contract.
+Select native-free fixtures whose required toolchains fit the fixed catalog profile.
+Native/GPU/upload/input-latency/FPS acceptance is N/A in this CPU route; real game, browser and Paper/Velocity host evidence uses its own integration route.
+
+Each source is reconstructed in a private checkout with `core.autocrlf=false`, staged patches and an exact `git write-tree` guard.
+The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
+No old workstation owner directory, private index or missing historical metadata file is a prerequisite.
+The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
+Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
+
+Both full work gates run before sampling.
+For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
+Quick, smoke, repetition and timing overrides are not manifest fields.
+The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
+The report displays the processor's baseline/candidate medians, absolute deltas, allocation and GC metrics, and SampleTime percentile medians.
+Time is per declared fixture batch; it has no cross-machine improvement interpretation or wall-time pass threshold.
+Thread CPU per operation is unavailable in the existing collector; Job CPU includes preparation and descendants.
+
+Every Gradle invocation requires fresh available physical RAM of at least 4096 MiB, checked again inside its owning Windows Job immediately before Java.
+The suspended caller is assigned before it can start Gradle; descendants inherit a 3 GiB committed-memory limit, kill-on-close and no breakaway.
+One invocation has 1800 seconds of work and 30 seconds of cleanup, one Gradle worker and one test fork.
+The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB, probe 32/256 MiB, compiler/generator/test worker 512/256 MiB and JavaExec/JMH fork 768/384 MiB.
+Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
+The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
+An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
+
+The artifact retains source archives, frozen manifest, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
+`attempt.json` is authoritative about success or failure; caches and private build workspaces are excluded from acceptance evidence.
+The workflow uploads failed attempts and checks failure, RAM-refusal, timeout and leaked-child cleanup through the same process boundary after collection.
+Acceptance requires the whole selected case matrix and both comparisons, the process-boundary controls, and ordinary quality/ABI/Qodana and supported-version checks on the final driver revision.
