@@ -104,17 +104,18 @@ internal class LinearMeasurementReleaseTest {
         horizontal: Boolean,
         source: ReleaseSource,
         probe: TestProbe,
-    ): RuntimeUiSession = createRuntimeUiSession {
-        evaluateComponentTree {
-            Observe(source) { count ->
-                if (horizontal) {
-                    Row { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
-                } else {
-                    Column { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
+    ): RuntimeUiSession =
+        createRuntimeUiSession {
+            evaluateComponentTree {
+                Observe(source) { count ->
+                    if (horizontal) {
+                        Row { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
+                    } else {
+                        Column { repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) } }
+                    }
                 }
             }
         }
-    }
 
     // Collection occurs after each creating stack frame returns, without measuring GC or allocating pressure buffers.
     private fun assertCollected(references: List<WeakReference<*>>) {
