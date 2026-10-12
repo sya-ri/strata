@@ -96,7 +96,13 @@ internal class GridElement(
                 val childSize = scope.measureChild(index, childConstraints)
                 recordTrackExtents(index, childSize, columnWidths, rowHeights)
             }
-            val size = constraints.constrain(naturalSize(columnWidths, rowHeights))
+            val size =
+                constraints.constrain(
+                    IntSize(
+                        checkedExtent(columnWidths, horizontalSpacing),
+                        checkedExtent(rowHeights, verticalSpacing),
+                    ),
+                )
             this.columnWidths = columnWidths
             this.rowHeights = rowHeights
             return size
@@ -184,15 +190,6 @@ internal class GridElement(
                 rowHeights[row] = size.height
             }
         }
-
-        private fun naturalSize(
-            columnWidths: IntArray,
-            rowHeights: IntArray,
-        ): IntSize =
-            IntSize(
-                checkedExtent(columnWidths, horizontalSpacing),
-                checkedExtent(rowHeights, verticalSpacing),
-            )
 
         private fun checkedExtent(
             tracks: IntArray,
