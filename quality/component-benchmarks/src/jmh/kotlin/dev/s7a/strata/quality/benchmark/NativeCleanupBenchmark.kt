@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevice
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDevices
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasDriver
@@ -62,6 +63,23 @@ public open class NativeCleanupBenchmark {
         public var owners: Int = 0
         private val drivers = ArrayList<Driver>()
         private val managers = ArrayList<Manager>()
+
+        /**
+         * Actual manager and driver callback totals, read only outside supplemental sampling.
+         */
+        internal val observedWork: RegistryWork
+            get() =
+                RegistryWork(
+                    managers.sumOf { it.polls.toLong() },
+                    managers.sumOf { it.consumptions.toLong() },
+                    drivers.sumOf { it.queries },
+                    drivers.sumOf { it.fences },
+                    drivers.sumOf { it.finishes.toLong() },
+                    drivers.sumOf { it.drains.toLong() },
+                    managers.sumOf { it.shutdowns.toLong() },
+                    managers.sumOf { it.closes.toLong() },
+                    managers.sumOf { it.acknowledgements.toLong() },
+                )
 
         /**
          * Registers each driver once on this JMH worker; native storage remains empty.
@@ -141,6 +159,12 @@ public open class NativeCleanupBenchmark {
         private val device = NativeCanvasDevice(driver)
 
         /**
+         * Actual query, fence, release and terminal callback totals, read outside supplemental sampling.
+         */
+        internal val observedWork: DeviceWork
+            get() = DeviceWork(driver.queries, driver.fences, driver.fenceCloses, driver.resourceCloses, driver.finishes, driver.drains)
+
+        /**
          * Creates pending fences before sampling without retiring any generation.
          */
         @Setup(Level.Trial)
@@ -199,6 +223,17 @@ public open class NativeCleanupBenchmark {
         private lateinit var identities: List<NativeGuiResourceOwnerId>
 
         /**
+         * Actual query, fence, release and terminal callback totals, read outside supplemental sampling.
+         */
+        internal val observedWork: DeviceWork
+            get() = DeviceWork(driver.queries, driver.fences, driver.fenceCloses, driver.resourceCloses, driver.finishes, driver.drains)
+
+        /**
+         * Current generation retention checked after each supplemental complete cycle.
+         */
+        internal val retainedSets: Int get() = device.guiResources.retainedSetCount()
+
+        /**
          * Captures stable presenters and checks the same lifecycle outside timing.
          */
         @Setup(Level.Trial)
@@ -242,7 +277,30 @@ public open class NativeCleanupBenchmark {
          * Uses a single permanently terminal registry lifetime and standalone device lifetimes.
          */
         @JvmStatic
-        public fun verifyWork() {
+        public fun verifyWork(): Unit = verifyWithOwners({}, {}, {})
+
+        /**
+         * Exposes all ten complete native cleanup boundaries through the shared optional report runner.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = NativeCleanupOperationReport
+
+        /**
+         * Invokes synchronous report callbacks after original admission and before original terminal release.
+         * The callbacks must not retain owners; registry membership grows only once in its original 0/1/32 order.
+         * Failure in admission, a callback or cleanup prevents the caller from returning complete reports.
+         */
+        internal fun withVerifiedOwners(
+            registry: (Registry) -> Unit,
+            pending: (Pending) -> Unit,
+            settled: (Settled) -> Unit,
+        ): Unit = verifyWithOwners(registry, pending, settled)
+
+        private fun verifyWithOwners(
+            registryReport: (Registry) -> Unit,
+            pendingReport: (Pending) -> Unit,
+            settledReport: (Settled) -> Unit,
+        ) {
             check(JmhWorkloadInventory.capture(listOf(NativeCleanupBenchmark::class.java), setOf("avgt")).size == 10)
             val registry = Registry()
             try {
@@ -250,6 +308,7 @@ public open class NativeCleanupBenchmark {
                     registry.owners = owners
                     registry.setup()
                     registry.verify()
+                    registryReport(registry)
                 }
             } finally {
                 registry.close()
@@ -258,12 +317,14 @@ public open class NativeCleanupBenchmark {
                 val pending = Pending().apply { this.owners = owners }
                 try {
                     pending.setup()
+                    pendingReport(pending)
                 } finally {
                     pending.close()
                 }
                 val settled = Settled().apply { this.owners = owners }
                 try {
                     settled.setup()
+                    settledReport(settled)
                 } finally {
                     settled.close()
                 }
@@ -306,6 +367,33 @@ public open class NativeCleanupBenchmark {
 
         private fun failing(failure: Throwable): () -> Unit = { throw failure }
     }
+
+    /**
+     * Detached actual registry callback totals used by untimed before/after sample assertions.
+     */
+    internal data class RegistryWork(
+        internal val polls: Long,
+        internal val consumptions: Long,
+        internal val queries: Long,
+        internal val fences: Long,
+        internal val finishes: Long,
+        internal val drains: Long,
+        internal val shutdowns: Long,
+        internal val closes: Long,
+        internal val acknowledgements: Long,
+    )
+
+    /**
+     * Detached actual standalone-device callback totals used by untimed before/after sample assertions.
+     */
+    internal data class DeviceWork(
+        internal val queries: Long,
+        internal val fences: Long,
+        internal val fenceCloses: Long,
+        internal val resourceCloses: Long,
+        internal val finishes: Int,
+        internal val drains: Int,
+    )
 
     /**
      * Counts simulated fence, physical release and terminal callbacks without storing their history.

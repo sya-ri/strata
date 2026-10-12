@@ -7,6 +7,7 @@ import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.TreeState
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -212,6 +213,12 @@ public open class CoreCleanupBenchmark {
      * Verifies the entire lifecycle matrix through the generic automatic work hook.
      */
     public companion object {
+        /**
+         * Returns all sixteen complete owner boundaries through the shared owner-thread meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = CoreCleanupOperationReport
+
         /**
          * Checks both operation boundaries and repeated terminal close for each compiled control.
          */

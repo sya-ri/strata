@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark;
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter;
 import dev.s7a.strata.runtime.FailureAccumulator;
 import dev.s7a.strata.runtime.minecraft.canvas.CanvasFailures;
 import kotlin.Unit;
@@ -19,6 +20,11 @@ public class CleanupFailuresBenchmark {
     @Benchmark
     public Throwable cleanup(Cleanup state) {
         return state.execute();
+    }
+
+    /** Returns all twenty original collector control boundaries through the shared owner-thread meter. */
+    public static JvmOperationReportAdapter operationReport() {
+        return CollectorCleanupOperationReport.INSTANCE;
     }
 
     /** Runs every compiled success and failure control outside timing. */
@@ -164,7 +170,8 @@ public class CleanupFailuresBenchmark {
             }
         }
 
-        private void verifyResult() {
+        /** Checks callback counts and the exact original suppression graph outside sampling. */
+        public void verifyResult() {
             require(completed == workload.callbacks, "Cleanup skipped an independent callback");
             if (failures.length == 0) {
                 require(result == null, "Successful cleanup recorded a failure");
