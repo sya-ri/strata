@@ -71,7 +71,7 @@ gradle.projectsEvaluated {
                 check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
                 mainClass.set(preflightRequest["main"].toString())
                 setArgs(listOf(File(preflight).absolutePath))
-                dependsOn(template.map { it.taskDependencies.getDependencies(it) })
+                dependsOn(source.taskDependencies.getDependencies(source))
                 outputs.upToDateWhen { false }
                 outputs.cacheIf { false }
             }
@@ -147,10 +147,12 @@ gradle.projectsEvaluated {
                     File(requested).bufferedReader(Charsets.UTF_8).use(targets::load)
                     val artifacts = project.configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
                         .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in targets.stringPropertyNames() }
-                    check(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == targets.stringPropertyNames())
+                    // One paired manifest can span suites with different compiled runtime dependencies.
+                    val selectedTargets = artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet()
+                    check(selectedTargets.isNotEmpty())
                     val replaced = artifacts.map { it.file.canonicalFile }.toSet()
-                    val archives = targets.stringPropertyNames().sorted().map { File(targets.getProperty(it)).canonicalFile }
-                    check(archives.toSet().size == targets.size && archives.all { it.isFile && it.extension == "jar" })
+                    val archives = selectedTargets.sorted().map { File(targets.getProperty(it)).canonicalFile }
+                    check(archives.toSet().size == selectedTargets.size && archives.all { it.isFile && it.extension == "jar" })
                     classpath = project.files(classpath.files.filter { it.canonicalFile !in replaced }) + project.files(archives)
                 }
                 rootProject.providers.gradleProperty("strata.performance.operationRequest").orNull?.let { request ->
