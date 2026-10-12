@@ -39,7 +39,7 @@ public object NonuniformOverlayOperationReport : JvmOperationReportAdapter {
                     }
             }
         var last: HeadlessImage? = null
-        JvmPerformanceRunner.warmup(plan.warmup) { states.values.forEach { last = it.next() } }
+        JvmPerformanceRunner.warmup(plan.warmup) { states.values.forEach { state -> last = state.next() } }
         return JvmPerformanceRunner.sequence(plan.samples, rows.associate { it.id to plan.samples }) { _, sequence ->
             states.forEach { (id, state) ->
                 sequence.sample(id) { last = state.next() }

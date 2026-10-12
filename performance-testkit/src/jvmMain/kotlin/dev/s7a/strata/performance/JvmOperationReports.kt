@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import org.openjdk.jmh.runner.options.OptionsBuilder
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Modifier
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -40,6 +42,8 @@ public object JvmOperationReports {
         collect(JvmEvidenceFiles.document(Path.of(arguments.single())))
     }
 
+    // Admission, complete collection and both provenance checks precede publication of one indivisible receipt.
+    @Suppress("LongMethod")
     private fun collect(request: JsonObject) {
         val collector = Path.of(request.textField("collector"))
         val binding = Path.of(request.textField("jmh_directory"))
@@ -47,19 +51,39 @@ public object JvmOperationReports {
         require(JmhPerformanceRunner.environment() == original.receipt.get("environment")) { "Operation JVM or host differs from original JMH evidence" }
         val fixtures = JmhFixtureSelection.select(emptyList())
         val expectedAdapters = request.objectField("adapters").entrySet().associate { it.key to it.value.textValue() }
-        val adapters = JmhFixtureSelection.operationAdapters(fixtures, expectedAdapters)
+        val adapters = operationAdapters(fixtures, expectedAdapters)
         val rows = adapters.flatMap { it.rows }.map { it.copy(parameters = it.parameters.toSortedMap()) }
         validateRows(rows, request.countField("expected_rows"), request.countField("expected_controls"))
         val selected = selection(fixtures, rows, original.receipt)
         val plan = PerformancePlan(warmup = request.countField("warmup"), samples = request.countField("samples"))
-        val targets = original.receipt.objectField("runtime_metadata").arrayField("modules").associate { value -> value.asJsonObject.let { it.textField("module") to it.textField("representativeClass") } }
-        val inputs = original.receipt.objectField("inputs").entrySet().associate { (name, value) -> name to JvmEvidenceFiles.preservedPath(binding, value.asJsonObject.textField("archive")) }
+        val targets =
+            original.receipt
+                .objectField("runtime_metadata")
+                .arrayField("modules")
+                .associate { value -> value.asJsonObject.let { it.textField("module") to it.textField("representativeClass") } }
+        val inputs =
+            original.receipt
+                .objectField("inputs")
+                .entrySet()
+                .associate { (name, value) -> name to JvmEvidenceFiles.preservedPath(binding, value.asJsonObject.textField("archive")) }
         val consumedInputs = JvmOperationInputs.capture(adapters, original.inputs)
-        val fixtureClasses = original.receipt.objectField("fixture_identity").keySet().map { Class.forName(it, false, javaClass.classLoader) }
+        val fixtureClasses =
+            original.receipt
+                .objectField("fixture_identity")
+                .keySet()
+                .map { Class.forName(it, false, javaClass.classLoader) }
         val identity = JmhForkConfiguration.capture(OptionsBuilder().include(".*").forks(1).build(), fixtures, targets, inputs)
         require(identity.get("runtime") == original.receipt.get("runtime_metadata") && identity.get("fixtures") == original.receipt.get("fixture_identity")) { "Loaded operation closure differs from original JMH binding" }
         val adapterIdentity = ArtifactIdentity.applicationTrees(adapters.map { it.javaClass })
-        require(adapterIdentity.values.all { it in original.receipt.objectField("fixture_identity").entrySet().map { entry -> entry.value.textValue() } }) { "Operation adapter is outside the frozen fixture closure" }
+        require(
+            adapterIdentity.values.all {
+                it in
+                    original.receipt
+                        .objectField("fixture_identity")
+                        .entrySet()
+                        .map { entry -> entry.value.textValue() }
+            },
+        ) { "Operation adapter is outside the frozen fixture closure" }
         val destination = Path.of(request.textField("output")).toAbsolutePath().normalize()
         require(Files.exists(destination).not()) { "Operation evidence already exists" }
         JmhFixtureSelection.verifyWork(fixtures)
@@ -67,7 +91,13 @@ public object JvmOperationReports {
         require(collected.map { it.first }.toSet().size == collected.size && collected.map { it.first }.toSet() == rows.map { it.id }.toSet()) { "Incomplete or duplicate operation reports" }
         val phases = phases(rows, collected.toMap(), plan.samples)
         require(JmhForkConfiguration.capture(OptionsBuilder().include(".*").forks(1).build(), fixtures, targets, inputs) == identity) { "Loaded operation identities changed during collection" }
-        require(ArtifactIdentity.applicationTrees(fixtureClasses) == original.receipt.objectField("fixture_identity").entrySet().associate { it.key to it.value.textValue() } && ArtifactIdentity.applicationTrees(adapters.map { it.javaClass }) == adapterIdentity) { "Operation fixture or adapter changed" }
+        require(
+            ArtifactIdentity.applicationTrees(fixtureClasses) ==
+                original.receipt
+                    .objectField("fixture_identity")
+                    .entrySet()
+                    .associate { it.key to it.value.textValue() } && ArtifactIdentity.applicationTrees(adapters.map { it.javaClass }) == adapterIdentity,
+        ) { "Operation fixture or adapter changed" }
         require(gson.toJsonTree(adapters.flatMap { it.rows }.map { it.copy(parameters = it.parameters.toSortedMap()) }) == gson.toJsonTree(rows)) { "Operation adapter rows changed during collection" }
         require(JvmOperationInputs.capture(adapters, original.inputs) == consumedInputs) { "Consumed operation inputs changed during collection" }
         JmhRunEvidence.load(binding, collector)
@@ -98,6 +128,33 @@ public object JvmOperationReports {
                 add("phases", phases)
             },
         )
+    }
+
+    /**
+     * Resolves required supplemental hooks before collection; opt-out callers never invoke them.
+     */
+    internal fun operationAdapters(
+        fixtures: List<Class<*>>,
+        expected: Map<String, String>,
+    ): List<JvmOperationReportAdapter> {
+        require(fixtures.map { it.name }.toSet() == expected.keys) { "Operation adapter fixture inventory differs" }
+        return fixtures
+            .map { fixture ->
+                val hooks = fixture.methods.filter { it.name.contentEquals("operationReport") }
+                require(hooks.size == 1) { "Missing or ambiguous operation report hook: ${fixture.name}" }
+                val hook = hooks.single()
+                require(Modifier.isStatic(hook.modifiers) && hook.parameterCount == 0 && JvmOperationReportAdapter::class.java.isAssignableFrom(hook.returnType)) { "Invalid operation report hook: ${fixture.name}" }
+                val adapter =
+                    try {
+                        hook.invoke(null) as JvmOperationReportAdapter
+                    } catch (failure: InvocationTargetException) {
+                        throw failure.cause ?: failure
+                    }
+                require(adapter.javaClass.name.contentEquals(expected.getValue(fixture.name))) { "Stale operation adapter: ${fixture.name}" }
+                adapter
+            }.also { adapters ->
+                require(adapters.map { it.javaClass.name }.distinct().size == adapters.size) { "Duplicate operation adapter" }
+            }
     }
 
     private fun selection(
@@ -160,7 +217,11 @@ public object JvmOperationReports {
     /**
      * Rejects duplicate logical IDs, incomplete bindings and ambiguous row declarations before sampling.
      */
-    internal fun validateRows(rows: List<JvmOperationReportRow>, count: Int, controls: Int) {
+    internal fun validateRows(
+        rows: List<JvmOperationReportRow>,
+        count: Int,
+        controls: Int,
+    ) {
         require(0 < count && rows.size == count && rows.map { it.id }.distinct().size == count && rows.count { it.control } == controls) { "Incomplete or duplicate operation row inventory" }
         require(rows.all { it.id.isNotBlank() && it.benchmark.isNotBlank() && it.boundary.isNotBlank() && 0 < it.operationsPerSample && it.parameters.keys.all(String::isNotBlank) }) { "Invalid operation row" }
     }
@@ -168,7 +229,10 @@ public object JvmOperationReports {
     /**
      * Requires complete original distributions; genuinely unsupported counters remain explicit JSON null.
      */
-    internal fun validateSample(phase: JsonObject, samples: Int) {
+    internal fun validateSample(
+        phase: JsonObject,
+        samples: Int,
+    ) {
         require(phase.countField("samples") == samples) { "Partial operation samples" }
         listOf("wall_distribution", "owner_thread_cpu_distribution", "owner_thread_allocation_distribution").forEach { field ->
             val distribution = checkNotNull(phase.get(field)) { "Missing operation distribution" }

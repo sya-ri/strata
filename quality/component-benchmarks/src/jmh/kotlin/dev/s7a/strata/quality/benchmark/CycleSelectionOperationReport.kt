@@ -58,7 +58,7 @@ public object CycleSelectionOperationReport : JvmOperationReportAdapter {
 
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
         val main = linkedMapOf<String, CycleSelectionFixture>()
-        return AutoCloseable { close(main.values) }.use {
+        return AutoCloseable { close(main.values) }.use { _ ->
             rows.filter { it.control.not() }.forEach { row ->
                 val count = row.parameters.getValue("choices").toInt()
                 main[row.id] = CycleSelectionFixture(count, CycleSelectionPosition.valueOf(row.parameters.getValue("position")).index(count), deferAssertions = true)
@@ -66,9 +66,9 @@ public object CycleSelectionOperationReport : JvmOperationReportAdapter {
             JvmPerformanceRunner.warmup(plan.warmup) {
                 rows.forEach { row ->
                     if (row.control) {
-                        CycleSelectionFixture(control = CycleSelectionControl.valueOf(row.parameters.getValue("scenario")), deferAssertions = true).use {
-                            it.control()
-                            it.assertOperation()
+                        CycleSelectionFixture(control = CycleSelectionControl.valueOf(row.parameters.getValue("scenario")), deferAssertions = true).use { fixture ->
+                            fixture.control()
+                            fixture.assertOperation()
                         }
                     } else {
                         val fixture = main.getValue(row.id)

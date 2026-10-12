@@ -16,14 +16,14 @@ class JvmOperationReportsTest {
     fun requiredCompiledHooksResolveAndStaleMissingAmbiguousOrInvalidHooksFail() {
         val first = FirstFixture::class.java
         val second = SecondFixture::class.java
-        val adapters = JmhFixtureSelection.operationAdapters(listOf(first, second), mapOf(first.name to FirstAdapter::class.java.name, second.name to SecondAdapter::class.java.name))
+        val adapters = JvmOperationReports.operationAdapters(listOf(first, second), mapOf(first.name to FirstAdapter::class.java.name, second.name to SecondAdapter::class.java.name))
         assertEquals(listOf(FirstAdapter, SecondAdapter), adapters)
-        assertFails { JmhFixtureSelection.operationAdapters(listOf(first), mapOf(first.name to SecondAdapter::class.java.name)) }
+        assertFails { JvmOperationReports.operationAdapters(listOf(first), mapOf(first.name to SecondAdapter::class.java.name)) }
         listOf(MissingFixture::class.java, InvalidFixture::class.java, AmbiguousFixture::class.java).forEach { fixture ->
-            assertFails { JmhFixtureSelection.operationAdapters(listOf(fixture), mapOf(fixture.name to FirstAdapter::class.java.name)) }
+            assertFails { JvmOperationReports.operationAdapters(listOf(fixture), mapOf(fixture.name to FirstAdapter::class.java.name)) }
         }
-        assertFails { JmhFixtureSelection.operationAdapters(listOf(first, first), mapOf(first.name to FirstAdapter::class.java.name)) }
-        assertFails { JmhFixtureSelection.operationAdapters(listOf(first), emptyMap()) }
+        assertFails { JvmOperationReports.operationAdapters(listOf(first, first), mapOf(first.name to FirstAdapter::class.java.name)) }
+        assertFails { JvmOperationReports.operationAdapters(listOf(first), emptyMap()) }
     }
 
     @Test
@@ -49,12 +49,14 @@ class JvmOperationReportsTest {
     @Test
     fun primingAssertionsAndSurvivingTeardownAllocateOutsideTheDeclaredSample() {
         var sink: ByteArray? = null
-        val report = JvmPerformanceRunner.sequence(2, mapOf("operation" to 2)) { _, sequence ->
-            sink = ByteArray(1024 * 1024)
-            sequence.sample("operation") { sink = ByteArray(64) }
-            assertEquals(64, checkNotNull(sink).size)
-            sink = ByteArray(1024 * 1024)
-        }.getValue("operation")
+        val report =
+            JvmPerformanceRunner
+                .sequence(2, mapOf("operation" to 2)) { _, sequence ->
+                    sink = ByteArray(1024 * 1024)
+                    sequence.sample("operation") { sink = ByteArray(64) }
+                    assertEquals(64, checkNotNull(sink).size)
+                    sink = ByteArray(1024 * 1024)
+                }.getValue("operation")
         assertEquals(1024 * 1024, checkNotNull(sink).size)
         val allocated = report.get("owner_thread_allocated_bytes")
         if (allocated.isJsonNull.not()) assertTrue(allocated.asLong < 1024 * 1024)
@@ -79,33 +81,23 @@ class JvmOperationReportsTest {
     /**
      * First independent fixture-owned declaration.
      */
-    class FirstFixture {
+    object FirstFixture {
         /**
-         * Exposes the optional compiled hook.
+         * Returns the first adapter outside sampling.
          */
-        companion object {
-            /**
-             * Returns the first adapter outside sampling.
-             */
-            @JvmStatic
-            fun operationReport(): JvmOperationReportAdapter = FirstAdapter
-        }
+        @JvmStatic
+        fun operationReport(): JvmOperationReportAdapter = FirstAdapter
     }
 
     /**
      * Second independent fixture-owned declaration.
      */
-    class SecondFixture {
+    object SecondFixture {
         /**
-         * Exposes another compiled hook.
+         * Returns the independently typed adapter.
          */
-        companion object {
-            /**
-             * Returns the independently typed adapter.
-             */
-            @JvmStatic
-            fun operationReport(): JvmOperationReportAdapter = SecondAdapter
-        }
+        @JvmStatic
+        fun operationReport(): JvmOperationReportAdapter = SecondAdapter
     }
 
     /**
@@ -116,39 +108,29 @@ class JvmOperationReportsTest {
     /**
      * Represents a hook with an invalid signature.
      */
-    class InvalidFixture {
+    object InvalidFixture {
         /**
-         * Supplies the invalid public declaration.
+         * Cannot declare a report adapter.
          */
-        companion object {
-            /**
-             * Cannot declare a report adapter.
-             */
-            @JvmStatic
-            fun operationReport(): String = "invalid"
-        }
+        @JvmStatic
+        fun operationReport(): String = javaClass.name
     }
 
     /**
      * Represents ambiguous overloaded hook declarations.
      */
-    class AmbiguousFixture {
+    object AmbiguousFixture {
         /**
-         * Supplies both conflicting signatures.
+         * Would be valid without its overload.
          */
-        companion object {
-            /**
-             * Would be valid without its overload.
-             */
-            @JvmStatic
-            fun operationReport(): JvmOperationReportAdapter = FirstAdapter
+        @JvmStatic
+        fun operationReport(): JvmOperationReportAdapter = FirstAdapter
 
-            /**
-             * Conflicts with automatic discovery.
-             */
-            @JvmStatic
-            fun operationReport(plan: PerformancePlan): JvmOperationReportAdapter = if (0 < plan.samples) FirstAdapter else SecondAdapter
-        }
+        /**
+         * Conflicts with automatic discovery.
+         */
+        @JvmStatic
+        fun operationReport(plan: PerformancePlan): JvmOperationReportAdapter = if (0 < plan.samples) FirstAdapter else SecondAdapter
     }
 
     /**
@@ -157,8 +139,7 @@ class JvmOperationReportsTest {
     object FirstAdapter : JvmOperationReportAdapter {
         override val rows: List<JvmOperationReportRow> = listOf(JvmOperationReportRow("first", "example.First.operation", emptyMap(), "Complete operation"))
 
-        override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
-            JvmPerformanceRunner.sequence(plan.samples, mapOf("first" to plan.samples)) { _, sequence -> sequence.sample("first") {} }
+        override fun collect(plan: PerformancePlan): Map<String, JsonObject> = JvmPerformanceRunner.sequence(plan.samples, mapOf("first" to plan.samples)) { _, sequence -> sequence.sample("first") {} }
     }
 
     /**
@@ -167,7 +148,6 @@ class JvmOperationReportsTest {
     object SecondAdapter : JvmOperationReportAdapter {
         override val rows: List<JvmOperationReportRow> = listOf(JvmOperationReportRow("second", "example.Second.operation", emptyMap(), "Complete operation"))
 
-        override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
-            JvmPerformanceRunner.sequence(plan.samples, mapOf("second" to plan.samples)) { _, sequence -> sequence.sample("second") {} }
+        override fun collect(plan: PerformancePlan): Map<String, JsonObject> = JvmPerformanceRunner.sequence(plan.samples, mapOf("second" to plan.samples)) { _, sequence -> sequence.sample("second") {} }
     }
 }
