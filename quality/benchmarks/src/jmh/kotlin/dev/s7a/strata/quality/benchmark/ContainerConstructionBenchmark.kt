@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -119,6 +120,12 @@ public open class ContainerConstructionBenchmark {
      * Automatic generic-collector work hook; no benchmark-specific launcher registration is required.
      */
     public companion object {
+        /**
+         * Declares all complete operations through the shared owner-thread CPU/allocation collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = ContainerConstructionOperationReport
+
         /**
          * Requires every generated case and independent declaration, geometry, pixel and lifecycle checks.
          */

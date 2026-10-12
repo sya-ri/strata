@@ -1,0 +1,647 @@
+{
+  "schema": "strata.issue153.prepared-source-provenance.v1",
+  "status": "Source preparation only; source quality and full measurements Pending",
+  "base_public_commit": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
+  "baseline_tree": "05c7bfe36655065055184161bd32e0ff6ad37eed",
+  "candidate_fixture_tree": "23c8f460e1691422cd74bd77ca865852ce53c39c",
+  "runtime_delta_paths": [
+    "api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt",
+    "api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt",
+    "api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt",
+    "api/src/main/kotlin/dev/s7a/strata/component/UiScope.kt"
+  ],
+  "all_other_baseline_candidate_source_bytes_identical": true,
+  "same_fixture_source_bindings": [
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionBenchmark.kt",
+      "raw_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
+      "canonical_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
+      "canonical_bytes": 5090,
+      "git_blob": "ddf8b48d8d67ec3740a000d74919f178b9bf2a6e"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionOperationReport.kt",
+      "raw_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
+      "canonical_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
+      "canonical_bytes": 3609,
+      "git_blob": "180f8b5c4507b206beea044a213882d9ffb1b2c9"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerDeclarationFixture.kt",
+      "raw_sha256": "e68cdfdd9f412ae412a789b3d7195bf034904aa555450a567ec8ed76b67f6729",
+      "canonical_sha256": "e68cdfdd9f412ae412a789b3d7195bf034904aa555450a567ec8ed76b67f6729",
+      "canonical_bytes": 22686,
+      "git_blob": "2bb670b1f018fc34ac6c65173e370aad05884476"
+    }
+  ],
+  "all_source_delta_bindings": [
+    {
+      "path": "api/src/commonTest/kotlin/dev/s7a/strata/ContainerChildrenOwnershipTest.kt",
+      "raw_sha256": "f7a8f7bbf76a38d798b5acdfe97df77fe71bd0cfbc992272f4fbfb38d4e15067",
+      "canonical_sha256": "f7a8f7bbf76a38d798b5acdfe97df77fe71bd0cfbc992272f4fbfb38d4e15067",
+      "canonical_bytes": 9902,
+      "git_blob": "284fbffea99535ec441db6e50575b9c93848169b"
+    },
+    {
+      "path": "api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt",
+      "raw_sha256": "3606bac1f63b7134377228120280c2320d91c6223fcbab0b6b196b3894f5f9bd",
+      "canonical_sha256": "3606bac1f63b7134377228120280c2320d91c6223fcbab0b6b196b3894f5f9bd",
+      "canonical_bytes": 36589,
+      "git_blob": "15eea694441fce5751a678137184ba06c5b32362"
+    },
+    {
+      "path": "api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt",
+      "raw_sha256": "af10a1c08c2bb6d93b9bc21a51844016235597a0da3c573a52e6d34514b34a52",
+      "canonical_sha256": "af10a1c08c2bb6d93b9bc21a51844016235597a0da3c573a52e6d34514b34a52",
+      "canonical_bytes": 3306,
+      "git_blob": "84059c7300c1ccae6aec6116f8cad5281d3eea5e"
+    },
+    {
+      "path": "api/src/main/kotlin/dev/s7a/strata/component/UiComponents.kt",
+      "raw_sha256": "1be1beff149700bcb16ac2a09b76b3c7391f77c461ea47ed4fa7cfb12609e72d",
+      "canonical_sha256": "1be1beff149700bcb16ac2a09b76b3c7391f77c461ea47ed4fa7cfb12609e72d",
+      "canonical_bytes": 10963,
+      "git_blob": "71afb0e96eeb65351f17a2257d8d274889204c52"
+    },
+    {
+      "path": "api/src/main/kotlin/dev/s7a/strata/component/UiScope.kt",
+      "raw_sha256": "bd988ae1eb5188011d150ed7bb45f679982e9331e2e6bb646a9ae1c9870fbcc5",
+      "canonical_sha256": "bd988ae1eb5188011d150ed7bb45f679982e9331e2e6bb646a9ae1c9870fbcc5",
+      "canonical_bytes": 6373,
+      "git_blob": "89f571c271eb8857fbd68e9c4a619c47c8b532a6"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionBenchmark.kt",
+      "raw_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
+      "canonical_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
+      "canonical_bytes": 5090,
+      "git_blob": "ddf8b48d8d67ec3740a000d74919f178b9bf2a6e"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionOperationReport.kt",
+      "raw_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
+      "canonical_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
+      "canonical_bytes": 3609,
+      "git_blob": "180f8b5c4507b206beea044a213882d9ffb1b2c9"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerDeclarationFixture.kt",
+      "raw_sha256": "e68cdfdd9f412ae412a789b3d7195bf034904aa555450a567ec8ed76b67f6729",
+      "canonical_sha256": "e68cdfdd9f412ae412a789b3d7195bf034904aa555450a567ec8ed76b67f6729",
+      "canonical_bytes": 22686,
+      "git_blob": "2bb670b1f018fc34ac6c65173e370aad05884476"
+    },
+    {
+      "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableContainerBuilderTest.kt",
+      "raw_sha256": "ddc0d4ee9adfe61b7884a83b468eea40105a5924f76da01e7342233e51298d8b",
+      "canonical_sha256": "ddc0d4ee9adfe61b7884a83b468eea40105a5924f76da01e7342233e51298d8b",
+      "canonical_bytes": 8043,
+      "git_blob": "4f35c34355ce991d45c5c8ec4e34c0280ee09c4c"
+    }
+  ],
+  "inventory": [
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Row",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "FlowRow",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Column",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Stack",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "Grid",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "construct",
+      "container": "TiledImage",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Row",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "FlowRow",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Column",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Stack",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "Grid",
+      "shape": "Template1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Empty",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Single",
+      "control": true
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Wide1024",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Deep32",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Grouped1000Eight",
+      "control": false
+    },
+    {
+      "method": "rebuildFrame",
+      "container": "TiledImage",
+      "shape": "Template1000Eight",
+      "control": false
+    }
+  ],
+  "expected_rows": 84,
+  "expected_controls": 24,
+  "normal_JMH_modes": [
+    "avgt",
+    "sample"
+  ],
+  "formal_repetitions_per_side": 3,
+  "standard_JMH_cells": 1008,
+  "supplemental_operation_rows": 504,
+  "operation_warmup": 30,
+  "operation_samples": 60,
+  "operations_per_sample": 1,
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "source_patches": {
+    "baseline": {
+      "path": ".github/performance/issue153-full/baseline.patch",
+      "sha256": "590379f1cd35767a2c52497390490e13426ac2e9d98cb47b12151142a10cb0ae"
+    },
+    "candidate": {
+      "path": ".github/performance/issue153-full/candidate.patch",
+      "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
+    }
+  },
+  "common_collector_master": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
+  "operation_boundaries": "Original complete construct and rebuildFrame methods; original trial setup, result-type checks, report serialization and terminal surviving-session close outside the sample.",
+  "deterministic_work": "Original 42 full public declaration/geometry/pixel/input/semantics/lifecycle fixtures and parent-data/session-owner controls run through the existing verifyWork hook.",
+  "candidate_internal_borrow_regression": "Final candidate API JVM/JavaScript source checks; private new internal method is not a baseline paired-test gate.",
+  "compiled_pins": "Optional empty; actual loaded fixture/collector/runtime/dependency/Java closure retained by existing driver",
+  "measurement_selection": "Opt-in manual jvm.yml nested .github/performance/issue153-full/manifest.json; no default manifest",
+  "patch_encoding": "Standard Git binary hunks; temporary generation attributes; repository attributes unchanged",
+  "driver_metadata_scope": "Measured source trees exclude new issue153-full driver metadata, avoiding self-reference",
+  "Java_started": 0,
+  "helper_calls": 0,
+  "completed_score_cells": 0,
+  "completed_operation_rows": 0
+}

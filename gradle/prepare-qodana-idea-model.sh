@@ -21,7 +21,10 @@ project_jdk=${java_toolchains[${#java_toolchains[@]} - 1]}
 project_language_level="JDK_$project_jdk"
 
 # Recreate the selected revision's source roots even when the IDE reuses indexes from an earlier scan.
+mkdir -p build/qodana
+rm -f -- build/qodana/declarations.json build/qodana/gradle.log
 bash ./gradlew \
+  --console=plain \
   --no-daemon \
   --no-configure-on-demand \
   --project-prop=strata.completeIdeaModel=true \
@@ -29,7 +32,11 @@ bash ./gradlew \
   cleanIdea \
   :api:jvmJar :runtime:core:jvmJar :runtime:headless:jar :runtime:minecraft:jar :runtime:minecraft-fonts-lwjgl:jar \
   classes gametestClasses \
-  idea
+  idea qodanaDeclarationInventory 2>&1 | tee build/qodana/gradle.log
+[[ -s build/qodana/declarations.json ]] || {
+  echo 'Gradle did not recreate the declaration-derived JMH inventory.' >&2
+  exit 1
+}
 
 verify_generated_projects() {
   local owner=$1
