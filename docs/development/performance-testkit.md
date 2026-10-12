@@ -538,6 +538,13 @@ Additional metrics require complete per-fork/per-iteration scalar data, the same
 An owner requiring an additional CPU metric must verify its actual availability across the whole selected matrix before accepting that corpus.
 Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
 Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
+An input may additionally declare `"layout": {"root": "asset-store", "path": "objects/ab/hash"}` to preserve a logical directory relationship.
+The driver copies that pinned file to `prepared/inputs/asset-store/objects/ab/hash`; inputs sharing a root retain their relative paths in one common prepared tree.
+Omitting `layout` preserves the existing flat `prepared/inputs/input-N.bin` destination.
+Root names are 1-64 ASCII letters, digits, underscores or hyphens and start with a letter or digit; paths use the existing canonical relative-path format and have at most 4,096 characters.
+Logical destinations reject traversal, absolute paths, Windows device names, trailing periods, case aliases, duplicate files, file/directory conflicts, link redirection and undeclared files or directories.
+Every input label and byte pin remains unchanged, and the layout is part of the frozen manifest identity.
+Fixtures consume the same prepared paths on both runtime sides and all repetitions; no fixture-specific property or input generator is added.
 
 A suite may declare optional `test_gates` for independent tests on both original reconstructed runtime sources before any timed collection.
 Each gate has an existing runtime `task` and a nonempty `required_tests` inventory of exact `class#method` bindings; filters and additional task arguments are not allowed.

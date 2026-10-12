@@ -10,6 +10,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import threading
@@ -66,12 +67,18 @@ def digest(path):
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def relative_path(root, value):
-    """Keep manifest files within the checkout, including on Windows."""
+def canonical_path(value):
+    """Decode the existing canonical repository-relative path format without filesystem resolution."""
     require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_$+./-]+", value), "Invalid repository path")
     relative = PurePosixPath(value)
     require(not relative.is_absolute() and all(part not in (".", "..", ".git") for part in relative.parts)
             and relative.as_posix() == value, "Noncanonical repository path")
+    return relative
+
+
+def relative_path(root, value):
+    """Keep manifest files within the checkout, including on Windows."""
+    relative = canonical_path(value)
     path = root.joinpath(*relative.parts)
     require(path.resolve().is_relative_to(root.resolve()), "Repository path escapes checkout")
     return path
@@ -83,6 +90,35 @@ def pin(root, value):
     path = relative_path(root, value["path"])
     require(digest(path) == value["sha256"], f"Pinned bytes changed: {value['path']}")
     return path
+
+
+def input_paths(inputs):
+    """Resolve optional logical roots and paths, keeping omitted layouts flat and rejecting path aliases."""
+    paths = {}
+    prefixes = {}
+    reserved = {"con", "prn", "aux", "nul", *(f"com{index}" for index in range(1, 10)), *(f"lpt{index}" for index in range(1, 10))}
+    for index, item in enumerate(inputs):
+        require(isinstance(item, dict) and set(item) in ({"label", "pin"}, {"label", "pin", "layout"}), "Invalid fixture input fields")
+        path = PurePosixPath(f"input-{index}.bin")
+        if "layout" in item:
+            layout = item["layout"]
+            require(isinstance(layout, dict) and set(layout) == {"root", "path"}, "Invalid input layout fields")
+            require(isinstance(layout["root"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", layout["root"]), "Invalid input root")
+            require(isinstance(layout["path"], str) and len(layout["path"]) <= 4096, "Invalid logical input path")
+            path = canonical_path(layout["root"] + "/" + canonical_path(layout["path"]).as_posix())
+            require(all(not part.endswith(".") and part.casefold() != ".git" and part.split(".", 1)[0].casefold() not in reserved for part in path.parts),
+                    "Nonportable logical input path")
+        require(item["label"] not in paths, "Duplicate fixture input label")
+        paths[item["label"]] = path
+        for depth in range(1, len(path.parts) + 1):
+            prefix = PurePosixPath(*path.parts[:depth])
+            key = prefix.as_posix().casefold()
+            require(key not in prefixes or prefixes[key] == prefix, "Case-colliding logical input paths")
+            prefixes[key] = prefix
+    files = set(paths.values())
+    require(len(files) == len(paths), "Duplicate logical input destination")
+    require(all(not any(parent in files for parent in path.parents) for path in files), "Logical input file/directory collision")
+    return paths
 
 
 def load_manifest(root, path):
@@ -164,10 +200,11 @@ def load_manifest(root, path):
             require(0 <= operation["warmup"] <= 1_000_000 and 0 < operation["samples"] <= 1_000_000
                     and 0 <= operation["expected_controls"] <= operation["expected_rows"] == suite["expected_cases"], "Incomplete or unbounded operation inventory")
     for value in data["inputs"]:
-        require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
+        require({"label", "pin"} <= set(value) <= {"label", "pin", "layout"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
         labels.add(value["label"])
         pin(root, value["pin"])
+    input_paths(data["inputs"])
     require(set(data["compiled_pins"]) == {"fixture", "baseline", "candidate"}, "Missing compiled pin inventory")
     for side, pins in data["compiled_pins"].items():
         require(isinstance(pins, list), f"Invalid compiled pin list: {side}")
@@ -396,6 +433,28 @@ def preserve_file(source, destination):
     shutil.copyfile(source, destination)
     require(digest(source) == digest(destination) == identity, "Prepared archive changed during preservation")
     return {"path": destination.as_posix(), "sha256": identity}
+
+
+def preserve_inputs(root, owner, inputs):
+    """Preserve only declared pinned files at their frozen logical destinations, rejecting link redirection."""
+    paths = input_paths(inputs)
+    result = {}
+    for item in inputs:
+        destination = relative_path(owner, paths[item["label"]].as_posix())
+        for path in (destination, *destination.parents):
+            try:
+                status = path.lstat()
+            except FileNotFoundError:
+                status = None
+            require(status is None or (not stat.S_ISLNK(status.st_mode) and not (getattr(status, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)),
+                    "Linked prepared input path")
+            if path == owner:
+                break
+        result[item["label"]] = preserve_file(pin(root, item["pin"]), destination)
+    expected = {owner.joinpath(*path.parts) for path in paths.values()}
+    expected |= {parent for path in tuple(expected) for parent in path.parents if parent != owner and parent.is_relative_to(owner)}
+    require(set(owner.rglob("*")) == expected, "Incomplete or undeclared prepared input tree")
+    return result
 
 
 def prepared_classpath(path):
@@ -759,8 +818,7 @@ def run(root, manifest_path, output):
             properties(runtime_manifests[side], mapping)
             record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
         inputs = output / "fixture-inputs.properties"
-        input_archives = {item["label"]: preserve_file(pin(root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
-                          for index, item in enumerate(data["inputs"])}
+        input_archives = preserve_inputs(root, output / "prepared" / "inputs", data["inputs"])
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
         prepared = output / "compiled"
