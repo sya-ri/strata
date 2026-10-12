@@ -11,6 +11,7 @@ import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 /**
@@ -96,6 +97,54 @@ internal class FabricMinecraftBoundaryCompositionTest {
         val fallback = present(resolved.layers, size)
         assertEquals(0xFF2E6C9F.toInt(), original[2 * size.width + 2])
         assertArrayEquals(original, fallback)
+    }
+
+    @Test
+    fun cpuAdmissionClonePreservesTheCanonicalRejectedSourcePartition() {
+        val size = IntSize(24, 16)
+        val binary = createDrawImage(IntSize(2, 2), intArrayOf(-1, 0, 0, -1))
+        val partial = createDrawImage(IntSize(1, 1), intArrayOf(0x7F4A1A8E))
+        val barrier = DrawCommand.SampledImage(binary, FloatRect(0f, 0f, 2f, 2f), FloatRect(8f, 1f, 12f, 5f), alphaCutoff = 0f)
+        val commands =
+            listOf(
+                DrawCommand.FillRectangle(IntRect(0, 0, 24, 16), ArgbColor(0xFF7195B3.toInt())),
+                barrier,
+                DrawCommand.FillRectangle(IntRect(1, 1, 12, 12), ArgbColor(0x80472853.toInt())),
+                barrier.copy(image = partial, source = FloatRect(0f, 0f, 1f, 1f), destination = FloatRect(2f, 2f, 10f, 10f)),
+                DrawCommand.FillRectangle(IntRect(1, 1, 12, 12), ArgbColor(0x80007BBC.toInt())),
+            )
+        val original = FabricMinecraftFrameInputs.prepare(commands, size, 1, compositionEnabled = true)
+        val gpu = original.resolve({ true }, { true }, { it === partial })
+        val fallback = original.javaClass.getDeclaredField("sourceFallback")
+        check(fallback.trySetAccessible())
+        val admitted = checkNotNull(fallback.get(original)) as FabricMinecraftFrameInputs
+        assertSame(gpu, admitted)
+        val cpu = FabricMinecraftFrameInputs(admitted.layers, 1, compositionEnabled = false)
+        val canonical = FabricMinecraftFrameInputs.prepare(commands, size, 1, compositionEnabled = false).resolve({ true }, { true }, { it === partial })
+        assertEquals(2, original.layers.count { it is FabricMinecraftFrameLayer.Sampled })
+        assertSame(admitted.layers, cpu.layers)
+
+        fun trace(layers: List<FabricMinecraftFrameLayer>): List<List<Any?>> =
+            layers.map { layer ->
+                when (layer) {
+                    is FabricMinecraftFrameLayer.Portable -> listOf(layer.commands, layer.bounds, layer.absoluteCoordinates, layer.ineligibleSampledImages, layer.capacitySampledImages)
+                    is FabricMinecraftFrameLayer.Sampled -> listOf(layer.command, layer.clip, layer.visibleBounds)
+                    is FabricMinecraftFrameLayer.Platform -> error("This independent scene has no platform command.")
+                }
+            }
+        assertEquals(trace(canonical.layers), trace(cpu.layers))
+        assertEquals(
+            commands,
+            cpu.layers.flatMap { layer ->
+                when (layer) {
+                    is FabricMinecraftFrameLayer.Portable -> layer.commands
+                    is FabricMinecraftFrameLayer.Sampled -> listOf(layer.command)
+                    is FabricMinecraftFrameLayer.Platform -> error("This independent scene has no platform command.")
+                }
+            },
+        )
+        assertEquals(1, cpu.layers.count { it is FabricMinecraftFrameLayer.Sampled })
+        assertArrayEquals(present(canonical.layers, size), present(cpu.layers, size))
     }
 
     /**

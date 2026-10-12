@@ -31,9 +31,13 @@ internal object MinecraftCompositionParityInputs {
         val field = presenter.javaClass.getDeclaredField("preparedInputs")
         check(field.trySetAccessible())
         val inputs = checkNotNull(field.get(presenter))
-        val constructor = inputs.javaClass.declaredConstructors.single { it.parameterCount == 6 }
+        val fallback = inputs.javaClass.getDeclaredField("sourceFallback")
+        check(fallback.trySetAccessible())
+        // The real borrow already admitted source alpha/availability; the CPU oracle changes composition only.
+        val admitted = fallback.get(inputs) ?: inputs
+        val constructor = admitted.javaClass.declaredConstructors.single { it.parameterCount == 6 }
         check(constructor.trySetAccessible())
-        field.set(presenter, constructor.newInstance(member(inputs, "layers"), member(inputs, "scale"), 0L, 0L, false, null))
+        field.set(presenter, constructor.newInstance(member(admitted, "layers"), member(admitted, "scale"), 0L, 0L, false, null))
     }
 
     /**
