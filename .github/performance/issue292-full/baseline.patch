@@ -7140,17 +7140,22 @@ delta 22
 dcmZo+|H``I9OGmori+tRnFH8#4fPB(xd2@d2Au!^
 
 diff --git a/integration/shared/minecraft-fabric/input/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenKeyboardInput.kt b/integration/shared/minecraft-fabric/input/gui-extractor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenKeyboardInput.kt
-index 5ee3108ff4ad7e09052ff52578ae342b93564259..c6ba3cc6bf4b8c57f86ca4bb45dea4cd9627bdee 100644
+index 5ee3108ff4ad7e09052ff52578ae342b93564259..9ae3c0e28c8df89568720c31870f80586f90e0df 100644
 GIT binary patch
-delta 279
-zcmYL^u}VZS5Jh3tLPfAuEXGPuNGrJ5XlZLF7PHB`&9HfskWAk4DtjyCeSqI!;Scy9
-z{)>@ivAW#i9?tzZ`Z|7-Ge?6d*Jz4nR5UE9s(GOCK012u(u<CX93(#$wisYVBdE`@
-zE`3WbfDV&Vh7NlU<3#~M<$<8sOeD}YVS#o9YgQktLLVJ>Ou3i?xP(VfU;~rrAC=I-
-zBIX>|1)es5yXX0qXrq+cC*>%B;{MSca;TY_OD4#qHA_>jVm-=|+;lQK-)WDg+u7-1
-a^S^=3y-8+Q`>mS+L#63;cmDbFz4r^g7G_@n
+delta 830
+zcmZ`%-D=c86vnj*E(n6Xu;S0@BG{FhTVbVAf3~%_h}eo3rQm6Dk_?^9q%)IUgOt72
+zD<u!$Gx!F+iI1XZCShHn&P66U`Of#9^PThk>hIOB>Q+M2$UefzI)e@)p~}iduc&^m
+z6Z)3QIfA6rZGsV5&X+AQCeQ{*IWnMdDl&9JD>$JVTyAug<$MbZDHcN3_br2*m=eS&
+z<uS%5FcU7<m4iYjA{At8)Q1P~x<hGY9V%y`G-PRRIJ3-aD>yx9h=iqus{v!9t%cpm
+z&U-+W!2XK~2u>zUK&OyuGeeUIm2o+&u8X3pa*DE|pn2ebNWp}@bf0*vjnOj;hc-4u
+z>S+FWQ9c(|6=mqv%PrbTQOJsG1vCVPTxAp`P^maal~Lk_e1F^C9A@5=k}{M}O;!~w
+zJpLF{OFGL*!6Dmt1neFgWVzMbp?F)Br8bUfmkhV$nzi2gMIKhO)w}tDGe^K5esY`r
+z;Rv2-EeRET>H{C{x@(0ouoYrH9%MH-dDsDc(4USfn(+ML;S*?1SFR5x<DG*=>N4uB
+z-;WNqI@sHNc|L4E?2l(#zkK7)xlH4*S*_sO{2vHOOI{;b`ClhD2Jd)Oe;o_kw`3gm
+rI)Z!r91IuiXW^}#9<;NM81bh0+`D$AU10X3`Lc5N!r70Xzb^d&=<E=f
 
-delta 14
-WcmdlgFrRlq-o!~6n{${>vH}1u2L<W?
+delta 18
+acmew_GM{%s-o!~MlV7oMZ{Evth!p@)W(W=d
 
 diff --git a/integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenInput.kt b/integration/shared/minecraft-fabric/input/primitive-callbacks/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftScreenInput.kt
 index 4c0520aec06e710eb7ad23c2d7aa9ad88118991b..5ed397b3cfd8ce162d3eddfcb9fa56585b988f90 100644
