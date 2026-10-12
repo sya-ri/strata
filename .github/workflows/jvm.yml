@@ -240,6 +240,14 @@ jobs:
         name: kover-reports
         path: build/reports/kover
         if-no-files-found: error
+    - name: Upload compiler ABI dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: compiler-abi-dumps
+        path: '**/build/kotlin/abi/'
+        if-no-files-found: ignore
+        retention-days: 7
     needs: plan
     if: needs.plan.outputs.common == 'true'
   minecraft-matrix:

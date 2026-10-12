@@ -31,11 +31,12 @@ public object NonuniformOverlayOperationReport : JvmOperationReportAdapter {
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
         val states =
             rows.associate { row ->
-                row.id to NonuniformOverlayBenchmark.MixedPixels().apply {
-                    width = row.parameters.getValue("width").toInt()
-                    layers = row.parameters.getValue("layers").toInt()
-                    setup()
-                }
+                row.id to
+                    NonuniformOverlayBenchmark.MixedPixels().apply {
+                        width = row.parameters.getValue("width").toInt()
+                        layers = row.parameters.getValue("layers").toInt()
+                        setup()
+                    }
             }
         var last: HeadlessImage? = null
         JvmPerformanceRunner.warmup(plan.warmup) { states.values.forEach { last = it.next() } }
