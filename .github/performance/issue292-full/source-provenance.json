@@ -1,0 +1,158 @@
+{
+  "schema": "strata.issue292.prepared-source-provenance.v2",
+  "status": "Source preparation only; no Java/native/measurement invocation",
+  "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
+  "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
+  "baseline_reconstructed_tree": "016085de231d4f479ffce3d726fb1203d3a59264",
+  "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
+  "candidate_fixture_tree": "c758bd06a391e47b5d474df9ce46609633de557b",
+  "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
+  "runtime_delta_paths": [
+    "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
+  ],
+  "all_other_baseline_candidate_source_bytes_identical": true,
+  "fixture_source_bindings": [
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionBenchmark.kt",
+      "git_blob": "f70232c855716e4c7869c791108d496c9144c6b1",
+      "sha256": "7232b2b1fcdd1ecffd08024d60d5c41b2f446496837c1e2b38801f2b3449f0dc"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFixture.kt",
+      "git_blob": "1045c0d46b059b724c98cf576c644199c334231d",
+      "sha256": "ac748aed2c47db6ef3e8aaa5b387a66731cccf0f67d6bcb77495732e212eace8"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionControl.kt",
+      "git_blob": "0fb0cec47a7165f0d26d4c770e36c4d4dbfaf64a",
+      "sha256": "b619f24eaa858ad7335466b14473c78dc5bfe45cc2045fba5d51fab6366bb8c2"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionPosition.kt",
+      "git_blob": "fc7de36aff007228b046c308f31ba9c3b2162b5c",
+      "sha256": "ed412b7d0379ca9e424fbdcf475bbb3928e9cf602b4559a0fabb56c4ecafffac"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFontAssets.kt",
+      "git_blob": "7161ca2574f0adeda99aca522d48d3655a69b992",
+      "sha256": "7235fee8b88eb6c48b2590417ae64e8744b24862616407a53fb64637efbca2aa"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentProfile.kt",
+      "git_blob": "dc14a727f260eb6b85b7f971ed3ad8a487c12950",
+      "sha256": "7776e471125b48c41358473381b3ac6d3a587f51ce8048fd53117d8897a201f8"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentFontAssets.kt",
+      "git_blob": "92205600efa26a6d884f19c184e3cf3a9b87c055",
+      "sha256": "3dad012cdd12b5e76acd5baea03942a47f82a056ee7b69830004cb9a98a70fd6"
+    }
+  ],
+  "controls": [
+    "CleanRetainedFrame",
+    "OneOptionUnchangedFrame",
+    "DisabledIgnoredInput",
+    "IgnoredPointerButton",
+    "ZeroScroll",
+    "ForwardWrap",
+    "BackwardWrap",
+    "PointerPrimaryCycle",
+    "ScrollForward",
+    "ScrollBackward",
+    "KeyLeft",
+    "KeyRight",
+    "KeySpace",
+    "KeyEnter",
+    "ExternalSelectedWrite",
+    "EqualDistinctNoOpWrite",
+    "InvalidOutsideValueRejected",
+    "LabelsSameTextDifferentValues",
+    "EmptyLabels",
+    "NormalInactiveGeometryParity",
+    "WidthOnlyRedeclaration",
+    "LabelAndGlyphReplacement",
+    "StateReplacementSameSelection",
+    "StateReplacementDifferentOrder",
+    "MutationBeforeAttach",
+    "MutationDuringDetachReattach",
+    "EarlierObserverThrows",
+    "LaterObserverReentersSelection",
+    "ActionCallbackReentersSelection",
+    "DisposeCloseRelease"
+  ],
+  "rows": [
+    "8/First/UnchangedHoverAndCompletedFrame",
+    "8/First/SelectionWriteAndCompletedFrame",
+    "8/Middle/UnchangedHoverAndCompletedFrame",
+    "8/Middle/SelectionWriteAndCompletedFrame",
+    "8/Last/UnchangedHoverAndCompletedFrame",
+    "8/Last/SelectionWriteAndCompletedFrame",
+    "128/First/UnchangedHoverAndCompletedFrame",
+    "128/First/SelectionWriteAndCompletedFrame",
+    "128/Middle/UnchangedHoverAndCompletedFrame",
+    "128/Middle/SelectionWriteAndCompletedFrame",
+    "128/Last/UnchangedHoverAndCompletedFrame",
+    "128/Last/SelectionWriteAndCompletedFrame",
+    "1024/First/UnchangedHoverAndCompletedFrame",
+    "1024/First/SelectionWriteAndCompletedFrame",
+    "1024/Middle/UnchangedHoverAndCompletedFrame",
+    "1024/Middle/SelectionWriteAndCompletedFrame",
+    "1024/Last/UnchangedHoverAndCompletedFrame",
+    "1024/Last/SelectionWriteAndCompletedFrame",
+    "CleanRetainedFrame",
+    "OneOptionUnchangedFrame",
+    "DisabledIgnoredInput",
+    "IgnoredPointerButton",
+    "ZeroScroll",
+    "ForwardWrap",
+    "BackwardWrap",
+    "PointerPrimaryCycle",
+    "ScrollForward",
+    "ScrollBackward",
+    "KeyLeft",
+    "KeyRight",
+    "KeySpace",
+    "KeyEnter",
+    "ExternalSelectedWrite",
+    "EqualDistinctNoOpWrite",
+    "InvalidOutsideValueRejected",
+    "LabelsSameTextDifferentValues",
+    "EmptyLabels",
+    "NormalInactiveGeometryParity",
+    "WidthOnlyRedeclaration",
+    "LabelAndGlyphReplacement",
+    "StateReplacementSameSelection",
+    "StateReplacementDifferentOrder",
+    "MutationBeforeAttach",
+    "MutationDuringDetachReattach",
+    "EarlierObserverThrows",
+    "LaterObserverReentersSelection",
+    "ActionCallbackReentersSelection",
+    "DisposeCloseRelease"
+  ],
+  "fixtures": 39,
+  "operation_rows": 48,
+  "formal_repetitions_per_side": 3,
+  "required_formal_cells": 288,
+  "formal_cells_completed": 0,
+  "timed_boundaries": "Published main hover/write methods and complete control transitions; invocation setup remains outside timed methods. Stock JMH GC allocation includes harness invocation setup and cannot certify operation-only control allocation.",
+  "operation_cpu_allocation": "Pending optional generic operation report route; not inferred from JMH or Job CPU",
+  "native_scope": "Separate loaded adapter receipts; CPU route does not certify native input, presentation or GPU behavior",
+  "source_patches": {
+    "baseline": {
+      "path": ".github/performance/issue292-full/baseline.patch",
+      "sha256": "4952de94035645fb6ce1a575a0586d84dadc876d93901691eac7019bef5c71a9"
+    },
+    "fixture_and_candidate": {
+      "path": ".github/performance/issue292-full/candidate.patch",
+      "sha256": "05e526e6ddab44f2cb1eb0e0358e5bd067aaf46be2666088edfc5b6dc8970683"
+    }
+  },
+  "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
+  "source_review": {
+    "sha256": "ad0e61443daa7993d6fa9fc77d2847994993b6ce85c792e1d6d3666513a4d0de",
+    "scope": "One native scene formatting delta; no input, expectation or execution order change"
+  },
+  "compiled_artifact_pins": "Not predeclared; the shared driver captures and certifies actual compiled fixture, collector, runtime, dependency and Java bytes during a qualified run",
+  "patch_encoding": "Standard Git binary hunks generated with temporary diff attributes; repository attributes remain unchanged"
+}

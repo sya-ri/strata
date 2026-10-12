@@ -74,11 +74,12 @@ internal class MinecraftCycleButtonSelectionScene(
                     width = 80,
                     enabled = enabled,
                     label = { value -> label(value, alternateLabel) },
-                    modifier = Modifier.Empty.onCycle<Choice>({ value ->
-                        events.add(Event.Action to value.id)
-                        actionValues.add(value.id)
-                        if (case == MinecraftCycleButtonSelectionCase.ActionReentry) selection.value.value = values[1]
-                    }),
+                    modifier =
+                        Modifier.Empty.onCycle<Choice>({ value ->
+                            events.add(Event.Action to value.id)
+                            actionValues.add(value.id)
+                            if (case == MinecraftCycleButtonSelectionCase.ActionReentry) selection.value.value = values[1]
+                        }),
                 )
             }
         }
@@ -88,13 +89,14 @@ internal class MinecraftCycleButtonSelectionScene(
      */
     internal fun afterAttachment() {
         if (case == MinecraftCycleButtonSelectionCase.LaterObserverReentry) {
-            later = original.observe { value ->
-                events.add(Event.LaterObserver to value.id)
-                if (nested.not()) {
-                    nested = true
-                    original.value = values[1]
+            later =
+                original.observe { value ->
+                    events.add(Event.LaterObserver to value.id)
+                    if (nested.not()) {
+                        nested = true
+                        original.value = values[1]
+                    }
                 }
-            }
         }
     }
 
@@ -109,6 +111,7 @@ internal class MinecraftCycleButtonSelectionScene(
     ) {
         when (case) {
             MinecraftCycleButtonSelectionCase.UnchangedHover -> {}
+
             MinecraftCycleButtonSelectionCase.PointerForwardWrap,
             MinecraftCycleButtonSelectionCase.LaterObserverReentry,
             MinecraftCycleButtonSelectionCase.ActionReentry,
@@ -116,8 +119,15 @@ internal class MinecraftCycleButtonSelectionScene(
                 check(context.pressPointer(screen, inside))
                 context.releasePointer(screen, inside)
             }
-            MinecraftCycleButtonSelectionCase.ScrollForwardWrap -> check(scrollMinecraftScreen(screen, inside, 1.0))
-            MinecraftCycleButtonSelectionCase.ScrollBackward -> check(scrollMinecraftScreen(screen, inside, -1.0))
+
+            MinecraftCycleButtonSelectionCase.ScrollForwardWrap -> {
+                check(scrollMinecraftScreen(screen, inside, 1.0))
+            }
+
+            MinecraftCycleButtonSelectionCase.ScrollBackward -> {
+                check(scrollMinecraftScreen(screen, inside, -1.0))
+            }
+
             MinecraftCycleButtonSelectionCase.KeyLeft,
             MinecraftCycleButtonSelectionCase.KeyRight,
             MinecraftCycleButtonSelectionCase.KeySpace,
@@ -126,23 +136,33 @@ internal class MinecraftCycleButtonSelectionScene(
                 check(pressMinecraftTab(screen))
                 check(pressMinecraftKey(screen, checkNotNull(case.key)))
             }
+
             MinecraftCycleButtonSelectionCase.DisabledInputs -> {
                 check(context.pressPointer(screen, inside).not())
                 context.releasePointer(screen, inside)
                 check(scrollMinecraftScreen(screen, inside, 1.0).not())
                 for (key in listOf(KeyCode.Left, KeyCode.Right, KeyCode.Space, KeyCode.Enter)) check(pressMinecraftKey(screen, key).not())
             }
-            MinecraftCycleButtonSelectionCase.ZeroScroll -> check(scrollMinecraftScreen(screen, inside, 0.0).not())
-            MinecraftCycleButtonSelectionCase.ExternalWrite -> original.value = values[0]
+
+            MinecraftCycleButtonSelectionCase.ZeroScroll -> {
+                check(scrollMinecraftScreen(screen, inside, 0.0).not())
+            }
+
+            MinecraftCycleButtonSelectionCase.ExternalWrite -> {
+                original.value = values[0]
+            }
+
             MinecraftCycleButtonSelectionCase.EarlierObserverFailure -> {
                 val thrown = runCatching { original.value = values[0] }.exceptionOrNull()
                 check(thrown === failure)
             }
+
             MinecraftCycleButtonSelectionCase.StateAndLabelReplacement -> {
                 selection.value = CycleButtonState(values.reversed(), values.last())
                 alternateLabel = true
                 revision.value += 1
             }
+
             MinecraftCycleButtonSelectionCase.DetachedMutationReattach -> {
                 context.setScreen(null)
                 original.value = values[0]
@@ -181,13 +201,17 @@ internal class MinecraftCycleButtonSelectionScene(
             MinecraftCycleButtonSelectionCase.DisabledInputs,
             MinecraftCycleButtonSelectionCase.ZeroScroll,
             -> emptyList()
+
             MinecraftCycleButtonSelectionCase.ExternalWrite,
             MinecraftCycleButtonSelectionCase.EarlierObserverFailure,
             MinecraftCycleButtonSelectionCase.StateAndLabelReplacement,
             MinecraftCycleButtonSelectionCase.DetachedMutationReattach,
             -> listOf(Event.Observer to 0)
+
             MinecraftCycleButtonSelectionCase.LaterObserverReentry -> listOf(Event.Observer to 0, Event.LaterObserver to 0, Event.Observer to 1, Event.LaterObserver to 1, Event.Action to 0)
+
             MinecraftCycleButtonSelectionCase.ActionReentry -> listOf(Event.Observer to 0, Event.Action to 0, Event.Observer to 1)
+
             else -> listOf(Event.Observer to case.expectedValue, Event.Action to case.expectedValue)
         }
 
@@ -198,11 +222,12 @@ internal class MinecraftCycleButtonSelectionScene(
         val alternate = case == MinecraftCycleButtonSelectionCase.StateAndLabelReplacement
         val order = if (alternate) values.reversed() else values
         val reference = CycleButtonState(order, values[case.expectedValue])
-        val definition = UiDefinition("Independent native CycleButton reference") {
-            Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
-                CycleButton(reference, width = 80, enabled = enabled, label = { value -> label(value, alternate) })
+        val definition =
+            UiDefinition("Independent native CycleButton reference") {
+                Stack(modifier = Modifier.Empty.size(viewport.width, viewport.height).background(ArgbColor(0xFF000000.toInt()))) {
+                    CycleButton(reference, width = 80, enabled = enabled, label = { value -> label(value, alternate) })
+                }
             }
-        }
         return createMinecraftUiHost(definition, profile, fontBackend = LwjglMinecraftFontBackendFactory).use { host ->
             host.attach()
             host.frame(viewport, FrameTime(0L))
@@ -232,9 +257,14 @@ internal class MinecraftCycleButtonSelectionScene(
     private enum class Event { Observer, LaterObserver, Action }
 
     // Preserve the exact immutable selected object when a different state reverses its option order.
-    private class Choice(val id: Int)
+    private class Choice(
+        val id: Int,
+    )
 
-    private fun label(value: Choice, alternate: Boolean): UiText = UiText.Literal((if (alternate) "W" else "V") + value.id.toString().padStart(6, '0'))
+    private fun label(
+        value: Choice,
+        alternate: Boolean,
+    ): UiText = UiText.Literal((if (alternate) "W" else "V") + value.id.toString().padStart(6, '0'))
 
     /**
      * Fixed logical scene extent with an opaque backdrop, independent of the CPU corpus's host viewport.
