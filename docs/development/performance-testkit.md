@@ -614,6 +614,9 @@ The six supplemental invocations and their cell counts are distinct from the twe
 ```
 
 The fixture declares a public static no-argument `operationReport()` returning `JvmOperationReportAdapter`; Kotlin companions expose it with `@JvmStatic`.
+`collectVerified` runs the fixture's original complete work hook before collection by default.
+An adapter whose original hook permanently closes its owner may override this boundary to verify and sample inside the same original owner lifetime.
+That override must preserve all original controls and terminal release; it cannot reset the owner or omit verification.
 The adapter declares `JvmOperationReportRow` identities, complete method/parameter bindings, boundaries, control identities and explicit operations per sample.
 Missing required, duplicate, ambiguous, invalid or stale hooks fail before collection can publish valid evidence.
 Every selected JMH method and parameter row must bind exactly once; the adapter cannot silently drop independent controls.
@@ -659,11 +662,21 @@ The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB, 
 The inherited Java environment supplies the probe heap cap, while each ordinary launcher retains its explicit profile.
 JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
 These probes remain separate diagnostic records and never count as measured forks.
+The boundary queries at most 256 live members and retains only still-active owned process handles.
+An incomplete Job list is never admitted; membership changes trigger another complete bounded query at the original 100 ms polling cadence within the same phase deadline.
+First and last incomplete query headers remain recorded separately from genuine capacity refusal.
+The existing 4 MiB terminal-reader capacity bounds history before insertion: each generation charges 1024 bytes for fixed fields/PID/list formatting plus six bytes per UTF-16 image character for worst JSON escaping.
+Accepted history has a 3 MiB serialized upper bound; the first refused generation is preserved before failure, with at most 197,632 additional bytes from the existing 32,768-character image buffer.
+The remaining report capacity covers fixed terminal metadata without truncating a generation or increasing the reader limit.
+Each signalled owned handle records its actual exit and PID/creation-time identity before closing; immutable generation lists preserve legitimate PID reuse instead of replacing history.
+VM checks select exactly one matching birth and reject missing, ambiguous, altered, active or wrong-affinity generations.
+The real boundary controls include 288 completed observed descendants with eight concurrent children, alongside the unchanged normal, failure, RAM-refusal, timeout and leaked-child cases.
+A separate eight-concurrent-child control reaches the actual history budget under the same source-control deadline and memory profile, retains the first refused generation and proves bounded-report failure plus zero owned cleanup.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
 Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
 Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
 Previously captured staging files must remain byte-identical before the next invocation.
-The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; missing or changed fork attribution fails instead of borrowing console output.
+The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.

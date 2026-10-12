@@ -2,8 +2,8 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
-      "tree": "23c8f460e1691422cd74bd77ca865852ce53c39c",
+      "ref": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
+      "tree": "fcfb80dc0076707085dc58d0bca2977f9e34a49d",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
@@ -12,8 +12,8 @@
       ]
     },
     "baseline": {
-      "ref": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
-      "tree": "05c7bfe36655065055184161bd32e0ff6ad37eed",
+      "ref": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
+      "tree": "b59bb90c14472a4bddd4c907ae26a77572c4c889",
       "patches": [
         {
           "path": ".github/performance/issue153-full/baseline.patch",
@@ -22,8 +22,8 @@
       ]
     },
     "candidate": {
-      "ref": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
-      "tree": "23c8f460e1691422cd74bd77ca865852ce53c39c",
+      "ref": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
+      "tree": "fcfb80dc0076707085dc58d0bca2977f9e34a49d",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
@@ -78,7 +78,7 @@
       "label": "container-source-provenance",
       "pin": {
         "path": ".github/performance/issue153-full/source-provenance.json",
-        "sha256": "7ba54dc681dd093f82bc54c5035dbc60ecc1200b2157648efdb348957098ee9f"
+        "sha256": "2b7ee6ec75b14f4d80b9372b581f74cf5bd5165b27cb55ad1f2d97d8219676ae"
       }
     },
     {
