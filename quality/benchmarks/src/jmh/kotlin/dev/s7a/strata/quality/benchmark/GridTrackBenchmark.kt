@@ -21,6 +21,7 @@ import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -200,6 +201,14 @@ public open class GridTrackBenchmark {
             println("Grid ${workload.name}: layoutSizeReads=${counted.reads}, placements=${counted.placements}, retainedIntSlots=${arrays.sumOf { it?.size ?: 0 }}")
         }
 
+        /**
+         * Checks the completed operation against independent geometry outside supplemental timing.
+         */
+        public fun verifySample(frame: RuntimeUiFrame) {
+            verifyFrame(frame)
+            check(cleanFrame() === frame)
+        }
+
         private fun verifyFrame(frame: RuntimeUiFrame) {
             val bounds = expectedBounds()
             check(frame.drawCommands == bounds.mapIndexed { index, rect -> DrawCommand.FillRectangle(rect, leaves[index].color) })
@@ -240,6 +249,12 @@ public open class GridTrackBenchmark {
      * The same static untimed controls run through existing generated-fixture selection and ordinary checks.
      */
     public companion object {
+        /**
+         * Binds all complete frame cases to the shared supplemental owner-thread collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = GridTrackOperationReport
+
         /**
          * Checks all 28 generated AverageTime cases with identical baseline/candidate fixture code.
          */

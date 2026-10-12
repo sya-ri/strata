@@ -41,10 +41,11 @@ internal class GridTrackRetentionTest {
         val node = GridElement.Node(2, 0, 0, Alignment.TopStart)
         node.measure(scope(2), Constraints())
         val failure = IllegalStateException("pending measurement")
-        val pending = scope(3) { index ->
-            assertEquals(listOf(null, null), tracks(node))
-            if (index == 2) throw failure
-        }
+        val pending =
+            scope(3) { index ->
+                assertEquals(listOf(null, null), tracks(node))
+                if (index == 2) throw failure
+            }
         assertSame(failure, assertThrows<IllegalStateException> { node.measure(pending, Constraints()) })
         assertEquals(listOf(null, null), tracks(node))
         node.measure(scope(1), Constraints())
@@ -77,16 +78,31 @@ internal class GridTrackRetentionTest {
 
     private fun tracks(node: GridElement.Node): List<IntArray?> =
         listOf("columnWidths", "rowHeights").map { name ->
-            node.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(node) as IntArray?
+            node.javaClass
+                .getDeclaredField(name)
+                .apply { isAccessible = true }
+                .get(node) as IntArray?
         }
 
-    private fun scope(count: Int, size: IntSize = IntSize(1, 1), before: (Int) -> Unit = {}): MeasureScope =
+    private fun scope(
+        count: Int,
+        size: IntSize = IntSize(1, 1),
+        before: (Int) -> Unit = {},
+    ): MeasureScope =
         object : MeasureScope {
             override val childCount: Int = count
-            override fun measureChild(index: Int, constraints: Constraints): IntSize {
+
+            override fun measureChild(
+                index: Int,
+                constraints: Constraints,
+            ): IntSize {
                 before(index)
                 return constraints.constrain(size)
             }
-            override fun <D : Any> childParentData(index: Int, key: ParentDataKey<D>): D? = null
+
+            override fun <D : Any> childParentData(
+                index: Int,
+                key: ParentDataKey<D>,
+            ): D? = null
         }
 }
