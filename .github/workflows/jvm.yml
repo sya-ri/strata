@@ -373,11 +373,11 @@ jobs:
           integration/docs/build/component-showcase/check
         if-no-files-found: error
         retention-days: 7
-    - name: Upload loaded-client failure evidence
-      if: failure()
+    - name: Upload loaded-client evidence for ${{ matrix.id }}
+      if: success() || failure()
       uses: actions/upload-artifact@v7
       with:
-        name: minecraft-failure-evidence-${{ matrix.id }}
+        name: minecraft-loaded-client-evidence-${{ matrix.id }}
         path: |
           integration/*/build/minecraft-verification/
           integration/*/build/minecraft-production-verification/
