@@ -27,31 +27,52 @@ internal fun trackCanvasDestruction(target: RenderTarget): FabricNativeCanvasDes
  *
  * The render-thread owner supplies only its allocated resources, including a partial texture without a view when initialization failed.
  * The list is copied before native close clears mutable fields; no sampler-cache object, screen, or global map is retained.
- * OpenGL destruction is synchronous, while Vulkan probes the actual native destroy callbacks after close and queue retirement.
+ * OpenGL destruction is synchronous; Vulkan portable storage completes physical retirement at its already-fenced close boundary.
+ * The later host destruction queue remains safe because successful native destruction is acknowledged and its repeated dispatch is inert.
  * Unknown native implementations fail during probing so an unproven release cannot return the generation's permit.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @JvmSynthetic
 internal fun trackPortableDestruction(resources: List<AutoCloseable>): FabricNativeCanvasDestruction = trackNativeDestruction(resources.toList())
 
+// Native destroy callbacks may fail independently; finish other eligible releases before preserving the first failure.
 @OptIn(InternalStrataRuntimeApi::class)
+@Suppress("TooGenericExceptionCaught")
 private fun trackNativeDestruction(resources: List<AutoCloseable>): FabricNativeCanvasDestruction =
-    FabricNativeCanvasDestruction {
-        resources.all { resource ->
-            when (resource) {
-                is VulkanGpuTexture, is VulkanGpuTextureView -> {
-                    checkNotNull(resource as? FabricVulkanDestroyedResource) {
-                        "Strata Vulkan destruction acknowledgement is unavailable."
-                    }.strataCanvasResourceDestroyed()
-                }
-
-                is GlTexture, is GlTextureView -> {
-                    true
-                }
-
-                else -> {
-                    error("Strata cannot establish physical destruction of this native resource.")
+    object : FabricNativeCanvasDestruction {
+        override fun completeRetirement() {
+            var failure: Throwable? = null
+            resources.asReversed().forEach { resource ->
+                if (resource is VulkanGpuTexture || resource is VulkanGpuTextureView) {
+                    try {
+                        checkNotNull(resource as? FabricVulkanDestroyedResource) {
+                            "Strata Vulkan destruction acknowledgement is unavailable."
+                        }.strataDestroyCompletedResource()
+                    } catch (caught: Throwable) {
+                        val primary = failure
+                        if (primary == null) failure = caught else FabricMinecraftFailures.addSuppressed(primary, caught)
+                    }
                 }
             }
+            failure?.let { throw it }
         }
+
+        override fun isDestroyed(): Boolean =
+            resources.all { resource ->
+                when (resource) {
+                    is VulkanGpuTexture, is VulkanGpuTextureView -> {
+                        checkNotNull(resource as? FabricVulkanDestroyedResource) {
+                            "Strata Vulkan destruction acknowledgement is unavailable."
+                        }.strataCanvasResourceDestroyed()
+                    }
+
+                    is GlTexture, is GlTextureView -> {
+                        true
+                    }
+
+                    else -> {
+                        error("Strata cannot establish physical destruction of this native resource.")
+                    }
+                }
+            }
     }
