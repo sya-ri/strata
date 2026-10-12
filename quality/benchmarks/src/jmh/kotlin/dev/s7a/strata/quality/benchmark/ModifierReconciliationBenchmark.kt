@@ -13,6 +13,7 @@ import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -180,6 +181,12 @@ public open class ModifierReconciliationBenchmark {
      */
     public companion object {
         private fun chain(descriptions: List<ModifierDescription>): Modifier = descriptions.fold(Modifier.Empty) { result, description -> result.then(description) }
+
+        /**
+         * Supplies all original update rows to the shared owner-thread CPU/allocation collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = ModifierReconciliationOperationReport
 
         /**
          * Verifies the exact corpus and every workload's independent owner lifecycle before collection.

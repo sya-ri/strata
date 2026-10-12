@@ -1,0 +1,106 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "29f5b1b6573fb0be23a85b3e029ef8f242499ca8",
+      "patches": [
+        {
+          "path": ".github/performance/issue154-full/candidate.patch",
+          "sha256": "469a103bd6785870dadf898f7e36248328e891ddc4bc39eaf1e352abda2b43ae"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "29d363d584a76747b98fc80ce6ef568b85f1ea14",
+      "patches": [
+        {
+          "path": ".github/performance/issue154-full/baseline.patch",
+          "sha256": "d4ccfb6eea90fc835923f74568087916266478cef40bcd7c87e204e125c4037d"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "29f5b1b6573fb0be23a85b3e029ef8f242499ca8",
+      "patches": [
+        {
+          "path": ".github/performance/issue154-full/candidate.patch",
+          "sha256": "469a103bd6785870dadf898f7e36248328e891ddc4bc39eaf1e352abda2b43ae"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "issue154-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 21,
+      "profilers": [],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark": "dev.s7a.strata.quality.benchmark.ModifierReconciliationOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 21,
+        "expected_controls": 15
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "label": "modifier-baseline-source-patch",
+      "pin": {
+        "path": ".github/performance/issue154-full/baseline.patch",
+        "sha256": "d4ccfb6eea90fc835923f74568087916266478cef40bcd7c87e204e125c4037d"
+      }
+    },
+    {
+      "label": "modifier-candidate-source-patch",
+      "pin": {
+        "path": ".github/performance/issue154-full/candidate.patch",
+        "sha256": "469a103bd6785870dadf898f7e36248328e891ddc4bc39eaf1e352abda2b43ae"
+      }
+    },
+    {
+      "label": "modifier-source-provenance",
+      "pin": {
+        "path": ".github/performance/issue154-full/source-provenance.json",
+        "sha256": "18eae97d450ad45f34c877ca030cc903497b9232ee374a31a1c8b0a3161f1d4f"
+      }
+    },
+    {
+      "label": "modifier-fixed-ModifierReconciliationBenchmark",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationBenchmark.kt",
+        "sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36"
+      }
+    },
+    {
+      "label": "modifier-fixed-ModifierReconciliationOperationReport",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
+        "sha256": "a41ce07e4d234c8605a5b2b0ecf6d3e951101aeb273c1d3b96b21b87bfa289a2"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
