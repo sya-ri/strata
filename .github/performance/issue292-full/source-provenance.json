@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "016085de231d4f479ffce3d726fb1203d3a59264",
-  "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "c758bd06a391e47b5d474df9ce46609633de557b",
+  "baseline_reconstructed_tree": "e223ec6648514607e4094a0c6878c622a8c574ae",
+  "candidate_fixture_public_commit": "228071cf777de162e20c0254c5b85ac175ff1513",
+  "candidate_fixture_tree": "c9c5d69380fada0f6e276397b9861353a7a22668",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -141,11 +141,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "4952de94035645fb6ce1a575a0586d84dadc876d93901691eac7019bef5c71a9"
+      "sha256": "d4d98bceb57055b2e6a48a84eae190a8eaaac3bda22dfedbc7aea49c64d118cf"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "05e526e6ddab44f2cb1eb0e0358e5bd067aaf46be2666088edfc5b6dc8970683"
+      "sha256": "2a7fbdc70798b75931f5403d39c8cd9ab02b07d8a5f415eb17d418afe6e68260"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -154,5 +154,19 @@
     "scope": "One native scene formatting delta; no input, expectation or execution order change"
   },
   "compiled_artifact_pins": "Not predeclared; the shared driver captures and certifies actual compiled fixture, collector, runtime, dependency and Java bytes during a qualified run",
-  "patch_encoding": "Standard Git binary hunks generated with temporary diff attributes; repository attributes remain unchanged"
+  "patch_encoding": "Standard Git binary hunks generated with temporary diff attributes; repository attributes remain unchanged",
+  "driver_metadata_scope": "Both frozen build trees exclude .github/performance/issue292-full; the public driver supplies the exact manifest/input bytes without a self-reference",
+  "native_scroll_boundary": {
+    "cause": "The new native fixture supplied common-direction signs to raw native screen callbacks",
+    "contract": "Existing baseline and candidate mapMinecraftVerticalScroll(nativeDeltaY) = -nativeDeltaY",
+    "forward_native_delta_y": -1.0,
+    "backward_native_delta_y": 1.0,
+    "expected_selections": {
+      "ScrollForwardWrap": 0,
+      "ScrollBackward": 1022
+    },
+    "all_original_assertions_and_case_expectations_preserved": true,
+    "source_review": "Pending focused independent review of this fixture correction",
+    "native_execution": "Pending fresh whole16case/all22target execution"
+  }
 }

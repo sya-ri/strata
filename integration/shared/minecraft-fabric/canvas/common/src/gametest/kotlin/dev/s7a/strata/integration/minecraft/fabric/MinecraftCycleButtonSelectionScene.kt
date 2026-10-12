@@ -121,11 +121,12 @@ internal class MinecraftCycleButtonSelectionScene(
             }
 
             MinecraftCycleButtonSelectionCase.ScrollForwardWrap -> {
-                check(scrollMinecraftScreen(screen, inside, 1.0))
+                // Native vertical scroll is negated into the common increasing-y input direction.
+                check(scrollMinecraftScreen(screen, inside, -1.0))
             }
 
             MinecraftCycleButtonSelectionCase.ScrollBackward -> {
-                check(scrollMinecraftScreen(screen, inside, -1.0))
+                check(scrollMinecraftScreen(screen, inside, 1.0))
             }
 
             MinecraftCycleButtonSelectionCase.KeyLeft,
@@ -182,7 +183,9 @@ internal class MinecraftCycleButtonSelectionScene(
      * Checks literal live value, ordered notifications, exact action payloads and committed native semantics.
      */
     internal fun verify(frame: RuntimeUiFrame) {
-        check(selection.value.value === values[case.expectedValue])
+        check(selection.value.value === values[case.expectedValue]) {
+            "Native $case selection differs: ${selection.value.value.id}, expected ${case.expectedValue}"
+        }
         val expected = expectedEvents()
         check(events == expected) { "Native $case notifications differ: $events, expected $expected" }
         check(actionValues == expected.filter { it.first == Event.Action }.map { it.second })
