@@ -103,14 +103,21 @@ internal class GridTrackMeasureTest {
 
     private fun node(columns: Int): GridElement.Node = GridElement.Node(columns, 1, 2, Alignment.TopStart)
 
-    private fun element(columns: Int, alignment: Alignment): GridElement =
-        GridElement(columns, 1, 2, alignment, null, emptyList(), Modifier.Empty)
+    private fun element(
+        columns: Int,
+        alignment: Alignment,
+    ): GridElement = GridElement(columns, 1, 2, alignment, null, emptyList(), Modifier.Empty)
 
     // Deliberately scans each track independently instead of repeating Grid's row-major aggregation.
-    private fun reference(sizes: List<IntSize>, columns: Int, alignment: Alignment): List<IntOffset> {
-        val widths = List(minOf(columns, sizes.size)) { column ->
-            sizes.filterIndexed { index, _ -> index % columns == column }.maxOf { it.width }
-        }
+    private fun reference(
+        sizes: List<IntSize>,
+        columns: Int,
+        alignment: Alignment,
+    ): List<IntOffset> {
+        val widths =
+            List(minOf(columns, sizes.size)) { column ->
+                sizes.filterIndexed { index, _ -> index % columns == column }.maxOf { it.width }
+            }
         val heights = sizes.chunked(columns).map { row -> row.maxOf { it.height } }
         val columnStarts = widths.runningFold(0) { offset, width -> offset + width + 1 }
         val rowStarts = heights.runningFold(0) { offset, height -> offset + height + 2 }
@@ -119,16 +126,18 @@ internal class GridTrackMeasureTest {
             val row = index / columns
             val slackX = widths[column] - size.width
             val slackY = heights[row] - size.height
-            val x = when (alignment.horizontalAlignment) {
-                HorizontalAlignment.Start -> 0
-                HorizontalAlignment.Center -> slackX / 2
-                HorizontalAlignment.End -> slackX
-            }
-            val y = when (alignment.verticalAlignment) {
-                VerticalAlignment.Top -> 0
-                VerticalAlignment.Center -> slackY / 2
-                VerticalAlignment.Bottom -> slackY
-            }
+            val x =
+                when (alignment.horizontalAlignment) {
+                    HorizontalAlignment.Start -> 0
+                    HorizontalAlignment.Center -> slackX / 2
+                    HorizontalAlignment.End -> slackX
+                }
+            val y =
+                when (alignment.verticalAlignment) {
+                    VerticalAlignment.Top -> 0
+                    VerticalAlignment.Center -> slackY / 2
+                    VerticalAlignment.Bottom -> slackY
+                }
             IntOffset(columnStarts[column] + x, rowStarts[row] + y)
         }
     }
@@ -139,7 +148,8 @@ internal class GridTrackMeasureTest {
     private class Scope(
         initialSizes: List<IntSize>,
         private val measureFailure: Throwable? = null,
-    ) : MeasureScope, LayoutScope {
+    ) : MeasureScope,
+        LayoutScope {
         val sizes = initialSizes.toMutableList()
         var alignment: Alignment? = null
         val measureReads = IntArray(sizes.size)
@@ -149,7 +159,10 @@ internal class GridTrackMeasureTest {
         override val childCount: Int get() = sizes.size
         override val size: IntSize get() = IntSize.Zero
 
-        override fun measureChild(index: Int, constraints: Constraints): IntSize {
+        override fun measureChild(
+            index: Int,
+            constraints: Constraints,
+        ): IntSize {
             if (index == sizes.lastIndex) measureFailure?.let { throw it }
             measureReads[index] += 1
             childConstraints += constraints
@@ -161,12 +174,17 @@ internal class GridTrackMeasureTest {
             return sizes[index]
         }
 
-        override fun placeChild(index: Int, offset: IntOffset) {
+        override fun placeChild(
+            index: Int,
+            offset: IntOffset,
+        ) {
             assertEquals(placements.size, index)
             placements += offset
         }
 
-        override fun <D : Any> childParentData(index: Int, key: ParentDataKey<D>): D? =
-            alignment?.let { key.castErased(GridAlignmentParentData.Data(it)) }
+        override fun <D : Any> childParentData(
+            index: Int,
+            key: ParentDataKey<D>,
+        ): D? = alignment?.let { key.castErased(GridAlignmentParentData.Data(it)) }
     }
 }

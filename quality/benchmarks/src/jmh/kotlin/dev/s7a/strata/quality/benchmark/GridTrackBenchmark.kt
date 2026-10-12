@@ -170,7 +170,7 @@ public open class GridTrackBenchmark {
             var frame = cleanFrame()
             check(cleanFrame() === frame)
             verifyFrame(frame)
-            repeat(3) {
+            repeat(3) { _ ->
                 val measured = leaves.sumOf { it.measures }
                 frame = childSizeFrame()
                 check(leaves.sumOf { it.measures } - measured == if (leaves.isEmpty()) 0 else 1)

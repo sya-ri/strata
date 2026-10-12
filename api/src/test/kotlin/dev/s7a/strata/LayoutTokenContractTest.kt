@@ -256,7 +256,7 @@ internal class LayoutTokenContractTest {
         assertSame(GridAlignmentParentData.KEY, (equalNode as GridAlignmentParentData.Node).parentDataKey)
         assertEquals(DirtyMask.None, first.type.updateErased(first, equal, equalNode))
         assertEquals(
-            DirtyMask.of(DirtyPhase.Layout),
+            DirtyMask.of(DirtyPhase.Measure),
             first.type.updateErased(first, changed, first.type.createErased(first)),
         )
     }
