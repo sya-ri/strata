@@ -259,6 +259,7 @@ tasks.register<JavaExec>("processNativeComponentEvidence") {
     description = "Validates the profile's native component invocations and delegates all aggregation to the testkit."
     dependsOn("classes")
     classpath = sourceSets.named("main").get().runtimeClasspath
+    workingDir(rootProject.projectDir)
     javaLauncher.set(componentLauncher)
     mainClass.set("dev.s7a.strata.quality.benchmark.NativeComponentPerformanceEvidence")
     providers.gradleProperty("strata.performance.request").orNull?.let { args(rootProject.file(it).absolutePath) }

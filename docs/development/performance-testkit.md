@@ -146,6 +146,11 @@ Invoke it three times with independent directories and the same selection for ea
 The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
 It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
+The fixture borrows the formal `minimized` inactivity setting and observes the actual selected and applied limiter at the initial sampling boundary and every completed frame.
+The configured limit is not evidence of the effective limit; modern menu or extracted render-state policies remain explicit in the receipt and must stay stable during each formal interval.
+`-Pstrata.performance.inactivity=afk` selects a separate diagnostic condition rather than changing the formal default.
+The paced fixture uses a distinct workload identity, and success is published only after borrowed options and native resources have been restored.
+An explicit backend request must match the loaded device before sampling; an OpenGL fallback cannot certify Vulkan performance.
 Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
 The 108-phase corpus measures settled presentation; it does not measure input, mutation, resize, release latency or GPU completion.
 Terminal native resource release is a correctness assertion outside timing.
@@ -165,6 +170,13 @@ The adapter selects the five shared API/core/headless/Minecraft/font representat
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
 Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
+
+For a baseline/candidate comparison, use the same processing task with `command: "comparison"`, `backend: "opengl"` or `"vulkan"`, and nested `baseline` and `candidate` objects that each contain three `runs` and their own `cpu_report`.
+The unchanged top-level `collector`, `output`, `workloads` and `sampled_images` fields still apply.
+Request file paths resolve from the repository root.
+Each raw invocation remains bound to its side's actual CPU origins; duplicate invocation IDs, driver fallback, mixed fixture epochs and unequal controlled conditions reject comparison.
+`JvmPerformanceReports.compare` owns all aggregation and metric comparison, and `compareImages` verifies the complete PNG inventory for each paired repetition.
+Preserve raw reports, PNGs and the actual loaded archive paths until processing completes; copying a receipt does not change its recorded origins.
 
 Rendering/extraction-family representatives are 1.20.6, 1.21.1, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1, 26.2 and 26.3, selected from the existing target declarations.
 These ten tuples cover the current UI, Canvas and test-extraction families; they do not certify all combinations of transport, input, Java compatibility or resource loading across the 22 supported targets.
@@ -545,6 +557,25 @@ An owner requiring an additional CPU metric must verify its actual availability 
 Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
 Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
 
+A suite may also declare an optional `preflight` object for a qualified compiled untimed controller.
+It has exactly four fields: `main` is a qualified class name already compiled in that suite's fixture classpath; `qualification` is an immutable repository-relative file pin containing the owner's independent controller qualification evidence; `runtime_classes` maps every declared runtime project to its loaded representative class; and `controls` is the complete ordered inventory of unique `id` and `arguments` records.
+Arguments are data passed in a pinned JSON request, never shell commands or additional JVM options.
+The same control inventory and qualification bytes apply to both runtime sides.
+Controller qualification remains an independent owner responsibility: a pinned record and a generic work gate cannot certify a particular tracer, native path or lifetime control.
+
+The controller's static `main(String[])` receives one absolute request-file path.
+The `strata-paired-jvm-preflight-request-v1` request records the suite, side, full control inventory, preserved qualification, runtime/classpath byte pins, required loaded classes, source archives, actual Java identities, frozen inputs and a fresh output directory.
+The controller executes every requested control before returning and writes `receipt.json` with schema `strata-paired-jvm-preflight-receipt-v1`, `status: passed`, the actual request's `request_sha256`, and its complete ordered `controls` array.
+Each control contains its `id`, `status: passed`, nonempty structured `observations`, `origins` for every required class as `{ "pid": actualJvmPid }`, and nonempty `artifacts` containing repository-style relative `path` and actual `sha256` pins inside that control's output directory.
+Separate observation files retain actual traces, counters and independent proof rather than replacing them with a success boolean.
+Missing, repeated, reordered, failed or unavailable controls, changed request/qualification/input/classpath bytes, unsafe observation paths and mismatched loaded origins fail the attempt.
+
+The shared init script creates the generic controller JavaExec from the existing suite work gate's dependency graph, launcher, native-access options and classpath.
+Its measured-fork count must be zero.
+An external controller launching its own untimed JVM must keep the inherited diagnostic/resource profile, emit its actual `paired.jvm.origin` record, and provide naturally released owning Job generations and PID-qualified class-load origins for those observations.
+Tracing belongs to this separate untimed route; the driver supplies no instrumentation option to timed JVMs and retains the same immutable fixture/runtime/collector/harness closure for collection.
+Every selected suite's full work gates and both sides' independent controls complete before the first timed collection in the attempt.
+
 Supported collector projects are `:quality:benchmarks`, `:quality:component-benchmarks` and `:quality:remote-benchmarks`.
 They use the existing `jmhHistorical`, `jmhComponents` and `jmhRemote` tasks and full `verifyHistoricalWorkloads`, `verifyComponentRenderingWork` and `verifyRemoteWorkloads` work gates.
 Generated fixture selection does not require a central benchmark registry or a fixture-specific build-script branch.
@@ -565,7 +596,7 @@ No old workstation owner directory, private index or missing historical metadata
 The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
-Both full work gates run before sampling.
+All selected suites' full work gates and optional independent preflight controls run before sampling.
 For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
 Quick, smoke, repetition and timing overrides are not manifest fields.
 The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
@@ -589,6 +620,15 @@ The driver records actual host/OS/power information and observed affinity rather
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
 
 The artifact retains source archives, frozen manifest, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
+Runtime JARs and immutable inputs are copied before the first work gate; a preflight suite additionally preserves every classpath archive/directory, including fixture, collector, harness and control tooling, before that gate's JVM starts.
+Copies are checked against original bytes before and after preservation, independently guarded across control and collection phases, and kept outside reusable workspaces even when the first control fails.
+Independent preflight requests, qualification records, actual observations, receipts and verified inventories remain in the failed or successful attempt archive.
 `attempt.json` is authoritative about success or failure; caches and private build workspaces are excluded from acceptance evidence.
 The workflow uploads failed attempts and checks failure, RAM-refusal, timeout and leaked-child cleanup through the same process boundary after collection.
 Acceptance requires the whole selected case matrix and both comparisons, the process-boundary controls, and ordinary quality/ABI/Qodana and supported-version checks on the final driver revision.
+
+Changes to the shared performance controller select the hosted `Qualified compiled fixture controls` qualification job.
+It compiles an independent test controller into the existing generated remote fixture classpath without editing a collector build script, completes both modes' whole three-baseline/three-candidate pair, and records actual collection and control phase costs.
+Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
+The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
+This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.

@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
+import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.test.assertEquals
@@ -84,6 +85,43 @@ internal class NativeCpuProvenanceTest {
         listOf("strata", "runtime_metadata").forEach { field -> assertFails { verify(metadata, report(field, metadata)) } }
     }
 
+    @Test
+    internal fun comparisonInvocationsKeepTheirOwnCpuOriginsAndRejectCopiedIds() {
+        val baselineJar = directory.resolve("baseline.jar")
+        val candidateJar = directory.resolve("candidate.jar")
+        val baselineCpu = directory.resolve("baseline-cpu.json")
+        val candidateCpu = directory.resolve("candidate-cpu.json")
+        val representative = "dev.s7a.strata.render.DrawImage"
+        Files.writeString(baselineCpu, report("runtime_metadata", metadata(baselineJar, representative)).toString())
+        Files.writeString(candidateCpu, report("runtime_metadata", metadata(candidateJar, representative)).toString())
+        val ids = List(6) { UUID.randomUUID() }
+        val paths =
+            ids.mapIndexed { index, id ->
+                directory.resolve("native-$index.json").also { path ->
+                    Files.writeString(path, JsonObject().apply { addProperty("run_id", id.toString()) }.toString())
+                }
+            }
+        val inputs = listOf(paths.take(3) to baselineCpu, paths.drop(3) to candidateCpu)
+        val bindings = NativeComponentPerformanceEvidence.cpuProvenanceByRun(inputs)
+        ids.forEachIndexed { index, id ->
+            val jar = if (index < 3) baselineJar else candidateJar
+            val actual =
+                bindings
+                    .getValue(id)
+                    .getAsJsonObject("strata")
+                    .getAsJsonArray("modules")
+                    .single()
+                    .asJsonObject
+            assertEquals(ArtifactIdentity.file(jar), actual.getAsJsonObject("codeSource").get("sha256").asString)
+        }
+        Files.writeString(paths[3], Files.readString(paths[0]))
+        assertFails { NativeComponentPerformanceEvidence.cpuProvenanceByRun(inputs) }
+        Files.writeString(paths[3], JsonObject().apply { addProperty("run_id", ids[3].toString()) }.toString())
+        val failed = report("runtime_metadata", metadata(candidateJar, representative)).apply { addProperty("status", "failed") }
+        Files.writeString(candidateCpu, failed.toString())
+        assertFails { NativeComponentPerformanceEvidence.cpuProvenanceByRun(inputs) }
+    }
+
     private fun verify(
         metadata: JsonObject,
         cpu: JsonObject,
@@ -107,9 +145,12 @@ internal class NativeCpuProvenanceTest {
             add(field, metadata.deepCopy())
         }
 
-    private fun metadata(path: Path): JsonObject {
-        val entry = "fixture/Probe.class"
-        val bytes = "detached archive probe".toByteArray(Charsets.UTF_8)
+    private fun metadata(
+        path: Path,
+        representative: String = "fixture.Probe",
+    ): JsonObject {
+        val entry = representative.replace('.', '/') + ".class"
+        val bytes = "detached archive probe ${path.fileName}".toByteArray(Charsets.UTF_8)
         ZipOutputStream(Files.newOutputStream(path)).use { archive ->
             archive.putNextEntry(ZipEntry(entry))
             archive.write(bytes)
@@ -119,7 +160,7 @@ internal class NativeCpuProvenanceTest {
         val module =
             JsonObject().apply {
                 addProperty("module", "runtime")
-                addProperty("representativeClass", "fixture.Probe")
+                addProperty("representativeClass", representative)
                 addProperty("status", "resolved")
                 add(
                     "codeSource",

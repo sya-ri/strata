@@ -1,0 +1,24 @@
+{
+  "command": "comparison",
+  "backend": "vulkan",
+  "collector": "performance-testkit/build/libs/performance-testkit-0.2.2.jar",
+  "sampled_images": true,
+  "workloads": "SampledStationaryMedium,SampledTranslationMedium,SampledOrderedRowsSmall,SampledScrolledRowsSmall",
+  "baseline": {
+    "runs": [
+      "build/performance/issue132/native/vulkan/baseline/run-0/report.json",
+      "build/performance/issue132/native/vulkan/baseline/run-1/report.json",
+      "build/performance/issue132/native/vulkan/baseline/run-2/report.json"
+    ],
+    "cpu_report": "build/performance/issue132/cpu/baseline/receipt.json"
+  },
+  "candidate": {
+    "runs": [
+      "build/performance/issue132/native/vulkan/candidate/run-0/report.json",
+      "build/performance/issue132/native/vulkan/candidate/run-1/report.json",
+      "build/performance/issue132/native/vulkan/candidate/run-2/report.json"
+    ],
+    "cpu_report": "build/performance/issue132/cpu/candidate/receipt.json"
+  },
+  "output": "build/performance/issue132/native/vulkan-comparison.json"
+}
