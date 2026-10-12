@@ -8,19 +8,19 @@ import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
 import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.PointerButton
 import dev.s7a.strata.input.PointerEvent
-import dev.s7a.strata.geometry.IntRect
-import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Alignment
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 /**
@@ -194,14 +194,18 @@ internal class GridLayoutIntegrationTest {
         tree.layout()
     }
 
-    private fun assertGeometry(tree: UiTree, expected: List<IntRect>) {
+    private fun assertGeometry(
+        tree: UiTree,
+        expected: List<IntRect>,
+    ) {
         assertEquals(expected, tree.paint().map { (it as DrawCommand.FillRectangle).bounds })
         assertEquals(expected, tree.semantics().map { it.bounds })
     }
 
-    private fun cells(): List<Cell> = listOf(IntSize(2, 1), IntSize(4, 3), IntSize(3, 2)).mapIndexed { index, size ->
-        Cell(ElementKey(index), size, ExternalProbe())
-    }
+    private fun cells(): List<Cell> =
+        listOf(IntSize(2, 1), IntSize(4, 3), IntSize(3, 2)).mapIndexed { index, size ->
+            Cell(ElementKey(index), size, ExternalProbe())
+        }
 
     private fun grid(
         cells: List<Cell>,
@@ -210,17 +214,22 @@ internal class GridLayoutIntegrationTest {
         columns: Int = 2,
         horizontalSpacing: Int = 1,
         verticalSpacing: Int = 2,
-    ): Element = evaluateComponentTree {
-        Grid(columns, contentAlignment = alignment, horizontalSpacing = horizontalSpacing, verticalSpacing = verticalSpacing) {
-            cells.forEachIndexed { index, cell ->
-                val modifier = if (index == 0 && firstAlignment != null) Modifier.Empty.align(firstAlignment) else Modifier.Empty
-                element(ExternalElement(probe = cell.probe, key = cell.key, width = cell.size.width, height = cell.size.height, modifier = modifier))
+    ): Element =
+        evaluateComponentTree {
+            Grid(columns, contentAlignment = alignment, horizontalSpacing = horizontalSpacing, verticalSpacing = verticalSpacing) {
+                cells.forEachIndexed { index, cell ->
+                    val modifier = if (index == 0 && firstAlignment != null) Modifier.Empty.align(firstAlignment) else Modifier.Empty
+                    element(ExternalElement(probe = cell.probe, key = cell.key, width = cell.size.width, height = cell.size.height, modifier = modifier))
+                }
             }
         }
-    }
 
     /**
      * Stable keyed cells with independent external callback probes.
      */
-    private data class Cell(val key: ElementKey<Int>, val size: IntSize, val probe: ExternalProbe)
+    private data class Cell(
+        val key: ElementKey<Int>,
+        val size: IntSize,
+        val probe: ExternalProbe,
+    )
 }
