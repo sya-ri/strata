@@ -5,8 +5,8 @@ The fixed baseline is synced master `2e8088d8c9281b0a3bb34249fdd058cdd7231112`, 
 Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
 Formal whole-corpus traces, all thirty acceptance controls and measurements remain Pending.
-The external observer has a separate [actual compiled known-control qualification](../../../../../../.github/performance/unihex-bounds/trace-qualification.json), including the bounded origin-mirroring correction.
-It binds one, three and zero real bounds calls and one caught closed-engine failure to actual loaded byte and owning-process evidence; it does not certify the complete corpus or a performance gain.
+The external observer has a separate [actual compiled qualification](../../../../../../.github/performance/unihex-bounds/trace-qualification.json) for exact method and marker entries, bounded origin transport and zero-bounds class preparation.
+It binds one, three and zero real bounds calls, one caught closed-engine failure and original TrueType, Bitmap and SnapshotLoad rows to actual loaded byte and owning-process evidence; it does not certify the complete corpus or a performance gain.
 
 The committed [fixture table](fixtures.tsv) contains 36 immutable fixtures.
 The [comparison table](comparisons.tsv) expands the geometry inputs into 120 rows and retains twelve additional complete consumer controls.
@@ -71,13 +71,18 @@ Both sides' independent tests, complete work gates and actual traces finish befo
 
 Before timing, run the packaged `UnihexBoundsMethodTrace` through the shared compiled preflight route for the complete R001–R132 inventory.
 Each worker delegates to the unchanged `UnihexBoundsWorkEvidence` single-row entry on the actual preserved classpath.
-JDK JDI observes `FontHexGlyph.bounds` and cache-miss method entries and actual Unihex return values between the printed operation boundaries, excluding setup.
+JDK JDI observes the actual `FontHexGlyph.bounds()Lkotlin/ranges/IntRange;` entry and every selected cache-miss, raster and image-factory overload with breakpoints at code index zero of their loaded methods.
+The controller installs exact entries while class preparation is suspended, handles already prepared classes, and rejects missing, ambiguous or non-executable entries.
+The trace worker prepares the bounds class outside the operation so snapshot-only and non-Unihex controls also have an installed observer; neither frozen bounds class has a static initializer.
+Both real marker descriptors use exact entry breakpoints, while actual return and exception notifications are enabled only between the begin and end markers on the operation thread.
+Actual Unihex returns remain independently observed; setup and teardown stay outside all operation counters.
 An actual null Unihex return is an absent result; a successful nonnull return records a constructed Unihex raster.
 Public glyph calls, provider cache misses, bitmap cell misses, native raster requests and image-factory entries have separate counters.
 Image-factory entries are not a count of completed rasters.
 The marker adapter accepts actual String-reference arguments to both `PrintStream.println(String)` and `println(Object)`, suppresses only nested println delegation and retains the observed descriptor.
 The operation thread owns each boundary, and a missing, repeated or incomplete boundary fails qualification instead of becoming a zero count.
 First qualify the actual compiled observer with one, three and zero real bounds calls plus a caught closed-engine failure observed independently through a JDI exception event.
+Also execute the original R127 TrueType, R128 Bitmap and R129 SnapshotLoad rows during qualification to prove their legitimate zero-bounds boundaries and actual return channels.
 Bind that qualification to the actual compiled controller/worker hashes, preserved byte closure, PID-qualified loaded origins, finite VM caps and naturally released owning Job before admitting any trace or timed collection.
 Startup class loads go to a retained PID-decorated file so a launching connector cannot block on an unavailable pipe.
 After natural child release, each unique actual required-origin line joins the bounded shared console for the existing origin verifier; the complete unchanged class-load file remains a pinned artifact.

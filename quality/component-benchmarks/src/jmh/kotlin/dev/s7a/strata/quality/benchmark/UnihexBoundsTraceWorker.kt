@@ -19,6 +19,8 @@ public object UnihexBoundsTraceWorker {
         require(args.size == 2)
         val request = JsonParser.parseString(Files.readString(Path.of(args[0]))).asJsonObject
         for (name in request.getAsJsonObject("required_classes").keySet()) Class.forName(name, false, ClassLoader.getSystemClassLoader())
+        // A zero-bounds control still needs its entry observer installed before the operation marker.
+        Class.forName("dev.s7a.strata.runtime.minecraft.font.FontHexGlyph", true, ClassLoader.getSystemClassLoader())
         val qualification = Qualification.entries.firstOrNull { it.name == args[1] }
         if (qualification == null) {
             UnihexBoundsWorkEvidence.main(arrayOf(args[1]))

@@ -3,31 +3,31 @@
   "sources": {
     "fixture": {
       "ref": "2e8088d8c9281b0a3bb34249fdd058cdd7231112",
-      "tree": "48302626fc59ec615c97d9c538157149f4c9d9ba",
+      "tree": "38dd1540ba9aab6463dc169f0b904be9f515cf48",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/candidate.patch",
-          "sha256": "57e87a0309aae6373bb0d0db2f2c630f0ee9894f5da23c2181b3d676cf5ecaee"
+          "sha256": "f6afbf12f36f0cbaa12248282f67238633e7e3ac2a9f50d5d986e32148d0a1c6"
         }
       ]
     },
     "baseline": {
       "ref": "2e8088d8c9281b0a3bb34249fdd058cdd7231112",
-      "tree": "df75fa345b6f8aca55d6c1827e15b398992cfe08",
+      "tree": "5eda93adec0c0ade8cf987997c5a97c840e00fc2",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/baseline.patch",
-          "sha256": "dc438d657d7c77dd077b17324d1a932c0a0ba9350de3fc5849cfdcc5194f2d87"
+          "sha256": "08090d73264a3b80971d3593f3032f36a2772e4c11b67273c56d4c7d42508b2b"
         }
       ]
     },
     "candidate": {
       "ref": "2e8088d8c9281b0a3bb34249fdd058cdd7231112",
-      "tree": "48302626fc59ec615c97d9c538157149f4c9d9ba",
+      "tree": "38dd1540ba9aab6463dc169f0b904be9f515cf48",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/candidate.patch",
-          "sha256": "57e87a0309aae6373bb0d0db2f2c630f0ee9894f5da23c2181b3d676cf5ecaee"
+          "sha256": "f6afbf12f36f0cbaa12248282f67238633e7e3ac2a9f50d5d986e32148d0a1c6"
         }
       ]
     }
@@ -56,7 +56,7 @@
       "preflight": {
         "main": "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace",
         "qualification": {
-          "sha256": "d0ebbce38a6d357573df53e1f36ad0de9ebe9fd7fa36e2007b415c54691ddcfc",
+          "sha256": "4e63127e73b0d66196d236ec8305f27e62a81764da2ae4e8445e98186eec1f34",
           "path": ".github/performance/unihex-bounds/trace-qualification.json"
         },
         "controls": [

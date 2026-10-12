@@ -544,6 +544,11 @@ An owner requiring an additional CPU metric must verify its actual availability 
 Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
 Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
 
+A suite may declare optional `test_gates` for independent tests on both original reconstructed runtime sources before any timed collection.
+Each gate has an existing runtime `task` and a nonempty `required_tests` inventory of exact `class#method` bindings; filters and additional task arguments are not allowed.
+The driver runs the complete task on baseline and candidate without the fixture overlay, preserves all actual JUnit XML even on failure, and checks report counts and successful execution of each required method exactly once.
+These independent tests supplement the fixture's complete work and loaded-runtime controls.
+
 A suite may also declare an optional `preflight` object for a qualified compiled untimed controller.
 It has exactly four fields: `main` is a qualified class name already compiled in that suite's fixture classpath; `qualification` is an immutable repository-relative file pin containing the owner's independent controller qualification evidence; `runtime_classes` maps every declared runtime project to its loaded representative class; and `controls` is the complete ordered inventory of unique `id` and `arguments` records.
 Arguments are data passed in a pinned JSON request, never shell commands or additional JVM options.
@@ -583,7 +588,7 @@ No old workstation owner directory, private index or missing historical metadata
 The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
-All selected suites' full work gates and optional independent preflight controls run before sampling.
+All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
 For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
 Quick, smoke, repetition and timing overrides are not manifest fields.
 The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
@@ -603,6 +608,11 @@ The inherited Java environment supplies the probe heap cap, while each ordinary 
 JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
 These probes remain separate diagnostic records and never count as measured forks.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
+Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
+Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
+Previously captured staging files must remain byte-identical before the next invocation.
+The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; missing or changed fork attribution fails instead of borrowing console output.
+Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
 

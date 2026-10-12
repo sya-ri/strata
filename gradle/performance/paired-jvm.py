@@ -227,10 +227,51 @@ def archive_file(workspace, project):
     return values[0]
 
 
+def class_load_inventory(owner, expected=None):
+    """Capture one fixed attempt-owned staging directory without reading aliases or foreign paths."""
+    require(owner.is_dir() and not owner.is_symlink(), "Missing owned class-load staging directory")
+    files = list(owner.iterdir())
+    require(all(path.is_file() and not path.is_symlink() for path in files), "Unsafe staged class-load diagnostic")
+    current = {path.name: digest(path) for path in files}
+    if expected is not None:
+        require(current == expected, "Changed or deleted captured class-load staging bytes")
+    return current
+
+def preserve_class_loads(owner, directory, previous):
+    """Pin only fresh phase files while rejecting changes or deletion of previously retained raw logs."""
+    current = class_load_inventory(owner)
+    require(previous.items() <= current.items(), "Changed or deleted previous class-load diagnostic")
+    destination = directory / "class-loads"
+    require(destination.is_dir() and not destination.is_symlink(), "Missing owned phase class-load directory")
+    copied = [{"source": str(owner / name), **preserve_file(owner / name, destination / name)}
+              for name in sorted(current.keys() - previous.keys())]
+    write_new(directory / "class-load-inventory.json", {"owner": str(owner), "previous": previous, "copied": copied})
+    return current
+
+
+def class_loads(directory):
+    """Retain complete bounded per-VM attribution with exact PID filenames and no rotation/truncation."""
+    owner = directory / "class-loads"
+    require(owner.is_dir() and not owner.is_symlink(), "Missing owned class-load directory")
+    texts, identities = [], {}
+    for path in sorted(owner.iterdir()):
+        name = re.fullmatch(r"classes-([0-9]+)-[0-9_-]+\.log", path.name)
+        require(name is not None and path.is_file() and not path.is_symlink()
+                and path.stat().st_size <= 1024 * 1024, "Invalid or oversized class-load diagnostic")
+        pid = int(name[1])
+        text = path.read_text(encoding="utf-8")
+        observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
+        require(pid not in identities and observed == {pid} and text.endswith("\n"), "Missing, duplicate, wrong-PID or truncated class-load diagnostic")
+        texts.append(text)
+        identities[pid] = {"path": str(path), "sha256": digest(path)}
+    return "".join(texts), identities
+
+
 def verify_vms(directory, files, terminal, allowed, expected_forks=None):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
+    loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
     records, forks, version_probes = [], [], []
     for path in files:
@@ -289,7 +330,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm_start - birth_ms <= 2000 and os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
             require(member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"], "JMH fork changed inherited affinity")
-            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", console)
+            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", loaded_classes)
             require(len(loaded) == 1, "PID-qualified JMH fork main origin missing or ambiguous")
             evidence["actual_loaded_main"] = loaded[0].strip()
             evidence["os_generation"] = member
@@ -297,11 +338,15 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         records.append(evidence)
     for probe in version_probes:
         authorities = [record["pid"] for record in records if record["role"] == "java_exec" and record["home"] == probe["home"]]
-        require(any(re.search(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+", console)
+        require(any(re.search(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+", loaded_classes)
                     for pid in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
     require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or reused JMH fork")
     if expected_forks is not None:
         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
+    require(set(class_identities) <= {record["pid"] for record in records}, "Unbound class-load JVM identity")
+    for record in records:
+        if record["pid"] in class_identities:
+            record["class_load_diagnostic"] = class_identities[record["pid"]]
     write_new(directory / "vms.json", records)
 
 
@@ -406,7 +451,10 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
     require(isinstance(receipt["controls"], list) and [item.get("id") for item in receipt["controls"]] == expected,
             "Incomplete or reordered whole preflight control inventory")
     console = (phase_directory / "console.log").read_text(encoding="utf-8", errors="replace")
+    loaded_classes, class_identities = class_loads(phase_directory)
     vms = {item["pid"]: item for item in read_json(phase_directory / "vms.json")}
+    captured_class_identities = {pid: vm["class_load_diagnostic"] for pid, vm in vms.items() if "class_load_diagnostic" in vm}
+    require(class_identities == captured_class_identities, "Control changed its captured class-load diagnostic")
     artifacts = set()
     for result in receipt["controls"]:
         require(set(result) == {"id", "status", "observations", "origins", "artifacts"} and result["status"] == "passed"
@@ -425,8 +473,12 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
             require(os.path.normcase(member["image"]) == os.path.normcase(str(Path(vm["home"], "bin/java.exe"))), "Control loaded origin and OS executable disagree")
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
-            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)", console)
-            require(len(loaded) == 1, "Missing or ambiguous PID-qualified control class load")
+            pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"
+            loaded = re.findall(pattern, loaded_classes)
+            observed = re.findall(pattern, console)
+            require((len(loaded) == 1 and (not observed or observed == loaded))
+                    or (not loaded and len(observed) == 1), "Missing or ambiguous PID-qualified control class load")
+            loaded = loaded or observed
             location = urlparse(loaded[0].strip())
             require(location.scheme == "file" and not location.netloc, "Control loaded class from a non-local origin")
             actual_path = unquote(location.path)
@@ -588,12 +640,16 @@ def run(root, manifest_path, output):
         allowed_releases = {Path(home, "release"): digest(Path(home, "release")) for home in homes}
         vm_directory = output / "vms"
         vm_directory.mkdir()
+        class_staging = output / "class-loads"
+        class_staging.mkdir()
+        captured_class_loads = {}
         common = ["-Pstrata.jvmOnly=true", "--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain",
                   "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false",
                   "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(homes), "-I", str(init)]
 
         def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
+            nonlocal captured_class_loads
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
             for executable, expected in allowed_java.items():
                 require(digest(Path(executable)) == expected, "Pinned Java executable bytes changed before invocation")
@@ -601,19 +657,27 @@ def run(root, manifest_path, output):
                 require(digest(release) == expected, "Pinned Java release bytes changed before invocation")
             directory = output / "phases" / name
             directory.mkdir(parents=True, exist_ok=False)
+            class_directory = directory / "class-loads"
+            class_directory.mkdir()
             logs = vm_directory.as_posix()
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={logs}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
-                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs}
+                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
             args = arguments + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
             request = {"workspace": str(workspace), "arguments": args, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3,
                        "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
             write_new(directory / "request.json", request)
             phase_started = time.monotonic()
             previous_vms = set(vm_directory.glob("*.log"))
-            exit_code = invoke(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(directory / "request.json"), "-Report", str(directory / "terminal.json")], root, directory / "console.log")
-            if test_gate is not None:
-                preserve_test_reports(workspace, directory, test_gate)
+            previous_class_loads = class_load_inventory(class_staging, captured_class_loads)
+            try:
+                exit_code = invoke(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(directory / "request.json"), "-Report", str(directory / "terminal.json")], root, directory / "console.log")
+            finally:
+                try:
+                    captured_class_loads = preserve_class_loads(class_staging, directory, previous_class_loads)
+                finally:
+                    if test_gate is not None:
+                        preserve_test_reports(workspace, directory, test_gate)
             terminal = read_json(directory / "terminal.json")
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
