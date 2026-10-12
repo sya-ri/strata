@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "eb12958f3f1cbe1ae9d6986bff340e808f86fcbd",
+  "baseline_reconstructed_tree": "fcf410e4c7a7f41c62e15d8db7929d1ba18748d6",
   "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "9a861dca944dd17a9f8367fbf0b388196dc1186a",
+  "candidate_fixture_tree": "d28e0bac4c37f4b8326554f1967f984b941583c2",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -156,11 +156,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "076a9b171c4d1eb67e52cce538f909a074de6e9513ea0a3d2a03c6ea7f8d278e"
+      "sha256": "5185695b2f7a12bf6a7a2b45b615e94fd74f3f5fb100d22892805faa851fa192"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "b13daf5c87b91b8434df6af9bdd82f5e2c07bcc2906599c1b6ae266db358d947"
+      "sha256": "777395f024c5635e404ddf7c59a313d36a4cdc3aaea81f3290e5b6aab6d327ca"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -198,15 +198,21 @@
     "source_review": "Pending focused independent review of this native input helper correction",
     "native_execution": "Pending fresh whole16case/all22target execution"
   },
-  "common_collector_source_commit": "c6c9c02b2e67874438cc9ca93ddc25e23d49bdb3",
-  "common_collector_source_tree": "2d333acfa9ebd575889b07bb98ca1fc278146c72",
-  "common_collector_source_review": "Exact published common projection and formatter repair: root actually executed the real positive/negative TestKit regression and test-source lint; all earlier selected admission controls preserved; no child Java/native invocation",
+  "common_collector_source_commit": "461efd04f71008c321248318b429e37314392cfc",
+  "common_collector_source_tree": "a1aabc9421ac86f72263c7b12729fc4a883c61ee",
+  "common_collector_source_review": "Shared generic class-load transport and actual source qualification retained; no child Java/native invocation",
   "common_collector_bindings": [
     {
       "path": ".github/workflows/jvm.yml",
       "git_blob": "7a70525e8dbe14dbc35afa5d6a5cf69beed8833a",
       "sha256": "f771b9eca4905400b18398768672d0e7ee236bdd99e310f22ce238f9ba088046",
       "exact_reviewed_common_bytes": false
+    },
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmClassLoadFunctionalTest.kt",
+      "git_blob": "2b81e6389bf87410b5deb348ce9afac760f0df12",
+      "sha256": "1a259db03efbde270c1f32c760d06469bebd1e2e1abc3b930e63d86a7869f79d",
+      "exact_reviewed_common_bytes": true
     },
     {
       "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt",
@@ -216,26 +222,26 @@
     },
     {
       "path": "docs/development/performance-testkit.md",
-      "git_blob": "dd37a33050fbaaeca3e4642d5096838f34e8d3b5",
-      "sha256": "55e6967134d0788cf8c905872a1dcacf108183a44a17aa744769004708d40c1c",
+      "git_blob": "0bdc1fdc19218c8afd4724ed96f2f8d37698ac3f",
+      "sha256": "a598825725822c24a481192b1bcdba039f8f1c6dd9dacd43489d4606fe0dc2e7",
       "exact_reviewed_common_bytes": true
     },
     {
       "path": "gradle/performance/bounded-jvm.init.gradle.kts",
-      "git_blob": "05b4525089487a2555cde71b878a7a0c57334045",
-      "sha256": "3f5f4f2b4d0b84b65d0e8361de8be6272cf6c5b45aed162cbe03398871fb2066",
+      "git_blob": "dda0bcd971cd49ad2085e5c8b2d18f333df7e865",
+      "sha256": "7690a6625a105630a49693e86d81ffa6233a9c5e08e908f99445397533aaee47",
       "exact_reviewed_common_bytes": true
     },
     {
       "path": "gradle/performance/paired-jvm.py",
-      "git_blob": "c1c1bed51fb60ffa908ed177063f918c4efb04fa",
-      "sha256": "01be95c14ebbca2370ff78341da707846993711bdbd190d8bb43abb7d5ba1c41",
+      "git_blob": "7eef271ddf522a699df44acb93d4e0253c6b323c",
+      "sha256": "29cdf2a45f57ea26a976382fa0d20c2c6d0ef619fe6d074f0a8d797f97bd2bb8",
       "exact_reviewed_common_bytes": true
     },
     {
       "path": "gradle/tests/test_paired_jvm.py",
-      "git_blob": "0407909d81ae033f61a7afff0f313bbe17a1d8b0",
-      "sha256": "0c758d8c157896d1401608dece335b47f0ff0413193f036b3655d18bd8d38b59",
+      "git_blob": "c1853fceab0067d30d7c8140588c7f03d74c62e7",
+      "sha256": "8e9a669d3163d512ff39c2916e519f920c9b3ac425e30343006c883222564e81",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -479,7 +485,7 @@
     "status": "Passed actual whole native-screen-callback/presentation reconciliation; fresh final driver remains Pending",
     "reconciliation_sha256": "3ed80fc3b4ce17c9dd8ac994bfa2e140e93bcbbcabdce830e59d025e922ec8a3"
   },
-  "final_driver_parent": "e0777bef45c282644bc48d298e9c39b080969fdd",
+  "final_driver_parent": "cf0cc85699c4ab49f409e5abe383eb3ce221d954",
   "previous_failed_whole_attempt": {
     "head": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
     "run": 38210183998,
@@ -522,6 +528,20 @@
       "artifact_sha256": "11ebd0f4c7484eac063bf3343c0b333c18fa9152da491faf28b4fb6ecba67cac",
       "receipt_sha256": "cff8d9710bd316315f06e0e6d1acd5eac9963957d479150b8e7dc0bac7462936",
       "partial_sample_adoption": false
+    },
+    {
+      "head": "cf0cc85699c4ab49f409e5abe383eb3ce221d954",
+      "run": 38232531543,
+      "job": 114755310996,
+      "completed_standard_jmh_cells": 0,
+      "completed_supplemental_operation_rows": 0,
+      "timing_started": true,
+      "cause": "All four full Cycle/overlay admissions passed; the first full JMH collection exceeded the unchanged 16MiB stdout bound with class-load diagnostics",
+      "artifact_sha256": "6a84c86247edeef1792e33a04297b37579464d8ae62126bb4a10723a1b6ff291",
+      "attempt_sha256": "b45175668e2a95b29c993e9a4580be955e51379f675c475d62bbd42dc4e792ce",
+      "partial_sample_adoption": false,
+      "first_collection_terminal_absent": true,
+      "results_json_bytes": 0
     }
   ],
   "generic_runtime_projection": {
@@ -563,5 +583,75 @@
     "run": 38223825438,
     "job": 114726433047,
     "cause": "Only multiline-expression-wrapping lint at the new test source line91:24; build-logic:test not reached"
+  },
+  "generic_class_load_transport": {
+    "contract": "Retain per-VM unrotated immutable class-load files bound to actual PID and OS birth; preserve independent JDI observation origins and captured hashes",
+    "console_cap_bytes": 16777216,
+    "per_vm_cap_bytes": 1048576,
+    "actual_common_source_qualification": {
+      "windows_init_and_functional": {
+        "receipt_sha256": "86a2e52a82a34258031bc3e672d37975e1c8c4b59969ab75fea7668c4ed496fb",
+        "exact_final_source_paths": [
+          "gradle/performance/bounded-jvm.init.gradle.kts",
+          "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmClassLoadFunctionalTest.kt"
+        ],
+        "actual_result": {
+          "status": "passed",
+          "tests": [
+            {
+              "name": "TEST-dev.s7a.strata.gradle.BoundedJvmClassLoadFunctionalTest.xml",
+              "seconds": "13.344",
+              "sha256": "940149284641176e22bd620041b27062673dcc364cd9b317ab210b63d29a625a"
+            },
+            {
+              "name": "TEST-dev.s7a.strata.gradle.BoundedJvmRuntimeProjectionFunctionalTest.xml",
+              "seconds": "6.797",
+              "sha256": "c4edf586c89ae7ecf8147423c54f0d5e0bfab0fd138c0974459f1b7f56b6356f"
+            }
+          ],
+          "source_sha256": {
+            "gradle/performance/bounded-jvm.init.gradle.kts": "7690a6625a105630a49693e86d81ffa6233a9c5e08e908f99445397533aaee47",
+            "gradle/performance/paired-jvm.py": "2a159c626a4fab894228bfff730c2e97b2e359f5803a761ad606b7bbe7db5bc9",
+            "gradle/tests/test_paired_jvm.py": "3d094f7585aec042c27e0e0c13628d18cc28dc7d792f62096b8c935801f967be",
+            "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmClassLoadFunctionalTest.kt": "1a259db03efbde270c1f32c760d06469bebd1e2e1abc3b930e63d86a7869f79d"
+          },
+          "peakJobCommittedBytes": 3128926208,
+          "totalProcesses": 26,
+          "ownedAfterCleanup": 0,
+          "naturalRelease": true,
+          "handlesClosed": true,
+          "timing": "Not performance measurements"
+        },
+        "scope": "Actual logger/effectivecwd/inherited child and projection with formatter/main-test lint; no timings"
+      },
+      "final_published_driver_python": {
+        "common_commit": "461efd04f71008c321248318b429e37314392cfc",
+        "receipt_sha256": "007c21d5a0455187ca067fc3bdad1af2b52e3b820d8e6c95774ead568148d47c",
+        "actual_result": {
+          "source_root": "C:\\Users\\gbv_s\\.codex\\worktrees\\cycle-selection-index\\strata",
+          "source_sha256": {
+            "gradle/performance/bounded-jvm.init.gradle.kts": "7690a6625a105630a49693e86d81ffa6233a9c5e08e908f99445397533aaee47",
+            "gradle/performance/paired-jvm.py": "29cdf2a45f57ea26a976382fa0d20c2c6d0ef619fe6d074f0a8d797f97bd2bb8",
+            "gradle/tests/test_paired_jvm.py": "8e9a669d3163d512ff39c2916e519f920c9b3ac425e30343006c883222564e81",
+            "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmClassLoadFunctionalTest.kt": "1a259db03efbde270c1f32c760d06469bebd1e2e1abc3b930e63d86a7869f79d",
+            "gradle/plan-ci.py": "3ea9574197397549c9b3616d73abb7632faa6f7961c3755b5ac0025319be349e",
+            "gradle/tests/test_plan_ci.py": "4757984ae3f7ddf3f4b35e3ca7833826faf8cd3f6974ff4ac0c71bc35ebdb351"
+          },
+          "source_unchanged_during_execution": true,
+          "tests": 33,
+          "test_seconds": 3.81,
+          "outer_seconds": 4.03099999999904,
+          "natural_exit": 0,
+          "console_sha256": "f28c8bcf6b3f791d07763ca914eb668b2c3d57165d685be113b23982744691ff",
+          "console_bytes": 6220,
+          "java_native_invocations": 0,
+          "actual_jvm_functional_and_quality": "Root r3 actual logger/inherited-child/effectivecwd and projection plus main/test lint passed; fresh final-head CI Pending"
+        },
+        "scope": "Exact adopted public Git bytes; complete33 source-only tests"
+      },
+      "fresh_final_source_ci": "Pending",
+      "whole_performance_measurements": "Pending"
+    },
+    "all_original_case_oracles_preserved": true
   }
 }

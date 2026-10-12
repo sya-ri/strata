@@ -120,8 +120,12 @@ gradle.projectsEvaluated {
         project.tasks.withType<JavaExec>().configureEach {
             minHeapSize = "64m"
             maxHeapSize = "768m"
-            jvmArgs("-XX:MaxMetaspaceSize=384m", "-Xlog:class+load=info:stdout:pid,level,tags")
+            val classLoads = File(checkNotNull(System.getenv("STRATA_PAIRED_CLASS_LOGS"))).canonicalFile
+            check(classLoads.isDirectory)
+            jvmArgs("-XX:MaxMetaspaceSize=384m")
             doFirst {
+                val classLoadPath = File(classLoads, "classes-%p-%t.log").relativeTo(workingDir.canonicalFile).invariantSeparatorsPath
+                jvmArgs("-Xlog:class+load=info:file=$classLoadPath:pid,level,tags:filecount=0")
                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
                 listOf("benchmarks", "workloads").forEach { name ->
