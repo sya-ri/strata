@@ -71,7 +71,7 @@ gradle.projectsEvaluated {
                 check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
                 mainClass.set(preflightRequest["main"].toString())
                 setArgs(listOf(File(preflight).absolutePath))
-                dependsOn(template.map { it.taskDependencies.getDependencies(it) })
+                dependsOn(source.taskDependencies.getDependencies(source))
                 outputs.upToDateWhen { false }
                 outputs.cacheIf { false }
             }
@@ -124,6 +124,11 @@ gradle.projectsEvaluated {
             doFirst {
                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
+                listOf("benchmarks", "workloads").forEach { name ->
+                    rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
+                        systemProperty("strata.performance.$name", it)
+                    }
+                }
                 listOf("parameters", "fixtureInputs").forEach { name ->
                     rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)

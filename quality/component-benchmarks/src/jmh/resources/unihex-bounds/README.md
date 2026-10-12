@@ -4,7 +4,8 @@ This complete corpus compares the actual runtime natural-bound helper and public
 The fixed baseline is synced master `7ebd9c94f3da521cadb76eadd4312289eaf88d7e`, including the accepted complete-JMH Qodana tooling and shared paired JVM CI.
 Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
-These sources are preparation; all execution, origin qualification, controls and measurements are Pending.
+Formal whole-corpus traces, all thirty acceptance controls and measurements remain Pending.
+The external observer has a separate [actual compiled known-control qualification](../../../../../../.github/performance/unihex-bounds/trace-qualification.json); it does not certify the complete corpus or a performance gain.
 
 The committed [fixture table](fixtures.tsv) contains 36 immutable fixtures.
 The [comparison table](comparisons.tsv) expands the geometry inputs into 120 rows and retains twelve additional complete consumer controls.
@@ -57,11 +58,19 @@ JMH elapsed microseconds per operation and `gc.alloc.rate.norm` bytes per operat
 Do not label the JMH controller thread's CPU as workload CPU, replace unsupported values with zero or infer allocation savings from bit expressions.
 See the pinned primary [JMH iteration metadata](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/results/IterationResultMetaData.java) and [GC normalization](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) for the actual-operation denominator.
 
-Before timing, use the packaged `UnihexBoundsWorkEvidence` single-row entry with R001–R132 for an external untimed JVM method trace.
-Count actual `FontHexGlyph.bounds` entries and actual cache-miss constructor paths inside each printed operation begin/end boundary, excluding setup.
-Distinguish an absent provider result from a constructed raster and distinguish raster-cache misses from public glyph requests.
+Before timing, run the packaged `UnihexBoundsMethodTrace` through the shared compiled preflight route for the complete R001–R132 inventory.
+Each worker delegates to the unchanged `UnihexBoundsWorkEvidence` single-row entry on the actual preserved classpath.
+JDK JDI observes `FontHexGlyph.bounds` and cache-miss method entries and actual Unihex return values between the printed operation boundaries, excluding setup.
+An actual null Unihex return is an absent result; a successful nonnull return records a constructed Unihex raster.
+Public glyph calls, provider cache misses, bitmap cell misses, native raster requests and image-factory entries have separate counters.
+Image-factory entries are not a count of completed rasters.
+The marker adapter accepts actual String-reference arguments to both `PrintStream.println(String)` and `println(Object)`, suppresses only nested println delegation and retains the observed descriptor.
+The operation thread owns each boundary, and a missing, repeated or incomplete boundary fails qualification instead of becoming a zero count.
+First qualify the actual compiled observer with one, three and zero real bounds calls plus a caught closed-engine failure observed independently through a JDI exception event.
+Bind that qualification to the actual compiled controller/worker hashes, preserved byte closure, PID-qualified loaded origins, finite VM caps and naturally released owning Job before admitting any trace or timed collection.
+Startup class loads go to a retained PID-decorated file so a launching connector cannot block on an unavailable pipe; after natural child release its exact bytes join the shared console and origin verification.
 Keep trace runtime/fixture/classpath identities bound to the actual preserved archives used by collection.
-Dirty Text emits shared frame-work diagnostics through the same entry.
+Dirty Text's actual post-operation work diagnostics are retained separately from method counts.
 The source forecast is 16×width original ink predicates versus sixteen candidate row reads/OR combinations, one width mask and two bit-extrema operations per executed nonempty scan.
 Those expressions are not total machine instructions or actual Text scan counts.
 External method tracing is separate from timed CPU/allocation collection and never instruments the measured runtime archives.

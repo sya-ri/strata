@@ -1,0 +1,342 @@
+{
+  "schema": "strata-unihex-method-trace-qualification-v1",
+  "status": "passed",
+  "controller_class_sha256": "723d6c072ed66c42ccd4b0917ae2a64a5a63a2005cc7a25ec87372e08030267c",
+  "worker_class_sha256": "ce6b3fcdd0224f7d133503015b718c81913e70333ff1a1bbf5bff7585597a9db",
+  "request_sha256": "0ad367d683638046949bd514adbb53385c91258c316d31a53ded75e7ecd479f3",
+  "receipt_sha256": "d707820fa7f86058df44bd3444e7aaefe2ec47697919483ddeab257970ef518a",
+  "verified_sha256": "27fbf54f40ce49d648875248c4bf291f0184d852ab0bade9004d42a0404849c1",
+  "terminal_sha256": "5175f991ebdf4633c0fc7342ae461b510533196abc315f1e0727c19c5f30f49f",
+  "vms_sha256": "22323e81a0b80276da708810a47dca2470d31d79935cfffb5659fc3dd5827c93",
+  "console_sha256": "742c62b41df79a5cfdca086f54852525023139b6d40c307c73d8d6c0c06dea38",
+  "bootstrap_sha256": "3bcb1c08a788eaf1a51ddb62ae28884cb9bb7f83e245505d116cd940df49ddd9",
+  "sources": {
+    "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt": {
+      "path": "C:\\Users\\gbv_s\\.codex\\worktrees\\u293-r6\\strata\\runtime\\minecraft\\src\\main\\kotlin\\dev\\s7a\\strata\\runtime\\minecraft\\font\\FontHexGlyph.kt",
+      "sha256": "65954a496c654f4f96f9eda057f2c0e9c2e35c4ca314eb4ccb1de02310bdf9ad"
+    },
+    "quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/UnihexBoundsMethodTrace.java": {
+      "path": "C:\\Users\\gbv_s\\.codex\\worktrees\\u293-r6\\strata\\quality\\component-benchmarks\\src\\jmh\\java\\dev\\s7a\\strata\\quality\\benchmark\\UnihexBoundsMethodTrace.java",
+      "sha256": "ebda32306c8faabfae8a97995d6061b68080d4f84dad608ec5ef43df3f21b873"
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTraceWorker.kt": {
+      "path": "C:\\Users\\gbv_s\\.codex\\worktrees\\u293-r6\\strata\\quality\\component-benchmarks\\src\\jmh\\kotlin\\dev\\s7a\\strata\\quality\\benchmark\\UnihexBoundsTraceWorker.kt",
+      "sha256": "347fca1786930bd3c3b7845aed7e01de1f0f635fa590cc3192433452902ed4c4"
+    }
+  },
+  "java": {
+    "executable": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\25.0.2\\bin\\java.exe",
+    "executable_sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+    "release": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\25.0.2\\release",
+    "release_sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62"
+  },
+  "controls": [
+    {
+      "id": "QSingle",
+      "status": "passed",
+      "observations": {
+        "pid": 15976,
+        "natural_bounds": 1,
+        "public_glyph_requests": 0,
+        "cached_glyph_requests": 0,
+        "provider_cache_misses": 0,
+        "unihex_raster_attempts": 0,
+        "unihex_absent_results": 0,
+        "unihex_constructed_rasters": 0,
+        "bitmap_cell_misses": 0,
+        "bitmap_decodes": 0,
+        "native_raster_requests": 0,
+        "owned_image_factory_entries": 0,
+        "expected_failures": 0,
+        "engine_exception_events": 0,
+        "can_get_method_return_values": true,
+        "begin_marker": "Unihex operation begin QSingle independent actual runtime control",
+        "begin_marker_signature": "(Ljava/lang/Object;)V",
+        "end_marker": "Unihex operation end QSingle independent control complete",
+        "end_marker_signature": "(Ljava/lang/Object;)V",
+        "exit_code": 0,
+        "complete_boundary": true
+      },
+      "origins": {
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
+          "pid": 15976
+        },
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
+          "pid": 15976
+        },
+        "dev.s7a.strata.performance.JvmPerformanceMeter": {
+          "pid": 15976
+        },
+        "org.openjdk.jmh.runner.Runner": {
+          "pid": 15976
+        },
+        "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
+          "pid": 15976
+        },
+        "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
+          "pid": 15976
+        },
+        "dev.s7a.strata.render.DrawImages": {
+          "pid": 15976
+        }
+      },
+      "artifacts": [
+        {
+          "path": "QSingle/stdout.log",
+          "sha256": "c74819d642ac5257b9e9f1038f97b70ddc8e9db58ba3fe954d13df12d538a121"
+        },
+        {
+          "path": "QSingle/stderr.log",
+          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+        },
+        {
+          "path": "QSingle/class-load.log",
+          "sha256": "79f0cc46f92a110600c927a02101e7bbba99e0dfeedc856a28097833c9539e2f"
+        },
+        {
+          "path": "QSingle/events.json",
+          "sha256": "8ef4194425659f8660ef74aa3724b93665dc2e174c96b0ef04fd05ae77c12375"
+        }
+      ]
+    },
+    {
+      "id": "QMultiple",
+      "status": "passed",
+      "observations": {
+        "pid": 15376,
+        "natural_bounds": 3,
+        "public_glyph_requests": 0,
+        "cached_glyph_requests": 0,
+        "provider_cache_misses": 0,
+        "unihex_raster_attempts": 0,
+        "unihex_absent_results": 0,
+        "unihex_constructed_rasters": 0,
+        "bitmap_cell_misses": 0,
+        "bitmap_decodes": 0,
+        "native_raster_requests": 0,
+        "owned_image_factory_entries": 0,
+        "expected_failures": 0,
+        "engine_exception_events": 0,
+        "can_get_method_return_values": true,
+        "begin_marker": "Unihex operation begin QMultiple independent actual runtime control",
+        "begin_marker_signature": "(Ljava/lang/Object;)V",
+        "end_marker": "Unihex operation end QMultiple independent control complete",
+        "end_marker_signature": "(Ljava/lang/Object;)V",
+        "exit_code": 0,
+        "complete_boundary": true
+      },
+      "origins": {
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
+          "pid": 15376
+        },
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
+          "pid": 15376
+        },
+        "dev.s7a.strata.performance.JvmPerformanceMeter": {
+          "pid": 15376
+        },
+        "org.openjdk.jmh.runner.Runner": {
+          "pid": 15376
+        },
+        "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
+          "pid": 15376
+        },
+        "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
+          "pid": 15376
+        },
+        "dev.s7a.strata.render.DrawImages": {
+          "pid": 15376
+        }
+      },
+      "artifacts": [
+        {
+          "path": "QMultiple/stdout.log",
+          "sha256": "909e2a3a8933b0d660662a1c620da6877b47e00c7f9b22200cef6e9c43d1060b"
+        },
+        {
+          "path": "QMultiple/stderr.log",
+          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+        },
+        {
+          "path": "QMultiple/class-load.log",
+          "sha256": "a6aabb79833a3037f1dc3d3be1915293e4099f9db1f30b80b367315410c67ea7"
+        },
+        {
+          "path": "QMultiple/events.json",
+          "sha256": "dc0d64673f2588d6b75eab265943530a82c3a829e99387eaa55d4d3d715d71cb"
+        }
+      ]
+    },
+    {
+      "id": "QZero",
+      "status": "passed",
+      "observations": {
+        "pid": 24544,
+        "natural_bounds": 0,
+        "public_glyph_requests": 0,
+        "cached_glyph_requests": 0,
+        "provider_cache_misses": 0,
+        "unihex_raster_attempts": 0,
+        "unihex_absent_results": 0,
+        "unihex_constructed_rasters": 0,
+        "bitmap_cell_misses": 0,
+        "bitmap_decodes": 0,
+        "native_raster_requests": 0,
+        "owned_image_factory_entries": 0,
+        "expected_failures": 0,
+        "engine_exception_events": 0,
+        "can_get_method_return_values": true,
+        "begin_marker": "Unihex operation begin QZero independent actual runtime control",
+        "begin_marker_signature": "(Ljava/lang/Object;)V",
+        "end_marker": "Unihex operation end QZero independent control complete",
+        "end_marker_signature": "(Ljava/lang/Object;)V",
+        "exit_code": 0,
+        "complete_boundary": true
+      },
+      "origins": {
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
+          "pid": 24544
+        },
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
+          "pid": 24544
+        },
+        "dev.s7a.strata.performance.JvmPerformanceMeter": {
+          "pid": 24544
+        },
+        "org.openjdk.jmh.runner.Runner": {
+          "pid": 24544
+        },
+        "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
+          "pid": 24544
+        },
+        "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
+          "pid": 24544
+        },
+        "dev.s7a.strata.render.DrawImages": {
+          "pid": 24544
+        }
+      },
+      "artifacts": [
+        {
+          "path": "QZero/stdout.log",
+          "sha256": "c790e95dc4b778ff41af6ea4777dba4c70b9f92a97679e167139b5ea0b1ebf6c"
+        },
+        {
+          "path": "QZero/stderr.log",
+          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+        },
+        {
+          "path": "QZero/class-load.log",
+          "sha256": "2c07f530b7e3bbb0b6896af1459034ac2665ef97a041c1fb094aadfe249d3114"
+        },
+        {
+          "path": "QZero/events.json",
+          "sha256": "ac3fc87ca05ea36a310346354dcc5d9aa0ca046cc710d1c8e7815a8e343ce6cd"
+        }
+      ]
+    },
+    {
+      "id": "QFailure",
+      "status": "passed",
+      "observations": {
+        "pid": 15424,
+        "natural_bounds": 0,
+        "public_glyph_requests": 1,
+        "cached_glyph_requests": 0,
+        "provider_cache_misses": 0,
+        "unihex_raster_attempts": 0,
+        "unihex_absent_results": 0,
+        "unihex_constructed_rasters": 0,
+        "bitmap_cell_misses": 0,
+        "bitmap_decodes": 0,
+        "native_raster_requests": 0,
+        "owned_image_factory_entries": 0,
+        "expected_failures": 1,
+        "engine_exception_events": 1,
+        "can_get_method_return_values": true,
+        "begin_marker": "Unihex operation begin QFailure independent actual runtime control",
+        "begin_marker_signature": "(Ljava/lang/Object;)V",
+        "exception_catch_location": "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker:59",
+        "failure_marker": "Unihex operation failure QFailure java.lang.IllegalStateException",
+        "end_marker": "Unihex operation end QFailure independent control complete",
+        "end_marker_signature": "(Ljava/lang/Object;)V",
+        "exit_code": 0,
+        "complete_boundary": true
+      },
+      "origins": {
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
+          "pid": 15424
+        },
+        "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
+          "pid": 15424
+        },
+        "dev.s7a.strata.performance.JvmPerformanceMeter": {
+          "pid": 15424
+        },
+        "org.openjdk.jmh.runner.Runner": {
+          "pid": 15424
+        },
+        "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
+          "pid": 15424
+        },
+        "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
+          "pid": 15424
+        },
+        "dev.s7a.strata.render.DrawImages": {
+          "pid": 15424
+        }
+      },
+      "artifacts": [
+        {
+          "path": "QFailure/stdout.log",
+          "sha256": "48b0c516487dee65d5b40ad4f8bd5c746054bc8ba10033cf575567f4a5d670a8"
+        },
+        {
+          "path": "QFailure/stderr.log",
+          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+        },
+        {
+          "path": "QFailure/class-load.log",
+          "sha256": "c7b203a37e6c1226abe08cda47f85c2c5665c378b0d2a8a4922b587e27834be9"
+        },
+        {
+          "path": "QFailure/events.json",
+          "sha256": "4da824e81314b4327af824faf8884d290ca6110f0fd7fb00d3a5c2e9e6094277"
+        }
+      ]
+    }
+  ],
+  "declared_java_homes": [
+    {
+      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\25.0.2",
+      "executable_sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+      "release_sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62"
+    },
+    {
+      "home": "C:\\Users\\gbv_s\\.gradle\\jdks\\eclipse_adoptium-17-amd64-windows.2",
+      "executable_sha256": "5369cf92fc590944793e47cc9c9fef7955ce1a68de22ba22023cdd3513e87c2b",
+      "release_sha256": "666094d10d8d978e4b72e7a492c07fde713cc15db2d8d02be802e0170ec878d6"
+    },
+    {
+      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\21.0.2",
+      "executable_sha256": "638a1fa85ec764d5ebeb749047868a36d4cc3bccd26d2caebc20f0f6e4adbdc1",
+      "release_sha256": "c7332a8bf8d588d76e8a58f0f95492f01d8beb1c02713cb43fc6eb98ec2e27c6"
+    },
+    {
+      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\temurin-25.0.4+101.0.LTS",
+      "executable_sha256": "5808527e3dfc4eb285c7664ba356bc267055ef906e83ed4660d9f7976da7349b",
+      "release_sha256": "86e5e51658bb2b9cf064b3957d81ac39abdb346b2cac19867c1625dd19d440d9"
+    }
+  ],
+  "phase_request_sha256": "1e0d5563f8b40e70af41c66c411740342d402f15965295af85b4814a46412b56",
+  "owned_phase": {
+    "jobName": "StrataPairedJVM-ee453be4ab714e99b40b02aa664b4ae4",
+    "exitCode": 0,
+    "naturalRelease": true,
+    "handlesClosed": true,
+    "activeProcessesAfterCleanup": 0,
+    "jobCommittedLimitBytes": 3221225472,
+    "observedJobLimitBytes": 3221225472,
+    "peakJobCommittedBytes": 2024906752
+  }
+}
