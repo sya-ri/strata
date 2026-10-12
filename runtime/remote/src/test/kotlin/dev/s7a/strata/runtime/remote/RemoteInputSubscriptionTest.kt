@@ -286,6 +286,7 @@ internal class RemoteInputSubscriptionTest {
             }
         }
     }
+
     /**
      * Owns an isolated client, server, binary channel, and retained host on the test thread.
      */
