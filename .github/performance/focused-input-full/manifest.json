@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "29b09978970f1208f0b7024fac85d71efa80e8f0",
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "4f8d76fece1b895d83f112d5636ea0bcef1a7bdd",
       "patches": [
         {
           "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "6c4c454fdb57c4acfd7338dbd0c18fa3dec4083459bc1e800d581f9990c48566"
+          "sha256": "faf6c1d4511c666717b95faa0bace61b4a2958df3d29795dee33e0a506c95eff"
         }
       ]
     },
     "candidate": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "29b09978970f1208f0b7024fac85d71efa80e8f0",
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "4f8d76fece1b895d83f112d5636ea0bcef1a7bdd",
       "patches": [
         {
           "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "6c4c454fdb57c4acfd7338dbd0c18fa3dec4083459bc1e800d581f9990c48566"
+          "sha256": "faf6c1d4511c666717b95faa0bace61b4a2958df3d29795dee33e0a506c95eff"
         }
       ]
     },
     "baseline": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "67ac4c93774a6091c7f4538a95187f26d6632bae",
+      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+      "tree": "168b9fd2d260d563f2d12868669c58be8423857d",
       "patches": [
         {
           "path": ".github/performance/focused-input-full/baseline.patch",
-          "sha256": "12c3ed42182cc70e63ace7a5a4147c14474aaecd385a3cb86065d12b31864366"
+          "sha256": "e96f512b99b72a4e0d4f4dd7035bacb7a8a39bc6b4fd76df4ba9678cb85d8556"
         }
       ]
     }
@@ -46,7 +46,16 @@
       ],
       "workloads": [],
       "parameters": {},
-      "expected_cases": 32
+      "expected_cases": 32,
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.FocusedInputBenchmark": "dev.s7a.strata.quality.benchmark.FocusedInputOperationReport"
+        },
+        "warmup": 100,
+        "samples": 200,
+        "expected_rows": 32,
+        "expected_controls": 2
+      }
     }
   ],
   "inputs": [
@@ -68,7 +77,14 @@
       "label": "focused-source-2",
       "pin": {
         "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt",
-        "sha256": "79aefb81c70665a627ee5b3900ca8cb647333ba50f5e55c53e6d9912f23149cc"
+        "sha256": "d5a54d8cc9615467904b4d46eec86e0cd870ebd135ca35638b1887de649b650a"
+      }
+    },
+    {
+      "label": "focused-owner-adapter",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt",
+        "sha256": "e4bd652ade5ec450567172a3c8233338b6ebce6380e255176b9f6473a51b7368"
       }
     }
   ],

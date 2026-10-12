@@ -263,7 +263,7 @@ def preserve_class_loads(owner, directory, previous):
 
 
 def class_loads(directory):
-    """Retain complete bounded per-VM attribution with exact PID filenames and no rotation/truncation."""
+    """Retain complete per-VM files; PID reuse keeps independent timestamped diagnostics."""
     owner = directory / "class-loads"
     require(owner.is_dir() and not owner.is_symlink(), "Missing owned class-load directory")
     texts, identities = [], {}
@@ -274,10 +274,58 @@ def class_loads(directory):
         pid = int(name[1])
         text = path.read_text(encoding="utf-8")
         observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
-        require(pid not in identities and observed == {pid} and text.endswith("\n"), "Missing, duplicate, wrong-PID or truncated class-load diagnostic")
+        require(observed == {pid} and text.endswith("\n"), "Missing, wrong-PID or truncated class-load diagnostic")
         texts.append(text)
-        identities[pid] = {"path": str(path), "sha256": digest(path)}
+        identities[str(path)] = {"path": str(path), "sha256": digest(path), "pid": pid}
     return "".join(texts), identities
+
+
+def owned_generation(terminal, pid, vm_start):
+    """Select one captured PID/birth generation; legacy single-record receipts remain readable."""
+    histories = terminal["members"].get(str(pid), [])
+    legacy = isinstance(histories, dict)
+    histories = [histories] if legacy else histories
+    require(isinstance(histories, list), "Invalid owned process history")
+    births, matching, previous_exit = set(), [], None
+    for member in histories:
+        require(isinstance(member, dict) and member.get("pid", pid if legacy else None) == pid
+                and isinstance(member.get("creationFileTime"), int) and not isinstance(member["creationFileTime"], bool), "Altered owned process identity")
+        birth = member["creationFileTime"]
+        require(birth not in births, "Duplicate owned process generation")
+        require(previous_exit is None or previous_exit <= birth, "Overlapping or reordered owned process generations")
+        births.add(birth)
+        if "exitFileTime" in member:
+            require(isinstance(member["exitFileTime"], int) and not isinstance(member["exitFileTime"], bool)
+                    and birth <= member["exitFileTime"], "Altered owned process lifetime")
+            previous_exit = member["exitFileTime"]
+        else:
+            require(legacy and len(histories) == 1, "Missing actual process lifetime proof")
+        birth_ms = (birth - 116444736000000000) // 10000
+        exit_ms = (member["exitFileTime"] - 116444736000000000) // 10000 if "exitFileTime" in member else None
+        require(exit_ms is None or birth_ms <= exit_ms, "Altered owned process lifetime")
+        if 0 <= vm_start - birth_ms <= 2000 and (exit_ms is None or vm_start <= exit_ms):
+            matching.append(member)
+    require(len(matching) == 1, "Missing or ambiguous owned process generation")
+    member = matching[0]
+    require(member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
+            and member.get("handleClosed", legacy) is True, "Actual JVM generation or zero-exit proof missing")
+    return member
+
+
+def class_diagnostic(identities, pid, vm_diagnostic, vm_files):
+    """Match actual start stamps; legacy unstamped diagnostics require a unique VM PID."""
+    candidates = [item for item in identities.values() if item["pid"] == pid]
+    if not candidates:
+        return None
+    name = re.fullmatch(r"vm-pid" + str(pid) + r"-([0-9_-]+)\.log", vm_diagnostic.name)
+    if name is None:
+        same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
+                                     path.read_text(encoding="utf-8"))) for path in vm_files)
+        require(len(candidates) == same_pid == 1, "Missing reused-PID VM diagnostic timestamp")
+        return candidates[0]
+    matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{name[1]}.log"]
+    require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
+    return matching[0] if matching else None
 
 
 def verify_vms(directory, files, terminal, allowed, expected_forks=None):
@@ -330,36 +378,36 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
             require(len(flags) == 1 and int(flags[0]) == cap * 1024**2, f"Changed or unavailable actual finite VM cap: {role}/{name}")
             caps[name] = int(flags[0])
         pid, vm_start = map(int, headers[0])
-        member = terminal["members"].get(str(pid))
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
         evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
+        diagnostic = class_diagnostic(class_identities, pid, path, files)
+        if diagnostic is not None:
+            evidence["class_load_diagnostic"] = diagnostic
         if role == "fork":
-            require(member is not None and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0,
-                    "Actual JMH fork generation or zero-exit proof missing")
-            birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
-            require(0 <= vm_start - birth_ms <= 2000 and os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
+            member = owned_generation(terminal, pid, vm_start)
+            require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
             require(member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"], "JMH fork changed inherited affinity")
-            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", loaded_classes)
+            require(diagnostic is not None, "PID-qualified JMH fork main origin missing or ambiguous")
+            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", Path(diagnostic["path"]).read_text(encoding="utf-8"))
             require(len(loaded) == 1, "PID-qualified JMH fork main origin missing or ambiguous")
             evidence["actual_loaded_main"] = loaded[0].strip()
             evidence["os_generation"] = member
-            forks.append(pid)
+            forks.append((pid, member["creationFileTime"]))
         records.append(evidence)
     for probe in version_probes:
-        authorities = [record["pid"] for record in records if record["role"] == "java_exec" and record["home"] == probe["home"]]
-        require(any(re.search(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+", loaded_classes)
-                    for pid in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
-    require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or reused JMH fork")
+        authorities = [record for record in records if record["role"] == "java_exec" and record["home"] == probe["home"] and "class_load_diagnostic" in record]
+        require(any(re.search(r"(?m)^\s*\[" + str(record["pid"]) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+",
+                              Path(record["class_load_diagnostic"]["path"]).read_text(encoding="utf-8"))
+                    for record in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
+    require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or duplicate JMH fork generation")
     if expected_forks is not None:
         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
-    require(set(class_identities) <= {record["pid"] for record in records}, "Unbound class-load JVM identity")
-    for record in records:
-        if record["pid"] in class_identities:
-            record["class_load_diagnostic"] = class_identities[record["pid"]]
+    captured = [record["class_load_diagnostic"]["path"] for record in records if "class_load_diagnostic" in record]
+    require(set(captured) == set(class_identities) and len(captured) == len(set(captured)), "Unbound or duplicate class-load JVM identity")
     write_new(directory / "vms.json", records)
 
 
@@ -465,8 +513,8 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
             "Incomplete or reordered whole preflight control inventory")
     console = (phase_directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(phase_directory)
-    vms = {item["pid"]: item for item in read_json(phase_directory / "vms.json")}
-    captured_class_identities = {pid: vm["class_load_diagnostic"] for pid, vm in vms.items() if "class_load_diagnostic" in vm}
+    vms = read_json(phase_directory / "vms.json")
+    captured_class_identities = {vm["class_load_diagnostic"]["path"]: {"pid": vm["pid"], **vm["class_load_diagnostic"]} for vm in vms if "class_load_diagnostic" in vm}
     require(class_identities == captured_class_identities, "Control changed its captured class-load diagnostic")
     artifacts = set()
     for result in receipt["controls"]:
@@ -477,8 +525,10 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
             require(isinstance(origin, dict) and set(origin) == {"pid"} and isinstance(origin["pid"], int)
                     and not isinstance(origin["pid"], bool), "Invalid actual control JVM identity")
             pid = origin["pid"]
-            vm = vms.get(pid)
-            member = terminal["members"].get(str(pid))
+            matching = [vm for vm in vms if vm["pid"] == pid and vm["role"] == "java_exec"]
+            require(len(matching) == 1, "Missing or ambiguous actual control JVM identity")
+            vm = matching[0]
+            member = owned_generation(terminal, pid, vm["vm_start_ms"])
             require(vm is not None and vm["role"] == "java_exec" and member is not None
                     and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
                     and member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"],
@@ -487,10 +537,15 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
             pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"
-            loaded = re.findall(pattern, loaded_classes)
+            diagnostic = vm.get("class_load_diagnostic")
+            vm_classes = Path(diagnostic["path"]).read_text(encoding="utf-8") if diagnostic is not None else ""
+            require(diagnostic is not None or len([item for item in vms if item["pid"] == pid]) == 1,
+                    "Ambiguous independent control process generation")
+            loaded = re.findall(pattern, vm_classes)
             observed = re.findall(pattern, console)
             require((len(loaded) == 1 and (not observed or observed == loaded))
-                    or (not loaded and len(observed) == 1), "Missing or ambiguous PID-qualified control class load")
+                    or (not loaded and len(observed) == 1 and len([item for item in vms if item["pid"] == pid]) == 1),
+                    "Missing or ambiguous PID-qualified control class load")
             loaded = loaded or observed
             location = urlparse(loaded[0].strip())
             require(location.scheme == "file" and not location.netloc, "Control loaded class from a non-local origin")

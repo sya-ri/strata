@@ -26,6 +26,7 @@ import dev.s7a.strata.node.ModifierNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.TextInputNode
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -452,12 +453,19 @@ public open class FocusedInputBenchmark {
             )
 
         /**
+         * Registers all original dispatch rows with the shared owner-thread meter without changing JMH sampling.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = FocusedInputOperationReport
+
+        /**
          * Verifies every frozen case with traces enabled outside timing and exact disposal counts.
          */
         @JvmStatic
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(FocusedInputBenchmark::class.java), setOf("avgt")).size == Workload.entries.size)
             Workload.entries.forEach { workload -> Fixture(workload).use { it.verifyWork() } }
+            FocusedInputOperationReport.verifyRows()
         }
     }
 }
