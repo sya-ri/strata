@@ -61,7 +61,10 @@ class ProjectionValueSnapshotTest {
      * Property-only projection must never request an endpoint or retain a resource capability.
      */
     private class Scope : ProjectionScope {
-        override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = error("Unexpected action")
+        override fun action(
+            action: ProjectionAction<*>,
+            key: ProjectionValue,
+        ): Long = error("Unexpected action")
 
         override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = error("Unexpected binding")
 

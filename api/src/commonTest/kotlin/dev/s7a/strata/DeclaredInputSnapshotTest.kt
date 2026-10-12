@@ -74,7 +74,10 @@ class DeclaredInputSnapshotTest {
             keys.clear()
         }
 
-        override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long {
+        override fun action(
+            action: ProjectionAction<*>,
+            key: ProjectionValue,
+        ): Long {
             keys.add(key)
             return keys.size.toLong()
         }
