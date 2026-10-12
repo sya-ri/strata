@@ -23,7 +23,9 @@ internal class MinecraftSlotTooltipReferenceScreen(
         checkNotNull(Minecraft.getInstance().player).inventory,
         Component.empty(),
     ) {
-    /** Completed native submissions observed only on the client thread. */
+    /**
+     * Completed native submissions observed only on the client thread.
+     */
     internal var frames: Long = 0L
         private set
 
@@ -41,8 +43,15 @@ internal class MinecraftSlotTooltipReferenceScreen(
         graphics.fill(0, 0, width, height, black)
         val carried = menu.carried
         if (carried.isEmpty.not()) {
-            graphics.renderItem(carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
-            graphics.renderItemDecorations(checkNotNull(minecraft).font, carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
+            // The original floating-item method owns a 232-depth pose on this native API family.
+            graphics.pose().pushPose()
+            try {
+                graphics.pose().translate(0.0f, 0.0f, carriedDepth)
+                graphics.renderItem(carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
+                graphics.renderItemDecorations(checkNotNull(minecraft).font, carried, mouseX - itemHalfSize, mouseY - itemHalfSize)
+            } finally {
+                graphics.pose().popPose()
+            }
         }
         super.renderTooltip(graphics, mouseX, mouseY)
         frames += 1L
@@ -59,6 +68,9 @@ internal class MinecraftSlotTooltipReferenceScreen(
 
     private companion object {
         private val black = 0xFF000000.toInt()
+
+        @Suppress("MayBeConstant")
+        private val carriedDepth = 232.0f
 
         @Suppress("MayBeConstant")
         private val itemHalfSize = 8

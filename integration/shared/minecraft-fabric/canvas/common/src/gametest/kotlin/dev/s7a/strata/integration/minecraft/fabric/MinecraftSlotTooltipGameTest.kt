@@ -97,7 +97,31 @@ internal object MinecraftSlotTooltipGameTest {
         val normal = capture(context, screen, inventoryIndex, "scale-$scale-${position.name}-normal")
         context.onClient { Minecraft.getInstance().options.advancedItemTooltips = true }
         val advanced = capture(context, screen, inventoryIndex, "scale-$scale-${position.name}-advanced")
-        check(pixels(normal.path).contentEquals(pixels(advanced.path)).not()) { "Changing advanced tooltips must change the same hovered sword without moving its pointer." }
+        val advancedChanged = pixels(normal.path).contentEquals(pixels(advanced.path)).not()
+        if (advancedChanged.not()) {
+            val nativeState =
+                context.onClient {
+                    val client = Minecraft.getInstance()
+                    val window = client.window
+                    val hovered =
+                        runCatching {
+                            val inventoryField = screen.javaClass.getDeclaredField("inventory")
+                            check(inventoryField.trySetAccessible())
+                            val inventory = checkNotNull(inventoryField.get(screen))
+                            val hoveredField = inventory.javaClass.getDeclaredField("hovered")
+                            check(hoveredField.trySetAccessible())
+                            (hoveredField.get(inventory) != null).toString()
+                        }.getOrElse { failure -> "unreadable:${failure.javaClass.name}:${failure.message}" }
+                    "logicalPointer=$pointer\nrawPointer=${client.mouseHandler.xpos()},${client.mouseHandler.ypos()}\n" +
+                        "logicalViewport=${window.guiScaledWidth}x${window.guiScaledHeight}\n" +
+                        "nativeWindow=${window.screenWidth}x${window.screenHeight}\nframebuffer=${window.width}x${window.height}\n" +
+                        "guiScale=${window.guiScale}\nforeground=${context.currentScreen() === screen}\noverlay=${context.hasOverlay()}\n" +
+                        "hoveredBinding=$hovered\nnormalHostFrames=${normal.hostFrameBaseline}..${normal.hostFramesObserved}\n" +
+                        "advancedHostFrames=${advanced.hostFrameBaseline}..${advanced.hostFramesObserved}\n"
+                }
+            Files.writeString(context.outputDirectory.resolve("strata-tooltip-native-input-$scale-${position.name}.txt"), nativeState)
+        }
+        check(advancedChanged) { "Changing advanced tooltips must change the same hovered sword without moving its pointer." }
         val observations = mutableListOf(normal, advanced)
         if (position == Position.Center) {
             replaceFixture(MinecraftSlotTooltipFixture.UpdatedSword)

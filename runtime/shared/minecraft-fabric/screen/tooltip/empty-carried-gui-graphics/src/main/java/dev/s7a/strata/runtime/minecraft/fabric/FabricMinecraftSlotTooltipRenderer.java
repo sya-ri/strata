@@ -23,7 +23,8 @@ final class FabricMinecraftSlotTooltipRenderer {
      * @param y current pointer y in GUI pixels.
      */
     static void render(GuiGraphics graphics, Font font, ItemStack stack, ItemStack carried, int x, int y) {
-        if (carried.isEmpty() == false) return;
-        graphics.renderTooltip(font, stack, x, y);
+        if (carried.isEmpty()) {
+            graphics.renderTooltip(font, stack, x, y);
+        }
     }
 }

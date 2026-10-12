@@ -24,7 +24,8 @@ final class FabricMinecraftSlotTooltipRenderer {
      * @param y current pointer y in GUI pixels.
      */
     static void render(GuiGraphics graphics, Font font, ItemStack stack, ItemStack carried, int x, int y) {
-        if (carried.isEmpty() == false && stack.getTooltipImage().map(ClientTooltipComponent::create).map(ClientTooltipComponent::showTooltipWithItemInHand).orElse(false) == false) return;
-        graphics.setTooltipForNextFrame(font, stack, x, y);
+        if (carried.isEmpty() || stack.getTooltipImage().map(ClientTooltipComponent::create).map(ClientTooltipComponent::showTooltipWithItemInHand).orElse(false)) {
+            graphics.setTooltipForNextFrame(font, stack, x, y);
+        }
     }
 }

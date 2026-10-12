@@ -127,9 +127,17 @@ private data class MinecraftFabricTarget(
     val uiInputSourcePath: String = "runtime/shared/minecraft-fabric/input/${if (uiFamily == UiFamily.ExtractHud) "gui-holder" else "screen-field"}"
     val allSourceLinkPaths: List<String> =
         (sourceLinkPaths + canvasSourcePaths + inputSourcePaths + uiInputSourcePath + "runtime/shared/minecraft-fabric/hud/${uiFamily.sourceRoot}" + "runtime/shared/minecraft-fabric/transport/${remoteNetworkFamily.sourceRoot}").distinct()
+    /** Independent vanilla carried-item context selected by the verified native framebuffer API. */
+    val tooltipReferenceSourcePath: String =
+        when (canvasFamily) {
+            CanvasFamily.OpenGlPlatformBuffers, CanvasFamily.OpenGlBuffers, CanvasFamily.Blaze3dDirectTextures -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/pose-gui-graphics"
+            CanvasFamily.Blaze3dTextureViews, CanvasFamily.Blaze3dSamplers -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/stratum-gui-graphics"
+            CanvasFamily.Blaze3dGuiExtractor, CanvasFamily.Blaze3dBindGroups, CanvasFamily.RenderPearl -> "integration/shared/minecraft-fabric/canvas/tooltip-reference/gui-extractor"
+        }
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            tooltipReferenceSourcePath,
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",

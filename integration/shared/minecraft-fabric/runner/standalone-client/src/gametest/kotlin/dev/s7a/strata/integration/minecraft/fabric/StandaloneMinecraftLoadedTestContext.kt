@@ -66,9 +66,9 @@ internal class StandaloneMinecraftLoadedTestContext : MinecraftLoadedTestContext
 
     override fun movePointer(position: IntOffset) {
         computeOnClient { minecraft ->
-            val scale = minecraft.window.guiScale
-            val rawX = position.x * scale
-            val rawY = position.y * scale
+            val window = minecraft.window
+            val rawX = position.x.toDouble() * window.screenWidth / window.guiScaledWidth
+            val rawY = position.y.toDouble() * window.screenHeight / window.guiScaledHeight
             GLFW.glfwSetCursorPos(
                 minecraft.window.window,
                 rawX,

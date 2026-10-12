@@ -80,8 +80,15 @@ private fun withMinecraftCanvasContext(
             override fun exchangeHudHidden(hidden: Boolean): Boolean = MinecraftClientScreenAccess.exchangeHudHidden(Minecraft.getInstance(), hidden)
 
             override fun movePointer(position: IntOffset) {
-                val scale = onClient { Minecraft.getInstance().window.guiScale }
-                context.input.setCursorPos(position.x.toDouble() * scale, position.y.toDouble() * scale)
+                val physical =
+                    onClient {
+                        val window = Minecraft.getInstance().window
+                        Pair(
+                            position.x.toDouble() * window.screenWidth / window.guiScaledWidth,
+                            position.y.toDouble() * window.screenHeight / window.guiScaledHeight,
+                        )
+                    }
+                context.input.setCursorPos(physical.first, physical.second)
             }
 
             override fun pressPointer(
