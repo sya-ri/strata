@@ -38,12 +38,6 @@ internal object NativeComponentPerformanceEvidence {
             .use { it.readLines() }
             .toSet()
     private val sampledCases = checkNotNull(javaClass.getResourceAsStream("/native-sampled-images.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }.toSet()
-    private val outputArguments =
-        setOf(
-            "-Dstrata.performance.nativeOutput=",
-            "-Dstrata.canvas.shutdown.run=",
-            "-Dstrata.canvas.shutdown.receipt=",
-        )
     private val metrics =
         listOf(
             PerformanceReportMetric("extraction_p50_ns", listOf("wall_p50_ns")),
@@ -174,19 +168,6 @@ internal object NativeComponentPerformanceEvidence {
         return { report ->
             verify(report, selection, profile, sampledImages)
             backend?.verify(report)
-            arguments.add(
-                JsonObject().apply {
-                    add(
-                        "jvm_arguments",
-                        JsonArray().apply {
-                            report.getAsJsonArray("jvm_arguments").forEach { value ->
-                                if (outputArguments.none(value.asString::startsWith)) add(value.deepCopy())
-                            }
-                        },
-                    )
-                },
-            )
-            JvmPerformanceEvidence.verifyEqual(arguments, setOf("jvm_arguments"))
             binaries.add(NativePerformanceEvidence.verify(report, provenance.getValue(UUID.fromString(report.get("run_id").asString)), representatives, setOf("fabric")))
             val fixture = Path.of(URI(report.get("fixture_archive").asString))
             require(ArtifactIdentity.file(fixture).contentEquals(report.get("fixture_archive_sha256").asString)) { "Changed native fixture archive" }
@@ -198,6 +179,8 @@ internal object NativeComponentPerformanceEvidence {
                 require(name.nameCount == 1 && name.fileName.toString().endsWith(".png") && name.isAbsolute.not())
                 require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
             }
+            arguments.add(NativeComponentJvmArguments.read(report))
+            JvmPerformanceEvidence.verifyEqual(arguments, setOf("jvm_arguments"))
         }
     }
 

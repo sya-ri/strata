@@ -6,17 +6,17 @@
   "workloads": "SampledStationaryMedium,SampledTranslationMedium,SampledOrderedRowsSmall,SampledScrolledRowsSmall",
   "baseline": {
     "runs": [
-      "build/performance/issue132/native/vulkan/baseline/run-0/report.json",
       "build/performance/issue132/native/vulkan/baseline/run-1/report.json",
-      "build/performance/issue132/native/vulkan/baseline/run-2/report.json"
+      "build/performance/issue132/native/vulkan/baseline/run-2/report.json",
+      "build/performance/issue132/native/vulkan/baseline/run-3/report.json"
     ],
     "cpu_report": "build/performance/issue132/cpu/baseline/receipt.json"
   },
   "candidate": {
     "runs": [
-      "build/performance/issue132/native/vulkan/candidate/run-0/report.json",
       "build/performance/issue132/native/vulkan/candidate/run-1/report.json",
-      "build/performance/issue132/native/vulkan/candidate/run-2/report.json"
+      "build/performance/issue132/native/vulkan/candidate/run-2/report.json",
+      "build/performance/issue132/native/vulkan/candidate/run-3/report.json"
     ],
     "cpu_report": "build/performance/issue132/cpu/candidate/receipt.json"
   },
