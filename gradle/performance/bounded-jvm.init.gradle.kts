@@ -1,4 +1,5 @@
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.JavaExec
@@ -6,7 +7,45 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.file.Files
+import java.security.MessageDigest
 import java.util.Properties
+
+/** Hashes every bounded classpath byte, including resources and compiled control code. */
+fun preparedIdentity(path: File): String {
+    fun fileHash(file: File): String = file.inputStream().use { input ->
+        val hash = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(65536)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            hash.update(buffer, 0, count)
+        }
+        hash.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
+    }
+    check(Files.isSymbolicLink(path.toPath()).not())
+    if (path.isFile) {
+        check(path.length() <= 64L * 1024 * 1024)
+        return fileHash(path)
+    }
+    check(path.isDirectory)
+    val entries = mutableListOf<File>()
+    var bytes = 0L
+    path.walkTopDown().forEach { file ->
+        check(Files.isSymbolicLink(file.toPath()).not())
+        check(entries.size < 16_384)
+        if (file.isFile) {
+            bytes = Math.addExact(bytes, file.length())
+            check(bytes <= 64L * 1024 * 1024)
+            entries.add(file)
+        }
+    }
+    val hash = MessageDigest.getInstance("SHA-256")
+    entries.sortedBy { it.relativeTo(path).invariantSeparatorsPath }.forEach { file ->
+        hash.update("${file.relativeTo(path).invariantSeparatorsPath}=${fileHash(file)}\n".toByteArray(Charsets.UTF_8))
+    }
+    return hash.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
+}
 
 // Apply the retained finite JVM profile to main and included builds; no benchmark registration is added.
 gradle.projectsEvaluated {
@@ -18,6 +57,25 @@ gradle.projectsEvaluated {
     check(Runtime.getRuntime().maxMemory() <= 768L * 1024L * 1024L)
     check(ManagementFactory.getRuntimeMXBean().inputArguments.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=1g")
     rootProject.allprojects.forEach { project ->
+        val preflight = rootProject.providers.gradleProperty("strata.paired.preflight").orNull
+        val preflightRequest = preflight?.let { JsonSlurper().parse(File(it)) as Map<*, *> }
+        if (preflightRequest != null && project.path == preflightRequest["project"]) {
+            check(project.configurations.findByName("jmhRuntimeClasspath") != null)
+            val templateName = rootProject.providers.gradleProperty("strata.paired.template").get()
+            val template = project.tasks.named(templateName, JavaExec::class.java)
+            project.tasks.register("strataPairedPreflight", JavaExec::class.java) {
+                val source = template.get()
+                source.copyTo(this)
+                javaLauncher.set(source.javaLauncher)
+                classpath = source.classpath
+                check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
+                mainClass.set(preflightRequest["main"].toString())
+                setArgs(listOf(File(preflight).absolutePath))
+                dependsOn(template.map { it.taskDependencies.getDependencies(it) })
+                outputs.upToDateWhen { false }
+                outputs.cacheIf { false }
+            }
+        }
         project.tasks.configureEach {
             javaClass.methods.filter {
                 it.name in setOf("getWorkerJvmArgs", "getJvmArgs") && it.parameterCount == 0 && ListProperty::class.java.isAssignableFrom(it.returnType)
@@ -95,6 +153,37 @@ gradle.projectsEvaluated {
                         mainClass.set("dev.s7a.strata.performance.JvmOperationReports")
                         setArgs(listOf(rootProject.file(request).absolutePath))
                     }
+                }
+                if (rootProject.providers.gradleProperty("strata.paired.classpath").isPresent || rootProject.providers.gradleProperty("strata.paired.preserveClasspath").isPresent) {
+                    check(classpath.files.all { it.exists() || it.extension.contentEquals("jar").not() })
+                    classpath = project.files(classpath.files.filter { it.exists() })
+                }
+                rootProject.providers.gradleProperty("strata.paired.classpath").orNull?.let { requestedClasspath ->
+                    val inventory = JsonSlurper().parse(File(requestedClasspath)) as Map<*, *>
+                    check(inventory["schema"] == "strata-paired-jvm-classpath-v1")
+                    val entries = inventory["entries"] as List<*>
+                    val records = entries.map { it as Map<*, *> }
+                    check(records.map { File(it["source"].toString()).canonicalFile } == classpath.files.map { it.canonicalFile })
+                    records.forEach { record ->
+                        check(preparedIdentity(File(record["source"].toString())) == record["sha256"])
+                        check(preparedIdentity(File(record["path"].toString())) == record["sha256"])
+                    }
+                    classpath = project.files(records.map { File(it["path"].toString()) })
+                }
+                rootProject.providers.gradleProperty("strata.paired.preserveClasspath").orNull?.let { retainedPath ->
+                    val retained = File(retainedPath)
+                    check(retained.exists().not() && retained.mkdirs())
+                    check(classpath.files.size in 1..256)
+                    val entries = classpath.files.mapIndexed { index, source ->
+                        val origin = source.canonicalFile
+                        val identity = preparedIdentity(origin)
+                        val archive = File(retained, if (origin.isDirectory) "classpath-$index" else "classpath-$index.jar")
+                        check(origin.copyRecursively(archive, overwrite = false))
+                        check(preparedIdentity(origin) == identity && preparedIdentity(archive) == identity)
+                        mapOf("source" to origin.absolutePath, "path" to archive.absolutePath, "sha256" to identity)
+                    }
+                    File(retained, "classpath.json").writeText(JsonOutput.toJson(mapOf("schema" to "strata-paired-jvm-classpath-v1", "entries" to entries)), Charsets.UTF_8)
+                    classpath = project.files(entries.map { File(it.getValue("path")) })
                 }
                 logger.lifecycle("paired.jvm.origin {}", JsonOutput.toJson(mapOf("task" to path, "main" to mainClass.get(), "executable" to javaLauncher.get().executablePath.asFile.absolutePath, "classpath" to classpath.asPath)))
             }
