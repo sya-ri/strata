@@ -145,7 +145,7 @@ internal class FabricMinecraftFramePresenter(
                 checkNotNull(preparedInputs)
             } else {
                 framePreparationCount += 1L
-                FabricMinecraftFrameInputs(partitionFabricMinecraftFrame(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling()), scale, compositionEnabled = supportsFabricMinecraftOrderedComposition())
+                FabricMinecraftFrameInputs.prepare(commands, viewport, scale, exactSampling = supportsFabricMinecraftExactSampling(), compositionEnabled = supportsFabricMinecraftOrderedComposition())
             }
         try {
             sampledImages.present(

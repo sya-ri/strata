@@ -271,6 +271,7 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricMinecraftPortableReuseKt",
                 "$packageName.FabricMinecraftPortableTilesKt",
                 "$packageName.FabricMinecraftFrameInputs",
+                "$packageName.FabricMinecraftFrameInputs\$Companion",
                 "$packageName.FabricMinecraftPortableTexture",
                 "$packageName.FabricMinecraftPortableTexture\$Companion",
                 "$packageName.FabricMinecraftPortableTextureFactoryKt",
@@ -310,7 +311,10 @@ internal class FabricMinecraftJvmSurfaceTest {
                 "$packageName.FabricNativeCanvasDestructionFactoryKt",
                 "$packageName.FabricNativeCanvasTargetDestructionKt",
             ).associateWith { emptySet<String>() } +
-                mapOf("$packageName.FabricMinecraftSampledImageDevice\$Release" to setOf("values", "valueOf", "getEntries"))
+                mapOf(
+                    "$packageName.FabricMinecraftSampledImageDevice\$Release" to setOf("values", "valueOf", "getEntries"),
+                    "$packageName.FabricMinecraftFrameLayer\$SourceRejection" to setOf("values", "valueOf", "getEntries"),
+                )
 
         // Mixin code executes inside Minecraft packages, so these opt-in bridges must remain Java-accessible.
         private val canvasBridgeMethods =

@@ -7,6 +7,7 @@ import dev.s7a.strata.geometry.IntOffset
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.ArgbColor
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameLayer.SourceRejection
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.math.ceil
@@ -64,6 +65,26 @@ internal sealed interface FabricMinecraftFrameLayer {
         @get:JvmSynthetic
         internal val clip: IntRect?,
     ) : FabricMinecraftFrameLayer
+
+    /**
+     * Borrow-local reasons why a geometrically admitted source must remain in complete portable composition.
+     */
+    enum class SourceRejection {
+        /**
+         * Supported source storage is absent under the existing native cache budget.
+         */
+        Capacity,
+
+        /**
+         * The native device does not support the source extent.
+         */
+        Ineligible,
+
+        /**
+         * Partial alpha or another source fallback requires the original ordered composition.
+         */
+        Composition,
+    }
 }
 
 /**
@@ -107,14 +128,29 @@ internal inline fun submitFabricMinecraftFrameLayers(
  * @return immutable layers in exact display-list order.
  */
 @JvmSynthetic
-// Keep clip-stack changes and layer flushes in one ordered traversal of the exhaustive command variants.
-@Suppress("CyclomaticComplexMethod", "LongMethod")
 internal fun partitionFabricMinecraftFrame(
     commands: List<DrawCommand>,
     viewport: IntSize,
     scale: Int = 1,
     fractionalSource: Boolean = false,
     exactSampling: Boolean = false,
+): List<FabricMinecraftFrameLayer> = partitionFabricMinecraftFrameWithSourceAdmission(commands, viewport, scale, fractionalSource, exactSampling) { null }
+
+/**
+ * Applies borrowed native-source rejection before the original partition traversal flushes any portable background.
+ * Rejection preserves complete command order, balanced clips, platform barriers and existing exact-output budgets.
+ * [sourceRejection] is synchronous and never retained; the original five-argument CPU entry remains unchanged.
+ */
+@JvmSynthetic
+// Keep clip-stack changes and layer flushes in one ordered traversal of the exhaustive command variants.
+@Suppress("CyclomaticComplexMethod", "LongMethod")
+internal fun partitionFabricMinecraftFrameWithSourceAdmission(
+    commands: List<DrawCommand>,
+    viewport: IntSize,
+    scale: Int,
+    fractionalSource: Boolean,
+    exactSampling: Boolean,
+    sourceRejection: (DrawCommand.SampledImage) -> SourceRejection?,
 ): List<FabricMinecraftFrameLayer> {
     require(0 < scale) { "Minecraft GUI scale must be positive." }
     val layers = ArrayList<FabricMinecraftFrameLayer>()
@@ -177,6 +213,8 @@ internal fun partitionFabricMinecraftFrame(
                     }
                 val capacity = directClip != null && ordinary.not() && samplingBudget.admit(command.destination, directClip, scale).not()
                 if (capacity) directClip = null
+                val sourceFallback = if (directClip != null) sourceRejection(command) else null
+                if (sourceFallback != null) directClip = null
                 if (directClip != null) {
                     flushPortable()
                     command.destination.enclosingFabricViewportBounds(directClip)?.let { visible ->
@@ -186,13 +224,13 @@ internal fun partitionFabricMinecraftFrame(
                     val visible = command.destination.enclosingFabricViewportBounds(visibleClip) ?: return@forEachIndexed
                     portable.add(command)
                     portableBounds = includeFabricVisibleBounds(portableBounds, visible)
-                    if (capacity) {
+                    if (capacity || sourceFallback == SourceRejection.Capacity) {
                         portableCapacitySampledImages = Math.incrementExact(portableCapacitySampledImages)
                     } else {
                         portableIneligibleSampledImages = Math.incrementExact(portableIneligibleSampledImages)
                     }
                     when {
-                        capacity -> Unit
+                        capacity || sourceFallback != null -> Unit
                         command.tint != ArgbColor(-1) && (exactSampling.not() || command.hasExactFabricSamplingEffects().not()) -> portableTintFallbackImages = Math.incrementExact(portableTintFallbackImages)
                         command.tint == ArgbColor(-1) && command.alphaCutoff != 0f && (exactSampling.not() || command.alphaCutoff != 1f) -> portableAlphaCutoffFallbackImages = Math.incrementExact(portableAlphaCutoffFallbackImages)
                     }
@@ -262,23 +300,6 @@ internal fun portableFabricSampledFallback(layer: FabricMinecraftFrameLayer.Samp
     commands.add(layer.command)
     if (layer.clip != null) commands.add(DrawCommand.PopClip)
     return FabricMinecraftFrameLayer.Portable(commands, bounds, absoluteCoordinates = true)
-}
-
-/**
- * Forwards one logical rectangle as the absolute corner coordinates required by the modern GUI extractor texture overload.
- *
- * [submit] is borrowed synchronously on the caller's thread, invoked exactly once, and never retained.
- * Any exception from [submit] propagates without translation.
- *
- * @param bounds logical destination whose right and bottom edges are absolute coordinates rather than extents.
- * @param submit borrowed native call receiving `x0`, `y0`, `x1`, and `y1` in that order.
- */
-@JvmSynthetic
-internal inline fun submitFabricMinecraftGuiCorners(
-    bounds: IntRect,
-    submit: (x0: Int, y0: Int, x1: Int, y1: Int) -> Unit,
-) {
-    submit(bounds.left, bounds.top, bounds.right, bounds.bottom)
 }
 
 private fun sampledFabricLayer(

@@ -1,7 +1,11 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
+import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameLayer.SourceRejection
+import dev.s7a.strata.runtime.render.DrawCommand
+import java.util.IdentityHashMap
 
 /**
  * Derived CPU inputs owned by one prepared display list and GUI scale, without native texture references.
@@ -20,6 +24,16 @@ internal class FabricMinecraftFrameInputs(
 ) {
     private val borrowedCapacity = capacitySampledImages
     private val borrowedIneligible = unavailableIneligibleImages
+
+    /**
+     * Current immutable-command preparation callback shared only with this class's companion.
+     * Synthetic internal access avoids a generated cross-class access bridge; no native callback is retained.
+     */
+    @get:JvmSynthetic
+    @set:JvmSynthetic
+    internal var repartition: ((List<SourceRejection?>) -> FabricMinecraftFrameInputs)? = null
+    private var fallbackReasons: List<SourceRejection?>? = null
+    private var sourceFallback: FabricMinecraftFrameInputs? = null
 
     /**
      * Immutable localized raster descriptions prepared once for the current display list.
@@ -114,15 +128,28 @@ internal class FabricMinecraftFrameInputs(
     internal val alphaCutoffFallbackImages: Long = cpuLayers.sumOf { it.alphaCutoffFallbackImages.toLong() }
 
     /**
-     * Returns these inputs unchanged when every direct layer is available, or constructs this borrow's portable fallbacks.
-     * The callbacks are synchronous and never retained; [supported] classifies each absent direct layer in display-list order.
-     * Fallback counts describe this borrow only, preserving per-command capacity and ineligible accounting without native handles.
+     * Resolves availability through the original two-callback CPU contract.
+     * Native source callers also supply uploaded alpha through the three-callback overload.
      */
     @JvmSynthetic
     internal fun resolve(
         available: (DrawImage) -> Boolean,
         supported: (DrawImage) -> Boolean,
+    ): FabricMinecraftFrameInputs = resolve(available, supported, { false })
+
+    /**
+     * Returns these inputs unchanged when every direct layer is available and has exact native alpha, or resolves portable fallbacks.
+     * The callbacks are synchronous and never retained; [supported] classifies each absent direct layer in display-list order.
+     * Fallback counts describe this borrow only, preserving per-command capacity and ineligible accounting without native handles.
+     * [partialAlpha] reads only classification retained by the current borrowed native source; unavailable sources are never inspected.
+     */
+    @JvmSynthetic
+    internal fun resolve(
+        available: (DrawImage) -> Boolean,
+        supported: (DrawImage) -> Boolean,
+        partialAlpha: (DrawImage) -> Boolean,
     ): FabricMinecraftFrameInputs {
+        if (repartition != null) return resolveSources(available, supported, partialAlpha)
         var replacements: MutableList<FabricMinecraftFrameLayer>? = null
         var capacity = 0L
         var ineligible = 0L
@@ -144,6 +171,50 @@ internal class FabricMinecraftFrameInputs(
         return direct.resolveCompositions(available)
     }
 
+    private fun resolveSources(
+        available: (DrawImage) -> Boolean,
+        supported: (DrawImage) -> Boolean,
+        partialAlpha: (DrawImage) -> Boolean,
+    ): FabricMinecraftFrameInputs {
+        var reasons: MutableList<SourceRejection?>? = null
+        var count = 0
+        layers.forEach { layer ->
+            if (layer is FabricMinecraftFrameLayer.Sampled) {
+                val reason = sourceRejection(layer, available, supported, partialAlpha)
+                if (reason != null && reasons == null) reasons = ArrayList<SourceRejection?>().also { repeat(count) { _ -> it.add(null) } }
+                reasons?.add(reason)
+                count += 1
+            }
+        }
+        sampled.forEach { image ->
+            val reason = if (available(image)) null else SourceRejection.Capacity
+            if (reason != null && reasons == null) reasons = ArrayList<SourceRejection?>().also { repeat(count) { _ -> it.add(null) } }
+            reasons?.add(reason)
+            count += 1
+        }
+        val rejected = reasons ?: return this
+        if (rejected != fallbackReasons) {
+            sourceFallback = checkNotNull(repartition).invoke(rejected).resolveCompositions(available)
+            fallbackReasons = rejected
+        }
+        return checkNotNull(sourceFallback)
+    }
+
+    // Classify only the current borrowed source; never inspect alpha metadata for absent storage.
+    private fun sourceRejection(
+        layer: FabricMinecraftFrameLayer.Sampled,
+        available: (DrawImage) -> Boolean,
+        supported: (DrawImage) -> Boolean,
+        partialAlpha: (DrawImage) -> Boolean,
+    ): SourceRejection? {
+        val image = layer.command.image
+        return when {
+            available(image).not() -> if (supported(image)) SourceRejection.Capacity else SourceRejection.Ineligible
+            layer.command.alphaCutoff == 0f && partialAlpha(image) -> SourceRejection.Composition
+            else -> null
+        }
+    }
+
     private fun resolveCompositions(available: (DrawImage) -> Boolean): FabricMinecraftFrameInputs {
         if (portable.none { input -> input.composition?.sources?.any { it != null && available(it).not() } == true }) return this
         val resolved =
@@ -156,5 +227,42 @@ internal class FabricMinecraftFrameInputs(
                 }
             }
         return FabricMinecraftFrameInputs(layers, scale, borrowedCapacity, borrowedIneligible, compositionEnabled, resolved)
+    }
+
+    /**
+     * Prepares complete display-list inputs whose native fallback can retain original composition before any background flush.
+     */
+    internal companion object {
+        /**
+         * Retains only the current immutable commands and at most one derived fallback in this display-list owner.
+         * Source availability and uploaded alpha are rechecked each borrow; a changed rejection signature replaces that fallback.
+         * Display-list, viewport or scale replacement and screen release drop the enclosing inputs and every derived description.
+         * No native handle, source pixel copy, pin, external callback or device ownership enters this prepared state.
+         */
+        @JvmSynthetic
+        internal fun prepare(
+            commands: List<DrawCommand>,
+            viewport: IntSize,
+            scale: Int,
+            fractionalSource: Boolean = false,
+            exactSampling: Boolean = false,
+            compositionEnabled: Boolean = false,
+        ): FabricMinecraftFrameInputs {
+            val layers = partitionFabricMinecraftFrame(commands, viewport, scale, fractionalSource, exactSampling)
+            return FabricMinecraftFrameInputs(layers, scale, compositionEnabled = compositionEnabled).also { inputs ->
+                inputs.repartition = { rejected ->
+                    val reasons = IdentityHashMap<DrawCommand.SampledImage, SourceRejection>()
+                    var index = 0
+                    layers.forEach { layer ->
+                        if (layer is FabricMinecraftFrameLayer.Sampled) rejected[index++]?.let { reasons[layer.command] = it }
+                    }
+                    // A native image barrier before a translucent or unknown source would separately round the original background.
+                    // Keep the complete original portable runs; opaque platform barriers and their active clips remain untouched.
+                    val resolved = partitionFabricMinecraftFrameWithSourceAdmission(commands, viewport, scale, fractionalSource, exactSampling) { reasons[it] ?: SourceRejection.Composition }
+                    val compose = compositionEnabled && rejected.none { it == SourceRejection.Capacity || it == SourceRejection.Ineligible }
+                    FabricMinecraftFrameInputs(resolved, scale, compositionEnabled = compose)
+                }
+            }
+        }
     }
 }

@@ -41,7 +41,7 @@ internal class FabricMinecraftSampledImageCache {
             released = false
         }
         device.borrow(owner, inputs.sampled, hit, miss, uploaded, evicted).use { borrowed ->
-            val resolved = inputs.resolve({ borrowed.texture(it) != null }, ::supports)
+            val resolved = inputs.resolve({ borrowed.texture(it) != null }, ::supports, { borrowed.texture(it)?.hasPartialAlpha == true })
             submit(resolved, borrowed::texture, borrowed::queued)
         }
     }

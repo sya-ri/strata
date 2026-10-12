@@ -32,6 +32,18 @@ internal class FabricMinecraftPortableTexture private constructor(
     private var closed = false
 
     /**
+     * Reports source alpha from its original upload without reading pixels during presentation.
+     * The flag shares this texture's render-thread ownership and is unavailable before initialization or after retirement.
+     */
+    @get:JvmSynthetic
+    internal val hasPartialAlpha: Boolean
+        get() {
+            RenderSystem.assertOnRenderThread()
+            check(closed.not() && storage != null) { "Source alpha requires initialized live native storage." }
+            return uploadPixels.hasPartialAlpha
+        }
+
+    /**
      * Borrows the initialized native texture on the render thread without transferring its generation-owned storage.
      *
      * The view's close and reload operations cannot release storage; only this owner's fenced cleanup can do so.

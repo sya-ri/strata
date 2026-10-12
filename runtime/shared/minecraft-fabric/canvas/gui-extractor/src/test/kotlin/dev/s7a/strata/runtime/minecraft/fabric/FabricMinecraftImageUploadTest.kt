@@ -2,7 +2,9 @@ package dev.s7a.strata.runtime.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntSize
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.lwjgl.system.MemoryUtil
 import java.nio.ByteBuffer
@@ -24,6 +26,35 @@ internal class FabricMinecraftImageUploadTest {
         expected.forEachIndexed { index, value -> assertEquals(value, storage.getInt((index + 1) * Int.SIZE_BYTES)) }
         assertEquals(0x12345678, storage.getInt(0))
         assertEquals(0x23456789, storage.getInt(7 * Int.SIZE_BYTES))
+    }
+
+    @Test
+    fun theOriginalCopyClassifiesPartialAlphaWithoutReadingAPixelTwice() {
+        val storage = ByteBuffer.allocateDirect(5 * Int.SIZE_BYTES).order(ByteOrder.nativeOrder())
+        val address = MemoryUtil.memAddress(storage)
+        var reads = 0
+        val binary = intArrayOf(0x00123456, 0xFF654321.toInt())
+        assertFalse(
+            writeFabricMinecraftArgbPixels(address, IntSize(2, 1)) { x, _ ->
+                reads += 1
+                binary[x]
+            },
+        )
+        assertEquals(2, reads)
+        assertEquals(0x00563412, storage.getInt(0))
+        assertEquals(0xFF214365.toInt(), storage.getInt(Int.SIZE_BYTES))
+        for (alpha in listOf(1, 127, 254)) {
+            reads = 0
+            val pixels = intArrayOf(binary[0], (alpha shl 24) or 0x123456, binary[1])
+            assertTrue(
+                writeFabricMinecraftArgbPixels(address, IntSize(3, 1)) { x, _ ->
+                    reads += 1
+                    pixels[x]
+                },
+            )
+            assertEquals(3, reads)
+            assertEquals((alpha shl 24) or 0x563412, storage.getInt(Int.SIZE_BYTES))
+        }
     }
 
     @Test

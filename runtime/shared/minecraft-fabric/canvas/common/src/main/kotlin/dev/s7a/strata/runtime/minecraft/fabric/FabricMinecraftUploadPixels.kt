@@ -17,6 +17,14 @@ internal class FabricMinecraftUploadPixels {
     private var factors: NativeImage? = null
 
     /**
+     * Immutable pixel classification recorded by the single primary copy and retained after staging storage closes.
+     * The enclosing source texture owns this flag through the same identity, reload, eviction and terminal lifetime.
+     */
+    @get:JvmSynthetic
+    @set:JvmSynthetic
+    internal var hasPartialAlpha: Boolean = false
+
+    /**
      * Indicates whether this owner has acquired any staging storage for its single initialization.
      */
     @get:JvmSynthetic
@@ -82,6 +90,6 @@ internal inline fun FabricMinecraftUploadPixels.stage(
     check(isEmpty) { "A portable upload can initialize only once." }
     val native = NativeImage(size.width, size.height, false)
     retainPrimary(native)
-    uploadFabricMinecraftArgbPixels(native, size, pixel)
+    hasPartialAlpha = uploadFabricMinecraftArgbPixels(native, size, pixel)
     return native
 }
