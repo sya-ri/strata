@@ -1,0 +1,1110 @@
+{
+  "schema": "strata.issue145.hosted-input-handoff.v1",
+  "issue": 145,
+  "pr": 201,
+  "executionState": "Pending",
+  "formalCellsMeasured": 0,
+  "inputProvenance": {
+    "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/source-provenance.derived.json",
+    "sha256": "66438a071ffcf7dcf745d813f8c6fa0d3734a524eb113a4b8c37d04d4e32162d",
+    "bytes": 1216100
+  },
+  "originalInvocation": {
+    "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/next-one-invocation.json",
+    "sha256": "39f3d0b8007a25311a290dc490b12bcfa468226e6ad26e1e11e86433e97d0a0d",
+    "bytes": 64733
+  },
+  "unavailableOriginalMetadata": [
+    {
+      "name": "next-ready.json",
+      "sha256": "f392e9785d1ebf1a413bfa1d8dde44db2073764c26168d1072559cf621b4421e"
+    },
+    {
+      "name": "source-freeze/manifest-complete.json",
+      "sha256": "54d562e5be2a52ccdab01cbc051e7fcbb2213fefd44c1ab3bf1b2708a543b51c"
+    },
+    {
+      "name": "source-freeze/fixture-inputs.properties",
+      "sha256": "c7d255b277257b9b9a7cc3a8de7feb47c0a49dbe16b67771b7fc410e36e16fc1",
+      "bytes": 62128
+    }
+  ],
+  "missingHistoricalInventory": "The exact old properties labels, referenced inventory and bytes are unknown. None is asserted recovered, and none is a hosted acceptance gate.",
+  "sourceMaterialization": "Check out each public commit with core.autocrlf=false; apply its exact patch with git apply --index; git write-tree must equal its sourceTree. This preserves the two retained source trees without a new runtime candidate.",
+  "bindingContract": "Only the declared path/executable tokens are rebound. Fixed artifact bytes, source trees, work counts, selectors, settings and call order remain unchanged. Record actual hosted paths, Java providers/versions, hardware and all call exits.",
+  "historicalEvidencePaths": "Embedded local paths in the provenance and original records are archival references, not hosted filesystem prerequisites. Actual invocations use the declared bound tokens; do not require old owner directories or private indexes.",
+  "tokens": {
+    "COMMON": "Materialized baseline source workspace; all controls/collections/processors use its one shared fixture and collector.",
+    "CANDIDATE": "Materialized candidate source workspace; supplies only its three runtime archives.",
+    "FIXTURE_INPUTS": "New hosted properties file containing the four derived provenance inputs; rebind paths only.",
+    "BOUNDED_INIT": "Existing bounded Gradle init with the main/included root paths rebound; preserve effective caps and verifier runtime substitution.",
+    "JDK17": "Temurin 17.0.18+8 toolchain; actual verifyHistoricalWorkloads JavaExec origin was this JDK.",
+    "JDK25": "Oracle 25.0.2 admitted Gradle launcher home; retain the original provider/version.",
+    "GRADLE_USER_HOME": "Hosted Gradle dependency cache; resolve the same pinned control JAR bytes using their cache-relative paths."
+  },
+  "fixedArtifacts": {
+    "runtimeArchives": [
+      {
+        "side": "baseline",
+        "module": ":api",
+        "path": "${COMMON}/api/build/libs/api-0.2.2.jar",
+        "sha256": "0b919ab75ce26b23cc42cb1d80aebd936b04db479d1772207b06a7639fdc3e01",
+        "bytes": 946402
+      },
+      {
+        "side": "baseline",
+        "module": ":runtime:core",
+        "path": "${COMMON}/runtime/core/build/libs/core-0.2.2.jar",
+        "sha256": "8250e7baeccbc8b8cd4f640338d6870c5c56157d478eb3aaa5cd640d4e7f44b1",
+        "bytes": 310070
+      },
+      {
+        "side": "baseline",
+        "module": ":runtime:headless",
+        "path": "${COMMON}/runtime/headless/build/libs/headless-0.2.2.jar",
+        "sha256": "16d69b2e11ee368b0a43181feee89d651e6b6752b28a89b87f1584a7b5d5c8fd",
+        "bytes": 54497
+      },
+      {
+        "side": "candidate",
+        "module": ":api",
+        "path": "${CANDIDATE}/api/build/libs/api-0.2.2.jar",
+        "sha256": "f44e3063a6f5b8f3794e2dca4ba93678ec562f3a37d964ce604914b88fc409ea",
+        "bytes": 946225
+      },
+      {
+        "side": "candidate",
+        "module": ":runtime:core",
+        "path": "${CANDIDATE}/runtime/core/build/libs/core-0.2.2.jar",
+        "sha256": "8250e7baeccbc8b8cd4f640338d6870c5c56157d478eb3aaa5cd640d4e7f44b1",
+        "bytes": 310070
+      },
+      {
+        "side": "candidate",
+        "module": ":runtime:headless",
+        "path": "${CANDIDATE}/runtime/headless/build/libs/headless-0.2.2.jar",
+        "sha256": "16d69b2e11ee368b0a43181feee89d651e6b6752b28a89b87f1584a7b5d5c8fd",
+        "bytes": 54497
+      }
+    ],
+    "collector": {
+      "path": "${COMMON}/performance-testkit/build/libs/performance-testkit-0.2.2.jar",
+      "sha256": "7497020e1a9b4d3683bae49e483c7a8cb421fa87c17b7f5522f8d07521e4f4ab",
+      "bytes": 332704
+    },
+    "harness": {
+      "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-core/1.37/896f27e49105b35ea1964319c83d12082e7a79ef/jmh-core-1.37.jar",
+      "sha256": "dc0eaf2bbf0036a70b60798c785d6e03a9daf06b68b8edb0f1ba9eb3421baeb3",
+      "bytes": 552986
+    },
+    "fixtureSource": {
+      "path": "${COMMON}/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark.kt",
+      "sha256": "3a1e59f22ff160b0deb23870b928c512baa0e4f68cdf22df9383dac0bbe43188",
+      "bytes": 14931
+    },
+    "generatedBenchmarkList": {
+      "path": "${COMMON}/quality/benchmarks/build/jmh-generated-resources/META-INF/BenchmarkList",
+      "sha256": "6ae7b1c95f840f8c520cdbc9157207bebc97622b1dd6f65013c3242f6830800d",
+      "bytes": 17201
+    },
+    "compiledFixtureFiles": [
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark.class",
+        "sha256": "71d724346a59b085488b3d2774ecdb96f490e92f7dc77dee4b3d3cd99e5d03dc",
+        "bytes": 2300
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Companion.class",
+        "sha256": "72006b7656f07df0f1ca84ea5a7ca0652e971924cab80d6dc52e8f834cae4449",
+        "bytes": 2579
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Counts.class",
+        "sha256": "a818b3d8289988d7212ac2f7778e99c1ecb66ccf3d38d6b11ca552006cf10c84",
+        "bytes": 2832
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$FrameElement.class",
+        "sha256": "20a53fd16b920ddc28b429a8b933ec86a8510a1f4089b43fc9aef6923e19256d",
+        "bytes": 5590
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$FrameElement$Companion.class",
+        "sha256": "4772b8b82b23569dfa7110b5f718ffd9283fa5a208b4db2b0927a39dbfc66a70",
+        "bytes": 1809
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$FrameNode.class",
+        "sha256": "0e93231630baf2b2898891577a4faa06afd8f90cee1e733372a5e65020bb442b",
+        "bytes": 6154
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Kind.class",
+        "sha256": "9e524f23805691ec1c0227e3db092e89a1ac6f12a1febd570af32505b1723af8",
+        "bytes": 2352
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Presentation.class",
+        "sha256": "fea5462d484ffe3f9b26cebf10290ac2ad0c2bf37686aa2fa51af7d6d491f8a9",
+        "bytes": 2988
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Scene.class",
+        "sha256": "afdcee7b4437bbc4c2d5c30459f3a9404b93b09fec2aa87f04625cc553534354",
+        "bytes": 18217
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Scene$WhenMappings.class",
+        "sha256": "51182e53fdc7cfd123ac84c027b1a27f06ae176c641b84e760c73af39bf7ff09",
+        "bytes": 1430
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/classes/kotlin/jmh/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark$Workload.class",
+        "sha256": "8346ed1844a38ffbdf055aefe2bbd1c41834f86474e3f4984d7e702c1bbcf54f",
+        "bytes": 4270
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_jmhType_B1.class",
+        "sha256": "0c6eaea0fb418aeb7aa707b6e7e3047d4ea66851fbb14aabb825aa2f96b900e3",
+        "bytes": 4817
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_jmhType_B2.class",
+        "sha256": "8835e50bf1902b6bab7fd76845324fffba3650d097c770803aed6458199ba460",
+        "bytes": 1520
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_jmhType_B3.class",
+        "sha256": "bf508b017c586d6c973340941db3a7bd0cc65bdc1dc45f80b270777a72aa0316",
+        "bytes": 4842
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_jmhType.class",
+        "sha256": "c241f09cd1fb2013779dbbcfe9e48f4709b0dcc24084c22f512f017e8906506c",
+        "bytes": 477
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_operation_jmhTest.class",
+        "sha256": "a72da21726f34ab5c51e4ff203c932cd2dd78a3db67c92b4bb79b68a30bc13f0",
+        "bytes": 15804
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_Scene_jmhType_B1.class",
+        "sha256": "5ad0e274ddbb89e85563ff9b3da624a8b28952622a41bd5682f69bcdf1358ceb",
+        "bytes": 4942
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_Scene_jmhType_B2.class",
+        "sha256": "075f09244e83257a7f9d31db27a991cf9abf87954cee13f36e8522b9839cd1cf",
+        "bytes": 1550
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_Scene_jmhType_B3.class",
+        "sha256": "c2e234d4b72bdf85062e65f206db468b90b0e7b18d00b4a0de058b257e676b8b",
+        "bytes": 4866
+      },
+      {
+        "path": "${COMMON}/quality/benchmarks/build/jmh-generated-classes/dev/s7a/strata/quality/benchmark/jmh_generated/OperationGuardBenchmark_Scene_jmhType.class",
+        "sha256": "8049539bfd9d9d2e0c7f91b041e55d5ab229a2a16c67f3695a32cd8961dcbb29",
+        "bytes": 501
+      }
+    ],
+    "controlLibraries": [
+      {
+        "label": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0:kotlinx-coroutines-core-jvm-1.11.0.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.11.0/3d57dc678bd8d72a60e7adf0eca5c54e3f4f4b79/kotlinx-coroutines-core-jvm-1.11.0.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.11.0/3d57dc678bd8d72a60e7adf0eca5c54e3f4f4b79/kotlinx-coroutines-core-jvm-1.11.0.jar",
+        "sha256": "d1d75aa01dffbb4d1c520e67e4c4e7f5f6174718e7cb4632412503f2f0e604fa",
+        "bytes": 1577052
+      },
+      {
+        "label": "org.jetbrains.kotlin:kotlin-stdlib:2.4.20:kotlin-stdlib-2.4.20.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.20/94c1451890d164aed65d43b3db0b7ecef7c183e7/kotlin-stdlib-2.4.20.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.20/94c1451890d164aed65d43b3db0b7ecef7c183e7/kotlin-stdlib-2.4.20.jar",
+        "sha256": "2226de463d309d4a5500a481320b3dea515a6981dcae1def531fbc158884e25f",
+        "bytes": 1853314
+      },
+      {
+        "label": "org.openjdk.jmh:jmh-generator-bytecode:1.37:jmh-generator-bytecode-1.37.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-bytecode/1.37/76bba384deb89a7107b4d2dc8f655585dee5eaeb/jmh-generator-bytecode-1.37.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-bytecode/1.37/76bba384deb89a7107b4d2dc8f655585dee5eaeb/jmh-generator-bytecode-1.37.jar",
+        "sha256": "619b3d15a5e8bfc4ec49d3b7a64dbed053a0ca8625820a49a4f869d1b8c71d09",
+        "bytes": 18517
+      },
+      {
+        "label": "org.openjdk.jmh:jmh-generator-asm:1.37:jmh-generator-asm-1.37.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-asm/1.37/2a39d64e8fd164192567d63e299214dcf2aadca5/jmh-generator-asm-1.37.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-asm/1.37/2a39d64e8fd164192567d63e299214dcf2aadca5/jmh-generator-asm-1.37.jar",
+        "sha256": "de29bacc5c3a413215800f57de9017fdda1b3cb6e5359ea0c84ebe13c9610222",
+        "bytes": 31641
+      },
+      {
+        "label": "org.openjdk.jmh:jmh-generator-reflection:1.37:jmh-generator-reflection-1.37.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-reflection/1.37/bc30f3ff829ddfca091665aa228c70687fbc5677/jmh-generator-reflection-1.37.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-generator-reflection/1.37/bc30f3ff829ddfca091665aa228c70687fbc5677/jmh-generator-reflection-1.37.jar",
+        "sha256": "a0421dbbe5e77690df2dfdef98618b62852d816bbb814c5cbd0b4d464bff32b0",
+        "bytes": 24518
+      },
+      {
+        "label": "org.openjdk.jmh:jmh-core:1.37:jmh-core-1.37.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.openjdk.jmh/jmh-core/1.37/896f27e49105b35ea1964319c83d12082e7a79ef/jmh-core-1.37.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.openjdk.jmh/jmh-core/1.37/896f27e49105b35ea1964319c83d12082e7a79ef/jmh-core-1.37.jar",
+        "sha256": "dc0eaf2bbf0036a70b60798c785d6e03a9daf06b68b8edb0f1ba9eb3421baeb3",
+        "bytes": 552986
+      },
+      {
+        "label": "org.jetbrains:annotations:23.0.0:annotations-23.0.0.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.jetbrains/annotations/23.0.0/8cc20c07506ec18e0834947b84a864bfc094484e/annotations-23.0.0.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.jetbrains/annotations/23.0.0/8cc20c07506ec18e0834947b84a864bfc094484e/annotations-23.0.0.jar",
+        "sha256": "7b0f19724082cbfcbc66e5abea2b9bc92cf08a1ea11e191933ed43801eb3cd05",
+        "bytes": 29371
+      },
+      {
+        "label": "net.sf.jopt-simple:jopt-simple:5.0.4:jopt-simple-5.0.4.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/net.sf.jopt-simple/jopt-simple/5.0.4/4fdac2fbe92dfad86aa6e9301736f6b4342a3f5c/jopt-simple-5.0.4.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/net.sf.jopt-simple/jopt-simple/5.0.4/4fdac2fbe92dfad86aa6e9301736f6b4342a3f5c/jopt-simple-5.0.4.jar",
+        "sha256": "df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28",
+        "bytes": 78146
+      },
+      {
+        "label": "org.apache.commons:commons-math3:3.6.1:commons-math3-3.6.1.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.apache.commons/commons-math3/3.6.1/e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf/commons-math3-3.6.1.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.apache.commons/commons-math3/3.6.1/e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf/commons-math3-3.6.1.jar",
+        "sha256": "1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308",
+        "bytes": 2213560
+      },
+      {
+        "label": "com.google.code.gson:gson:2.10.1:gson-2.10.1.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/com.google.code.gson/gson/2.10.1/b3add478d4382b78ea20b1671390a858002feb6c/gson-2.10.1.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/com.google.code.gson/gson/2.10.1/b3add478d4382b78ea20b1671390a858002feb6c/gson-2.10.1.jar",
+        "sha256": "4241c14a7727c34feea6507ec801318a3d4a90f070e4525681079fb94ee4c593",
+        "bytes": 283367
+      },
+      {
+        "label": "org.ow2.asm:asm:9.0:asm-9.0.jar",
+        "gradleCacheRelativePath": "caches/modules-2/files-2.1/org.ow2.asm/asm/9.0/af582ff60bc567c42d931500c3fdc20e0141ddf9/asm-9.0.jar",
+        "path": "${GRADLE_USER_HOME}/caches/modules-2/files-2.1/org.ow2.asm/asm/9.0/af582ff60bc567c42d931500c3fdc20e0141ddf9/asm-9.0.jar",
+        "sha256": "0df97574914aee92fd349d0cb4e00f3345d45b2c239e0bb50f0a90ead47888e0",
+        "bytes": 121783
+      }
+    ]
+  },
+  "admittedJavaInstallations": {
+    "toolchain": {
+      "home": "${JDK17}",
+      "provider": "Eclipse Adoptium",
+      "javaVersion": "17.0.18",
+      "runtimeVersion": "17.0.18+8",
+      "release": {
+        "path": "${JDK17}/release",
+        "sha256": "666094d10d8d978e4b72e7a492c07fde713cc15db2d8d02be802e0170ec878d6",
+        "bytes": 1662
+      },
+      "javaExecutable": {
+        "path": "${JDK17}/bin/java.exe",
+        "sha256": "5369cf92fc590944793e47cc9c9fef7955ce1a68de22ba22023cdd3513e87c2b",
+        "bytes": 50344
+      }
+    },
+    "launcher": {
+      "home": "${JDK25}",
+      "provider": "Oracle Corporation",
+      "javaVersion": "25.0.2",
+      "runtimeVersion": "25.0.2+10-69",
+      "release": {
+        "path": "${JDK25}/release",
+        "sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62",
+        "bytes": 1249
+      },
+      "javaExecutable": {
+        "path": "${JDK25}/bin/java.exe",
+        "sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+        "bytes": 50336
+      }
+    }
+  },
+  "runtimeProperties": {
+    "baseline": {
+      "originalIdentity": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/snapshots/common-baseline/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "sha256": "10896d0acff82f36485bb01c19b4e9ed081aa419e192bed804c288dbeac8b556",
+        "bytes": 472
+      },
+      "hostedValues": {
+        ":api": "${COMMON}/api/build/libs/api-0.2.2.jar",
+        ":runtime:core": "${COMMON}/runtime/core/build/libs/core-0.2.2.jar",
+        ":runtime:headless": "${COMMON}/runtime/headless/build/libs/headless-0.2.2.jar"
+      }
+    },
+    "candidate": {
+      "originalIdentity": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/snapshots/common-baseline/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "sha256": "83b0b9050f77ae8daaf9b5dfd558937226ce823553361e11a7fa841b984a8d37",
+        "bytes": 481
+      },
+      "hostedValues": {
+        ":api": "${CANDIDATE}/api/build/libs/api-0.2.2.jar",
+        ":runtime:core": "${CANDIDATE}/runtime/core/build/libs/core-0.2.2.jar",
+        ":runtime:headless": "${CANDIDATE}/runtime/headless/build/libs/headless-0.2.2.jar"
+      }
+    }
+  },
+  "sources": {
+    "baseline": {
+      "publicCommit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
+      "commitTree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
+      "sourceTree": "77675a4e9ef349aa8d0b2a6c2e26b47397a948b0",
+      "patch": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/baseline.patch",
+        "sha256": "5d16e3754ed6e8a2b93556d1379cb60463d6423552488edc04359e9c0e6b65a0",
+        "bytes": 107972
+      }
+    },
+    "candidate": {
+      "publicCommit": "a7b208e289109465acabcbd1b107516cf171f16a",
+      "commitTree": "2d85eafa3c5d33b4fd5a92eed94e806a34efd2fd",
+      "sourceTree": "4b05b7baa09600a8b7442f608020561473705e1f",
+      "patch": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/candidate.patch",
+        "sha256": "f3a67ca350cb1ea111077bf9c8d2498020fabaabe0142188aed5480ecf8eda3e",
+        "bytes": 123257
+      }
+    }
+  },
+  "profile": {
+    "cases": 14,
+    "scoreCells": 168,
+    "independentRunsPerSidePerMode": 3,
+    "modes": [
+      "avgt",
+      "sample"
+    ],
+    "collections": 12,
+    "warmupIterations": 3,
+    "warmup": "1s",
+    "measurementIterations": 5,
+    "measurement": "1s",
+    "forks": 1,
+    "threads": 1,
+    "profiler": "gc",
+    "parameterSubset": null,
+    "quick": false,
+    "smoke": false,
+    "unit": "us",
+    "normalization": "Per declared batch; preserve count and repeats including10000 clean frames"
+  },
+  "workloadNames": [
+    "Guard1",
+    "Guard2",
+    "Guard8",
+    "Mutation1",
+    "Mutation8",
+    "Clean1",
+    "Timed1",
+    "Clean128",
+    "Timed128",
+    "HighRate10000",
+    "Dirty1",
+    "Dirty128",
+    "Nested2",
+    "Nested8"
+  ],
+  "controls": "All14 typed guard/mutation/clean/timed/dirty/nested/high-rate cases retained; no row subset",
+  "metrics": {
+    "elapsed": "Actual avgt and sample p50/p95/p99 via existing processor",
+    "allocation": "Actual gc.alloc.rate.norm B/op and supported secondary metrics",
+    "gc": "Actual gc.count and gc.time when supported; unavailable never zero",
+    "threadCpu": "Unavailable in unchanged path; disclose, no start gate or custom timer",
+    "nativeLoadedGame": "N/A for portable API/core/headless fixture",
+    "gpuUploadInputLatencyFPS": "N/A"
+  },
+  "extraFixtureInputs": {
+    "performance-source-provenance": {
+      "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/source-provenance.derived.json",
+      "sha256": "66438a071ffcf7dcf745d813f8c6fa0d3734a524eb113a4b8c37d04d4e32162d",
+      "bytes": 1216100
+    },
+    "performance-baseline-source-patch": {
+      "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/baseline.patch",
+      "sha256": "5d16e3754ed6e8a2b93556d1379cb60463d6423552488edc04359e9c0e6b65a0",
+      "bytes": 107972
+    },
+    "performance-candidate-source-patch": {
+      "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/candidate.patch",
+      "sha256": "f3a67ca350cb1ea111077bf9c8d2498020fabaabe0142188aed5480ecf8eda3e",
+      "bytes": 123257
+    },
+    "performance-fixed-fixture-source": {
+      "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/snapshots/common-baseline/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/OperationGuardBenchmark.kt",
+      "sha256": "3a1e59f22ff160b0deb23870b928c512baa0e4f68cdf22df9383dac0bbe43188",
+      "bytes": 14931
+    }
+  },
+  "localDerivedProperties": {
+    "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/fixture-inputs.derived.properties",
+    "sha256": "efe4a3a7d5ee6984d937722465e32372659360993a9c7748f36e85cc7ed61f67",
+    "bytes": 753
+  },
+  "propertiesRebinding": "Generate the same four labels from the same four files at their hosted absolute paths; retain hosted properties bytes/hash alongside the original local derived properties identity.",
+  "resourcePolicy": {
+    "minimumFreePhysicalBytes": 4294967296,
+    "jobCommittedBytes": 3221225472,
+    "heapDaemonMiB": 768,
+    "metaspaceDaemonMiB": 1024,
+    "maxWorkers": 1,
+    "workSeconds": 1800,
+    "cleanupSeconds": 30
+  },
+  "admissions": [
+    {
+      "executable": "${COMMON}/gradlew.bat",
+      "side": "baseline",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:verifyHistoricalWorkloads",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "executable": "${COMMON}/gradlew.bat",
+      "side": "candidate",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:verifyHistoricalWorkloads",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    }
+  ],
+  "collections": [
+    {
+      "side": "baseline",
+      "mode": "avgt",
+      "repetition": 0,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=0",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-0",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "avgt",
+      "repetition": 0,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=0",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-0",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "baseline",
+      "mode": "avgt",
+      "repetition": 1,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=1",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-1",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "avgt",
+      "repetition": 1,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=1",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-1",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "baseline",
+      "mode": "avgt",
+      "repetition": 2,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=2",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-2",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "avgt",
+      "repetition": 2,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=avgt",
+        "-Pstrata.performance.repetition=2",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-2",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "baseline",
+      "mode": "sample",
+      "repetition": 0,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=0",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-0",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "sample",
+      "repetition": 0,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=0",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-0",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "baseline",
+      "mode": "sample",
+      "repetition": 1,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=1",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-1",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "sample",
+      "repetition": 1,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=1",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-1",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "baseline",
+      "mode": "sample",
+      "repetition": 2,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=2",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-baseline.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-2",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    },
+    {
+      "side": "candidate",
+      "mode": "sample",
+      "repetition": 2,
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":quality:benchmarks:jmhHistorical",
+        "-Pstrata.performance.benchmarks=dev.s7a.strata.quality.benchmark.OperationGuardBenchmark",
+        "-Pstrata.performance.suite=issue145-full",
+        "-Pstrata.performance.mode=sample",
+        "-Pstrata.performance.repetition=2",
+        "-Pstrata.performance.historicalRuntime=${COMMON}/quality/benchmarks/build/performance/runtime-candidate.properties",
+        "-Pstrata.performance.historicalOutputRoot=${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate",
+        "-Pstrata.performance.fixtureInputs=${FIXTURE_INPUTS}",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "outputDirectory": "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-2",
+      "expectedCases": 14,
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472
+    }
+  ],
+  "processing": [
+    {
+      "mode": "avgt",
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":performance-testkit:processEvidence",
+        "-Pstrata.performance.request=${COMMON}/quality/benchmarks/build/performance/issue145-avgt-comparison.request.json",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "output": "${COMMON}/quality/benchmarks/build/performance/issue145-avgt-comparison.json",
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472,
+      "originalRequestIdentity": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/snapshots/common-baseline/quality/benchmarks/build/performance/issue145-avgt-comparison.request.json",
+        "sha256": "9674cfc92a9ab7b834e76594b88b8245cddfc435600bac31a2ef85fce373aac0",
+        "bytes": 1726
+      },
+      "requestTemplate": {
+        "command": "jmh-comparison",
+        "collector": "${COMMON}/performance-testkit/build/libs/performance-testkit-0.2.2.jar",
+        "repetitions": 3,
+        "baseline": [
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-0",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-1",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full/run-2"
+        ],
+        "candidate": [
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-0",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-1",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full/run-2"
+        ],
+        "output": "${COMMON}/quality/benchmarks/build/performance/issue145-avgt-comparison.json"
+      }
+    },
+    {
+      "mode": "sample",
+      "executable": "${COMMON}/gradlew.bat",
+      "workspace": "${COMMON}",
+      "arguments": [
+        ":performance-testkit:processEvidence",
+        "-Pstrata.performance.request=${COMMON}/quality/benchmarks/build/performance/issue145-sample-comparison.request.json",
+        "-Pstrata.jvmOnly=true",
+        "--no-daemon",
+        "--no-parallel",
+        "--max-workers=1",
+        "--no-build-cache",
+        "--no-configuration-cache",
+        "--console=plain",
+        "-Pkotlin.compiler.execution.strategy=in-process",
+        "-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+        "-Pdetekt.use.worker.api=false",
+        "-Dorg.gradle.java.installations.auto-detect=false",
+        "-Dorg.gradle.java.installations.auto-download=false",
+        "-Dorg.gradle.java.installations.paths=${JDK17},${JDK25}",
+        "-Dorg.gradle.java.installations.fromEnv=",
+        "-I",
+        "${BOUNDED_INIT}"
+      ],
+      "output": "${COMMON}/quality/benchmarks/build/performance/issue145-sample-comparison.json",
+      "minimumFreePhysicalBytes": 4294967296,
+      "jobCommittedBytes": 3221225472,
+      "originalRequestIdentity": {
+        "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/snapshots/common-baseline/quality/benchmarks/build/performance/issue145-sample-comparison.request.json",
+        "sha256": "cd0cc359430a0638fb1c5a0e49650c0dbdcc00f870dc8a8a9f9a287f1465933f",
+        "bytes": 1770
+      },
+      "requestTemplate": {
+        "command": "jmh-comparison",
+        "collector": "${COMMON}/performance-testkit/build/libs/performance-testkit-0.2.2.jar",
+        "repetitions": 3,
+        "baseline": [
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-0",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-1",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-baseline/issue145-full-sample/run-2"
+        ],
+        "candidate": [
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-0",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-1",
+          "${COMMON}/quality/benchmarks/build/reports/jmh/issue145-candidate/issue145-full-sample/run-2"
+        ],
+        "output": "${COMMON}/quality/benchmarks/build/performance/issue145-sample-comparison.json"
+      }
+    }
+  ],
+  "requiredHostedPreparation": {
+    "baselineTasks": [
+      ":api:jvmJar",
+      ":runtime:core:jvmJar",
+      ":runtime:headless:jar",
+      ":performance-testkit:jvmJar",
+      ":quality:benchmarks:compileJmhKotlin",
+      ":quality:benchmarks:processJmhResources",
+      ":quality:benchmarks:jmhRunBytecodeGenerator",
+      ":quality:benchmarks:jmhCompileGeneratedClasses"
+    ],
+    "candidateTasks": [
+      ":api:jvmJar",
+      ":runtime:core:jvmJar",
+      ":runtime:headless:jar"
+    ],
+    "byteIdentityRule": "Preserve or reproduce the pinned bytes and verify actual hashes. A mismatching hosted rebuild does not replace a frozen pin or count as measurement evidence."
+  },
+  "routinePrCi": "Heavy comparative collections run only for a manual explicit request in one hosted Windows job, never automatically for other PRs.",
+  "legacyPreflight": {
+    "state": "Failed",
+    "toolChunk": "538d49",
+    "reason": "Old owner checkout and next-ready.json are missing; old private-index/packet requirements are not hosted gates."
+  },
+  "sharedToolingDraft": {
+    "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/invoke-windows.draft.ps1",
+    "sha256": "06c5d20b8a545e82434bd28de30919fcf1c838e69ce84f30a3744b9815af6d74",
+    "bytes": 10140
+  },
+  "sharedToolingDraftStatus": "Uncommitted, unexecuted resource-wrapper draft for the new shared-tooling owner to review or reuse; no workflow edit was made.",
+  "sharedToolingDraftLimitations": [
+    "Only PowerShell AST parsing was checked; no native call, job release, timeout or stdout behavior was executed.",
+    "The draft parent checks RAM before creating the caller. The final shared tool must also recheck RAM inside the owning job immediately before Java; this draft is not accepted as an executable implementation."
+  ],
+  "existingBoundedGradleInit": {
+    "path": "C:/Home/Projects/strata/build/perf/state-worker-completion-201-182-20261011-r2/issue145-common-compile-r4/hosted-inputs/bounded-basic.original.init.gradle.kts",
+    "sha256": "6751eb7f053054ea5bf17903ba2b490bab2baed03931f7b13291b26fb9dcd5d2",
+    "bytes": 8807
+  },
+  "boundedInitAdaptation": "Rebind only its two main/included root literals for the baseline and candidate preparation calls; keep daemon 768MiB/1024MiB, JavaExec 768MiB/384MiB, fork inheritance, worker/javac/Test 512MiB/256MiB and actual three-JAR verifier substitution. Its stale source-only comments do not constitute evidence.",
+  "genericToolingNeeds": [
+    "Manual request selection, not a benchmark-specific build-script edit",
+    "One runner for both sides and both modes",
+    "Source commit plus exact patch materialization",
+    "Path and Java-home binding without old owner/index gates",
+    "Effective JVM caps for all children and a fresh 4096MiB RAM guard inside the owning 3GiB Job",
+    "One 1800s native call plus 30s cleanup budget, with failure stopping the next call",
+    "Original shared JMH/collector/processor execution and immutable artifact preservation"
+  ],
+  "productionOwner": "C:/Home/Projects/strata/.worktrees/operation-guard-hosted"
+}

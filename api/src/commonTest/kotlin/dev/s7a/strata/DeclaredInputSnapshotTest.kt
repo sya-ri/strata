@@ -44,7 +44,7 @@ class DeclaredInputSnapshotTest {
             )
         cases.forEach { (modifier, expected) ->
             val scope = Scope()
-            val projection = requireNotNull(modifier.elements().single().declarationProjection)
+            val projection = requireNotNull(modifier.elements().single().projection)
             val old = projection.encode(scope)
             val hash = old.hashCode()
             assertEquals(expected, old)

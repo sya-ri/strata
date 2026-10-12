@@ -86,8 +86,8 @@ internal enum class ProjectionFieldProfileCase {
          */
         fun projection(element: Element): DeclarationProjection<*> =
             when (selected) {
-                MenuBackground -> checkNotNull(element.modifier.elements().single().declarationProjection)
-                else -> checkNotNull(element.declarationProjection)
+                MenuBackground -> checkNotNull(element.modifier.elements().single().projection)
+                else -> checkNotNull(element.projection)
             }
     }
 }

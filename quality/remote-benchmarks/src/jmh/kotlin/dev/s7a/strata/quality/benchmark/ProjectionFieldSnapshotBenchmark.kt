@@ -169,7 +169,7 @@ public open class ProjectionFieldSnapshotBenchmark {
         @Setup(Level.Trial)
         public fun setup() {
             selected = ProjectionFieldModifierCase.valueOf(workload)
-            projection = checkNotNull(selected.create().elements().single().declarationProjection)
+            projection = checkNotNull(selected.create().elements().single().projection)
         }
 
         /**
