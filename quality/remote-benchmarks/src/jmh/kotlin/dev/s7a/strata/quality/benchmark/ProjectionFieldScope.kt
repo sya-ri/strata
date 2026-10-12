@@ -23,10 +23,12 @@ internal class ProjectionFieldScope : ProjectionScope {
         endpoint = 0
     }
 
-    override fun action(action: ProjectionAction<*>, key: ProjectionValue): Long = ++endpoint
+    override fun action(
+        action: ProjectionAction<*>,
+        key: ProjectionValue,
+    ): Long = ++endpoint
 
-    override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue =
-        ProjectionValue.Sequence(listOf(ProjectionValue.Integer(++endpoint), ProjectionValue.Integer(1), ProjectionValue.Integer(0), binding.encode(binding.read()), ProjectionValue.Integer(++endpoint)))
+    override fun <T : Any> binding(binding: ProjectionBinding<T>): ProjectionValue = ProjectionValue.Sequence(listOf(ProjectionValue.Integer(++endpoint), ProjectionValue.Integer(1), ProjectionValue.Integer(0), binding.encode(binding.read()), ProjectionValue.Integer(++endpoint)))
 
     override fun image(image: DrawImage): ProjectionValue = error("This fixture has no images")
 

@@ -97,9 +97,9 @@ internal object ProjectionFieldWorkEvidence {
         owner.verifyClosed()
         repeat(8) {
             val lifecycle = ProjectionFieldOwner(inputs)
-            lifecycle.use {
-                check(it.update() == 2)
-                it.verifyOpen()
+            lifecycle.use { session ->
+                check(session.update() == 2)
+                session.verifyOpen()
             }
             lifecycle.verifyClosed()
         }

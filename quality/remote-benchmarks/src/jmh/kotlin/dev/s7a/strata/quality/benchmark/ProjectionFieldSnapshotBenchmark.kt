@@ -112,7 +112,9 @@ public open class ProjectionFieldSnapshotBenchmark {
 
         /**
          * Executes the actual public vararg factory and its immediate encoder.
+         * The public spread-copy cost is deliberately included on both revisions.
          */
+        @Suppress("SpreadOperator")
         public fun properties(): ProjectionValue = BuiltinProjection.Grid.properties(*values).encode(scope)
 
         /**
@@ -169,7 +171,14 @@ public open class ProjectionFieldSnapshotBenchmark {
         @Setup(Level.Trial)
         public fun setup() {
             selected = ProjectionFieldModifierCase.valueOf(workload)
-            projection = checkNotNull(selected.create().elements().single().projection)
+            projection =
+                checkNotNull(
+                    selected
+                        .create()
+                        .elements()
+                        .single()
+                        .projection,
+                )
         }
 
         /**
