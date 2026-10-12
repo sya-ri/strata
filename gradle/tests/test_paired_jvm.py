@@ -200,6 +200,33 @@ class PairedJvmTest(unittest.TestCase):
                 self.assertFalse((directory / "junit-verified.json").exists())
                 self.assertTrue((directory / "junit-inventory.json").is_file())
 
+    def test_independent_junit_gate_accepts_actual_jvm_platform_names_without_accepting_other_platforms_or_duplicates(self):
+        gate = {"task": ":runtime:core:jvmTest", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/core/build/test-results/jvmTest"
+        reports.mkdir(parents=True)
+        cases = [
+            (("owner()[jvm]", "failure()[jvm]"), True),
+            (("owner()[jvm]", "failure()"), True),
+            (("owner()[js]", "failure()[jvm]"), False),
+            (("owner()[jvm][jvm]", "failure()[jvm]"), False),
+            (("owner()[jvm]", "owner()", "failure()[jvm]"), False),
+        ]
+        for index, (names, accepted) in enumerate(cases):
+            with self.subTest(names=names):
+                directory = self.root / f"jvm-platform-{index}"
+                directory.mkdir()
+                report = reports / "TEST-independent.Controls.xml"
+                body = ''.join(f'<testcase classname="independent.Controls" name="{name}"/>' for name in names)
+                report.write_text(f'<testsuite tests="{len(names)}" failures="0" errors="0" skipped="0">{body}</testsuite>', encoding="utf-8")
+                PAIRED.preserve_test_reports(self.root, directory, gate)
+                if accepted:
+                    PAIRED.verify_test_gate(directory, gate)
+                    self.assertEqual(PAIRED.read_json(directory / "junit-verified.json")["counts"]["tests"], len(names))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_test_gate(directory, gate)
+                    self.assertFalse((directory / "junit-verified.json").exists())
+
     def preflight_fixture(self, name):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
         output = self.root / name
