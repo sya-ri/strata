@@ -34,6 +34,7 @@ extensions.configure<DetektExtension> {
 
 extensions.configure<SourceSetContainer> {
     named("main") {
+        java.srcDir(rootProject.file("runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor/src/main/java"))
         java.srcDirs(
             rootProject.file("runtime/shared/minecraft-fabric/input/common/src/main/java"),
             rootProject.file("runtime/shared/minecraft-fabric/lifecycle/common/src/main/java"),

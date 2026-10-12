@@ -363,30 +363,30 @@ Tracks `FabricMinecraftWindowMixin` in each runtime's configured main sources.
 
 ## screen
 
-| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) |
-| --- | --- | --- | --- | --- |
-| 1.20 | ✓ |  |  |  |
-| 1.20.1 | ✓ |  |  |  |
-| 1.20.2 | ✓ | ✓ |  |  |
-| 1.20.3 | ✓ | ✓ |  |  |
-| 1.20.4 | ✓ | ✓ |  |  |
-| 1.20.5 | ✓ | ✓ |  |  |
-| 1.20.6 | ✓ | ✓ |  |  |
-| 1.21 | ✓ | ✓ |  |  |
-| 1.21.1 | ✓ | ✓ |  |  |
-| 1.21.2 | ✓ | ✓ |  |  |
-| 1.21.3 | ✓ | ✓ |  |  |
-| 1.21.4 | ✓ | ✓ |  |  |
-| 1.21.5 | ✓ | ✓ |  |  |
-| 1.21.6 | ✓ | ✓ |  |  |
-| 1.21.7 | ✓ | ✓ |  |  |
-| 1.21.8 | ✓ | ✓ |  |  |
-| 1.21.9 | ✓ |  | ✓ |  |
-| 1.21.10 | ✓ |  | ✓ |  |
-| 1.21.11 | ✓ |  | ✓ |  |
-| 26.1 |  |  |  | ✓ |
-| 26.2 |  |  |  | ✓ |
-| 26.3 |  |  |  | ✓ |
+| Minecraft | [`gui-graphics`](../../runtime/shared/minecraft-fabric/screen/gui-graphics) | [`tooltip/empty-carried-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics) | [`primitive-callbacks`](../../runtime/shared/minecraft-fabric/screen/primitive-callbacks) | [`tooltip/item-component-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics) | [`tooltip/deferred-gui-graphics`](../../runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics) | [`event-callbacks`](../../runtime/shared/minecraft-fabric/screen/event-callbacks) | [`gui-extractor`](../../runtime/shared/minecraft-fabric/screen/gui-extractor) | [`tooltip/gui-extractor`](../../runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.20 | ✓ | ✓ |  |  |  |  |  |  |
+| 1.20.1 | ✓ | ✓ |  |  |  |  |  |  |
+| 1.20.2 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.20.3 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.20.4 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.20.5 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.20.6 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.21 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.21.1 | ✓ | ✓ | ✓ |  |  |  |  |  |
+| 1.21.2 | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.3 | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.4 | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.5 | ✓ |  | ✓ | ✓ |  |  |  |  |
+| 1.21.6 | ✓ |  | ✓ |  | ✓ |  |  |  |
+| 1.21.7 | ✓ |  | ✓ |  | ✓ |  |  |  |
+| 1.21.8 | ✓ |  | ✓ |  | ✓ |  |  |  |
+| 1.21.9 | ✓ |  |  |  | ✓ | ✓ |  |  |
+| 1.21.10 | ✓ |  |  |  | ✓ | ✓ |  |  |
+| 1.21.11 | ✓ |  |  |  | ✓ | ✓ |  |  |
+| 26.1 |  |  |  |  |  |  | ✓ | ✓ |
+| 26.2 |  |  |  |  |  |  | ✓ | ✓ |
+| 26.3 |  |  |  |  |  |  | ✓ | ✓ |
 
 ## transport
 

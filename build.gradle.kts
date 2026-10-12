@@ -205,6 +205,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.1",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -219,6 +220,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.1",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                 ) + guiGraphicsRuntimeSourceLinks,
         ),
@@ -232,6 +234,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -248,6 +251,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/minecraft-fabric-1.20.4",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -263,6 +267,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.4",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -276,6 +281,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.5",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -290,6 +296,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.20.6",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -304,6 +311,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -318,6 +326,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.1",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/empty-carried-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -333,6 +342,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -347,6 +357,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/resources/direct-skin-result",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
@@ -361,6 +372,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.4",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -374,6 +386,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.5",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/item-component-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-type",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -388,6 +401,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.6",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -402,6 +416,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.7",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -416,6 +431,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.8",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/primitive-callbacks", "runtime/shared/minecraft-fabric/resources/primitive-callbacks", "runtime/shared/minecraft-fabric/screen/primitive-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -429,6 +445,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.9",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -442,6 +459,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.10",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                 ) + guiGraphicsRuntimeSourceLinks,
@@ -455,6 +473,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-1.21.11",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/deferred-gui-graphics",
                     "runtime/shared/minecraft-fabric/rendering/render-pipeline",
                     "runtime/shared/minecraft-fabric/input/event-callbacks", "runtime/shared/minecraft-fabric/resources/event-callbacks", "runtime/shared/minecraft-fabric/screen/event-callbacks",
                     "runtime/shared/minecraft-fabric/resources/identifier",
@@ -470,6 +489,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.1",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
@@ -485,6 +505,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.2",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/input/glfw-observation", "runtime/shared/minecraft-fabric/lifecycle/glfw-observation", "runtime/shared/minecraft-fabric/resources/glfw-observation",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
@@ -500,6 +521,7 @@ private val minecraftFabricTargets =
             sourceLinkPaths =
                 listOf(
                     "runtime/minecraft-fabric-26.3",
+                    "runtime/shared/minecraft-fabric/screen/tooltip/gui-extractor",
                     "runtime/shared/minecraft-fabric/resources/identifier",
                     "runtime/shared/minecraft-fabric/canvas/common", "runtime/shared/minecraft-fabric/input/common", "runtime/shared/minecraft-fabric/lifecycle/common", "runtime/shared/minecraft-fabric/rendering/common", "runtime/shared/minecraft-fabric/resources/common", "runtime/shared/minecraft-fabric/screen/common", "runtime/shared/minecraft-fabric/transport/common",
                     "runtime/shared/minecraft-fabric/canvas/gui-extractor", "runtime/shared/minecraft-fabric/input/gui-extractor", "runtime/shared/minecraft-fabric/rendering/gui-extractor", "runtime/shared/minecraft-fabric/resources/gui-extractor", "runtime/shared/minecraft-fabric/screen/gui-extractor",

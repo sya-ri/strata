@@ -33,6 +33,12 @@ fabricApi {
     }
 }
 
+extensions.configure<SourceSetContainer> {
+    named("gametest") {
+        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/tag-enchantments/src/gametest/java"))
+    }
+}
+
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("gametest") {
         kotlin.srcDir(rootProject.file("integration/shared/minecraft-fabric/transport/custom-payload/src/gametest/kotlin"))

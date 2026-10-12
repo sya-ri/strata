@@ -136,6 +136,7 @@ fabricApi {
 
 extensions.configure<SourceSetContainer> {
     named("gametest") {
+        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/java"))
         java.srcDir("src/gametest26/java")
         resources.srcDir(rootProject.file("integration/shared/font-parity/src/gametest/resources"))
         resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/font-parity/gui-extractor/src/gametest/resources"))

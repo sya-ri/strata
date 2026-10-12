@@ -51,6 +51,7 @@ extensions.configure<DetektExtension> {
 
 extensions.configure<SourceSetContainer> {
     named("gametest") {
+        java.srcDir(rootProject.file("integration/shared/minecraft-fabric/screen/tooltip/template-enchantments/src/gametest/java"))
         resources.srcDir(rootProject.file("integration/shared/minecraft-fabric/lifecycle/gui-extractor/src/gametest/resources"))
     }
 }

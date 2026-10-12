@@ -178,7 +178,10 @@ public class FabricMinecraftScreen private constructor(
                 presentation.present(graphics, commands, frame.size, dispatch::render)
             }
             if (attached.not()) return
-            if (FabricUiSessions.acceptsPointer(this)) inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
+            if (FabricUiSessions.acceptsPointer(this)) {
+                inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
+                inventory.renderTooltip(graphics, minecraftClient.font, mouseX, mouseY)
+            }
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)

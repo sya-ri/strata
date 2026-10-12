@@ -740,6 +740,23 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
         FabricMinecraftCarriedItemRenderer.render(graphics, font, snapshot, x, y);
     }
 
+    /**
+     * Presents the native tooltip for the currently hit-tested synchronized Slot.
+     *
+     * <p>The binding owns its copied snapshot; no tooltip state outlives this native frame.</p>
+     *
+     * @param graphics borrowed native GUI context.
+     * @param font active Minecraft font.
+     * @param mouseX current logical pointer x.
+     * @param mouseY current logical pointer y.
+     */
+    void renderTooltip(GuiGraphics graphics, Font font, int mouseX, int mouseY) {
+        requireUsable();
+        Binding target = hovered;
+        if (target == null || target.snapshot.isEmpty() || requireMinecraft().player == null) return;
+        FabricMinecraftSlotTooltipRenderer.render(graphics, font, target.snapshot.copy(), activeMenu().getCarried(), mouseX, mouseY);
+    }
+
     private boolean withInput(NativeInput current, BooleanSupplier operation) {
         requireUsable();
         checkState(input == null, "Minecraft inventory input transactions are non-reentrant.");

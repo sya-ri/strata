@@ -199,6 +199,14 @@ internal object InventorySlotSynchronizationGameTest {
         waitForPlayerItem(context, playerInventoryIndex, Items.DIRT)
         runMinecraftUiSessionTest(context, output)
         runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
+        runMinecraftSlotTooltipTest(context, profile, output, playerInventoryIndex) { fixture ->
+            replaceTooltipFixture(context, server, playerId, fixture)
+        }
+        onServer(context, server, playerId) { player ->
+            player.inventory.setItem(playerInventoryIndex, ItemStack(Items.DIRT, itemCount))
+            player.inventoryMenu.broadcastChanges()
+        }
+        waitForPlayerItem(context, playerInventoryIndex, Items.DIRT)
         showBoundScreen(context, profile, Slots.playerInventory(playerInventoryIndex))
         context.takeScreenshot(
             TestScreenshotOptions
@@ -285,6 +293,31 @@ internal object InventorySlotSynchronizationGameTest {
             containerReference.get().setItem(containerSlotIndex, previous.get())
             player.closeContainer()
         }
+    }
+
+    private fun replaceTooltipFixture(
+        context: ClientGameTestContext,
+        server: MinecraftServer,
+        playerId: UUID,
+        fixture: MinecraftSlotTooltipFixture,
+    ) {
+        val expected = AtomicReference<Pair<ItemStack, ItemStack>>()
+        onServer(context, server, playerId) { player ->
+            val stack = MinecraftSlotTooltipTestStack.create(server.registryAccess(), fixture)
+            val carried =
+                if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, itemCount) else ItemStack.EMPTY
+            player.inventory.setItem(playerInventoryIndex, stack)
+            player.inventoryMenu.carried = carried
+            player.inventoryMenu.broadcastChanges()
+            expected.set(Pair(stack.copy(), carried.copy()))
+        }
+        context.waitFor(
+            Predicate<Minecraft> { minecraft ->
+                val player = minecraft.player
+                val snapshot = expected.get()
+                player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(playerInventoryIndex), snapshot.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, snapshot.second)
+            },
+        )
     }
 
     private fun showBoundScreen(

@@ -350,6 +350,34 @@ internal class StrataMinecraftLegacyLoadedSuite {
 
             runMinecraftUiSessionTest(context, output)
             runMinecraftCanvasSlotTest(context, profile, output, playerInventoryIndex)
+            runMinecraftSlotTooltipTest(context, profile, output, playerInventoryIndex) { fixture ->
+                val expected =
+                    world.computeOnServer { activeServer ->
+                        val player = activeServer.playerList.players.single()
+                        val stack = MinecraftSlotTooltipTestStack.create(activeServer.registryAccess(), fixture)
+                        val carried =
+                            if (fixture == MinecraftSlotTooltipFixture.CarriedSword || fixture == MinecraftSlotTooltipFixture.CarriedBundle) ItemStack(Items.DIRT, itemCount) else ItemStack.EMPTY
+                        player.inventory.setItem(playerInventoryIndex, stack)
+                        player.inventoryMenu.carried = carried
+                        player.inventoryMenu.broadcastChanges()
+                        Pair(stack.copy(), carried.copy())
+                    }
+                context.waitFor { minecraft ->
+                    val player = minecraft.player
+                    player != null && matchesMinecraftTooltipFixture(player.inventory.getItem(playerInventoryIndex), expected.first) && matchesMinecraftTooltipFixture(player.containerMenu.carried, expected.second)
+                }
+            }
+            world.computeOnServer { activeServer ->
+                val player = activeServer.playerList.players.single()
+                player.inventory.setItem(playerInventoryIndex, ItemStack(Items.DIRT, itemCount))
+                player.inventoryMenu.broadcastChanges()
+            }
+            context.waitFor { minecraft ->
+                minecraft.player
+                    ?.inventory
+                    ?.getItem(playerInventoryIndex)
+                    ?.`is`(Items.DIRT) == true
+            }
             openPlayerInventoryScreen(context, profile, output)
             verifyPlayerInventoryRoundTrip(context, server, playerId)
             closeAndAssertReleased(context)
