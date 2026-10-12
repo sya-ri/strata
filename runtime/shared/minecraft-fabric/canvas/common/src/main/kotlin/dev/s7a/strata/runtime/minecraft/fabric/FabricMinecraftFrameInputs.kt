@@ -135,7 +135,7 @@ internal class FabricMinecraftFrameInputs(
     internal fun resolve(
         available: (DrawImage) -> Boolean,
         supported: (DrawImage) -> Boolean,
-    ): FabricMinecraftFrameInputs = resolve(available, supported, { false })
+    ): FabricMinecraftFrameInputs = resolve(available, supported) { false }
 
     /**
      * Returns these inputs unchanged when every direct layer is available and has exact native alpha, or resolves portable fallbacks.

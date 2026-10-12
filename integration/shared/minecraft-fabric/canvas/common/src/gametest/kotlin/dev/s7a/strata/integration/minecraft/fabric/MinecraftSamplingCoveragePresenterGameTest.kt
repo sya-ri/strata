@@ -162,6 +162,7 @@ internal object MinecraftSamplingCoveragePresenterGameTest {
             check(extractMinecraftCanvasScreen(screen, {}) === marker)
             check(MinecraftSamplingCoveragePresentation.released(screen))
             check(runCatching { screen.added() }.exceptionOrNull() is IllegalStateException)
+            context.setScreen(null)
         }
         context.waitFor { retired(screen) }
         return JsonObject().apply {
@@ -201,12 +202,14 @@ internal object MinecraftSamplingCoveragePresenterGameTest {
                             check(retainedBefore == 1) { "Screen close freed the sampled source before actual GUI consumption." }
                             closedBeforeConsumer = true
                         },
-                        { consumed = true },
+                        {
+                            context.setScreen(null)
+                            consumed = true
+                        },
                     )
                     context.setScreen(screen)
                 }
                 context.waitFor { closedBeforeConsumer && consumed }
-                context.onClient { context.setScreen(null) }
                 context.waitFor { retired(screen) }
                 JsonObject().apply {
                     addProperty("actualGuiConsumerCompleted", consumed)

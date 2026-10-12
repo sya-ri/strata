@@ -45,7 +45,7 @@ internal inline fun writeFabricMinecraftArgbPixels(
         for (x in 0 until size.width) {
             val argb = pixel(x, y)
             val alpha = argb ushr 24
-            if (0 < alpha && alpha < 255) partialAlpha = true
+            if (alpha in 1..254) partialAlpha = true
             val abgr = (argb and 0xFF00FF00.toInt()) or ((argb ushr 16) and 0xFF) or ((argb and 0xFF) shl 16)
             MemoryUtil.memPutInt(address + offset, abgr)
             offset += Int.SIZE_BYTES
