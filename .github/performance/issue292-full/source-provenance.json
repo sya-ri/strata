@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "ec2b943064e0da6336be2748ae1362dd1343b091",
+  "baseline_reconstructed_tree": "eb12958f3f1cbe1ae9d6986bff340e808f86fcbd",
   "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "f11eb91e699446edadc6dc209525df245ea1ebbb",
+  "candidate_fixture_tree": "9a861dca944dd17a9f8367fbf0b388196dc1186a",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -156,11 +156,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "dcd86af9da5d02f3f55ebaa5dae4c65c9da5808ed02490b1c63b63efb2a1b61f"
+      "sha256": "076a9b171c4d1eb67e52cce538f909a074de6e9513ea0a3d2a03c6ea7f8d278e"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "67354138bef1438281ab74883f5fdc2161d7d153aebd70251c1ec787ba0f4257"
+      "sha256": "b13daf5c87b91b8434df6af9bdd82f5e2c07bcc2906599c1b6ae266db358d947"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -198,9 +198,9 @@
     "source_review": "Pending focused independent review of this native input helper correction",
     "native_execution": "Pending fresh whole16case/all22target execution"
   },
-  "common_collector_source_commit": "490a9f685e911eab3fb2383a35eafd78fd9e8b74",
-  "common_collector_source_tree": "5ddc6c5610944487277b8929ec62debc1f8d9459",
-  "common_collector_source_review": "Exact public490a9f68 common projection and preflight dependency correction: source review and 27 Python checks pass; actual new TestKit and affected quality qualification Pending existing CI; no child Java/native invocation",
+  "common_collector_source_commit": "c6c9c02b2e67874438cc9ca93ddc25e23d49bdb3",
+  "common_collector_source_tree": "2d333acfa9ebd575889b07bb98ca1fc278146c72",
+  "common_collector_source_review": "Exact published common projection and formatter repair: root actually executed the real positive/negative TestKit regression and test-source lint; all earlier selected admission controls preserved; no child Java/native invocation",
   "common_collector_bindings": [
     {
       "path": ".github/workflows/jvm.yml",
@@ -210,8 +210,8 @@
     },
     {
       "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt",
-      "git_blob": "5e86e1b1c86521c1fa9f79c5c95d75092f308fb3",
-      "sha256": "7080c2394b55ec4e70181403916f745f9b87a34fb1969b11d127368ac66bfa80",
+      "git_blob": "61fbd96ada6fad4c7a99205475b3aade3bf4ecc0",
+      "sha256": "79c1b8e94c621a9a9973160652753dc2f075d270480ab6e3f446087f790d0931",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -479,7 +479,7 @@
     "status": "Passed actual whole native-screen-callback/presentation reconciliation; fresh final driver remains Pending",
     "reconciliation_sha256": "3ed80fc3b4ce17c9dd8ac994bfa2e140e93bcbbcabdce830e59d025e922ec8a3"
   },
-  "final_driver_parent": "1771394ef4fbd12e15c0af070c6ab1b7c00b84f3",
+  "final_driver_parent": "e0777bef45c282644bc48d298e9c39b080969fdd",
   "previous_failed_whole_attempt": {
     "head": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
     "run": 38210183998,
@@ -526,7 +526,42 @@
   ],
   "generic_runtime_projection": {
     "contract": "Preserve the full prepared runtime union; replace the owning suite's actual matched project dependency archives only, with nonempty/canonical JAR uniqueness and all existing source/loaded identity checks",
-    "actual_functional_qualification": "Pending existing public common-source CI",
+    "actual_functional_qualification": {
+      "common_commit": "c6c9c02b2e67874438cc9ca93ddc25e23d49bdb3",
+      "actual_execution_source_head": "490a9f685e911eab3fb2383a35eafd78fd9e8b74",
+      "actual_projection_test_passed": true,
+      "actual_test_source_lint_passed": true,
+      "natural_exit": 0,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": "14.191",
+      "formatter": "existing formatKotlinTest",
+      "source_sha256": "79c1b8e94c621a9a9973160652753dc2f075d270480ab6e3f446087f790d0931",
+      "unchanged_nonwhitespace_bytes": true,
+      "controls": [
+        "three-of-five runtime JARs",
+        "all-five runtime JARs",
+        "unrelated support JAR",
+        "missing archive",
+        "duplicate matched archive",
+        "wrong resource archive",
+        "unmatched owner mapping"
+      ],
+      "root_receipt_path": "C:\\Users\\gbv_s\\.codex\\worktrees\\0b3c\\strata\\build\\pr307-validation\\runtime-projection-r2\\qualified-source-test.json",
+      "root_receipt_sha256": "3d2a9368ed1d4463ad78edaf1bf572ce403e280d95a0c797f425e741d8fa2eba",
+      "root_terminal_sha256": "dcf9c3f009321b9f40d56b4da8134a7c14c9c027447d6892834d4a27e87afbd9",
+      "root_test_xml_sha256": "dca73ba3afd51e7bda6ceb36994a2f12353a0b315013bb5dc6b058555f95b7dc",
+      "final_head_ci": "Pending",
+      "child_java_native_invocations": 0
+    },
     "all_original_case_oracles_preserved": true
+  },
+  "previous_common_quality_failure": {
+    "head": "490a9f685e911eab3fb2383a35eafd78fd9e8b74",
+    "run": 38223825438,
+    "job": 114726433047,
+    "cause": "Only multiline-expression-wrapping lint at the new test source line91:24; build-logic:test not reached"
   }
 }

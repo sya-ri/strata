@@ -88,16 +88,17 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
             write("$name/build.gradle.kts", "")
             write("$name/src/main/resources/$name.txt", if (name == "support") "untouched" else "baseline")
         }
-        val archives = runtimes.associate { name ->
-            val archive = directory.resolve("frozen/$name.jar")
-            Files.createDirectories(archive.parent)
-            JarOutputStream(Files.newOutputStream(archive)).use { jar ->
-                jar.putNextEntry(JarEntry("$name.txt"))
-                jar.write("candidate".toByteArray())
-                jar.closeEntry()
+        val archives =
+            runtimes.associate { name ->
+                val archive = directory.resolve("frozen/$name.jar")
+                Files.createDirectories(archive.parent)
+                JarOutputStream(Files.newOutputStream(archive)).use { jar ->
+                    jar.putNextEntry(JarEntry("$name.txt"))
+                    jar.write("candidate".toByteArray())
+                    jar.closeEntry()
+                }
+                ":$name" to archive
             }
-            ":$name" to archive
-        }
         manifest(archives)
         val subset = runtimes.take(3)
         listOf(subset, runtimes).forEach { selected ->
