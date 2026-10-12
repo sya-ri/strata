@@ -17,6 +17,7 @@ import time
 import tomllib
 from urllib.parse import unquote, urlparse
 import zipfile
+import xml.etree.ElementTree as ElementTree
 
 
 class FixtureProject(Enum):
@@ -104,7 +105,7 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(fields <= set(suite) <= fields | {"profilers", "preflight"}, "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "preflight", "test_gates"}, "Invalid suite fields")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -120,6 +121,19 @@ def load_manifest(root, path):
         profilers = suite.get("profilers", [])
         require(isinstance(profilers, list) and len(profilers) == len(set(profilers))
                 and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in profilers), "Use unique compiled JMH profiler class names")
+        gates = suite.get("test_gates", [])
+        require(isinstance(gates, list) and len(gates) <= 16_384, "Invalid independent test gate inventory")
+        tasks = set()
+        for gate in gates:
+            require(isinstance(gate, dict) and set(gate) == {"task", "required_tests"}, "Invalid independent test gate fields")
+            task = gate["task"]
+            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:(?:test|jvmTest|fontTest[A-Za-z0-9_]+)", task)
+                    and task.rsplit(":", 1)[0] in projects and task not in tasks, "Use unique existing runtime test tasks")
+            tasks.add(task)
+            tests = gate["required_tests"]
+            require(isinstance(tests, list) and tests and len(tests) <= 16_384 and len(tests) == len(set(tests))
+                    and all(isinstance(test, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+#[^#\r\n\x00]+", test) for test in tests),
+                    "Declare exact independent JUnit class and method bindings")
         if "preflight" in suite:
             control = suite["preflight"]
             require(isinstance(control, dict) and set(control) == {"main", "qualification", "runtime_classes", "controls"}, "Invalid compiled preflight fields")
@@ -435,6 +449,44 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
     write_new(directory / "verified.json", {"status": "passed", "request_sha256": digest(request_path), "receipt_sha256": digest(directory / "receipt.json"), "controls": expected})
 
 
+def preserve_test_reports(workspace, directory, gate):
+    """Retain all actual JUnit bytes even when the owning test phase fails before admission."""
+    reports = workspace.joinpath(*gate["task"].strip(":").split(":")[:-1], "build", "test-results", gate["task"].rsplit(":", 1)[1])
+    require(not reports.is_symlink(), "Unsafe independent JUnit output")
+    files = sorted(reports.glob("TEST-*.xml")) if reports.is_dir() else []
+    require(len(files) <= 16_384 and all(path.is_file() and not path.is_symlink() for path in files)
+            and sum(path.stat().st_size for path in files) <= 64 * 1024**2, "Unsafe or oversized independent JUnit reports")
+    artifacts = [{"name": report.name, **preserve_file(report, directory / "junit" / report.name)} for report in files]
+    write_new(directory / "junit-inventory.json", {"task": gate["task"], "reports": artifacts})
+
+
+def verify_test_gate(directory, gate):
+    """Require complete actual JUnit counts and each exact independent method to run successfully."""
+    inventory = read_json(directory / "junit-inventory.json")
+    require(inventory["task"] == gate["task"] and inventory["reports"], "Missing actual independent JUnit output")
+    observed, counts = {}, {name: 0 for name in ("tests", "failures", "errors", "skipped")}
+    for artifact in inventory["reports"]:
+        report = Path(artifact["path"])
+        require(report.resolve().parent == (directory / "junit").resolve() and digest(report) == artifact["sha256"], "Changed independent JUnit report")
+        suite = ElementTree.fromstring(report.read_bytes())
+        require(suite.tag == "testsuite", "Invalid independent JUnit report root")
+        actual = {name: 0 for name in counts}
+        for case in suite.findall("testcase"):
+            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("()")
+            actual["tests"] += 1
+            for name, tag in (("failures", "failure"), ("errors", "error"), ("skipped", "skipped")):
+                actual[name] += int(case.find(tag) is not None)
+            observed.setdefault(identity, []).append(all(case.find(tag) is None for tag in ("failure", "error", "skipped")))
+        for name in counts:
+            value = suite.get(name)
+            require(value is not None and re.fullmatch(r"[0-9]+", value) and int(value) == actual[name], "Inconsistent actual JUnit counts")
+            counts[name] += actual[name]
+    require(0 < counts["tests"] and counts["failures"] == counts["errors"] == 0, "Failed independent JUnit gate")
+    require(all(observed.get(test) == [True] for test in gate["required_tests"]), "Required independent JUnit method missing, repeated, failed or skipped")
+    write_new(directory / "junit-verified.json", {"status": "passed", "task": gate["task"], "required_tests": gate["required_tests"],
+                                                "counts": counts, "reports": inventory["reports"]})
+
+
 def table(output, comparisons, phases):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
@@ -540,7 +592,7 @@ def run(root, manifest_path, output):
                   "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false",
                   "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(homes), "-I", str(init)]
 
-        def phase(name, workspace, arguments, expected_forks=None):
+        def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
             for executable, expected in allowed_java.items():
@@ -560,6 +612,8 @@ def run(root, manifest_path, output):
             phase_started = time.monotonic()
             previous_vms = set(vm_directory.glob("*.log"))
             exit_code = invoke(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(directory / "request.json"), "-Report", str(directory / "terminal.json")], root, directory / "console.log")
+            if test_gate is not None:
+                preserve_test_reports(workspace, directory, test_gate)
             terminal = read_json(directory / "terminal.json")
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
@@ -647,6 +701,11 @@ def run(root, manifest_path, output):
             selectors += [f"-Pstrata.performance.fixtureInputs={inputs}"]
             classpaths = {}
             for side in ("baseline", "candidate"):
+                for index, gate in enumerate(suite.get("test_gates", [])):
+                    source_guard(workspaces[side], data["sources"][side]["tree"])
+                    checked = phase(f"tests-{suite['name']}-{side}-{index}", workspaces[side], [gate["task"]], 0, gate)
+                    verify_test_gate(checked, gate)
+                    source_guard(workspaces[side], data["sources"][side]["tree"])
                 flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
                 if "preflight" in suite:
                     retained = output / "prepared-classpaths" / suite["name"] / side

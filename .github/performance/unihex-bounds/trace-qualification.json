@@ -1,14 +1,14 @@
 {
   "schema": "strata-unihex-method-trace-qualification-v1",
   "status": "passed",
-  "controller_class_sha256": "723d6c072ed66c42ccd4b0917ae2a64a5a63a2005cc7a25ec87372e08030267c",
+  "controller_class_sha256": "a3b3e0e99cfa6a7dc6485bd8b513d65364c012bc085ae2faa9307b7e1ff5de9b",
   "worker_class_sha256": "ce6b3fcdd0224f7d133503015b718c81913e70333ff1a1bbf5bff7585597a9db",
-  "request_sha256": "0ad367d683638046949bd514adbb53385c91258c316d31a53ded75e7ecd479f3",
-  "receipt_sha256": "d707820fa7f86058df44bd3444e7aaefe2ec47697919483ddeab257970ef518a",
-  "verified_sha256": "27fbf54f40ce49d648875248c4bf291f0184d852ab0bade9004d42a0404849c1",
-  "terminal_sha256": "5175f991ebdf4633c0fc7342ae461b510533196abc315f1e0727c19c5f30f49f",
-  "vms_sha256": "22323e81a0b80276da708810a47dca2470d31d79935cfffb5659fc3dd5827c93",
-  "console_sha256": "742c62b41df79a5cfdca086f54852525023139b6d40c307c73d8d6c0c06dea38",
+  "request_sha256": "f31f338242c2ef78d6a7a98dd270a6280455a5896d6dde3e27859722ca15943b",
+  "receipt_sha256": "d2bd861feb3bc751e53a4cf6bb5772f27d2120fb8603368618cf970a4e588d84",
+  "verified_sha256": "44ee51fab367f142aca052a2f6ba0994925e0ef9def24db1ecc30286961455eb",
+  "terminal_sha256": "a1561d543a723008f4212dc02133d37c8c46e02e44e0b28d5df0eeb85cd69a66",
+  "vms_sha256": "b05626f67be09ece48d444c5b8f91e3439e0d156f6b3c1644ce3ec9489394e90",
+  "console_sha256": "b25e46581bb1041b5983623f7d14794459ec33c8b63fed11cb06c5c7b3f88c12",
   "bootstrap_sha256": "3bcb1c08a788eaf1a51ddb62ae28884cb9bb7f83e245505d116cd940df49ddd9",
   "sources": {
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt": {
@@ -17,7 +17,7 @@
     },
     "quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/UnihexBoundsMethodTrace.java": {
       "path": "C:\\Users\\gbv_s\\.codex\\worktrees\\u293-r6\\strata\\quality\\component-benchmarks\\src\\jmh\\java\\dev\\s7a\\strata\\quality\\benchmark\\UnihexBoundsMethodTrace.java",
-      "sha256": "ebda32306c8faabfae8a97995d6061b68080d4f84dad608ec5ef43df3f21b873"
+      "sha256": "367fbf1873ddba40eb42fd02978bf5b675ebce76874f48b0a903dff3b965d301"
     },
     "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTraceWorker.kt": {
       "path": "C:\\Users\\gbv_s\\.codex\\worktrees\\u293-r6\\strata\\quality\\component-benchmarks\\src\\jmh\\kotlin\\dev\\s7a\\strata\\quality\\benchmark\\UnihexBoundsTraceWorker.kt",
@@ -35,7 +35,7 @@
       "id": "QSingle",
       "status": "passed",
       "observations": {
-        "pid": 15976,
+        "pid": 51800,
         "natural_bounds": 1,
         "public_glyph_requests": 0,
         "cached_glyph_requests": 0,
@@ -59,25 +59,25 @@
       },
       "origins": {
         "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
-          "pid": 15976
+          "pid": 51800
         },
         "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
-          "pid": 15976
+          "pid": 51800
         },
         "dev.s7a.strata.performance.JvmPerformanceMeter": {
-          "pid": 15976
+          "pid": 51800
         },
         "org.openjdk.jmh.runner.Runner": {
-          "pid": 15976
+          "pid": 51800
         },
         "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
-          "pid": 15976
+          "pid": 51800
         },
         "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
-          "pid": 15976
+          "pid": 51800
         },
         "dev.s7a.strata.render.DrawImages": {
-          "pid": 15976
+          "pid": 51800
         }
       },
       "artifacts": [
@@ -87,15 +87,15 @@
         },
         {
           "path": "QSingle/stderr.log",
-          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+          "sha256": "359c50f624f6645c7e4c796a522eb620289c02971a20f537468096f558a5797e"
         },
         {
           "path": "QSingle/class-load.log",
-          "sha256": "79f0cc46f92a110600c927a02101e7bbba99e0dfeedc856a28097833c9539e2f"
+          "sha256": "9472ce4f6fbfec377a9fcc1ced3ffe19cc918be007f17912afaef37aa6444421"
         },
         {
           "path": "QSingle/events.json",
-          "sha256": "8ef4194425659f8660ef74aa3724b93665dc2e174c96b0ef04fd05ae77c12375"
+          "sha256": "d2c74c497b34b291e75e6808d73a3cb0e296e47ae524f520dfc2ab18aaae0396"
         }
       ]
     },
@@ -103,7 +103,7 @@
       "id": "QMultiple",
       "status": "passed",
       "observations": {
-        "pid": 15376,
+        "pid": 48528,
         "natural_bounds": 3,
         "public_glyph_requests": 0,
         "cached_glyph_requests": 0,
@@ -127,25 +127,25 @@
       },
       "origins": {
         "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
-          "pid": 15376
+          "pid": 48528
         },
         "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
-          "pid": 15376
+          "pid": 48528
         },
         "dev.s7a.strata.performance.JvmPerformanceMeter": {
-          "pid": 15376
+          "pid": 48528
         },
         "org.openjdk.jmh.runner.Runner": {
-          "pid": 15376
+          "pid": 48528
         },
         "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
-          "pid": 15376
+          "pid": 48528
         },
         "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
-          "pid": 15376
+          "pid": 48528
         },
         "dev.s7a.strata.render.DrawImages": {
-          "pid": 15376
+          "pid": 48528
         }
       },
       "artifacts": [
@@ -155,15 +155,15 @@
         },
         {
           "path": "QMultiple/stderr.log",
-          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+          "sha256": "359c50f624f6645c7e4c796a522eb620289c02971a20f537468096f558a5797e"
         },
         {
           "path": "QMultiple/class-load.log",
-          "sha256": "a6aabb79833a3037f1dc3d3be1915293e4099f9db1f30b80b367315410c67ea7"
+          "sha256": "278f4fd9903f9e3aa054b6eeb6cb78274f8213e25ebd899a123cff4811aa7793"
         },
         {
           "path": "QMultiple/events.json",
-          "sha256": "dc0d64673f2588d6b75eab265943530a82c3a829e99387eaa55d4d3d715d71cb"
+          "sha256": "e00323d0b7f91a098a774736887856d3562eff436ac64341f462b835680576dc"
         }
       ]
     },
@@ -171,7 +171,7 @@
       "id": "QZero",
       "status": "passed",
       "observations": {
-        "pid": 24544,
+        "pid": 4372,
         "natural_bounds": 0,
         "public_glyph_requests": 0,
         "cached_glyph_requests": 0,
@@ -195,25 +195,25 @@
       },
       "origins": {
         "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
-          "pid": 24544
+          "pid": 4372
         },
         "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
-          "pid": 24544
+          "pid": 4372
         },
         "dev.s7a.strata.performance.JvmPerformanceMeter": {
-          "pid": 24544
+          "pid": 4372
         },
         "org.openjdk.jmh.runner.Runner": {
-          "pid": 24544
+          "pid": 4372
         },
         "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
-          "pid": 24544
+          "pid": 4372
         },
         "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
-          "pid": 24544
+          "pid": 4372
         },
         "dev.s7a.strata.render.DrawImages": {
-          "pid": 24544
+          "pid": 4372
         }
       },
       "artifacts": [
@@ -223,15 +223,15 @@
         },
         {
           "path": "QZero/stderr.log",
-          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+          "sha256": "359c50f624f6645c7e4c796a522eb620289c02971a20f537468096f558a5797e"
         },
         {
           "path": "QZero/class-load.log",
-          "sha256": "2c07f530b7e3bbb0b6896af1459034ac2665ef97a041c1fb094aadfe249d3114"
+          "sha256": "b3b38a8cc5ea4fc82789a7289d6d980ea8e524941253e7085b4697f31889fd89"
         },
         {
           "path": "QZero/events.json",
-          "sha256": "ac3fc87ca05ea36a310346354dcc5d9aa0ca046cc710d1c8e7815a8e343ce6cd"
+          "sha256": "38882196ed350995496b2af0e3e0d21625af14d191549cc5557430f3d8df5112"
         }
       ]
     },
@@ -239,7 +239,7 @@
       "id": "QFailure",
       "status": "passed",
       "observations": {
-        "pid": 15424,
+        "pid": 33408,
         "natural_bounds": 0,
         "public_glyph_requests": 1,
         "cached_glyph_requests": 0,
@@ -265,25 +265,25 @@
       },
       "origins": {
         "dev.s7a.strata.quality.benchmark.UnihexBoundsMethodTrace": {
-          "pid": 15424
+          "pid": 33408
         },
         "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker": {
-          "pid": 15424
+          "pid": 33408
         },
         "dev.s7a.strata.performance.JvmPerformanceMeter": {
-          "pid": 15424
+          "pid": 33408
         },
         "org.openjdk.jmh.runner.Runner": {
-          "pid": 15424
+          "pid": 33408
         },
         "dev.s7a.strata.runtime.minecraft.font.FontHexGlyph": {
-          "pid": 15424
+          "pid": 33408
         },
         "dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine": {
-          "pid": 15424
+          "pid": 33408
         },
         "dev.s7a.strata.render.DrawImages": {
-          "pid": 15424
+          "pid": 33408
         }
       },
       "artifacts": [
@@ -293,15 +293,15 @@
         },
         {
           "path": "QFailure/stderr.log",
-          "sha256": "e83e03927b003fc555793b33ab54d9bf7296a1bb4b8f31a958306bf96171a073"
+          "sha256": "359c50f624f6645c7e4c796a522eb620289c02971a20f537468096f558a5797e"
         },
         {
           "path": "QFailure/class-load.log",
-          "sha256": "c7b203a37e6c1226abe08cda47f85c2c5665c378b0d2a8a4922b587e27834be9"
+          "sha256": "105b53f4080eed5c70c0f7278a1dd5e3e6b7f739f70505ca385ba048e8130033"
         },
         {
           "path": "QFailure/events.json",
-          "sha256": "4da824e81314b4327af824faf8884d290ca6110f0fd7fb00d3a5c2e9e6094277"
+          "sha256": "5ad9241b4a8f39ffe12f90c671c30ec80ac95bb110f8da4cea7e419e76485dfe"
         }
       ]
     }
@@ -318,25 +318,20 @@
       "release_sha256": "666094d10d8d978e4b72e7a492c07fde713cc15db2d8d02be802e0170ec878d6"
     },
     {
-      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\21.0.2",
-      "executable_sha256": "638a1fa85ec764d5ebeb749047868a36d4cc3bccd26d2caebc20f0f6e4adbdc1",
-      "release_sha256": "c7332a8bf8d588d76e8a58f0f95492f01d8beb1c02713cb43fc6eb98ec2e27c6"
-    },
-    {
-      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\temurin-25.0.4+101.0.LTS",
-      "executable_sha256": "5808527e3dfc4eb285c7664ba356bc267055ef906e83ed4660d9f7976da7349b",
-      "release_sha256": "86e5e51658bb2b9cf064b3957d81ac39abdb346b2cac19867c1625dd19d440d9"
+      "home": "C:\\Users\\gbv_s\\AppData\\Local\\mise\\installs\\java\\25.0.2",
+      "executable_sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+      "release_sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62"
     }
   ],
-  "phase_request_sha256": "1e0d5563f8b40e70af41c66c411740342d402f15965295af85b4814a46412b56",
+  "phase_request_sha256": "465ac157d34120bb39b822584520dc0fa613854ead1484b14cecb238f293e060",
   "owned_phase": {
-    "jobName": "StrataPairedJVM-ee453be4ab714e99b40b02aa664b4ae4",
+    "jobName": "StrataPairedJVM-b2dee9286c3e4b7b8a468fa6e82cbe67",
     "exitCode": 0,
     "naturalRelease": true,
     "handlesClosed": true,
     "activeProcessesAfterCleanup": 0,
     "jobCommittedLimitBytes": 3221225472,
     "observedJobLimitBytes": 3221225472,
-    "peakJobCommittedBytes": 2024906752
+    "peakJobCommittedBytes": 2018734080
   }
 }

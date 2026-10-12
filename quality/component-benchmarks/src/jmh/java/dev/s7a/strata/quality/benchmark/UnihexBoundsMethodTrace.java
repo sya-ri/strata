@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /** External untimed JDI observer; it never instruments or rewrites a runtime archive. */
 public final class UnihexBoundsMethodTrace {
@@ -92,7 +93,7 @@ public final class UnihexBoundsMethodTrace {
         writeNew(output.resolve("receipt.json"), receipt);
     }
 
-    /** Observes actual method entry/return events on the operation thread between actual println(String) arguments. */
+    /** Observes actual method entry/return events on the operation thread between actual String-reference println arguments. */
     private static Trace observe(Path requestPath, JsonObject request, Path output, String id, String argument) throws Exception {
         if (id.matches("[A-Za-z0-9][A-Za-z0-9_.-]*") == false) throw new IllegalArgumentException("Unsafe trace identity");
         Path directory = output.resolve(id);
@@ -161,8 +162,8 @@ public final class UnihexBoundsMethodTrace {
             stdout.get(10, TimeUnit.SECONDS);
             stderr.get(10, TimeUnit.SECONDS);
             // Startup class logs use a file because the launching connector exposes pipes only after the JDWP handshake.
-            // Retain exact PID-qualified lines in the shared console after natural process release.
-            try (InputStream classes = Files.newInputStream(classLog)) { classes.transferTo(System.out); }
+            // Keep the full original file as an artifact; the bounded console needs only actual required origins.
+            mirrorOrigins(classLog, process.pid(), request.getAsJsonObject("required_classes"));
             trace.observations.addProperty("exit_code", process.exitValue());
             trace.observations.addProperty("complete_boundary", trace.begins == 1 && trace.ends == 1 && trace.active == false);
             if (process.exitValue() != 0 || trace.begins != 1 || trace.ends != 1 || trace.active) throw new IllegalStateException("Failed worker or incomplete external operation boundary");
@@ -189,6 +190,20 @@ public final class UnihexBoundsMethodTrace {
                 artifact.addProperty("sha256", hash(path));
                 trace.artifacts.add(artifact);
             }
+        }
+    }
+
+    /** Mirrors each unique actual PID-qualified required origin without expanding the shared console bound. */
+    private static void mirrorOrigins(Path classLog, long pid, JsonObject required) throws Exception {
+        if (64L * 1024 * 1024 < Files.size(classLog)) throw new IllegalStateException("Trace class-load output overflow");
+        for (String name : required.keySet()) {
+            Pattern loaded = Pattern.compile("^\\[" + pid + "\\]\\[info *\\]\\[class,load *\\] " + Pattern.quote(name) + " source: [^\\r\\n]+");
+            List<String> matches;
+            try (var lines = Files.lines(classLog, StandardCharsets.UTF_8)) {
+                matches = lines.filter(line -> loaded.matcher(line).matches()).toList();
+            }
+            if (matches.size() != 1) throw new IllegalStateException("Missing or ambiguous actual worker class origin: " + name);
+            System.out.println(matches.get(0));
         }
     }
 

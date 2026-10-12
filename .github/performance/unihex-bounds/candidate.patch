@@ -1,5 +1,163 @@
+diff --git a/build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..61fbd96ada6fad4c7a99205475b3aade3bf4ecc0
+--- /dev/null
++++ b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt
+@@ -0,0 +1,152 @@
++package dev.s7a.strata.gradle
++
++import org.gradle.testkit.runner.GradleRunner
++import org.gradle.testkit.runner.TaskOutcome
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertTrue
++import org.junit.jupiter.api.Test
++import org.junit.jupiter.api.io.TempDir
++import java.nio.file.Files
++import java.nio.file.Path
++import java.util.Properties
++import java.util.jar.JarEntry
++import java.util.jar.JarOutputStream
++
++/** Exercises the production runtime replacement action with real resolved project JARs and a loaded probe. */
++internal class BoundedJvmRuntimeProjectionFunctionalTest {
++    @TempDir
++    lateinit var directory: Path
++
++    private val runtimes = listOf("one", "two", "three", "four", "five")
++
++    @Test
++    fun `each owner loads its frozen runtime subset and rejects invalid matched archives`() {
++        val repository = generateSequence(Path.of("").toAbsolutePath()) { it.parent }.first { Files.isRegularFile(it.resolve("gradle/libs.versions.toml")) }
++        val production = Files.readString(repository.resolve("gradle/performance/bounded-jvm.init.gradle.kts"))
++        val replacement =
++            production
++                .substringAfter("                val requested = rootProject.providers.gradleProperty(\"strata.paired.runtime\").orNull")
++                .substringBefore("                rootProject.providers.gradleProperty(\"strata.performance.operationRequest\")")
++                .substringBefore("                if (rootProject.providers.gradleProperty(\"strata.paired.classpath\").isPresent")
++        write("settings.gradle.kts", "rootProject.name = \"runtime-projection\"\ninclude(${(runtimes + "support").joinToString { "\"$it\"" }})\n")
++        write(
++            "build.gradle.kts",
++            """
++            import org.gradle.api.artifacts.component.ProjectComponentIdentifier
++            import org.gradle.api.attributes.LibraryElements
++            import org.gradle.api.attributes.Usage
++            import java.io.File
++            import java.util.Properties
++            plugins { java }
++            subprojects { apply(plugin = "java-library") }
++            val jmhRuntimeClasspath = configurations.create("jmhRuntimeClasspath") {
++                isCanBeConsumed = false
++                attributes {
++                    attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
++                    attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.JAR))
++                }
++            }
++            val selected = providers.gradleProperty("fixture.runtimes").get().split(',')
++            (selected + "support").forEach { dependencies.add(jmhRuntimeClasspath.name, project(":${'$'}it")) }
++            tasks.register<JavaExec>("verifyProjection") {
++                dependsOn("classes", jmhRuntimeClasspath)
++                classpath = sourceSets["main"].runtimeClasspath + jmhRuntimeClasspath
++                mainClass.set("fixture.Probe")
++                args(selected + "support")
++                maxHeapSize = "64m"
++                doFirst {
++                    val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
++            $replacement
++                }
++            }
++            """.trimIndent(),
++        )
++        write(
++            "src/main/java/fixture/Probe.java",
++            """
++            package fixture;
++            import java.io.InputStream;
++            import java.nio.charset.StandardCharsets;
++            public class Probe {
++                public static void main(String[] names) throws Exception {
++                    for (String name : names) {
++                        try (InputStream input = Probe.class.getResourceAsStream("/" + name + ".txt")) {
++                            if (input == null) throw new IllegalStateException("Missing runtime resource: " + name);
++                            String expected = name.equals("support") ? "untouched" : "candidate";
++                            if (expected.equals(new String(input.readAllBytes(), StandardCharsets.UTF_8))) {
++                                System.out.println("loaded-" + name);
++                            } else {
++                                throw new IllegalStateException("Wrong runtime resource: " + name);
++                            }
++                        }
++                    }
++                }
++            }
++            """.trimIndent(),
++        )
++        (runtimes + "support").forEach { name ->
++            write("$name/build.gradle.kts", "")
++            write("$name/src/main/resources/$name.txt", if (name == "support") "untouched" else "baseline")
++        }
++        val archives =
++            runtimes.associate { name ->
++                val archive = directory.resolve("frozen/$name.jar")
++                Files.createDirectories(archive.parent)
++                JarOutputStream(Files.newOutputStream(archive)).use { jar ->
++                    jar.putNextEntry(JarEntry("$name.txt"))
++                    jar.write("candidate".toByteArray())
++                    jar.closeEntry()
++                }
++                ":$name" to archive
++            }
++        manifest(archives)
++        val subset = runtimes.take(3)
++        listOf(subset, runtimes).forEach { selected ->
++            val result = runner(selected).build()
++            assertEquals(TaskOutcome.SUCCESS, result.task(":verifyProjection")?.outcome)
++            assertTrue((selected + "support").all { result.output.contains("loaded-$it") }, result.output)
++            assertTrue((runtimes - selected.toSet()).all { result.output.contains("loaded-$it").not() }, result.output)
++            assertTrue(archives.values.all { Files.isRegularFile(it) })
++        }
++        listOf(
++            archives + (":one" to directory.resolve("absent.jar")),
++            archives + (":one" to archives.getValue(":two")),
++            archives + (":one" to directory.resolve("support/build/libs/support.jar")),
++            archives.mapKeys { (name, _) -> ":outside$name" },
++        ).forEach { invalid ->
++            manifest(invalid)
++            val result = runner(subset).buildAndFail()
++            assertEquals(TaskOutcome.FAILED, result.task(":verifyProjection")?.outcome)
++            assertTrue(result.output.contains("loaded-one").not(), result.output)
++        }
++    }
++
++    /** Retains the whole global archive mapping for every independently selected owner. */
++    private fun manifest(archives: Map<String, Path>) {
++        Files.newBufferedWriter(directory.resolve("runtime.properties")).use { output ->
++            Properties().apply { archives.forEach { (name, path) -> setProperty(name, path.toString()) } }.store(output, "Frozen runtime union")
++        }
++    }
++
++    /** Writes only synthetic working Java resources and their consumer before running the production action. */
++    private fun write(
++        relative: String,
++        text: String,
++    ) {
++        val target = directory.resolve(relative)
++        Files.createDirectories(target.parent)
++        Files.writeString(target, text)
++    }
++
++    /** Bounds the real dependency and JavaExec fixture without loading Minecraft or creating measurement evidence. */
++    private fun runner(selected: List<String>): GradleRunner =
++        GradleRunner.create().withProjectDir(directory.toFile()).withArguments(
++            "verifyProjection",
++            "-Pfixture.runtimes=${selected.joinToString(",")}",
++            "-Pstrata.paired.runtime=${directory.resolve("runtime.properties")}",
++            "--max-workers=1",
++            "--no-parallel",
++            "-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=256m",
++            "--stacktrace",
++        )
++}
 diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
-index ef9ec812dd4ceb52ff651f8583a0af7b4f40e617..310ebe76eba54492c1a1e31c55a1cad9eab4e970 100644
+index 2db0a189a6a53e2499d0345e6915ba4f7be69276..a10952278b74ceea9bd76c9132c5146cf0859632 100644
 --- a/docs/development/performance-testkit.md
 +++ b/docs/development/performance-testkit.md
 @@ -77,6 +77,11 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
@@ -14,6 +172,280 @@ index ef9ec812dd4ceb52ff651f8583a0af7b4f40e617..310ebe76eba54492c1a1e31c55a1cad9
  Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
  This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
  Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
+diff --git a/gradle/performance/bounded-jvm.init.gradle.kts b/gradle/performance/bounded-jvm.init.gradle.kts
+index 362dbc0d45060358840ad976d6dbe03e00a11cf3..b8039e208cd393002f4d780a95c9c1393c468087 100644
+--- a/gradle/performance/bounded-jvm.init.gradle.kts
++++ b/gradle/performance/bounded-jvm.init.gradle.kts
+@@ -71,7 +71,7 @@ gradle.projectsEvaluated {
+                 check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
+                 mainClass.set(preflightRequest["main"].toString())
+                 setArgs(listOf(File(preflight).absolutePath))
+-                dependsOn(template.map { it.taskDependencies.getDependencies(it) })
++                dependsOn(source.taskDependencies.getDependencies(source))
+                 outputs.upToDateWhen { false }
+                 outputs.cacheIf { false }
+             }
+@@ -124,6 +124,11 @@ gradle.projectsEvaluated {
+             doFirst {
+                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
+                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
++                listOf("benchmarks", "workloads").forEach { name ->
++                    rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
++                        systemProperty("strata.performance.$name", it)
++                    }
++                }
+                 listOf("parameters", "fixtureInputs").forEach { name ->
+                     rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
+                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)
+@@ -142,10 +147,12 @@ gradle.projectsEvaluated {
+                     File(requested).bufferedReader(Charsets.UTF_8).use(targets::load)
+                     val artifacts = project.configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
+                         .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in targets.stringPropertyNames() }
+-                    check(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == targets.stringPropertyNames())
++                    // One paired manifest can span suites with different compiled runtime dependencies.
++                    val selectedTargets = artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet()
++                    check(selectedTargets.isNotEmpty())
+                     val replaced = artifacts.map { it.file.canonicalFile }.toSet()
+-                    val archives = targets.stringPropertyNames().sorted().map { File(targets.getProperty(it)).canonicalFile }
+-                    check(archives.toSet().size == targets.size && archives.all { it.isFile && it.extension == "jar" })
++                    val archives = selectedTargets.sorted().map { File(targets.getProperty(it)).canonicalFile }
++                    check(archives.toSet().size == selectedTargets.size && archives.all { it.isFile && it.extension == "jar" })
+                     classpath = project.files(classpath.files.filter { it.canonicalFile !in replaced }) + project.files(archives)
+                 }
+                 if (rootProject.providers.gradleProperty("strata.paired.classpath").isPresent || rootProject.providers.gradleProperty("strata.paired.preserveClasspath").isPresent) {
+diff --git a/gradle/performance/paired-jvm.py b/gradle/performance/paired-jvm.py
+index 7d247f3ec916d2f6d8c1f2d50a14ffd035a4e36d..dd48209c7319a159b9b475a0594016f6c84ca776 100644
+--- a/gradle/performance/paired-jvm.py
++++ b/gradle/performance/paired-jvm.py
+@@ -17,6 +17,7 @@ import time
+ import tomllib
+ from urllib.parse import unquote, urlparse
+ import zipfile
++import xml.etree.ElementTree as ElementTree
+ 
+ 
+ class FixtureProject(Enum):
+@@ -104,7 +105,7 @@ def load_manifest(root, path):
+     names = set()
+     for suite in data["suites"]:
+         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
+-        require(fields <= set(suite) <= fields | {"profilers", "preflight"}, "Invalid suite fields")
++        require(fields <= set(suite) <= fields | {"profilers", "preflight", "test_gates"}, "Invalid suite fields")
+         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
+         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
+         names.add(suite["name"])
+@@ -120,6 +121,19 @@ def load_manifest(root, path):
+         profilers = suite.get("profilers", [])
+         require(isinstance(profilers, list) and len(profilers) == len(set(profilers))
+                 and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in profilers), "Use unique compiled JMH profiler class names")
++        gates = suite.get("test_gates", [])
++        require(isinstance(gates, list) and len(gates) <= 16_384, "Invalid independent test gate inventory")
++        tasks = set()
++        for gate in gates:
++            require(isinstance(gate, dict) and set(gate) == {"task", "required_tests"}, "Invalid independent test gate fields")
++            task = gate["task"]
++            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:(?:test|jvmTest|fontTest[A-Za-z0-9_]+)", task)
++                    and task.rsplit(":", 1)[0] in projects and task not in tasks, "Use unique existing runtime test tasks")
++            tasks.add(task)
++            tests = gate["required_tests"]
++            require(isinstance(tests, list) and tests and len(tests) <= 16_384 and len(tests) == len(set(tests))
++                    and all(isinstance(test, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+#[^#\r\n\x00]+", test) for test in tests),
++                    "Declare exact independent JUnit class and method bindings")
+         if "preflight" in suite:
+             control = suite["preflight"]
+             require(isinstance(control, dict) and set(control) == {"main", "qualification", "runtime_classes", "controls"}, "Invalid compiled preflight fields")
+@@ -435,6 +449,44 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
+     write_new(directory / "verified.json", {"status": "passed", "request_sha256": digest(request_path), "receipt_sha256": digest(directory / "receipt.json"), "controls": expected})
+ 
+ 
++def preserve_test_reports(workspace, directory, gate):
++    """Retain all actual JUnit bytes even when the owning test phase fails before admission."""
++    reports = workspace.joinpath(*gate["task"].strip(":").split(":")[:-1], "build", "test-results", gate["task"].rsplit(":", 1)[1])
++    require(not reports.is_symlink(), "Unsafe independent JUnit output")
++    files = sorted(reports.glob("TEST-*.xml")) if reports.is_dir() else []
++    require(len(files) <= 16_384 and all(path.is_file() and not path.is_symlink() for path in files)
++            and sum(path.stat().st_size for path in files) <= 64 * 1024**2, "Unsafe or oversized independent JUnit reports")
++    artifacts = [{"name": report.name, **preserve_file(report, directory / "junit" / report.name)} for report in files]
++    write_new(directory / "junit-inventory.json", {"task": gate["task"], "reports": artifacts})
++
++
++def verify_test_gate(directory, gate):
++    """Require complete actual JUnit counts and each exact independent method to run successfully."""
++    inventory = read_json(directory / "junit-inventory.json")
++    require(inventory["task"] == gate["task"] and inventory["reports"], "Missing actual independent JUnit output")
++    observed, counts = {}, {name: 0 for name in ("tests", "failures", "errors", "skipped")}
++    for artifact in inventory["reports"]:
++        report = Path(artifact["path"])
++        require(report.resolve().parent == (directory / "junit").resolve() and digest(report) == artifact["sha256"], "Changed independent JUnit report")
++        suite = ElementTree.fromstring(report.read_bytes())
++        require(suite.tag == "testsuite", "Invalid independent JUnit report root")
++        actual = {name: 0 for name in counts}
++        for case in suite.findall("testcase"):
++            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("()")
++            actual["tests"] += 1
++            for name, tag in (("failures", "failure"), ("errors", "error"), ("skipped", "skipped")):
++                actual[name] += int(case.find(tag) is not None)
++            observed.setdefault(identity, []).append(all(case.find(tag) is None for tag in ("failure", "error", "skipped")))
++        for name in counts:
++            value = suite.get(name)
++            require(value is not None and re.fullmatch(r"[0-9]+", value) and int(value) == actual[name], "Inconsistent actual JUnit counts")
++            counts[name] += actual[name]
++    require(0 < counts["tests"] and counts["failures"] == counts["errors"] == 0, "Failed independent JUnit gate")
++    require(all(observed.get(test) == [True] for test in gate["required_tests"]), "Required independent JUnit method missing, repeated, failed or skipped")
++    write_new(directory / "junit-verified.json", {"status": "passed", "task": gate["task"], "required_tests": gate["required_tests"],
++                                                "counts": counts, "reports": inventory["reports"]})
++
++
+ def table(output, comparisons, phases):
+     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
+     rows = []
+@@ -540,7 +592,7 @@ def run(root, manifest_path, output):
+                   "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false",
+                   "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(homes), "-I", str(init)]
+ 
+-        def phase(name, workspace, arguments, expected_forks=None):
++        def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
+             """Admit a full bounded call with upload reserve, then require natural Job release."""
+             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
+             for executable, expected in allowed_java.items():
+@@ -560,6 +612,8 @@ def run(root, manifest_path, output):
+             phase_started = time.monotonic()
+             previous_vms = set(vm_directory.glob("*.log"))
+             exit_code = invoke(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(directory / "request.json"), "-Report", str(directory / "terminal.json")], root, directory / "console.log")
++            if test_gate is not None:
++                preserve_test_reports(workspace, directory, test_gate)
+             terminal = read_json(directory / "terminal.json")
+             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
+                                     "available_disk_bytes": shutil.disk_usage(output).free})
+@@ -647,6 +701,11 @@ def run(root, manifest_path, output):
+             selectors += [f"-Pstrata.performance.fixtureInputs={inputs}"]
+             classpaths = {}
+             for side in ("baseline", "candidate"):
++                for index, gate in enumerate(suite.get("test_gates", [])):
++                    source_guard(workspaces[side], data["sources"][side]["tree"])
++                    checked = phase(f"tests-{suite['name']}-{side}-{index}", workspaces[side], [gate["task"]], 0, gate)
++                    verify_test_gate(checked, gate)
++                    source_guard(workspaces[side], data["sources"][side]["tree"])
+                 flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                 if "preflight" in suite:
+                     retained = output / "prepared-classpaths" / suite["name"] / side
+diff --git a/gradle/tests/test_paired_jvm.py b/gradle/tests/test_paired_jvm.py
+index 8da260c98f412a62400830574c09098b38830109..74d37f73e6bca580ccf1d3401e5c73c8bcd77d3b 100644
+--- a/gradle/tests/test_paired_jvm.py
++++ b/gradle/tests/test_paired_jvm.py
+@@ -118,6 +118,58 @@ class PairedJvmTest(unittest.TestCase):
+             with self.subTest(change=change), self.assertRaises(ValueError):
+                 self.load(changed)
+ 
++    def test_independent_test_gates_reject_filters_nonruntime_tasks_and_missing_bindings(self):
++        value = copy.deepcopy(self.manifest)
++        value["suites"][0]["test_gates"] = [{"task": ":runtime:headless:test", "required_tests": ["independent.Controls#full owner failure"]}]
++        self.assertEqual(self.load(value), value)
++        changes = [lambda gate: gate.update(task=":runtime:headless:check"),
++                   lambda gate: gate.update(task=":quality:benchmarks:test"),
++                   lambda gate: gate.update(task=":runtime:headless:test --tests One"),
++                   lambda gate: gate.update(required_tests=[]),
++                   lambda gate: gate.update(required_tests=["Controls"]),
++                   lambda gate: gate.update(arguments=["--tests", "One"])]
++        for change in changes:
++            changed = copy.deepcopy(value)
++            change(changed["suites"][0]["test_gates"][0])
++            with self.subTest(change=change), self.assertRaises(ValueError):
++                self.load(changed)
++        value["suites"][0]["test_gates"].append(value["suites"][0]["test_gates"][0])
++        with self.assertRaises(ValueError):
++            self.load(value)
++
++    def test_independent_junit_gate_requires_actual_complete_method_results_and_preserves_reports(self):
++        gate = {"task": ":runtime:headless:test", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
++        reports = self.root / "runtime/headless/build/test-results/test"
++        reports.mkdir(parents=True)
++        owner = '<testcase classname="independent.Controls" name="owner()"/>'
++        failure = '<testcase classname="independent.Controls" name="failure()"/>'
++        for index, (counts, body) in enumerate((
++                ((2, 0, 0, 0), owner + failure),
++                ((1, 0, 0, 0), owner),
++                ((2, 0, 0, 1), owner + '<testcase classname="independent.Controls" name="failure()"><skipped/></testcase>'),
++                ((2, 1, 0, 0), owner + '<testcase classname="independent.Controls" name="failure()"><failure/></testcase>'),
++                ((3, 0, 0, 0), owner + failure + failure),
++                ((3, 0, 1, 0), owner + failure + '<testcase classname="independent.Controls" name="other()"><error/></testcase>'),
++                ((3, 0, 0, 0), owner + failure))):
++            directory = self.root / f"junit-{index}"
++            directory.mkdir()
++            report = reports / "TEST-independent.Controls.xml"
++            attributes = ' '.join(f'{name}="{value}"' for name, value in zip(("tests", "failures", "errors", "skipped"), counts))
++            report.write_text('<testsuite ' + attributes + '>' + body + '</testsuite>', encoding="utf-8")
++            PAIRED.preserve_test_reports(self.root, directory, gate)
++            self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
++            if index == 0:
++                PAIRED.verify_test_gate(directory, gate)
++                verified = PAIRED.read_json(directory / "junit-verified.json")
++                self.assertEqual(verified["required_tests"], gate["required_tests"])
++                self.assertEqual(verified["reports"][0]["sha256"], PAIRED.digest(report))
++                self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
++            else:
++                with self.subTest(index=index), self.assertRaises(ValueError):
++                    PAIRED.verify_test_gate(directory, gate)
++                self.assertFalse((directory / "junit-verified.json").exists())
++                self.assertTrue((directory / "junit-inventory.json").is_file())
++
+     def preflight_fixture(self, name):
+         """Model independently retained class loads and OS generations for source-only rejection checks."""
+         output = self.root / name
+diff --git a/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JmhFixtureSelectionTest.kt b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JmhFixtureSelectionTest.kt
+index d49f5a10501c1f077e4bf6d3afa2a8bff83167f1..9f314271d11c3e90e0cd6c1293e63905dfc2f881 100644
+--- a/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JmhFixtureSelectionTest.kt
++++ b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JmhFixtureSelectionTest.kt
+@@ -68,6 +68,26 @@ class JmhFixtureSelectionTest {
+         assertSame(FailedFixture.failure, assertFailsWith<IllegalStateException> { JmhFixtureSelection.verifyWork(listOf(FailedFixture::class.java)) })
+     }
+ 
++    @Test
++    fun selectedVerifierDoesNotInvokeAnUnrelatedFailedFixture() {
++        CheckedFixture.calls = 0
++        val defaults = listOf(PlainFixture::class.java, CheckedFixture::class.java, FailedFixture::class.java)
++        val selected = JmhFixtureSelection.select(defaults, CheckedFixture::class.java.name)
++        assertEquals(listOf(CheckedFixture::class.java), selected)
++        JmhFixtureSelection.verifyWork(selected)
++        assertEquals(1, CheckedFixture.calls)
++    }
++
++    @Test
++    fun absentSelectionInvokesTheCompleteDefaultWorkGateAndPreservesItsFailure() {
++        CheckedFixture.calls = 0
++        val defaults = listOf(PlainFixture::class.java, CheckedFixture::class.java, FailedFixture::class.java)
++        val selected = JmhFixtureSelection.select(defaults, requested = null)
++        assertEquals(defaults, selected)
++        assertSame(FailedFixture.failure, assertFailsWith<IllegalStateException> { JmhFixtureSelection.verifyWork(selected) })
++        assertEquals(1, CheckedFixture.calls)
++    }
++
+     /**
+      * Represents a generated benchmark without an optional deterministic verifier.
+      */
+diff --git a/performance-testkit/src/test/resources/META-INF/BenchmarkList b/performance-testkit/src/test/resources/META-INF/BenchmarkList
+new file mode 100644
+index 0000000000000000000000000000000000000000..b59169ae43381d857e6361b03c12f7a2d04fefd7
+--- /dev/null
++++ b/performance-testkit/src/test/resources/META-INF/BenchmarkList
+@@ -0,0 +1,4 @@
++# Synthetic JMH metadata for selector and untimed-verifier tests; no generated benchmark execution.
++JMH S 63 dev.s7a.strata.performance.JmhFixtureSelectionTest.PlainFixture S 71 dev.s7a.strata.performance.JmhFixtureSelectionTest.PlainFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E
++JMH S 65 dev.s7a.strata.performance.JmhFixtureSelectionTest.CheckedFixture S 73 dev.s7a.strata.performance.JmhFixtureSelectionTest.CheckedFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E
++JMH S 64 dev.s7a.strata.performance.JmhFixtureSelectionTest.FailedFixture S 72 dev.s7a.strata.performance.JmhFixtureSelectionTest.FailedFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/HistoricalWorkloadEvidence.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/HistoricalWorkloadEvidence.kt
+index fb283dba8229683b6b79940a7330305cbfa86ed9..1cded38716d373c8ccfbc6954562b154fefe56a7 100644
+--- a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/HistoricalWorkloadEvidence.kt
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/HistoricalWorkloadEvidence.kt
+@@ -33,7 +33,7 @@ public object HistoricalWorkloadEvidence {
+         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
+         // New compiled fixtures participate without changing this launcher or Gradle registration.
+         val compiled = JmhFixtureSelection.all()
+-        JmhFixtureSelection.verifyWork(compiled)
++        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(compiled))
+         compiled.forEach { fixture ->
+             val includes = JmhFixtureSelection.includes(listOf(fixture))
+             val expected = JmhWorkloadInventory.capture(listOf(fixture), setOf("avgt"), includes = includes)
 diff --git a/quality/component-benchmarks/build.gradle.kts b/quality/component-benchmarks/build.gradle.kts
 index cbcb1247390777cd21af59b49bc53680d7613ca1..8cd362f09e4288a2ab1136ff10f1f246dc04de23 100644
 --- a/quality/component-benchmarks/build.gradle.kts
@@ -28,6 +460,381 @@ index cbcb1247390777cd21af59b49bc53680d7613ca1..8cd362f09e4288a2ab1136ff10f1f246
      systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
      systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
      systemProperty("strata.performance.mode", mode)
+diff --git a/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/UnihexBoundsMethodTrace.java b/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/UnihexBoundsMethodTrace.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..291fd4f872a43818e2012be74a4c5dec94562c91
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/UnihexBoundsMethodTrace.java
+@@ -0,0 +1,356 @@
++package dev.s7a.strata.quality.benchmark;
++
++import com.google.gson.JsonArray;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import com.sun.jdi.Bootstrap;
++import com.sun.jdi.Method;
++import com.sun.jdi.StringReference;
++import com.sun.jdi.VirtualMachine;
++import com.sun.jdi.connect.Connector;
++import com.sun.jdi.connect.LaunchingConnector;
++import com.sun.jdi.event.Event;
++import com.sun.jdi.event.EventSet;
++import com.sun.jdi.event.ExceptionEvent;
++import com.sun.jdi.event.MethodEntryEvent;
++import com.sun.jdi.event.MethodExitEvent;
++import com.sun.jdi.event.VMDisconnectEvent;
++import com.sun.jdi.event.VMStartEvent;
++import com.sun.jdi.request.EventRequest;
++import com.sun.jdi.request.ExceptionRequest;
++import com.sun.jdi.request.MethodEntryRequest;
++import com.sun.jdi.request.MethodExitRequest;
++import java.io.File;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.StandardOpenOption;
++import java.security.MessageDigest;
++import java.util.ArrayList;
++import java.util.HexFormat;
++import java.util.List;
++import java.util.Map;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.TimeUnit;
++import java.util.regex.Pattern;
++
++/** External untimed JDI observer; it never instruments or rewrites a runtime archive. */
++public final class UnihexBoundsMethodTrace {
++    private static final String FONT = "dev.s7a.strata.runtime.minecraft.font.";
++    private static final String WORKER = "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker";
++    private static final Map<String, List<String>> METHODS = Map.of(
++        FONT + "FontHexGlyph", List.of("bounds"),
++        FONT + "MinecraftFontEngine", List.of("glyph", "cachedGlyph", "resolveGlyph", "unihexGlyph", "readBitmapCell", "decodeBitmap"),
++        FONT + "lwjgl.StbMinecraftFontFace", List.of("glyph"),
++        FONT + "lwjgl.FreeTypeMinecraftFontFace", List.of("glyph"),
++        "dev.s7a.strata.render.DrawImages", List.of("createOwnedDrawImage")
++    );
++
++    private UnihexBoundsMethodTrace() {}
++
++    /** Runs exactly the pinned control inventory and writes a receipt only after every real worker succeeds. */
++    public static void main(String[] arguments) throws Exception {
++        if (arguments.length != 1) throw new IllegalArgumentException("Supply one pinned preflight request");
++        Path requestPath = Path.of(arguments[0]).toAbsolutePath();
++        JsonObject request = JsonParser.parseString(Files.readString(requestPath)).getAsJsonObject();
++        Path output = Path.of(request.get("output").getAsString());
++        JsonArray controls = request.getAsJsonArray("controls");
++        boolean qualification = controls.size() == 4 && controls.get(0).getAsJsonObject().get("id").getAsString().equals("QSingle");
++        if (qualification == false) {
++            JsonObject qualified = JsonParser.parseString(Files.readString(Path.of(request.getAsJsonObject("qualification").get("path").getAsString()))).getAsJsonObject();
++            if (qualified.get("schema").getAsString().equals("strata-unihex-method-trace-qualification-v1") == false
++                || qualified.get("status").getAsString().equals("passed") == false
++                || qualified.get("controller_class_sha256").getAsString().equals(classHash(UnihexBoundsMethodTrace.class)) == false
++                || qualified.get("worker_class_sha256").getAsString().equals(classHash(UnihexBoundsTraceWorker.class)) == false)
++                throw new IllegalArgumentException("A current actual controller qualification is required before the whole trace");
++            if (controls.size() != 132) throw new IllegalArgumentException("Retain the complete 132-row trace inventory");
++        }
++        JsonArray results = new JsonArray();
++        for (JsonElement entry : controls) {
++            JsonObject control = entry.getAsJsonObject();
++            String id = control.get("id").getAsString();
++            JsonArray options = control.getAsJsonArray("arguments");
++            if (options.size() != 1) throw new IllegalArgumentException("Supply one row or independently defined qualification identity");
++            Trace trace = observe(requestPath, request, output, id, options.get(0).getAsString());
++            if (qualification) verifyQualification(id, trace.observations);
++            JsonObject result = new JsonObject();
++            result.addProperty("id", id);
++            result.addProperty("status", "passed");
++            result.add("observations", trace.observations);
++            result.add("origins", trace.origins);
++            result.add("artifacts", trace.artifacts);
++            results.add(result);
++            System.out.println("Unihex external trace completed " + id + " " + trace.observations);
++        }
++        JsonObject receipt = new JsonObject();
++        receipt.addProperty("schema", "strata-paired-jvm-preflight-receipt-v1");
++        receipt.addProperty("status", "passed");
++        receipt.addProperty("request_sha256", hash(requestPath));
++        receipt.add("controls", results);
++        writeNew(output.resolve("receipt.json"), receipt);
++    }
++
++    /** Observes actual method entry/return events on the operation thread between actual String-reference println arguments. */
++    private static Trace observe(Path requestPath, JsonObject request, Path output, String id, String argument) throws Exception {
++        if (id.matches("[A-Za-z0-9][A-Za-z0-9_.-]*") == false) throw new IllegalArgumentException("Unsafe trace identity");
++        Path directory = output.resolve(id);
++        Files.createDirectory(directory);
++        List<String> paths = new ArrayList<>();
++        for (JsonElement entry : request.getAsJsonObject("classpath").getAsJsonArray("entries")) paths.add(entry.getAsJsonObject().get("path").getAsString());
++        String classpath = String.join(System.getProperty("path.separator"), paths);
++        String font = System.getProperty("strata.performance.fontFixture");
++        if (font == null) throw new IllegalArgumentException("Preserve the original TrueType control input");
++        LaunchingConnector connector = Bootstrap.virtualMachineManager().defaultConnector();
++        Map<String, Connector.Argument> options = connector.defaultArguments();
++        options.get("home").setValue(System.getProperty("java.home"));
++        options.get("main").setValue(WORKER + " " + quote(requestPath.toString()) + " " + quote(argument));
++        Path classLog = directory.resolve("class-load.log");
++        String relativeLog = Path.of(System.getProperty("user.dir")).toAbsolutePath().relativize(classLog).toString().replace(File.separatorChar, '/');
++        options.get("options").setValue("-Xmx768m -XX:MaxMetaspaceSize=384m --enable-native-access=ALL-UNNAMED " + quote("-Xlog:class+load=info:file=" + relativeLog + ":pid,level,tags:filecount=0") + " -Dstrata.performance.fontFixture=" + quote(font) + " -classpath " + quote(classpath));
++        options.get("suspend").setValue("true");
++        VirtualMachine vm = connector.launch(options);
++        Process process = vm.process();
++        JsonObject origin = new JsonObject();
++        origin.addProperty("task", "external-unihex-trace:" + id);
++        origin.addProperty("main", WORKER);
++        origin.addProperty("executable", Path.of(System.getProperty("java.home"), "bin", "java.exe").toString());
++        origin.addProperty("classpath", classpath);
++        System.out.println("paired.jvm.origin " + origin);
++        CompletableFuture<Void> stdout = drain(process.getInputStream(), directory.resolve("stdout.log"), System.out);
++        CompletableFuture<Void> stderr = drain(process.getErrorStream(), directory.resolve("stderr.log"), System.err);
++        Trace trace = new Trace(process.pid());
++        try {
++            EventSet started = vm.eventQueue().remove(10000);
++            if (started == null || started.stream().noneMatch(event -> event instanceof VMStartEvent)) throw new IllegalStateException("Missing actual JDI VM start" );
++            if (vm.canGetMethodReturnValues() == false) throw new IllegalStateException("JDI actual method return values are unavailable");
++            trace.observations.addProperty("can_get_method_return_values", vm.canGetMethodReturnValues());
++            List<String> filters = new ArrayList<>(METHODS.keySet());
++            filters.add("java.io.PrintStream");
++            for (String filter : filters) {
++                MethodEntryRequest entered = vm.eventRequestManager().createMethodEntryRequest();
++                entered.addClassFilter(filter);
++                entered.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
++                entered.enable();
++                if (filter.equals("java.io.PrintStream") == false && filter.equals(FONT + "FontHexGlyph") == false) {
++                    MethodExitRequest returned = vm.eventRequestManager().createMethodExitRequest();
++                    returned.addClassFilter(filter);
++                    returned.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
++                    returned.enable();
++                }
++            }
++            ExceptionRequest failureRequest = vm.eventRequestManager().createExceptionRequest(null, true, true);
++            failureRequest.addClassFilter(FONT + "MinecraftFontEngine");
++            failureRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
++            failureRequest.enable();
++            started.resume();
++            boolean disconnected = false;
++            while (disconnected == false) {
++                EventSet events = vm.eventQueue().remove(1000);
++                if (events == null) continue;
++                for (Event event : events) {
++                    if (event instanceof VMDisconnectEvent) disconnected = true;
++                    else if (event instanceof MethodEntryEvent entered) trace.enter(entered, id);
++                    else if (event instanceof MethodExitEvent returned) trace.exit(returned);
++                    else if (event instanceof ExceptionEvent failure) trace.failure(failure);
++                }
++                if (disconnected == false) events.resume();
++            }
++            if (process.waitFor(10, TimeUnit.SECONDS) == false) throw new IllegalStateException("Trace worker did not release naturally");
++            stdout.get(10, TimeUnit.SECONDS);
++            stderr.get(10, TimeUnit.SECONDS);
++            // Startup class logs use a file because the launching connector exposes pipes only after the JDWP handshake.
++            // Keep the full original file as an artifact; the bounded console needs only actual required origins.
++            mirrorOrigins(classLog, process.pid(), request.getAsJsonObject("required_classes"));
++            trace.observations.addProperty("exit_code", process.exitValue());
++            trace.observations.addProperty("complete_boundary", trace.begins == 1 && trace.ends == 1 && trace.active == false);
++            if (process.exitValue() != 0 || trace.begins != 1 || trace.ends != 1 || trace.active) throw new IllegalStateException("Failed worker or incomplete external operation boundary");
++            for (String name : request.getAsJsonObject("required_classes").keySet()) {
++                JsonObject actual = new JsonObject();
++                actual.addProperty("pid", process.pid());
++                trace.origins.add(name, actual);
++            }
++            return trace;
++        } finally {
++            if (process.isAlive()) {
++                process.destroy();
++                if (process.waitFor(10, TimeUnit.SECONDS) == false) process.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
++            }
++            JsonObject raw = new JsonObject();
++            raw.addProperty("pid", process.pid());
++            raw.add("observations", trace.observations);
++            raw.add("events", trace.events);
++            writeNew(directory.resolve("events.json"), raw);
++            for (String name : List.of("stdout.log", "stderr.log", "class-load.log", "events.json")) {
++                Path path = directory.resolve(name);
++                JsonObject artifact = new JsonObject();
++                artifact.addProperty("path", output.relativize(path).toString().replace('\\', '/'));
++                artifact.addProperty("sha256", hash(path));
++                trace.artifacts.add(artifact);
++            }
++        }
++    }
++
++    /** Mirrors each unique actual PID-qualified required origin without expanding the shared console bound. */
++    private static void mirrorOrigins(Path classLog, long pid, JsonObject required) throws Exception {
++        if (64L * 1024 * 1024 < Files.size(classLog)) throw new IllegalStateException("Trace class-load output overflow");
++        for (String name : required.keySet()) {
++            Pattern loaded = Pattern.compile("^\\[" + pid + "\\]\\[info *\\]\\[class,load *\\] " + Pattern.quote(name) + " source: [^\\r\\n]+");
++            List<String> matches;
++            try (var lines = Files.lines(classLog, StandardCharsets.UTF_8)) {
++                matches = lines.filter(line -> loaded.matcher(line).matches()).toList();
++            }
++            if (matches.size() != 1) throw new IllegalStateException("Missing or ambiguous actual worker class origin: " + name);
++            System.out.println(matches.get(0));
++        }
++    }
++
++    /** Captures every selected real method event and separates absence from successful construction. */
++    private static final class Trace {
++        private final JsonObject observations = new JsonObject();
++        private final JsonObject origins = new JsonObject();
++        private final JsonArray artifacts = new JsonArray();
++        private final JsonArray events = new JsonArray();
++        private boolean active;
++        private long thread;
++        private int begins;
++        private int ends;
++
++        private Trace(long pid) {
++            observations.addProperty("pid", pid);
++            for (String name : List.of("natural_bounds", "public_glyph_requests", "cached_glyph_requests", "provider_cache_misses", "unihex_raster_attempts", "unihex_absent_results", "unihex_constructed_rasters", "bitmap_cell_misses", "bitmap_decodes", "native_raster_requests", "owned_image_factory_entries", "expected_failures", "engine_exception_events")) observations.addProperty(name, 0);
++        }
++
++        private void enter(MethodEntryEvent event, String id) throws Exception {
++            Method method = event.method();
++            String type = method.declaringType().name();
++            if (type.equals("java.io.PrintStream")) {
++                if (method.name().equals("println") && (method.signature().equals("(Ljava/lang/String;)V") || method.signature().equals("(Ljava/lang/Object;)V"))) {
++                    if (1 < event.thread().frameCount()) {
++                        Method caller = event.thread().frame(1).location().method();
++                        if (caller.declaringType().name().equals("java.io.PrintStream") && caller.name().equals("println")) return;
++                    }
++                    Object value = event.thread().frame(0).getArgumentValues().get(0);
++                    if ((value instanceof StringReference) == false) return;
++                    String marker = ((StringReference) value).value();
++                    if (marker.startsWith("Unihex operation begin " + id + " ")) {
++                        if (begins != 0 || ends != 0) throw new IllegalStateException("Repeated operation begin");
++                        begins++;
++                        active = true;
++                        thread = event.thread().uniqueID();
++                        observations.addProperty("begin_marker", marker);
++                        observations.addProperty("begin_marker_signature", method.signature());
++                        record("begin", method, marker);
++                    } else if (marker.startsWith("Unihex operation end " + id + " ")) {
++                        if (active == false || thread != event.thread().uniqueID()) throw new IllegalStateException("Unowned operation end");
++                        active = false;
++                        ends++;
++                        observations.addProperty("end_marker", marker);
++                        observations.addProperty("end_marker_signature", method.signature());
++                        record("end", method, marker);
++                    } else if (active && marker.startsWith("Unihex operation failure " + id + " ")) {
++                        increment("expected_failures");
++                        observations.addProperty("failure_marker", marker);
++                    } else if (marker.startsWith("Unihex frame work " + id + " ")) {
++                        if (begins != 1 || ends != 1 || active) throw new IllegalStateException("Frame work escaped the complete operation boundary");
++                        observations.add("frame_work", JsonParser.parseString(marker.substring(("Unihex frame work " + id + " ").length())).getAsJsonObject());
++                    }
++                }
++                return;
++            }
++            if (active == false || thread != event.thread().uniqueID() || METHODS.get(type).contains(method.name()) == false) return;
++            record("entry", method, null);
++            if (type.equals(FONT + "FontHexGlyph")) increment("natural_bounds");
++            else if (type.equals(FONT + "MinecraftFontEngine")) {
++                switch (method.name()) {
++                    case "glyph" -> increment("public_glyph_requests");
++                    case "cachedGlyph" -> increment("cached_glyph_requests");
++                    case "resolveGlyph" -> increment("provider_cache_misses");
++                    case "unihexGlyph" -> increment("unihex_raster_attempts");
++                    case "readBitmapCell" -> increment("bitmap_cell_misses");
++                    case "decodeBitmap" -> increment("bitmap_decodes");
++                    default -> throw new IllegalStateException("Unclassified external engine method");
++                }
++            } else if (type.equals("dev.s7a.strata.render.DrawImages")) increment("owned_image_factory_entries");
++            else increment("native_raster_requests");
++        }
++
++        private void exit(MethodExitEvent event) {
++            Method method = event.method();
++            String type = method.declaringType().name();
++            if (active == false || thread != event.thread().uniqueID() || METHODS.get(type).contains(method.name()) == false) return;
++            String result = event.returnValue() == null ? "null" : event.returnValue().type().name();
++            record("return", method, result);
++            if (type.equals(FONT + "MinecraftFontEngine") && method.name().equals("unihexGlyph")) increment(event.returnValue() == null ? "unihex_absent_results" : "unihex_constructed_rasters");
++        }
++
++        /** Records a real thrown engine exception independently of the worker's caught-failure marker. */
++        private void failure(ExceptionEvent failure) {
++            if (active == false || thread != failure.thread().uniqueID()) return;
++            increment("engine_exception_events");
++            record("exception", failure.location().method(), failure.exception().referenceType().name());
++            observations.addProperty("exception_catch_location", failure.catchLocation() == null ? null : failure.catchLocation().toString());
++        }
++
++        private void increment(String name) { observations.addProperty(name, observations.get(name).getAsLong() + 1); }
++
++        private void record(String kind, Method method, String returned) {
++            if (16_384 <= events.size()) throw new IllegalStateException("External method trace overflow");
++            JsonObject event = new JsonObject();
++            event.addProperty("kind", kind);
++            event.addProperty("class", method.declaringType().name());
++            event.addProperty("method", method.name());
++            event.addProperty("signature", method.signature());
++            event.addProperty("thread", thread);
++            if (returned != null) event.addProperty("returned", returned);
++            events.add(event);
++        }
++    }
++
++    /** Checks known actual bounds-entry multiplicities and a terminal engine failure before qualification is admitted. */
++    private static void verifyQualification(String id, JsonObject observed) {
++        long expected = switch (id) { case "QSingle" -> 1; case "QMultiple" -> 3; case "QZero", "QFailure" -> 0; default -> throw new IllegalArgumentException("Unknown qualification control"); };
++        if (observed.get("natural_bounds").getAsLong() != expected
++            || observed.get("expected_failures").getAsLong() != (id.equals("QFailure") ? 1 : 0)
++            || observed.get("engine_exception_events").getAsLong() != (id.equals("QFailure") ? 1 : 0)) throw new IllegalStateException("Independent trace qualification failed: " + id);
++    }
++
++    /** Drains child streams concurrently and retains their complete bytes; an I/O failure fails the controller. */
++    private static CompletableFuture<Void> drain(InputStream source, Path path, OutputStream console) {
++        return CompletableFuture.runAsync(() -> {
++            try (source; OutputStream retained = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)) {
++                byte[] buffer = new byte[8192];
++                long bytes = 0;
++                int count;
++                while ((count = source.read(buffer)) != -1) {
++                    bytes += count;
++                    if (64L * 1024 * 1024 < bytes) throw new IllegalStateException("Trace worker output overflow");
++                    retained.write(buffer, 0, count);
++                    console.write(buffer, 0, count);
++                    console.flush();
++                }
++            } catch (Exception failure) { throw new IllegalStateException("Could not retain trace worker stream", failure); }
++        });
++    }
++
++    /** Quotes the documented launching connector argument syntax, rejecting ambiguous embedded quotes. */
++    private static String quote(String value) {
++        if (value.contains("\"") || value.contains("\n") || value.contains("\r")) throw new IllegalArgumentException("Unrepresentable connector argument");
++        return "\"" + value + "\"";
++    }
++    /** Hashes actual loaded controller bytes for qualification rather than trusting source declarations. */
++    private static String classHash(Class<?> type) throws Exception {
++        try (InputStream bytes = type.getResourceAsStream("/" + type.getName().replace('.', '/') + ".class")) {
++            if (bytes == null) throw new IllegalStateException("Missing actual compiled trace class");
++            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.readAllBytes()));
++        }
++    }
++
++    /** Hashes retained artifacts independently from the shared Python verifier. */
++    private static String hash(Path path) throws Exception { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))); }
++
++    /** Preserves fresh immutable evidence without replacing a prior attempt. */
++    private static void writeNew(Path path, JsonObject value) throws Exception { Files.writeString(path, value.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW); }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt
+index fabe6635cf108d003700ed1357f0065d07671ee2..4c4cb82ff511e04ff1f692e72d01d0c2c976e5b6 100644
+--- a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt
+@@ -75,7 +75,7 @@ public object ComponentWorkEvidence {
+             val methods = JmhFixtureSelection.methods(listOf(fixture), null)
+             JmhFixtureSelection.verifyIncludes(expected, methods.map { "^${Regex.escape(it)}$" })
+         }
+-        JmhFixtureSelection.verifyWork(fixtures)
++        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(fixtures))
+     }
+ 
+     private fun verifyJmhInventory() {
 diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsAssets.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsAssets.kt
 new file mode 100644
 index 0000000000000000000000000000000000000000..b191700bd595c69fbf78bb13eca50ce23b234846
@@ -964,6 +1771,78 @@ index 0000000000000000000000000000000000000000..73eb3ae0f171f1b5d7c6876259bfa4df
 +        end(state.bounds())
 +    }
 +}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTraceWorker.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTraceWorker.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..da011ad3239673f09ffc30658a62e3590bc8f404
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsTraceWorker.kt
+@@ -0,0 +1,66 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonParser
++import java.nio.file.Files
++import java.nio.file.Path
++
++/**
++ * Real packaged trace worker; ordinary rows delegate to the preserved single-row entry.
++ * Independent qualification controls call the actual runtime bounds handle or a closed public engine.
++ */
++public object UnihexBoundsTraceWorker {
++    private enum class Qualification { QSingle, QMultiple, QZero, QFailure }
++
++    /**
++     * Loads every required prepared class before an operation, preserving PID-qualified origin evidence.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        require(args.size == 2)
++        val request = JsonParser.parseString(Files.readString(Path.of(args[0]))).asJsonObject
++        for (name in request.getAsJsonObject("required_classes").keySet()) Class.forName(name, false, ClassLoader.getSystemClassLoader())
++        val qualification = Qualification.entries.firstOrNull { it.name == args[1] }
++        if (qualification == null) {
++            UnihexBoundsWorkEvidence.main(arrayOf(args[1]))
++        } else {
++            qualify(qualification)
++        }
++    }
++
++    private fun qualify(control: Qualification) {
++        val state =
++            UnihexBoundsBenchmark.BoundsState().also {
++                it.fixture = UnihexBoundsFixture.W8LeftEdge
++                it.setup()
++            }
++        val closed =
++            if (control == Qualification.QFailure) {
++                UnihexBoundsBenchmark.GlyphState().also {
++                    it.fixture = UnihexBoundsFixture.W8LeftEdge
++                    it.setup()
++                    it.close()
++                }
++            } else {
++                null
++            }
++        println("Unihex operation begin ${control.name} independent actual runtime control")
++        when (control) {
++            Qualification.QSingle -> {
++                check(state.bounds() == 0..0)
++            }
++
++            Qualification.QMultiple -> {
++                repeat(3) { check(state.bounds() == 0..0) }
++            }
++
++            Qualification.QZero -> {}
++
++            Qualification.QFailure -> {
++                val failure = runCatching { checkNotNull(closed).glyph() }.exceptionOrNull()
++                check(failure is IllegalStateException)
++                println("Unihex operation failure ${control.name} ${failure.javaClass.name}")
++            }
++        }
++        println("Unihex operation end ${control.name} independent control complete")
++    }
++}
 diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsWorkEvidence.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/UnihexBoundsWorkEvidence.kt
 new file mode 100644
 index 0000000000000000000000000000000000000000..1d470bb0cebd9afad9e70470c154d0955cdcd155
@@ -1299,17 +2178,19 @@ index 0000000000000000000000000000000000000000..6c18d0c91bf92579d11218c41a302e0c
 +controls.tsv -text
 diff --git a/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..b2a79ae85015eb7d08ef7fa41217879c4ce0e827
+index 0000000000000000000000000000000000000000..6bffa0ceedc0e5029d6608d38fda72ba1f3ae443
 --- /dev/null
 +++ b/quality/component-benchmarks/src/jmh/resources/unihex-bounds/README.md
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,103 @@
 +# Unihex natural-bounds comparison inputs
 +
 +This complete corpus compares the actual runtime natural-bound helper and public consumers while changing only `FontHexGlyph.bounds`.
-+The fixed baseline is synced master `7ebd9c94f3da521cadb76eadd4312289eaf88d7e`, including the accepted complete-JMH Qodana tooling and shared paired JVM CI.
++The fixed baseline is synced master `2e8088d8c9281b0a3bb34249fdd058cdd7231112`, including accepted complete-JMH Qodana tooling and the shared compiled-preflight paired JVM route.
 +Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 +Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
-+These sources are preparation; all execution, origin qualification, controls and measurements are Pending.
++Formal whole-corpus traces, all thirty acceptance controls and measurements remain Pending.
++The external observer has a separate [actual compiled known-control qualification](../../../../../../.github/performance/unihex-bounds/trace-qualification.json), including the bounded origin-mirroring correction.
++It binds one, three and zero real bounds calls and one caught closed-engine failure to actual loaded byte and owning-process evidence; it does not certify the complete corpus or a performance gain.
 +
 +The committed [fixture table](fixtures.tsv) contains 36 immutable fixtures.
 +The [comparison table](comparisons.tsv) expands the geometry inputs into 120 rows and retains twelve additional complete consumer controls.
@@ -1345,7 +2226,9 @@ index 0000000000000000000000000000000000000000..b2a79ae85015eb7d08ef7fa41217879c
 +The [full paired manifest](../../../../../../.github/performance/paired-jvm.json) binds this complete corpus to the shared Windows CPU route.
 +Its immutable source patches reconstruct the same prepared fixture and collector on both runtime sides from the accepted master; only `FontHexGlyph.kt` differs.
 +The driver retains all 132 cases in each of three baseline and three candidate AverageTime collections (792 required cells), plus the separate complete SampleTime comparison (792 additional cells).
-+Input attributes preserve the original five resource blobs across checkouts; predeclared compiled, dependency and Java byte pins are empty because no qualifying archives or hosted executables have yet been produced for this revision.
++Input attributes preserve the original five resource blobs and the actual qualification bytes across checkouts.
++Dependency and canonical Java byte pins come from the preserved known-control qualification.
++Preparation preserves the actual fixture, collector and runtime bytes before admission; optional compiled predeclarations do not replace that evidence.
 +Actual source archive hashes, loaded origins, CPU availability, controls, collection costs and all measurements remain Pending until this corpus completes.
 +The shared CPU route supplements the existing external untimed tracing and real OpenGL/Vulkan, font ownership and supported-version acceptance; it does not replace them.
 +Register `assets.zip`, `fixtures.tsv`, `comparisons.tsv`, `measurements.tsv` and `controls.tsv` through the existing `strata.performance.fixtureInputs` properties manifest, with labels `unihex-bounds-<filename>` and exact absolute regular-file paths.
@@ -1362,11 +2245,29 @@ index 0000000000000000000000000000000000000000..b2a79ae85015eb7d08ef7fa41217879c
 +Do not label the JMH controller thread's CPU as workload CPU, replace unsupported values with zero or infer allocation savings from bit expressions.
 +See the pinned primary [JMH iteration metadata](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/results/IterationResultMetaData.java) and [GC normalization](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) for the actual-operation denominator.
 +
-+Before timing, use the packaged `UnihexBoundsWorkEvidence` single-row entry with R001–R132 for an external untimed JVM method trace.
-+Count actual `FontHexGlyph.bounds` entries and actual cache-miss constructor paths inside each printed operation begin/end boundary, excluding setup.
-+Distinguish an absent provider result from a constructed raster and distinguish raster-cache misses from public glyph requests.
++Before timing, the manifest's generic `test_gates` run the existing unfiltered `:runtime:minecraft:test`, `:runtime:minecraft-fonts-lwjgl:test` and `:runtime:minecraft-fonts-lwjgl:fontTestMinecraft263` tasks in each preserved baseline and candidate source workspace.
++Every exact independent JUnit method declared by the manifest must run once and pass; missing, repeated, failed or skipped required methods reject admission.
++The existing bounded Test profile disables output reuse and filters, and the driver preserves complete original JUnit XML even when the phase fails.
++Controls 8–13, 20 and 28–30 retain their original scalar, ownership, failure and lifetime assertions; the private scalar helpers are exercised through their actual JUnit callers.
++The CPU native-font tests additionally exercise real provider and PNG ownership against both runtimes.
++Loaded OpenGL/Vulkan/native-font parity and all supported targets remain final acceptance requirements.
++Both sides' independent tests, complete work gates and actual traces finish before any timed collection.
++
++Before timing, run the packaged `UnihexBoundsMethodTrace` through the shared compiled preflight route for the complete R001–R132 inventory.
++Each worker delegates to the unchanged `UnihexBoundsWorkEvidence` single-row entry on the actual preserved classpath.
++JDK JDI observes `FontHexGlyph.bounds` and cache-miss method entries and actual Unihex return values between the printed operation boundaries, excluding setup.
++An actual null Unihex return is an absent result; a successful nonnull return records a constructed Unihex raster.
++Public glyph calls, provider cache misses, bitmap cell misses, native raster requests and image-factory entries have separate counters.
++Image-factory entries are not a count of completed rasters.
++The marker adapter accepts actual String-reference arguments to both `PrintStream.println(String)` and `println(Object)`, suppresses only nested println delegation and retains the observed descriptor.
++The operation thread owns each boundary, and a missing, repeated or incomplete boundary fails qualification instead of becoming a zero count.
++First qualify the actual compiled observer with one, three and zero real bounds calls plus a caught closed-engine failure observed independently through a JDI exception event.
++Bind that qualification to the actual compiled controller/worker hashes, preserved byte closure, PID-qualified loaded origins, finite VM caps and naturally released owning Job before admitting any trace or timed collection.
++Startup class loads go to a retained PID-decorated file so a launching connector cannot block on an unavailable pipe.
++After natural child release, each unique actual required-origin line joins the bounded shared console for the existing origin verifier; the complete unchanged class-load file remains a pinned artifact.
++A missing or duplicate required origin fails the controller, and no console or artifact cap increases.
 +Keep trace runtime/fixture/classpath identities bound to the actual preserved archives used by collection.
-+Dirty Text emits shared frame-work diagnostics through the same entry.
++Dirty Text's actual post-operation work diagnostics are retained separately from method counts.
 +The source forecast is 16×width original ink predicates versus sixteen candidate row reads/OR combinations, one width mask and two bit-extrema operations per executed nonempty scan.
 +Those expressions are not total machine instructions or actual Text scan counts.
 +External method tracing is separate from timed CPU/allocation collection and never instruments the measured runtime archives.
@@ -2458,6 +3359,19 @@ index 0000000000000000000000000000000000000000..5fb066079071416caf9aeaf83503053c
 +R132	Candidate	0	Pending	Pending	Pending	Pending	Pending	Pending
 +R132	Candidate	1	Pending	Pending	Pending	Pending	Pending	Pending
 +R132	Candidate	2	Pending	Pending	Pending	Pending	Pending	Pending
+diff --git a/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteWorkEvidence.kt b/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteWorkEvidence.kt
+index caef837e4e659bd475502278d241251f9986f74a..becd19e7d7ef23756b797a69ffbbcca18473fc00 100644
+--- a/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteWorkEvidence.kt
++++ b/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteWorkEvidence.kt
+@@ -32,7 +32,7 @@ public object RemoteWorkEvidence {
+             return
+         }
+         verifySurface()
+-        JmhFixtureSelection.verifyWork(JmhFixtureSelection.all())
++        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(JmhFixtureSelection.all()))
+         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
+         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt"), includes = listOf("RemoteProtocolBenchmark.diff")).size == 6)
+         val benchmark = RemoteProtocolBenchmark()
 diff --git a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt
 index 69557cd691c2d0aae60a494c9f490ecf6e60eea0..2dc316e6db268a0338c072ad2fcc0ae2d53765f4 100644
 --- a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/FontHexGlyph.kt

@@ -118,6 +118,58 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.load(changed)
 
+    def test_independent_test_gates_reject_filters_nonruntime_tasks_and_missing_bindings(self):
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["test_gates"] = [{"task": ":runtime:headless:test", "required_tests": ["independent.Controls#full owner failure"]}]
+        self.assertEqual(self.load(value), value)
+        changes = [lambda gate: gate.update(task=":runtime:headless:check"),
+                   lambda gate: gate.update(task=":quality:benchmarks:test"),
+                   lambda gate: gate.update(task=":runtime:headless:test --tests One"),
+                   lambda gate: gate.update(required_tests=[]),
+                   lambda gate: gate.update(required_tests=["Controls"]),
+                   lambda gate: gate.update(arguments=["--tests", "One"])]
+        for change in changes:
+            changed = copy.deepcopy(value)
+            change(changed["suites"][0]["test_gates"][0])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+        value["suites"][0]["test_gates"].append(value["suites"][0]["test_gates"][0])
+        with self.assertRaises(ValueError):
+            self.load(value)
+
+    def test_independent_junit_gate_requires_actual_complete_method_results_and_preserves_reports(self):
+        gate = {"task": ":runtime:headless:test", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/headless/build/test-results/test"
+        reports.mkdir(parents=True)
+        owner = '<testcase classname="independent.Controls" name="owner()"/>'
+        failure = '<testcase classname="independent.Controls" name="failure()"/>'
+        for index, (counts, body) in enumerate((
+                ((2, 0, 0, 0), owner + failure),
+                ((1, 0, 0, 0), owner),
+                ((2, 0, 0, 1), owner + '<testcase classname="independent.Controls" name="failure()"><skipped/></testcase>'),
+                ((2, 1, 0, 0), owner + '<testcase classname="independent.Controls" name="failure()"><failure/></testcase>'),
+                ((3, 0, 0, 0), owner + failure + failure),
+                ((3, 0, 1, 0), owner + failure + '<testcase classname="independent.Controls" name="other()"><error/></testcase>'),
+                ((3, 0, 0, 0), owner + failure))):
+            directory = self.root / f"junit-{index}"
+            directory.mkdir()
+            report = reports / "TEST-independent.Controls.xml"
+            attributes = ' '.join(f'{name}="{value}"' for name, value in zip(("tests", "failures", "errors", "skipped"), counts))
+            report.write_text('<testsuite ' + attributes + '>' + body + '</testsuite>', encoding="utf-8")
+            PAIRED.preserve_test_reports(self.root, directory, gate)
+            self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
+            if index == 0:
+                PAIRED.verify_test_gate(directory, gate)
+                verified = PAIRED.read_json(directory / "junit-verified.json")
+                self.assertEqual(verified["required_tests"], gate["required_tests"])
+                self.assertEqual(verified["reports"][0]["sha256"], PAIRED.digest(report))
+                self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
+            else:
+                with self.subTest(index=index), self.assertRaises(ValueError):
+                    PAIRED.verify_test_gate(directory, gate)
+                self.assertFalse((directory / "junit-verified.json").exists())
+                self.assertTrue((directory / "junit-inventory.json").is_file())
+
     def preflight_fixture(self, name):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
         output = self.root / name
