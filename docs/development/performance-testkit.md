@@ -539,6 +539,11 @@ An owner requiring an additional CPU metric must verify its actual availability 
 Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
 Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
 
+A suite may declare optional `test_gates` for independent tests on both original reconstructed runtime sources before any timed collection.
+Each gate has an existing runtime `task` and a nonempty `required_tests` inventory of exact `class#method` bindings; filters and additional task arguments are not allowed.
+The driver runs the complete task on baseline and candidate without the fixture overlay, preserves all actual JUnit XML even on failure, and checks report counts and successful execution of each required method exactly once.
+These independent tests supplement the fixture's complete work and loaded-runtime controls.
+
 A suite may also declare an optional `preflight` object for a qualified compiled untimed controller.
 It has exactly four fields: `main` is a qualified class name already compiled in that suite's fixture classpath; `qualification` is an immutable repository-relative file pin containing the owner's independent controller qualification evidence; `runtime_classes` maps every declared runtime project to its loaded representative class; and `controls` is the complete ordered inventory of unique `id` and `arguments` records.
 Arguments are data passed in a pinned JSON request, never shell commands or additional JVM options.
@@ -578,13 +583,70 @@ No old workstation owner directory, private index or missing historical metadata
 The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
-All selected suites' full work gates and optional independent preflight controls run before sampling.
+All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
 For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
 Quick, smoke, repetition and timing overrides are not manifest fields.
 The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
 The report displays the processor's baseline/candidate medians, absolute deltas, allocation and GC metrics, and SampleTime percentile medians.
 Time is per declared fixture batch; it has no cross-machine improvement interpretation or wall-time pass threshold.
-Thread CPU per operation is unavailable in the existing collector; Job CPU includes preparation and descendants.
+JMH Thread CPU per operation is unavailable unless a separately declared profiler supplies it; Job CPU includes preparation and descendants.
+Supplemental owner-thread operation reports have their own explicit boundary and protocol described below.
+
+### Supplemental operation reports
+
+A suite can opt into `operation_reports` without changing its JMH selectors, modes, forks, iterations or deterministic work gates.
+The existing three supported fixture projects use their existing collector tasks and classpaths; no fixture-specific Gradle task or launcher is required.
+Omitting this field never discovers or invokes an adapter, and the fixed pilot remains unchanged.
+The field requires an `adapters` object mapping each selected fixture's binary class name to its compiled adapter class name, `warmup`, `samples`, `expected_rows` and `expected_controls`.
+The complete operation row count must equal the original selected JMH method/parameter count for one mode; each row also binds both original AverageTime and SampleTime inventories.
+The six supplemental invocations and their cell counts are distinct from the twelve original JMH invocations.
+
+```json
+"operation_reports": {
+  "adapters": {
+    "dev.s7a.strata.quality.benchmark.CycleSelectionBenchmark": "dev.s7a.strata.quality.benchmark.CycleSelectionOperationReport"
+  },
+  "warmup": 30,
+  "samples": 60,
+  "expected_rows": 48,
+  "expected_controls": 30
+}
+```
+
+The fixture declares a public static no-argument `operationReport()` returning `JvmOperationReportAdapter`; Kotlin companions expose it with `@JvmStatic`.
+The adapter declares `JvmOperationReportRow` identities, complete method/parameter bindings, boundaries, control identities and explicit operations per sample.
+Missing required, duplicate, ambiguous, invalid or stale hooks fail before collection can publish valid evidence.
+Every selected JMH method and parameter row must bind exactly once; the adapter cannot silently drop independent controls.
+The shipped [selection adapter](../../quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionOperationReport.kt) preserves all 39 fixtures, 48 complete operation rows and 30 controls.
+The independent [composition adapter](../../quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayOperationReport.kt) binds every row of its existing six-case corpus.
+
+Adapters use `JvmPerformanceRunner.warmup` and `sequence` rather than implementing a sampling loop, clock or counter.
+Prepare and prime fixtures before `sequence.sample`, execute every required complete-operation step inside its callback, and keep assertions, report serialization and ordinary surviving-resource teardown after it.
+Lifecycle rows retain required terminal close inside the actual operation; setup allocation is never subtracted from stock JMH GC allocation.
+Retained main fixtures and fresh invocation controls keep their own original ownership and preparation rules.
+Failed operations, incomplete sample counts or terminal cleanup failures cannot publish a successful report.
+
+Supplemental invocations run serially in `B0/C0/B1/C1/B2/C2` order on the same qualified host, outside JMH timing, with the same frozen fixture/collector/adapter and external inputs against each runtime.
+Each raw `report.json` binds its independent UUID to the corresponding complete original AverageTime invocation and preserved receipt digest.
+Loaded fixture, adapter, collector, runtime class trees, actual JVM/host properties and input identities are checked around collection; source/tree/archive bindings remain in every report and the whole attempt archive.
+Adapters declare actual consumed resource and external file paths through `inputs`; every original JMH input must match a current source file, including resolved control libraries.
+The collector re-reads mappings and bytes after collection, and processing revalidates both those actual files and the semantic input-manifest mappings alongside the original JMH archives.
+Missing, unknown, redirected or changed inputs fail instead of reusing an old archive identity.
+Processing uses `JvmPerformanceReports.compare`, `PerformanceReportContract` and registered `PerformanceReportMetric` projections.
+A changed adapter or collector requires a new paired freeze and fresh evidence on both sides.
+
+Owner-thread CPU is `owner_thread_cpu_ns / samples` in ns/sample; owner-thread allocation is `owner_thread_allocated_bytes / samples` in B/sample.
+A sample is the declared complete operation or explicit batch; raw totals, exact denominators, operations per sample and original distributions remain preserved.
+CPU/allocation percentiles keep their own units; the existing allocation distribution's legacy `_ns` field suffix denotes the collector's stored numeric distribution rather than converting allocated bytes to time.
+The comparison preserves independent per-run values and medians, absolute deltas and nullable unavailable fields.
+Unsupported CPU or allocation counters remain JSON null through collection, comparison and rendered tables, never a fabricated zero.
+Wall time, process/all-thread counters, job CPU, heap-boundary samples and stock JMH GC allocation retain their separate scopes.
+Heap-boundary changes do not establish retained-object size, and these counters do not certify browser, GPU, native upload or loaded-game costs.
+Existing meter reads and adapter dispatch have collection cost; cost comparisons require actual matching fixture measurements and remain Pending until collected.
+
+Every supplemental preparation, collection, processing and cleanup phase uses the same fresh RAM admission, fixed JVM caps, worker and affinity controls, owned Windows Job, deadlines, no-breakaway and terminal resource checks.
+A failed attempt cannot donate rows to a later attempt; an unsupported whole workload is reported as a failure without substituting a subset.
+Full original JMH and applicable native/runtime Issue acceptance remain independently required.
 
 Every Gradle invocation requires fresh available physical RAM of at least 4096 MiB, checked again inside its owning Windows Job immediately before Java.
 The suspended caller is assigned before it can start Gradle; descendants inherit a 3 GiB committed-memory limit, kill-on-close and no breakaway.
@@ -598,6 +660,11 @@ The inherited Java environment supplies the probe heap cap, while each ordinary 
 JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
 These probes remain separate diagnostic records and never count as measured forks.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
+Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
+Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
+Previously captured staging files must remain byte-identical before the next invocation.
+The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; missing or changed fork attribution fails instead of borrowing console output.
+Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
 
