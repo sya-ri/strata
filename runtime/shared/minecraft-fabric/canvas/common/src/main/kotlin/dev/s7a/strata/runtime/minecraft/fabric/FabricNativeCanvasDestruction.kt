@@ -1,5 +1,7 @@
 package dev.s7a.strata.runtime.minecraft.fabric
 
+import kotlin.jvm.JvmDefaultWithoutCompatibility
+
 /**
  * Tracks physical destruction of the fixed resources owned by one Canvas target or portable layer.
  *
@@ -7,6 +9,7 @@ package dev.s7a.strata.runtime.minecraft.fabric
  * Implementations may retain native attachments, but never a screen, callback, or retained node.
  * A successful probe is permanent and must not issue GPU work or wait for completion.
  */
+@JvmDefaultWithoutCompatibility
 internal fun interface FabricNativeCanvasDestruction {
     /**
      * Completes eligible physical retirement after initialization and every GUI use have completed and all close requests succeeded.

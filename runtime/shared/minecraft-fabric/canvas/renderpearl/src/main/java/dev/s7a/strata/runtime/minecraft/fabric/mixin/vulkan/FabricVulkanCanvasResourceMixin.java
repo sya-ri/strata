@@ -39,12 +39,14 @@ abstract class FabricVulkanCanvasResourceMixin implements FabricVulkanDestroyedR
     @Override
     public void strataDestroyCompletedResource() {
         RenderSystem.assertOnRenderThread();
-        if (isClosed() == false) {
-            throw new IllegalStateException("Completed Vulkan retirement requires a successful close request.");
-        }
-        if (strata$canvasDestroyed == false) {
+        if (isClosed()) {
+            if (strata$canvasDestroyed) {
+                return;
+            }
             destroy();
+            return;
         }
+        throw new IllegalStateException("Completed Vulkan retirement requires a successful close request.");
     }
 
     @Inject(method = "destroy()V", at = @At("HEAD"), cancellable = true)
