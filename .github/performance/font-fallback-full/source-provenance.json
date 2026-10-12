@@ -1,0 +1,132 @@
+{
+  "schema": "strata-font-fallback-whole-source-v1",
+  "issue": 144,
+  "pull_request": 204,
+  "status": "source and full original B/C untimed work qualified; formal comparisons and complete loaded acceptance Pending",
+  "original_candidate": "73a5a8d929da4c199bdb20bf0eeb2762b8155b03",
+  "ordinary_master_merge": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
+  "common_correctness_source": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+  "common_correctness_acceptance": "Pending complete loaded OpenGL/Vulkan/font parity; common repair is identical on both runtime sides",
+  "sources": {
+    "baseline": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "f6c2714c7a4beedfd70d12b36ab234298ff0f166",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/baseline.patch",
+          "sha256": "cface231e6c749cdb1ab9aab09054ea4f51cd8c18692d029d6f507a4f8cc4c5b"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "537ee5d7eee9c88fd76d4d04dd7a29af87634c3d",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d061c2b0ef6ad34173d80b836451b74590be38f96c3917d2030d5d909b34dc1b"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "537ee5d7eee9c88fd76d4d04dd7a29af87634c3d",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d061c2b0ef6ad34173d80b836451b74590be38f96c3917d2030d5d909b34dc1b"
+        }
+      ]
+    }
+  },
+  "production_difference": [
+    "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt"
+  ],
+  "candidate_only_original_regression_source": "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontResolutionTest.kt",
+  "fixture_files": {
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackBenchmark.kt": {
+      "sha256": "7ceed85ea640999986153446ff34133c1fa397afe1af19f8d4083bba97ccaed9",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackOperationReport.kt": {
+      "sha256": "46a2b77eab240c15340d468aeb7693d86ec0c7eec5bab4768c7deaead36cff60",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackAssets.kt": {
+      "sha256": "d8f2d124bd0dda9bae88869d464e13d9e73ef5855bf2edf68ab0f741d732e038",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkEvidence.kt": {
+      "sha256": "4398a1addae3aa14249654b4c188e90c81c866fdb7c64b05cbe656cb8e8d574d",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkload.kt": {
+      "sha256": "070a0d32c554286d2b4e7039275b99ea98d8b46b4a56574b81f65db17f7c8df8",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontProviderBenchmark.kt": {
+      "sha256": "060057a2ba6a2f5b96626bfde289e3b6a575b1ce16c0fbddc7461b116a3a625d",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterAssets.kt": {
+      "sha256": "a4b9eba75dba9732128e69fb32fcb7fd87d22c3e951f71192dfc4d89f77b1701",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterOwnershipBenchmark.kt": {
+      "sha256": "d4c907fa307abbe4863cd9e38a52ff7e4c804a570d3e41a3c198b619a1fb49c4",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterWorkEvidence.kt": {
+      "sha256": "7ada61b99a7d3f26e0343cba94b4d7f9172125089cbf7917ae43e47a0f6f0987",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontTextBenchmark.kt": {
+      "sha256": "8dfb3f3ca3c4f98c03cf5d82c8e669b548b26627b41c4ea893cb6ad69f0ee3b3",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontWorkEvidence.kt": {
+      "sha256": "a1f582e046bb70524756e7cd6f8c67901582c17423f02ce02870aa9cf09b2057",
+      "baseline_equal": true
+    },
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontWorkload.kt": {
+      "sha256": "c810e285ee9e604c9ea56a7f1cfcbd71173ff2ba29cf9d87bc0e7f0f73454ab2",
+      "baseline_equal": true
+    }
+  },
+  "original_timed_operations_and_session_bodies": "unchanged; only the static admission and shared operation adapter hooks were added",
+  "measured_rows_per_mode": 48,
+  "primary_B3_C3_cells_per_mode": 288,
+  "primary_cells_both_modes": 576,
+  "supplemental_rows": 48,
+  "supplemental_B3_C3_cells": 288,
+  "full_original_untimed_gates": {
+    "FontWorkEvidence": 42,
+    "FontRasterWorkEvidence": 22,
+    "FontFallbackWorkEvidence": 48
+  },
+  "source_evidence": {
+    "sha256": "d9f4f59dda76e31150c34374e9ad97f4c02b34ed735dda4a1b84c76867f400b0",
+    "baseline_JVM_and_worker_tests": 1066,
+    "candidate_JVM_and_worker_tests": 1076,
+    "component_tests": 11,
+    "actual_VM_binding_sha256": "be8f760def11595337dc811ed0162841724275e20512dc5779cbf827ef03dc3e",
+    "candidate_runtime_phase": "actual exit1 due later adapter lint; earlier runtime groups are preserved separately and their final source equality is verified"
+  },
+  "actual_original_generator_receipt_sha256": "b71a740fd2839fa282944691f0bdf82cb6f1f4ba21f2befd5a899478869c96a7",
+  "actual_work_admission": {
+    "sha256": "921643d52ff8fd150fe7c651ad1575327b73d71c612b7350414c87ba2ee3912e",
+    "fixture_source_tree": "537ee5d7eee9c88fd76d4d04dd7a29af87634c3d",
+    "baseline": {
+      "pid": 61344,
+      "runtime_sha256": "381acff8f4e7a852ae7ff0467a4d0895e3d1e766bab03d803f17dc90c524b0be"
+    },
+    "candidate": {
+      "pid": 25652,
+      "runtime_sha256": "fe8643288d554a37477b817d2c906de2c74dbad7052ec9213d6c3b8819c7439f"
+    },
+    "complete_raster_and_fallback_parity": "22 raster and48 fallback row data are identical across the actual runtime pair",
+    "historical_r1": "two candidate-runtime admissions passed; unconsumed request property means no baseline or timing credit"
+  },
+  "native_presentation_timing": "not measured by these JVM operations",
+  "formal_timing_credit": false
+}

@@ -1,0 +1,148 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "f6c2714c7a4beedfd70d12b36ab234298ff0f166",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/baseline.patch",
+          "sha256": "cface231e6c749cdb1ab9aab09054ea4f51cd8c18692d029d6f507a4f8cc4c5b"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "537ee5d7eee9c88fd76d4d04dd7a29af87634c3d",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d061c2b0ef6ad34173d80b836451b74590be38f96c3917d2030d5d909b34dc1b"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+      "tree": "537ee5d7eee9c88fd76d4d04dd7a29af87634c3d",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d061c2b0ef6ad34173d80b836451b74590be38f96c3917d2030d5d909b34dc1b"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless",
+    ":runtime:minecraft",
+    ":runtime:minecraft-fonts-lwjgl"
+  ],
+  "suites": [
+    {
+      "project": ":quality:component-benchmarks",
+      "name": "font-fallback-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.FontFallbackBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 48,
+      "test_gates": [
+        {
+          "task": ":runtime:minecraft:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#completedImageNullAndMissingGlyphsCannotReadmitTerminalRasters",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#successfulFaceReturnedAfterCloseIsReleasedWithoutPreflightAdmission",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#lateDecodeAndOpenFailuresKeepOrdinaryDiagnosticsAndFatalIdentityWithoutRetainingKeys",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#evictionCloseStopsReplacementOpenAndKeepsItsFailureBehavior",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#validatedReopenReleasesALateFaceAndPropagatesItsExactCleanupFailure",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#poisoningCloseKeepsTheAllocationFailurePrimaryAndTerminalCountersEmpty",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#imageChecksAfterCallbackCloseRetainTheExistingPublicClosedFailure",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalOwnershipTest#foreignThreadCloseCannotAffectAnIndependentOwnerOrNormalGlyphAndEvictionOrder",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalCallbackTest#cleanupFailureInsideDecodeOrOpenKeepsTheOriginalPreflightFailureContract",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalCallbackTest#orderingAndShapingCallbacksReturnDetachedValuesWithoutTerminalOwnerState",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalCallbackTest#lateFaceReleaseStillRunsAfterTheCallbackObservedABackendCleanupFailure",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalCallbackTest#missingCallbackKeepsSpaceFallbackAndLaterFaceClosedFailureDistinct",
+            "dev.s7a.strata.runtime.minecraft.font.MinecraftFontTerminalCallbackTest#glyphReopenEvictionCloseKeepsTheOriginalMissingBackendFailureWithoutAnotherOpen"
+          ]
+        },
+        {
+          "task": ":runtime:minecraft-fonts-lwjgl:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglFontTerminalOwnershipTest#returnedNativeFaceCannotRepopulateTheClosedEngineOrInvalidateDetachedPixels",
+            "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglFontTerminalOwnershipTest#realPngReturnedAfterCloseRetainsPixelsWithoutCachingResourceKeys"
+          ]
+        }
+      ],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.FontFallbackBenchmark": "dev.s7a.strata.quality.benchmark.FontFallbackOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 48,
+        "expected_controls": 0
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "label": "font-raster-png-32",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/inputs/png-32.png",
+        "sha256": "fb9f5e05c1f2253f6b19eab66a4125fe7d8e884c776f753b503fdda350c4991d"
+      }
+    },
+    {
+      "label": "font-raster-png-256",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/inputs/png-256.png",
+        "sha256": "3edcfea7f23fb79b05f64494803e8632ce6dbde13778734c7c00a304f74cf34f"
+      }
+    },
+    {
+      "label": "font-raster-png-1024",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/inputs/png-1024.png",
+        "sha256": "7092c2b69f2682d8e5ece9eae0304a5bb1d5cd41f4638244d15102bbde8fcf28"
+      }
+    },
+    {
+      "label": "font-raster-png-257",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/inputs/atlas-257.png",
+        "sha256": "6904429f48b35ade196e549aa452b2d150424c4f1722cc1bf09e3a345ecbedd9"
+      }
+    },
+    {
+      "label": "font-fallback-baseline-source",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/baseline.patch",
+        "sha256": "cface231e6c749cdb1ab9aab09054ea4f51cd8c18692d029d6f507a4f8cc4c5b"
+      }
+    },
+    {
+      "label": "font-fallback-candidate-source",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/candidate.patch",
+        "sha256": "d061c2b0ef6ad34173d80b836451b74590be38f96c3917d2030d5d909b34dc1b"
+      }
+    },
+    {
+      "label": "font-fallback-source-provenance",
+      "pin": {
+        "path": ".github/performance/font-fallback-full/source-provenance.json",
+        "sha256": "212b32ca9c3fbf637c653ea24d987f8f85955a7785a5fa7881da20f3ae3f53de"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

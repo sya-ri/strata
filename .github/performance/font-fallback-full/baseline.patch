@@ -1,0 +1,741 @@
+diff --git a/docs/development/performance.md b/docs/development/performance.md
+index e715bc903739f2c879d7cc8ebac9ebd080fb8dc7..36b1b4263fc117fa387ed985bc298a4264a1eb48 100644
+--- a/docs/development/performance.md
++++ b/docs/development/performance.md
+@@ -544,6 +544,12 @@ Each common host owns one font engine for its immutable profile snapshot and cap
+ Decoded bitmap sheets use detached resource identity; scanned cells use that resource, grid dimensions, and cell index, retaining only the cell's current height/ascent result.
+ TrueType faces and glyphs use resource identity and exact size, oversampling, and shift settings, with provider-specific skips checked before lookup.
+ Other glyph results use snapshot-local provider identity and Unicode scalar keys.
++An independent engine-local resolution map keys the selected font identifier and scalar within that captured snapshot and its options.
++Each entry retains only the selected provider or a complete-chain missing result and the preceding cached-miss raster keys; hits touch those keys in their original order before using the ordinary selected-provider cache.
++This preserves raster LRU pressure and subsequent native face reopening or failure instead of treating selection as a detached final-glyph cache.
++Resolution entries and all retained prefix keys share a combined access-ordered limit of `min(cacheEntries, 4096)` units, so zero disables reuse and long chains cannot multiply the scalar-history bound.
++Raster replacement or eviction, permanent face poisoning and face-opening failure clear all resolutions; a fallback walk that changes that raster epoch is not admitted.
++Every known font still preflights every provider before resolution lookup, unknown identifiers create no entries, and owner-thread close clears every selection and key.
+ The access-ordered raster cache has a combined default limit of 4,096 entries and 16 MiB of retained pixel payload; oversized values bypass retention, and a separate default 8 MiB input ceiling bounds bitmap sheets in every cache mode.
+ Native faces use an independent access-ordered cache limited to 16 entries and combined encoded input no larger than the snapshot's `maxAssetBytes`, 32 MiB by default.
+ Eviction removes accounting and closes the previous face before opening its replacement.
+@@ -555,14 +561,18 @@ Provider and font initialization status is bounded by the snapshot's provider gr
+ Changing resource packs, provider filters, or language direction requires a new snapshot and host; existing host engines never mutate their snapshot and never share native faces.
+ All host-cache and native access is confined to the host's owner thread.
+ Terminal cleanup clears cache and snapshot references and closes all faces and the backend, including when an initialization, rasterization, or cleanup step fails.
+-A backend callback may close its engine on that same owner thread; subsequent cache and preflight publication is rejected.
+-A face returned after terminal close is released immediately, and its cleanup failure propagates with the original throwable identity.
+-An interrupted preflight returns the missing shape without opening another face; completed detached glyph results remain usable.
+ Detachment preserves common host ownership for reattachment but releases Fabric presentation textures independently.
+ 
+ Tests compare enabled and disabled raster caches, assert entry and payload bounds, churn face keys and weighted input limits, exercise duplicate-provider preflight and permanent poisoned-face rejection, isolate engines sharing one snapshot, and verify terminal counters and backend release after failures.
+ The raster byte bound covers cache-owned pixels; the face byte bound covers retained encoded native inputs, not arbitrary native bookkeeping or total heap usage.
+ Neither includes glyphs in current caller-owned runs or immutable source-file bytes in a shared snapshot.
++
++The separate `FontFallbackBenchmark` corpus contains 48 generated cases: first, late, complete missing, filtered late, STB, FreeType, atlas-rejected and disabled malformed-provider inputs at chain depths one and ten, each with repeated lookup, 64-scalar pressure and complete engine-lifetime operations.
++Select it through `:quality:component-benchmarks:jmhComponents -Pstrata.performance.benchmarks=FontFallbackBenchmark -Pstrata.performance.suite=font-fallback` using the unchanged Standard settings and collector.
++Its untimed verifier compares complete cached/uncached metric bits and pixels, checks actual decode/raster/open/close observations and terminal retention, and retains the original font corpora.
++Formal paired collection freezes the registered original CC0 font and a separate rejected 257-square PNG under the `font-raster-png-257` input label, alongside actual fixture and runtime archives.
++The original ten-to-one lookup forecast does not apply to this implementation because preceding raster LRU touches remain; paired CPU/allocation evidence must determine any benefit from avoiding repeated filter, descriptor and key construction and preserve all controls and regressions.
++These CPU operations perform no native presentation, so upload bytes, complete offscreen-through-GUI GPU time and GUI-only consumption are unavailable for this corpus; loaded native font comparisons remain separate acceptance evidence.
+ Native font acceptance separately compares standard Minecraft rendering at each tested GUI scale; sharing the portable rasterizer cannot by itself establish native equality.
+ 
+ ### Visible glyph submission
+diff --git a/quality/component-benchmarks/build.gradle.kts b/quality/component-benchmarks/build.gradle.kts
+index cbcb1247390777cd21af59b49bc53680d7613ca1..501407e3b1f15f9bb3f84cef7e032b38039ca889 100644
+--- a/quality/component-benchmarks/build.gradle.kts
++++ b/quality/component-benchmarks/build.gradle.kts
+@@ -1,4 +1,5 @@
+ import me.champeau.jmh.JmhBytecodeGeneratorTask
++import dev.detekt.gradle.Detekt
+ import dev.detekt.gradle.extensions.DetektExtension
+ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+ import org.gradle.jvm.toolchain.JavaToolchainService
+@@ -67,6 +68,11 @@ extensions.configure<KotlinJvmProjectExtension> {
+     sourceSets.named("jmh") { kotlin.source(showcaseSources) }
+ }
+ 
++// Preserve the compiler's filtered shared sources instead of analysing their unfiltered parent directories.
++tasks.named<Detekt>("detektJmh") {
++    setSource(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh").map { it.kotlin.asFileTree })
++}
++
+ jmh {
+     jmhVersion.set(libs.versions.benchmark.harness)
+     includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ComponentRenderingBenchmark.*"))
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackAssets.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackAssets.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..009f4f8ee585a6f11ac2d43a70e69c36a2325734
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackAssets.kt
+@@ -0,0 +1,68 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeRasterizer
++import java.nio.file.Files
++import java.nio.file.Path
++
++/**
++ * Immutable provider documents and registered original CC0/PNG inputs prepared outside timed operations.
++ */
++internal object FontFallbackAssets {
++    /**
++     * Creates the complete ordered provider chain without loading game or system fonts.
++     */
++    internal fun snapshot(
++        workload: FontFallbackWorkload,
++        depth: Int,
++    ): MinecraftFontSnapshot {
++        val files = linkedMapOf<String, ByteArray>()
++        val glyphs = JsonObject().apply { for (scalar in 65..128) addProperty(scalar.toChar().toString(), 7) }
++        val hit = """{"type":"space","advances":$glyphs}"""
++        val miss = """{"type":"space","advances":{"日":3}}"""
++        val terminal =
++            when (workload) {
++                FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate -> {
++                    hit
++                }
++
++                FontFallbackWorkload.Missing -> {
++                    miss
++                }
++
++                FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate -> {
++                    files["assets/strata_benchmark/font/fixture.ttf"] = Files.readAllBytes(Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))))
++                    """{"type":"ttf","file":"strata_benchmark:fixture.ttf","size":11,"oversample":2}"""
++                }
++
++                FontFallbackWorkload.AtlasRejected -> {
++                    files["assets/strata_benchmark/textures/font/rejected.png"] = FontRasterAssets.png(257)
++                    """{"type":"bitmap","file":"strata_benchmark:font/rejected.png","height":257,"ascent":256,"chars":["A"]}"""
++                }
++
++                FontFallbackWorkload.Poisoned -> {
++                    files["assets/strata_benchmark/font/invalid.ttf"] = byteArrayOf(0)
++                    """{"type":"ttf","file":"strata_benchmark:invalid.ttf","filter":{"uniform":true}}"""
++                }
++            }
++        val providers =
++            List(depth) { index ->
++                when {
++                    index == depth - 1 -> terminal
++                    workload == FontFallbackWorkload.First -> hit
++                    workload == FontFallbackWorkload.FilteredLate -> """{"type":"space","advances":$glyphs,"filter":{"uniform":true}}"""
++                    else -> miss
++                }
++            }
++        files["assets/minecraft/font/default.json"] = """{"providers":[${providers.joinToString(",")}]}""".toByteArray(Charsets.UTF_8)
++        return MinecraftFontSnapshot.load(listOf(MinecraftMemoryFontAssetSource("font-fallback-v1", files)), compatibility(workload)).also { check(it.diagnostics.isEmpty()) }
++    }
++
++    /**
++     * Uses the actual declared native generation and immutable modern provider-filter capabilities.
++     */
++    internal fun compatibility(workload: FontFallbackWorkload): MinecraftFontCompatibility = FontRasterAssets.compatibility(if (workload == FontFallbackWorkload.StbLate) MinecraftTrueTypeRasterizer.Stb else MinecraftTrueTypeRasterizer.FreeType)
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..0172ba39a770b1d81c2b0b6bd5f6bf9d58a40dc8
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackBenchmark.kt
+@@ -0,0 +1,210 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.render.DrawImage
++import dev.s7a.strata.resource.ResourceId
++import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontEngine
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontLoadLimits
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
++import dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++
++/**
++ * Independent 48-case fallback corpus with repeated lookup, bounded scalar pressure and owner lifetime controls.
++ * Source acquisition and snapshot loading are outside all operations; lifecycle explicitly includes engine ownership.
++ */
++public open class FontFallbackBenchmark {
++    /**
++     * Complete deterministic admission before any selected fixture starts timing.
++     */
++    public companion object {
++        /**
++         * Checks all registered cases, complete glyph parity and terminal ownership outside samples.
++         */
++        @JvmStatic
++        public fun verifyWork() {
++            FontWorkEvidence.main(emptyArray())
++            FontRasterWorkEvidence.verify()
++            FontFallbackWorkEvidence.verify()
++            FontFallbackOperationReport.verifyInventory()
++        }
++
++        /**
++         * Supplies the same complete 48-row boundary to the shared CPU and allocation collector.
++         */
++        @JvmStatic
++        public fun operationReport(): JvmOperationReportAdapter = FontFallbackOperationReport
++    }
++
++    /**
++     * Resolves the same scalar through the prepared engine without pixel extraction.
++     */
++    @Benchmark
++    public fun warm(state: FallbackSession): MinecraftFontGlyph = state.warm()
++
++    /**
++     * Resolves the fixed working set whose long chains exceed the ordinary raster-entry bound.
++     */
++    @Benchmark
++    public fun churn(state: FallbackSession): MinecraftFontGlyph = state.churn()
++
++    /**
++     * Opens, queries and closes a new engine from the prepared immutable snapshot.
++     */
++    @Benchmark
++    public fun lifecycle(state: FallbackSession): MinecraftFontGlyph = state.lifecycle()
++
++    /**
++     * One immutable source graph and owner-thread engine shared only by this JMH state.
++     */
++    @State(Scope.Thread)
++    public open class FallbackSession {
++        /**
++         * Includes first, late, missing, filter, native, atlas and disabled-failure controls.
++         */
++        @Param("First", "Late", "Missing", "FilteredLate", "StbLate", "FreeTypeLate", "AtlasRejected", "Poisoned")
++        public var workload: FontFallbackWorkload = FontFallbackWorkload.First
++
++        /**
++         * One provider and the investigation's ten-provider fallback chain.
++         */
++        @Param("1", "10")
++        public var depth: Int = 1
++        private lateinit var snapshot: MinecraftFontSnapshot
++        private lateinit var engine: MinecraftFontEngine
++        private val font = ResourceId("minecraft", "default")
++        private var backendOpens = 0L
++        private var decodes = 0L
++        private var faceOpens = 0L
++        private var rasters = 0L
++        private var faceCloses = 0L
++        private var backendCloses = 0L
++
++        /**
++         * Actual backend opens, PNG decodes, face-open attempts, native glyph calls and terminal close calls.
++         * These fixture-owned counters use no clock and retain no native resource.
++         */
++        public val observedWork: List<Long>
++            get() = listOf(backendOpens, decodes, faceOpens, rasters, faceCloses, backendCloses)
++
++        /**
++         * Actual current raster, pixel and native-face retention gauges; readable after close.
++         */
++        public val retained: List<Long>
++            get() = listOf(engine.retainedRasterEntries.toLong(), engine.retainedRasterBytes, engine.retainedFaces.toLong())
++
++        /**
++         * Prepares every source byte and warms the selected scalar before sampling.
++         */
++        @Setup(Level.Trial)
++        public fun setup() {
++            snapshot = FontFallbackAssets.snapshot(workload, depth)
++            engine = createEngine(64)
++            warm()
++        }
++
++        /**
++         * Returns a repeated actual glyph result; the raster access order remains observable to pressure operations.
++         */
++        public fun warm(): MinecraftFontGlyph = engine.glyph(font, 65)
++
++        /**
++         * Exercises all 64 predetermined Unicode scalars and returns the last result to JMH.
++         */
++        public fun churn(): MinecraftFontGlyph = glyphs(engine)
++
++        /**
++         * Includes native preflight, cold lookup and complete owner release on a new engine.
++         */
++        public fun lifecycle(): MinecraftFontGlyph = createEngine(64).use(::glyphs)
++
++        /**
++         * Produces the same fixed result without raster or resolution retention for untimed pixel/metric admission.
++         */
++        public fun uncached(): MinecraftFontGlyph = createEngine(0).use(::glyphs)
++
++        /**
++         * Produces the same warm scalar without raster or resolution retention for untimed admission.
++         */
++        public fun uncachedWarm(): MinecraftFontGlyph = createEngine(0).use { it.glyph(font, 65) }
++
++        /**
++         * Captures all 64 scalar results with current, uncached and fresh bounded owners outside timing.
++         * The outer order is cached churn, uncached reference and complete lifecycle.
++         */
++        public fun traces(): List<List<MinecraftFontGlyph>> = listOf(trace(engine), createEngine(0).use(::trace), createEngine(64).use(::trace))
++
++        /**
++         * Closes the prepared engine and requires all existing retention gauges to reach zero.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            engine.close()
++            check(retained == listOf(0L, 0L, 0L))
++        }
++
++        private fun createEngine(entries: Int): MinecraftFontEngine =
++            MinecraftFontEngine(
++                snapshot,
++                { compatibility ->
++                    backendOpens++
++                    val delegate = LwjglMinecraftFontBackendFactory.open(compatibility) as MinecraftBoundedFontBackend
++                    object : MinecraftBoundedFontBackend by delegate {
++                        override fun decodePng(
++                            bytes: ByteArray,
++                            limits: MinecraftFontLoadLimits,
++                        ): DrawImage {
++                            decodes++
++                            return delegate.decodePng(bytes, limits)
++                        }
++
++                        override fun openTrueType(
++                            bytes: ByteArray,
++                            settings: MinecraftTrueTypeSettings,
++                            limits: MinecraftFontLoadLimits,
++                        ): MinecraftTrueTypeFace {
++                            faceOpens++
++                            val face = delegate.openTrueType(bytes, settings, limits)
++                            return object : MinecraftTrueTypeFace by face {
++                                override fun glyph(codePoint: Int): MinecraftFontGlyph? {
++                                    rasters++
++                                    return face.glyph(codePoint)
++                                }
++
++                                override fun close() {
++                                    faceCloses++
++                                    face.close()
++                                }
++                            }
++                        }
++
++                        override fun close() {
++                            backendCloses++
++                            delegate.close()
++                        }
++                    }
++                },
++                cacheEntries = entries,
++                cacheBytes = 1024 * 1024,
++                maxFaces = 1,
++            )
++
++        private fun trace(owner: MinecraftFontEngine): List<MinecraftFontGlyph> = (65..128).map { scalar -> owner.glyph(font, scalar) }
++
++        private fun glyphs(owner: MinecraftFontEngine): MinecraftFontGlyph {
++            var glyph = owner.glyph(font, 65)
++            for (scalar in 66..128) glyph = owner.glyph(font, scalar)
++            return glyph
++        }
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackOperationReport.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackOperationReport.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e7a81178acadef92e70cf7e240e4e90c286701d
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackOperationReport.kt
+@@ -0,0 +1,170 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonArray
++import com.google.gson.JsonObject
++import dev.s7a.strata.performance.JmhFixtureSelection
++import dev.s7a.strata.performance.JmhPerformanceRunner
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.performance.JvmOperationReportRow
++import dev.s7a.strata.performance.JvmPerformanceInputs
++import dev.s7a.strata.performance.JvmPerformanceRunner
++import dev.s7a.strata.performance.PerformancePlan
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import java.nio.file.Path
++
++/**
++ * All 48 original fallback operations use independent prepared owners and the shared owner-thread meter.
++ * Source acquisition, snapshot loading, reference glyphs and surviving-owner close remain outside samples.
++ * Lifecycle retains its original backend opening, preflight, 64-scalar lookup and terminal close inside each operation.
++ * Complete returned glyph, retention and actual backend-work checks run after sampling; failures prevent a complete report.
++ */
++public object FontFallbackOperationReport : JvmOperationReportAdapter {
++    override val inputs: Map<String, Path>
++        get() {
++            val required =
++                JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) +
++                    mapOf(
++                        "cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))),
++                        "component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI()),
++                        "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI()),
++                    )
++            val additional = JmhFixtureSelection.inputs()
++            require(required.keys.intersect(additional.keys).isEmpty()) { "Fixture input labels overlap required control inputs" }
++            return required + additional
++        }
++
++    private enum class Operation(
++        val method: String,
++        val boundary: String,
++    ) {
++        Warm("warm", "Resolve prepared scalar 65 once, retaining the original raster access order."),
++        Churn("churn", "Resolve every predetermined scalar from 65 through 128 in ascending order and return scalar 128."),
++        Lifecycle("lifecycle", "Open, preflight, query all 64 predetermined scalars and close one fresh bounded engine."),
++    }
++
++    private val depths = listOf(1, 10)
++    private val counterNames = listOf("backend_open_attempts", "png_decode_calls", "face_open_attempts", "native_glyph_calls", "face_close_calls", "backend_close_calls")
++
++    override val rows: List<JvmOperationReportRow> =
++        Operation.entries.flatMap { operation ->
++            FontFallbackWorkload.entries.flatMap { workload -> depths.map { depth -> row(operation, workload, depth) } }
++        }
++
++    /**
++     * Requires exact method and parameter coverage from the real JMH-generated registry before collecting any row.
++     */
++    internal fun verifyInventory() {
++        val actual = JmhWorkloadInventory.capture(listOf(FontFallbackBenchmark::class.java), setOf("avgt"))
++        val declared = rows.map { JmhPerformanceRunner.workloadIdentity(it.benchmark, "avgt", it.parameters) }.toSet()
++        check(rows.size == 48 && rows.map { it.id }.toSet().size == rows.size && declared == actual)
++    }
++
++    override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
++        verifyInventory()
++        return Operation.entries
++            .flatMap { operation ->
++                FontFallbackWorkload.entries.flatMap { workload ->
++                    depths.map { depth ->
++                        val row = row(operation, workload, depth)
++                        row.id to collectRow(operation, workload, depth, plan)
++                    }
++                }
++            }.toMap()
++    }
++
++    private fun collectRow(
++        operation: Operation,
++        workload: FontFallbackWorkload,
++        depth: Int,
++        plan: PerformancePlan,
++    ): JsonObject {
++        val owner =
++            FontFallbackBenchmark.FallbackSession().apply {
++                this.workload = workload
++                this.depth = depth
++            }
++        owner.setup()
++        val id = row(operation, workload, depth).id
++        val report =
++            try {
++                val expected = if (operation == Operation.Warm) owner.uncachedWarm() else owner.uncached()
++                val retained = owner.retained
++                var before = owner.observedWork
++                val deltas = JsonArray()
++                JvmPerformanceRunner
++                    .measure(
++                        id,
++                        plan,
++                        beforeSample = { before = owner.observedWork },
++                        afterOperation = { _, result ->
++                            equalGlyph(expected, result)
++                            val delta = verifyOperation(owner, operation, before, retained)
++                            deltas.add(JsonArray().apply { delta.forEach { add(it) } })
++                        },
++                    ) {
++                        when (operation) {
++                            Operation.Warm -> owner.warm()
++                            Operation.Churn -> owner.churn()
++                            Operation.Lifecycle -> owner.lifecycle()
++                        }
++                    }.evidence
++                    .apply {
++                        check(deltas.size() == plan.samples)
++                        add("sampled_backend_work", workRecord(deltas))
++                    }
++            } finally {
++                owner.close()
++            }
++        val work = owner.observedWork
++        check(work[0] == work[5]) { "A supplemental fixture engine retained its native backend after close" }
++        return report
++    }
++
++    private fun verifyOperation(
++        owner: FontFallbackBenchmark.FallbackSession,
++        operation: Operation,
++        before: List<Long>,
++        retained: List<Long>,
++    ): List<Long> {
++        val current = owner.observedWork
++        check(current.size == counterNames.size && before.size == counterNames.size)
++        val delta = current.zip(before) { after, previous -> Math.subtractExact(after, previous) }
++        check(delta.all { 0L <= it })
++        if (operation == Operation.Lifecycle) {
++            check(delta[0] == 1L && delta[5] == 1L)
++            check(owner.retained == retained)
++        } else {
++            check(delta[0] == 0L && delta[5] == 0L)
++        }
++        val live = owner.retained
++        check(live[0] <= 64L && live[1] <= 1024 * 1024L && live[2] <= 1L)
++        return delta
++    }
++
++    private fun workRecord(deltas: JsonArray): JsonObject =
++        JsonObject().apply {
++            add("counter_names", JsonArray().apply { counterNames.forEach { add(it) } })
++            add("deltas", deltas)
++        }
++
++    private fun row(
++        operation: Operation,
++        workload: FontFallbackWorkload,
++        depth: Int,
++    ): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "${operation.method}-${workload.name}-$depth",
++            "${FontFallbackBenchmark::class.java.name}.${operation.method}",
++            mapOf("workload" to workload.name, "depth" to depth.toString()),
++            operation.boundary,
++        )
++
++    private fun equalGlyph(
++        expected: MinecraftFontGlyph,
++        actual: MinecraftFontGlyph,
++    ) {
++        check(expected.copy(image = null) == actual.copy(image = null))
++        check(expected.image?.size == actual.image?.size && (expected.image?.copyArgb()?.contentEquals(actual.image?.copyArgb()) ?: (actual.image == null)))
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkEvidence.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkEvidence.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..8cf1565a3bcb08adc2f3a30f6782d926f105bf3a
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkEvidence.kt
+@@ -0,0 +1,156 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonArray
++import com.google.gson.JsonObject
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import java.nio.ByteBuffer
++import java.nio.file.Files
++import java.nio.file.Path
++
++/**
++ * Complete generated-case, glyph-bit, pixel and ownership evidence collected outside all measured operations.
++ */
++public object FontFallbackWorkEvidence {
++    /**
++     * With one argument writes the separate atlas-rejection PNG input; otherwise verifies all 48 cases.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        require(args.size <= 1)
++        if (args.isNotEmpty()) {
++            val file = Path.of(args.single())
++            check(Files.exists(file).not())
++            Files.write(file, FontRasterAssets.png(257))
++            return
++        }
++        verify()
++    }
++
++    /**
++     * Requires cached/uncached complete glyph parity and publishes actual input and output fingerprints.
++     */
++    public fun verify() {
++        check(JmhWorkloadInventory.capture(listOf(FontFallbackBenchmark::class.java), setOf("avgt")).size == 48)
++        val cases = JsonArray()
++        FontFallbackWorkload.entries.forEach { workload ->
++            listOf(1, 10).forEach { depth -> verifySession(workload, depth).forEach(cases::add) }
++        }
++        check(cases.size() == 48)
++        println(
++            JsonObject().apply {
++                addProperty("contract", "font-fallback-parity-v1")
++                addProperty("status", "passed")
++                addProperty("measured", false)
++                addProperty("case_count", cases.size())
++                add(
++                    "untimed_work_counter_names",
++                    JsonArray().apply {
++                        listOf("backend_open_attempts", "png_decode_calls", "face_open_attempts", "native_glyph_calls", "face_close_calls", "backend_close_calls").forEach { add(it) }
++                    },
++                )
++                addProperty("cc0_font_sha256", FontRasterAssets.digest(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))))))
++                addProperty("atlas_rejection_png_sha256", FontRasterAssets.digest(FontRasterAssets.png(257)))
++                add("cases", cases)
++            },
++        )
++    }
++
++    private fun verifySession(
++        workload: FontFallbackWorkload,
++        depth: Int,
++    ): List<JsonObject> {
++        val owner =
++            FontFallbackBenchmark.FallbackSession().apply {
++                this.workload = workload
++                this.depth = depth
++            }
++        owner.setup()
++        val records =
++            try {
++                val warm = owner.warm()
++                equalGlyph(warm, owner.uncachedWarm())
++                val traces = owner.traces()
++                check(traces.size == 3 && traces.all { it.size == 64 })
++                for (reference in traces.drop(1)) traces.first().zip(reference).forEach { (cached, uncached) -> equalGlyph(cached, uncached) }
++                equalGlyph(warm, traces.first().first())
++                val churn = owner.churn()
++                equalGlyph(churn, traces.first().last())
++                equalGlyph(churn, owner.uncached())
++                equalGlyph(warm, owner.warm())
++                val lifetime = owner.lifecycle()
++                equalGlyph(churn, lifetime)
++                val retained = owner.retained
++                check(retained[0] <= 64L && retained[1] <= 1024 * 1024L && retained[2] <= 1L)
++                verifyWarmGlyph(workload, warm)
++                listOf(
++                    record(workload, depth, "warm", warm, listOf(warm)),
++                    record(workload, depth, "churn", churn, traces.first()),
++                    record(workload, depth, "lifecycle", lifetime, traces.last()),
++                )
++            } finally {
++                owner.close()
++            }
++        val work = owner.observedWork
++        check(work[0] == work[5]) { "A fixture engine retained its native backend after close" }
++        return records.onEach { row -> row.add("untimed_session_observed_work", JsonArray().apply { work.forEach { add(it) } }) }
++    }
++
++    private fun verifyWarmGlyph(
++        workload: FontFallbackWorkload,
++        warm: MinecraftFontGlyph,
++    ) {
++        if (workload in setOf(FontFallbackWorkload.StbLate, FontFallbackWorkload.FreeTypeLate)) checkNotNull(warm.image) { "Check failed." }
++        if (workload in setOf(FontFallbackWorkload.Missing, FontFallbackWorkload.Poisoned)) check(warm.advance == 6f)
++        if (workload == FontFallbackWorkload.AtlasRejected) {
++            check(warm.advance == 258f && warm.image?.size == IntSize(5, 8) && warm.oversizedRasterSize == null)
++        }
++        if (workload in setOf(FontFallbackWorkload.First, FontFallbackWorkload.Late, FontFallbackWorkload.FilteredLate)) check(warm.advance == 7f && warm.image == null)
++    }
++
++    private fun equalGlyph(
++        first: MinecraftFontGlyph,
++        second: MinecraftFontGlyph,
++    ) {
++        check(first.copy(image = null) == second.copy(image = null))
++        check(first.image?.size == second.image?.size && (first.image?.copyArgb()?.contentEquals(second.image?.copyArgb()) ?: (second.image == null)))
++    }
++
++    private fun record(
++        workload: FontFallbackWorkload,
++        depth: Int,
++        operation: String,
++        glyph: MinecraftFontGlyph,
++        trace: List<MinecraftFontGlyph>,
++    ): JsonObject =
++        glyphRecord(glyph).apply {
++            addProperty("workload", workload.name)
++            addProperty("depth", depth)
++            addProperty("operation", operation)
++            add(
++                "glyph_trace",
++                JsonArray().apply {
++                    trace.forEachIndexed { index, scalarGlyph -> add(glyphRecord(scalarGlyph).apply { addProperty("scalar", 65 + index) }) }
++                },
++            )
++        }
++
++    private fun glyphRecord(glyph: MinecraftFontGlyph): JsonObject =
++        JsonObject().apply {
++            addProperty("advance_bits", glyph.advance.toBits())
++            add("metric_bits", JsonArray().apply { listOf(glyph.left, glyph.top, glyph.right, glyph.bottom, glyph.boldOffset, glyph.shadowOffset).forEach { add(it.toBits()) } })
++            addProperty("orientation", glyph.orientation.name)
++            addProperty("channel", glyph.channel.name)
++            addProperty("oversized_raster_width", glyph.oversizedRasterSize?.width)
++            addProperty("oversized_raster_height", glyph.oversizedRasterSize?.height)
++            val image = glyph.image
++            addProperty("width", image?.size?.width)
++            addProperty("height", image?.size?.height)
++            image?.let {
++                val bytes = ByteBuffer.allocate(Math.multiplyExact(Math.multiplyExact(it.size.width, it.size.height), 4))
++                it.copyArgb().forEach(bytes::putInt)
++                addProperty("argb_sha256", FontRasterAssets.digest(bytes.array()))
++            }
++        }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkload.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkload.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd795b9d648a0e6395d4b77983a6241b4da18777
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkload.kt
+@@ -0,0 +1,46 @@
++package dev.s7a.strata.quality.benchmark
++
++/**
++ * Stable independent fallback-selection inputs, including unchanged-work and failure controls.
++ */
++public enum class FontFallbackWorkload {
++    /**
++     * First-provider hit; extra resolution work must remain visible.
++     */
++    First,
++
++    /**
++     * Space glyph after cached scalar misses in every preceding provider.
++     */
++    Late,
++
++    /**
++     * Complete-chain miss with the runtime's native missing metrics and pixels.
++     */
++    Missing,
++
++    /**
++     * Applicable late provider after captured uniform-option filters reject preceding providers.
++     */
++    FilteredLate,
++
++    /**
++     * Real STB glyph after cached misses; raster and face lifetimes remain unchanged.
++     */
++    StbLate,
++
++    /**
++     * Real FreeType glyph after cached misses; raster and face lifetimes remain unchanged.
++     */
++    FreeTypeLate,
++
++    /**
++     * Oversized bitmap result selects its provider and retains the effective missing shape.
++     */
++    AtlasRejected,
++
++    /**
++     * Disabled malformed native provider still poisons the entire preflighted bundle.
++     */
++    Poisoned,
++}
