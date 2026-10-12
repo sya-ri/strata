@@ -42,10 +42,13 @@ Keep any separately authorized invocation guard tied to its actual workload and 
 Run each side three times per backend with the same standalone arguments, replacing only the fresh output directory and the requested backend:
 
 ```powershell
-.\gradlew.bat benchmarkMinecraft '-Pstrata.minecraftVersions=26.3' '-Pstrata.performance.sampledImages=true' '-Pstrata.performance.workloads=SampledStationaryMedium,SampledTranslationMedium,SampledOrderedRowsSmall,SampledScrolledRowsSmall' '-Pstrata.performance.gpuQueries=true' '-Pstrata.performance.inactivity=minimized' '-Pstrata.canvas.backend=opengl' '-Pstrata.performance.nativeOutput=<fresh-absolute-directory>'
+.\gradlew.bat benchmarkMinecraft '-Pstrata.minecraftVersions=26.3' '-Pstrata.performance.sampledImages=true' '-Pstrata.performance.workloads=SampledStationaryMedium,SampledTranslationMedium,SampledOrderedRowsSmall,SampledScrolledRowsSmall' '-Pstrata.performance.gpuQueries=true' '-Pstrata.performance.inactivity=minimized' '-Pstrata.canvas.scope=canvas-only' '-Pstrata.canvas.backend=opengl' '-Pstrata.performance.nativeOutput=<fresh-absolute-directory>'
 ```
 
 For Vulkan, use `-Pstrata.canvas.backend=vulkan`; actual OpenGL fallback fails admission.
+Use the existing Canvas-only performance entry identically on both sides to avoid unrelated font preparation; it preserves every selected case, GUI scale, capture and measured interval.
+The native-output branch enters performance before ordinary Canvas oracles, so its terminal receipt establishes the actual selected performance lifecycle and shutdown only.
+Collect independent Vulkan Float/Canvas correctness separately through the existing Canvas-only correctness task without `strata.performance.nativeOutput`; retain final all-target full-suite CI.
 The standard fixture retains 30 warm-up frames, 60 complete sampled frames per phase, eight settle frames, 1920×1080, and GUI scales 1–4.
 There are 16 phases per invocation and 12 independent processes across B3/C3 and the two backends.
 Alternate baseline and candidate invocations without overlap, retain every actual UUID, and record launch/exit logs and native terminal receipts.

@@ -98,9 +98,9 @@ internal class NativeComponentPerformanceEvidenceTest {
         val legacy = complete()
         val declared = complete()
         declared.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", JsonNull.INSTANCE) }
-        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(legacy, declared)) }
+        assertFails { NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(legacy, declared)) }
         legacy.getAsJsonArray("phases")[0].asJsonObject.add("presentation_gpu", unavailableGpu())
-        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(legacy)) }
+        assertFails { NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(legacy)) }
     }
 
     @Test
@@ -112,23 +112,23 @@ internal class NativeComponentPerformanceEvidenceTest {
         }
         val unavailable = complete()
         unavailable.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", unavailableGpu()) }
-        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)))
-        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(unavailable)))
-        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available, unavailable)) }
+        assertTrue(NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(available)))
+        assertTrue(NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(unavailable)))
+        assertFails { NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(available, unavailable)) }
         val changed = available.getAsJsonArray("phases")[0].asJsonObject
         changed.add("native_gpu", unavailableGpu())
         changed.add("presentation_gpu", unavailableGpu())
-        assertFails { NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(available)) }
+        assertFails { NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(available)) }
     }
 
     @Test
     internal fun legacyUnavailableQueriesKeepFullGpuMetricsUnavailable() {
         val report = complete()
         NativeComponentPerformanceEvidence.verify(report)
-        assertFalse(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(report)))
+        assertFalse(NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(report)))
         report.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", JsonNull.INSTANCE) }
         NativeComponentPerformanceEvidence.verify(report)
-        assertTrue(NativeComponentPerformanceEvidence.presentationGpuMetricsPresent(listOf(report)))
+        assertTrue(NativeComponentGpuEvidence.presentationGpuMetricsPresent(listOf(report)))
         report.getAsJsonArray("phases").forEach { phase -> phase.asJsonObject.add("presentation_gpu", unavailableGpu()) }
         NativeComponentPerformanceEvidence.verify(report)
     }

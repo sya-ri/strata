@@ -116,7 +116,7 @@ internal object NativeComponentPerformanceEvidence {
         val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
         val reports = paths.map(JvmPerformanceEvidence::readReport)
         val epoch = NativePresentationEpoch.fromWorkloadIds(reports.map { it.get("workload_id").asString }, selection, profile, sampledImages)
-        val presentationPresent = presentationGpuMetricsPresent(reports)
+        val presentationPresent = NativeComponentGpuEvidence.presentationGpuMetricsPresent(reports)
         val validate = validation(request, provenance, imageDirectories, binaries, backend)
         val reportContract = contract(selection, profile, sampledImages, epoch)
         val reportMetrics = metrics + if (presentationPresent) presentationMetrics else emptyList()
@@ -380,7 +380,7 @@ internal object NativeComponentPerformanceEvidence {
         require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->
             require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == plan.samples)
-            verifyGpu(phase, plan.samples)
+            NativeComponentGpuEvidence.verifyGpu(phase, plan.samples)
             require(phase.getAsJsonObject("frame_interval").get("samples").asInt == plan.samples)
             require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
             require(
