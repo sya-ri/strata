@@ -71,7 +71,7 @@ gradle.projectsEvaluated {
                 check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
                 mainClass.set(preflightRequest["main"].toString())
                 setArgs(listOf(File(preflight).absolutePath))
-                dependsOn(template.map { it.taskDependencies.getDependencies(it) })
+                dependsOn(source.taskDependencies.getDependencies(source))
                 outputs.upToDateWhen { false }
                 outputs.cacheIf { false }
             }
@@ -120,10 +120,19 @@ gradle.projectsEvaluated {
         project.tasks.withType<JavaExec>().configureEach {
             minHeapSize = "64m"
             maxHeapSize = "768m"
-            jvmArgs("-XX:MaxMetaspaceSize=384m", "-Xlog:class+load=info:stdout:pid,level,tags")
+            val classLoads = File(checkNotNull(System.getenv("STRATA_PAIRED_CLASS_LOGS"))).canonicalFile
+            check(classLoads.isDirectory)
+            jvmArgs("-XX:MaxMetaspaceSize=384m")
             doFirst {
+                val classLoadPath = File(classLoads, "classes-%p-%t.log").relativeTo(workingDir.canonicalFile).invariantSeparatorsPath
+                jvmArgs("-Xlog:class+load=info:file=$classLoadPath:pid,level,tags:filecount=0")
                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
+                listOf("benchmarks", "workloads").forEach { name ->
+                    rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
+                        systemProperty("strata.performance.$name", it)
+                    }
+                }
                 listOf("parameters", "fixtureInputs").forEach { name ->
                     rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)
@@ -142,11 +151,19 @@ gradle.projectsEvaluated {
                     File(requested).bufferedReader(Charsets.UTF_8).use(targets::load)
                     val artifacts = project.configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts
                         .filter { (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath in targets.stringPropertyNames() }
-                    check(artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet() == targets.stringPropertyNames())
+                    // One paired manifest can span suites with different compiled runtime dependencies.
+                    val selectedTargets = artifacts.map { (it.id.componentIdentifier as ProjectComponentIdentifier).projectPath }.toSet()
+                    check(selectedTargets.isNotEmpty())
                     val replaced = artifacts.map { it.file.canonicalFile }.toSet()
-                    val archives = targets.stringPropertyNames().sorted().map { File(targets.getProperty(it)).canonicalFile }
-                    check(archives.toSet().size == targets.size && archives.all { it.isFile && it.extension == "jar" })
+                    val archives = selectedTargets.sorted().map { File(targets.getProperty(it)).canonicalFile }
+                    check(archives.toSet().size == selectedTargets.size && archives.all { it.isFile && it.extension == "jar" })
                     classpath = project.files(classpath.files.filter { it.canonicalFile !in replaced }) + project.files(archives)
+                }
+                rootProject.providers.gradleProperty("strata.performance.operationRequest").orNull?.let { request ->
+                    if (name in setOf("jmhHistorical", "jmhComponents", "jmhRemote")) {
+                        mainClass.set("dev.s7a.strata.performance.JvmOperationReports")
+                        setArgs(listOf(rootProject.file(request).absolutePath))
+                    }
                 }
                 if (rootProject.providers.gradleProperty("strata.paired.classpath").isPresent || rootProject.providers.gradleProperty("strata.paired.preserveClasspath").isPresent) {
                     check(classpath.files.all { it.exists() || it.extension.contentEquals("jar").not() })
