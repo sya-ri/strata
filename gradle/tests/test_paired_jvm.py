@@ -67,11 +67,38 @@ class PairedJvmTest(unittest.TestCase):
             changed["inputs"][0]["label"] = label
             with self.subTest(label=label), self.assertRaises(ValueError):
                 self.load(changed)
+
         for profilers in (["gc"], ["bad;command.Profiler"], ["example..Profiler"], ["example.Profiler", "example.Profiler"]):
             changed = copy.deepcopy(value)
             changed["suites"][0]["profilers"] = profilers
             with self.subTest(profilers=profilers), self.assertRaises(ValueError):
                 self.load(changed)
+
+    def test_operation_connection_is_optional_and_rejects_partial_or_stale_registration(self):
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["operation_reports"] = {"adapters": {"example.Fixture": "example.Adapter"}, "warmup": 30,
+                                                  "samples": 60, "expected_rows": 2, "expected_controls": 1}
+        self.assertEqual(self.load(value), value)
+        for key, invalid in (("samples", 0), ("samples", True), ("warmup", -1), ("expected_rows", 1),
+                             ("expected_controls", 3), ("adapters", {}), ("adapters", {"example.Fixture": "bad;Adapter"})):
+            changed = copy.deepcopy(value)
+            changed["suites"][0]["operation_reports"][key] = invalid
+            with self.subTest(key=key, invalid=invalid), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def test_operation_table_keeps_nullable_processor_deltas_and_units(self):
+        comparison = {"phases": [{"operation_id": "complete", "before": {"owner_thread_cpu_ns_per_sample": None,
+                                                                                 "owner_thread_allocated_bytes_per_sample": 10.0},
+                                  "after": {"owner_thread_cpu_ns_per_sample": None, "owner_thread_allocated_bytes_per_sample": 6.0},
+                                  "delta": {"owner_thread_cpu_ns_per_sample": None, "owner_thread_allocated_bytes_per_sample": -4.0}}]}
+        PAIRED.table(self.root, [], [], [("full", comparison)])
+        with (self.root / "table.csv").open(encoding="utf-8", newline="") as source:
+            rows = list(csv.DictReader(source))
+        self.assertEqual(rows[0]["baseline"], "")
+        self.assertEqual(rows[0]["unit"], "ns/sample")
+        self.assertEqual(rows[1]["unit"], "B/sample")
+        self.assertEqual(rows[1]["delta"], "-4.0")
+        self.assertIn("unavailable", (self.root / "report.md").read_text(encoding="utf-8"))
 
     def test_reject_changed_missing_or_duplicate_inputs_and_selectors(self):
         mutations = [
@@ -105,6 +132,9 @@ class PairedJvmTest(unittest.TestCase):
             "controls": [{"id": "row-1", "arguments": ["untimed", "1"]}, {"id": "row-2", "arguments": ["untimed", "2"]}],
         }
         self.assertEqual(self.load(value), value)
+        value["suites"][0]["operation_reports"] = {"adapters": {"example.Fixture": "example.Adapter"}, "warmup": 30,
+                                                  "samples": 60, "expected_rows": 2, "expected_controls": 1}
+        self.assertEqual(self.load(value), value)
         changes = [lambda control: control.update(command="arbitrary shell"),
                    lambda control: control.update(main="Controller"),
                    lambda control: control["runtime_classes"].pop(":api"),
@@ -117,6 +147,85 @@ class PairedJvmTest(unittest.TestCase):
             change(changed["suites"][0]["preflight"])
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.load(changed)
+
+    def test_independent_test_gates_reject_filters_nonruntime_tasks_and_missing_bindings(self):
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["test_gates"] = [{"task": ":runtime:headless:test", "required_tests": ["independent.Controls#full owner failure"]}]
+        self.assertEqual(self.load(value), value)
+        changes = [lambda gate: gate.update(task=":runtime:headless:check"),
+                   lambda gate: gate.update(task=":quality:benchmarks:test"),
+                   lambda gate: gate.update(task=":runtime:headless:test --tests One"),
+                   lambda gate: gate.update(required_tests=[]),
+                   lambda gate: gate.update(required_tests=["Controls"]),
+                   lambda gate: gate.update(arguments=["--tests", "One"])]
+        for change in changes:
+            changed = copy.deepcopy(value)
+            change(changed["suites"][0]["test_gates"][0])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+        value["suites"][0]["test_gates"].append(value["suites"][0]["test_gates"][0])
+        with self.assertRaises(ValueError):
+            self.load(value)
+
+    def test_independent_junit_gate_requires_actual_complete_method_results_and_preserves_reports(self):
+        gate = {"task": ":runtime:headless:test", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/headless/build/test-results/test"
+        reports.mkdir(parents=True)
+        owner = '<testcase classname="independent.Controls" name="owner()"/>'
+        failure = '<testcase classname="independent.Controls" name="failure()"/>'
+        for index, (counts, body) in enumerate((
+                ((2, 0, 0, 0), owner + failure),
+                ((1, 0, 0, 0), owner),
+                ((2, 0, 0, 1), owner + '<testcase classname="independent.Controls" name="failure()"><skipped/></testcase>'),
+                ((2, 1, 0, 0), owner + '<testcase classname="independent.Controls" name="failure()"><failure/></testcase>'),
+                ((3, 0, 0, 0), owner + failure + failure),
+                ((3, 0, 1, 0), owner + failure + '<testcase classname="independent.Controls" name="other()"><error/></testcase>'),
+                ((3, 0, 0, 0), owner + failure))):
+            directory = self.root / f"junit-{index}"
+            directory.mkdir()
+            report = reports / "TEST-independent.Controls.xml"
+            attributes = ' '.join(f'{name}="{value}"' for name, value in zip(("tests", "failures", "errors", "skipped"), counts))
+            report.write_text('<testsuite ' + attributes + '>' + body + '</testsuite>', encoding="utf-8")
+            PAIRED.preserve_test_reports(self.root, directory, gate)
+            self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
+            if index == 0:
+                PAIRED.verify_test_gate(directory, gate)
+                verified = PAIRED.read_json(directory / "junit-verified.json")
+                self.assertEqual(verified["required_tests"], gate["required_tests"])
+                self.assertEqual(verified["reports"][0]["sha256"], PAIRED.digest(report))
+                self.assertEqual((directory / "junit" / report.name).read_bytes(), report.read_bytes())
+            else:
+                with self.subTest(index=index), self.assertRaises(ValueError):
+                    PAIRED.verify_test_gate(directory, gate)
+                self.assertFalse((directory / "junit-verified.json").exists())
+                self.assertTrue((directory / "junit-inventory.json").is_file())
+
+    def test_independent_junit_gate_accepts_actual_jvm_platform_names_without_accepting_other_platforms_or_duplicates(self):
+        gate = {"task": ":runtime:core:jvmTest", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/core/build/test-results/jvmTest"
+        reports.mkdir(parents=True)
+        cases = [
+            (("owner()[jvm]", "failure()[jvm]"), True),
+            (("owner()[jvm]", "failure()"), True),
+            (("owner()[js]", "failure()[jvm]"), False),
+            (("owner()[jvm][jvm]", "failure()[jvm]"), False),
+            (("owner()[jvm]", "owner()", "failure()[jvm]"), False),
+        ]
+        for index, (names, accepted) in enumerate(cases):
+            with self.subTest(names=names):
+                directory = self.root / f"jvm-platform-{index}"
+                directory.mkdir()
+                report = reports / "TEST-independent.Controls.xml"
+                body = ''.join(f'<testcase classname="independent.Controls" name="{name}"/>' for name in names)
+                report.write_text(f'<testsuite tests="{len(names)}" failures="0" errors="0" skipped="0">{body}</testsuite>', encoding="utf-8")
+                PAIRED.preserve_test_reports(self.root, directory, gate)
+                if accepted:
+                    PAIRED.verify_test_gate(directory, gate)
+                    self.assertEqual(PAIRED.read_json(directory / "junit-verified.json")["counts"]["tests"], len(names))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_test_gate(directory, gate)
+                    self.assertFalse((directory / "junit-verified.json").exists())
 
     def preflight_fixture(self, name):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
@@ -150,6 +259,7 @@ class PairedJvmTest(unittest.TestCase):
                    "request_sha256": PAIRED.digest(directory / "request.json"), "controls": controls}
         phase = output / "phase"
         phase.mkdir()
+        (phase / "class-loads").mkdir()
         (phase / "console.log").write_text("".join(f"[123][info][class,load] {item} source: {Path(request['required_classes'][item]['path']).as_uri()}\n" for item in names), encoding="utf-8")
         PAIRED.write_new(phase / "vms.json", [{"pid": 123, "vm_start_ms": 1001, "role": "java_exec", "home": str(output / "jdk")}])
         terminal = {"inheritedAffinityMask": 15, "systemAffinityMask": 15,
@@ -191,6 +301,39 @@ class PairedJvmTest(unittest.TestCase):
                     self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
                 else:
                     with self.assertRaises(ValueError):
+                        PAIRED.verify_preflight(directory, phase, terminal, request_hash)
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_preflight_class_files_preserve_pins_and_independent_origin_corroboration(self):
+        for mode in ("corroborated", "file-only", "changed-file", "removed-file", "wrong-origin", "duplicate-observation"):
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("class-file-" + mode)
+                console = phase / "console.log"
+                observed = console.read_text(encoding="utf-8")
+                diagnostic = phase / "class-loads/classes-123-2026-10-12_12-00-00.log"
+                diagnostic.write_text(observed, encoding="utf-8")
+                vms = PAIRED.read_json(phase / "vms.json")
+                vms[0]["class_load_diagnostic"] = {"path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)}
+                (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "file-only":
+                    console.write_text("", encoding="utf-8")
+                elif mode == "changed-file":
+                    diagnostic.write_text(observed + "[123][info][class,load] extra.Class source: shared objects file\n", encoding="utf-8")
+                elif mode == "removed-file":
+                    diagnostic.unlink()
+                elif mode == "wrong-origin":
+                    wrong = (phase / "different.jar").as_uri()
+                    console.write_text(re.sub(r"source: [^\n]+", "source: " + wrong, observed), encoding="utf-8")
+                elif mode == "duplicate-observation":
+                    console.write_text(observed + observed, encoding="utf-8")
+                request_hash = PAIRED.digest(directory / "request.json")
+                if mode in ("corroborated", "file-only"):
+                    PAIRED.verify_preflight(directory, phase, terminal, request_hash)
+                    self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
+                else:
+                    message = "captured class-load diagnostic" if mode in ("changed-file", "removed-file") else "ambiguous PID-qualified"
+                    with self.assertRaisesRegex(ValueError, message):
                         PAIRED.verify_preflight(directory, phase, terminal, request_hash)
                     self.assertFalse((directory / "verified.json").exists())
 
@@ -353,21 +496,151 @@ class PairedJvmTest(unittest.TestCase):
                     "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
         changes = [lambda value: None, lambda value: value["members"]["123"].update(completed=False),
                    lambda value: value["members"]["123"].update(exitCode=1), lambda value: value["members"]["123"].update(affinityMask=3),
-                   lambda value: value["members"]["123"].update(creationFileTime=116444736100000000), lambda value: value["members"].clear()]
+                   lambda value: value["members"]["123"].update(creationFileTime=116444736100000000), lambda value: value["members"].clear(), lambda value: None, lambda value: None]
         for index, change in enumerate(changes):
             directory = self.root / str(index)
             directory.mkdir()
-            (directory / "console.log").write_text("[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+            (directory / "console.log").write_text("", encoding="utf-8")
+            (directory / "class-loads").mkdir()
+            (directory / "class-loads/classes-123-2026-10-12_00-00-00.log").write_text("[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
             log = directory / "vm.log"
             log.write_text(document, encoding="utf-8")
             actual = copy.deepcopy(terminal)
             change(actual)
+            if index == 6:
+                (directory / "class-loads/classes-123-2026-10-12_00-00-00.log").unlink()
+                (directory / "console.log").write_text("[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+            if index == 7:
+                (directory / "class-loads/classes-456-2026-10-12_00-00-00.log").write_text("[456][info][class,load] unbound.Class source: file:/frozen.jar\n", encoding="utf-8")
             if index == 0:
                 PAIRED.verify_vms(directory, [log], actual, allowed, 1)
                 self.assertTrue((directory / "vms.json").is_file())
             else:
                 with self.assertRaises(ValueError):
                     PAIRED.verify_vms(directory, [log], actual, allowed, 1)
+
+    def test_reused_pid_preserves_both_completed_fork_generations_and_rejects_ambiguous_or_altered_history(self):
+        home = self.root / "reuse-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        epoch = 116444736000000000
+        records = [{"pid": 123, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                    "creationFileTime": epoch + start * 10000, "exitFileTime": epoch + (start + 1000) * 10000,
+                    "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15} for start in (1000, 5000)]
+        changes = [lambda history: None, lambda history: history.pop(0),
+                   lambda history: history.append(copy.deepcopy(history[0])),
+                   lambda history: history[0].update(pid=999), lambda history: history[0].update(completed=False),
+                   lambda history: history[0].update(handleClosed=False), lambda history: history[0].update(exitCode=1),
+                   lambda history: history[0].update(affinityMask=3),
+                   lambda history: history[0].update(creationFileTime=epoch + 2000 * 10000),
+                   lambda history: history[0].update(exitFileTime=epoch + 500 * 10000),
+                   lambda history: history.append({**history[0], "creationFileTime": epoch + 999 * 10000})]
+        for index, change in enumerate(changes):
+            with self.subTest(change=index):
+                directory = self.root / f"pid-reuse-{index}"
+                (directory / "class-loads").mkdir(parents=True)
+                (directory / "console.log").write_text("", encoding="utf-8")
+                files = []
+                for start, stamp in ((1000, "2026-10-12_00-00-01"), (5000, "2026-10-12_00-00-05")):
+                    log = directory / f"vm-pid123-{stamp}.log"
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start + 1}'>\n<vm_arguments>"
+                                   f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\n"
+                                   "java.class.path=frozen.jar\n</vm_arguments>\n"
+                                   "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                   "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                    (directory / f"class-loads/classes-123-{stamp}.log").write_text(
+                        "[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                    files.append(log)
+                history = copy.deepcopy(records)
+                change(history)
+                terminal = {"members": {"123": history}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if index == 0:
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    vms = PAIRED.read_json(directory / "vms.json")
+                    self.assertEqual([vm["os_generation"] for vm in vms], records)
+                    self.assertEqual(len({vm["class_load_diagnostic"]["path"] for vm in vms}), 2)
+                    self.assertEqual(terminal["members"]["123"], records)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_control_selects_actual_birth_without_borrowing_a_reused_pid_and_rejects_ambiguous_vm_origin(self):
+        for mode in ("history", "ambiguous-vm", "wrong-birth", "active", "wrong-affinity"):
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("reuse-control-" + mode)
+                original = terminal["members"]["123"]
+                original.update(pid=123, exitFileTime=116444736020000000, handleClosed=True)
+                later = {**original, "creationFileTime": 116444736050000000, "exitFileTime": 116444736060000000}
+                terminal["members"]["123"] = [original, later]
+                if mode == "ambiguous-vm":
+                    vms = PAIRED.read_json(phase / "vms.json")
+                    vms.append({**vms[0], "vm_start_ms": 5001})
+                    (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
+                elif mode == "wrong-birth":
+                    original["creationFileTime"] = 116444736030000000
+                elif mode == "active":
+                    original["completed"] = False
+                elif mode == "wrong-affinity":
+                    original["affinityMask"] = 3
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "history":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertTrue((directory / "verified.json").is_file())
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
+        original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}
+        legacy = {"members": {"123": copy.deepcopy(original)}}
+        self.assertEqual(PAIRED.owned_generation(legacy, 123, 1001), original)
+        current = {**original, "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
+        for missing in (None, "handleClosed", "exitFileTime", "pid"):
+            with self.subTest(missing=missing):
+                member = copy.deepcopy(current)
+                if missing is not None:
+                    member.pop(missing)
+                terminal = {"members": {"123": [member]}}
+                if missing is None:
+                    self.assertEqual(PAIRED.owned_generation(terminal, 123, 1001), current)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.owned_generation(terminal, 123, 1001)
+
+    def test_control_cannot_borrow_class_attribution_from_another_generation_with_the_same_pid(self):
+        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-class")
+        classes = (phase / "console.log").read_text(encoding="utf-8")
+        (phase / "console.log").write_text("", encoding="utf-8")
+        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
+        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
+        later = phase / "class-loads/classes-123-2026-10-12_00-00-05.log"
+        later.write_text(classes, encoding="utf-8")
+        vm = PAIRED.read_json(phase / "vms.json")[0]
+        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
+        other = {**vm, "role": "worker", "vm_start_ms": 5001,
+                 "class_load_diagnostic": {"path": str(later), "sha256": PAIRED.digest(later), "pid": 123}}
+        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
+        PAIRED.write_new(directory / "receipt.json", receipt)
+        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
+            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+        self.assertFalse((directory / "verified.json").exists())
+
+    def test_control_rejects_another_generations_console_origin_even_with_an_unrelated_own_class_file(self):
+        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-console")
+        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
+        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
+        vm = PAIRED.read_json(phase / "vms.json")[0]
+        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
+        other = {"pid": 123, "role": "worker", "vm_start_ms": 5001, "home": vm["home"]}
+        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
+        PAIRED.write_new(directory / "receipt.json", receipt)
+        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
+            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+        self.assertFalse((directory / "verified.json").exists())
 
     def test_jmh_version_probes_require_exact_arguments_caps_and_bound_compiler_hints(self):
         home = self.root / "jdk"
@@ -396,7 +669,9 @@ class PairedJvmTest(unittest.TestCase):
                     directory.mkdir()
                     PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
                     actual_console = console if index != 5 else console.replace("[456]", "[999]")
-                    (directory / "console.log").write_text(actual_console, encoding="utf-8")
+                    (directory / "console.log").write_text(actual_console.split("\n", 1)[0] + "\n", encoding="utf-8")
+                    (directory / "class-loads").mkdir()
+                    (directory / "class-loads/classes-456-2026-10-12_00-00-00.log").write_text(actual_console.split("\n", 1)[1], encoding="utf-8")
                     probe = directory / "probe.log"
                     probe.write_text(change(document.replace("{options}", inherited.replace("-XX:CompileCommand=blackhole", quiet + "-XX:CompileCommand=blackhole"))), encoding="utf-8")
                     collector = directory / "collector.log"
@@ -414,6 +689,138 @@ class PairedJvmTest(unittest.TestCase):
                     else:
                         with self.assertRaises(ValueError):
                             PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
+
+    def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
+        home = self.root / "probe-reuse-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        environment = "-Xmx32m -XX:MaxMetaspaceSize=256m -XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile=owned/vm-%p-%t.log"
+        probe = ("<hotspot_log process='5704' time_ms='1791843175150'>\n<vm_arguments><args>\n"
+                 f"{environment} -XX:+UnlockExperimentalVMOptions -XX:CompileCommand=blackhole,some/fake/Class.method </args>\n"
+                 f"<launcher>SUN_STANDARD</launcher>\n<properties>\njava.home={home}\njava.class.path=\n</properties></vm_arguments>\n"
+                 "-XX:MaxHeapSize=33554432 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        def document(pid, start, main):
+            return (f"<hotspot_log process='{pid}' time_ms='{start}'>\n<vm_arguments><command>{main}</command>\n"
+                    f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
+                    "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        member = {"pid": 5704, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                  "creationFileTime": 134363168979685947, "exitFileTime": 134363169071356647,
+                  "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15}
+        for mode in ("complete", "wrong-fork-stamp", "unstamped-reused-pid"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("probe-fork-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
+                origin = {"main": "fixture.Collector", "executable": str(executable), "classpath": "frozen.jar"}
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                files = [directory / name for name in ("vm-pid5704-2026-10-12_22-12-55.log", "vm-pid5704-2026-10-12_22-14-57.log", "vm-pid456-2026-10-12_22-12-54.log")]
+                if mode == "unstamped-reused-pid":
+                    files[0] = directory / "probe.log"
+                    files[1] = directory / "fork.log"
+                for path, value in zip(files, (probe, document(5704, 1791843297993, "org.openjdk.jmh.runner.ForkedMain 1"), document(456, 1791843174001, "fixture.Collector"))):
+                    path.write_text(value, encoding="utf-8")
+                stamp = "2026-10-12_22-12-55" if mode == "wrong-fork-stamp" else "2026-10-12_22-14-57"
+                fork_class = directory / f"class-loads/classes-5704-{stamp}.log"
+                fork_class.write_text("[5704][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                (directory / "class-loads/classes-456-2026-10-12_22-12-54.log").write_text("[456][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
+                terminal = {"members": {"5704": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    rows = PAIRED.read_json(directory / "vms.json")
+                    self.assertNotIn("class_load_diagnostic", rows[0])
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["sha256"], PAIRED.digest(fork_class))
+                    self.assertEqual(rows[1]["os_generation"], member)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_fixed_class_load_staging_retains_only_fresh_phase_bytes_and_rejects_previous_mutation(self):
+        for mode in ("complete", "partial", "changed-previous", "deleted-previous"):
+            with self.subTest(mode=mode):
+                owner = self.root / ("staging-" + mode)
+                owner.mkdir()
+                old = owner / "classes-123-2026-10-12_00-00-00.log"
+                old.write_text("[123][info][class,load] previous.Class source: file:/previous.jar\n", encoding="utf-8")
+                previous = PAIRED.class_load_inventory(owner)
+                fresh = owner / "classes-123-2026-10-12_00-00-01.log"
+                line = "[123][info][class,load] fresh.Class source: file:/fresh.jar\n"
+                fresh.write_text(line.rstrip() if mode == "partial" else line, encoding="utf-8")
+                directory = self.root / ("phase-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                if mode == "changed-previous":
+                    old.write_bytes(b"changed previous bytes")
+                elif mode == "deleted-previous":
+                    old.unlink()
+                if mode in ("changed-previous", "deleted-previous"):
+                    with self.assertRaisesRegex(ValueError, "previous class-load diagnostic"):
+                        PAIRED.preserve_class_loads(owner, directory, previous)
+                    self.assertFalse((directory / "class-load-inventory.json").exists())
+                else:
+                    captured = PAIRED.preserve_class_loads(owner, directory, previous)
+                    retained = directory / "class-loads" / fresh.name
+                    self.assertEqual(retained.read_bytes(), fresh.read_bytes())
+                    self.assertEqual(list((directory / "class-loads").iterdir()), [retained])
+                    self.assertEqual(PAIRED.class_load_inventory(owner)[old.name], previous[old.name])
+                    capture = PAIRED.read_json(directory / "class-load-inventory.json")
+                    self.assertEqual(capture["owner"], str(owner))
+                    self.assertEqual(capture["copied"][0]["sha256"], PAIRED.digest(retained))
+                    if mode == "partial":
+                        with self.assertRaisesRegex(ValueError, "truncated class-load diagnostic"):
+                            PAIRED.class_loads(directory)
+                    else:
+                        observed, identities = PAIRED.class_loads(directory)
+                        self.assertEqual(observed, line)
+                        self.assertEqual({item["pid"] for item in identities.values()}, {123})
+                        self.assertEqual(PAIRED.class_load_inventory(owner, captured), captured)
+                        fresh.write_bytes(b"changed between phases")
+                        with self.assertRaisesRegex(ValueError, "captured class-load staging bytes"):
+                            PAIRED.class_load_inventory(owner, captured)
+                        fresh.unlink()
+                        with self.assertRaisesRegex(ValueError, "captured class-load staging bytes"):
+                            PAIRED.class_load_inventory(owner, captured)
+                        self.assertEqual(retained.read_text(encoding="utf-8"), line)
+
+    def test_whole_class_load_inventory_exceeds_console_budget_without_truncating_each_vm(self):
+        directory = self.root / "whole-diagnostics"
+        directory.mkdir()
+        owner = directory / "class-loads"
+        owner.mkdir()
+        for pid in range(1, 49):
+            record = f"[{pid}][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+            (owner / f"classes-{pid}-2026-10-12_00-00-00.log").write_text(record * 7000, encoding="utf-8")
+        text, identities = PAIRED.class_loads(directory)
+        self.assertGreater(len(text), 16 * 1024**2)
+        self.assertEqual({item["pid"] for item in identities.values()}, set(range(1, 49)))
+        self.assertEqual(text.count("fixture.Complete source:"), 48 * 7000)
+
+    def test_class_load_inventory_rejects_missing_duplicate_wrong_pid_rotation_and_truncation(self):
+        line = "[123][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+        changes = [lambda path: path.unlink(), lambda path: path.write_text(line.replace("[123]", "[999]")),
+                   lambda path: path.write_text(line.rstrip()), lambda path: path.write_text(line * 20000),
+                   lambda path: path.with_name("classes-123-2026-10-12_00-00-01.log").write_text(line),
+                   lambda path: path.with_name(path.name + ".0").write_text(line)]
+        for index, change in enumerate(changes):
+            directory = self.root / f"changed-class-load-{index}"
+            owner = directory / "class-loads"
+            owner.mkdir(parents=True)
+            path = owner / "classes-123-2026-10-12_00-00-00.log"
+            path.write_text(line, encoding="utf-8")
+            change(path)
+            if index == 0:
+                text, identities = PAIRED.class_loads(directory)
+                self.assertEqual((text, identities), ("", {}))
+            elif index == 4:
+                text, identities = PAIRED.class_loads(directory)
+                self.assertEqual(len(identities), 2)
+                self.assertEqual({item["pid"] for item in identities.values()}, {123})
+            else:
+                with self.assertRaises(ValueError):
+                    PAIRED.class_loads(directory)
+        with self.assertRaisesRegex(ValueError, "Missing owned class-load directory"):
+            PAIRED.class_loads(self.root / "missing-phase")
 
     def test_early_setup_failure_preserves_failed_attempt_without_java(self):
         output = self.root / "early-failure"

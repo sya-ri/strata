@@ -1,4 +1,5 @@
 import me.champeau.jmh.JmhBytecodeGeneratorTask
+import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.gradle.jvm.toolchain.JavaToolchainService
@@ -65,6 +66,11 @@ val showcaseSources = objects.sourceDirectorySet("performanceShowcase", "Shipped
 }
 extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("jmh") { kotlin.source(showcaseSources) }
+}
+
+// Preserve the compiler's filtered shared sources instead of analysing their unfiltered parent directories.
+tasks.named<Detekt>("detektJmh") {
+    setSource(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh").map { it.kotlin.asFileTree })
 }
 
 jmh {
