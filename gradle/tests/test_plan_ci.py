@@ -61,6 +61,13 @@ class PlanCiTest(unittest.TestCase):
         result = planner.plan(["runtime/web/src/Web.kt", "tools/web/package.json"])
         self.assertTrue(result["qodana"])
 
+    def test_compiled_preflight_qualification_selects_its_actual_boundary(self):
+        for path in ("gradle/performance/paired-jvm.py", "gradle/performance/fixtures/QualifiedFixtureController.java", "gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml"):
+            with self.subTest(path=path):
+                self.assertTrue(planner.plan([path])["preflight"])
+        self.assertFalse(planner.plan(["runtime/core/src/commonMain/Runtime.kt"])["preflight"])
+        self.assertTrue(planner.plan([], full=True)["preflight"])
+
     def test_public_modules_keep_the_same_checks_after_moving_to_the_root(self):
         for module in ("detekt-rules", "performance-testkit"):
             with self.subTest(module=module):
