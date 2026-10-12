@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
@@ -43,7 +44,11 @@ public object SamplingCoverageLoadedControls {
         check(pairs[0].second.get("backend") == pairs[1].second.get("backend"))
     }
 
-    private fun verifyVariant(inputs: Map<String, Path>, proof: JsonObject, mapClass: String): Pair<JsonObject, JsonObject> {
+    private fun verifyVariant(
+        inputs: Map<String, Path>,
+        proof: JsonObject,
+        mapClass: String,
+    ): Pair<JsonObject, JsonObject> {
         check(ArtifactIdentity.file(checkNotNull(inputs[proof.get("runtimeArchiveInput").asString])) == proof.get("runtimeArchiveSha256").asString)
         val entries = proof.getAsJsonArray("evidenceInputs").map { it.asJsonObject }
         val evidence = entries.associate { it.get("label").asString to it.get("sha256").asString }
@@ -69,7 +74,10 @@ public object SamplingCoverageLoadedControls {
         return device to presenter
     }
 
-    private fun verifyOrigin(report: JsonObject, mapClass: String) {
+    private fun verifyOrigin(
+        report: JsonObject,
+        mapClass: String,
+    ) {
         val loaded = report.getAsJsonObject("actualLoadedRuntime")
         LoadedArtifactMetadata.verifyComplete(loaded)
         val modules = loaded.getAsJsonArray("modules").map { it.asJsonObject }
@@ -77,7 +85,16 @@ public object SamplingCoverageLoadedControls {
         val module = modules.single { it.get("representativeClass").asString == mapClass }
         check(module.getAsJsonObject("codeSource").get("sha256") == report.get("runtimeArchiveSha256"))
         check(module.getAsJsonObject("classResource").get("sha256") == report.get("samplingMapClassSha256"))
-        for (entry in modules) check(entry.has("classTree") && entry.getAsJsonObject("classTree").get("sha256").isJsonNull.not())
+        for (entry in modules) {
+            check(
+                entry.has("classTree") &&
+                    entry
+                        .getAsJsonObject("classTree")
+                        .get("sha256")
+                        .isJsonNull
+                        .not(),
+            )
+        }
     }
 
     private fun verifyDevice(device: JsonObject) {
@@ -89,7 +106,12 @@ public object SamplingCoverageLoadedControls {
         check(device.get("retainedResourcesAfter").asInt == 0 && device.get("retainedBytesAfter").asLong == 0L)
     }
 
-    private fun verifyPresenter(inputs: Map<String, Path>, evidence: Map<String, String>, screenshots: JsonObject, presenter: JsonObject) {
+    private fun verifyPresenter(
+        inputs: Map<String, Path>,
+        evidence: Map<String, String>,
+        screenshots: JsonObject,
+        presenter: JsonObject,
+    ) {
         check(presenter.get("presenterAssertionsPassed").asBoolean)
         val cases = presenter.getAsJsonArray("cases").map { it.asJsonObject }
         val inventory = cases.associateBy { SamplingCoverageFixture.FrameOnly.valueOf(it.get("case").asString) }
@@ -104,7 +126,13 @@ public object SamplingCoverageLoadedControls {
         check(lifetime.get("zeroRetainedOwners").asBoolean && lifetime.get("zeroRetainedSources").asBoolean)
     }
 
-    private fun verifyCase(inputs: Map<String, Path>, evidence: Map<String, String>, label: String, case: SamplingCoverageFixture.FrameOnly, receipt: JsonObject) {
+    private fun verifyCase(
+        inputs: Map<String, Path>,
+        evidence: Map<String, String>,
+        label: String,
+        case: SamplingCoverageFixture.FrameOnly,
+        receipt: JsonObject,
+    ) {
         val clean = case == SamplingCoverageFixture.FrameOnly.CleanSameCommandIdentity
         val exact = clean || case == SamplingCoverageFixture.FrameOnly.ChangedListSameCommands || case == SamplingCoverageFixture.FrameOnly.UnchangedMetadataEquivalentOutput
         val width = if (case == SamplingCoverageFixture.FrameOnly.ExactBudgetFallback) 4096 else 640
@@ -119,13 +147,26 @@ public object SamplingCoverageLoadedControls {
         if (case == SamplingCoverageFixture.FrameOnly.UnchangedMetadataEquivalentOutput) check(receipt.get("differentCommandElement").asBoolean)
         check(receipt.get("oldMapsImmutable").asBoolean && receipt.get("metadataEqual").asBoolean)
         check(receipt.get("sourcePixelsSha256").asString == sourcePixelsSha256())
-        check(receipt.get("viewportWidth").asInt == width && receipt.get("viewportHeight").asInt == height && receipt.get("density").asInt == 1)
-        check(receipt.get("nativePixelsCompared").asLong == width.toLong() * height)
+        verifyScreenshot(inputs, evidence, label, receipt, IntSize(width, height))
+    }
+
+    /**
+     * Checks the complete physical viewport and its independently pinned screenshot.
+     */
+    private fun verifyScreenshot(
+        inputs: Map<String, Path>,
+        evidence: Map<String, String>,
+        label: String,
+        receipt: JsonObject,
+        size: IntSize,
+    ) {
+        check(receipt.get("viewportWidth").asInt == size.width && receipt.get("viewportHeight").asInt == size.height && receipt.get("density").asInt == 1)
+        check(receipt.get("nativePixelsCompared").asLong == size.width.toLong() * size.height)
         val path = checkNotNull(inputs[label])
         check(label in evidence && evidence[label] == receipt.get("screenshotSha256").asString)
         check(path.fileName.toString() == receipt.get("screenshot").asString)
         val screenshot = checkNotNull(ImageIO.read(path.toFile()))
-        check(screenshot.width == width && screenshot.height == height)
+        check(screenshot.width == size.width && screenshot.height == size.height)
     }
 
     private fun sourcePixelsSha256(): String {
@@ -134,7 +175,10 @@ public object SamplingCoverageLoadedControls {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
     }
 
-    private fun requireAssertions(assertions: JsonObject, required: Set<String>) {
+    private fun requireAssertions(
+        assertions: JsonObject,
+        required: Set<String>,
+    ) {
         check(assertions.keySet() == required && required.all { assertions.get(it).asBoolean })
     }
 

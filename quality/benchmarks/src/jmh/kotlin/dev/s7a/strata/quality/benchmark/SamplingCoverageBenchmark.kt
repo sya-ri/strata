@@ -20,29 +20,43 @@ import java.nio.file.Path
  * It does not measure native texture-generation matching, CPU fallback rasterization, upload, GPU work or complete presentation.
  */
 public open class SamplingCoverageBenchmark {
-    /** Returns a newly allocated immutable three-row lookup from the actual runtime constructor. */
+    /**
+     * Returns a newly allocated immutable three-row lookup from the actual runtime constructor.
+     */
     @Benchmark
     public fun exactMapMetadata(state: Scene): Any = state.runtime.map(state.input.command, state.input.mapBounds, state.input.density)
 
-    /** Returns complete fresh CPU frame inputs, including actual composition preparation on fallback paths. */
+    /**
+     * Returns complete fresh CPU frame inputs, including actual composition preparation on fallback paths.
+     */
     @Benchmark
     public fun completeCpuFramePreparation(state: Scene): Any = state.runtime.prepare(state.input)
 
-    /** Fixed geometry and the actual archive reflection boundary, owned by one JMH worker. */
+    /**
+     * Fixed geometry and the actual archive reflection boundary, owned by one JMH worker.
+     */
     @State(Scope.Thread)
     public open class Scene {
-        /** Complete typed 45-case inventory; no default subset is silently substituted. */
+        /**
+         * Complete typed 45-case inventory; no default subset is silently substituted.
+         */
         @JvmField
         @Param
         public var geometry: SamplingCoverageFixture.Geometry = SamplingCoverageFixture.Geometry.OneByOneD1
 
-        /** Actual immutable command input, prepared before sampling. */
+        /**
+         * Actual immutable command input, prepared before sampling.
+         */
         public lateinit var input: SamplingCoverageFixture.Input
 
-        /** Genuine archive access resolved once per trial. */
+        /**
+         * Genuine archive access resolved once per trial.
+         */
         public lateinit var runtime: SamplingCoverageRuntime
 
-        /** Resolves all target classes and validates this row's complete metadata before timing. */
+        /**
+         * Resolves all target classes and validates this row's complete metadata before timing.
+         */
         @Setup(Level.Trial)
         public fun setup() {
             input = SamplingCoverageFixture.geometry(geometry)
@@ -53,9 +67,13 @@ public open class SamplingCoverageBenchmark {
         }
     }
 
-    /** Source-free discovery and collection entry points reuse the existing shared inventory/collector. */
+    /**
+     * Source-free discovery and collection entry points reuse the existing shared inventory/collector.
+     */
     public companion object {
-        /** Runs automatically under generic fixture discovery without requiring a Fabric archive on that classpath. */
+        /**
+         * Runs automatically under generic fixture discovery without requiring a Fabric archive on that classpath.
+         */
         @JvmStatic
         public fun verifyWork() {
             SamplingCoverageFrozenInputs.verify()

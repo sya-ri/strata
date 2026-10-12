@@ -19,16 +19,26 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 public object SamplingCoverageFixture {
     private val alphas = intArrayOf(0, 1, 127, 254, 255)
-    /** The bounded source includes transparent, translucent and opaque independently patterned texels. */
+
+    /**
+     * The bounded source includes transparent, translucent and opaque independently patterned texels.
+     */
     public val image: DrawImage = createDrawImage(IntSize(64, 48)) { x, y -> pattern(x, y) }
 
-    /** Detached source color formula used by the scalar reference without reading the runtime's pixels. */
-    public fun pattern(x: Int, y: Int): Int {
+    /**
+     * Detached source color formula used by the scalar reference without reading the runtime's pixels.
+     */
+    public fun pattern(
+        x: Int,
+        y: Int,
+    ): Int {
         val alpha = alphas[(x + y * 3) % 5]
         return (alpha shl 24) or (((x * 37 + y * 11) and 255) shl 16) or (((x * 13 + y * 43) and 255) shl 8) or ((x * 71 + y * 19) and 255)
     }
 
-    /** Input changes are typed; no runtime component or domain state is selected by a string. */
+    /**
+     * Input changes are typed; no runtime component or domain state is selected by a string.
+     */
     public enum class Scenario {
         Shape,
         NegativeOrigin,
@@ -39,8 +49,15 @@ public object SamplingCoverageFixture {
         CroppedFractionalSource,
     }
 
-    /** Complete 45-case geometry inventory, with logical bounds and physical density fixed before timing. */
-    public enum class Geometry(public val width: Int, public val height: Int, public val density: Int, public val scenario: Scenario = Scenario.Shape) {
+    /**
+     * Complete 45-case geometry inventory, with logical bounds and physical density fixed before timing.
+     */
+    public enum class Geometry(
+        public val width: Int,
+        public val height: Int,
+        public val density: Int,
+        public val scenario: Scenario = Scenario.Shape,
+    ) {
         OneByOneD1(1, 1, 1),
         OneByOneD2(1, 1, 2),
         OneByOneD4(1, 1, 4),
@@ -88,7 +105,9 @@ public object SamplingCoverageFixture {
         CroppedFractionalSourceD4(64, 32, 4, Scenario.CroppedFractionalSource),
     }
 
-    /** Independent no-map, fresh-map, rejection and barrier preparation controls. */
+    /**
+     * Independent no-map, fresh-map, rejection and barrier preparation controls.
+     */
     public enum class FrameOnly {
         CleanSameCommandIdentity,
         ChangedListSameCommands,
@@ -100,13 +119,17 @@ public object SamplingCoverageFixture {
         UnchangedMetadataEquivalentOutput,
     }
 
-    /** Separate actual operation boundaries; constructor work is never mislabeled complete-frame admission. */
+    /**
+     * Separate actual operation boundaries; constructor work is never mislabeled complete-frame admission.
+     */
     public enum class Boundary {
         ExactMapMetadata,
         CompleteCpuFramePreparation,
     }
 
-    /** All immutable geometry and complete balanced command inputs for one row. */
+    /**
+     * All immutable geometry and complete balanced command inputs for one row.
+     */
     public data class Input(
         public val command: DrawCommand.SampledImage,
         public val mapBounds: IntRect,
@@ -115,7 +138,9 @@ public object SamplingCoverageFixture {
         public val commands: List<DrawCommand>,
     )
 
-    /** Builds exact-effects cases that cannot accidentally measure the ordinary direct path. */
+    /**
+     * Builds exact-effects cases that cannot accidentally measure the ordinary direct path.
+     */
     public fun geometry(value: Geometry): Input {
         val bounds = if (value.scenario == Scenario.NegativeOrigin) IntRect(-16, -8, 48, 24) else IntRect(0, 0, value.width, value.height)
         val edge = 0.5f / value.density.toFloat()
@@ -134,7 +159,9 @@ public object SamplingCoverageFixture {
         return Input(command, bounds, viewport, value.density, commands)
     }
 
-    /** Uses bounded fixed state transitions; clean cases borrow primed inputs and changed cases rebuild real inputs. */
+    /**
+     * Uses bounded fixed state transitions; clean cases borrow primed inputs and changed cases rebuild real inputs.
+     */
     public fun frame(value: FrameOnly): Input {
         val base = geometry(Geometry.Square64D1)
         val command =

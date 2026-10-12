@@ -14,7 +14,9 @@ import java.nio.file.Path
  * Tables are also explicit collector inputs; compiled fixture provenance alone does not certify an unrelated table.
  */
 public object SamplingCoverageFrozenInputs {
-    /** Verifies all 53 complete input records, every Float bit pattern and the exact 98-row comparison inventory. */
+    /**
+     * Verifies all 53 complete input records, every Float bit pattern and the exact 98-row comparison inventory.
+     */
     public fun verify() {
         val records = resource("sampling-coverage-fixtures.tsv")
         check(records.size == 53 && records.map { it[0] }.distinct().size == 53)
@@ -53,16 +55,27 @@ public object SamplingCoverageFrozenInputs {
         for (fixture in SamplingCoverageFixture.FrameOnly.entries) check(SamplingCoverageFixture.Boundary.valueOf(matrix.single { it[0] == fixture.name }[1]) == SamplingCoverageFixture.Boundary.CompleteCpuFramePreparation)
         val controls = resource("sampling-coverage-controls.tsv")
         check(controls.size == 30 && controls.map { SamplingCoverageWorkEvidence.Control.valueOf(it[1]) } == SamplingCoverageWorkEvidence.Control.entries)
+        verifyPixels()
+    }
+
+    /**
+     * Checks every frozen source pixel through both actual immutable fixture accessors.
+     */
+    private fun verifyPixels() {
         check(SamplingCoverageFixture.image.size.width == 64 && SamplingCoverageFixture.image.size.height == 48)
         val pixels = resource("sampling-coverage-source.tsv")
         check(pixels.size == 48 && pixels.all { it.size == 64 })
-        for (y in 0 until 48) for (x in 0 until 64) {
-            val expectedPixel = pixels[y][x].toLong(16).toInt()
-            check(SamplingCoverageFixture.image.argbAt(x, y) == expectedPixel && SamplingCoverageFixture.pattern(x, y) == expectedPixel)
+        for (y in 0 until 48) {
+            for (x in 0 until 64) {
+                val expectedPixel = pixels[y][x].toLong(16).toInt()
+                check(SamplingCoverageFixture.image.argbAt(x, y) == expectedPixel && SamplingCoverageFixture.pattern(x, y) == expectedPixel)
+            }
         }
     }
 
-    /** Requires identical separately archived table, source pixels and control specification on both variants. */
+    /**
+     * Requires identical separately archived table, source pixels and control specification on both variants.
+     */
     public fun verifyExternal(inputs: Map<String, Path>) {
         val resources = mapOf("sampling-fixtures" to "sampling-coverage-fixtures.tsv", "sampling-matrix" to "sampling-coverage-matrix.tsv", "sampling-controls" to "sampling-coverage-controls.tsv", "sampling-source" to "sampling-coverage-source.tsv")
         for ((label, name) in resources) {
@@ -72,7 +85,9 @@ public object SamplingCoverageFrozenInputs {
         }
     }
 
-    /** Checks new-map frequency separately from the returned inputs' current lookup extents and CPU metadata payload. */
+    /**
+     * Checks new-map frequency separately from the returned inputs' current lookup extents and CPU metadata payload.
+     */
     @Suppress("LongParameterList") // Frequency and returned metadata payload describe different work on a clean input borrow.
     public fun observed(id: String, boundary: SamplingCoverageFixture.Boundary, density: Int, runtime: SamplingCoverageRuntime, maps: List<Any>, capacity: Long, newMapCount: Int = maps.size) {
         val expected = resource("sampling-coverage-matrix.tsv").single { it[0] == id && SamplingCoverageFixture.Boundary.valueOf(it[1]) == boundary }
@@ -84,7 +99,13 @@ public object SamplingCoverageFrozenInputs {
         println("Sampling coverage observed\t${actual.joinToString("\t")}")
     }
 
-    private fun record(id: String, kind: String, width: Int, height: Int, input: SamplingCoverageFixture.Input): List<String> {
+    private fun record(
+        id: String,
+        kind: String,
+        width: Int,
+        height: Int,
+        input: SamplingCoverageFixture.Input,
+    ): List<String> {
         val command = input.command
         val source = command.source
         val destination = command.destination

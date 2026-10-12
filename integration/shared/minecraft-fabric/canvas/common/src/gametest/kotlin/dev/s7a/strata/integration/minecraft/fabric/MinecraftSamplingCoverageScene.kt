@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Loaded compatibility controls retain the one-shot screen entry point.
+
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.component.Canvas
@@ -31,7 +33,9 @@ internal class MinecraftSamplingCoverageScene(
     internal val case: Case,
     private val viewport: IntSize,
 ) {
-    /** Fixed native control inventory corresponding to the eight frozen CPU frame-only cases. */
+    /**
+     * Fixed native control inventory corresponding to the eight frozen CPU frame-only cases.
+     */
     internal enum class Case {
         CleanSameCommandIdentity,
         ChangedListSameCommands,
@@ -74,7 +78,9 @@ internal class MinecraftSamplingCoverageScene(
             }
         }
 
-    /** Creates one one-shot screen definition; the Canvas source identity remains stable across layout changes. */
+    /**
+     * Creates one one-shot screen definition; the Canvas source identity remains stable across layout changes.
+     */
     internal fun definition(): ScreenDefinition =
         ScreenDefinition("Exact sampling coverage loaded controls") {
             Row {
@@ -83,26 +89,34 @@ internal class MinecraftSamplingCoverageScene(
             }
         }
 
-    /** Changes only unpainted sibling layout, retaining the sampled Canvas picture and command identities. */
+    /**
+     * Changes only unpainted sibling layout, retaining the sampled Canvas picture and command identities.
+     */
     internal fun changeList() {
         requireOwner()
         trailing.value = if (trailing.value == 1) 2 else 1
     }
 
-    /** Forces a new local picture with exactly equal command values and the same immutable source identity. */
+    /**
+     * Forces a new local picture with exactly equal command values and the same immutable source identity.
+     */
     internal fun repaint() {
         requireOwner()
         revision = Math.incrementExact(revision)
     }
 
-    /** Replaces the current source by a distinct equal-pixel image and enqueues a repaint revision. */
+    /**
+     * Replaces the current source by a distinct equal-pixel image and enqueues a repaint revision.
+     */
     internal fun replaceSource() {
         requireOwner()
         image = pattern()
         repaint()
     }
 
-    /** Hashes this actual native-control source as big-endian ARGB words, outside presentation or timing. */
+    /**
+     * Hashes this actual native-control source as big-endian ARGB words, outside presentation or timing.
+     */
     internal fun sourcePixelsSha256(): String {
         requireOwner()
         val pixels = image.copyArgb()
@@ -110,7 +124,9 @@ internal class MinecraftSamplingCoverageScene(
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
     }
 
-    /** Injects a primary paint failure before native preparation or GUI submission. */
+    /**
+     * Injects a primary paint failure before native preparation or GUI submission.
+     */
     internal fun fail(marker: Throwable) {
         requireOwner()
         failure = marker
@@ -122,7 +138,10 @@ internal class MinecraftSamplingCoverageScene(
         return Snapshot(revision, image, failure)
     }
 
-    private fun paint(scope: PaintScope, image: DrawImage) {
+    private fun paint(
+        scope: PaintScope,
+        image: DrawImage,
+    ) {
         scope.fillRectangle(IntRect(0, 0, viewport.width, viewport.height), ArgbColor(0xFF112233.toInt()))
         val source = if (case == Case.OrdinaryDirectNoMap) FloatRect(0f, 0f, 64f, 48f) else FloatRect(0.25f, 0.375f, 63.75f, 47.625f)
         val destination =
@@ -132,8 +151,22 @@ internal class MinecraftSamplingCoverageScene(
                 Case.ExactBudgetFallback -> FloatRect(0f, 0f, 4096f, 4096f)
                 else -> FloatRect(0f, 0f, 64f, 64f)
             }
-        val tint = if (case == Case.OrdinaryDirectNoMap) ArgbColor(-1) else if (case == Case.UnsupportedEffectsFallback) ArgbColor(0xFF817263.toInt()) else ArgbColor(0xFFFF00FF.toInt())
-        val cutoff = if (case == Case.OrdinaryDirectNoMap) 0f else if (case == Case.UnsupportedEffectsFallback) 0.5f else 1f
+        val tint =
+            if (case == Case.OrdinaryDirectNoMap) {
+                ArgbColor(-1)
+            } else if (case == Case.UnsupportedEffectsFallback) {
+                ArgbColor(0xFF817263.toInt())
+            } else {
+                ArgbColor(0xFFFF00FF.toInt())
+            }
+        val cutoff =
+            if (case == Case.OrdinaryDirectNoMap) {
+                0f
+            } else if (case == Case.UnsupportedEffectsFallback) {
+                0.5f
+            } else {
+                1f
+            }
         scope.withClip(IntRect(0, 0, size.width, size.height)) {
             if (case == Case.MixedCompositionBarrier) scope.fillRectangle(IntRect(0, 0, 64, 64), ArgbColor(0x80456789.toInt()))
             scope.sampledImage(image, source, destination, tint = tint, alphaCutoff = cutoff)
@@ -152,6 +185,12 @@ internal class MinecraftSamplingCoverageScene(
         check(Thread.currentThread() === owner)
     }
 
-    /** One frame cutoff; retained history is limited to the binding's current captured and committed values. */
-    private data class Snapshot(val revision: Int, val image: DrawImage, val failure: Throwable?)
+    /**
+     * One frame cutoff; retained history is limited to the binding's current captured and committed values.
+     */
+    private data class Snapshot(
+        val revision: Int,
+        val image: DrawImage,
+        val failure: Throwable?,
+    )
 }

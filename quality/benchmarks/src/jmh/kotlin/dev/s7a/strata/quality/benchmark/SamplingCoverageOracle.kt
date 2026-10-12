@@ -15,8 +15,16 @@ import kotlin.math.floor
  * Complete metadata checks include RGBA bytes in all three rows, uncovered entries, padding and extent/effect texels.
  */
 public object SamplingCoverageOracle {
-    /** Checks a complete genuine map against independently calculated integer selections and RGBA bytes. */
-    public fun metadata(runtime: SamplingCoverageRuntime, map: Any, command: DrawCommand.SampledImage, bounds: IntRect, density: Int) {
+    /**
+     * Checks a complete genuine map against independently calculated integer selections and RGBA bytes.
+     */
+    public fun metadata(
+        runtime: SamplingCoverageRuntime,
+        map: Any,
+        command: DrawCommand.SampledImage,
+        bounds: IntRect,
+        density: Int,
+    ) {
         val width = Math.multiplyExact(bounds.width, density)
         val height = Math.multiplyExact(bounds.height, density)
         val indices = runtime.indices(map)
@@ -26,15 +34,22 @@ public object SamplingCoverageOracle {
             for (position in 0 until indices.size.width) {
                 val expected =
                     when (row) {
-                        0 -> if (position < width) select(Math.addExact(Math.multiplyExact(bounds.left, density), position), command, density, horizontal = true) + 1 else 0
-                        1 -> if (position < height) select(Math.addExact(Math.multiplyExact(bounds.top, density), position), command, density, horizontal = false) + 1 else 0
-                        else ->
+                        0 -> {
+                            if (position < width) select(Math.addExact(Math.multiplyExact(bounds.left, density), position), command, density, horizontal = true) + 1 else 0
+                        }
+
+                        1 -> {
+                            if (position < height) select(Math.addExact(Math.multiplyExact(bounds.top, density), position), command, density, horizontal = false) + 1 else 0
+                        }
+
+                        else -> {
                             when (position) {
                                 0 -> width + 1
                                 1 -> height + 1
                                 2 -> effect(command)
                                 else -> 0
                             }
+                        }
                     }
                 val actual = indices.argbAt(position, row)
                 check(actual ushr 16 and 255 == expected and 255) { "R row=$row position=$position" }
@@ -45,27 +60,52 @@ public object SamplingCoverageOracle {
         }
     }
 
-    /** Checks complete output at the real nonnegative viewport, including clips, fills and ordered sampled effects. */
-    public fun completePixels(input: SamplingCoverageFixture.Input, trace: List<SamplingCoverageRuntime.Trace>? = null) {
+    /**
+     * Checks complete output at the real nonnegative viewport, including clips, fills and ordered sampled effects.
+     */
+    public fun completePixels(
+        input: SamplingCoverageFixture.Input,
+        trace: List<SamplingCoverageRuntime.Trace>? = null,
+    ) {
         val actual = rasterizeHeadless(input.commands, input.viewport, input.density)
         for (y in 0 until actual.size.height) {
             for (x in 0 until actual.size.width) {
                 val expected = pixel(input.commands, x, y, input.density)
                 check(actual.argbAt(x, y) == expected) { "Complete pixel ($x,$y) density=${input.density}" }
                 if (trace != null) {
-                    var prepared = 0
-                    for (layer in trace) {
-                        val bounds = layer.bounds
-                        if (covered(x, y, bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble(), input.density)) prepared = pixel(layer.commands, x, y, input.density, prepared)
-                    }
+                    val prepared = preparedPixel(trace, x, y, input.density)
                     check(prepared == expected) { "Actual ordered preparation trace changed pixel ($x,$y)" }
                 }
             }
         }
     }
 
-    /** Returns a zero-based source coordinate or minus one for uncovered physical centers. */
-    public fun select(physical: Int, command: DrawCommand.SampledImage, density: Int, horizontal: Boolean): Int {
+    /**
+     * Composes the unchanged ordered prepared trace at one physical pixel center.
+     */
+    private fun preparedPixel(
+        trace: List<SamplingCoverageRuntime.Trace>,
+        x: Int,
+        y: Int,
+        density: Int,
+    ): Int {
+        var prepared = 0
+        for (layer in trace) {
+            val bounds = layer.bounds
+            if (covered(x, y, bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble(), density)) prepared = pixel(layer.commands, x, y, density, prepared)
+        }
+        return prepared
+    }
+
+    /**
+     * Returns a zero-based source coordinate or minus one for uncovered physical centers.
+     */
+    public fun select(
+        physical: Int,
+        command: DrawCommand.SampledImage,
+        density: Int,
+        horizontal: Boolean,
+    ): Int {
         val destination = command.destination
         val source = command.source
         val start = if (horizontal) destination.left else destination.top
@@ -100,22 +140,36 @@ public object SamplingCoverageOracle {
         val clips = ArrayList<Boolean>()
         for (command in commands) {
             when (command) {
-                is DrawCommand.PushClip -> clips.add(covered(x, y, command.bounds.left.toDouble(), command.bounds.top.toDouble(), command.bounds.right.toDouble(), command.bounds.bottom.toDouble(), density))
-                is DrawCommand.PushFractionalClip -> clips.add(covered(x, y, command.bounds.left.toDouble(), command.bounds.top.toDouble(), command.bounds.right.toDouble(), command.bounds.bottom.toDouble(), density))
-                DrawCommand.PopClip -> clips.removeAt(clips.lastIndex)
+                is DrawCommand.PushClip -> {
+                    clips.add(covered(x, y, command.bounds.left.toDouble(), command.bounds.top.toDouble(), command.bounds.right.toDouble(), command.bounds.bottom.toDouble(), density))
+                }
+
+                is DrawCommand.PushFractionalClip -> {
+                    clips.add(covered(x, y, command.bounds.left.toDouble(), command.bounds.top.toDouble(), command.bounds.right.toDouble(), command.bounds.bottom.toDouble(), density))
+                }
+
+                DrawCommand.PopClip -> {
+                    clips.removeAt(clips.lastIndex)
+                }
+
                 is DrawCommand.SampledImage -> {
-                    if (clips.any { it.not() }) continue
-                    val sx = select(x, command, density, horizontal = true)
-                    val sy = select(y, command, density, horizontal = false)
-                    if (sx < 0 || sy < 0) continue
-                    result = sampledBlend(SamplingCoverageFixture.pattern(sx, sy), command, result)
+                    if (clips.none { it.not() }) {
+                        val sx = select(x, command, density, horizontal = true)
+                        val sy = select(y, command, density, horizontal = false)
+                        if (0 <= sx && 0 <= sy) result = sampledBlend(SamplingCoverageFixture.pattern(sx, sy), command, result)
+                    }
                 }
+
                 is DrawCommand.FillRectangle -> {
-                    if (clips.any { it.not() }) continue
-                    val bounds = command.bounds
-                    if (covered(x, y, bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble(), density)) result = integerBlend(command.color.value, result)
+                    if (clips.none { it.not() }) {
+                        val bounds = command.bounds
+                        if (covered(x, y, bounds.left.toDouble(), bounds.top.toDouble(), bounds.right.toDouble(), bounds.bottom.toDouble(), density)) result = integerBlend(command.color.value, result)
+                    }
                 }
-                else -> error("The frozen scalar corpus contains only fills, clips and sampled images.")
+
+                else -> {
+                    error("The frozen scalar corpus contains only fills, clips and sampled images.")
+                }
             }
         }
         check(clips.isEmpty())
@@ -126,7 +180,11 @@ public object SamplingCoverageOracle {
     private fun covered(x: Int, y: Int, left: Double, top: Double, right: Double, bottom: Double, density: Int): Boolean =
         left * density <= x + 0.5 && x + 0.5 < right * density && top * density <= y + 0.5 && y + 0.5 < bottom * density
 
-    private fun sampledBlend(source: Int, command: DrawCommand.SampledImage, destination: Int): Int {
+    private fun sampledBlend(
+        source: Int,
+        command: DrawCommand.SampledImage,
+        destination: Int,
+    ): Int {
         val tint = command.tint.value
         val alpha = (source ushr 24).toFloat() / 255f * ((tint ushr 24).toFloat() / 255f)
         if (alpha < command.alphaCutoff || alpha == 0f) return destination
@@ -142,7 +200,10 @@ public object SamplingCoverageOracle {
         return result
     }
 
-    private fun integerBlend(source: Int, destination: Int): Int {
+    private fun integerBlend(
+        source: Int,
+        destination: Int,
+    ): Int {
         val alpha = source ushr 24
         val oldAlpha = destination ushr 24
         val numerator = alpha * 255L + oldAlpha * (255L - alpha)

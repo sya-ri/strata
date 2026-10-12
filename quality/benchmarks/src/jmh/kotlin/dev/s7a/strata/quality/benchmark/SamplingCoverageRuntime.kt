@@ -29,89 +29,136 @@ public class SamplingCoverageRuntime {
     private val indices = getter(mapClass, "Indices")
     private val physicalSize = getter(mapClass, "PhysicalSize")
     private val sampling = getter(sampledClass, "Sampling")
-    private val portable = getter(inputClass, "Portable")
-    private val sampled = getter(inputClass, "Sampled")
+
+    /**
+     * Captured downstream description accessor, resolved before any timed operation.
+     */
+    internal val portableGetter: Method = getter(inputClass, "Portable")
+
+    /**
+     * Captured immutable source accessor for untimed lifetime controls.
+     */
+    internal val sampledGetter: Method = getter(inputClass, "Sampled")
     private val layers = getter(inputClass, "Layers")
-    private val capacity = getter(inputClass, "CapacitySampledImages")
-    private val ineligible = getter(inputClass, "IneligibleSampledImages")
-    private val tintFallback = getter(inputClass, "TintFallbackImages")
-    private val equivalent = mapClass.declaredMethods.single { it.name.substringBefore('$') == "equivalent" }
+
+    /**
+     * Captured actual byte/image fallback accessor.
+     */
+    internal val capacityGetter: Method = getter(inputClass, "CapacitySampledImages")
+
+    /**
+     * Captured unsupported sampling accessor.
+     */
+    internal val ineligibleGetter: Method = getter(inputClass, "IneligibleSampledImages")
+
+    /**
+     * Captured unsupported tint accessor.
+     */
+    internal val tintFallbackGetter: Method = getter(inputClass, "TintFallbackImages")
+    private val equivalent = mapClass.declaredMethods.single { it.name.substringBefore('$').contentEquals("equivalent") }
     private val sampledCommand = getter(sampledClass, "Command")
     private val sampledClip = getter(sampledClass, "Clip")
     private val sampledBounds = getter(sampledClass, "VisibleBounds")
     private val portableCommands = getter(portableClass, "Commands")
     private val portableBounds = getter(portableClass, "Bounds")
 
-    /** Typed detached view of actual prepared layer order, clips and immutable commands for the independent oracle. */
-    public data class Trace(public val bounds: IntRect, public val commands: List<DrawCommand>)
+    /**
+     * Typed detached view of actual prepared layer order, clips and immutable commands for the independent oracle.
+     */
+    public data class Trace(
+        public val bounds: IntRect,
+        public val commands: List<DrawCommand>,
+    )
 
-    /** Constructs a fresh genuine exact map, preserving the runtime's original failure as the cause. */
-    public fun map(command: DrawCommand.SampledImage, bounds: IntRect, density: Int): Any = originalFailure { mapConstructor.newInstance(command, bounds, density) }
+    /**
+     * Constructs a fresh genuine exact map, preserving the runtime's original failure as the cause.
+     */
+    public fun map(
+        command: DrawCommand.SampledImage,
+        bounds: IntRect,
+        density: Int,
+    ): Any = originalFailure { mapConstructor.newInstance(command, bounds, density) }
 
-    /** Prepares the complete CPU descriptions, including composition/factor tables and sampled-source requests. */
-    public fun prepare(input: SamplingCoverageFixture.Input, commands: List<DrawCommand> = input.commands): Any = originalFailure {
-        val result = checkNotNull(partition.invoke(null, commands, input.viewport, input.density, true, true))
-        inputConstructor.newInstance(result, input.density, 0L, 0L, true, null)
-    }
+    /**
+     * Prepares the complete CPU descriptions, including composition/factor tables and sampled-source requests.
+     */
+    public fun prepare(
+        input: SamplingCoverageFixture.Input,
+        commands: List<DrawCommand> = input.commands,
+    ): Any =
+        originalFailure {
+            val result = checkNotNull(partition.invoke(null, commands, input.viewport, input.density, true, true))
+            inputConstructor.newInstance(result, input.density, 0L, 0L, true, null)
+        }
 
-    /** Returns the complete encoded immutable lookup; no source pixel copy is made. */
+    /**
+     * Returns the complete encoded immutable lookup; no source pixel copy is made.
+     */
     public fun indices(map: Any): DrawImage = indices.invoke(map) as DrawImage
 
-    /** Physical map extent from actual runtime checked arithmetic. */
+    /**
+     * Physical map extent from actual runtime checked arithmetic.
+     */
     public fun size(map: Any): IntSize = physicalSize.invoke(map) as IntSize
 
-    /** Counts the actual map objects in the produced ordered layers, never forecasting admission from dimensions. */
+    /**
+     * Counts the actual map objects in the produced ordered layers, never forecasting admission from dimensions.
+     */
     public fun maps(inputs: Any): List<Any> = layers(inputs).filter(sampledClass::isInstance).mapNotNull { sampling.invoke(it) }
 
-    /** Complete actual ordered layer trace for independently defined admission and barrier assertions. */
+    /**
+     * Complete actual ordered layer trace for independently defined admission and barrier assertions.
+     */
     public fun layers(inputs: Any): List<Any> = (layers.invoke(inputs) as List<*>).map(::checkNotNull)
 
-    /** Decodes actual archive layer kinds at the reflection boundary, preserving every command occurrence and clip. */
-    public fun trace(inputs: Any): List<Trace> = layers(inputs).map { layer ->
-        when {
-            sampledClass.isInstance(layer) -> {
-                val command = sampledCommand.invoke(layer) as DrawCommand.SampledImage
-                val clip = sampledClip.invoke(layer) as IntRect?
-                val commands = if (clip == null) listOf(command) else listOf(DrawCommand.PushClip(clip), command, DrawCommand.PopClip)
-                Trace(sampledBounds.invoke(layer) as IntRect, commands)
+    /**
+     * Decodes actual archive layer kinds at the reflection boundary, preserving every command occurrence and clip.
+     */
+    public fun trace(inputs: Any): List<Trace> =
+        layers(inputs).map { layer ->
+            when {
+                sampledClass.isInstance(layer) -> {
+                    val command = sampledCommand.invoke(layer) as DrawCommand.SampledImage
+                    val clip = sampledClip.invoke(layer) as IntRect?
+                    val commands = if (clip == null) listOf(command) else listOf(DrawCommand.PushClip(clip), command, DrawCommand.PopClip)
+                    Trace(sampledBounds.invoke(layer) as IntRect, commands)
+                }
+
+                portableClass.isInstance(layer) -> {
+                    val commands = (portableCommands.invoke(layer) as List<*>).map { it as DrawCommand }
+                    Trace(portableBounds.invoke(layer) as IntRect, commands)
+                }
+
+                else -> {
+                    error("The frozen CPU corpus has no opaque platform layers.")
+                }
             }
-            portableClass.isInstance(layer) -> {
-                val commands = (portableCommands.invoke(layer) as List<*>).map { it as DrawCommand }
-                Trace(portableBounds.invoke(layer) as IntRect, commands)
-            }
-            else -> error("The frozen CPU corpus has no opaque platform layers.")
         }
-    }
 
-    /** Genuine downstream CPU descriptions, with all complete current source/factor/map metadata. */
-    public fun portable(inputs: Any): List<Any> = (portable.invoke(inputs) as List<*>).map(::checkNotNull)
+    /**
+     * Existing placement-independent equivalence contract, independent of the scalar oracle checks.
+     */
+    public fun equivalent(
+        first: Any,
+        second: Any,
+    ): Boolean = equivalent.invoke(first, second) as Boolean
 
-    /** Genuine requested immutable source identities; their native pinning remains a separate loaded gate. */
-    public fun sources(inputs: Any): List<Any> = (sampled.invoke(inputs) as List<*>).map(::checkNotNull)
-
-    /** Actual byte/image capacity fallback count after full composition preparation. */
-    public fun capacity(inputs: Any): Long = capacity.invoke(inputs) as Long
-
-    /** Actual unsupported sampling count after full composition preparation. */
-    public fun ineligible(inputs: Any): Long = ineligible.invoke(inputs) as Long
-
-    /** Actual unsupported tint fallback count. */
-    public fun tintFallback(inputs: Any): Long = tintFallback.invoke(inputs) as Long
-
-    /** Existing placement-independent equivalence contract, independent of the scalar oracle checks. */
-    public fun equivalent(first: Any, second: Any): Boolean = equivalent.invoke(first, second) as Boolean
-
-    /** Independently exercises the full 1024-pass limit without consuming byte or image capacity first. */
+    /**
+     * Independently exercises the full 1024-pass limit without consuming byte or image capacity first.
+     */
     public fun passBudget(): Boolean {
         val owner = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSamplingBudget")
         val budget = owner.getDeclaredConstructor().newInstance()
-        val admit = owner.declaredMethods.single { it.name.substringBefore('$') == "admitComposition" }
+        val admit = owner.declaredMethods.single { it.name.substringBefore('$').contentEquals("admitComposition") }
         val full = admit.invoke(budget, IntSize(1, 1), 1L, 1024) as Boolean
         val exhausted = admit.invoke(budget, IntSize(1, 1), 1L, 1) as Boolean
         return full && exhausted.not()
     }
 
-    private fun getter(owner: Class<*>, property: String): Method = owner.declaredMethods.single { it.name.substringBefore('$') == "get$property" }
+    private fun getter(
+        owner: Class<*>,
+        property: String,
+    ): Method = owner.declaredMethods.single { it.name.substringBefore('$').contentEquals("get$property") }
 
     private inline fun originalFailure(block: () -> Any): Any =
         try {

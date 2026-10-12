@@ -17,14 +17,20 @@ import org.openjdk.jmh.annotations.State
  * the actual screen/presenter preflight selects it and that native pins, fences and ownership remain correct.
  */
 public open class SamplingCoverageFrameBenchmark {
-    /** Returns genuine prepared inputs, or the primed immutable input in the explicit clean borrow control. */
+    /**
+     * Returns genuine prepared inputs, or the primed immutable input in the explicit clean borrow control.
+     */
     @Benchmark
     public fun completeCpuFramePreparation(state: Scene): Any = state.prepare()
 
-    /** Holds only two frozen display lists and one current immutable prepared input, never frame history. */
+    /**
+     * Holds only two frozen display lists and one current immutable prepared input, never frame history.
+     */
     @State(Scope.Thread)
     public open class Scene {
-        /** Complete eight-case frame-only inventory. */
+        /**
+         * Complete eight-case frame-only inventory.
+         */
         @JvmField
         @Param
         public var fixture: SamplingCoverageFixture.FrameOnly = SamplingCoverageFixture.FrameOnly.CleanSameCommandIdentity
@@ -36,7 +42,9 @@ public open class SamplingCoverageFrameBenchmark {
         private lateinit var current: Any
         private var alternate = false
 
-        /** Primes identical bounded state before each independent trial; preparation is outside timing. */
+        /**
+         * Primes identical bounded state before each independent trial; preparation is outside timing.
+         */
         @Setup(Level.Trial)
         public fun setup() {
             runtime = SamplingCoverageRuntime()
@@ -48,7 +56,9 @@ public open class SamplingCoverageFrameBenchmark {
             SamplingCoverageWorkEvidence.frameAdmission(runtime, fixture, current)
         }
 
-        /** Alternates exactly the same two frozen lists on both variants, replacing the sole current result. */
+        /**
+         * Alternates exactly the same two frozen lists on both variants, replacing the sole current result.
+         */
         public fun prepare(): Any {
             if (fixture == SamplingCoverageFixture.FrameOnly.CleanSameCommandIdentity) return current
             alternate = alternate.not()

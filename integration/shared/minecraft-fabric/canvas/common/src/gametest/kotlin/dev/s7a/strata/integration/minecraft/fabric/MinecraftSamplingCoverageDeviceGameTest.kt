@@ -49,6 +49,50 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
 
     @Suppress("LongMethod") // Keep every assertion before terminal proof publication; helper calls never report a full loaded-control pass.
     private fun verify(fixture: Fixture): JsonObject {
+        val first = verifyIdentityAndRetirement(fixture)
+        verifyFailureCleanup(fixture)
+        val mapClass = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSamplingMap", false, javaClass.classLoader)
+        return JsonObject().apply {
+            addProperty("scope", "Loaded native sampled-device ownership with controlled queue markers and gated real native fences; presenter and actual GUI-consumer assertions remain separate")
+            addProperty("fullLoadedControlsPassed", false)
+            addProperty("runtimeArchiveSha256", ArtifactIdentity.fullCodeSource(mapClass))
+            addProperty("samplingMapClassSha256", LoadedArtifactMetadata.captureClassHashes(listOf(mapClass)).get(mapClass.name).asString)
+            val targets = mapOf("sampling-map" to mapClass.name, "sampled-device" to fixture.type.name)
+            add("actualLoadedRuntime", LoadedArtifactMetadata.capture(checkNotNull(mapClass.classLoader), targets, targets.keys))
+            add("probeClassHashes", LoadedArtifactMetadata.captureClassHashes(listOf(MinecraftSamplingCoverageDeviceGameTest::class.java)))
+            add(
+                "observations",
+                JsonObject().apply {
+                    addProperty("sourceIdentityVsEqualPixels", true)
+                    addProperty("sourceReplacement", true)
+                    addProperty("ownerIsolation", true)
+                    addProperty("pinnedThroughPreparation", true)
+                    addProperty("controlledQueueMarkerRetains", true)
+                    addProperty("gatedRealNativeFenceRetains", true)
+                    addProperty("acquisitionCallbackFailure", true)
+                    addProperty("failureAfterActualUpload", true)
+                    addProperty("primaryFailurePreserved", true)
+                    addProperty("deviceTerminalRelease", true)
+                    addProperty("zeroRetainedOwners", true)
+                    addProperty("zeroRetainedSources", true)
+                    addProperty("nativeResourcesDestroyed", true)
+                },
+            )
+            addProperty("actualNativeUploads", fixture.resources.size)
+            addProperty("sourceWidth", first.size.width)
+            addProperty("sourceHeight", first.size.height)
+            val pixels = first.copyArgb()
+            val bytes = ByteBuffer.allocate(pixels.size * Int.SIZE_BYTES).also { it.asIntBuffer().put(pixels) }.array()
+            addProperty("sourcePixelsSha256", HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
+            addProperty("retainedResourcesAfter", fixture.count())
+            addProperty("retainedBytesAfter", fixture.bytes())
+        }
+    }
+
+    /**
+     * Verifies sources selected by identity remain pinned through retirement and gated native fences.
+     */
+    private fun verifyIdentityAndRetirement(fixture: Fixture): DrawImage {
         val first = image()
         val equalPixels = image()
         check(first !== equalPixels && first.copyArgb().contentEquals(equalPixels.copyArgb()))
@@ -71,6 +115,13 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
         fixture.manager.poll()
         check(fixture.count() == 2 && fixture.pins() == 0 && fixture.nativeOwnersOpen())
 
+        return first
+    }
+
+    /**
+     * Preserves acquisition and upload failures through complete terminal resource release.
+     */
+    private fun verifyFailureCleanup(fixture: Fixture) {
         val preparationOwner = fixture.open()
         val preparationFailure = IllegalStateException("Expected sampled acquisition callback failure")
         val before = fixture.count()
@@ -88,39 +139,6 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
         check(fixture.count() == 0 && fixture.bytes() == 0L && fixture.owners() == 0)
         check(fixture.resources.size == 3 && fixture.resources.all(NativeGuiResource::isDestroyed))
         check(fixture.driver.fences.isNotEmpty() && fixture.driver.fences.all { it.closed })
-        val mapClass = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSamplingMap", false, javaClass.classLoader)
-        return JsonObject().apply {
-            addProperty("scope", "Loaded native sampled-device ownership with controlled queue markers and gated real native fences; presenter and actual GUI-consumer assertions remain separate")
-            addProperty("fullLoadedControlsPassed", false)
-            addProperty("runtimeArchiveSha256", ArtifactIdentity.fullCodeSource(mapClass))
-            addProperty("samplingMapClassSha256", LoadedArtifactMetadata.captureClassHashes(listOf(mapClass)).get(mapClass.name).asString)
-            val targets = mapOf("sampling-map" to mapClass.name, "sampled-device" to fixture.type.name)
-            add("actualLoadedRuntime", LoadedArtifactMetadata.capture(checkNotNull(mapClass.classLoader), targets, targets.keys))
-            add("probeClassHashes", LoadedArtifactMetadata.captureClassHashes(listOf(MinecraftSamplingCoverageDeviceGameTest::class.java)))
-            add("observations", JsonObject().apply {
-                addProperty("sourceIdentityVsEqualPixels", true)
-                addProperty("sourceReplacement", true)
-                addProperty("ownerIsolation", true)
-                addProperty("pinnedThroughPreparation", true)
-                addProperty("controlledQueueMarkerRetains", true)
-                addProperty("gatedRealNativeFenceRetains", true)
-                addProperty("acquisitionCallbackFailure", true)
-                addProperty("failureAfterActualUpload", true)
-                addProperty("primaryFailurePreserved", true)
-                addProperty("deviceTerminalRelease", true)
-                addProperty("zeroRetainedOwners", true)
-                addProperty("zeroRetainedSources", true)
-                addProperty("nativeResourcesDestroyed", true)
-            })
-            addProperty("actualNativeUploads", fixture.resources.size)
-            addProperty("sourceWidth", first.size.width)
-            addProperty("sourceHeight", first.size.height)
-            val pixels = first.copyArgb()
-            val bytes = ByteBuffer.allocate(pixels.size * Int.SIZE_BYTES).also { it.asIntBuffer().put(pixels) }.array()
-            addProperty("sourcePixelsSha256", HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)))
-            addProperty("retainedResourcesAfter", fixture.count())
-            addProperty("retainedBytesAfter", fixture.bytes())
-        }
     }
 
     private fun image(): DrawImage =
@@ -129,9 +147,13 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
             (alpha shl 24) or (((x * 37 + y * 11) and 255) shl 16) or (((x * 13 + y * 43) and 255) shl 8) or ((x * 71 + y * 19) and 255)
         }
 
-    /** Calls genuine internal archive members; reflection is resolved outside each ownership operation. */
+    /**
+     * Calls genuine internal archive members; reflection is resolved outside each ownership operation.
+     */
     @Suppress("TooManyFunctions") // One bounded actual-device fixture owns the resolved reflection and terminal cleanup.
-    private class Fixture(nativeDriver: NativeCanvasDriver) : AutoCloseable {
+    private class Fixture(
+        nativeDriver: NativeCanvasDriver,
+    ) : AutoCloseable {
         val driver = GatedDriver(nativeDriver)
         private val terminalDevice = NativeCanvasDevice(driver)
         val type: Class<*> = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftSampledImageDevice")
@@ -142,7 +164,7 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
         private val supports = supportMethod()
         private val textureClass = Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftPortableTexture")
         private val companion = checkNotNull(textureClass.getDeclaredField("Companion").get(null))
-        private val create = companion.javaClass.declaredMethods.single { it.name.substringBefore('$') == "create" && it.parameterTypes.firstOrNull() == DrawImage::class.java }
+        private val create = method(companion.javaClass, "create", DrawImage::class.java)
         private val ownerMethod = method(type, "openOwner")
         private val borrowMethod = method(type, "borrow")
         private val releaseMethod = method(type, "release")
@@ -171,7 +193,11 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
 
         fun open(): Any = checkNotNull(ownerMethod.invoke(manager))
 
-        fun borrow(owner: Any, images: List<DrawImage>, missFailure: Throwable? = null): AutoCloseable {
+        fun borrow(
+            owner: Any,
+            images: List<DrawImage>,
+            missFailure: Throwable? = null,
+        ): AutoCloseable {
             val hit: () -> Unit = {}
             val miss: () -> Unit = { missFailure?.let { throw it } }
             val uploaded: (DrawImage) -> Unit = {}
@@ -181,9 +207,15 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
             return result
         }
 
-        fun texture(borrow: AutoCloseable, image: DrawImage): Any? = textureMethod.invoke(borrow, image)
+        fun texture(
+            borrow: AutoCloseable,
+            image: DrawImage,
+        ): Any? = textureMethod.invoke(borrow, image)
 
-        fun queued(borrow: AutoCloseable, image: DrawImage) {
+        fun queued(
+            borrow: AutoCloseable,
+            image: DrawImage,
+        ) {
             queueMethod.invoke(borrow, image)
         }
 
@@ -208,12 +240,24 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
             runCanvasTestCleanup(null, *(closeBorrows + terminalDevice::closeAfterGuiDiscarded).toTypedArray())
         }
 
-        private fun field(owner: Any, name: String): Any? = owner.javaClass.getDeclaredField(name).let { field ->
-            check(field.trySetAccessible())
-            field.get(owner)
-        }
+        private fun field(
+            owner: Any,
+            name: String,
+        ): Any? =
+            owner.javaClass.getDeclaredField(name).let { field ->
+                check(field.trySetAccessible())
+                field.get(owner)
+            }
 
-        private fun method(owner: Class<*>, name: String): Method = owner.declaredMethods.single { it.name.substringBefore('$') == name }
+        private fun method(
+            owner: Class<*>,
+            name: String,
+            firstParameter: Class<*>? = null,
+        ): Method =
+            owner.declaredMethods.single {
+                it.name.substringBefore('$') == name &&
+                    (firstParameter == null || it.parameterTypes.firstOrNull() == firstParameter)
+            }
 
         @Suppress("StringLiteralComparison") // Exact reflected JVM method names are decoded at this native adapter boundary.
         private fun supportMethod(): Method {
@@ -238,8 +282,12 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
             }
     }
 
-    /** Delays completion observations of real native fences until this independent manager's terminal shutdown. */
-    private class GatedDriver(private val actual: NativeCanvasDriver) : NativeCanvasDriver by actual {
+    /**
+     * Delays completion observations of real native fences until this independent manager's terminal shutdown.
+     */
+    private class GatedDriver(
+        private val actual: NativeCanvasDriver,
+    ) : NativeCanvasDriver by actual {
         val fences = ArrayList<Gate>()
 
         override fun fence(): NativeCanvasFence = Gate(actual.fence()).also(fences::add)
@@ -250,8 +298,12 @@ internal object MinecraftSamplingCoverageDeviceGameTest {
         }
     }
 
-    /** Owns one actual GPU fence and records its release, without submitting or waiting during polling. */
-    private class Gate(private val actual: NativeCanvasFence) : NativeCanvasFence {
+    /**
+     * Owns one actual GPU fence and records its release, without submitting or waiting during polling.
+     */
+    private class Gate(
+        private val actual: NativeCanvasFence,
+    ) : NativeCanvasFence {
         var open = false
         var closed = false
 
