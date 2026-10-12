@@ -124,6 +124,11 @@ gradle.projectsEvaluated {
             doFirst {
                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
+                listOf("benchmarks", "workloads").forEach { name ->
+                    rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
+                        systemProperty("strata.performance.$name", it)
+                    }
+                }
                 listOf("parameters", "fixtureInputs").forEach { name ->
                     rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)
