@@ -31,6 +31,7 @@ internal object JmhEvidenceAggregation {
             addProperty("gc_count_median", medianSecondary(rows, "gc.count"))
             addProperty("gc_time_ms_median_available", if (times.isEmpty()) null else JvmPerformanceEvidence.median(times))
             addProperty("gc_time_available_repetitions", times.size)
+            add("secondary_metrics", secondarySummary(rows))
             if (JmhEvidenceMode.decode(key.mode) == JmhEvidenceMode.SampleTime) {
                 add(
                     "per_run_percentile_medians",
@@ -74,6 +75,7 @@ internal object JmhEvidenceAggregation {
                     }
                 },
             )
+            add("secondary_metrics", secondaryComparison(before.objectField("secondary_metrics"), after.objectField("secondary_metrics")))
             if (JmhEvidenceMode.decode(before.textField("mode")) == JmhEvidenceMode.SampleTime) {
                 add(
                     "per_run_percentile_medians",
@@ -90,4 +92,49 @@ internal object JmhEvidenceAggregation {
         rows: List<JsonObject>,
         metric: String,
     ): Double = JvmPerformanceEvidence.median(rows.map { checkNotNull(it.objectField("secondaryMetrics").objectField(metric).get("score")).metricValue() })
+
+    private fun secondarySummary(rows: List<JsonObject>): JsonObject {
+        val secondary = rows.map { it.objectField("secondaryMetrics") }
+        val names = secondary.first().keySet() - JmhMetricEvidence.summarizedSecondaryKeys
+        require(secondary.all { it.keySet() - JmhMetricEvidence.summarizedSecondaryKeys == names }) { "Incomplete additional JMH metric matrix" }
+        return JsonObject().apply {
+            names.sorted().forEach { name ->
+                val metrics = secondary.map { it.objectField(name) }
+                JvmPerformanceEvidence.verifyEqual(metrics, setOf("scoreUnit"))
+                add(
+                    name,
+                    JsonObject().apply {
+                        addProperty("unit", metrics.first().textField("scoreUnit"))
+                        addProperty("score_median", JvmPerformanceEvidence.median(metrics.map { checkNotNull(it.get("score")).metricValue() }))
+                    },
+                )
+            }
+        }
+    }
+
+    private fun secondaryComparison(
+        before: JsonObject,
+        after: JsonObject,
+    ): JsonObject {
+        require(before.keySet() == after.keySet()) { "Changed additional JMH metric inventory" }
+        return JsonObject().apply {
+            before.keySet().sorted().forEach { name ->
+                val old = before.objectField(name)
+                val new = after.objectField(name)
+                JvmPerformanceEvidence.verifyEqual(listOf(old, new), setOf("unit"))
+                val baseline = checkNotNull(old.get("score_median")).metricValue()
+                val candidate = checkNotNull(new.get("score_median")).metricValue()
+                add(
+                    name,
+                    JsonObject().apply {
+                        add("unit", old.get("unit"))
+                        addProperty("baseline", baseline)
+                        addProperty("candidate", candidate)
+                        addProperty("delta", candidate - baseline)
+                        addProperty("candidate_to_baseline", if (baseline == 0.0) null else candidate / baseline)
+                    },
+                )
+            }
+        }
+    }
 }
