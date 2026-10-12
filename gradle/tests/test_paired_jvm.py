@@ -1,6 +1,7 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
 import copy
 import csv
+import hashlib
 import importlib.util
 import json
 import os
@@ -17,6 +18,9 @@ import zipfile
 SPEC = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).resolve().parents[1] / "performance/paired-jvm.py")
 PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
+QUALIFICATION_SPEC = importlib.util.spec_from_file_location("qualified_preflight", Path(__file__).resolve().parents[1] / "performance/verify-qualified-preflight.py")
+QUALIFICATION = importlib.util.module_from_spec(QUALIFICATION_SPEC)
+QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 
 
 class PairedJvmTest(unittest.TestCase):
@@ -92,6 +96,160 @@ class PairedJvmTest(unittest.TestCase):
         self.input.write_text("changed input\n", encoding="utf-8")
         with self.assertRaises(ValueError):
             self.load(self.manifest)
+
+    def test_optional_compiled_preflight_keeps_whole_control_inventory_and_pins(self):
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["preflight"] = {
+            "main": "independent.Controller", "qualification": self.pin,
+            "runtime_classes": {project: "independent.Runtime" for project in value["runtime_projects"]},
+            "controls": [{"id": "row-1", "arguments": ["untimed", "1"]}, {"id": "row-2", "arguments": ["untimed", "2"]}],
+        }
+        self.assertEqual(self.load(value), value)
+        changes = [lambda control: control.update(command="arbitrary shell"),
+                   lambda control: control.update(main="Controller"),
+                   lambda control: control["runtime_classes"].pop(":api"),
+                   lambda control: control.update(controls=[]),
+                   lambda control: control["controls"].append(control["controls"][0]),
+                   lambda control: control["controls"][0].update(arguments=["zero\x00byte"]),
+                   lambda control: control["qualification"].update(sha256="0" * 64)]
+        for change in changes:
+            changed = copy.deepcopy(value)
+            change(changed["suites"][0]["preflight"])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def preflight_fixture(self, name):
+        """Model independently retained class loads and OS generations for source-only rejection checks."""
+        output = self.root / name
+        output.mkdir()
+        original = output / "original.jar"
+        names = ["independent.Controller", "independent.Runtime", "dev.s7a.strata.performance.JvmPerformanceMeter", "org.openjdk.jmh.runner.Runner"]
+        with zipfile.ZipFile(original, "x") as archive:
+            for item in names:
+                archive.writestr(item.replace(".", "/") + ".class", b"source-only class identity fixture")
+        runtime = {project: PAIRED.preserve_file(original, output / "prepared" / project.strip(":").replace(":", "-") / "target.jar")
+                   for project in self.manifest["runtime_projects"]}
+        retained = output / "classpath"
+        item = {"source": str(original), **PAIRED.preserve_file(original, retained / "classpath-0.jar")}
+        PAIRED.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [item]})
+        suite = copy.deepcopy(self.manifest["suites"][0])
+        suite["preflight"] = {"main": names[0], "qualification": self.pin,
+                              "runtime_classes": {project: names[1] for project in runtime},
+                              "controls": [{"id": "independent-a", "arguments": []}, {"id": "independent-b", "arguments": []}]}
+        inputs = {"input": PAIRED.preserve_file(self.input, output / "inputs" / "input.bin")}
+        directory = PAIRED.preflight_request(self.root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
+        request = PAIRED.read_json(directory / "request.json")
+        controls = []
+        for control in suite["preflight"]["controls"]:
+            artifact = directory / (control["id"] + ".txt")
+            artifact.write_bytes(b"actual observation fixture")
+            controls.append({"id": control["id"], "status": "passed", "observations": {"entries": 3},
+                             "origins": {item: {"pid": 123} for item in names},
+                             "artifacts": [{"path": artifact.name, "sha256": PAIRED.digest(artifact)}]})
+        receipt = {"schema": "strata-paired-jvm-preflight-receipt-v1", "status": "passed",
+                   "request_sha256": PAIRED.digest(directory / "request.json"), "controls": controls}
+        phase = output / "phase"
+        phase.mkdir()
+        (phase / "console.log").write_text("".join(f"[123][info][class,load] {item} source: {Path(request['required_classes'][item]['path']).as_uri()}\n" for item in names), encoding="utf-8")
+        PAIRED.write_new(phase / "vms.json", [{"pid": 123, "vm_start_ms": 1001, "role": "java_exec", "home": str(output / "jdk")}])
+        terminal = {"inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                    "members": {"123": {"inOwnedJob": True, "completed": True, "exitCode": 0,
+                                        "affinityMask": 15, "systemAffinityMask": 15, "image": str(output / "jdk/bin/java.exe"),
+                                        "creationFileTime": 116444736010000000}}}
+        return directory, phase, terminal, receipt
+
+    def test_complete_preflight_rejects_missing_failed_changed_or_wrong_origin_controls(self):
+        def replace_request(directory, phase, terminal, receipt):
+            request = PAIRED.read_json(directory / "request.json")
+            request["side"] = "candidate"
+            (directory / "request.json").write_text(json.dumps(request), encoding="utf-8")
+            receipt["request_sha256"] = PAIRED.digest(directory / "request.json")
+
+        changes = [lambda directory, phase, terminal, receipt: None,
+                   lambda directory, phase, terminal, receipt: receipt["controls"].pop(),
+                   lambda directory, phase, terminal, receipt: receipt["controls"].reverse(),
+                   lambda directory, phase, terminal, receipt: receipt["controls"][0].update(status="failed"),
+                   lambda directory, phase, terminal, receipt: receipt["controls"][0].update(observations={}),
+                   lambda directory, phase, terminal, receipt: receipt.update(request_sha256="0" * 64),
+                   lambda directory, phase, terminal, receipt: receipt["controls"][0]["origins"].pop("independent.Runtime"),
+                   lambda directory, phase, terminal, receipt: receipt["controls"][0]["origins"]["independent.Runtime"].update(pid=999),
+                   lambda directory, phase, terminal, receipt: terminal["members"]["123"].update(completed=False),
+                   lambda directory, phase, terminal, receipt: terminal["members"]["123"].update(creationFileTime=116444736100000000),
+                   lambda directory, phase, terminal, receipt: (phase / "console.log").write_text("missing class origins\n"),
+                   lambda directory, phase, terminal, receipt: (directory / "independent-a.txt").write_bytes(b"changed observation"),
+                   lambda directory, phase, terminal, receipt: receipt["controls"][0]["artifacts"][0].update(path="../outside"),
+                   lambda directory, phase, terminal, receipt: (directory / "qualification.json").write_bytes(b"changed qualification"),
+                   replace_request]
+        for index, change in enumerate(changes):
+            with self.subTest(change=index):
+                directory, phase, terminal, receipt = self.preflight_fixture(f"control-{index}")
+                request_hash = PAIRED.digest(directory / "request.json")
+                change(directory, phase, terminal, receipt)
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if index == 0:
+                    PAIRED.verify_preflight(directory, phase, terminal, request_hash)
+                    self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_preflight(directory, phase, terminal, request_hash)
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_prepared_bytes_survive_first_control_failure_and_cannot_be_rehashed(self):
+        directory, phase, terminal, receipt = self.preflight_fixture("failed-control")
+        root = directory.parents[2]
+        inventory = root / "classpath/classpath.json"
+        PAIRED.prepared_classpath(inventory)
+        (root / "classpath/classpath-0.jar").write_bytes(b"altered prepared bytes")
+        with self.assertRaises(ValueError):
+            PAIRED.prepared_classpath(inventory)
+        receipt["controls"][0]["status"] = "failed"
+        PAIRED.write_new(directory / "receipt.json", receipt)
+        with self.assertRaises(ValueError):
+            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+        with zipfile.ZipFile(PAIRED.pack(root)) as archive:
+            self.assertIn("prepared/api/target.jar", archive.namelist())
+            self.assertIn("classpath/classpath-0.jar", archive.namelist())
+            self.assertIn("preflight/arbitrary-new-fixture/baseline/receipt.json", archive.namelist())
+
+    def test_directory_pins_use_jvm_case_sensitive_utf8_entry_order_on_windows(self):
+        tree = self.root / "compiled-tree"
+        files = {"META-INF/fixture.kotlin_module": b"module", "dev/example/Fixture.class": b"compiled class", "z-resource.txt": b"asset"}
+        for name, value in files.items():
+            path = tree.joinpath(*name.split("/"))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(value)
+        # JVM String order places uppercase META-INF before lowercase packages on every host.
+        expected = hashlib.sha256()
+        for name in ("META-INF/fixture.kotlin_module", "dev/example/Fixture.class", "z-resource.txt"):
+            expected.update(f"{name}={hashlib.sha256(files[name]).hexdigest()}\n".encode("utf-8"))
+        self.assertEqual(PAIRED.path_identity(tree), expected.hexdigest())
+
+    def test_qualification_upload_keeps_attempt_receipts_without_reusable_workspaces(self):
+        output = self.root / "qualification"
+        workspace = output / "complete/workspaces/fixture"
+        workspace.mkdir(parents=True)
+        (workspace / "cache.bin").write_bytes(b"reusable intermediate")
+        PAIRED.write_new(output / "result.json", {"status": "failed"})
+        attempt = output / "complete.zip"
+        with zipfile.ZipFile(attempt, "x") as archive:
+            archive.writestr("attempt.json", '{"status":"failed"}')
+            archive.writestr("prepared/target-0.jar", b"actual early runtime bytes")
+        with zipfile.ZipFile(QUALIFICATION.pack_qualification(output)) as retained:
+            self.assertEqual(set(retained.namelist()), {"result.json", "complete.zip"})
+            self.assertEqual(retained.read("complete.zip"), attempt.read_bytes())
+
+    def test_directory_pins_order_supplementary_names_like_java_utf16_strings(self):
+        tree = self.root / "unicode-tree"
+        tree.mkdir()
+        supplementary = "\U00010000-resource.bin"
+        high_bmp = "\ue000-resource.bin"
+        (tree / supplementary).write_bytes(b"supplementary")
+        (tree / high_bmp).write_bytes(b"high BMP")
+        # The supplementary surrogate D800 sorts before E000 in Java, despite its larger Unicode scalar.
+        expected = hashlib.sha256()
+        for name, value in ((supplementary, b"supplementary"), (high_bmp, b"high BMP")):
+            expected.update(f"{name}={hashlib.sha256(value).hexdigest()}\n".encode("utf-8"))
+        self.assertEqual(PAIRED.path_identity(tree), expected.hexdigest())
 
     def test_paths_and_json_cannot_escape_or_override_pins(self):
         for value in ("../outside", "C:/outside", "a\\b", "/outside", "a/../b", "./a", ".git/index", "a\nb", "a//b"):
@@ -276,7 +434,7 @@ class PairedJvmTest(unittest.TestCase):
         outputs.update(minecraft="[]", paired_manifest="")
         # The runner omits empty outputs before exposing needs.plan.outputs to the aggregation job.
         exposed = {key: value for key, value in outputs.items() if value}
-        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
+        jobs = {key: {"result": "skipped"} for key in ("paired-jvm", "preflight-qualification", "checks", "web-demos", "web", "workflow-checks", "minecraft-matrix", "minecraft", "documentation", "docs")}
         jobs["plan"] = {"result": "success", "outputs": exposed}
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
             exec(compile(script, "jvm-workflow-result", "exec"), {})
