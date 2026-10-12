@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "46e9f8bd04df0178a893ae01f78d97baf9280206",
+  "baseline_reconstructed_tree": "ec2b943064e0da6336be2748ae1362dd1343b091",
   "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "956def1a369a074c0edb9b62b64457bc3d286267",
+  "candidate_fixture_tree": "f11eb91e699446edadc6dc209525df245ea1ebbb",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -156,11 +156,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "077989f15a14dc73e0b6f76acea022e3830f5be313f5180e0a375ee384bf6bb7"
+      "sha256": "dcd86af9da5d02f3f55ebaa5dae4c65c9da5808ed02490b1c63b63efb2a1b61f"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "c2428c12b054130433e902fdf84d2a1ef9437df651c18eec4746e21291cfa741"
+      "sha256": "67354138bef1438281ab74883f5fdc2161d7d153aebd70251c1ec787ba0f4257"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -198,15 +198,21 @@
     "source_review": "Pending focused independent review of this native input helper correction",
     "native_execution": "Pending fresh whole16case/all22target execution"
   },
-  "common_collector_source_commit": "65d7ef86939f714e062c85f833f944a2c9b59107",
-  "common_collector_source_tree": "46735d17f84bb215e09e1a7db57491eb7aed743a",
-  "common_collector_source_review": "Exact public65d7 common correction: root actual90JVMtests/25suites with two selector regressions, allthreebenchmark compile/lint/Detekt, ABI and27Python checks pass; no local Java/native invocation",
+  "common_collector_source_commit": "490a9f685e911eab3fb2383a35eafd78fd9e8b74",
+  "common_collector_source_tree": "5ddc6c5610944487277b8929ec62debc1f8d9459",
+  "common_collector_source_review": "Exact public490a9f68 common projection and preflight dependency correction: source review and 27 Python checks pass; actual new TestKit and affected quality qualification Pending existing CI; no child Java/native invocation",
   "common_collector_bindings": [
     {
       "path": ".github/workflows/jvm.yml",
       "git_blob": "7a70525e8dbe14dbc35afa5d6a5cf69beed8833a",
       "sha256": "f771b9eca4905400b18398768672d0e7ee236bdd99e310f22ce238f9ba088046",
       "exact_reviewed_common_bytes": false
+    },
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/BoundedJvmRuntimeProjectionFunctionalTest.kt",
+      "git_blob": "5e86e1b1c86521c1fa9f79c5c95d75092f308fb3",
+      "sha256": "7080c2394b55ec4e70181403916f745f9b87a34fb1969b11d127368ac66bfa80",
+      "exact_reviewed_common_bytes": true
     },
     {
       "path": "docs/development/performance-testkit.md",
@@ -216,8 +222,8 @@
     },
     {
       "path": "gradle/performance/bounded-jvm.init.gradle.kts",
-      "git_blob": "4398ee5aa3d7b0bb57a73189097f31c5488733de",
-      "sha256": "1f3b5f696fc93195c36ce68a78af83c15eff11c2e75a91b357ccca260aa7a76b",
+      "git_blob": "05b4525089487a2555cde71b878a7a0c57334045",
+      "sha256": "3f5f4f2b4d0b84b65d0e8361de8be6272cf6c5b45aed162cbe03398871fb2066",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -473,7 +479,7 @@
     "status": "Passed actual whole native-screen-callback/presentation reconciliation; fresh final driver remains Pending",
     "reconciliation_sha256": "3ed80fc3b4ce17c9dd8ac994bfa2e140e93bcbbcabdce830e59d025e922ec8a3"
   },
-  "final_driver_parent": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
+  "final_driver_parent": "1771394ef4fbd12e15c0af070c6ab1b7c00b84f3",
   "previous_failed_whole_attempt": {
     "head": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
     "run": 38210183998,
@@ -492,6 +498,35 @@
     ],
     "contract": "Forward existing selectors to untimed JavaExec; optional verifier invocation uses selected compiled fixtures while all metadata checks and unselected whole gates remain unchanged",
     "all_original_case_oracles_preserved": true,
-    "source_review": "Pending focused final source/manifest integration review"
+    "source_review": "Reviewed public65d7 selector correction; both full Cycle48/30 admission gates passed in preserved177 attempt; no partial timing adoption"
+  },
+  "previous_failed_whole_attempts": [
+    {
+      "head": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
+      "run": 38210183998,
+      "job": 114682500106,
+      "completed_standard_jmh_cells": 0,
+      "completed_supplemental_operation_rows": 0,
+      "cause": "Unselected optional font verifier ran under selected CycleSelection inputs; missing required font PNG pin fails before timing",
+      "artifact_sha256": "74026367974dcece87b28a30f7234be561b56bf8b8c11fed7d3c484cfcf573f0",
+      "receipt_sha256": "5920a264a0ca782bacc2c67035303428c710e07ad771eab89d3f5418027b3cca",
+      "partial_sample_adoption": false
+    },
+    {
+      "head": "1771394ef4fbd12e15c0af070c6ab1b7c00b84f3",
+      "run": 38217934611,
+      "job": 114707042672,
+      "completed_standard_jmh_cells": 0,
+      "completed_supplemental_operation_rows": 0,
+      "cause": "Both Cycle48/30 untimed gates passed; the independent overlay owning-classpath3 failed global-runtime5 equality before JavaExec launch",
+      "artifact_sha256": "11ebd0f4c7484eac063bf3343c0b333c18fa9152da491faf28b4fb6ecba67cac",
+      "receipt_sha256": "cff8d9710bd316315f06e0e6d1acd5eac9963957d479150b8e7dc0bac7462936",
+      "partial_sample_adoption": false
+    }
+  ],
+  "generic_runtime_projection": {
+    "contract": "Preserve the full prepared runtime union; replace the owning suite's actual matched project dependency archives only, with nonempty/canonical JAR uniqueness and all existing source/loaded identity checks",
+    "actual_functional_qualification": "Pending existing public common-source CI",
+    "all_original_case_oracles_preserved": true
   }
 }

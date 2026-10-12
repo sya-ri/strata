@@ -3,31 +3,31 @@
   "sources": {
     "fixture": {
       "ref": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-      "tree": "956def1a369a074c0edb9b62b64457bc3d286267",
+      "tree": "f11eb91e699446edadc6dc209525df245ea1ebbb",
       "patches": [
         {
           "path": ".github/performance/issue292-full/candidate.patch",
-          "sha256": "c2428c12b054130433e902fdf84d2a1ef9437df651c18eec4746e21291cfa741"
+          "sha256": "67354138bef1438281ab74883f5fdc2161d7d153aebd70251c1ec787ba0f4257"
         }
       ]
     },
     "baseline": {
       "ref": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
-      "tree": "46e9f8bd04df0178a893ae01f78d97baf9280206",
+      "tree": "ec2b943064e0da6336be2748ae1362dd1343b091",
       "patches": [
         {
           "path": ".github/performance/issue292-full/baseline.patch",
-          "sha256": "077989f15a14dc73e0b6f76acea022e3830f5be313f5180e0a375ee384bf6bb7"
+          "sha256": "dcd86af9da5d02f3f55ebaa5dae4c65c9da5808ed02490b1c63b63efb2a1b61f"
         }
       ]
     },
     "candidate": {
       "ref": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-      "tree": "956def1a369a074c0edb9b62b64457bc3d286267",
+      "tree": "f11eb91e699446edadc6dc209525df245ea1ebbb",
       "patches": [
         {
           "path": ".github/performance/issue292-full/candidate.patch",
-          "sha256": "c2428c12b054130433e902fdf84d2a1ef9437df651c18eec4746e21291cfa741"
+          "sha256": "67354138bef1438281ab74883f5fdc2161d7d153aebd70251c1ec787ba0f4257"
         }
       ]
     }
@@ -86,21 +86,21 @@
       "label": "cycle-selection-source-provenance",
       "pin": {
         "path": ".github/performance/issue292-full/source-provenance.json",
-        "sha256": "f2f3fe799be739f4d928e5684052e7b615c00326e6179a263d86b26dd3551511"
+        "sha256": "d6b69fc6b90fa5101022f354ffce1580ab4d6c28a4f7377d4eb51dc8a08cf5b8"
       }
     },
     {
       "label": "cycle-selection-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue292-full/baseline.patch",
-        "sha256": "077989f15a14dc73e0b6f76acea022e3830f5be313f5180e0a375ee384bf6bb7"
+        "sha256": "dcd86af9da5d02f3f55ebaa5dae4c65c9da5808ed02490b1c63b63efb2a1b61f"
       }
     },
     {
       "label": "cycle-selection-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue292-full/candidate.patch",
-        "sha256": "c2428c12b054130433e902fdf84d2a1ef9437df651c18eec4746e21291cfa741"
+        "sha256": "67354138bef1438281ab74883f5fdc2161d7d153aebd70251c1ec787ba0f4257"
       }
     },
     {
