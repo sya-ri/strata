@@ -1,0 +1,916 @@
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt
+new file mode 100644
+index 000000000..86bc485b5
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt
+@@ -0,0 +1,463 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementType
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.KeyCode
++import dev.s7a.strata.input.KeyboardEvent
++import dev.s7a.strata.input.KeyboardModifiers
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.layout.LayoutScope
++import dev.s7a.strata.layout.MeasureScope
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.modifier.ModifierElement
++import dev.s7a.strata.modifier.ModifierNodeType
++import dev.s7a.strata.node.DirtyMask
++import dev.s7a.strata.node.FocusTargetNode
++import dev.s7a.strata.node.KeyboardInputNode
++import dev.s7a.strata.node.LayoutNode
++import dev.s7a.strata.node.LifecycleNode
++import dev.s7a.strata.node.MeasureNode
++import dev.s7a.strata.node.ModifierNode
++import dev.s7a.strata.node.Node
++import dev.s7a.strata.node.TextInputNode
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.runtime.spi.RuntimeUiSession
++import dev.s7a.strata.runtime.spi.createRuntimeUiSession
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++
++/**
++ * Measures clean-frame focused input independently of retained frame preparation.
++ * The fixed matrix covers small chains, absent focus, consumption, typed text and large cyclic traversal without a Cartesian product.
++ * Events, nodes and declarations are prepared outside timing; each operation includes only the session input boundary and dispatch.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class FocusedInputBenchmark {
++    /**
++     * Delivers one prebuilt event through the committed retained tree.
++     */
++    @Benchmark
++    public fun dispatch(scene: Scene): InputResult = scene.dispatch()
++
++    /**
++     * One owner-thread session for one fixed input case.
++     */
++    @State(Scope.Thread)
++    public open class Scene {
++        /**
++         * Frozen cases shared by both measured runtime archives.
++         */
++        @JvmField
++        @Param
++        public var workload: Workload = Workload.PressNoModifiers
++
++        private lateinit var fixture: Fixture
++
++        /**
++         * Prepares the tree, immutable events and independent callback/focus oracle outside measurement.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = Fixture(workload)
++            fixture.verifyWork()
++        }
++
++        /**
++         * Returns the observed result so JMH consumes it without allocating a trace.
++         */
++        public fun dispatch(): InputResult = fixture.dispatch()
++
++        /**
++         * Requires exact terminal disposal without adding close latency to the dispatch interval.
++         */
++        @TearDown(Level.Trial)
++        public fun close(): Unit = fixture.close()
++    }
++
++    /**
++     * Fixed coverage rather than independent parameter dimensions; owner counts include the structural root.
++     * None/Few/Many mean zero, at most three, or every nonstructural owner accepts traversal.
++     */
++    public enum class Workload(
++        internal val owners: Int,
++        internal val modifiers: Int,
++        internal val protocol: Protocol,
++        internal val consumption: Consumption = Consumption.None,
++        internal val acceptance: Acceptance = Acceptance.Many,
++        internal val focused: Boolean = true,
++    ) {
++        PressNoModifiers(1, 0, Protocol.Press),
++        PressFewEarly(1, 4, Protocol.Press, Consumption.Early),
++        PressManyLate(1, 16, Protocol.Press, Consumption.Late),
++        PressManyIgnored(1, 16, Protocol.Press),
++        ReleaseNoModifiers(1, 0, Protocol.Release),
++        ReleaseFewLate(1, 4, Protocol.Release, Consumption.Late),
++        ReleaseManyEarly(1, 16, Protocol.Release, Consumption.Early),
++        ReleaseManyIgnored(1, 16, Protocol.Release),
++        CharacterNoModifiers(1, 0, Protocol.Character),
++        CharacterFewEarly(1, 4, Protocol.Character, Consumption.Early),
++        CharacterManyLate(1, 16, Protocol.Character, Consumption.Late),
++        CharacterManyIgnored(1, 16, Protocol.Character),
++        PreeditNoModifiers(1, 0, Protocol.Preedit),
++        PreeditFewLate(1, 4, Protocol.Preedit, Consumption.Late),
++        PreeditManyEarly(1, 16, Protocol.Preedit, Consumption.Early),
++        PreeditManyIgnored(1, 16, Protocol.Preedit),
++        NoFocusPress(1, 16, Protocol.Press, acceptance = Acceptance.None, focused = false),
++        NoFocusCharacter(1, 16, Protocol.Character, acceptance = Acceptance.None, focused = false),
++        TabSingle(1, 0, Protocol.Tab),
++        ShiftTabSingle(1, 0, Protocol.ShiftTab),
++        TabSparse128(128, 4, Protocol.Tab, acceptance = Acceptance.Few),
++        ShiftTabSparse128(128, 4, Protocol.ShiftTab, acceptance = Acceptance.Few),
++        TabMany128(128, 0, Protocol.Tab),
++        ShiftTabMany128(128, 0, Protocol.ShiftTab),
++        TabNone128(128, 0, Protocol.Tab, acceptance = Acceptance.None),
++        ShiftTabNone128(128, 0, Protocol.ShiftTab, acceptance = Acceptance.None),
++        TabSparse10000(10000, 0, Protocol.Tab, acceptance = Acceptance.Few),
++        ShiftTabSparse10000(10000, 0, Protocol.ShiftTab, acceptance = Acceptance.Few),
++        TabMany10000(10000, 0, Protocol.Tab),
++        ShiftTabMany10000(10000, 0, Protocol.ShiftTab),
++        TabNone10000(10000, 0, Protocol.Tab, acceptance = Acceptance.None),
++        ShiftTabNone10000(10000, 0, Protocol.ShiftTab),
++    }
++
++    /**
++     * Typed event selection; native input delivery and presentation are outside this CPU interval.
++     */
++    internal enum class Protocol { Press, Release, Character, Preedit, Tab, ShiftTab }
++
++    /**
++     * First capable member, component member, or complete ignored chain.
++     */
++    internal enum class Consumption { Early, Late, None }
++
++    /**
++     * Current target distribution independent of the directional anchor.
++     */
++    internal enum class Acceptance { None, Few, Many }
++
++    private class Fixture(
++        private val workload: Workload,
++    ) : AutoCloseable {
++        private val counters = Counters()
++        private val constraints = Constraints.fixed(10, 10)
++        private val anchor = if (workload.owners == 1) 0 else workload.owners / 2
++        private val targets =
++            when (workload.acceptance) {
++                Acceptance.None -> emptySet()
++                Acceptance.Few -> setOf(if (workload.owners == 1) 0 else 1, anchor, workload.owners - 1)
++                Acceptance.Many -> ((if (workload.owners == 1) 0 else 1) until workload.owners).toSet()
++            }
++        private val nodes = ArrayList<InputNode>()
++        private val session: RuntimeUiSession
++        private val keyboard =
++            when (workload.protocol) {
++                Protocol.Release -> KeyboardEvent.Release(KeyCode.Enter, 7)
++                Protocol.Tab -> KeyboardEvent.Press(KeyCode.Tab, 7)
++                Protocol.ShiftTab -> KeyboardEvent.Press(KeyCode.Tab, 7, KeyboardModifiers(shift = true))
++                Protocol.Press, Protocol.Character, Protocol.Preedit -> KeyboardEvent.Press(KeyCode.Enter, 7)
++            }
++        private val text =
++            if (workload.protocol === Protocol.Preedit) {
++                TextInputEvent.Preedit("compose", 3, listOf("com", "pose"), 1)
++            } else {
++                TextInputEvent.Character(0x1F642)
++            }
++        private val preparedFrame: Any
++
++        init {
++            val elements = List(workload.owners) { owner -> element(owner) }
++            val root = InputElement(elements[0].node, elements.drop(1), elements[0].modifier)
++            session = createRuntimeUiSession { root }
++            session.attach()
++            preparedFrame = session.frame(constraints)
++            nodes.forEach { it.accepting = it.owner in targets }
++            check(counters.focused == if (workload.focused) anchor else null)
++        }
++
++        fun dispatch(): InputResult =
++            when (workload.protocol) {
++                Protocol.Character, Protocol.Preedit -> session.dispatchTextInput(text)
++                Protocol.Press, Protocol.Release, Protocol.Tab, Protocol.ShiftTab -> session.dispatchKeyboard(keyboard)
++            }
++
++        fun verifyWork() {
++            val measures = counters.measures
++            val layouts = counters.layouts
++            counters.record = true
++            repeat(8) {
++                verifyDispatch()
++                check(session.frame(constraints) === preparedFrame)
++                check(counters.measures == measures && counters.layouts == layouts)
++            }
++            counters.record = false
++            counters.trace.clear()
++            counters.transitions.clear()
++            counters.acceptanceReads.clear()
++        }
++
++        private fun verifyDispatch() {
++            val current = counters.focused
++            val expectedTrace = expectedTrace(current)
++            val consumed = current != null && workload.consumption !== Consumption.None
++            val traversal = workload.protocol === Protocol.Tab || workload.protocol === Protocol.ShiftTab
++            val next = if (traversal && consumed.not()) expectedNext(current) else current
++            val expectedResult = expectedResult(consumed, traversal, next)
++            val expectedReads = expectedReads(current, next, traversal && consumed.not())
++            val expectedTransitions = expectedTransitions(current, next)
++            val token = session.textInputFocus
++            counters.trace.clear()
++            counters.transitions.clear()
++            counters.callbacks = 0
++            counters.acceptanceReads.clear()
++
++            check(dispatch() === expectedResult)
++            check(counters.trace == expectedTrace && counters.callbacks == expectedTrace.size)
++            check(counters.acceptanceReads == expectedReads)
++            check(counters.focused == next)
++            check(counters.transitions == expectedTransitions)
++            if (next == current) check(session.textInputFocus === token)
++        }
++
++        private fun expectedTrace(current: Int?): List<Actor> {
++            if (current == null) return emptyList()
++            val order = (0 until workload.modifiers).reversed().toList() + workload.modifiers
++            val delivered = order.map { member -> Actor(current, member) }
++            return when (workload.consumption) {
++                Consumption.Early -> delivered.take(1)
++                Consumption.Late, Consumption.None -> delivered
++            }
++        }
++
++        private fun expectedResult(
++            consumed: Boolean,
++            traversal: Boolean,
++            next: Int?,
++        ): InputResult {
++            if (consumed) return InputResult.Consumed
++            if (traversal.not() || next == null) return InputResult.Ignored
++            return if (next in targets) InputResult.Consumed else InputResult.Ignored
++        }
++
++        private fun expectedReads(
++            current: Int?,
++            next: Int?,
++            traversal: Boolean,
++        ): List<Int> {
++            val order = if (traversal) expectedTraversal(current) else emptyList()
++            val firstAccepting = order.indexOfFirst { owner -> owner in targets }
++            val candidates = if (firstAccepting < 0) order else order.take(firstAccepting + 1)
++            return candidates + if (next != current && next != null) listOf(next) else emptyList()
++        }
++
++        private fun expectedTransitions(
++            current: Int?,
++            next: Int?,
++        ): List<Transition> =
++            if (next == current) {
++                emptyList()
++            } else {
++                listOfNotNull(current?.let { owner -> Transition(owner, false) }, next?.let { owner -> Transition(owner, true) })
++            }
++
++        override fun close() {
++            session.close()
++            check(counters.disposals == workload.owners * (workload.modifiers + 1))
++            nodes.clear()
++            counters.trace.clear()
++            counters.transitions.clear()
++            counters.acceptanceReads.clear()
++        }
++
++        private fun expectedNext(current: Int?): Int? = expectedTraversal(current).firstOrNull { it in targets } ?: current
++
++        private fun expectedTraversal(current: Int?): List<Int> {
++            val owners = (0 until workload.owners).toList()
++            val reverse = workload.protocol === Protocol.ShiftTab
++            return when {
++                current == null && reverse -> owners.reversed()
++                current == null -> owners
++                reverse -> owners.take(current).reversed() + owners.drop(current).reversed()
++                else -> owners.drop(current + 1) + owners.take(current + 1)
++            }
++        }
++
++        private fun element(owner: Int): InputElement {
++            val node = InputNode(owner, owner == anchor && workload.focused, workload, counters)
++            nodes += node
++            var modifier: Modifier = Modifier.Empty
++            repeat(workload.modifiers) { index -> modifier = modifier.then(DispatchElement(owner, index, workload, counters)) }
++            return InputElement(node, modifier = modifier)
++        }
++    }
++
++    private class Counters {
++        var focused: Int? = null
++        var record = false
++        var callbacks = 0
++        var measures = 0
++        var layouts = 0
++        var disposals = 0
++        val trace = ArrayList<Actor>()
++        val transitions = ArrayList<Transition>()
++        val acceptanceReads = ArrayList<Int>()
++
++        fun deliver(
++            owner: Int,
++            member: Int,
++            workload: Workload,
++        ): InputResult {
++            callbacks += 1
++            if (record) trace += Actor(owner, member)
++            return when (workload.consumption) {
++                Consumption.None -> InputResult.Ignored
++                Consumption.Early -> if (member == maxOf(0, workload.modifiers - 1)) InputResult.Consumed else InputResult.Ignored
++                Consumption.Late -> if (member == workload.modifiers) InputResult.Consumed else InputResult.Ignored
++            }
++        }
++    }
++
++    private class InputNode(
++        val owner: Int,
++        private val initial: Boolean,
++        private val workload: Workload,
++        private val counters: Counters,
++    ) : Node(),
++        MeasureNode,
++        LayoutNode,
++        FocusTargetNode,
++        KeyboardInputNode,
++        TextInputNode,
++        LifecycleNode {
++        var accepting = initial
++
++        override val acceptsFocus: Boolean
++            get() {
++                if (counters.record) counters.acceptanceReads += owner
++                return accepting
++            }
++
++        override val requestsInitialFocus: Boolean
++            get() = initial
++
++        override val requiresTextInput: Boolean
++            get() = true
++
++        override fun measure(
++            scope: MeasureScope,
++            constraints: Constraints,
++        ): IntSize {
++            counters.measures += 1
++            repeat(scope.childCount) { scope.measureChild(it, constraints) }
++            return constraints.constrain(IntSize(10, 10))
++        }
++
++        override fun layout(scope: LayoutScope) {
++            counters.layouts += 1
++            repeat(scope.childCount) { scope.placeChild(it, IntOffset.Zero) }
++        }
++
++        override fun onFocusChanged(focused: Boolean) {
++            if (focused) counters.focused = owner
++            if (counters.record) counters.transitions += Transition(owner, focused)
++        }
++
++        override fun onKeyboardEvent(event: KeyboardEvent): InputResult = counters.deliver(owner, workload.modifiers, workload)
++
++        override fun onTextInput(event: TextInputEvent): InputResult = counters.deliver(owner, workload.modifiers, workload)
++
++        override fun attach() = Unit
++
++        override fun detach() = Unit
++
++        override fun dispose() {
++            counters.disposals += 1
++        }
++    }
++
++    private class DispatchNode(
++        private val element: DispatchElement,
++    ) : ModifierNode(),
++        KeyboardInputNode,
++        TextInputNode,
++        LifecycleNode {
++        override fun onKeyboardEvent(event: KeyboardEvent): InputResult = element.counters.deliver(element.owner, element.member, element.workload)
++
++        override fun onTextInput(event: TextInputEvent): InputResult = element.counters.deliver(element.owner, element.member, element.workload)
++
++        override fun attach() = Unit
++
++        override fun detach() = Unit
++
++        override fun dispose() {
++            element.counters.disposals += 1
++        }
++    }
++
++    private class InputElement(
++        val node: InputNode,
++        children: List<Element> = emptyList(),
++        modifier: Modifier = Modifier.Empty,
++    ) : Element(ElementIdentity.Positional, inputType, children, modifier)
++
++    private data class DispatchElement(
++        val owner: Int,
++        val member: Int,
++        val workload: Workload,
++        val counters: Counters,
++    ) : ModifierElement {
++        override val type: ModifierNodeType<*, *>
++            get() = dispatchType
++    }
++
++    private data class Actor(
++        val owner: Int,
++        val member: Int,
++    )
++
++    private data class Transition(
++        val owner: Int,
++        val focused: Boolean,
++    )
++
++    /**
++     * Generated-metadata registration and the independent dispatch oracle, invoked before any collection.
++     */
++    public companion object {
++        private val inputType =
++            ElementType(
++                elementClass = InputElement::class,
++                nodeClass = InputNode::class,
++                validateLocal = {},
++                createNode = InputElement::node,
++                updateNode = { _, _, _ -> DirtyMask.None },
++            )
++        private val dispatchType =
++            ModifierNodeType(
++                elementClass = DispatchElement::class,
++                nodeClass = DispatchNode::class,
++                validateLocal = {},
++                createNode = ::DispatchNode,
++                updateNode = { _, _, _ -> DirtyMask.None },
++            )
++
++        /**
++         * Verifies every frozen case with traces enabled outside timing and exact disposal counts.
++         */
++        @JvmStatic
++        public fun verifyWork() {
++            check(JmhWorkloadInventory.capture(listOf(FocusedInputBenchmark::class.java), setOf("avgt")).size == Workload.entries.size)
++            Workload.entries.forEach { workload -> Fixture(workload).use { it.verifyWork() } }
++        }
++    }
++}
+diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt
+new file mode 100644
+index 000000000..c63607dfb
+--- /dev/null
++++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt
+@@ -0,0 +1,441 @@
++package dev.s7a.strata.runtime
++
++import dev.s7a.strata.component.Row
++import dev.s7a.strata.component.Spacer
++import dev.s7a.strata.component.evaluateComponentTree
++import dev.s7a.strata.element.Element
++import dev.s7a.strata.element.ElementIdentity
++import dev.s7a.strata.element.ElementType
++import dev.s7a.strata.geometry.Constraints
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.input.FocusEvent
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.KeyCode
++import dev.s7a.strata.input.KeyboardEvent
++import dev.s7a.strata.input.KeyboardModifiers
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.modifier.ModifierElement
++import dev.s7a.strata.modifier.ModifierNodeType
++import dev.s7a.strata.modifier.initialFocus
++import dev.s7a.strata.modifier.onFocusChanged
++import dev.s7a.strata.modifier.onKeyEvent
++import dev.s7a.strata.modifier.onKeyPress
++import dev.s7a.strata.modifier.onTextInput
++import dev.s7a.strata.modifier.size
++import dev.s7a.strata.node.ClipChildrenNode
++import dev.s7a.strata.node.DirtyMask
++import dev.s7a.strata.node.FocusTargetNode
++import dev.s7a.strata.node.KeyboardInputNode
++import dev.s7a.strata.node.ModifierNode
++import dev.s7a.strata.node.Node
++import dev.s7a.strata.node.TextInputNode
++import dev.s7a.strata.runtime.spi.createRuntimeUiSession
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.state.mutableStateOf
++import kotlin.test.Test
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertNull
++import kotlin.test.assertSame
++
++/**
++ * Checks focused dispatch snapshots and cyclic traversal independently of platform adapters on JVM and JavaScript.
++ * Artificial retained mutations test snapshot membership even though public tree operations reject callback reentry.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class PortableFocusedInputTest {
++    @Test
++    fun everyProtocolPreservesInnerToOwnerOrderAndStopsAtFirstConsumption() {
++        for (count in listOf(0, 4, 16)) {
++            val order = (0 until count).reversed().toList() + count
++            for (protocol in Protocol.entries) {
++                for (stop in listOf(-1, 0, order.lastIndex).distinct()) {
++                    val observed = ArrayList<Int>()
++                    val fixture =
++                        focused(count) { id ->
++                            observed += id
++                            if (stop == observed.lastIndex) InputResult.Consumed else InputResult.Ignored
++                        }
++                    val token = fixture.pipeline.textInputFocus
++                    val expected = if (stop < 0) order else order.take(stop + 1)
++
++                    assertEquals(if (stop < 0) InputResult.Ignored else InputResult.Consumed, dispatch(fixture, protocol))
++                    assertEquals(expected, observed)
++                    assertSame(token, fixture.pipeline.textInputFocus)
++                    fixture.pipeline.releaseRetainedReferences()
++                    assertEquals(InputResult.Ignored, dispatch(fixture, protocol))
++                    assertNull(fixture.pipeline.textInputFocus)
++                }
++            }
++        }
++    }
++
++    @Test
++    fun callbackMutationDoesNotChangeTheCapturedChainMembership() {
++        for (protocol in Protocol.entries) {
++            val observed = ArrayList<Int>()
++            lateinit var fixture: Fixture
++            fixture =
++                focused(4) { id ->
++                    observed += id
++                    fixture.root.modifiers.clear()
++                    InputResult.Ignored
++                }
++
++            assertEquals(InputResult.Ignored, dispatch(fixture, protocol))
++            assertEquals(listOf(3, 2, 1, 0, 4), observed)
++            fixture.pipeline.releaseRetainedReferences()
++        }
++    }
++
++    @Test
++    fun callbackFailuresEscapeUnchangedWithoutCallingLaterMembers() {
++        for (protocol in Protocol.entries) {
++            val primary = IllegalArgumentException("focused callback")
++            val observed = ArrayList<Int>()
++            val fixture =
++                focused(4) { id ->
++                    observed += id
++                    throw primary
++                }
++
++            assertSame(primary, assertFailsWith<IllegalArgumentException> { dispatch(fixture, protocol) })
++            assertEquals(listOf(3), observed)
++            fixture.pipeline.releaseRetainedReferences()
++            assertNull(fixture.pipeline.textInputFocus)
++        }
++    }
++
++    @Test
++    fun traversalWrapsAtBothEndsAndKeepsDisabledOwnersAsAnchors() {
++        for (reverse in listOf(false, true)) {
++            for (start in listOf(0, 1, 2)) {
++                val transitions = ArrayList<Pair<Int, Boolean>>()
++                val nodes = List(3) { id -> ProbeNode(initial = id == start, changed = { transitions += id to it }) }
++                val fixture = owners(nodes)
++                nodes[start].accepting = false
++                transitions.clear()
++                val expected = if (reverse) (start + 2) % 3 else (start + 1) % 3
++
++                assertEquals(InputResult.Consumed, tab(fixture, reverse))
++                assertEquals(listOf(start to false, expected to true), transitions)
++                fixture.pipeline.releaseRetainedReferences()
++            }
++        }
++    }
++
++    @Test
++    fun missingFocusStartsAtTheDirectionalEndAndSingleTargetDoesNotRepeatTransitions() {
++        for (reverse in listOf(false, true)) {
++            val transitions = ArrayList<Pair<Int, Boolean>>()
++            val fixture = owners(List(3) { id -> ProbeNode(changed = { transitions += id to it }) })
++            val expected = if (reverse) 2 else 0
++            assertEquals(InputResult.Consumed, tab(fixture, reverse))
++            assertEquals(listOf(expected to true), transitions)
++            fixture.pipeline.releaseRetainedReferences()
++
++            val singleTransitions = ArrayList<Boolean>()
++            val single = owners(listOf(ProbeNode(changed = singleTransitions::add)))
++            repeat(3) { assertEquals(InputResult.Consumed, tab(single, reverse)) }
++            assertEquals(listOf(true), singleTransitions)
++            single.pipeline.clear()
++            single.pipeline.clear()
++            assertEquals(listOf(true, false), singleTransitions)
++            assertEquals(InputResult.Ignored, single.pipeline.dispatchTextInput(character))
++        }
++    }
++
++    @Test
++    fun ignoredKeyboardCallbackChangesAcceptanceBeforeTraversalEvaluatesCandidates() {
++        for (reverse in listOf(false, true)) {
++            val transitions = ArrayList<Pair<Int, Boolean>>()
++            val nodes = List(3) { id -> ProbeNode(initial = id == 0, changed = { transitions += id to it }) }
++            val firstCandidate = if (reverse) 2 else 1
++            val secondCandidate = if (reverse) 1 else 2
++            val fixture = owners(nodes)
++            nodes[0].callback = {
++                nodes[firstCandidate].accepting = false
++                InputResult.Ignored
++            }
++            transitions.clear()
++
++            assertEquals(InputResult.Consumed, tab(fixture, reverse))
++            assertEquals(listOf(0 to false, secondCandidate to true), transitions)
++            fixture.pipeline.releaseRetainedReferences()
++        }
++    }
++
++    @Test
++    fun candidateAcceptanceIsReadLazilyAndOwnerDiscoveryRemainsASnapshot() {
++        val transitions = ArrayList<Pair<Int, Boolean>>()
++        val nodes = List(4) { id -> ProbeNode(initial = id == 0, changed = { transitions += id to it }) }
++        val fixture = owners(nodes)
++        var firstRead = true
++        nodes[1].readAcceptance = {
++            if (firstRead) {
++                firstRead = false
++                nodes[2].accepting = true
++                fixture.root.children.removeAt(2)
++            }
++            false
++        }
++        nodes[2].accepting = false
++        transitions.clear()
++
++        assertEquals(InputResult.Consumed, tab(fixture, reverse = false))
++        assertEquals(listOf(0 to false, 2 to true), transitions)
++        fixture.pipeline.releaseRetainedReferences()
++    }
++
++    @Test
++    fun traversalSkipsUnplacedOffscreenAndClippedTargetsButAllowsVisibleOverflow() {
++        val transitions = ArrayList<Pair<Int, Boolean>>()
++        val nodes = List(5) { id -> ProbeNode(initial = id == 0, changed = { transitions += id to it }) }
++        val fixture = owners(nodes)
++        val entries = fixture.root.children
++        entries[1].placed = false
++        entries[2].bounds = IntRect(Int.MAX_VALUE - 2, 0, Int.MAX_VALUE, 2)
++        val clip = retained(ClipProbe()).also { it.bounds = IntRect(0, 0, 2, 2) }
++        entries[3].parent = clip
++        entries[3].bounds = IntRect(3, 0, 5, 2)
++        val overflow = retained(ProbeNode(accepting = false)).also { it.bounds = IntRect(0, 0, 2, 2) }
++        entries[4].parent = overflow
++        entries[4].bounds = IntRect(3, 0, 5, 2)
++        transitions.clear()
++
++        assertEquals(InputResult.Consumed, tab(fixture, reverse = false))
++        assertEquals(listOf(0 to false, 4 to true), transitions)
++        fixture.pipeline.releaseRetainedReferences()
++    }
++
++    @Test
++    fun reorderedAndRemovedOwnersUseTheCurrentSnapshotAndReleaseOldFocus() {
++        val transitions = ArrayList<Pair<Int, Boolean>>()
++        val nodes = List(3) { id -> ProbeNode(initial = id == 0, changed = { transitions += id to it }) }
++        val fixture = owners(nodes)
++        val first = fixture.root.children.removeAt(0)
++        fixture.root.children.add(1, first)
++        fixture.pipeline.layoutCommitted(fixture.root)
++        transitions.clear()
++
++        assertEquals(InputResult.Consumed, tab(fixture, reverse = false))
++        assertEquals(listOf(0 to false, 2 to true), transitions)
++        nodes[0].accepting = false
++        fixture.root.children.removeAt(2)
++        fixture.pipeline.layoutCommitted(fixture.root)
++        assertNull(fixture.pipeline.textInputFocus)
++        assertEquals(InputResult.Ignored, fixture.pipeline.dispatchTextInput(character))
++        fixture.pipeline.releaseRetainedReferences()
++    }
++
++    @Test
++    fun ignoredTabPublishesStateWithoutApplyingNewDeclarationsDuringDispatch() {
++        val disabled = mutableStateOf(false)
++        val observed = ArrayList<FocusEvent>()
++        var evaluations = 0
++        val session =
++            createRuntimeUiSession {
++                evaluations += 1
++                evaluateComponentTree {
++                    Row {
++                        Spacer(
++                            modifier =
++                                Modifier.Empty
++                                    .size(10, 10)
++                                    .initialFocus()
++                                    .onKeyPress {
++                                        disabled.value = true
++                                        InputResult.Ignored
++                                    },
++                        )
++                        Spacer(
++                            modifier =
++                                if (disabled.value) {
++                                    Modifier.Empty.size(10, 10)
++                                } else {
++                                    Modifier.Empty.size(10, 10).onFocusChanged { observed += it }
++                                },
++                        )
++                    }
++                }
++            }
++        try {
++            session.attach()
++            val constraints = Constraints.fixed(20, 10)
++            session.frame(constraints)
++
++            assertEquals(InputResult.Consumed, session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
++            assertEquals(1, evaluations)
++            assertEquals(listOf(FocusEvent.Gained), observed)
++            session.frame(constraints)
++            assertEquals(2, evaluations)
++            assertEquals(listOf(FocusEvent.Gained), observed)
++            session.resetInputState()
++        } finally {
++            session.close()
++        }
++    }
++
++    @Test
++    fun realSessionFailuresPreserveIdentityAndDisposeBeforeReturningOnEveryProtocol() {
++        for (protocol in Protocol.entries) {
++            val primary = IllegalArgumentException("focused delivery")
++            val probe = TestProbe()
++            var disposals = 0
++            val modifier =
++                Modifier.Empty
++                    .initialFocus()
++                    .onKeyEvent { throw primary }
++                    .onTextInput { throw primary }
++            val session =
++                createRuntimeUiSession {
++                    probe.element(
++                        TestProbe.ProbeId("focused"),
++                        modifier = modifier,
++                        onDispose = { disposals += 1 },
++                    )
++                }
++            session.attach()
++            session.frame(Constraints.fixed(10, 10))
++
++            val failure =
++                assertFailsWith<IllegalArgumentException> {
++                    when (protocol) {
++                        Protocol.Press -> session.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Enter, 7))
++                        Protocol.Release -> session.dispatchKeyboard(KeyboardEvent.Release(KeyCode.Enter, 7))
++                        Protocol.Character -> session.dispatchTextInput(character)
++                        Protocol.Preedit -> session.dispatchTextInput(TextInputEvent.Preedit("compose", 3, listOf("com", "pose"), 1))
++                    }
++                }
++            assertSame(primary, failure)
++            assertEquals(1, disposals)
++            assertFailsWith<IllegalStateException> { session.dispatchTextInput(character) }
++            session.close()
++            assertEquals(1, disposals)
++        }
++    }
++
++    private fun focused(
++        modifierCount: Int,
++        callback: (Int) -> InputResult,
++    ): Fixture {
++        val root = retained(ProbeNode(initial = true, callback = { callback(modifierCount) }))
++        repeat(modifierCount) { id ->
++            val node = InputModifier { callback(id) }
++            val entry = RetainedModifier(InputElement(node), node).also { it.placed = true }
++            root.modifiers += entry
++        }
++        root.modifiers.forEachIndexed { index, modifier ->
++            modifier.virtualChild = root.modifiers.getOrNull(index + 1) ?: root
++        }
++        return Fixture(root, FocusedInputPipeline().also { it.layoutCommitted(root) })
++    }
++
++    private fun owners(nodes: List<ProbeNode>): Fixture {
++        val root = retained(ProbeNode(accepting = false))
++        nodes.forEach { node -> root.children += retained(node).also { it.parent = root } }
++        return Fixture(root, FocusedInputPipeline().also { it.layoutCommitted(root) })
++    }
++
++    private fun retained(node: ProbeNode): RetainedNode =
++        RetainedNode(ProbeElement(node), node, logicalParent = null).also {
++            it.placed = true
++            it.bounds = IntRect(0, 0, 10, 10)
++        }
++
++    private fun dispatch(
++        fixture: Fixture,
++        protocol: Protocol,
++    ): InputResult =
++        when (protocol) {
++            Protocol.Press -> fixture.pipeline.dispatchKeyboard(fixture.root, KeyboardEvent.Press(KeyCode.Enter, 7))
++            Protocol.Release -> fixture.pipeline.dispatchKeyboard(fixture.root, KeyboardEvent.Release(KeyCode.Enter, 7))
++            Protocol.Character -> fixture.pipeline.dispatchTextInput(character)
++            Protocol.Preedit -> fixture.pipeline.dispatchTextInput(TextInputEvent.Preedit("compose", 3, listOf("com", "pose"), 1))
++        }
++
++    private fun tab(
++        fixture: Fixture,
++        reverse: Boolean,
++    ): InputResult = fixture.pipeline.dispatchKeyboard(fixture.root, KeyboardEvent.Press(KeyCode.Tab, 0, KeyboardModifiers(shift = reverse)))
++
++    private enum class Protocol { Press, Release, Character, Preedit }
++
++    private data class Fixture(
++        val root: RetainedNode,
++        val pipeline: FocusedInputPipeline,
++    )
++
++    private open class ProbeNode(
++        var accepting: Boolean = true,
++        private val initial: Boolean = false,
++        var callback: () -> InputResult = { InputResult.Ignored },
++        private val changed: (Boolean) -> Unit = {},
++    ) : Node(),
++        FocusTargetNode,
++        KeyboardInputNode,
++        TextInputNode {
++        var readAcceptance: (() -> Boolean)? = null
++
++        override val acceptsFocus: Boolean
++            get() = readAcceptance?.invoke() ?: accepting
++
++        override val requestsInitialFocus: Boolean
++            get() = initial
++
++        override val requiresTextInput: Boolean
++            get() = true
++
++        override fun onFocusChanged(focused: Boolean) = changed(focused)
++
++        override fun onKeyboardEvent(event: KeyboardEvent): InputResult = callback()
++
++        override fun onTextInput(event: TextInputEvent): InputResult = callback()
++    }
++
++    private class ClipProbe :
++        ProbeNode(accepting = false),
++        ClipChildrenNode
++
++    private class InputModifier(
++        private val callback: () -> InputResult,
++    ) : ModifierNode(),
++        KeyboardInputNode,
++        TextInputNode {
++        override fun onKeyboardEvent(event: KeyboardEvent): InputResult = callback()
++
++        override fun onTextInput(event: TextInputEvent): InputResult = callback()
++    }
++
++    private class ProbeElement(
++        val node: ProbeNode,
++    ) : Element(ElementIdentity.Positional, probeType)
++
++    private data class InputElement(
++        val node: InputModifier,
++    ) : ModifierElement {
++        override val type: ModifierNodeType<*, *>
++            get() = inputType
++    }
++
++    private companion object {
++        val character = TextInputEvent.Character(0x1F642)
++        val probeType =
++            ElementType(
++                elementClass = ProbeElement::class,
++                nodeClass = ProbeNode::class,
++                validateLocal = {},
++                createNode = ProbeElement::node,
++                updateNode = { _, _, _ -> DirtyMask.None },
++            )
++        val inputType =
++            ModifierNodeType(
++                elementClass = InputElement::class,
++                nodeClass = InputModifier::class,
++                validateLocal = {},
++                createNode = InputElement::node,
++                updateNode = { _, _, _ -> DirtyMask.None },
++            )
++    }
++}

@@ -1,0 +1,82 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
+      "tree": "29b09978970f1208f0b7024fac85d71efa80e8f0",
+      "patches": [
+        {
+          "path": ".github/performance/focused-input-full/candidate.patch",
+          "sha256": "6c4c454fdb57c4acfd7338dbd0c18fa3dec4083459bc1e800d581f9990c48566"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
+      "tree": "29b09978970f1208f0b7024fac85d71efa80e8f0",
+      "patches": [
+        {
+          "path": ".github/performance/focused-input-full/candidate.patch",
+          "sha256": "6c4c454fdb57c4acfd7338dbd0c18fa3dec4083459bc1e800d581f9990c48566"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
+      "tree": "67ac4c93774a6091c7f4538a95187f26d6632bae",
+      "patches": [
+        {
+          "path": ".github/performance/focused-input-full/baseline.patch",
+          "sha256": "12c3ed42182cc70e63ace7a5a4147c14474aaecd385a3cb86065d12b31864366"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "focused-input-full",
+      "benchmarks": [
+        "FocusedInputBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 32
+    }
+  ],
+  "inputs": [
+    {
+      "label": "focused-source-0",
+      "pin": {
+        "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/FocusedInputPipeline.kt",
+        "sha256": "b4ab55ba057673643bf9bd7449eebd9b6e22863951a3473d6a1430687facf475"
+      }
+    },
+    {
+      "label": "focused-source-1",
+      "pin": {
+        "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt",
+        "sha256": "c28001cedb397298f15a8bae320c3fd64778aef745b262e7604b51e8585de92b"
+      }
+    },
+    {
+      "label": "focused-source-2",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt",
+        "sha256": "79aefb81c70665a627ee5b3900ca8cb647333ba50f5e55c53e6d9912f23149cc"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

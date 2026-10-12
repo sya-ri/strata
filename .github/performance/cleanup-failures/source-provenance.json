@@ -1,0 +1,192 @@
+{
+  "source_bindings": {
+    "baseline": {
+      "ref": "0c0e19bb21bcd67549f469845eb95d234c1cb5e3",
+      "tree": "1b7d2a2e1c5f869f2c8f4291cb69bf097a48f7cc",
+      "patches": [
+        {
+          "path": ".github/performance/cleanup-failures/baseline.patch",
+          "sha256": "3a3c2b297a7521a43a94afff1ca478b3012a0d4fbf4d350a212cc7bd1940b7fa"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "7392a965f3c41bd49a12e54551cca37d5c1359ac",
+      "tree": "76a220bc8d813943caa00fa61263f489c7beb4ba",
+      "patches": []
+    },
+    "fixture": {
+      "ref": "7392a965f3c41bd49a12e54551cca37d5c1359ac",
+      "tree": "76a220bc8d813943caa00fa61263f489c7beb4ba",
+      "patches": []
+    }
+  },
+  "common_source_files": {
+    "baseline": {
+      "docs/development/performance-testkit.md": {
+        "git_blob": "8e23995edfc3d3a2fd5bdc2c5a5d82eb3f42cf78",
+        "sha256": "07016b228ec2250e8f066827ff744e4ad713406a3a9a936f637b65491fcece3a"
+      },
+      "gradle/performance/paired-jvm.py": {
+        "git_blob": "5f9db3aaa0a16575baa8b96d1bcbb010ea2dccd8",
+        "sha256": "534dddcc9ee7ef9c42176a26f600ce80443c45a5e72e97e6c99c31f6d21bc07e"
+      },
+      "gradle/tests/test_paired_jvm.py": {
+        "git_blob": "78f125b4990f14e40a6170cd3fca458039c38694",
+        "sha256": "be7754d9665e19e215eafc7e8e99727c64304027d270bc046ef1a000b9bfabcc"
+      },
+      "performance-testkit/api/performance-testkit.api": {
+        "git_blob": "7a46891af5ae0f0065d2261622b4ae196c3265ca",
+        "sha256": "ee658d617d7160fa37089878a57d9c1c404929e6b577d9ca0a515d9a34b70e08"
+      },
+      "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReportAdapter.kt": {
+        "git_blob": "32bba92f09bfdba45b4699fe2fbde8d87e6cfaf8",
+        "sha256": "1351a7e3ecea91a37f0520a897ffd46aa0c62cf173a3558a17782cf24a012e75"
+      },
+      "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReports.kt": {
+        "git_blob": "b74d7f82253b719e775cc5802c94723e48846acd",
+        "sha256": "e0b8d1d97d1016b41624dd3a0828fa17bf830f2f1efc9f1611963b0a933bcfff"
+      },
+      "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationReportsTest.kt": {
+        "git_blob": "b35a557b242906512593537095c6da7ba75fb53a",
+        "sha256": "701664435dc1da7e14ad739af62367a11b89094f061821bd0b8ff63ee4f4b6cc"
+      },
+      "quality/component-benchmarks/build.gradle.kts": {
+        "git_blob": "501407e3b1f15f9bb3f84cef7e032b38039ca889",
+        "sha256": "152418c01f84e8c961904176629e06f60e21e5dbd5a165e4fa543e62b54ba87f"
+      },
+      "quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/CleanupFailuresBenchmark.java": {
+        "git_blob": "f31917aed136bd097e9fe36f20b5043d812fdd86",
+        "sha256": "c1bc35cc677090fe20e04d565e4185cf724c9203bb5a331fb89019619d879f21"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CleanupOperationInputs.kt": {
+        "git_blob": "1e2e571e6bda1e8f075fb58c1cf30194b636c1a3",
+        "sha256": "52bef117684a049482acf9ff1a0d700942236051ed55c4fb9cb4962cc730975b"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CollectorCleanupOperationReport.kt": {
+        "git_blob": "16372209f5bc819c316f265f51d36cc3a9051594",
+        "sha256": "3c69848b8255ee26fcc693997656016dbda2faf8cea728c76d78bccc7e24df84"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CoreCleanupBenchmark.kt": {
+        "git_blob": "5a4d49ca8e2ab43ba0492303bd7dd050d4fb98d4",
+        "sha256": "1e691dd3fbc74ea4fa1e4ea005daf6db38b2ba02b0a5e939dbdf5e92f9374154"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CoreCleanupOperationReport.kt": {
+        "git_blob": "5ab0bb10c6b043c476a803d9e109953180c842dd",
+        "sha256": "771f748329debe4951803ab38e7652f4554bc1e6954792d520ff69b1ea22ce08"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCleanupBenchmark.kt": {
+        "git_blob": "971cfe51087778726a8bc011323ef78ea89a475d",
+        "sha256": "28a177490bbcb7e600b07fd520fe1ad447cd7262084d6266cfde5e6a0558275b"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCleanupOperationReport.kt": {
+        "git_blob": "c85d203a523f513bd2fda5efe581b9339a2f1e20",
+        "sha256": "c9d46c3953cffed84873f2ae2765e6237f05094748321c6f44498b16f4bd5260"
+      },
+      "quality/component-benchmarks/src/main/resources/published-host-api.tsv": {
+        "git_blob": "f76eb82f237e854d461eab84957d6ae4bcd5af2c",
+        "sha256": "c972b41cb14b5a8ba0adf6ce8bd716d9f362c0668fb15007f12fb685549ad702"
+      },
+      "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/FailureAccumulatorTest.kt": {
+        "git_blob": "53342f412e1640ad2d30cb7f80d3152a985d3a75",
+        "sha256": "1a017d48c4fbb8c456498c4e53aaf7a78ec925c5bf8867365d57a195a06aa250"
+      },
+      "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/CanvasFailuresTest.kt": {
+        "git_blob": "2743d8ff24df9fbf72607badf9e4fdc574a235fa",
+        "sha256": "547758721aa14681d5fbd264e9f730e1f2cb05880db410ac757dcd09b30e3a8c"
+      }
+    },
+    "candidate": {
+      "docs/development/performance-testkit.md": {
+        "git_blob": "8e23995edfc3d3a2fd5bdc2c5a5d82eb3f42cf78",
+        "sha256": "07016b228ec2250e8f066827ff744e4ad713406a3a9a936f637b65491fcece3a"
+      },
+      "gradle/performance/paired-jvm.py": {
+        "git_blob": "5f9db3aaa0a16575baa8b96d1bcbb010ea2dccd8",
+        "sha256": "534dddcc9ee7ef9c42176a26f600ce80443c45a5e72e97e6c99c31f6d21bc07e"
+      },
+      "gradle/tests/test_paired_jvm.py": {
+        "git_blob": "78f125b4990f14e40a6170cd3fca458039c38694",
+        "sha256": "be7754d9665e19e215eafc7e8e99727c64304027d270bc046ef1a000b9bfabcc"
+      },
+      "performance-testkit/api/performance-testkit.api": {
+        "git_blob": "7a46891af5ae0f0065d2261622b4ae196c3265ca",
+        "sha256": "ee658d617d7160fa37089878a57d9c1c404929e6b577d9ca0a515d9a34b70e08"
+      },
+      "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReportAdapter.kt": {
+        "git_blob": "32bba92f09bfdba45b4699fe2fbde8d87e6cfaf8",
+        "sha256": "1351a7e3ecea91a37f0520a897ffd46aa0c62cf173a3558a17782cf24a012e75"
+      },
+      "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReports.kt": {
+        "git_blob": "b74d7f82253b719e775cc5802c94723e48846acd",
+        "sha256": "e0b8d1d97d1016b41624dd3a0828fa17bf830f2f1efc9f1611963b0a933bcfff"
+      },
+      "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationReportsTest.kt": {
+        "git_blob": "b35a557b242906512593537095c6da7ba75fb53a",
+        "sha256": "701664435dc1da7e14ad739af62367a11b89094f061821bd0b8ff63ee4f4b6cc"
+      },
+      "quality/component-benchmarks/build.gradle.kts": {
+        "git_blob": "501407e3b1f15f9bb3f84cef7e032b38039ca889",
+        "sha256": "152418c01f84e8c961904176629e06f60e21e5dbd5a165e4fa543e62b54ba87f"
+      },
+      "quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/CleanupFailuresBenchmark.java": {
+        "git_blob": "f31917aed136bd097e9fe36f20b5043d812fdd86",
+        "sha256": "c1bc35cc677090fe20e04d565e4185cf724c9203bb5a331fb89019619d879f21"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CleanupOperationInputs.kt": {
+        "git_blob": "1e2e571e6bda1e8f075fb58c1cf30194b636c1a3",
+        "sha256": "52bef117684a049482acf9ff1a0d700942236051ed55c4fb9cb4962cc730975b"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CollectorCleanupOperationReport.kt": {
+        "git_blob": "16372209f5bc819c316f265f51d36cc3a9051594",
+        "sha256": "3c69848b8255ee26fcc693997656016dbda2faf8cea728c76d78bccc7e24df84"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CoreCleanupBenchmark.kt": {
+        "git_blob": "5a4d49ca8e2ab43ba0492303bd7dd050d4fb98d4",
+        "sha256": "1e691dd3fbc74ea4fa1e4ea005daf6db38b2ba02b0a5e939dbdf5e92f9374154"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CoreCleanupOperationReport.kt": {
+        "git_blob": "5ab0bb10c6b043c476a803d9e109953180c842dd",
+        "sha256": "771f748329debe4951803ab38e7652f4554bc1e6954792d520ff69b1ea22ce08"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCleanupBenchmark.kt": {
+        "git_blob": "971cfe51087778726a8bc011323ef78ea89a475d",
+        "sha256": "28a177490bbcb7e600b07fd520fe1ad447cd7262084d6266cfde5e6a0558275b"
+      },
+      "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCleanupOperationReport.kt": {
+        "git_blob": "c85d203a523f513bd2fda5efe581b9339a2f1e20",
+        "sha256": "c9d46c3953cffed84873f2ae2765e6237f05094748321c6f44498b16f4bd5260"
+      },
+      "quality/component-benchmarks/src/main/resources/published-host-api.tsv": {
+        "git_blob": "f76eb82f237e854d461eab84957d6ae4bcd5af2c",
+        "sha256": "c972b41cb14b5a8ba0adf6ce8bd716d9f362c0668fb15007f12fb685549ad702"
+      },
+      "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/FailureAccumulatorTest.kt": {
+        "git_blob": "53342f412e1640ad2d30cb7f80d3152a985d3a75",
+        "sha256": "1a017d48c4fbb8c456498c4e53aaf7a78ec925c5bf8867365d57a195a06aa250"
+      },
+      "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/CanvasFailuresTest.kt": {
+        "git_blob": "b551ce421274f9e8175c385fc2f0758e55406111",
+        "sha256": "0c6d304dd07af2faf5c92a9acd3a2bb9e450e8c1fc89ade8d815eb3a80a72e27"
+      }
+    }
+  },
+  "primary_cases_per_mode": 46,
+  "primary_b3c3_cells": 552,
+  "supplemental_b3c3_rows": 276,
+  "declared_collector_controls": 20,
+  "unchanged_control_claim": false,
+  "required_independent_runtime_junit_methods": 45,
+  "kit_contract_methods_in_normal_ci": 6,
+  "only_production_delta": [
+    "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/FailureAccumulator.kt",
+    "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/CanvasFailures.kt"
+  ],
+  "candidate_only_optimization_tests": [
+    "FailureAccumulatorStorageTest",
+    "CanvasFailuresTest.successfulEmptySingleAndManyCallbacksNeverCreateIdentityStorage"
+  ],
+  "baseline_tests": "All original unfiltered tests plus every common failure graph parity control; candidate-only absent-storage assertions cannot run on the original eager implementation.",
+  "compiled_prepins": "Not declared; actual generated CI archives, complete loaded class origins and catalog toolchains remain mandatory.",
+  "measured_improvement": "Pending complete B3/C3 collection"
+}
