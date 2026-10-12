@@ -677,6 +677,8 @@ Full class-load attribution uses one fixed attempt-owned staging directory so th
 Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
 Previously captured staging files must remain byte-identical before the next invocation.
 The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
+Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
+Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.

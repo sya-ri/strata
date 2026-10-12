@@ -1,9 +1,9 @@
 {
   "schema": "strata.issue153.prepared-source-provenance.v1",
   "status": "Source preparation only; source quality and full measurements Pending",
-  "base_public_commit": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
-  "baseline_tree": "b59bb90c14472a4bddd4c907ae26a77572c4c889",
-  "candidate_fixture_tree": "fcfb80dc0076707085dc58d0bca2977f9e34a49d",
+  "base_public_commit": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+  "baseline_tree": "cebefd1f432cb0025b215acd3df4ed820f50de12",
+  "candidate_fixture_tree": "89c0dd7ef2b6aeafe67e5bdf3539040d92b3d14f",
   "runtime_delta_paths": [
     "api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt",
     "api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt",
@@ -632,16 +632,16 @@
       "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
     }
   },
-  "common_collector_master": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
+  "common_collector_master": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
   "accepted_master": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-  "common_generic_source": "02422daef6e3df351ebf97a1f1f5233b1c560d1f",
+  "common_generic_source": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
   "operation_boundaries": "Original complete construct and rebuildFrame methods; original trial setup, result-type checks, report serialization and terminal surviving-session close outside the sample.",
   "deterministic_work": "Original 42 full public declaration/geometry/pixel/input/semantics/lifecycle fixtures and parent-data/session-owner controls run through the existing verifyWork hook.",
   "candidate_internal_borrow_regression": "Final candidate API JVM/JavaScript source checks; private new internal method is not a baseline paired-test gate.",
   "compiled_pins": "Optional empty; actual loaded fixture/collector/runtime/dependency/Java closure retained by existing driver",
-  "measurement_selection": "Own whole84 default and nested opt-in manifests are byte-identical; inherited cleanup46 default is replaced only in this PR driver metadata. Original84/24/1008+504 and fixed1800+30 unchanged.",
+  "measurement_selection": "Own complete84 automatically selected by byte-identical default/nested manifests; no unrelated inherited corpus or duplicate dispatch",
   "patch_encoding": "Standard Git binary hunks; temporary generation attributes; repository attributes unchanged",
-  "driver_metadata_scope": "Measured source trees exclude own issue153-full metadata and retain the unchanged public foundation default; it is not read by the explicitly selected Gradle fixture. Both runtime sides share every source byte except the original4API paths.",
+  "driver_metadata_scope": "Measured source trees exclude own issue153-full metadata and default manifest, avoiding self-reference; common483 source has no default",
   "Java_started": 0,
   "helper_calls": 0,
   "completed_score_cells": 0,

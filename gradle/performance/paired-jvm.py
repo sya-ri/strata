@@ -312,16 +312,20 @@ def owned_generation(terminal, pid, vm_start):
     return member
 
 
-def class_diagnostic(identities, pid, vm_diagnostic):
-    """Bind reused PIDs through the identical JVM-start filename stamp of both raw logs."""
+def class_diagnostic(identities, pid, vm_diagnostic, vm_files):
+    """Match actual start stamps; legacy unstamped diagnostics require a unique VM PID."""
     candidates = [item for item in identities.values() if item["pid"] == pid]
-    if len(candidates) <= 1:
-        return candidates[0] if candidates else None
+    if not candidates:
+        return None
     name = re.fullmatch(r"vm-pid" + str(pid) + r"-([0-9_-]+)\.log", vm_diagnostic.name)
-    require(name is not None, "Missing reused-PID VM diagnostic timestamp")
+    if name is None:
+        same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
+                                     path.read_text(encoding="utf-8"))) for path in vm_files)
+        require(len(candidates) == same_pid == 1, "Missing reused-PID VM diagnostic timestamp")
+        return candidates[0]
     matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{name[1]}.log"]
-    require(len(matching) == 1, "Missing or ambiguous reused-PID class-load diagnostic")
-    return matching[0]
+    require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
+    return matching[0] if matching else None
 
 
 def verify_vms(directory, files, terminal, allowed, expected_forks=None):
@@ -380,7 +384,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
-        diagnostic = class_diagnostic(class_identities, pid, path)
+        diagnostic = class_diagnostic(class_identities, pid, path, files)
         if diagnostic is not None:
             evidence["class_load_diagnostic"] = diagnostic
         if role == "fork":

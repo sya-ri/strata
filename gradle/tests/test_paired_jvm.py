@@ -690,6 +690,53 @@ class PairedJvmTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
 
+    def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
+        home = self.root / "probe-reuse-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        environment = "-Xmx32m -XX:MaxMetaspaceSize=256m -XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile=owned/vm-%p-%t.log"
+        probe = ("<hotspot_log process='5704' time_ms='1791843175150'>\n<vm_arguments><args>\n"
+                 f"{environment} -XX:+UnlockExperimentalVMOptions -XX:CompileCommand=blackhole,some/fake/Class.method </args>\n"
+                 f"<launcher>SUN_STANDARD</launcher>\n<properties>\njava.home={home}\njava.class.path=\n</properties></vm_arguments>\n"
+                 "-XX:MaxHeapSize=33554432 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        def document(pid, start, main):
+            return (f"<hotspot_log process='{pid}' time_ms='{start}'>\n<vm_arguments><command>{main}</command>\n"
+                    f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
+                    "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        member = {"pid": 5704, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                  "creationFileTime": 134363168979685947, "exitFileTime": 134363169071356647,
+                  "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15}
+        for mode in ("complete", "wrong-fork-stamp", "unstamped-reused-pid"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("probe-fork-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
+                origin = {"main": "fixture.Collector", "executable": str(executable), "classpath": "frozen.jar"}
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                files = [directory / name for name in ("vm-pid5704-2026-10-12_22-12-55.log", "vm-pid5704-2026-10-12_22-14-57.log", "vm-pid456-2026-10-12_22-12-54.log")]
+                if mode == "unstamped-reused-pid":
+                    files[0] = directory / "probe.log"
+                    files[1] = directory / "fork.log"
+                for path, value in zip(files, (probe, document(5704, 1791843297993, "org.openjdk.jmh.runner.ForkedMain 1"), document(456, 1791843174001, "fixture.Collector"))):
+                    path.write_text(value, encoding="utf-8")
+                stamp = "2026-10-12_22-12-55" if mode == "wrong-fork-stamp" else "2026-10-12_22-14-57"
+                fork_class = directory / f"class-loads/classes-5704-{stamp}.log"
+                fork_class.write_text("[5704][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                (directory / "class-loads/classes-456-2026-10-12_22-12-54.log").write_text("[456][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
+                terminal = {"members": {"5704": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    rows = PAIRED.read_json(directory / "vms.json")
+                    self.assertNotIn("class_load_diagnostic", rows[0])
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["sha256"], PAIRED.digest(fork_class))
+                    self.assertEqual(rows[1]["os_generation"], member)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_fixed_class_load_staging_retains_only_fresh_phase_bytes_and_rejects_previous_mutation(self):
         for mode in ("complete", "partial", "changed-previous", "deleted-previous"):
             with self.subTest(mode=mode):
