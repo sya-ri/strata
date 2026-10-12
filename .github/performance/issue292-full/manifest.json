@@ -3,31 +3,31 @@
   "sources": {
     "fixture": {
       "ref": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-      "tree": "4fb7e146d43b4bd4b1bb27d5d8a7fe3edf0a03e2",
+      "tree": "9e80c98f85c2cd75e5c9108d6add68c45764946e",
       "patches": [
         {
           "path": ".github/performance/issue292-full/candidate.patch",
-          "sha256": "a4a770bb0f5c4e5b58e27f39fd5233d9432a8602bb60ede569693df7d39efc71"
+          "sha256": "0278916351a56f3cb2b2e554fad69be59b5dad49e63b0369058e812696a4bbaf"
         }
       ]
     },
     "baseline": {
       "ref": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
-      "tree": "9356b47e31bc5876c803418d2ba0937dc670694d",
+      "tree": "948d127e94e010a4eff9fe7757fd1c4465c0a170",
       "patches": [
         {
           "path": ".github/performance/issue292-full/baseline.patch",
-          "sha256": "2d6c0c7adbe3b9f6d0e73b8ad5a270be97be6f61757da9c1600fcac861b3a354"
+          "sha256": "be23173dd5216c06b6da33db2f5b57c570cb5a18bf590d3a7402a1b5611f003d"
         }
       ]
     },
     "candidate": {
       "ref": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-      "tree": "4fb7e146d43b4bd4b1bb27d5d8a7fe3edf0a03e2",
+      "tree": "9e80c98f85c2cd75e5c9108d6add68c45764946e",
       "patches": [
         {
           "path": ".github/performance/issue292-full/candidate.patch",
-          "sha256": "a4a770bb0f5c4e5b58e27f39fd5233d9432a8602bb60ede569693df7d39efc71"
+          "sha256": "0278916351a56f3cb2b2e554fad69be59b5dad49e63b0369058e812696a4bbaf"
         }
       ]
     }
@@ -49,7 +49,36 @@
       "workloads": [],
       "parameters": {},
       "expected_cases": 48,
-      "profilers": []
+      "profilers": [],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.CycleSelectionBenchmark": "dev.s7a.strata.quality.benchmark.CycleSelectionOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 48,
+        "expected_controls": 30
+      }
+    },
+    {
+      "project": ":quality:benchmarks",
+      "name": "issue306-nonuniform-overlay",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.NonuniformOverlayBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 6,
+      "profilers": [],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.NonuniformOverlayBenchmark": "dev.s7a.strata.quality.benchmark.NonuniformOverlayOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 6,
+        "expected_controls": 0
+      }
     }
   ],
   "inputs": [
@@ -57,35 +86,35 @@
       "label": "cycle-selection-source-provenance",
       "pin": {
         "path": ".github/performance/issue292-full/source-provenance.json",
-        "sha256": "6b6c300375e346a4db866ae4d9e4ef9f08bb6d21c393049ad4ff2a10e03fabc3"
+        "sha256": "e7d2d4f9e84d5d791d165063132f3f5e42dbebbd935b689a57d260065dce70d3"
       }
     },
     {
       "label": "cycle-selection-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue292-full/baseline.patch",
-        "sha256": "2d6c0c7adbe3b9f6d0e73b8ad5a270be97be6f61757da9c1600fcac861b3a354"
+        "sha256": "be23173dd5216c06b6da33db2f5b57c570cb5a18bf590d3a7402a1b5611f003d"
       }
     },
     {
       "label": "cycle-selection-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue292-full/candidate.patch",
-        "sha256": "a4a770bb0f5c4e5b58e27f39fd5233d9432a8602bb60ede569693df7d39efc71"
+        "sha256": "0278916351a56f3cb2b2e554fad69be59b5dad49e63b0369058e812696a4bbaf"
       }
     },
     {
       "label": "cycle-selection-fixed-CycleSelectionBenchmark",
       "pin": {
         "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionBenchmark.kt",
-        "sha256": "7232b2b1fcdd1ecffd08024d60d5c41b2f446496837c1e2b38801f2b3449f0dc"
+        "sha256": "840602a83c85471e027a74d9550208c42a02e74008839334d5b0dc30e732174b"
       }
     },
     {
       "label": "cycle-selection-fixed-CycleSelectionFixture",
       "pin": {
         "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFixture.kt",
-        "sha256": "ac748aed2c47db6ef3e8aaa5b387a66731cccf0f67d6bcb77495732e212eace8"
+        "sha256": "c3513aa5e3279de381b59a711ec9e1c9aa18d8c84534565732577be39a2e7c66"
       }
     },
     {
@@ -121,6 +150,27 @@
       "pin": {
         "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentFontAssets.kt",
         "sha256": "3dad012cdd12b5e76acd5baea03942a47f82a056ee7b69830004cb9a98a70fd6"
+      }
+    },
+    {
+      "label": "cycle-selection-fixed-CycleSelectionOperationReport",
+      "pin": {
+        "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionOperationReport.kt",
+        "sha256": "8fa927e8f1f165c4a7452f5d3af64fcc00d9470ca75467029210302a66df3d73"
+      }
+    },
+    {
+      "label": "nonuniform-overlay-fixed-NonuniformOverlayBenchmark",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayBenchmark.kt",
+        "sha256": "3c88b893b00f99a088c752ae8b7bf85c4b5a3d0db13608dafd9c7c3c0ee3e825"
+      }
+    },
+    {
+      "label": "nonuniform-overlay-fixed-NonuniformOverlayOperationReport",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayOperationReport.kt",
+        "sha256": "1c0f316965a51ced9ba3ac344a14206ecd5b56d4c15d48f4b4d8a59fe1a7233c"
       }
     }
   ],

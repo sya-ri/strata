@@ -25,6 +25,7 @@ jobs:
       all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
       minecraft: ${{ steps.plan.outputs.minecraft }}
       paired_manifest: ${{ steps.paired.outputs.paired_manifest }}
+      preflight: ${{ steps.plan.outputs.preflight }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -104,6 +105,40 @@ jobs:
         path: |
           build/performance-ci/*.zip
           build/performance-ci/bootstrap.json
+        if-no-files-found: error
+  preflight-qualification:
+    name: Qualified compiled fixture controls
+    needs: plan
+    if: needs.plan.outputs.preflight == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+      id: java
+      with:
+        paired: 'true'
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Qualify the real whole control and timing boundary
+      shell: pwsh
+      env:
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
+      run: python -B gradle/performance/verify-qualified-preflight.py --output "build/performance-ci/qualified-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Verify real resource refusal and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: qualified-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+        path: build/performance-ci/*.zip
         if-no-files-found: error
   web-demos:
     name: Web runtime and demos
@@ -240,6 +275,14 @@ jobs:
         name: kover-reports
         path: build/reports/kover
         if-no-files-found: error
+    - name: Upload compiler ABI dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: compiler-abi-dumps
+        path: '**/build/kotlin/abi/'
+        if-no-files-found: ignore
+        retention-days: 7
     needs: plan
     if: needs.plan.outputs.common == 'true'
   minecraft-matrix:
@@ -426,6 +469,7 @@ jobs:
     needs:
     - plan
     - paired-jvm
+    - preflight-qualification
     - web-demos
     - workflow-checks
     - web
@@ -448,6 +492,7 @@ jobs:
         minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
         expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
         expected['paired-jvm'] = p.get('paired_manifest', '') != ''
+        expected['preflight-qualification'] = p.get('preflight', 'false') == 'true'
         for job, selected in expected.items():
             required = 'success' if selected else 'skipped'
             assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"

@@ -37,6 +37,7 @@ import java.lang.ref.WeakReference
 /**
  * One owner-confined public host operation with immutable producers prepared before measurement.
  * Optional admission records exact input, action/observer order, dirty work, commands and detached pixels outside timing.
+ * Supplemental sampling can defer operation assertions to [assertOperation] while recording outcomes inside the boundary.
  */
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions") // The frozen independent transitions share one public-host ownership and parity implementation.
@@ -45,6 +46,7 @@ internal class CycleSelectionFixture(
     selected: Int = 0,
     private val control: CycleSelectionControl? = null,
     private val verify: Boolean = false,
+    private val deferAssertions: Boolean = false,
 ) : AutoCloseable {
     private var values: List<Choice>? = List(if (control == CycleSelectionControl.OneOptionUnchangedFrame) 1 else count) { Choice(it) }
     private var selection: MutableState<CycleButtonState<Choice>>? = mutableStateOf(CycleButtonState(checkNotNull(values), initial(selected)))
@@ -80,6 +82,17 @@ internal class CycleSelectionFixture(
     private val failure = ObserverFailure()
     private val viewport = IntSize(100, 20)
     private val time = FrameTime(0)
+
+    // The frozen disabled-input control has the largest input sequence: one pointer and four keys.
+    private val inputResults = arrayOfNulls<InputResult>(5)
+
+    private val expectedInputs = arrayOfNulls<InputResult>(5)
+    private var inputCount = 0
+    private var rejected: IllegalArgumentException? = null
+    private var rejectedValue: Choice? = null
+    private var caught: ObserverFailure? = null
+    private var equalBefore: Choice? = null
+    private var equalAfter: Choice? = null
     private val state: CycleButtonState<Choice> get() = checkNotNull(selection).value
     private val choices: List<Choice> get() = checkNotNull(values)
 
@@ -133,7 +146,7 @@ internal class CycleSelectionFixture(
     internal fun hover(): RuntimeUiFrame {
         inside = inside.not()
         val result = currentHost.dispatchPointer(PointerEvent.Move(if (inside) IntOffset(2, 2) else IntOffset(90, 2)))
-        check(result == InputResult.Ignored)
+        input(result, InputResult.Ignored)
         return complete()
     }
 
@@ -209,9 +222,14 @@ internal class CycleSelectionFixture(
             CycleSelectionControl.InvalidOutsideValueRejected -> {
                 try {
                     state.value = outside
-                    error("Outside selection was accepted")
+                    if (deferAssertions.not()) error("Outside selection was accepted")
                 } catch (expected: IllegalArgumentException) {
-                    check(state.value === original) { "Rejected outside selection mutated the state: $expected" }
+                    if (deferAssertions) {
+                        rejected = expected
+                        rejectedValue = state.value
+                    } else {
+                        check(state.value === original) { "Rejected outside selection mutated the state: $expected" }
+                    }
                 }
                 return hover()
             }
@@ -260,9 +278,9 @@ internal class CycleSelectionFixture(
             CycleSelectionControl.EarlierObserverThrows -> {
                 try {
                     state.value = choices.last()
-                    error("Earlier observer did not fail")
+                    if (deferAssertions.not()) error("Earlier observer did not fail")
                 } catch (expected: ObserverFailure) {
-                    check(expected === failure)
+                    if (deferAssertions) caught = expected else check(expected === failure)
                 }
                 return hover()
             }
@@ -291,7 +309,12 @@ internal class CycleSelectionFixture(
     private fun equalAndAliasSequence(): RuntimeUiFrame {
         val previous = state.value
         state.value = equal
-        check(state.value === previous)
+        if (deferAssertions) {
+            equalBefore = previous
+            equalAfter = state.value
+        } else {
+            check(state.value === previous)
+        }
         complete()
         val aliases = checkNotNull(aliasState)
         aliases.value = aliasEarlier
@@ -316,14 +339,39 @@ internal class CycleSelectionFixture(
         event: PointerEvent,
         expected: InputResult = InputResult.Consumed,
     ) {
-        check(currentHost.dispatchPointer(event) == expected)
+        input(currentHost.dispatchPointer(event), expected)
     }
 
     private fun key(
         key: KeyCode,
         expected: InputResult = InputResult.Consumed,
     ) {
-        check(currentHost.dispatchKeyboard(KeyboardEvent.Press(key, 0)) == expected)
+        input(currentHost.dispatchKeyboard(KeyboardEvent.Press(key, 0)), expected)
+    }
+
+    private fun input(
+        actual: InputResult,
+        expected: InputResult,
+    ) {
+        if (deferAssertions) {
+            inputResults[inputCount] = actual
+            expectedInputs[inputCount] = expected
+            inputCount += 1
+        } else {
+            check(actual == expected)
+        }
+    }
+
+    /**
+     * Checks recorded input, rejection, exception and no-op outcomes after a supplemental sample.
+     * Expected failure handling and every recovery frame remain inside the complete operation.
+     */
+    internal fun assertOperation() {
+        repeat(inputCount) { check(inputResults[it] == expectedInputs[it]) }
+        inputCount = 0
+        if (control == CycleSelectionControl.InvalidOutsideValueRejected) check(rejected != null && rejectedValue === original)
+        if (control == CycleSelectionControl.EarlierObserverThrows) check(caught === failure)
+        if (control == CycleSelectionControl.EqualDistinctNoOpWrite) check(equalBefore === equalAfter)
     }
 
     private fun redeclare() {
@@ -531,6 +579,14 @@ internal class CycleSelectionFixture(
             values = null
             original = null
             alternate = null
+            rejected = null
+            rejectedValue = null
+            caught = null
+            equalBefore = null
+            equalAfter = null
+            inputCount = 0
+            inputResults.fill(null)
+            expectedInputs.fill(null)
             profile = null
             events.clear()
             actionValues.clear()

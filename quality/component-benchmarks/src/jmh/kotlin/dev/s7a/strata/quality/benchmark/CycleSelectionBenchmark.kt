@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -108,6 +109,12 @@ public open class CycleSelectionBenchmark {
      * Frozen matrix and deterministic admission for every main mode and every independent control.
      */
     public companion object {
+        /**
+         * Declares all complete operation rows for optional generic supplemental collection.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = CycleSelectionOperationReport
+
         /**
          * Requires all 39 fixtures and 48 rows, with detached pixels, input, semantics, work and release checks.
          */

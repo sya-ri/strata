@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "9356b47e31bc5876c803418d2ba0937dc670694d",
+  "baseline_reconstructed_tree": "948d127e94e010a4eff9fe7757fd1c4465c0a170",
   "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "4fb7e146d43b4bd4b1bb27d5d8a7fe3edf0a03e2",
+  "candidate_fixture_tree": "9e80c98f85c2cd75e5c9108d6add68c45764946e",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -14,13 +14,13 @@
   "fixture_source_bindings": [
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionBenchmark.kt",
-      "git_blob": "f70232c855716e4c7869c791108d496c9144c6b1",
-      "sha256": "7232b2b1fcdd1ecffd08024d60d5c41b2f446496837c1e2b38801f2b3449f0dc"
+      "git_blob": "a75086ffe372703868271c044def52d3dc8d1dd1",
+      "sha256": "840602a83c85471e027a74d9550208c42a02e74008839334d5b0dc30e732174b"
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFixture.kt",
-      "git_blob": "1045c0d46b059b724c98cf576c644199c334231d",
-      "sha256": "ac748aed2c47db6ef3e8aaa5b387a66731cccf0f67d6bcb77495732e212eace8"
+      "git_blob": "8969befc3705dad9c710d600cf355b9dfb9ee9d3",
+      "sha256": "c3513aa5e3279de381b59a711ec9e1c9aa18d8c84534565732577be39a2e7c66"
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionControl.kt",
@@ -46,6 +46,21 @@
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentFontAssets.kt",
       "git_blob": "92205600efa26a6d884f19c184e3cf3a9b87c055",
       "sha256": "3dad012cdd12b5e76acd5baea03942a47f82a056ee7b69830004cb9a98a70fd6"
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionOperationReport.kt",
+      "git_blob": "b3fc03b3c01f81e623918e6be98df80c56523ed9",
+      "sha256": "8fa927e8f1f165c4a7452f5d3af64fcc00d9470ca75467029210302a66df3d73"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayBenchmark.kt",
+      "git_blob": "a828aecc6a47f66f4ab649b0fda8c1bf5675fd14",
+      "sha256": "3c88b893b00f99a088c752ae8b7bf85c4b5a3d0db13608dafd9c7c3c0ee3e825"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayOperationReport.kt",
+      "git_blob": "55364fdb48a219953931202d938bf65d7b8184ec",
+      "sha256": "1c0f316965a51ced9ba3ac344a14206ecd5b56d4c15d48f4b4d8a59fe1a7233c"
     }
   ],
   "controls": [
@@ -136,16 +151,16 @@
   "required_formal_cells": 288,
   "formal_cells_completed": 0,
   "timed_boundaries": "Published main hover/write methods and complete control transitions; invocation setup remains outside timed methods. Stock JMH GC allocation includes harness invocation setup and cannot certify operation-only control allocation.",
-  "operation_cpu_allocation": "Pending optional generic operation report route; not inferred from JMH or Job CPU",
+  "operation_cpu_allocation": "Pending actual full operation reports; explicit owner-thread complete boundaries, 30 warmup and 60 measured samples, three independent executions per side",
   "native_scope": "Separate loaded adapter receipts; CPU route does not certify native input, presentation or GPU behavior",
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "2d6c0c7adbe3b9f6d0e73b8ad5a270be97be6f61757da9c1600fcac861b3a354"
+      "sha256": "be23173dd5216c06b6da33db2f5b57c570cb5a18bf590d3a7402a1b5611f003d"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "a4a770bb0f5c4e5b58e27f39fd5233d9432a8602bb60ede569693df7d39efc71"
+      "sha256": "0278916351a56f3cb2b2e554fad69be59b5dad49e63b0369058e812696a4bbaf"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -182,5 +197,254 @@
     "all_original_assertions_and_case_expectations_preserved": true,
     "source_review": "Pending focused independent review of this native input helper correction",
     "native_execution": "Pending fresh whole16case/all22target execution"
+  },
+  "common_collector_source_commit": "87bec683f9ed50109900dc50afafa1147b534099",
+  "common_collector_source_tree": "9cefa26a76cfdded76306929e380b14ca0cd01dc",
+  "common_collector_source_review": "Reviewed c33 collector/fixture bytes unchanged; root combined runner passes 20 shared-driver and 7 planner tests, focused final integration review Pending",
+  "common_collector_bindings": [
+    {
+      "path": ".github/workflows/jvm.yml",
+      "git_blob": "7a70525e8dbe14dbc35afa5d6a5cf69beed8833a",
+      "sha256": "f771b9eca4905400b18398768672d0e7ee236bdd99e310f22ce238f9ba088046",
+      "exact_reviewed_common_bytes": false
+    },
+    {
+      "path": "docs/development/performance-testkit.md",
+      "git_blob": "dd37a33050fbaaeca3e4642d5096838f34e8d3b5",
+      "sha256": "55e6967134d0788cf8c905872a1dcacf108183a44a17aa744769004708d40c1c",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "gradle/performance/bounded-jvm.init.gradle.kts",
+      "git_blob": "2c68ed97642cd01427003d0be1fbe6133b357243",
+      "sha256": "443930b74286ca95846ec5ca268a98031368fec41bd063ddb77cbc7a6ec913f0",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "gradle/performance/paired-jvm.py",
+      "git_blob": "c1c1bed51fb60ffa908ed177063f918c4efb04fa",
+      "sha256": "01be95c14ebbca2370ff78341da707846993711bdbd190d8bb43abb7d5ba1c41",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "gradle/tests/test_paired_jvm.py",
+      "git_blob": "0407909d81ae033f61a7afff0f313bbe17a1d8b0",
+      "sha256": "0c758d8c157896d1401608dece335b47f0ff0413193f036b3655d18bd8d38b59",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/api/performance-testkit.api",
+      "git_blob": "e7d844869914319015ef579db424fcf552e9a318",
+      "sha256": "f33e73fea5cab7919242f3713f4d970f2c1eed0c81e911afea6ae566f6eeb31d",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JmhPerformanceRunner.kt",
+      "git_blob": "8b8c4161b21f7eb558a69c15c4f22dcee4335c27",
+      "sha256": "dd3073e98cc2e6e0bd7bfd2f061899310af6f826a2f369c6f8dbc0cf03f75984",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationInputs.kt",
+      "git_blob": "ef488fa369f47891ef3e12dfb76ed0734b277d63",
+      "sha256": "0b43bd7962e5cd196c565a7388a4da55e1ebd8898a716edd4c3d75e98d59b460",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReportAdapter.kt",
+      "git_blob": "8195d42b2744bcebb64f3e7200f91d3b5034c130",
+      "sha256": "f5fa5f541aa31cec814869850094c0031fb5d9ad0916be92f10777700a1a939d",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReportRow.kt",
+      "git_blob": "e15bc330d7528b1e9f5a75783272449035605e34",
+      "sha256": "ca1f9ddde25229e360eea92eee82b8b1b37b4fa014cb2f4768e148ebcea3f964",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmOperationReports.kt",
+      "git_blob": "ff9d5b293559c292c61e84f6882ad03355e825e3",
+      "sha256": "594e4228db5b7fb7feeb3137f20c4169a1a5b8eb9949cef8c1bdf63468187d03",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmPerformanceReports.kt",
+      "git_blob": "0a04c0e3c2bf41d0678dfbaed1b1bc4efb1d1bda",
+      "sha256": "92d4952f903e91ecdd74f9c745ea18d57c75440438735c1c37ef36d00ebd74f2",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/PerformanceEvidenceCli.kt",
+      "git_blob": "87c63422e5e572fe9a0f928ac97302c26bbd1f94",
+      "sha256": "a43d0e1a2f47f2e3a1ab6a25e670f30ccb5a7c75eae0e3e70da5a5bc87ce4a95",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/PerformanceEvidenceCommand.kt",
+      "git_blob": "820b824db2baa5f4a2ff736fc9a59847f684c156",
+      "sha256": "0aac0739ae574539124e7c3df95a2cdf6c540dc74cafa2adfab94cc7a7cb62c2",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationInputsTest.kt",
+      "git_blob": "470cf65a467f0665cb9eda49ed997dcb59060317",
+      "sha256": "6d12aa0b45224e8e967e75c3466a7da12157f071db7efc5f75a7629fc412cfab",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationReportsTest.kt",
+      "git_blob": "7ce4ad5bbd09e658ce4406cf2b2df7eff8f8b01b",
+      "sha256": "9501bc532d0d027defc722e1c536ed213d2204269947ed415d207923093267a6",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayBenchmark.kt",
+      "git_blob": "a828aecc6a47f66f4ab649b0fda8c1bf5675fd14",
+      "sha256": "3c88b893b00f99a088c752ae8b7bf85c4b5a3d0db13608dafd9c7c3c0ee3e825",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayOperationReport.kt",
+      "git_blob": "55364fdb48a219953931202d938bf65d7b8184ec",
+      "sha256": "1c0f316965a51ced9ba3ac344a14206ecd5b56d4c15d48f4b4d8a59fe1a7233c",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentProfile.kt",
+      "git_blob": "dc14a727f260eb6b85b7f971ed3ad8a487c12950",
+      "sha256": "7776e471125b48c41358473381b3ac6d3a587f51ce8048fd53117d8897a201f8",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionBenchmark.kt",
+      "git_blob": "a75086ffe372703868271c044def52d3dc8d1dd1",
+      "sha256": "840602a83c85471e027a74d9550208c42a02e74008839334d5b0dc30e732174b",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionControl.kt",
+      "git_blob": "0fb0cec47a7165f0d26d4c770e36c4d4dbfaf64a",
+      "sha256": "b619f24eaa858ad7335466b14473c78dc5bfe45cc2045fba5d51fab6366bb8c2",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFixture.kt",
+      "git_blob": "8969befc3705dad9c710d600cf355b9dfb9ee9d3",
+      "sha256": "c3513aa5e3279de381b59a711ec9e1c9aa18d8c84534565732577be39a2e7c66",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionFontAssets.kt",
+      "git_blob": "7161ca2574f0adeda99aca522d48d3655a69b992",
+      "sha256": "7235fee8b88eb6c48b2590417ae64e8744b24862616407a53fb64637efbca2aa",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionOperationReport.kt",
+      "git_blob": "b3fc03b3c01f81e623918e6be98df80c56523ed9",
+      "sha256": "8fa927e8f1f165c4a7452f5d3af64fcc00d9470ca75467029210302a66df3d73",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionPosition.kt",
+      "git_blob": "fc7de36aff007228b046c308f31ba9c3b2162b5c",
+      "sha256": "ed412b7d0379ca9e424fbdcf475bbb3928e9cf602b4559a0fabb56c4ecafffac",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/resources/published-host-api.tsv",
+      "git_blob": "f28cdbb399f8daa442065fc70339a85ea3033d9d",
+      "sha256": "090660568ea6c27d3f9eacefd6280131de763ac664c9631202ab2160c41fae95",
+      "exact_reviewed_common_bytes": true
+    }
+  ],
+  "independent_overlay_suite": {
+    "issue": 306,
+    "benchmark": "dev.s7a.strata.quality.benchmark.NonuniformOverlayBenchmark",
+    "rows": [
+      "composition/width=320/layers=1",
+      "composition/width=320/layers=16",
+      "composition/width=320/layers=64",
+      "composition/width=1920/layers=1",
+      "composition/width=1920/layers=16",
+      "composition/width=1920/layers=64"
+    ],
+    "controls": 0,
+    "source_prep_outside_sampling": true,
+    "runtime_scope": "Same frozen Headless implementation on both sides; independent collector proof, no CycleButton gain attribution"
+  },
+  "whole_host_inventory": {
+    "suites": 2,
+    "selected_jmh_cases_per_mode": 54,
+    "standard_jmh_score_cells": 648,
+    "supplemental_operation_rows": 324,
+    "independent_cycle_controls": 30,
+    "standard_jmh_cells_completed": 0,
+    "supplemental_operation_rows_completed": 0
+  },
+  "merged_runner_master_commit": "2e8088d8c9281b0a3bb34249fdd058cdd7231112",
+  "merge_driver_parents": [
+    "b7efe20e9cd13effc7ba6cbb4917ae48f88da287",
+    "2e8088d8c9281b0a3bb34249fdd058cdd7231112"
+  ],
+  "invocation_protocol": "Every suite/side admission completes before any timed invocation; runtime and inputs retained before controls/timing, original modes and supplemental reports use existing owned process boundary",
+  "measurement_selection": "Explicit manual jvm.yml dispatch with nested .github/performance/issue292-full/manifest.json; no permanent default manifest",
+  "merged_runner_source_bindings": [
+    {
+      "path": ".github/workflows/jvm.yml",
+      "git_blob": "7a70525e8dbe14dbc35afa5d6a5cf69beed8833a",
+      "sha256": "f771b9eca4905400b18398768672d0e7ee236bdd99e310f22ce238f9ba088046"
+    },
+    {
+      "path": "docs/development/performance-testkit.md",
+      "git_blob": "dd37a33050fbaaeca3e4642d5096838f34e8d3b5",
+      "sha256": "55e6967134d0788cf8c905872a1dcacf108183a44a17aa744769004708d40c1c"
+    },
+    {
+      "path": "gradle/performance/bounded-jvm.init.gradle.kts",
+      "git_blob": "2c68ed97642cd01427003d0be1fbe6133b357243",
+      "sha256": "443930b74286ca95846ec5ca268a98031368fec41bd063ddb77cbc7a6ec913f0"
+    },
+    {
+      "path": "gradle/performance/fixtures/QualifiedFixtureController.java",
+      "git_blob": "3fa10e438a1f788c1946e4f0c5e9316132c1ec2b",
+      "sha256": "64a52ae455f516871eade5b36b0317947276b2cc85bde1bd50e80a3afa9da22c"
+    },
+    {
+      "path": "gradle/performance/paired-jvm.py",
+      "git_blob": "c1c1bed51fb60ffa908ed177063f918c4efb04fa",
+      "sha256": "01be95c14ebbca2370ff78341da707846993711bdbd190d8bb43abb7d5ba1c41"
+    },
+    {
+      "path": "gradle/performance/verify-qualified-preflight.py",
+      "git_blob": "90446df512a759d4ca8fdcbaa78769e58cfac4d5",
+      "sha256": "a8c39cc1a5704189aa39882fa5f51c8192b58aafcb3ca220a2f1498cfe1f8543"
+    },
+    {
+      "path": "gradle/plan-ci.py",
+      "git_blob": "2b803c9ac76c3cf8533eeee54482ed45e23ae055",
+      "sha256": "3ea9574197397549c9b3616d73abb7632faa6f7961c3755b5ac0025319be349e"
+    },
+    {
+      "path": "gradle/tests/test_paired_jvm.py",
+      "git_blob": "0407909d81ae033f61a7afff0f313bbe17a1d8b0",
+      "sha256": "0c758d8c157896d1401608dece335b47f0ff0413193f036b3655d18bd8d38b59"
+    },
+    {
+      "path": "gradle/tests/test_plan_ci.py",
+      "git_blob": "a8a3553539cfe047e0e6cd6bf99c3223f4cd0d89",
+      "sha256": "4757984ae3f7ddf3f4b35e3ca7833826faf8cd3f6974ff4ac0c71bc35ebdb351"
+    }
+  ],
+  "native_previous_public_revision": {
+    "head": "b7efe20e9cd13effc7ba6cbb4917ae48f88da287",
+    "jvm_run": 38206725932,
+    "all_targets": 22,
+    "cases_per_carrier": 16,
+    "carriers_per_target": 2,
+    "exact_png_pairs": 704,
+    "status": "Passed actual whole native-screen-callback/presentation reconciliation; fresh final driver remains Pending",
+    "reconciliation_sha256": "3ed80fc3b4ce17c9dd8ac994bfa2e140e93bcbbcabdce830e59d025e922ec8a3"
   }
 }

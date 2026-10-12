@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 import tomllib
+from urllib.parse import unquote, urlparse
 import zipfile
 
 
@@ -103,7 +104,7 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(set(suite) in (fields, fields | {"profilers"}), "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight"}, "Invalid suite fields")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -119,7 +120,35 @@ def load_manifest(root, path):
         profilers = suite.get("profilers", [])
         require(isinstance(profilers, list) and len(profilers) == len(set(profilers))
                 and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in profilers), "Use unique compiled JMH profiler class names")
+        if "preflight" in suite:
+            control = suite["preflight"]
+            require(isinstance(control, dict) and set(control) == {"main", "qualification", "runtime_classes", "controls"}, "Invalid compiled preflight fields")
+            classes = [control["main"], *control["runtime_classes"].values()]
+            require(set(control["runtime_classes"]) == set(projects)
+                    and all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", value) for value in classes), "Declare each loaded preflight runtime class and compiled main")
+            pin(root, control["qualification"])
+            require(isinstance(control["controls"], list) and 0 < len(control["controls"]) <= 16_384, "Declare the whole preflight control inventory")
+            identifiers = []
+            for item in control["controls"]:
+                require(isinstance(item, dict) and set(item) == {"id", "arguments"}
+                        and isinstance(item["id"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", item["id"]), "Invalid preflight control identity")
+                require(isinstance(item["arguments"], list) and len(item["arguments"]) <= 256
+                        and all(isinstance(value, str) and len(value) <= 4096 and "\x00" not in value for value in item["arguments"]), "Use bounded compiled control arguments")
+                identifiers.append(item["id"])
+            require(len(identifiers) == len(set(identifiers)), "Duplicate preflight control identity")
     labels = set()
+    for suite in data["suites"]:
+        if "operation_reports" in suite:
+            operation = suite["operation_reports"]
+            require(set(operation) == {"adapters", "warmup", "samples", "expected_rows", "expected_controls"}, "Invalid operation report fields")
+            require(suite["benchmarks"] and isinstance(operation["adapters"], dict) and operation["adapters"], "Operation reports require explicit fixtures and required adapters")
+            require(all(isinstance(value, str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*", value)
+                        for pair in operation["adapters"].items() for value in pair), "Invalid compiled operation adapter identity")
+            require(len(set(operation["adapters"].values())) == len(operation["adapters"]), "Duplicate operation adapter")
+            for key in ("warmup", "samples", "expected_rows", "expected_controls"):
+                require(isinstance(operation[key], int) and not isinstance(operation[key], bool), "Operation counts must be integers")
+            require(0 <= operation["warmup"] <= 1_000_000 and 0 < operation["samples"] <= 1_000_000
+                    and 0 <= operation["expected_controls"] <= operation["expected_rows"] == suite["expected_cases"], "Incomplete or unbounded operation inventory")
     for value in data["inputs"]:
         require(set(value) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", value["label"])
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
@@ -248,7 +277,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         member = terminal["members"].get(str(pid))
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
-        evidence = {"pid": pid, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
@@ -283,7 +312,142 @@ def properties(path, values):
             target.write(f"{escape(key)}={escape(value)}\n")
 
 
-def table(output, comparisons, phases):
+def path_identity(path):
+    """Hash an entire bounded classpath directory or archive, including resources and control bytes."""
+    if path.is_file():
+        require(path.stat().st_size <= 64 * 1024**2, "Prepared classpath archive exceeds its byte bound")
+        return digest(path)
+    require(path.is_dir() and not path.is_symlink(), "Missing prepared classpath directory")
+    files = sorted(path.rglob("*"), key=lambda item: item.relative_to(path).as_posix().encode("utf-16-be"))
+    require(len(files) <= 16_384 and all(not item.is_symlink() for item in files), "Unsafe or oversized prepared classpath tree")
+    files = [item for item in files if item.is_file()]
+    require(sum(item.stat().st_size for item in files) <= 64 * 1024**2, "Prepared classpath tree exceeds its byte bound")
+    identity = hashlib.sha256()
+    for item in files:
+        identity.update(f"{item.relative_to(path).as_posix()}={digest(item)}\n".encode("utf-8"))
+    return identity.hexdigest()
+
+
+def preserve_file(source, destination):
+    """Retain immutable bytes before any control or timing can fail, checking both sides of the copy."""
+    identity = path_identity(source)
+    require(not destination.exists(), "Prepared evidence already exists")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+    require(digest(source) == digest(destination) == identity, "Prepared archive changed during preservation")
+    return {"path": destination.as_posix(), "sha256": identity}
+
+
+def prepared_classpath(path):
+    """Verify every retained classpath byte before reuse; a fresh hash cannot replace its captured pin."""
+    inventory = read_json(path)
+    require(set(inventory) == {"schema", "entries"} and inventory["schema"] == "strata-paired-jvm-classpath-v1"
+            and isinstance(inventory["entries"], list) and 0 < len(inventory["entries"]) <= 256, "Invalid prepared classpath inventory")
+    paths, sources = set(), set()
+    for entry in inventory["entries"]:
+        require(set(entry) == {"source", "path", "sha256"} and re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]), "Invalid prepared classpath pin")
+        retained = Path(entry["path"])
+        require(retained.is_absolute() and retained.resolve().is_relative_to(path.parent.resolve()), "Prepared classpath escapes its retained owner")
+        require(entry["path"] not in paths and entry["source"] not in sources, "Duplicate prepared classpath origin")
+        paths.add(entry["path"])
+        sources.add(entry["source"])
+        require(path_identity(retained) == entry["sha256"] and path_identity(Path(entry["source"])) == entry["sha256"], "Prepared classpath bytes changed")
+    return inventory
+
+
+def class_entry(classpath, name):
+    """Require a unique compiled class source rather than allowing shadowed control/runtime classes."""
+    resource = name.replace(".", "/") + ".class"
+    matches = []
+    for entry in classpath["entries"]:
+        path = Path(entry["path"])
+        if path.is_dir():
+            present = path.joinpath(*PurePosixPath(resource).parts).is_file()
+        else:
+            with zipfile.ZipFile(path) as archive:
+                present = resource in archive.namelist()
+        if present:
+            matches.append(entry)
+    require(len(matches) == 1, f"Missing or shadowed compiled preflight class: {name}")
+    return matches[0]
+
+
+def preflight_request(root, output, suite, side, classpath_path, runtime, sources, java, inputs):
+    """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
+    specification = suite["preflight"]
+    classpath = prepared_classpath(classpath_path)
+    classes = {name: class_entry(classpath, name) for name in [specification["main"],
+               "dev.s7a.strata.performance.JvmPerformanceMeter", "org.openjdk.jmh.runner.Runner", *specification["runtime_classes"].values()]}
+    for project, name in specification["runtime_classes"].items():
+        require(classes[name]["sha256"] == runtime[project]["sha256"], "Preflight class resolves outside its actual runtime archive")
+    directory = output / "preflight" / suite["name"] / side
+    directory.mkdir(parents=True, exist_ok=False)
+    qualification = preserve_file(pin(root, specification["qualification"]), directory / "qualification.json")
+    request = {"schema": "strata-paired-jvm-preflight-request-v1", "project": suite["project"], "suite": suite["name"], "side": side,
+               "main": specification["main"], "controls": specification["controls"], "qualification": qualification,
+               "classpath": classpath, "required_classes": classes, "runtime": runtime, "sources": sources,
+               "java": java, "inputs": inputs, "output": directory.as_posix()}
+    write_new(directory / "request.json", request)
+    return directory
+
+
+def verify_preflight(directory, phase_directory, terminal, expected_request_sha256):
+    """Fail closed on incomplete controls, changed bytes, wrong actual loaded origins or unowned JVMs."""
+    request_path = directory / "request.json"
+    require(digest(request_path) == expected_request_sha256, "Control changed its pinned request bytes")
+    request = read_json(request_path)
+    receipt = read_json(directory / "receipt.json")
+    require(set(receipt) == {"schema", "status", "request_sha256", "controls"}
+            and receipt["schema"] == "strata-paired-jvm-preflight-receipt-v1" and receipt["status"] == "passed"
+            and receipt["request_sha256"] == digest(request_path), "Missing or wrong-identity qualified preflight receipt")
+    expected = [item["id"] for item in request["controls"]]
+    require(isinstance(receipt["controls"], list) and [item.get("id") for item in receipt["controls"]] == expected,
+            "Incomplete or reordered whole preflight control inventory")
+    console = (phase_directory / "console.log").read_text(encoding="utf-8", errors="replace")
+    vms = {item["pid"]: item for item in read_json(phase_directory / "vms.json")}
+    artifacts = set()
+    for result in receipt["controls"]:
+        require(set(result) == {"id", "status", "observations", "origins", "artifacts"} and result["status"] == "passed"
+                and isinstance(result["observations"], dict) and result["observations"], "Failed or unavailable preflight control observations")
+        require(isinstance(result["origins"], dict) and set(result["origins"]) == set(request["required_classes"]), "Missing actual control class origins")
+        for name, origin in result["origins"].items():
+            require(isinstance(origin, dict) and set(origin) == {"pid"} and isinstance(origin["pid"], int)
+                    and not isinstance(origin["pid"], bool), "Invalid actual control JVM identity")
+            pid = origin["pid"]
+            vm = vms.get(pid)
+            member = terminal["members"].get(str(pid))
+            require(vm is not None and vm["role"] == "java_exec" and member is not None
+                    and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
+                    and member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"],
+                    "Preflight observation lacks naturally released owning JVM proof")
+            require(os.path.normcase(member["image"]) == os.path.normcase(str(Path(vm["home"], "bin/java.exe"))), "Control loaded origin and OS executable disagree")
+            birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
+            require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
+            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)", console)
+            require(len(loaded) == 1, "Missing or ambiguous PID-qualified control class load")
+            location = urlparse(loaded[0].strip())
+            require(location.scheme == "file" and not location.netloc, "Control loaded class from a non-local origin")
+            actual_path = unquote(location.path)
+            if re.match(r"^/[A-Za-z]:/", actual_path):
+                actual_path = actual_path[1:]
+            expected_path = Path(request["required_classes"][name]["path"])
+            require(os.path.normcase(str(Path(actual_path).resolve())) == os.path.normcase(str(expected_path.resolve())), "Control loaded class from the wrong prepared archive")
+        require(isinstance(result["artifacts"], list) and result["artifacts"], "Missing actual preflight observation artifacts")
+        for artifact in result["artifacts"]:
+            require(set(artifact) == {"path", "sha256"}, "Invalid control observation artifact")
+            path = pin(directory, artifact)
+            require(path.stat().st_size <= 64 * 1024**2 and artifact["path"] not in artifacts
+                    and artifact["path"] not in ("receipt.json", "request.json", "qualification.json"), "Unsafe or duplicate observation artifact")
+            artifacts.add(artifact["path"])
+    for entry in request["classpath"]["entries"]:
+        require(path_identity(Path(entry["path"])) == entry["sha256"] and path_identity(Path(entry["source"])) == entry["sha256"], "Control changed prepared or original classpath bytes")
+    require(digest(Path(request["qualification"]["path"])) == request["qualification"]["sha256"], "Control qualification bytes changed")
+    for entry in request["inputs"].values():
+        require(digest(Path(entry["path"])) == entry["sha256"], "Control changed frozen input bytes")
+    write_new(directory / "verified.json", {"status": "passed", "request_sha256": digest(request_path), "receipt_sha256": digest(directory / "receipt.json"), "controls": expected})
+
+
+def table(output, comparisons, phases, operations=()):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
     for suite, mode, comparison in comparisons:
@@ -300,6 +464,13 @@ def table(output, comparisons, phases):
                 rows.append({"suite": suite, "mode": mode, "benchmark": case["benchmark"], "params": json.dumps(case["params"], sort_keys=True),
                              "metric": f"sample_percentile_{metric}", "unit": case["primary_unit"], "baseline": before, "candidate": after, "delta": after-before,
                              "candidate_to_baseline": after / before if before != 0 else None})
+    for suite, comparison in operations:
+        for phase in comparison["phases"]:
+            for metric, before in phase["before"].items():
+                unit = "B/sample" if metric.endswith("bytes_per_sample") else "B" if metric.endswith("bytes") else "ns/sample" if metric.endswith("ns_per_sample") else "ns"
+                rows.append({"suite": suite, "mode": "owner-thread-operation", "benchmark": phase["operation_id"], "params": "{}",
+                             "metric": metric, "unit": unit, "baseline": before, "candidate": phase["after"][metric],
+                             "delta": phase["delta"][metric], "candidate_to_baseline": None})
     with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
         writer = csv.DictWriter(target, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -313,7 +484,7 @@ def table(output, comparisons, phases):
         target.write("\n| Phase | Seconds |\n| --- | ---: |\n")
         for phase in phases:
             target.write(f"| {phase['name']} | {phase['elapsed_seconds']:.3f} |\n")
-        target.write("\nThread CPU per operation is unavailable in the existing collector. Job CPU includes preparation and descendants. Additional declared JMH profiler metrics remain in raw results. CPU native font-library controls require their full work gate and actual library load/release; GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
+        target.write("\nJMH elapsed and stock GC allocation retain their harness scope. Optional owner-thread operation CPU/allocation use separate compiled reports and declared sample boundaries; absent or unsupported counters stay unavailable. Job/process/all-thread CPU and allocation include broader work. Heap-boundary samples do not prove retained-object size. Meter counter reads and adapter dispatch have collection cost; batching is declared in raw rows. Additional JMH profiler metrics remain in raw results. CPU native font-library controls require their full work gate and actual library load/release; GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A for this CPU job. Cross-environment timing is not a runtime improvement percentage.\n")
 
 
 def pack(output):
@@ -381,6 +552,7 @@ def run(root, manifest_path, output):
             require(release["IMPLEMENTOR"].strip('"') == provider and release["JAVA_VERSION"].strip('"') == version, "Actual Java provider/version differs from the fixed catalog profile")
         gradle_cache = Path(os.environ.get("GRADLE_USER_HOME", str(Path.home() / ".gradle")))
         allowed_java = {os.path.normcase(str(Path(home, "bin/java.exe"))): digest(Path(home, "bin/java.exe")) for home in homes}
+        allowed_releases = {Path(home, "release"): digest(Path(home, "release")) for home in homes}
         vm_directory = output / "vms"
         vm_directory.mkdir()
         common = ["-Pstrata.jvmOnly=true", "--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain",
@@ -390,6 +562,10 @@ def run(root, manifest_path, output):
         def phase(name, workspace, arguments, expected_forks=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
+            for executable, expected in allowed_java.items():
+                require(digest(Path(executable)) == expected, "Pinned Java executable bytes changed before invocation")
+            for release, expected in allowed_releases.items():
+                require(digest(release) == expected, "Pinned Java release bytes changed before invocation")
             directory = output / "phases" / name
             directory.mkdir(parents=True, exist_ok=False)
             logs = vm_directory.as_posix()
@@ -415,6 +591,8 @@ def run(root, manifest_path, output):
                 first = record["phases"][0]["terminal"]
                 require(terminal["inheritedAffinityMask"] == first["inheritedAffinityMask"] and terminal["systemAffinityMask"] == first["systemAffinityMask"], "Host affinity changed between paired phases")
             verify_vms(directory, sorted(set(vm_directory.glob("*.log"))-previous_vms), terminal, allowed_java, expected_forks)
+            for release, expected in allowed_releases.items():
+                require(digest(release) == expected, "Pinned Java release bytes changed during invocation")
             return directory
 
         data = load_manifest(root, manifest_path)
@@ -452,15 +630,19 @@ def run(root, manifest_path, output):
         for side, values in data["compiled_pins"].items():
             for value in values:
                 pin(workspaces[side], value)
-        runtime_manifests = {}
+        runtime_manifests, runtime_archives = {}, {}
         record["archives"] = {}
         for side in ("baseline", "candidate"):
-            mapping = {project: archive_file(workspaces[side], project).as_posix() for project in data["runtime_projects"]}
+            runtime_archives[side] = {project: preserve_file(archive_file(workspaces[side], project), output / "prepared" / side / f"target-{index}.jar")
+                                      for index, project in enumerate(data["runtime_projects"])}
+            mapping = {project: item["path"] for project, item in runtime_archives[side].items()}
             runtime_manifests[side] = output / f"runtime-{side}.properties"
             properties(runtime_manifests[side], mapping)
             record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
         inputs = output / "fixture-inputs.properties"
-        properties(inputs, {item["label"]: pin(root, item["pin"]).as_posix() for item in data["inputs"]})
+        input_archives = {item["label"]: preserve_file(pin(root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
+                          for index, item in enumerate(data["inputs"])}
+        properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
         prepared = output / "compiled"
         prepared.mkdir()
@@ -471,7 +653,9 @@ def run(root, manifest_path, output):
                 original = build / relative
                 require(original.is_dir(), "Missing common compiled fixture closure")
                 shutil.copytree(original, prepared / owner.strip(":").replace(":", "-") / relative)
-        comparisons, invocation_ids = [], set()
+        comparisons, invocation_ids, operation_comparisons, operation_ids, admitted_suites = [], set(), [], set(), []
+        java_identity = read_json(output / "java-installations.json")
+        # Every independent suite/side control completes before the first timed invocation in the attempt.
         for suite in data["suites"]:
             project, task, verifier = FixtureProject.decode(suite["project"]).value
             selectors = [f"-Pstrata.performance.{key}={','.join(suite[key])}" for key in ("benchmarks", "workloads") if suite[key]]
@@ -480,17 +664,47 @@ def run(root, manifest_path, output):
                 properties(parameters, {key: ",".join(values) for key, values in suite["parameters"].items()})
                 selectors.append(f"-Pstrata.performance.parameters={parameters}")
             selectors += [f"-Pstrata.performance.fixtureInputs={inputs}"]
+            classpaths = {}
             for side in ("baseline", "candidate"):
-                phase(f"admit-{suite['name']}-{side}", fixture, [project + ":" + verifier, f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors)
+                flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                if "preflight" in suite:
+                    retained = output / "prepared-classpaths" / suite["name"] / side
+                    flags += [f"-Pstrata.paired.preserveClasspath={retained}"]
+                    classpaths[side] = retained / "classpath.json"
+                phase(f"admit-{suite['name']}-{side}", fixture, [project + ":" + verifier] + flags + selectors)
+                if "preflight" in suite:
+                    control = preflight_request(root, output, suite, side, classpaths[side], runtime_archives[side], record["sources"], java_identity, input_archives)
+                    classpaths[side] = {"path": classpaths[side], "sha256": digest(classpaths[side])}
+                    request_hash = digest(control / "request.json")
+                    actual = phase(f"preflight-{suite['name']}-{side}", fixture,
+                                   [project + ":strataPairedPreflight", f"-Pstrata.paired.template={verifier}",
+                                    f"-Pstrata.paired.preflight={control / 'request.json'}", f"-Pstrata.paired.classpath={classpaths[side]['path']}",
+                                    f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors, 0)
+                    verify_preflight(control, actual, record["phases"][-1]["terminal"], request_hash)
+                    require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Control changed its prepared classpath inventory")
+            admitted_suites.append((suite, project, task, selectors, classpaths))
+        for suite, project, task, selectors, classpaths in admitted_suites:
+            bindings = {"baseline": [], "candidate": []}
             for mode in ("avgt", "sample"):
                 runs = {"baseline": [], "candidate": []}
                 for repetition in range(3):
                     for side in ("baseline", "candidate"):
                         for key, workspace in workspaces.items():
                             source_guard(workspace, data["sources"][key]["tree"])
+                        for archives in runtime_archives.values():
+                            for item in archives.values():
+                                require(digest(Path(item["path"])) == item["sha256"], "Prepared runtime bytes changed before collection")
+                        for item in input_archives.values():
+                            require(digest(Path(item["path"])) == item["sha256"], "Frozen input bytes changed before collection")
+                        if "preflight" in suite:
+                            pin(root, suite["preflight"]["qualification"])
                         destination = output / "raw" / suite["name"] / mode / side / f"run-{repetition}"
                         flags = [f"-Pstrata.performance.mode={mode}", f"-Pstrata.performance.repetition={repetition}",
                                  f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                        if side in classpaths:
+                            require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before collection")
+                            prepared_classpath(classpaths[side]["path"])
+                            flags.append(f"-Pstrata.paired.classpath={classpaths[side]['path']}")
                         if suite.get("profilers"):
                             flags.append("-Pstrata.performance.profilers=" + ",".join(suite["profilers"]))
                         if FixtureProject.decode(project) == FixtureProject.HISTORICAL:
@@ -505,6 +719,8 @@ def run(root, manifest_path, output):
                                 "Missing cases, fork proof or independent invocation")
                         invocation_ids.add(receipt["run_id"])
                         runs[side].append(str(destination))
+                        if mode == "avgt":
+                            bindings[side].append(str(destination))
                 request_path = output / f"{suite['name']}-{mode}-request.json"
                 comparison_path = output / f"{suite['name']}-{mode}-comparison.json"
                 write_new(request_path, {"command": "jmh-comparison", "collector": str(collector), "baseline": runs["baseline"], "candidate": runs["candidate"],
@@ -513,15 +729,54 @@ def run(root, manifest_path, output):
                 comparison = read_json(comparison_path)
                 require(comparison["status"] == "passed" and len(comparison["cases"]) == suite["expected_cases"], "Incomplete paired comparison")
                 comparisons.append((suite["name"], mode, comparison))
+            if "operation_reports" in suite:
+                operation = suite["operation_reports"]
+                runs = {"baseline": [], "candidate": []}
+                for repetition in range(3):
+                    for side in ("baseline", "candidate"):
+                        for key, workspace in workspaces.items():
+                            source_guard(workspace, data["sources"][key]["tree"])
+                        destination = output / "raw" / suite["name"] / "operations" / side / f"run-{repetition}"
+                        request_path = output / f"{suite['name']}-operations-{side}-{repetition}-request.json"
+                        write_new(request_path, {**operation, "collector": str(collector), "jmh_directory": bindings[side][repetition],
+                                                 "output": str(destination), "repetition": repetition, "source_bindings": record["sources"]})
+                        flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                        if side in classpaths:
+                            require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before operation collection")
+                            prepared_classpath(classpaths[side]["path"])
+                            pin(root, suite["preflight"]["qualification"])
+                            flags.append(f"-Pstrata.paired.classpath={classpaths[side]['path']}")
+                        phase(f"collect-{suite['name']}-operations-{side}-{repetition}", fixture,
+                              [project + ":" + task] + flags + selectors, 0)
+                        report = read_json(destination / "report.json")
+                        require(report["status"] == "passed" and len(report["phases"]) == operation["expected_rows"]
+                                and sum(row["control"] for row in report["phases"]) == operation["expected_controls"]
+                                and report["run_id"] not in invocation_ids | operation_ids, "Incomplete or reused operation invocation")
+                        operation_ids.add(report["run_id"])
+                        runs[side].append(str(destination / "report.json"))
+                request_path = output / f"{suite['name']}-operations-comparison-request.json"
+                comparison_path = output / f"{suite['name']}-operations-comparison.json"
+                write_new(request_path, {"command": "operation-comparison", "collector": str(collector),
+                                         "baseline": runs["baseline"], "candidate": runs["candidate"], "output": str(comparison_path)})
+                phase(f"compare-{suite['name']}-operations", fixture, [":performance-testkit:processEvidence", f"-Pstrata.performance.request={request_path}"])
+                comparison = read_json(comparison_path)
+                require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
+                operation_comparisons.append((suite["name"], comparison))
         for side, workspace in workspaces.items():
             source_guard(workspace, data["sources"][side]["tree"])
             for value in data["compiled_pins"][side]:
                 pin(workspace, value)
         for item in data["dependency_pins"]:
             pin(gradle_cache, item)
+        for suite, project, task, selectors, classpaths in admitted_suites:
+            for item in classpaths.values():
+                require(digest(item["path"]) == item["sha256"], "Prepared classpath inventory changed during collection")
+                prepared_classpath(item["path"])
         require(len(invocation_ids) == len(data["suites"]) * 12 and len(comparisons) == len(data["suites"]) * 2, "Whole attempt incomplete")
+        require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
         record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
-        table(output, comparisons, record["phases"])
+        record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
+        table(output, comparisons, record["phases"], operation_comparisons)
         record["status"] = "passed"
     except BaseException as failure:
         record["error"] = f"{type(failure).__name__}: {failure}"
