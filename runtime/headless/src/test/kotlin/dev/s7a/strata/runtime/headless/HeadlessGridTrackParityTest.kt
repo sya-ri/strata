@@ -44,36 +44,42 @@ internal class HeadlessGridTrackParityTest {
         val initial = Scene(List(3) { Cell(it, IntSize(it + 2, 3 - it)) }, 2)
         val state = mutableStateOf(initial)
         val hits = ArrayList<Int>()
-        val session = createRuntimeUiSession {
-            val scene = state.value
-            evaluateComponentTree {
-                Grid(scene.columns, horizontalSpacing = scene.spacing, verticalSpacing = scene.spacing, contentAlignment = scene.alignment) {
-                    scene.cells.forEach { cell ->
-                        var modifier = Modifier.Empty.size(cell.size.width, cell.size.height)
-                            .background(cell.color).semantics(cell.semantics).onPress { hits += cell.id }
-                        cell.alignment?.let { modifier = modifier.align(it) }
-                        Spacer(key = ElementKey(cell.id), modifier = modifier)
+        val session =
+            createRuntimeUiSession {
+                val scene = state.value
+                evaluateComponentTree {
+                    Grid(scene.columns, horizontalSpacing = scene.spacing, verticalSpacing = scene.spacing, contentAlignment = scene.alignment) {
+                        scene.cells.forEach { cell ->
+                            var modifier =
+                                Modifier.Empty
+                                    .size(cell.size.width, cell.size.height)
+                                    .background(cell.color)
+                                    .semantics(cell.semantics)
+                                    .onPress { hits += cell.id }
+                            cell.alignment?.let { modifier = modifier.align(it) }
+                            Spacer(key = ElementKey(cell.id), modifier = modifier)
+                        }
                     }
                 }
             }
-        }
         session.attach()
         val partial = initial.copy(cells = List(128) { Cell(it, IntSize(it % 7 + 1, it % 5 + 1)) }, columns = 7)
         val large = partial.copy(cells = List(4_096) { Cell(it, IntSize(it % 7 + 1, it % 5 + 1)) }, columns = 64)
-        val models = listOf(
-            initial,
-            initial.copy(alignment = Alignment.BottomEnd),
-            initial.copy(cells = initial.cells.map { it.copy(alignment = Alignment.Center) }),
-            initial.copy(cells = initial.cells.reversed()),
-            initial.copy(cells = initial.cells.take(2)),
-            initial.copy(cells = listOf(initial.cells[0], Cell(9, IntSize(5, 4)))),
-            initial.copy(cells = listOf(initial.cells[0].copy(size = initial.cells[1].size), initial.cells[1].copy(size = initial.cells[0].size))),
-            initial.copy(columns = 1, spacing = 3),
-            partial,
-            large,
-            initial.copy(cells = initial.cells.take(1)),
-            initial.copy(cells = emptyList()),
-        )
+        val models =
+            listOf(
+                initial,
+                initial.copy(alignment = Alignment.BottomEnd),
+                initial.copy(cells = initial.cells.map { it.copy(alignment = Alignment.Center) }),
+                initial.copy(cells = initial.cells.reversed()),
+                initial.copy(cells = initial.cells.take(2)),
+                initial.copy(cells = listOf(initial.cells[0], Cell(9, IntSize(5, 4)))),
+                initial.copy(cells = listOf(initial.cells[0].copy(size = initial.cells[1].size), initial.cells[1].copy(size = initial.cells[0].size))),
+                initial.copy(columns = 1, spacing = 3),
+                partial,
+                large,
+                initial.copy(cells = initial.cells.take(1)),
+                initial.copy(cells = emptyList()),
+            )
         try {
             for (scene in models) {
                 state.value = scene
@@ -94,7 +100,12 @@ internal class HeadlessGridTrackParityTest {
         }
     }
 
-    private fun verifyGeometry(session: RuntimeUiSession, scene: Scene, viewport: IntSize, hits: MutableList<Int>) {
+    private fun verifyGeometry(
+        session: RuntimeUiSession,
+        scene: Scene,
+        viewport: IntSize,
+        hits: MutableList<Int>,
+    ) {
         val frame = session.frame(Constraints.fixed(viewport.width, viewport.height))
         val bounds = referenceBounds(scene, viewport)
         val commands = bounds.mapIndexed { index, rect -> DrawCommand.FillRectangle(rect, scene.cells[index].color) }
@@ -115,11 +126,15 @@ internal class HeadlessGridTrackParityTest {
     }
 
     // Independent track-by-track scans use constrained leaf extents and live cell/default alignment.
-    private fun referenceBounds(scene: Scene, viewport: IntSize): List<IntRect> {
+    private fun referenceBounds(
+        scene: Scene,
+        viewport: IntSize,
+    ): List<IntRect> {
         val sizes = scene.cells.map { IntSize(minOf(it.size.width, viewport.width), minOf(it.size.height, viewport.height)) }
-        val widths = List(minOf(scene.columns, sizes.size)) { column ->
-            sizes.filterIndexed { index, _ -> index % scene.columns == column }.maxOf { it.width }
-        }
+        val widths =
+            List(minOf(scene.columns, sizes.size)) { column ->
+                sizes.filterIndexed { index, _ -> index % scene.columns == column }.maxOf { it.width }
+            }
         val heights = sizes.chunked(scene.columns).map { row -> row.maxOf { it.height } }
         val columnStarts = widths.runningFold(0) { offset, width -> offset + width + scene.spacing }
         val rowStarts = heights.runningFold(0) { offset, height -> offset + height + scene.spacing }
@@ -129,22 +144,31 @@ internal class HeadlessGridTrackParityTest {
             val alignment = scene.cells[index].alignment ?: scene.alignment
             val slackX = widths[column] - size.width
             val slackY = heights[row] - size.height
-            val x = columnStarts[column] + when (alignment.horizontalAlignment) {
-                HorizontalAlignment.Start -> 0
-                HorizontalAlignment.Center -> slackX / 2
-                HorizontalAlignment.End -> slackX
-            }
-            val y = rowStarts[row] + when (alignment.verticalAlignment) {
-                VerticalAlignment.Top -> 0
-                VerticalAlignment.Center -> slackY / 2
-                VerticalAlignment.Bottom -> slackY
-            }
+            val x =
+                columnStarts[column] +
+                    when (alignment.horizontalAlignment) {
+                        HorizontalAlignment.Start -> 0
+                        HorizontalAlignment.Center -> slackX / 2
+                        HorizontalAlignment.End -> slackX
+                    }
+            val y =
+                rowStarts[row] +
+                    when (alignment.verticalAlignment) {
+                        VerticalAlignment.Top -> 0
+                        VerticalAlignment.Center -> slackY / 2
+                        VerticalAlignment.Bottom -> slackY
+                    }
             IntRect(x, y, x + size.width, y + size.height)
         }
     }
 
     // Opaque integer cells can be independently filled in declared order without calling a raster helper.
-    private fun referencePixels(scene: Scene, bounds: List<IntRect>, viewport: IntSize, density: Int): IntArray {
+    private fun referencePixels(
+        scene: Scene,
+        bounds: List<IntRect>,
+        viewport: IntSize,
+        density: Int,
+    ): IntArray {
         val width = viewport.width * density
         val result = IntArray(width * viewport.height * density)
         bounds.forEachIndexed { index, rect ->
@@ -160,12 +184,21 @@ internal class HeadlessGridTrackParityTest {
     /**
      * Complete current declaration input; tests retain no historical runtime geometry.
      */
-    private data class Scene(val cells: List<Cell>, val columns: Int, val spacing: Int = 1, val alignment: Alignment = Alignment.TopStart)
+    private data class Scene(
+        val cells: List<Cell>,
+        val columns: Int,
+        val spacing: Int = 1,
+        val alignment: Alignment = Alignment.TopStart,
+    )
 
     /**
      * Keyed opaque cell with independently derived paint, semantics and optional parent alignment.
      */
-    private data class Cell(val id: Int, val size: IntSize, val alignment: Alignment? = null) {
+    private data class Cell(
+        val id: Int,
+        val size: IntSize,
+        val alignment: Alignment? = null,
+    ) {
         val color = ArgbColor(0xFF000000.toInt() or (id * 7_919 and 0xFFFFFF))
         val semantics = Semantics(label = UiText.Literal(id.toString()))
     }

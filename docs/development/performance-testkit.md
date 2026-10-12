@@ -614,6 +614,9 @@ The six supplemental invocations and their cell counts are distinct from the twe
 ```
 
 The fixture declares a public static no-argument `operationReport()` returning `JvmOperationReportAdapter`; Kotlin companions expose it with `@JvmStatic`.
+`collectVerified` runs the fixture's original complete work hook before collection by default.
+An adapter whose original hook permanently closes its owner may override this boundary to verify and sample inside the same original owner lifetime.
+That override must preserve all original controls and terminal release; it cannot reset the owner or omit verification.
 The adapter declares `JvmOperationReportRow` identities, complete method/parameter bindings, boundaries, control identities and explicit operations per sample.
 Missing required, duplicate, ambiguous, invalid or stale hooks fail before collection can publish valid evidence.
 Every selected JMH method and parameter row must bind exactly once; the adapter cannot silently drop independent controls.
