@@ -3,9 +3,9 @@
   "status": "Source preparation only; no Java/native/measurement invocation",
   "baseline_public_commit": "414cb972ffa8c89a4aee2102d1dc2834dbe32eae",
   "baseline_public_tree": "b457d69f4559203eb7227de5a58e9bdad7f777a3",
-  "baseline_reconstructed_tree": "948d127e94e010a4eff9fe7757fd1c4465c0a170",
+  "baseline_reconstructed_tree": "46e9f8bd04df0178a893ae01f78d97baf9280206",
   "candidate_fixture_public_commit": "d91194f50e7ea316d8d0290cac2ce3e427048904",
-  "candidate_fixture_tree": "9e80c98f85c2cd75e5c9108d6add68c45764946e",
+  "candidate_fixture_tree": "956def1a369a074c0edb9b62b64457bc3d286267",
   "baseline_production_element_blob": "882d05902e0ac87a00a14bef93aa853cd84e2adc",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftCycleButtonElement.kt"
@@ -156,11 +156,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue292-full/baseline.patch",
-      "sha256": "be23173dd5216c06b6da33db2f5b57c570cb5a18bf590d3a7402a1b5611f003d"
+      "sha256": "077989f15a14dc73e0b6f76acea022e3830f5be313f5180e0a375ee384bf6bb7"
     },
     "fixture_and_candidate": {
       "path": ".github/performance/issue292-full/candidate.patch",
-      "sha256": "0278916351a56f3cb2b2e554fad69be59b5dad49e63b0369058e812696a4bbaf"
+      "sha256": "c2428c12b054130433e902fdf84d2a1ef9437df651c18eec4746e21291cfa741"
     }
   },
   "final_signed_commit": "Not required for reconstruction: published parent plus exact binary patch binds the reviewed final source tree",
@@ -198,9 +198,9 @@
     "source_review": "Pending focused independent review of this native input helper correction",
     "native_execution": "Pending fresh whole16case/all22target execution"
   },
-  "common_collector_source_commit": "87bec683f9ed50109900dc50afafa1147b534099",
-  "common_collector_source_tree": "9cefa26a76cfdded76306929e380b14ca0cd01dc",
-  "common_collector_source_review": "Reviewed c33 collector/fixture bytes unchanged; root combined runner passes 20 shared-driver and 7 planner tests, focused final integration review Pending",
+  "common_collector_source_commit": "65d7ef86939f714e062c85f833f944a2c9b59107",
+  "common_collector_source_tree": "46735d17f84bb215e09e1a7db57491eb7aed743a",
+  "common_collector_source_review": "Exact public65d7 common correction: root actual90JVMtests/25suites with two selector regressions, allthreebenchmark compile/lint/Detekt, ABI and27Python checks pass; no local Java/native invocation",
   "common_collector_bindings": [
     {
       "path": ".github/workflows/jvm.yml",
@@ -216,8 +216,8 @@
     },
     {
       "path": "gradle/performance/bounded-jvm.init.gradle.kts",
-      "git_blob": "2c68ed97642cd01427003d0be1fbe6133b357243",
-      "sha256": "443930b74286ca95846ec5ca268a98031368fec41bd063ddb77cbc7a6ec913f0",
+      "git_blob": "4398ee5aa3d7b0bb57a73189097f31c5488733de",
+      "sha256": "1f3b5f696fc93195c36ce68a78af83c15eff11c2e75a91b357ccca260aa7a76b",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -287,6 +287,12 @@
       "exact_reviewed_common_bytes": true
     },
     {
+      "path": "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JmhFixtureSelectionTest.kt",
+      "git_blob": "9f314271d11c3e90e0cd6c1293e63905dfc2f881",
+      "sha256": "39a6475ee1a0c1b1f9168b662cccae99b08eb6ee3ae76fde0efd143006421e77",
+      "exact_reviewed_common_bytes": true
+    },
+    {
       "path": "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationInputsTest.kt",
       "git_blob": "470cf65a467f0665cb9eda49ed997dcb59060317",
       "sha256": "6d12aa0b45224e8e967e75c3466a7da12157f071db7efc5f75a7629fc412cfab",
@@ -296,6 +302,18 @@
       "path": "performance-testkit/src/test/kotlin/dev/s7a/strata/performance/JvmOperationReportsTest.kt",
       "git_blob": "7ce4ad5bbd09e658ce4406cf2b2df7eff8f8b01b",
       "sha256": "9501bc532d0d027defc722e1c536ed213d2204269947ed415d207923093267a6",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "performance-testkit/src/test/resources/META-INF/BenchmarkList",
+      "git_blob": "b59169ae43381d857e6361b03c12f7a2d04fefd7",
+      "sha256": "ba059a7d9a317f98dd6aa295f3e21eb166b450905c5670d7b6c88177f792052b",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/HistoricalWorkloadEvidence.kt",
+      "git_blob": "1cded38716d373c8ccfbc6954562b154fefe56a7",
+      "sha256": "3b7c71c4a9c8f59d23c24f7e53186bf34e0645463f16e77dd194a5b7a7409f2e",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -314,6 +332,12 @@
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentProfile.kt",
       "git_blob": "dc14a727f260eb6b85b7f971ed3ad8a487c12950",
       "sha256": "7776e471125b48c41358473381b3ac6d3a587f51ce8048fd53117d8897a201f8",
+      "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentWorkEvidence.kt",
+      "git_blob": "4c4cb82ff511e04ff1f692e72d01d0c2c976e5b6",
+      "sha256": "98be1f6e78e85db5f8b127ab627b95fe542bc2aee67ac6d3775d21ae0934b272",
       "exact_reviewed_common_bytes": true
     },
     {
@@ -357,6 +381,12 @@
       "git_blob": "f28cdbb399f8daa442065fc70339a85ea3033d9d",
       "sha256": "090660568ea6c27d3f9eacefd6280131de763ac664c9631202ab2160c41fae95",
       "exact_reviewed_common_bytes": true
+    },
+    {
+      "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteWorkEvidence.kt",
+      "git_blob": "becd19e7d7ef23756b797a69ffbbcca18473fc00",
+      "sha256": "ba0574bfb9406a53fe89f75b2223bb8751948a53414ae163e1145204c2441ec5",
+      "exact_reviewed_common_bytes": true
     }
   ],
   "independent_overlay_suite": {
@@ -384,10 +414,6 @@
     "supplemental_operation_rows_completed": 0
   },
   "merged_runner_master_commit": "2e8088d8c9281b0a3bb34249fdd058cdd7231112",
-  "merge_driver_parents": [
-    "b7efe20e9cd13effc7ba6cbb4917ae48f88da287",
-    "2e8088d8c9281b0a3bb34249fdd058cdd7231112"
-  ],
   "invocation_protocol": "Every suite/side admission completes before any timed invocation; runtime and inputs retained before controls/timing, original modes and supplemental reports use existing owned process boundary",
   "measurement_selection": "Explicit manual jvm.yml dispatch with nested .github/performance/issue292-full/manifest.json; no permanent default manifest",
   "merged_runner_source_bindings": [
@@ -446,5 +472,26 @@
     "exact_png_pairs": 704,
     "status": "Passed actual whole native-screen-callback/presentation reconciliation; fresh final driver remains Pending",
     "reconciliation_sha256": "3ed80fc3b4ce17c9dd8ac994bfa2e140e93bcbbcabdce830e59d025e922ec8a3"
+  },
+  "final_driver_parent": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
+  "previous_failed_whole_attempt": {
+    "head": "bada1d539fd9ca550d4d37160e0004738ea1d6cf",
+    "run": 38210183998,
+    "job": 114682500106,
+    "completed_standard_jmh_cells": 0,
+    "completed_supplemental_operation_rows": 0,
+    "cause": "Unselected optional font verifier ran under selected CycleSelection inputs; missing required font PNG pin fails before timing",
+    "artifact_sha256": "74026367974dcece87b28a30f7234be561b56bf8b8c11fed7d3c484cfcf573f0",
+    "receipt_sha256": "5920a264a0ca782bacc2c67035303428c710e07ad771eab89d3f5418027b3cca",
+    "partial_sample_adoption": false
+  },
+  "generic_admission_selection": {
+    "selectors": [
+      "strata.performance.benchmarks",
+      "strata.performance.workloads"
+    ],
+    "contract": "Forward existing selectors to untimed JavaExec; optional verifier invocation uses selected compiled fixtures while all metadata checks and unselected whole gates remain unchanged",
+    "all_original_case_oracles_preserved": true,
+    "source_review": "Pending focused final source/manifest integration review"
   }
 }
