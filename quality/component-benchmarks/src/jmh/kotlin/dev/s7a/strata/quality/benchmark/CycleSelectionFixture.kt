@@ -82,8 +82,10 @@ internal class CycleSelectionFixture(
     private val failure = ObserverFailure()
     private val viewport = IntSize(100, 20)
     private val time = FrameTime(0)
+
     // The frozen disabled-input control has the largest input sequence: one pointer and four keys.
     private val inputResults = arrayOfNulls<InputResult>(5)
+
     private val expectedInputs = arrayOfNulls<InputResult>(5)
     private var inputCount = 0
     private var rejected: IllegalArgumentException? = null
