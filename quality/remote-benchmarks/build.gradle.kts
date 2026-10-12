@@ -46,19 +46,21 @@ tasks.register<JavaExec>("jmhRemote") {
     require(mode in setOf("avgt", "sample"))
     val sessions = providers.gradleProperty("strata.performance.remoteSessions").map(String::toBooleanStrict).getOrElse(false)
     val family = if (sessions) "remote-sessions" else "remote"
-    val selected = listOf("benchmarks", "workloads", "parameters").any { providers.gradleProperty("strata.performance.$it").isPresent }
-    listOf("benchmarks", "workloads").forEach { name ->
-        providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", it) }
-    }
+    val workloads = providers.gradleProperty("strata.performance.workloads").orNull
+    workloads?.let { systemProperty("strata.performance.workloads", it) }
+    val selected = listOf("benchmarks", "parameters").any { providers.gradleProperty("strata.performance.$it").isPresent }
+    providers.gradleProperty("strata.performance.benchmarks").orNull?.let { systemProperty("strata.performance.benchmarks", it) }
     listOf("parameters", "fixtureInputs").forEach { name ->
         providers.gradleProperty("strata.performance.$name").orNull?.let { systemProperty("strata.performance.$name", rootProject.file(it).absolutePath) }
     }
-    val suite = (if (quick) "$family-quick" else if (smoke) "$family-smoke" else family) + (if (selected) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
+    val label = providers.gradleProperty("strata.performance.suite").getOrElse(family)
+    require(label.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_-]*"))) { "Invalid performance output suite name" }
+    val suite = (if (quick) "$label-quick" else if (smoke) "$label-smoke" else label) + (if (workloads != null || selected) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
     systemProperty("strata.performance.remoteSessions", sessions)
-    systemProperty("strata.performance.smoke", smoke || (quick && selected.not()))
+    systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && selected.not()))
     systemProperty("strata.performance.mode", mode)
     val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {

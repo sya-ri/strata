@@ -58,6 +58,12 @@ internal interface MinecraftCanvasTestContext {
     fun exchangeHudHidden(hidden: Boolean): Boolean
 
     /**
+     * Moves the real native cursor to an unclamped logical coordinate from the runner thread.
+     * The version adapter applies the current GUI density; the next native frame delivers ordinary hover.
+     */
+    fun movePointer(position: IntOffset)
+
+    /**
      * Delivers a primary-button press through the borrowed [screen]'s native callback on the client thread.
      *
      * [position] is an unclamped logical coordinate. The result is native consumption, and callback failures propagate unchanged.
