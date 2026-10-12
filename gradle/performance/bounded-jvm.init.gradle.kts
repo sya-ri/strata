@@ -64,20 +64,16 @@ gradle.projectsEvaluated {
             val templateName = rootProject.providers.gradleProperty("strata.paired.template").get()
             val template = project.tasks.named(templateName, JavaExec::class.java)
             project.tasks.register("strataPairedPreflight", JavaExec::class.java) {
+                val source = template.get()
+                source.copyTo(this)
+                javaLauncher.set(source.javaLauncher)
+                classpath = source.classpath
+                check(preflightRequest["schema"] == "strata-paired-jvm-preflight-request-v1")
+                mainClass.set(preflightRequest["main"].toString())
+                setArgs(listOf(File(preflight).absolutePath))
                 dependsOn(template.map { it.taskDependencies.getDependencies(it) })
                 outputs.upToDateWhen { false }
                 outputs.cacheIf { false }
-                doFirst {
-                    val source = template.get()
-                    val execution = this as JavaExec
-                    source.copyTo(execution)
-                    execution.javaLauncher.set(source.javaLauncher)
-                    execution.classpath = source.classpath
-                    val request = JsonSlurper().parse(File(preflight)) as Map<*, *>
-                    check(request["schema"] == "strata-paired-jvm-preflight-request-v1")
-                    execution.mainClass.set(request["main"].toString())
-                    execution.setArgs(listOf(File(preflight).absolutePath))
-                }
             }
         }
         project.tasks.configureEach {

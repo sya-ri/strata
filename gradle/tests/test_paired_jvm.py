@@ -1,6 +1,7 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
 import copy
 import csv
+import hashlib
 import importlib.util
 import json
 import os
@@ -17,6 +18,9 @@ import zipfile
 SPEC = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).resolve().parents[1] / "performance/paired-jvm.py")
 PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
+QUALIFICATION_SPEC = importlib.util.spec_from_file_location("qualified_preflight", Path(__file__).resolve().parents[1] / "performance/verify-qualified-preflight.py")
+QUALIFICATION = importlib.util.module_from_spec(QUALIFICATION_SPEC)
+QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 
 
 class PairedJvmTest(unittest.TestCase):
@@ -206,6 +210,46 @@ class PairedJvmTest(unittest.TestCase):
             self.assertIn("prepared/api/target.jar", archive.namelist())
             self.assertIn("classpath/classpath-0.jar", archive.namelist())
             self.assertIn("preflight/arbitrary-new-fixture/baseline/receipt.json", archive.namelist())
+
+    def test_directory_pins_use_jvm_case_sensitive_utf8_entry_order_on_windows(self):
+        tree = self.root / "compiled-tree"
+        files = {"META-INF/fixture.kotlin_module": b"module", "dev/example/Fixture.class": b"compiled class", "z-resource.txt": b"asset"}
+        for name, value in files.items():
+            path = tree.joinpath(*name.split("/"))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(value)
+        # JVM String order places uppercase META-INF before lowercase packages on every host.
+        expected = hashlib.sha256()
+        for name in ("META-INF/fixture.kotlin_module", "dev/example/Fixture.class", "z-resource.txt"):
+            expected.update(f"{name}={hashlib.sha256(files[name]).hexdigest()}\n".encode("utf-8"))
+        self.assertEqual(PAIRED.path_identity(tree), expected.hexdigest())
+
+    def test_qualification_upload_keeps_attempt_receipts_without_reusable_workspaces(self):
+        output = self.root / "qualification"
+        workspace = output / "complete/workspaces/fixture"
+        workspace.mkdir(parents=True)
+        (workspace / "cache.bin").write_bytes(b"reusable intermediate")
+        PAIRED.write_new(output / "result.json", {"status": "failed"})
+        attempt = output / "complete.zip"
+        with zipfile.ZipFile(attempt, "x") as archive:
+            archive.writestr("attempt.json", '{"status":"failed"}')
+            archive.writestr("prepared/target-0.jar", b"actual early runtime bytes")
+        with zipfile.ZipFile(QUALIFICATION.pack_qualification(output)) as retained:
+            self.assertEqual(set(retained.namelist()), {"result.json", "complete.zip"})
+            self.assertEqual(retained.read("complete.zip"), attempt.read_bytes())
+
+    def test_directory_pins_order_supplementary_names_like_java_utf16_strings(self):
+        tree = self.root / "unicode-tree"
+        tree.mkdir()
+        supplementary = "\U00010000-resource.bin"
+        high_bmp = "\ue000-resource.bin"
+        (tree / supplementary).write_bytes(b"supplementary")
+        (tree / high_bmp).write_bytes(b"high BMP")
+        # The supplementary surrogate D800 sorts before E000 in Java, despite its larger Unicode scalar.
+        expected = hashlib.sha256()
+        for name, value in ((supplementary, b"supplementary"), (high_bmp, b"high BMP")):
+            expected.update(f"{name}={hashlib.sha256(value).hexdigest()}\n".encode("utf-8"))
+        self.assertEqual(PAIRED.path_identity(tree), expected.hexdigest())
 
     def test_paths_and_json_cannot_escape_or_override_pins(self):
         for value in ("../outside", "C:/outside", "a\\b", "/outside", "a/../b", "./a", ".git/index", "a\nb", "a//b"):

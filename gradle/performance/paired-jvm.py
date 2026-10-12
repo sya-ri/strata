@@ -306,7 +306,7 @@ def path_identity(path):
         require(path.stat().st_size <= 64 * 1024**2, "Prepared classpath archive exceeds its byte bound")
         return digest(path)
     require(path.is_dir() and not path.is_symlink(), "Missing prepared classpath directory")
-    files = sorted(path.rglob("*"))
+    files = sorted(path.rglob("*"), key=lambda item: item.relative_to(path).as_posix().encode("utf-16-be"))
     require(len(files) <= 16_384 and all(not item.is_symlink() for item in files), "Unsafe or oversized prepared classpath tree")
     files = [item for item in files if item.is_file()]
     require(sum(item.stat().st_size for item in files) <= 64 * 1024**2, "Prepared classpath tree exceeds its byte bound")

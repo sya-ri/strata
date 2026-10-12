@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import zipfile
 
 
 SPEC = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).with_name("paired-jvm.py"))
@@ -35,6 +36,17 @@ def frozen_fixture(root, output):
     with patch.open("xb") as stream:
         subprocess.run(["git", "-C", str(workspace), "diff", "--cached", "--binary", "--no-ext-diff", head], check=True, stdout=stream)
     return {"ref": head, "tree": tree, "patches": [{"path": patch.relative_to(root).as_posix(), "sha256": PAIRED.digest(patch)}]}, controller
+
+
+def pack_qualification(output):
+    """Retain each complete attempt ZIP once; exclude its private reusable workspaces from the outer artifact."""
+    archive = output.parent / (output.name + ".zip")
+    with zipfile.ZipFile(archive, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as target:
+        for path in sorted(output.iterdir()):
+            if path.is_file():
+                PAIRED.require(not path.is_symlink(), "Qualification evidence contains a symlink")
+                target.write(path, path.name)
+    return archive
 
 
 def main():
@@ -98,7 +110,7 @@ def main():
         raise
     finally:
         PAIRED.write_new(output / "result.json", result)
-        print(f"Preserved compiled preflight qualification: {PAIRED.pack(output)}", flush=True)
+        print(f"Preserved compiled preflight qualification: {pack_qualification(output)}", flush=True)
 
 
 if __name__ == "__main__":
