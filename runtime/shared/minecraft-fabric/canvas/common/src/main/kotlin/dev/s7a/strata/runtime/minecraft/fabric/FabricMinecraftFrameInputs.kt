@@ -256,9 +256,8 @@ internal class FabricMinecraftFrameInputs(
                     layers.forEach { layer ->
                         if (layer is FabricMinecraftFrameLayer.Sampled) rejected[index++]?.let { reasons[layer.command] = it }
                     }
-                    // A native image barrier before a translucent or unknown source would separately round the original background.
-                    // Keep the complete original portable runs; opaque platform barriers and their active clips remain untouched.
-                    val resolved = partitionFabricMinecraftFrameWithSourceAdmission(commands, viewport, scale, fractionalSource, exactSampling) { reasons[it] ?: SourceRejection.Composition }
+                    // Only a rejected source joins its adjacent portable run; other native barriers retain their original rounding boundaries.
+                    val resolved = partitionFabricMinecraftFrameWithSourceAdmission(commands, viewport, scale, fractionalSource, exactSampling) { reasons[it] }
                     val compose = compositionEnabled && rejected.none { it == SourceRejection.Capacity || it == SourceRejection.Ineligible }
                     FabricMinecraftFrameInputs(resolved, scale, compositionEnabled = compose)
                 }

@@ -203,25 +203,56 @@ internal class FabricMinecraftFrameInputsTest {
         for (scale in 1..4) {
             val inputs = FabricMinecraftFrameInputs.prepare(first + platform + last, size, scale)
             val resolved = inputs.resolve({ true }, { true }, { it === partial })
-            assertEquals(3, resolved.layers.size)
+            assertEquals(5, resolved.layers.size)
             assertTrue(resolved.layers[0] is FabricMinecraftFrameLayer.Portable)
-            assertSame(platform, (resolved.layers[1] as FabricMinecraftFrameLayer.Platform).command)
+            assertSame(first[3], (resolved.layers[1] as FabricMinecraftFrameLayer.Sampled).command)
             assertTrue(resolved.layers[2] is FabricMinecraftFrameLayer.Portable)
+            assertSame(platform, (resolved.layers[3] as FabricMinecraftFrameLayer.Platform).command)
+            assertTrue(resolved.layers[4] is FabricMinecraftFrameLayer.Portable)
             assertArrayEquals(
                 rasterizeHeadless(first, size, scale).copyArgb(),
-                resolved.portable
-                    .first()
-                    .rasterize()
-                    .copyArgb(),
+                present(resolved.layers.take(3), size, scale),
             )
             assertArrayEquals(
                 rasterizeHeadless(last, size, scale).copyArgb(),
-                resolved.portable
-                    .last()
-                    .rasterize()
-                    .copyArgb(),
+                present(resolved.layers.drop(4), size, scale),
             )
         }
+    }
+
+    /**
+     * Presents each existing portable raster and retained native image in its original ordered position.
+     * This CPU control uses the original complete commands as the independent clip and pixel oracle.
+     */
+    private fun present(
+        layers: List<FabricMinecraftFrameLayer>,
+        size: IntSize,
+        scale: Int,
+    ): IntArray {
+        val inputs = FabricMinecraftFrameInputs(layers, scale)
+        val presentation = ArrayList<DrawCommand>()
+        var portableIndex = 0
+        layers.forEach { layer ->
+            when (layer) {
+                is FabricMinecraftFrameLayer.Portable -> {
+                    val raster = inputs.portable[portableIndex++].rasterize()
+                    val image = createDrawImage(raster.size, raster.copyArgb())
+                    presentation.add(DrawCommand.BlitImage(image, IntRect(0, 0, raster.size.width, raster.size.height), layer.bounds))
+                }
+
+                is FabricMinecraftFrameLayer.Sampled -> {
+                    if (layer.sampling != null) portableIndex += 1
+                    layer.clip?.let { presentation.add(DrawCommand.PushClip(it)) }
+                    presentation.add(layer.command)
+                    if (layer.clip != null) presentation.add(DrawCommand.PopClip)
+                }
+
+                is FabricMinecraftFrameLayer.Platform -> {
+                    error("Platform barriers are verified between these independent pixel segments.")
+                }
+            }
+        }
+        return rasterizeHeadless(presentation, size, scale).copyArgb()
     }
 
     private data object TestPlatform : PlatformDrawCommand
