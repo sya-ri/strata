@@ -13,6 +13,67 @@ import kotlin.test.assertTrue
  */
 class JvmOperationReportsTest {
     @Test
+    fun failedOriginalWorkCannotStartSupplementalSampling() {
+        val failure = IllegalStateException("Original work failed")
+        var sampled = false
+        val adapter =
+            object : JvmOperationReportAdapter {
+                override val rows: List<JvmOperationReportRow> = FirstAdapter.rows
+
+                override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
+                    sampled = true
+                    return FirstAdapter.collect(plan)
+                }
+            }
+        assertSame(failure, assertFailsWith<IllegalStateException> { adapter.collectVerified(PerformancePlan(warmup = 0, samples = 2)) { throw failure } })
+        assertEquals(false, sampled)
+    }
+
+    @Test
+    fun terminalOwnerVerificationAndSamplingShareOneLifetimeEvenOnFailure() {
+        fun collect(failure: Throwable?): Map<String, JsonObject> {
+            var open = true
+            var releases = 0
+            var originalControlRuns = 0
+            val adapter =
+                object : JvmOperationReportAdapter {
+                    override val rows: List<JvmOperationReportRow> = FirstAdapter.rows
+
+                    override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
+                        JvmPerformanceRunner.sequence(plan.samples, mapOf("first" to plan.samples)) { _, sequence ->
+                            sequence.sample("first") {
+                                check(open)
+                                failure?.let { throw it }
+                            }
+                        }
+
+                    override fun collectVerified(
+                        plan: PerformancePlan,
+                        verifyWork: () -> Unit,
+                    ): Map<String, JsonObject> =
+                        try {
+                            check(open)
+                            originalControlRuns += 1
+                            collect(plan)
+                        } finally {
+                            open = false
+                            releases += 1
+                        }
+                }
+            return try {
+                adapter.collectVerified(PerformancePlan(warmup = 0, samples = 2)) { error("The original terminal control must run inside its single lifetime") }
+            } finally {
+                assertEquals(false, open)
+                assertEquals(1, releases)
+                assertEquals(1, originalControlRuns)
+            }
+        }
+        JvmOperationReports.validateSample(collect(null).getValue("first"), 2)
+        val failure = IllegalStateException("Owner operation failed")
+        assertSame(failure, assertFailsWith<IllegalStateException> { collect(failure) })
+    }
+
+    @Test
     fun requiredCompiledHooksResolveAndStaleMissingAmbiguousOrInvalidHooksFail() {
         val first = FirstFixture::class.java
         val second = SecondFixture::class.java

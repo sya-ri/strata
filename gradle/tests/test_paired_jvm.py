@@ -74,6 +74,71 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(profilers=profilers), self.assertRaises(ValueError):
                 self.load(changed)
 
+    def owner_specification(self):
+        return {"name": "independent-owner", "project": ":runtime:headless", "template": "test", "kind": "test",
+                "main": "independent.OwnerEvidence", "comparison": "independent.OwnerComparison", "workload_id": "independent-owner-v1",
+                "phase_keys": ["workload"], "rows": [{"workload": "all"}, {"workload": "control"}], "warmup": 100, "samples": 200,
+                "runtime_classes": {"headless": {"project": ":runtime:headless", "class": "independent.Runtime"}}}
+
+    def test_owner_reports_are_independent_of_jmh_rows_and_reject_incomplete_bindings(self):
+        value = copy.deepcopy(self.manifest)
+        value["runtime_projects"] += [":velocity-api", ":runtime:velocity"]
+        value["owner_reports"] = [self.owner_specification()]
+        self.assertEqual(self.load(value), value)
+        changes = [lambda report: report.update(kind="shell"), lambda report: report.update(template="test --tests subset"),
+                   lambda report: report.update(main="bad;Main"), lambda report: report.update(rows=[]),
+                   lambda report: report["rows"].append(report["rows"][0]), lambda report: report.update(samples=True),
+                   lambda report: report.update(phase_keys=[]), lambda report: report.update(project=":runtime:unknown"),
+                   lambda report: report["runtime_classes"]["headless"].update(project=":unknown"),
+                   lambda report: report.update(command="arbitrary")]
+        for change in changes:
+            changed = copy.deepcopy(value)
+            change(changed["owner_reports"][0])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def test_owner_raw_rejects_substitution_reused_uuid_partial_rows_and_changed_profile(self):
+        archive = self.root / "actual.jar"
+        binary = b"actual compiled representative"
+        with zipfile.ZipFile(archive, "w") as target:
+            target.writestr("independent/Runtime.class", binary)
+        runtime = {":runtime:headless": {"path": str(archive), "sha256": PAIRED.digest(archive)}}
+        specification = self.owner_specification()
+        identity = "12345678-1234-1234-1234-123456789abc"
+        report = {"schema_version": 1, "status": "passed", "workload_id": "independent-owner-v1", "repetition": 0, "run_id": identity,
+                  "phases": [{"workload": row["workload"], "warmup": 100, "samples": 200} for row in specification["rows"]],
+                  "runtime_metadata": {"modules": [{"module": "headless", "status": "resolved", "representativeClass": "independent.Runtime",
+                                                    "codeSource": {"status": "available", "sha256": PAIRED.digest(archive)},
+                                                    "classResource": {"status": "available", "sha256": hashlib.sha256(binary).hexdigest()},
+                                                    "classTree": {"status": "available"}}]}}
+        seen = set()
+        PAIRED.verify_owner_report(report, specification, 0, runtime, seen)
+        self.assertEqual(seen, {identity})
+        with self.assertRaises(ValueError):
+            PAIRED.verify_owner_report(report, specification, 0, runtime, seen)
+        changes = [lambda value: value["phases"].pop(), lambda value: value["phases"][0].update(samples=199),
+                   lambda value: value["phases"][0].update(workload="substituted"), lambda value: value.update(repetition=1),
+                   lambda value: value["runtime_metadata"]["modules"][0]["codeSource"].update(sha256="0" * 64),
+                   lambda value: value["runtime_metadata"]["modules"][0]["classResource"].update(sha256="0" * 64)]
+        for change in changes:
+            changed = copy.deepcopy(report)
+            change(changed)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                PAIRED.verify_owner_report(changed, specification, 0, runtime, set())
+
+    def test_owner_table_keeps_cycle_units_nulls_and_adverse_deltas(self):
+        specification = self.owner_specification()
+        comparison = {"phases": [{"workload": "all", "before": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 4.0},
+                                  "after": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 7.0},
+                                  "delta": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 3.0}}]}
+        PAIRED.table(self.root, [], [], owners=[(specification, comparison)])
+        with (self.root / "table.csv").open(encoding="utf-8", newline="") as source:
+            rows = list(csv.DictReader(source))
+        self.assertEqual(rows[0]["unit"], "ns/cycle")
+        self.assertEqual(rows[0]["baseline"], "")
+        self.assertEqual(rows[1]["unit"], "B/cycle")
+        self.assertEqual(rows[1]["delta"], "3.0")
+
     def test_operation_connection_is_optional_and_rejects_partial_or_stale_registration(self):
         value = copy.deepcopy(self.manifest)
         value["suites"][0]["operation_reports"] = {"adapters": {"example.Fixture": "example.Adapter"}, "warmup": 30,
@@ -199,6 +264,33 @@ class PairedJvmTest(unittest.TestCase):
                     PAIRED.verify_test_gate(directory, gate)
                 self.assertFalse((directory / "junit-verified.json").exists())
                 self.assertTrue((directory / "junit-inventory.json").is_file())
+
+    def test_independent_junit_gate_accepts_actual_jvm_platform_names_without_accepting_other_platforms_or_duplicates(self):
+        gate = {"task": ":runtime:core:jvmTest", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/core/build/test-results/jvmTest"
+        reports.mkdir(parents=True)
+        cases = [
+            (("owner()[jvm]", "failure()[jvm]"), True),
+            (("owner()[jvm]", "failure()"), True),
+            (("owner()[js]", "failure()[jvm]"), False),
+            (("owner()[jvm][jvm]", "failure()[jvm]"), False),
+            (("owner()[jvm]", "owner()", "failure()[jvm]"), False),
+        ]
+        for index, (names, accepted) in enumerate(cases):
+            with self.subTest(names=names):
+                directory = self.root / f"jvm-platform-{index}"
+                directory.mkdir()
+                report = reports / "TEST-independent.Controls.xml"
+                body = ''.join(f'<testcase classname="independent.Controls" name="{name}"/>' for name in names)
+                report.write_text(f'<testsuite tests="{len(names)}" failures="0" errors="0" skipped="0">{body}</testsuite>', encoding="utf-8")
+                PAIRED.preserve_test_reports(self.root, directory, gate)
+                if accepted:
+                    PAIRED.verify_test_gate(directory, gate)
+                    self.assertEqual(PAIRED.read_json(directory / "junit-verified.json")["counts"]["tests"], len(names))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_test_gate(directory, gate)
+                    self.assertFalse((directory / "junit-verified.json").exists())
 
     def preflight_fixture(self, name):
         """Model independently retained class loads and OS generations for source-only rejection checks."""

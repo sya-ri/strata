@@ -89,7 +89,7 @@ def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(set(data) == required and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}, "Invalid source binding")
@@ -99,7 +99,7 @@ def load_manifest(root, path):
             pin(root, patch)
     projects = data["runtime_projects"]
     require(isinstance(projects, list) and projects and len(set(projects)) == len(projects), "Missing or duplicate runtime project")
-    require(all(re.fullmatch(r":(?:api|runtime:(?:core|headless|remote|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
+    require(all(re.fullmatch(r":(?:api|velocity-api|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
             "Unsupported CPU runtime project")
     require(isinstance(data["suites"], list) and data["suites"], "No paired suites selected")
     names = set()
@@ -150,6 +150,41 @@ def load_manifest(root, path):
                         and all(isinstance(value, str) and len(value) <= 4096 and "\x00" not in value for value in item["arguments"]), "Use bounded compiled control arguments")
                 identifiers.append(item["id"])
             require(len(identifiers) == len(set(identifiers)), "Duplicate preflight control identity")
+    reports = data.get("owner_reports", [])
+    require(isinstance(reports, list) and len(reports) <= 256, "Invalid owner report inventory")
+    for report in reports:
+        fields = {"name", "project", "template", "kind", "main", "comparison", "workload_id", "phase_keys", "rows", "warmup", "samples", "runtime_classes"}
+        require(isinstance(report, dict) and fields <= set(report) <= fields | {"controls"}, "Invalid compiled owner report fields")
+        require(isinstance(report["name"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", report["name"])
+                and report["name"] not in names, "Invalid or duplicate owner report name")
+        names.add(report["name"])
+        kind = report["kind"]
+        require(kind in ("java-exec", "test"), "Use an existing JavaExec or Test template")
+        require((kind == "java-exec" and FixtureProject.decode(report["project"]) is not None)
+                or (kind == "test" and report["project"] in projects), "Owner report template is outside frozen projects")
+        require(re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", report["template"]), "Use one existing template task")
+        require(all(isinstance(report[key], str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", report[key])
+                    for key in ("main", "comparison")), "Declare compiled owner report entry points")
+        require(isinstance(report["workload_id"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", report["workload_id"]), "Invalid owner workload identity")
+        keys, rows = report["phase_keys"], report["rows"]
+        require(isinstance(keys, list) and keys and len(keys) == len(set(keys))
+                and all(isinstance(key, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", key) for key in keys), "Declare owner phase keys")
+        require(isinstance(rows, list) and 0 < len(rows) <= 16_384
+                and all(isinstance(row, dict) and set(row) == set(keys)
+                        and all(isinstance(value, (str, int)) and not isinstance(value, bool) for value in row.values()) for row in rows)
+                and len({json.dumps(row, sort_keys=True) for row in rows}) == len(rows), "Declare the complete unique owner row inventory")
+        require(all(isinstance(report[key], int) and not isinstance(report[key], bool) for key in ("warmup", "samples"))
+                and 0 <= report["warmup"] <= 1_000_000 and 0 < report["samples"] <= 1_000_000, "Invalid owner profile counts")
+        controls = report.get("controls", [])
+        require(isinstance(controls, list) and len(controls) <= 256 and len(controls) == len(set(controls))
+                and all(isinstance(field, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", field) for field in controls), "Invalid raw owner control fields")
+        classes = report["runtime_classes"]
+        require(isinstance(classes, dict) and classes and len(classes) <= len(projects), "Missing actual owner runtime bindings")
+        for module, binding in classes.items():
+            require(re.fullmatch(r"[A-Za-z0-9_-]+", module) and isinstance(binding, dict) and set(binding) == {"project", "class"}
+                    and binding["project"] in projects and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", binding["class"]),
+                    "Invalid actual owner runtime representative")
+        require(len({binding["project"] for binding in classes.values()}) == len(classes), "Duplicate owner runtime binding")
     labels = set()
     for suite in data["suites"]:
         if "operation_reports" in suite:
@@ -234,9 +269,42 @@ def archive_task(project):
 def archive_file(workspace, project):
     """Require one ordinary binary archive rather than selecting a sources or old release JAR."""
     libraries = workspace.joinpath(*project.strip(":").split(":"), "build", "libs")
-    values = [path for path in libraries.glob("*.jar") if not path.name.endswith(("-sources.jar", "-javadoc.jar", "-all.jar"))]
+    values = [path for path in libraries.glob("*.jar") if not path.name.endswith(("-sources.jar", "-javadoc.jar", "-all.jar", "-plugin.jar"))]
     require(len(values) == 1, f"Expected one current runtime archive: {project}")
     return values[0]
+
+
+def verify_owner_report(report, specification, repetition, runtime, seen):
+    """Validate raw complete rows and actual loaded B/C JARs; processing remains in the shared kit."""
+    require(report.get("status") == "passed" and report.get("schema_version") == 1
+            and report.get("workload_id") == specification["workload_id"] and report.get("repetition") == repetition,
+            "Wrong or incomplete owner report")
+    identity = report.get("run_id")
+    require(isinstance(identity, str) and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", identity)
+            and identity not in seen, "Missing or reused owner invocation")
+    phases = report.get("phases", [])
+    keys = specification["phase_keys"]
+    actual = [{key: phase.get(key) for key in keys} for phase in phases]
+    require(len(actual) == len(specification["rows"])
+            and {json.dumps(row, sort_keys=True) for row in actual} == {json.dumps(row, sort_keys=True) for row in specification["rows"]}
+            and all(phase.get("samples") == specification["samples"] and phase.get("warmup") == specification["warmup"] for phase in phases),
+            "Incomplete or changed owner row/profile inventory")
+    require(all(all(field in phase for field in specification.get("controls", [])) for phase in phases), "Missing original untimed owner controls")
+    modules = report.get("runtime_metadata", {}).get("modules", [])
+    require(len(modules) == len(specification["runtime_classes"]), "Incomplete owner runtime origin inventory")
+    loaded = {module.get("module"): module for module in modules}
+    require(set(loaded) == set(specification["runtime_classes"]), "Changed owner runtime modules")
+    for label, binding in specification["runtime_classes"].items():
+        module = loaded[label]
+        archive = runtime[binding["project"]]
+        resource = binding["class"].replace(".", "/") + ".class"
+        with zipfile.ZipFile(archive["path"]) as jar:
+            expected = hashlib.sha256(jar.read(resource)).hexdigest()
+        require(module.get("status") == "resolved" and module.get("representativeClass") == binding["class"]
+                and module.get("codeSource", {}).get("status") == "available" and module["codeSource"].get("sha256") == archive["sha256"]
+                and module.get("classResource", {}).get("status") == "available" and module["classResource"].get("sha256") == expected
+                and module.get("classTree", {}).get("status") == "available", "Owner report loaded a substituted runtime")
+    seen.add(identity)
 
 
 def class_load_inventory(owner, expected=None):
@@ -537,7 +605,7 @@ def verify_test_gate(directory, gate):
         require(suite.tag == "testsuite", "Invalid independent JUnit report root")
         actual = {name: 0 for name in counts}
         for case in suite.findall("testcase"):
-            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("()")
+            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("[jvm]").removesuffix("()")
             actual["tests"] += 1
             for name, tag in (("failures", "failure"), ("errors", "error"), ("skipped", "skipped")):
                 actual[name] += int(case.find(tag) is not None)
@@ -552,7 +620,7 @@ def verify_test_gate(directory, gate):
                                                 "counts": counts, "reports": inventory["reports"]})
 
 
-def table(output, comparisons, phases, operations=()):
+def table(output, comparisons, phases, operations=(), owners=()):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
     for suite, mode, comparison in comparisons:
@@ -576,6 +644,14 @@ def table(output, comparisons, phases, operations=()):
                 rows.append({"suite": suite, "mode": "owner-thread-operation", "benchmark": phase["operation_id"], "params": "{}",
                              "metric": metric, "unit": unit, "baseline": before, "candidate": phase["after"][metric],
                              "delta": phase["delta"][metric], "candidate_to_baseline": None})
+    for specification, comparison in owners:
+        for phase in comparison["phases"]:
+            identity = {key: phase[key] for key in specification["phase_keys"]}
+            for metric, before in phase["before"].items():
+                unit = "B/cycle" if metric.endswith("bytes_per_cycle") else "ns/cycle" if metric.endswith("ns_per_cycle") else ""
+                rows.append({"suite": specification["name"], "mode": "owner-thread-report", "benchmark": specification["workload_id"],
+                             "params": json.dumps(identity, sort_keys=True), "metric": metric, "unit": unit,
+                             "baseline": before, "candidate": phase["after"][metric], "delta": phase["delta"][metric], "candidate_to_baseline": None})
     with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
         writer = csv.DictWriter(target, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -715,6 +791,8 @@ def run(root, manifest_path, output):
             return directory
 
         data = load_manifest(root, manifest_path)
+        if any(project in (":velocity-api", ":runtime:velocity") for project in data["runtime_projects"]):
+            common.remove("-Pstrata.jvmOnly=true")
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
@@ -737,6 +815,7 @@ def run(root, manifest_path, output):
         fixture = workspaces["fixture"]
         owners = sorted({suite["project"] for suite in data["suites"]})
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
+        fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
         for side in ("baseline", "candidate"):
             tasks = [archive_task(project) for project in data["runtime_projects"]]
             if workspaces[side] == fixture:
@@ -886,6 +965,58 @@ def run(root, manifest_path, output):
                 comparison = read_json(comparison_path)
                 require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
                 operation_comparisons.append((suite["name"], comparison))
+        owner_comparisons, owner_ids, owner_controls = [], set(), []
+        for specification in data.get("owner_reports", []):
+            runs, classpaths = {"baseline": [], "candidate": []}, {}
+            library_manifest = output / (specification["name"] + "-libraries.properties")
+            for repetition in range(3):
+                for side in ("baseline", "candidate"):
+                    for key, workspace in workspaces.items():
+                        source_guard(workspace, data["sources"][key]["tree"])
+                    for archives in runtime_archives.values():
+                        for item in archives.values():
+                            require(digest(Path(item["path"])) == item["sha256"], "Prepared owner runtime changed")
+                    destination = output / "raw" / specification["name"] / side / f"run-{repetition}.json"
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    request = output / f"{specification['name']}-{side}-{repetition}-owner-request.json"
+                    write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                        "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
+                                        "arguments": [str(destination), str(repetition)], "inputs": str(library_manifest)})
+                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.paired.runtime={runtime_manifests[side]}",
+                             f"-Pstrata.performance.fixtureInputs={inputs}"]
+                    if side not in classpaths:
+                        retained = output / "prepared-classpaths" / specification["name"] / side
+                        flags.append(f"-Pstrata.paired.preserveClasspath={retained}")
+                        classpaths[side] = retained / "classpath.json"
+                    else:
+                        prepared_classpath(classpaths[side])
+                        flags.append(f"-Pstrata.paired.classpath={classpaths[side]}")
+                    phase(f"collect-{specification['name']}-owner-{side}-{repetition}", fixture,
+                          [specification["project"] + ":strataPairedEvidence"] + flags, 0)
+                    prepared = prepared_classpath(classpaths[side])
+                    require(class_entry(prepared, "dev.s7a.strata.performance.JvmPerformanceMeter")["sha256"] == digest(collector), "Owner report substituted its collector")
+                    verify_owner_report(read_json(destination), specification, repetition, runtime_archives[side], invocation_ids | operation_ids | owner_ids)
+                    raw = read_json(destination)
+                    owner_ids.add(raw["run_id"])
+                    if specification.get("controls"):
+                        owner_controls.append({"suite": specification["name"], "side": side, "repetition": repetition, "run_id": raw["run_id"],
+                                               "rows": [{**{key: row[key] for key in specification["phase_keys"]},
+                                                         **{key: row[key] for key in specification["controls"]}} for row in raw["phases"]]})
+                    runs[side].append(str(destination))
+            comparison_path = output / (specification["name"] + "-owner-comparison.json")
+            request = output / (specification["name"] + "-comparison-owner-request.json")
+            write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                "template": specification["template"], "kind": specification["kind"], "main": specification["comparison"],
+                                "arguments": runs["baseline"] + runs["candidate"] + [str(collector), str(comparison_path)], "inputs": str(library_manifest)})
+            phase(f"compare-{specification['name']}-owner", fixture,
+                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
+                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}"])
+            comparison = read_json(comparison_path)
+            require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
+            owner_comparisons.append((specification, comparison))
+        require(len(owner_ids) == len(data.get("owner_reports", [])) * 6, "Whole owner report attempt incomplete")
+        record["owner_report_cells"] = sum(len(report["rows"]) * 6 for report in data.get("owner_reports", []))
+        write_new(output / "owner-controls.json", owner_controls)
         for side, workspace in workspaces.items():
             source_guard(workspace, data["sources"][side]["tree"])
             for value in data["compiled_pins"][side]:
@@ -900,7 +1031,13 @@ def run(root, manifest_path, output):
         require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
         record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
         record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
-        table(output, comparisons, record["phases"], operation_comparisons)
+        table(output, comparisons, record["phases"], operation_comparisons, owner_comparisons)
+        if owner_controls:
+            with (output / "report.md").open("a", encoding="utf-8") as target:
+                target.write("\nUntimed original owner controls are raw counts/transitions, not wall-time or percentile measurements. Every independent invocation is retained.\n\n| Suite | Side | Repetition | Original row/control fields |\n| --- | --- | ---: | --- |\n")
+                for control in owner_controls:
+                    for row in control["rows"]:
+                        target.write(f"| {control['suite']} | {control['side']} | {control['repetition']} | {json.dumps(row, sort_keys=True)} |\n")
         record["status"] = "passed"
     except BaseException as failure:
         record["error"] = f"{type(failure).__name__}: {failure}"

@@ -1,0 +1,221 @@
+{
+  "owner_reports": [
+    {
+      "name": "transport-drain-owner",
+      "project": ":quality:remote-benchmarks",
+      "template": "jmhRemote",
+      "kind": "java-exec",
+      "main": "dev.s7a.strata.quality.benchmark.TransportDrainCpuEvidence",
+      "comparison": "dev.s7a.strata.quality.benchmark.TransportDrainCpuComparison",
+      "workload_id": "bounded-transport-drain-v1",
+      "phase_keys": [
+        "peers",
+        "workload"
+      ],
+      "rows": [
+        {
+          "peers": 1,
+          "workload": "Idle"
+        },
+        {
+          "peers": 1,
+          "workload": "One"
+        },
+        {
+          "peers": 1,
+          "workload": "Sparse"
+        },
+        {
+          "peers": 1,
+          "workload": "Seven"
+        },
+        {
+          "peers": 1,
+          "workload": "Eight"
+        },
+        {
+          "peers": 1,
+          "workload": "SixtyThree"
+        },
+        {
+          "peers": 1,
+          "workload": "ExactLimit"
+        },
+        {
+          "peers": 1,
+          "workload": "LimitPlusOne"
+        },
+        {
+          "peers": 1,
+          "workload": "SequenceGap"
+        },
+        {
+          "peers": 1,
+          "workload": "BusyProducer"
+        },
+        {
+          "peers": 100,
+          "workload": "Idle"
+        },
+        {
+          "peers": 100,
+          "workload": "One"
+        },
+        {
+          "peers": 100,
+          "workload": "Sparse"
+        },
+        {
+          "peers": 100,
+          "workload": "Seven"
+        },
+        {
+          "peers": 100,
+          "workload": "Eight"
+        },
+        {
+          "peers": 100,
+          "workload": "SixtyThree"
+        },
+        {
+          "peers": 100,
+          "workload": "ExactLimit"
+        },
+        {
+          "peers": 100,
+          "workload": "LimitPlusOne"
+        },
+        {
+          "peers": 100,
+          "workload": "SequenceGap"
+        },
+        {
+          "peers": 100,
+          "workload": "BusyProducer"
+        },
+        {
+          "peers": 1000,
+          "workload": "Idle"
+        },
+        {
+          "peers": 1000,
+          "workload": "One"
+        },
+        {
+          "peers": 1000,
+          "workload": "Sparse"
+        },
+        {
+          "peers": 1000,
+          "workload": "Seven"
+        },
+        {
+          "peers": 1000,
+          "workload": "Eight"
+        },
+        {
+          "peers": 1000,
+          "workload": "SixtyThree"
+        },
+        {
+          "peers": 1000,
+          "workload": "ExactLimit"
+        },
+        {
+          "peers": 1000,
+          "workload": "LimitPlusOne"
+        },
+        {
+          "peers": 1000,
+          "workload": "SequenceGap"
+        },
+        {
+          "peers": 1000,
+          "workload": "BusyProducer"
+        }
+      ],
+      "warmup": 100,
+      "samples": 200,
+      "runtime_classes": {
+        "api": {
+          "project": ":api",
+          "class": "dev.s7a.strata.projection.ProjectionValue"
+        },
+        "core": {
+          "project": ":runtime:core",
+          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
+        },
+        "remote": {
+          "project": ":runtime:remote",
+          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
+        }
+      }
+    },
+    {
+      "name": "velocity-drain-owner",
+      "project": ":runtime:velocity",
+      "template": "test",
+      "kind": "test",
+      "main": "dev.s7a.strata.runtime.velocity.VelocityDrainCpuEvidence",
+      "comparison": "dev.s7a.strata.runtime.velocity.VelocityDrainCpuComparison",
+      "workload_id": "bounded-velocity-drain-v1",
+      "phase_keys": [
+        "workload"
+      ],
+      "rows": [
+        {
+          "workload": "Idle"
+        },
+        {
+          "workload": "One"
+        },
+        {
+          "workload": "Seven"
+        },
+        {
+          "workload": "Eight"
+        },
+        {
+          "workload": "SixtyThree"
+        },
+        {
+          "workload": "ExactLimit"
+        },
+        {
+          "workload": "LimitPlusOne"
+        },
+        {
+          "workload": "BusyProducer"
+        }
+      ],
+      "warmup": 100,
+      "samples": 200,
+      "runtime_classes": {
+        "api": {
+          "project": ":api",
+          "class": "dev.s7a.strata.projection.ProjectionValue"
+        },
+        "core": {
+          "project": ":runtime:core",
+          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
+        },
+        "remote": {
+          "project": ":runtime:remote",
+          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
+        },
+        "velocity-api": {
+          "project": ":velocity-api",
+          "class": "dev.s7a.strata.velocity.VelocityUi"
+        },
+        "velocity": {
+          "project": ":runtime:velocity",
+          "class": "dev.s7a.strata.runtime.velocity.VelocityScreens"
+        }
+      },
+      "controls": [
+        "untimed_command_polls_per_cycle",
+        "post_empty_arrival"
+      ]
+    }
+  ]
+}
