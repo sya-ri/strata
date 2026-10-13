@@ -184,8 +184,9 @@ internal class TextLineLayoutFixture(
         val previousOwner = owner()
         val previousLayout = currentLayout()
         val previous = TextLineLayoutAccess.snapshot(previousLayout)
+        val oldViewport = size.value
         val oldFrame = frame()
-        val pixels = pixels(oldFrame)
+        val pixels = pixels(oldFrame, oldViewport)
         layout(operation)
         val nextOwner = owner()
         check(currentLayout() !== previousLayout) { "Layout replacement failed for $consumer/$shape/$operation." }
@@ -198,7 +199,7 @@ internal class TextLineLayoutFixture(
         resetCaret()
         verifyCurrent()
         TextLineLayoutAccess.verifySnapshot(previousLayout, previous)
-        check(pixels(oldFrame).contentEquals(pixels))
+        check(pixels(oldFrame, oldViewport).contentEquals(pixels))
         verifyClean()
     }
 
@@ -321,7 +322,10 @@ internal class TextLineLayoutFixture(
 
     private fun frame(): RuntimeUiFrame = host.frame(size.value, time)
 
-    private fun pixels(frame: RuntimeUiFrame): IntArray = rasterizeHeadless(frame.drawCommands, IntSize(minOf(64, size.value.width), minOf(64, size.value.height))).copyArgb()
+    private fun pixels(
+        frame: RuntimeUiFrame,
+        viewport: IntSize = size.value,
+    ): IntArray = rasterizeHeadless(frame.drawCommands, IntSize(minOf(64, viewport.width), minOf(64, viewport.height))).copyArgb()
 
     private fun opposite(value: Side): Side = if (value === Side.First) Side.Second else Side.First
 

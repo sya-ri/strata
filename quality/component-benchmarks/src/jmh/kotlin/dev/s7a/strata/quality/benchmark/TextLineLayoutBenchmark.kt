@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -265,10 +266,17 @@ public open class TextLineLayoutBenchmark {
      */
     public companion object {
         /**
+         * Connects all original retained construction and control boundaries to the shared owner-thread meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = TextLineLayoutOperationReport
+
+        /**
          * Requires all 82 generated cases, real scalar/pixel/lifetime oracles and complete release before collection.
          */
         @JvmStatic
         public fun verifyWork() {
+            TextLineLayoutOperationReport.verifyRows()
             check(JmhWorkloadInventory.capture(listOf(TextLineLayoutBenchmark::class.java), setOf("avgt")).size == 82)
             for (workload in LayoutCase.entries) {
                 TextLineLayoutFixture(workload.consumer, workload.shape).use { fixture -> fixture.verifyLayout(workload.operation) }

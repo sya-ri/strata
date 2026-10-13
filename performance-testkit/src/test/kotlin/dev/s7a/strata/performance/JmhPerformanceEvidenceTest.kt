@@ -121,6 +121,54 @@ class JmhPerformanceEvidenceTest {
         }
     }
 
+    @Test
+    fun additionalProfilerMetricsRequireEveryIterationAndPreserveUnitsAcrossBothModes() {
+        PackagedEvidenceFixture().use { kit ->
+            listOf(false, true).forEach { sample ->
+                val root = directory.resolve("secondary-$sample")
+                val baseline = JmhEvidenceFixtureData(root.resolve("baseline"), kit.archive).create(sample)
+                val candidate = JmhEvidenceFixtureData(root.resolve("candidate"), kit.archive).create(sample)
+                val modifier = JmhEvidenceFixtureData(root, kit.archive)
+                listOf(baseline to 1, candidate to 2).forEach { (runs, scale) ->
+                    runs.forEachIndexed { repetition, run ->
+                        modifier.mutateRaw(run) { row ->
+                            row.objectField("secondaryMetrics").add(
+                                "unihex.processCpu",
+                                JsonObject().apply {
+                                    addProperty("score", (repetition + 1) * scale)
+                                    addProperty("scoreUnit", "ns/op")
+                                    add("rawData", JsonParser.parseString("[[${(repetition + 1) * scale}]]"))
+                                },
+                            )
+                        }
+                    }
+                }
+                val cpu =
+                    kit
+                        .compare(baseline, candidate)
+                        .arrayField("cases")
+                        .single()
+                        .asJsonObject
+                        .objectField("secondary_metrics")
+                        .objectField("unihex.processCpu")
+                assertEquals("ns/op", cpu.textField("unit"))
+                assertEquals(2.0, cpu.get("baseline").asDouble)
+                assertEquals(4.0, cpu.get("candidate").asDouble)
+                assertEquals(2.0, cpu.get("delta").asDouble)
+                assertEquals(2.0, cpu.get("candidate_to_baseline").asDouble)
+                candidate.forEach { run -> modifier.mutateRaw(run) { it.objectField("secondaryMetrics").objectField("unihex.processCpu").addProperty("scoreUnit", "us/op") } }
+                assertFails { kit.compare(baseline, candidate) }
+                modifier.mutateRaw(candidate.first()) { it.objectField("secondaryMetrics").remove("unihex.processCpu") }
+                assertFails { kit.summarize(candidate) }
+                modifier.mutateRaw(candidate.first()) { row ->
+                    row.objectField("secondaryMetrics").add("unihex.processCpu", JsonParser.parseString("""{"score":2,"scoreUnit":"us/op","rawData":[[2]]}"""))
+                }
+                modifier.mutateRaw(candidate.last()) { it.objectField("secondaryMetrics").objectField("unihex.processCpu").add("rawData", JsonParser.parseString("[[]]")) }
+                assertFails { kit.summarize(candidate) }
+            }
+        }
+    }
+
     private fun mutateMetric(
         row: JsonObject,
         name: JmhEvidenceMutation,

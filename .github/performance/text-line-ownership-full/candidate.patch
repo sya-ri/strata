@@ -1,0 +1,1724 @@
+diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
+index f50fe998f555c0d376860e2996f68030d7507869..b2311cf1f3905895088475d1f1e66d96b375b73a 100644
+--- a/docs/development/performance-testkit.md
++++ b/docs/development/performance-testkit.md
+@@ -112,6 +112,15 @@ Preserve actual parent/fork loaded archives and class trees, external inputs, so
+ Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
+ The corpus makes no native latency, upload, FPS or GPU claim.
+ 
++`TextLineLayoutBenchmark` keeps all 60 retained construction opportunities and 22 clean, caret and composition controls.
++Its optional `operationReport()` uses the same original scene setup and benchmark methods through the shared owner-thread meter.
++Initial construction replaces a keyed component in the primed host/font owner; it does not include a new backend or profile.
++Edit and reflow samples retain the complete public mutation/frame opportunity; caret and composition controls retain their original restoring input cycles.
++Independent scalar, exact bounded pixel, original-viewport old-frame and release oracles run outside samples, and terminal cleanup must succeed.
++All 82 owner rows retain CPU, owner/all-thread allocation and wall metrics with unavailable counters explicit; none replaces the complete JMH comparison or establishes native input/FPS gains.
++The copying neutral runtime preserves the original six-argument constructor and every shared semantic control; only the candidate's exclusive-array identity test is omitted from its source.
++Frozen source/input bytes are selected from the final commit's `Performance-Inputs` producer; transient inputs are absent from the execution tree.
++
+ Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
+ Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
+ Scene setup, independent oracles, coordinate-read diagnostics and surviving-owner cleanup remain outside samples.
+@@ -504,6 +513,21 @@ Collector changes require fresh evidence; earlier receipts without child verific
+ 
+ The separate stress corpus is selected with `-Pstrata.performance.benchmarks=StressRenderingBenchmark -Pstrata.performance.suite=stress` on `jmhComponents` and writes separate `stress` or `stress-sample` directories.
+ 
++The supplemental `TextLineLayoutBenchmark` corpus selects the actual retained TextArea and multiline Text public entry points with `-Pstrata.performance.benchmarks=TextLineLayoutBenchmark -Pstrata.performance.suite=text-line-layout` on `:quality:component-benchmarks:jmhComponents`.
++Its 82 generated cases separate 60 keyed initial construction, content-edit and width-reflow opportunities from 22 clean, restoring caret and complete preedit/focused-range/loss controls.
++Initial construction replaces a retained component within an already primed host/font lifetime; it does not include profile/backend creation.
++Each CPU and allocation interval includes the complete public mutation/input/frame cycle, with no per-invocation setup, reflection or oracle work.
++Inputs cover empty, short, 128 and 32,767 BMP scalars, 32,767 supplementary scalars with sufficient explicit UTF-16 state capacity, character wrapping, CRLF/hard breaks, signed/zero/exceptional advances, font spans and first/middle/last ellipsis cuts.
++TextArea font changes select a whole editor font; multiline display text also supplies mixed spans.
++The deterministic custom ordering probe preserves original logical caret metrics and does not establish native bidi or IME acceptance.
++The generated fixture gate verifies independent original boundaries and forward Float-prefix/native rounding, compact visible arrays, nearest/caret/range lookups, semantics, bounded synthetic reference pixels at densities one through three, immutable old lines/frames and zero terminal faces/backends.
++Raster checks cover a 64-by-64 logical window; long-line suffix admission is checked by complete scalar/run oracles, not by a full-width image claim.
++Both runtime sides must load the same compiled fixture and helper/generated classes, collector, harness and reviewed API inputs, with only the target Minecraft runtime archive varied.
++Freeze a reviewed neutral factory baseline retaining the original copies before measuring the owned-array candidate so both sides share the exact internal host inventory registration.
++Prepare with fully qualified JVM tasks and the generic `-Pstrata.jvmOnly=true` model; quote dotted properties in PowerShell and keep final aggregate/platform verification unscoped.
++Collect three independent Standard repetitions per side and retain every case, control and regression through the existing shared processor.
++This native-free JVM fixture measures layout opportunity CPU/allocation, without GPU uploads, native input latency or FPS evidence.
++
+ The supplemental `-Pstrata.performance.benchmarks=ExceptionalTextFieldBenchmark -Pstrata.performance.suite=exceptional-text` corpus uses public TextField operations with fixed synthetic TrueType metrics for signed fractional spacing, inexact large cancellation and infinite tails under both native rounding contracts.
+ Its 18 independent idle/update/lifecycle cases use the unchanged JMH defaults and shared processing, with `exceptional-text` / `exceptional-text-sample` outputs; it does not change the existing stress matrix or font inputs.
+ Resource preparation stays outside sampling, and its detached empty glyphs measure width/control work rather than native font rasterization.
+diff --git a/docs/development/performance.md b/docs/development/performance.md
+index 7511f2c37e6a835c5b9fb2e65b378ae4ac259be0..02d745f87ac2632f1eb7d7425b92817dfe10f5f6 100644
+--- a/docs/development/performance.md
++++ b/docs/development/performance.md
+@@ -748,6 +748,21 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar
+ This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
+ The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+ 
++### Current text-line array ownership
++
++`MinecraftTextLineBreaker` exclusively transfers its completed original scalar-offset and rounded-position arrays into each current detached line.
++Untruncated lines transfer the original offsets directly; an ellipsis cut first trims offsets to exactly the admitted visible boundaries.
++Positions are constructed at their final visible length, and neither array is mutated or retained by the producer after transfer.
++The privileged factory exposes no array or mutable view; the existing six-argument constructor still snapshots arbitrary caller arrays.
++The private ownership discriminator controls construction only and is not retained as line state.
++
++Every line keeps only its detached run, private current metrics and derived admission/ink data.
++Layout replacement releases the owner's old reference; editor detach clears current composition/layout, and terminal component disposal clears borrowed input/service references.
++The handoff introduces no string, renderer, backend, source-state or historical-layout cache.
++Scalar offsets, forward Float accumulation, native signed rounding, nearest-boundary ties, range extrema and glyph ordering remain defined by their existing contracts.
++The `TextLineLayoutBenchmark` corpus exercises actual construction and clean/editing controls with independent boundaries, bounded reference pixels and release checks; its complete frozen paired evidence is defined by [the testkit contract](performance-testkit.md).
++Removed source copy sites are separate from normalized VM allocation and do not establish measured CPU, native input or FPS gains.
++
+ ### Logical multiline insertion lookup
+ 
+ Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAccess.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAccess.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..be7a86f4750fa9d20a0ba8eedfc7b0496611961a
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAccess.kt
+@@ -0,0 +1,85 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Consumer
++import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++
++/**
++ * Untimed read-only adapter for actual current layout owners on the frozen runtime sides.
++ * Existing internal symbols are decoded once by class identity; no runtime field is changed or passed into timing.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal object TextLineLayoutAccess {
++    private val layoutType = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextLayout")
++
++    /**
++     * Borrows the exact retained component owner through the known host/session/tree chain.
++     */
++    internal fun owner(
++        host: MinecraftUiHost,
++        consumer: Consumer,
++    ): Any {
++        if (consumer === Consumer.TextArea) return TextAreaInputAccess.editor(host)
++        val session = TextAreaInputAccess.field(TextAreaInputAccess.field(host, "session"), "session")
++        val root = TextAreaInputAccess.field(TextAreaInputAccess.field(session, "tree"), "root")
++        return checkNotNull(findDisplay(root))
++    }
++
++    /**
++     * Borrows only the owner's current layout and never consults previous layouts.
++     */
++    internal fun layout(
++        owner: Any,
++        consumer: Consumer,
++    ): Any = TextAreaInputAccess.field(owner, if (consumer === Consumer.TextArea) "layout" else "currentLayout")
++
++    /**
++     * Requires terminal current-layout and borrowed-input release on the real owner.
++     */
++    internal fun verifyReleased(
++        owner: Any,
++        consumer: Consumer,
++    ) {
++        val layout = if (consumer === Consumer.TextArea) "layout" else "currentLayout"
++        check(TextAreaInputAccess.optional(owner, layout) == null)
++        if (consumer === Consumer.TextArea) {
++            check(TextAreaInputAccess.optional(owner, "current") == null)
++        } else {
++            check(TextAreaInputAccess.optional(owner, "content") == null)
++            check(TextAreaInputAccess.optional(owner, "renderer") == null)
++        }
++    }
++
++    /**
++     * Copies temporary oracle inputs outside timing to prove old immutable lines survive replacement and release.
++     */
++    internal fun snapshot(layout: Any): List<Pair<IntArray, IntArray>> =
++        TextAreaInputAccess.lines(layout).map { line ->
++            (TextAreaInputAccess.field(line, "offsets") as IntArray).copyOf() to
++                (TextAreaInputAccess.field(line, "positions") as IntArray).copyOf()
++        }
++
++    /**
++     * Compares every original boundary and coordinate after the owning component changes or closes.
++     */
++    internal fun verifySnapshot(
++        layout: Any,
++        expected: List<Pair<IntArray, IntArray>>,
++    ) {
++        val lines = TextAreaInputAccess.lines(layout)
++        check(lines.size == expected.size)
++        for ((line, metrics) in lines.zip(expected)) {
++            check((TextAreaInputAccess.field(line, "offsets") as IntArray).contentEquals(metrics.first))
++            check((TextAreaInputAccess.field(line, "positions") as IntArray).contentEquals(metrics.second))
++        }
++    }
++
++    private fun findDisplay(entry: Any): Any? {
++        val node = TextAreaInputAccess.field(entry, "node")
++        if (node.javaClass.declaredFields.any { field -> field.type === layoutType }) return node
++        for (child in TextAreaInputAccess.field(entry, "children") as List<*>) {
++            findDisplay(checkNotNull(child))?.let { return it }
++        }
++        return null
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAssets.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAssets.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..b72fd85ee5ca626f8348996161c5fa573b79a9c5
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutAssets.kt
+@@ -0,0 +1,173 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Shape
++import dev.s7a.strata.render.DrawImage
++import dev.s7a.strata.render.createDrawImage
++import dev.s7a.strata.resource.ResourceId
++import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontCompatibility
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
++import dev.s7a.strata.runtime.minecraft.font.MinecraftVisualGlyph
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++
++/**
++ * Prepared immutable resource/metric inputs for one retained layout fixture.
++ * Synthetic scalar advances exercise the real engine without a game, graphics context or native face.
++ * Backend counters describe current owned resources and never enter a measured operation as an oracle.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class TextLineLayoutAssets(
++    private val shape: Shape,
++) {
++    /**
++     * Fixed font identities whose prepared bytes are part of the fixture code-source archive.
++     */
++    internal val defaultFont = ResourceId("minecraft", "default")
++
++    /**
++     * Distinct metric face used by mixed display spans and whole-editor font changes.
++     */
++    internal val alternateFont = ResourceId("strata_benchmark", "layout_alt")
++
++    /**
++     * Actual selected native rounding contract, independently applied to forward reference prefixes.
++     */
++    internal val compatibility: MinecraftFontCompatibility = ComponentFontAssets.snapshot().compatibility.copy(saturatingCeil = true)
++
++    private val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++
++    /**
++     * Complete host profile prepared before timing.
++     */
++    internal val profile: MinecraftUiProfile = profile()
++
++    /**
++     * Number of currently open backend owners.
++     */
++    internal var backends = 0
++        private set
++
++    /**
++     * Number of currently open faces across this host's prepared fonts.
++     */
++    internal var faces = 0
++        private set
++
++    /**
++     * Calls reaching a synthetic face, used only in untimed clean/control validation.
++     */
++    internal var glyphCalls = 0
++        private set
++
++    /**
++     * Returns prepared logical content; the caller normalizes editor hard breaks explicitly before timing.
++     */
++    internal fun value(): String =
++        when (shape) {
++            Shape.Empty -> ""
++            Shape.Short -> "A🙂BZ"
++            Shape.Bmp128 -> "AB".repeat(64)
++            Shape.Bmp32767, Shape.EllipsisFirst, Shape.EllipsisMiddle, Shape.EllipsisLast -> "A".repeat(32_767)
++            Shape.Supplementary32767Scalars -> "🙂".repeat(32_767)
++            Shape.Wrapped -> "AB🙂CD ".repeat(4681)
++            Shape.HardBreaks -> List(4096) { "AB🙂C" }.joinToString("\r\n")
++            Shape.Signed, Shape.ZeroAdvance -> "AB".repeat(16_383) + "A"
++            Shape.MixedFonts -> "AB🙂C ".repeat(5461) + "A"
++            Shape.ExceptionalMetrics -> "AB🙂CDZ"
++            Shape.DisplayOrder -> "אב🙂CD".repeat(16)
++        }
++
++    /**
++     * Independent original logical advance for a supplied scalar/font, without calling the measured renderer.
++     */
++    internal fun advance(
++        codePoint: Int,
++        font: ResourceId,
++    ): Float =
++        when (shape) {
++            Shape.Signed -> {
++                if (codePoint == 'B'.code) -2f else 3f
++            }
++
++            Shape.ZeroAdvance -> {
++                if (codePoint == 'B'.code) 0f else 3f
++            }
++
++            Shape.ExceptionalMetrics -> {
++                when (codePoint) {
++                    'A'.code -> 1.25f
++                    'B'.code -> -0.1f
++                    0x1F642 -> 0f
++                    'C'.code -> 3e9f
++                    'D'.code -> -3e9f
++                    else -> Float.NaN
++                }
++            }
++
++            else -> {
++                if (font == alternateFont) 4f else 3f
++            }
++        }
++
++    /**
++     * Opens one host-owned synthetic backend; font/ordering work remains required and common to both runtime sides.
++     */
++    internal fun backend(): MinecraftFontBackend {
++        backends += 1
++        return object : MinecraftFontBackend {
++            override fun decodePng(bytes: ByteArray): DrawImage = error("The line-layout fixture has no bitmap provider")
++
++            override fun openTrueType(
++                bytes: ByteArray,
++                settings: MinecraftTrueTypeSettings,
++            ): MinecraftTrueTypeFace {
++                faces += 1
++                val font = if (settings.size == 4f) alternateFont else defaultFont
++                return object : MinecraftTrueTypeFace {
++                    override fun glyph(codePoint: Int): MinecraftFontGlyph {
++                        glyphCalls += 1
++                        val invisible = shape === Shape.ExceptionalMetrics
++                        return MinecraftFontGlyph(advance(codePoint, font), 0f, 0f, if (invisible) 0f else 1f, if (invisible) 0f else 1f, if (invisible) null else image)
++                    }
++
++                    override fun close() {
++                        faces -= 1
++                    }
++                }
++            }
++
++            override fun visualGlyphs(
++                text: String,
++                rightToLeft: Boolean,
++            ): List<MinecraftVisualGlyph> {
++                val logical = super.visualGlyphs(text, rightToLeft)
++                return if (shape === Shape.DisplayOrder) logical.asReversed() else logical
++            }
++
++            override fun close() {
++                backends -= 1
++            }
++        }
++    }
++
++    private fun profile(): MinecraftUiProfile {
++        val source =
++            MinecraftMemoryFontAssetSource(
++                "line-layout-metrics-v1",
++                mapOf(
++                    "assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:layout.ttf","size":3}]}""".toByteArray(Charsets.UTF_8),
++                    "assets/strata_benchmark/font/layout_alt.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:layout.ttf","size":4}]}""".toByteArray(Charsets.UTF_8),
++                    "assets/strata_benchmark/font/layout.ttf" to byteArrayOf(1),
++                ),
++            )
++        val snapshot = MinecraftFontSnapshot.load(listOf(source), compatibility)
++        check(snapshot.diagnostics.isEmpty())
++        return ComponentProfile.create(snapshot)
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa22dfb49a90c089b4ac5c0c0d3d5e3235021820
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutBenchmark.kt
+@@ -0,0 +1,289 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++
++/**
++ * Compares real retained line construction with primed clean, caret and composition controls.
++ * Fonts, profile assets, values, keys, sizes and input events are prepared before collection.
++ * Every score includes its complete public state/input/frame opportunity with one fixed current owner.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class TextLineLayoutBenchmark {
++    /**
++     * Replaces a retained node, edits content or reflows width while keeping the primed font owner.
++     */
++    @Benchmark
++    public fun layout(scene: LayoutScene): RuntimeUiFrame = scene.operation()
++
++    /**
++     * Measures clean reuse, a restoring caret cycle or a complete composition/focused-range cycle separately.
++     */
++    @Benchmark
++    public fun control(scene: ControlScene): RuntimeUiFrame = scene.operation()
++
++    /**
++     * Complete construction cases; initial means a fresh retained component using an already prepared host/font owner.
++     */
++    public enum class LayoutCase(
++        internal val consumer: Consumer,
++        internal val shape: Shape,
++        internal val operation: LayoutOperation,
++    ) {
++        TextAreaEmptyInitial(Consumer.TextArea, Shape.Empty, LayoutOperation.Initial),
++        TextAreaShortInitial(Consumer.TextArea, Shape.Short, LayoutOperation.Initial),
++        TextAreaBmp128Initial(Consumer.TextArea, Shape.Bmp128, LayoutOperation.Initial),
++        TextAreaBmp32767Initial(Consumer.TextArea, Shape.Bmp32767, LayoutOperation.Initial),
++        TextAreaSupplementary32767ScalarsInitial(Consumer.TextArea, Shape.Supplementary32767Scalars, LayoutOperation.Initial),
++        TextAreaWrappedInitial(Consumer.TextArea, Shape.Wrapped, LayoutOperation.Initial),
++        TextAreaHardBreaksInitial(Consumer.TextArea, Shape.HardBreaks, LayoutOperation.Initial),
++        TextAreaSignedInitial(Consumer.TextArea, Shape.Signed, LayoutOperation.Initial),
++        TextAreaZeroAdvanceInitial(Consumer.TextArea, Shape.ZeroAdvance, LayoutOperation.Initial),
++        TextAreaMixedFontsInitial(Consumer.TextArea, Shape.MixedFonts, LayoutOperation.Initial),
++        TextAreaExceptionalMetricsInitial(Consumer.TextArea, Shape.ExceptionalMetrics, LayoutOperation.Initial),
++        TextAreaDisplayOrderInitial(Consumer.TextArea, Shape.DisplayOrder, LayoutOperation.Initial),
++        MultilineTextEmptyInitial(Consumer.MultilineText, Shape.Empty, LayoutOperation.Initial),
++        MultilineTextShortInitial(Consumer.MultilineText, Shape.Short, LayoutOperation.Initial),
++        MultilineTextBmp128Initial(Consumer.MultilineText, Shape.Bmp128, LayoutOperation.Initial),
++        MultilineTextBmp32767Initial(Consumer.MultilineText, Shape.Bmp32767, LayoutOperation.Initial),
++        MultilineTextSupplementary32767ScalarsInitial(Consumer.MultilineText, Shape.Supplementary32767Scalars, LayoutOperation.Initial),
++        MultilineTextWrappedInitial(Consumer.MultilineText, Shape.Wrapped, LayoutOperation.Initial),
++        MultilineTextHardBreaksInitial(Consumer.MultilineText, Shape.HardBreaks, LayoutOperation.Initial),
++        MultilineTextSignedInitial(Consumer.MultilineText, Shape.Signed, LayoutOperation.Initial),
++        MultilineTextZeroAdvanceInitial(Consumer.MultilineText, Shape.ZeroAdvance, LayoutOperation.Initial),
++        MultilineTextMixedFontsInitial(Consumer.MultilineText, Shape.MixedFonts, LayoutOperation.Initial),
++        MultilineTextExceptionalMetricsInitial(Consumer.MultilineText, Shape.ExceptionalMetrics, LayoutOperation.Initial),
++        MultilineTextDisplayOrderInitial(Consumer.MultilineText, Shape.DisplayOrder, LayoutOperation.Initial),
++        MultilineTextEllipsisFirstInitial(Consumer.MultilineText, Shape.EllipsisFirst, LayoutOperation.Initial),
++        MultilineTextEllipsisMiddleInitial(Consumer.MultilineText, Shape.EllipsisMiddle, LayoutOperation.Initial),
++        MultilineTextEllipsisLastInitial(Consumer.MultilineText, Shape.EllipsisLast, LayoutOperation.Initial),
++        TextAreaShortEdit(Consumer.TextArea, Shape.Short, LayoutOperation.Edit),
++        TextAreaBmp128Edit(Consumer.TextArea, Shape.Bmp128, LayoutOperation.Edit),
++        TextAreaBmp32767Edit(Consumer.TextArea, Shape.Bmp32767, LayoutOperation.Edit),
++        TextAreaSupplementary32767ScalarsEdit(Consumer.TextArea, Shape.Supplementary32767Scalars, LayoutOperation.Edit),
++        TextAreaWrappedEdit(Consumer.TextArea, Shape.Wrapped, LayoutOperation.Edit),
++        TextAreaHardBreaksEdit(Consumer.TextArea, Shape.HardBreaks, LayoutOperation.Edit),
++        TextAreaSignedEdit(Consumer.TextArea, Shape.Signed, LayoutOperation.Edit),
++        TextAreaZeroAdvanceEdit(Consumer.TextArea, Shape.ZeroAdvance, LayoutOperation.Edit),
++        TextAreaMixedFontsEdit(Consumer.TextArea, Shape.MixedFonts, LayoutOperation.Edit),
++        TextAreaShortReflow(Consumer.TextArea, Shape.Short, LayoutOperation.Reflow),
++        TextAreaBmp32767Reflow(Consumer.TextArea, Shape.Bmp32767, LayoutOperation.Reflow),
++        TextAreaWrappedReflow(Consumer.TextArea, Shape.Wrapped, LayoutOperation.Reflow),
++        TextAreaHardBreaksReflow(Consumer.TextArea, Shape.HardBreaks, LayoutOperation.Reflow),
++        TextAreaSignedReflow(Consumer.TextArea, Shape.Signed, LayoutOperation.Reflow),
++        TextAreaMixedFontsReflow(Consumer.TextArea, Shape.MixedFonts, LayoutOperation.Reflow),
++        MultilineTextShortEdit(Consumer.MultilineText, Shape.Short, LayoutOperation.Edit),
++        MultilineTextBmp128Edit(Consumer.MultilineText, Shape.Bmp128, LayoutOperation.Edit),
++        MultilineTextBmp32767Edit(Consumer.MultilineText, Shape.Bmp32767, LayoutOperation.Edit),
++        MultilineTextSupplementary32767ScalarsEdit(Consumer.MultilineText, Shape.Supplementary32767Scalars, LayoutOperation.Edit),
++        MultilineTextWrappedEdit(Consumer.MultilineText, Shape.Wrapped, LayoutOperation.Edit),
++        MultilineTextHardBreaksEdit(Consumer.MultilineText, Shape.HardBreaks, LayoutOperation.Edit),
++        MultilineTextSignedEdit(Consumer.MultilineText, Shape.Signed, LayoutOperation.Edit),
++        MultilineTextZeroAdvanceEdit(Consumer.MultilineText, Shape.ZeroAdvance, LayoutOperation.Edit),
++        MultilineTextMixedFontsEdit(Consumer.MultilineText, Shape.MixedFonts, LayoutOperation.Edit),
++        MultilineTextShortReflow(Consumer.MultilineText, Shape.Short, LayoutOperation.Reflow),
++        MultilineTextBmp32767Reflow(Consumer.MultilineText, Shape.Bmp32767, LayoutOperation.Reflow),
++        MultilineTextWrappedReflow(Consumer.MultilineText, Shape.Wrapped, LayoutOperation.Reflow),
++        MultilineTextHardBreaksReflow(Consumer.MultilineText, Shape.HardBreaks, LayoutOperation.Reflow),
++        MultilineTextSignedReflow(Consumer.MultilineText, Shape.Signed, LayoutOperation.Reflow),
++        MultilineTextMixedFontsReflow(Consumer.MultilineText, Shape.MixedFonts, LayoutOperation.Reflow),
++        MultilineTextEllipsisFirstReflow(Consumer.MultilineText, Shape.EllipsisFirst, LayoutOperation.Reflow),
++        MultilineTextEllipsisMiddleReflow(Consumer.MultilineText, Shape.EllipsisMiddle, LayoutOperation.Reflow),
++        MultilineTextEllipsisLastReflow(Consumer.MultilineText, Shape.EllipsisLast, LayoutOperation.Reflow),
++    }
++
++    /**
++     * Explicit unchanged and editing controls; ellipsis belongs only to display text.
++     */
++    public enum class ControlCase(
++        internal val consumer: Consumer,
++        internal val shape: Shape,
++        internal val operation: ControlOperation,
++        internal val region: CompositionRegion = CompositionRegion.Before,
++    ) {
++        TextAreaEmptyClean(Consumer.TextArea, Shape.Empty, ControlOperation.Clean),
++        TextAreaShortClean(Consumer.TextArea, Shape.Short, ControlOperation.Clean),
++        TextAreaBmp32767Clean(Consumer.TextArea, Shape.Bmp32767, ControlOperation.Clean),
++        TextAreaWrappedClean(Consumer.TextArea, Shape.Wrapped, ControlOperation.Clean),
++        TextAreaSignedClean(Consumer.TextArea, Shape.Signed, ControlOperation.Clean),
++        TextAreaMixedFontsClean(Consumer.TextArea, Shape.MixedFonts, ControlOperation.Clean),
++        MultilineTextEmptyClean(Consumer.MultilineText, Shape.Empty, ControlOperation.Clean),
++        MultilineTextShortClean(Consumer.MultilineText, Shape.Short, ControlOperation.Clean),
++        MultilineTextBmp32767Clean(Consumer.MultilineText, Shape.Bmp32767, ControlOperation.Clean),
++        MultilineTextWrappedClean(Consumer.MultilineText, Shape.Wrapped, ControlOperation.Clean),
++        MultilineTextSignedClean(Consumer.MultilineText, Shape.Signed, ControlOperation.Clean),
++        MultilineTextMixedFontsClean(Consumer.MultilineText, Shape.MixedFonts, ControlOperation.Clean),
++        TextAreaShortCaret(Consumer.TextArea, Shape.Short, ControlOperation.Caret),
++        TextAreaBmp32767Caret(Consumer.TextArea, Shape.Bmp32767, ControlOperation.Caret),
++        TextAreaWrappedCaret(Consumer.TextArea, Shape.Wrapped, ControlOperation.Caret),
++        TextAreaSignedCaret(Consumer.TextArea, Shape.Signed, ControlOperation.Caret),
++        TextAreaMixedFontsCompositionBefore(Consumer.TextArea, Shape.MixedFonts, ControlOperation.Composition, CompositionRegion.Before),
++        TextAreaMixedFontsCompositionInside(Consumer.TextArea, Shape.MixedFonts, ControlOperation.Composition, CompositionRegion.Inside),
++        TextAreaMixedFontsCompositionAfter(Consumer.TextArea, Shape.MixedFonts, ControlOperation.Composition, CompositionRegion.After),
++        MultilineTextEllipsisFirstClean(Consumer.MultilineText, Shape.EllipsisFirst, ControlOperation.Clean),
++        MultilineTextEllipsisMiddleClean(Consumer.MultilineText, Shape.EllipsisMiddle, ControlOperation.Clean),
++        MultilineTextEllipsisLastClean(Consumer.MultilineText, Shape.EllipsisLast, ControlOperation.Clean),
++    }
++
++    /**
++     * Actual public component whose current layout owns the private line arrays.
++     */
++    internal enum class Consumer {
++        TextArea,
++        MultilineText,
++    }
++
++    /**
++     * Prepared scalar/metric families; supplementary long input uses sufficient explicit UTF-16 state capacity.
++     * DisplayOrder uses a deterministic custom backend ordering probe and does not claim native bidi acceptance.
++     */
++    internal enum class Shape {
++        Empty,
++        Short,
++        Bmp128,
++        Bmp32767,
++        Supplementary32767Scalars,
++        Wrapped,
++        HardBreaks,
++        Signed,
++        ZeroAdvance,
++        MixedFonts,
++        ExceptionalMetrics,
++        DisplayOrder,
++        EllipsisFirst,
++        EllipsisMiddle,
++        EllipsisLast,
++    }
++
++    /**
++     * Three distinct real construction opportunities with identical ownership and prepared inputs.
++     */
++    internal enum class LayoutOperation {
++        Initial,
++        Edit,
++        Reflow,
++    }
++
++    /**
++     * Clean frames retain the current arrays; caret and composition cycles restore their public starting opportunity.
++     */
++    internal enum class ControlOperation {
++        Clean,
++        Caret,
++        Composition,
++    }
++
++    /**
++     * Caret/focused-block regions within the fixed supplementary composition.
++     */
++    internal enum class CompositionRegion {
++        Before,
++        Inside,
++        After,
++    }
++
++    /**
++     * One real retained construction owner, verified before standard JMH trial sampling.
++     */
++    @State(Scope.Thread)
++    public open class LayoutScene {
++        /**
++         * Exact generated construction case.
++         */
++        @JvmField
++        @Param
++        public var workload: LayoutCase = LayoutCase.TextAreaEmptyInitial
++
++        private lateinit var fixture: TextLineLayoutFixture
++
++        /**
++         * Prepares fonts/values and independently checks the loaded line metrics and replacement lifetime.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = TextLineLayoutFixture(workload.consumer, workload.shape)
++            fixture.verifyLayout(workload.operation)
++        }
++
++        /**
++         * Includes the public opportunity and settled frame without reflective access or oracle copying.
++         */
++        public fun operation(): RuntimeUiFrame = fixture.layout(workload.operation)
++
++        /**
++         * Releases the current host and requires zero face/backend ownership.
++         */
++        @TearDown(Level.Trial)
++        public fun close(): Unit = fixture.close()
++    }
++
++    /**
++     * One primed control owner with fixed public input events.
++     */
++    @State(Scope.Thread)
++    public open class ControlScene {
++        /**
++         * Exact generated control case.
++         */
++        @JvmField
++        @Param
++        public var workload: ControlCase = ControlCase.TextAreaEmptyClean
++
++        private lateinit var fixture: TextLineLayoutFixture
++
++        /**
++         * Verifies current layout reuse, restored pixels, scalar placement and composition lifetime outside timing.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = TextLineLayoutFixture(workload.consumer, workload.shape, workload.region)
++            fixture.verifyControl(workload.operation)
++        }
++
++        /**
++         * Includes each complete public control cycle with the same CPU/allocation boundary.
++         */
++        public fun operation(): RuntimeUiFrame = fixture.control(workload.operation)
++
++        /**
++         * Releases the current font owner after all measured use.
++         */
++        @TearDown(Level.Trial)
++        public fun close(): Unit = fixture.close()
++    }
++
++    /**
++     * Generic fixture verification without a corpus-specific Gradle task or launcher branch.
++     */
++    public companion object {
++        /**
++         * Connects all original retained construction and control boundaries to the shared owner-thread meter.
++         */
++        @JvmStatic
++        public fun operationReport(): JvmOperationReportAdapter = TextLineLayoutOperationReport
++
++        /**
++         * Requires all 82 generated cases, real scalar/pixel/lifetime oracles and complete release before collection.
++         */
++        @JvmStatic
++        public fun verifyWork() {
++            TextLineLayoutOperationReport.verifyRows()
++            check(JmhWorkloadInventory.capture(listOf(TextLineLayoutBenchmark::class.java), setOf("avgt")).size == 82)
++            for (workload in LayoutCase.entries) {
++                TextLineLayoutFixture(workload.consumer, workload.shape).use { fixture -> fixture.verifyLayout(workload.operation) }
++            }
++            for (workload in ControlCase.entries) {
++                TextLineLayoutFixture(workload.consumer, workload.shape, workload.region).use { fixture -> fixture.verifyControl(workload.operation) }
++            }
++        }
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutFixture.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutFixture.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c86adea358c4742c24f5714fc364bea9be54970
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutFixture.kt
+@@ -0,0 +1,362 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.component.Text
++import dev.s7a.strata.component.TextArea
++import dev.s7a.strata.component.TextAreaState
++import dev.s7a.strata.component.TextAreaViewport
++import dev.s7a.strata.component.TextStyle
++import dev.s7a.strata.element.ElementKey
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.KeyCode
++import dev.s7a.strata.input.KeyboardEvent
++import dev.s7a.strata.input.KeyboardModifiers
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.modifier.initialFocus
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.CompositionRegion
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Consumer
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.ControlOperation
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.LayoutOperation
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Shape
++import dev.s7a.strata.resource.ResourceId
++import dev.s7a.strata.runtime.FrameTime
++import dev.s7a.strata.runtime.headless.rasterizeHeadless
++import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.semantics.SemanticsRole
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.state.mutableStateOf
++import dev.s7a.strata.text.TextLayout
++import dev.s7a.strata.text.TextOverflow
++import dev.s7a.strata.text.TextWrap
++import dev.s7a.strata.text.UiText
++import dev.s7a.strata.text.withFont
++import dev.s7a.strata.ui.UiDefinition
++
++// Why: one fixture owns the actual host, prepared opportunities and release oracles for both retained consumers.
++
++/**
++ * Real public retained layout opportunities with prepared resources and one primed font owner.
++ * Timing includes each complete mutation/input/frame cycle, with no invocation setup or reflective adapter work.
++ * Initial cycles replace a keyed component; content edits and width changes reuse its current owner.
++ * Only untimed validation keeps temporary old layouts or raster snapshots, and close releases every owned face.
++ */
++@Suppress("TooManyFunctions", "TooGenericExceptionCaught") // Constructor failures release all owned resources and preserve the original throwable.
++@OptIn(InternalStrataRuntimeApi::class)
++internal class TextLineLayoutFixture(
++    private val consumer: Consumer,
++    private val shape: Shape,
++    private val region: CompositionRegion = CompositionRegion.Before,
++) : AutoCloseable {
++    private val assets = TextLineLayoutAssets(shape)
++    private val firstValue = assets.value().let { if (consumer === Consumer.TextArea) it.replace("\r\n", "\n") else it }
++    private val secondValue =
++        if (firstValue.isEmpty()) {
++            "Z"
++        } else {
++            val replacement = if (firstValue.endsWith('Z')) "Y" else "Z"
++            firstValue.substring(0, firstValue.offsetByCodePoints(firstValue.length, -1)) + replacement
++        }
++    private val values = listOf(firstValue, secondValue)
++    private val texts = values.map(::text)
++    private val states = List(2) { TextAreaState(firstValue, maxLength = maxOf(firstValue.length, secondValue.length) + 16) }
++    private val selected = mutableStateOf(Side.First)
++    private val content = mutableStateOf(Side.First)
++    private val firstSize = IntSize(width(), 64)
++    private val secondSize = IntSize(width() + 3, 64)
++    private val size = mutableStateOf(firstSize)
++    private val keys = Side.entries.map(::ElementKey)
++    private val time = FrameTime(0)
++    private val wrap = if (shape === Shape.Wrapped) TextWrap.Character else TextWrap.None
++    private val policy = TextLayout.Multiline(wrap = wrap, overflow = if (ellipsis()) TextOverflow.Ellipsis else TextOverflow.Clip, lineSpacing = 2)
++    private val right = KeyboardEvent.Press(KeyCode.Right, 0)
++    private val left = KeyboardEvent.Press(KeyCode.Left, 0)
++    private val home = KeyboardEvent.Press(KeyCode.Home, 0, KeyboardModifiers(control = true))
++    private val clear = TextInputEvent.Preedit("", 0, emptyList(), -1)
++    private val firstComposition = TextInputEvent.Preedit("🙂Z", 0, listOf("🙂", "Z"), 0)
++    private val focusedBlock =
++        when (region) {
++            CompositionRegion.Before -> 0
++            CompositionRegion.Inside -> 1
++            CompositionRegion.After -> -1
++        }
++    private val compositionCaret =
++        when (region) {
++            CompositionRegion.Before -> 0
++            CompositionRegion.Inside -> 2
++            CompositionRegion.After -> 3
++        }
++    private val secondComposition = TextInputEvent.Preedit("🙂Z", compositionCaret, listOf("🙂", "Z"), focusedBlock)
++    private var closed = false
++    private val host =
++        createMinecraftUiHost(
++            UiDefinition("Retained current text-line layout") {
++                val owner = selected.value.ordinal
++                val value = content.value
++                val viewport = size.value
++                if (consumer === Consumer.TextArea) {
++                    TextArea(states[owner], TextAreaViewport.Size(viewport), font = font(value), wrap = wrap, lineSpacing = 2, modifier = Modifier.Empty.initialFocus(), key = keys[owner])
++                } else {
++                    Text(texts[value.ordinal], policy, style = TextStyle.TextField, key = keys[owner])
++                }
++            },
++            assets.profile,
++            fontBackend = MinecraftFontBackendFactory { assets.backend() },
++        )
++
++    init {
++        try {
++            check(firstValue != secondValue)
++            host.attach()
++            frame()
++            layout(LayoutOperation.Edit)
++            layout(LayoutOperation.Edit)
++            if (consumer === Consumer.TextArea) {
++                resetCaret()
++                control(ControlOperation.Composition)
++            }
++            check(assets.backends == 1)
++        } catch (failure: Throwable) {
++            try {
++                host.close()
++            } catch (release: Throwable) {
++                if (release !== failure) failure.addSuppressed(release)
++            }
++            throw failure
++        }
++    }
++
++    /**
++     * Delivers one complete prepared construction opportunity through unchanged public entry points.
++     */
++    internal fun layout(operation: LayoutOperation): RuntimeUiFrame {
++        when (operation) {
++            LayoutOperation.Initial -> {
++                val next = opposite(selected.value)
++                states[next.ordinal].value = values[content.value.ordinal]
++                selected.value = next
++            }
++
++            LayoutOperation.Edit -> {
++                val next = opposite(content.value)
++                states[selected.value.ordinal].value = values[next.ordinal]
++                content.value = next
++            }
++
++            LayoutOperation.Reflow -> {
++                size.value = if (size.value == firstSize) secondSize else firstSize
++            }
++        }
++        return frame()
++    }
++
++    /**
++     * Includes clean reuse, both restoring scalar moves, or insertion/focused-range/loss of the fixed preedit.
++     */
++    internal fun control(operation: ControlOperation): RuntimeUiFrame =
++        when (operation) {
++            ControlOperation.Clean -> {
++                frame()
++            }
++
++            ControlOperation.Caret -> {
++                host.dispatchKeyboard(right)
++                frame()
++                host.dispatchKeyboard(left)
++                frame()
++            }
++
++            ControlOperation.Composition -> {
++                host.dispatchTextInput(firstComposition)
++                frame()
++                host.dispatchTextInput(secondComposition)
++                frame()
++                host.dispatchTextInput(clear)
++                frame()
++            }
++        }
++
++    /**
++     * Verifies actual replacement, independent original metrics, bounded reference pixels and old snapshot immutability.
++     */
++    internal fun verifyLayout(operation: LayoutOperation) {
++        val previousOwner = owner()
++        val previousLayout = currentLayout()
++        val previous = TextLineLayoutAccess.snapshot(previousLayout)
++        val oldViewport = size.value
++        val oldFrame = frame()
++        val pixels = pixels(oldFrame, oldViewport)
++        layout(operation)
++        val nextOwner = owner()
++        check(currentLayout() !== previousLayout) { "Layout replacement failed for $consumer/$shape/$operation." }
++        if (operation === LayoutOperation.Initial) {
++            check(nextOwner !== previousOwner)
++            TextLineLayoutAccess.verifyReleased(previousOwner, consumer)
++        } else {
++            check(nextOwner === previousOwner)
++        }
++        resetCaret()
++        verifyCurrent()
++        TextLineLayoutAccess.verifySnapshot(previousLayout, previous)
++        check(pixels(oldFrame, oldViewport).contentEquals(pixels))
++        verifyClean()
++    }
++
++    /**
++     * Checks independent placement/range metrics, retained controls and unchanged committed semantics and pixels.
++     */
++    internal fun verifyControl(operation: ControlOperation) {
++        resetCaret()
++        verifyCurrent()
++        val oldLayout = currentLayout()
++        val snapshot = TextLineLayoutAccess.snapshot(oldLayout)
++        val before = frame()
++        val beforePixels = pixels(before)
++        val calls = assets.glyphCalls
++        val token = host.textInputFocus
++        if (operation === ControlOperation.Composition) verifyComposition() else control(operation)
++        if (operation !== ControlOperation.Composition) {
++            check(currentLayout() === oldLayout)
++            check(assets.glyphCalls == calls)
++        } else {
++            check(currentLayout() !== oldLayout)
++        }
++        check(host.textInputFocus === token)
++        verifyCurrent()
++        check(pixels(frame()).contentEquals(beforePixels))
++        TextLineLayoutAccess.verifySnapshot(oldLayout, snapshot)
++        check(pixels(before).contentEquals(beforePixels))
++        verifyClean()
++    }
++
++    private fun verifyComposition() {
++        host.dispatchTextInput(firstComposition)
++        frame()
++        val composed = currentLayout()
++        val expected = reference("🙂Z" + states[selected.value.ordinal].value)
++        expected.verify(composed)
++        expected.verifyPixels(frame())
++        expected.verifyUnderline(TextAreaInputAccess.optional(owner(), "underlines"), 0..1)
++        val snapshot = TextLineLayoutAccess.snapshot(composed)
++        val calls = assets.glyphCalls
++        host.dispatchTextInput(secondComposition)
++        frame()
++        check(currentLayout() === composed)
++        check(assets.glyphCalls == calls)
++        val range =
++            when (region) {
++                CompositionRegion.Before -> 0..1
++                CompositionRegion.Inside -> 2..2
++                CompositionRegion.After -> null
++            }
++        expected.verifyUnderline(TextAreaInputAccess.optional(owner(), "underlines"), range)
++        host.dispatchTextInput(clear)
++        frame()
++        check(TextAreaInputAccess.optional(owner(), "underlines") == null)
++        check(TextAreaInputAccess.optional(owner(), "preedit") == null)
++        TextLineLayoutAccess.verifySnapshot(composed, snapshot)
++    }
++
++    private fun verifyCurrent() {
++        val expected = reference(values[content.value.ordinal])
++        expected.verify(currentLayout())
++        expected.verifyPixels(frame())
++        val role = if (consumer === Consumer.TextArea) SemanticsRole.TextArea else SemanticsRole.Text
++        val semantic = frame().semantics.single { it.semantics.role === role }.semantics
++        if (consumer === Consumer.TextArea) {
++            check(semantic.value == UiText.Literal(values[content.value.ordinal]))
++            checkNotNull(host.textInputFocus)
++            check(TextAreaInputAccess.field(TextAreaInputAccess.field(owner(), "cursor"), "offset") == 0)
++        } else {
++            check(semantic.label == texts[content.value.ordinal])
++            check(host.textInputFocus == null)
++        }
++    }
++
++    private fun verifyClean() {
++        val previous = frame()
++        val layout = currentLayout()
++        val calls = assets.glyphCalls
++        check(frame() === previous)
++        check(currentLayout() === layout)
++        check(assets.glyphCalls == calls)
++    }
++
++    private fun reference(value: String): TextLineLayoutReference {
++        val split = value.offsetByCodePoints(0, value.codePointCount(0, value.length) / 2)
++        val fontAt: (Int) -> ResourceId = { offset ->
++            if (consumer === Consumer.MultilineText && shape === Shape.MixedFonts && split <= offset) assets.alternateFont else font(content.value)
++        }
++        return TextLineLayoutReference(value, fontAt, assets, consumer, shape, size.value)
++    }
++
++    private fun text(value: String): UiText {
++        if (shape !== Shape.MixedFonts) return UiText.Literal(value)
++        val split = value.offsetByCodePoints(0, value.codePointCount(0, value.length) / 2)
++        return UiText.concat(UiText.Literal(value.substring(0, split)).withFont(assets.defaultFont), UiText.Literal(value.substring(split)).withFont(assets.alternateFont))
++    }
++
++    private fun font(value: Side): ResourceId = if (consumer === Consumer.TextArea && shape === Shape.MixedFonts && value === Side.Second) assets.alternateFont else assets.defaultFont
++
++    private fun width(): Int =
++        when (shape) {
++            Shape.EllipsisFirst -> 9
++            Shape.EllipsisMiddle -> 48
++            Shape.EllipsisLast -> 98_298
++            else -> 64
++        }
++
++    private fun ellipsis(): Boolean = shape === Shape.EllipsisFirst || shape === Shape.EllipsisMiddle || shape === Shape.EllipsisLast
++
++    private fun resetCaret() {
++        if (consumer === Consumer.TextArea) {
++            host.dispatchKeyboard(home)
++            frame()
++        }
++    }
++
++    private fun owner(): Any = TextLineLayoutAccess.owner(host, consumer)
++
++    private fun currentLayout(): Any = TextLineLayoutAccess.layout(owner(), consumer)
++
++    private fun frame(): RuntimeUiFrame = host.frame(size.value, time)
++
++    private fun pixels(
++        frame: RuntimeUiFrame,
++        viewport: IntSize = size.value,
++    ): IntArray = rasterizeHeadless(frame.drawCommands, IntSize(minOf(64, viewport.width), minOf(64, viewport.height))).copyArgb()
++
++    private fun opposite(value: Side): Side = if (value === Side.First) Side.Second else Side.First
++
++    /**
++     * Releases the actual current owner and proves every temporary old line/frame stays immutable after detach/close.
++     */
++    override fun close() {
++        if (closed) return
++        closed = true
++        val current = owner()
++        val layout = currentLayout()
++        val snapshot = TextLineLayoutAccess.snapshot(layout)
++        val previous = frame()
++        val expected = pixels(previous)
++        try {
++            host.detach()
++            TextLineLayoutAccess.verifySnapshot(layout, snapshot)
++            check(host.textInputFocus == null)
++            check(owner() === current)
++        } finally {
++            host.close()
++        }
++        TextLineLayoutAccess.verifyReleased(current, consumer)
++        TextLineLayoutAccess.verifySnapshot(layout, snapshot)
++        check(pixels(previous).contentEquals(expected))
++        check(assets.faces == 0 && assets.backends == 0)
++        states.forEach { state -> state.observe { }.close() }
++    }
++
++    private enum class Side {
++        First,
++        Second,
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutOperationReport.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutOperationReport.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..49621cbbd0ee6c375e2ba39130c943d3951db9cb
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutOperationReport.kt
+@@ -0,0 +1,112 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import dev.s7a.strata.performance.JmhPerformanceRunner
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.performance.JvmOperationReportRow
++import dev.s7a.strata.performance.JvmPerformanceRunner
++import dev.s7a.strata.performance.PerformancePlan
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Consumer
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.ControlCase
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.ControlOperation
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.LayoutCase
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.LayoutOperation
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.semantics.SemanticsRole
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import java.nio.file.Path
++
++/**
++ * Measures all 60 original current-line construction opportunities and 22 controls with the shared owner-thread meter.
++ * Original scene setup and independent scalar, pixel, old-frame and release oracles remain outside samples.
++ * Each sample calls the original benchmark method once, including its complete public state/input/frame cycle.
++ * Surviving scene cleanup remains outside samples and must succeed before a complete report is returned.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public object TextLineLayoutOperationReport : JvmOperationReportAdapter {
++    override val inputs: Map<String, Path>
++        get() = cleanupOperationInputs()
++
++    override val rows: List<JvmOperationReportRow> =
++        LayoutCase.entries.map(::layoutRow) + ControlCase.entries.map(::controlRow)
++
++    /**
++     * Requires every original generated method/parameter combination in both modes, including all 22 controls.
++     */
++    public fun verifyRows() {
++        val expected = JmhWorkloadInventory.capture(listOf(TextLineLayoutBenchmark::class.java), setOf("avgt", "sample"))
++        val actual =
++            rows.flatMap { row ->
++                listOf("avgt", "sample").map { mode -> JmhPerformanceRunner.workloadIdentity(row.benchmark, mode, row.parameters) }
++            }
++        check(rows.size == 82 && rows.map { it.id }.distinct().size == 82)
++        check(actual.size == 164 && actual.toSet() == expected)
++        check(rows.count { it.control } == 22 && rows.all { it.operationsPerSample == 1 })
++    }
++
++    override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
++        verifyRows()
++        val benchmark = TextLineLayoutBenchmark()
++        val reports = linkedMapOf<String, JsonObject>()
++        LayoutCase.entries.forEach { workload ->
++            val scene = TextLineLayoutBenchmark.LayoutScene().apply { this.workload = workload }
++            AutoCloseable { scene.close() }.use { _ ->
++                scene.setUp()
++                reports.putAll(measure(layoutRow(workload), workload.consumer, plan) { benchmark.layout(scene) })
++            }
++        }
++        ControlCase.entries.forEach { workload ->
++            val scene = TextLineLayoutBenchmark.ControlScene().apply { this.workload = workload }
++            AutoCloseable { scene.close() }.use { _ ->
++                scene.setUp()
++                reports.putAll(measure(controlRow(workload), workload.consumer, plan, workload.operation === ControlOperation.Clean) { benchmark.control(scene) })
++            }
++        }
++        check(reports.keys == rows.map { it.id }.toSet())
++        return reports
++    }
++
++    private fun measure(
++        row: JvmOperationReportRow,
++        consumer: Consumer,
++        plan: PerformancePlan,
++        clean: Boolean = false,
++        operation: () -> RuntimeUiFrame,
++    ): Map<String, JsonObject> {
++        val role = if (consumer === Consumer.TextArea) SemanticsRole.TextArea else SemanticsRole.Text
++        val expected = if (clean) operation() else null
++        lateinit var last: RuntimeUiFrame
++        JvmPerformanceRunner.warmup(plan.warmup) { last = operation() }
++        return JvmPerformanceRunner.sequence(plan.samples, mapOf(row.id to plan.samples)) { _, sequence ->
++            sequence.sample(row.id) { last = operation() }
++            check(last.semantics.count { entry -> entry.semantics.role === role } == 1)
++            if (clean) check(last === expected)
++        }
++    }
++
++    private fun layoutRow(workload: LayoutCase): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "layout-${workload.name}",
++            "${TextLineLayoutBenchmark::class.java.name}.layout",
++            mapOf("workload" to workload.name),
++            when (workload.operation) {
++                LayoutOperation.Initial -> "Replace one keyed retained component, then settle its complete frame using the prepared host and font owner."
++                LayoutOperation.Edit -> "Apply one scalar-safe prepared content change to the retained owner, then settle its complete frame."
++                LayoutOperation.Reflow -> "Switch the prepared viewport width and settle one complete reflow frame on the retained owner."
++            },
++        )
++
++    private fun controlRow(workload: ControlCase): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "control-${workload.name}",
++            "${TextLineLayoutBenchmark::class.java.name}.control",
++            mapOf("workload" to workload.name),
++            when (workload.operation) {
++                ControlOperation.Clean -> "Return one unchanged frame from the primed retained owner."
++                ControlOperation.Caret -> "Dispatch the prepared right and left scalar moves, settling a frame after each to restore the original opportunity."
++                ControlOperation.Composition -> "Apply the prepared preedit, focused-range update and composition loss, settling a frame after each complete public input."
++            },
++            control = true,
++        )
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutReference.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutReference.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..9701a8d72792027fb4cadbcbb29e6ff963570390
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextLineLayoutReference.kt
+@@ -0,0 +1,226 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.geometry.FloatRect
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Consumer
++import dev.s7a.strata.quality.benchmark.TextLineLayoutBenchmark.Shape
++import dev.s7a.strata.render.ArgbColor
++import dev.s7a.strata.render.createDrawImage
++import dev.s7a.strata.resource.ResourceId
++import dev.s7a.strata.runtime.headless.rasterizeHeadless
++import dev.s7a.strata.runtime.render.DrawCommand
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.UiText
++import kotlin.math.abs
++
++/**
++ * Independent scalar/Float-prefix and white-ink reference for the prepared logical inputs.
++ * Expected boundaries never come from a target line; temporary oracle rows are released before timing.
++ * Pixel checks cover a bounded 64 by 64 window at densities one through three, including viewport clipping.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class TextLineLayoutReference(
++    private val value: String,
++    private val fontAt: (Int) -> ResourceId,
++    private val assets: TextLineLayoutAssets,
++    private val consumer: Consumer,
++    private val shape: Shape,
++    private val size: IntSize,
++) {
++    private val width = if (consumer === Consumer.TextArea) size.width - 8 else size.width
++    private val rows = rows()
++
++    /**
++     * Requires the exact admitted scalar arrays, forward native rounding and detached visible run text.
++     */
++    internal fun verify(layout: Any) {
++        val content = TextAreaInputAccess.field(layout, "content")
++        check(TextAreaInputAccess.field(content, "value") == value)
++        val lines = TextAreaInputAccess.lines(layout)
++        check(lines.size == rows.size)
++        for ((line, row) in lines.zip(rows)) verifyLine(line, row)
++        check(TextAreaInputAccess.field(layout, "lineStep") == 11)
++    }
++
++    /**
++     * Checks synthetic glyph pixels against independently positioned foreground/shadow commands.
++     * The editor frame and caret are checked by their separate restoration oracle.
++     */
++    internal fun verifyPixels(frame: RuntimeUiFrame) {
++        val bounds = if (consumer === Consumer.TextArea) IntRect(4, 4, size.width - 4, size.height - 4) else IntRect(0, 0, size.width, size.height)
++        val actual =
++            buildList {
++                add(DrawCommand.PushClip(bounds))
++                addAll(frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>())
++                add(DrawCommand.PopClip)
++            }
++        val expected =
++            buildList {
++                add(DrawCommand.PushClip(bounds))
++                if (shape !== Shape.ExceptionalMetrics) rows.forEachIndexed { index, row -> addAll(glyphs(row, index)) }
++                add(DrawCommand.PopClip)
++            }
++        val window = IntSize(minOf(64, size.width), minOf(64, size.height))
++        for (scale in 1..3) {
++            check(rasterizeHeadless(actual, window, scale).copyArgb().contentEquals(rasterizeHeadless(expected, window, scale).copyArgb()))
++        }
++    }
++
++    /**
++     * Requires independently selected extrema for the focused block on the first logical line.
++     */
++    internal fun verifyUnderline(
++        underline: Any?,
++        range: IntRange?,
++    ) {
++        if (range == null) {
++            check(underline == null)
++            return
++        }
++        val row = rows.first()
++        val first = row.offsets.indexOf(range.first)
++        val last = row.offsets.indexOf(range.last + 1)
++        check(0 <= first && first <= last)
++        val coordinates = row.positions.slice(first..last)
++        check(TextAreaInputAccess.field(checkNotNull(underline), "firstLine") == 0)
++        check(TextAreaInputAccess.field(checkNotNull(underline), "ranges") == listOf(coordinates.min()..coordinates.max()))
++    }
++
++    private fun verifyLine(
++        line: Any,
++        row: Row,
++    ) {
++        check(TextAreaInputAccess.field(line, "start") == row.offsets.first())
++        check(TextAreaInputAccess.field(line, "end") == row.offsets.last())
++        check(TextAreaInputAccess.field(line, "nextStart") == row.nextStart)
++        check((TextAreaInputAccess.field(line, "offsets") as IntArray).contentEquals(row.offsets))
++        check((TextAreaInputAccess.field(line, "positions") as IntArray).contentEquals(row.positions))
++        val run = TextAreaInputAccess.field(line, "run")
++        check(literal(TextAreaInputAccess.field(run, "text") as UiText) == value.substring(row.offsets.first(), row.offsets.last()) + if (row.ellipsis) "..." else "")
++        val lookup = TextAreaLookupAccess.create(line)
++        for (x in listOf(Int.MIN_VALUE, -1, 0, row.positions.first(), row.positions[row.positions.size / 2], row.positions.last(), Int.MAX_VALUE)) {
++            val index = row.positions.indices.minBy { abs(row.positions[it].toLong() - x.toLong()) }
++            check(lookup.applyAsInt(x) == row.offsets[index])
++        }
++        val caret =
++            line.javaClass.declaredMethods
++                .single { it.name.startsWith("caretX") }
++                .apply { isAccessible = true }
++        for (index in listOf(0, row.offsets.size / 2, row.offsets.lastIndex)) check(caret.invoke(line, row.offsets[index]) == row.positions[index])
++        val extents =
++            line.javaClass.declaredMethods
++                .single { it.name.startsWith("caretExtents") }
++                .apply { isAccessible = true }
++        check(extents.invoke(line, row.offsets.first(), row.offsets.last()) == row.positions.min()..row.positions.max())
++    }
++
++    private fun rows(): List<Row> {
++        val paragraphs = ArrayList<Triple<Int, Int, Int>>()
++        var first = 0
++        var offset = 0
++        while (offset < value.length) {
++            val scalar = value.codePointAt(offset)
++            if (scalar in listOf(0x0A, 0x0B, 0x0C, 0x0D, 0x85, 0x2028, 0x2029)) {
++                val next = if (scalar == 0x0D && offset + 1 < value.length && value[offset + 1] == '\n') offset + 2 else offset + 1
++                paragraphs.add(Triple(first, offset, next))
++                first = next
++                offset = next
++            } else {
++                offset += Character.charCount(scalar)
++            }
++        }
++        paragraphs.add(Triple(first, value.length, value.length))
++        val result = paragraphs.flatMap { range -> paragraph(range.first, range.second, range.third) }
++        val admitted = if (consumer === Consumer.TextArea) result else result.take(1 + (size.height - 1) / 11)
++        return admitted.mapIndexed { index, row -> compact(row, index == admitted.lastIndex && admitted.size < result.size) }
++    }
++
++    private fun paragraph(
++        start: Int,
++        end: Int,
++        nextStart: Int,
++    ): List<Row> {
++        val result = ArrayList<Row>()
++        val offsets = arrayListOf(start)
++        val prefixes = arrayListOf(0f)
++        var offset = start
++        while (offset < end) {
++            val scalar = value.codePointAt(offset)
++            var nextWidth = prefixes.last() + assets.advance(scalar, fontAt(offset))
++            if (shape === Shape.Wrapped && width < assets.compatibility.roundedWidth(nextWidth) && 1 < offsets.size) {
++                result.add(row(offsets, prefixes, offset))
++                offsets.clear()
++                offsets.add(offset)
++                prefixes.clear()
++                prefixes.add(0f)
++                nextWidth = assets.advance(scalar, fontAt(offset))
++            }
++            offset += Character.charCount(scalar)
++            offsets.add(offset)
++            prefixes.add(nextWidth)
++        }
++        result.add(row(offsets, prefixes, nextStart))
++        return result
++    }
++
++    private fun row(
++        offsets: List<Int>,
++        prefixes: List<Float>,
++        nextStart: Int,
++    ): Row = Row(offsets.toIntArray(), prefixes.map(assets.compatibility::roundedWidth).toIntArray(), prefixes.toFloatArray(), nextStart)
++
++    private fun compact(
++        row: Row,
++        heightOverflow: Boolean,
++    ): Row {
++        val ellipsis = shape === Shape.EllipsisFirst || shape === Shape.EllipsisMiddle || shape === Shape.EllipsisLast
++        if (ellipsis.not() || (heightOverflow.not() && row.positions.last() <= width)) return row
++        val last =
++            row.offsets.indices.lastOrNull { index ->
++                val previous = if (0 < index) row.offsets[index - 1] else row.offsets.first()
++                val marker = assets.advance('.'.code, fontAt(previous))
++                assets.compatibility.roundedWidth(((row.prefixes[index] + marker) + marker) + marker) <= width
++            } ?: return row
++        return Row(row.offsets.copyOf(last + 1), row.positions.copyOf(last + 1), row.prefixes.copyOf(last + 1), row.nextStart, true)
++    }
++
++    private fun glyphs(
++        row: Row,
++        index: Int,
++    ): List<DrawCommand> {
++        val offsets = row.offsets.dropLast(1)
++        val visual = if (shape === Shape.DisplayOrder && consumer === Consumer.MultilineText) offsets.asReversed() else offsets
++        val scalars = visual.map { offset -> value.codePointAt(offset) to fontAt(offset) }.toMutableList()
++        if (row.ellipsis) repeat(3) { scalars.add('.'.code to fontAt(if (1 < row.offsets.size) row.offsets[row.offsets.lastIndex - 1] else row.offsets.first())) }
++        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++        val origin = if (consumer === Consumer.TextArea) 4 else 0
++        var x = 0f
++        return buildList {
++            for ((scalar, font) in scalars) {
++                val left = origin + x
++                val top = (origin + index * 11).toFloat()
++                add(DrawCommand.SampledImage(image, FloatRect(0.01f, 0.01f, 0.99f, 0.99f), FloatRect(left + 1f, top + 1f, left + 2f, top + 2f), ArgbColor(0xff383838.toInt())))
++                add(DrawCommand.SampledImage(image, FloatRect(0.01f, 0.01f, 0.99f, 0.99f), FloatRect(left, top, left + 1f, top + 1f), ArgbColor(0xffe0e0e0.toInt())))
++                x += assets.advance(scalar, font)
++            }
++        }
++    }
++
++    private fun literal(text: UiText): String =
++        when (text) {
++            is UiText.Literal -> text.value
++            is UiText.WithFont -> literal(text.text)
++            is UiText.Concatenated -> text.parts.joinToString("") { literal(it) }
++            else -> error("The fixture admits only prepared literal/font inputs")
++        }
++
++    private data class Row(
++        val offsets: IntArray,
++        val positions: IntArray,
++        val prefixes: FloatArray,
++        val nextStart: Int,
++        val ellipsis: Boolean = false,
++    )
++}
+diff --git a/quality/component-benchmarks/src/jmh/resources/runtime-api.tsv b/quality/component-benchmarks/src/jmh/resources/runtime-api.tsv
+index 11c986356b3bb7b0195bc7dc2bcbb6f35ffe97e3..be686494041c32c3c8e989f4a3cc4a8d4959575a 100644
+--- a/quality/component-benchmarks/src/jmh/resources/runtime-api.tsv
++++ b/quality/component-benchmarks/src/jmh/resources/runtime-api.tsv
+@@ -3966,7 +3966,9 @@ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextInputAppearanc
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLayout#constructor:1:(Ldev/s7a/strata/runtime/minecraft/MinecraftTextContent;Ljava/util/List;Ldev/s7a/strata/geometry/IntSize;IZ)V
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLayout#type:17:java.lang.Object:
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#constructor:1:(IIILdev/s7a/strata/runtime/minecraft/MinecraftTextRun;[I[I)V
++minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftTextLine$Companion;
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine#type:17:java.lang.Object:
++minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLine$Companion#type:25:java.lang.Object:
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLineBreaker#field:25:INSTANCE:Ldev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker;
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextLineBreaker#type:17:java.lang.Object:
+ minecraft	Minecraft	dev.s7a.strata.runtime.minecraft.MinecraftTextRenderer#field:25:Companion:Ldev/s7a/strata/runtime/minecraft/MinecraftTextRenderer$Companion;
+diff --git a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLine.kt b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLine.kt
+index b5b4963fb3332c56e8a807e26cefdbd0ebc41a73..9e0ff7619cb3657fed38f3d1a3974b06dc69d441 100644
+--- a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLine.kt
++++ b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLine.kt
+@@ -5,7 +5,8 @@ import kotlin.math.abs
+ /**
+  * One detached laid-out line with scalar-aligned original offsets and logical caret metrics.
+  *
+- * Arrays are copied once and never exposed; one admission flag belongs to their current immutable lifetime.
++ * Arbitrary caller arrays are copied; the line breaker exclusively transfers its fresh compact arrays.
++ * Arrays are never exposed, and one admission flag belongs to their current immutable lifetime.
+  * The line owns no renderer, font backend, coordinate history or lookup result cache.
+  * Display shaping changes only the run's visual glyphs, not the logical editing coordinates.
+  *
+@@ -16,7 +17,7 @@ import kotlin.math.abs
+  * @param offsets ordered original scalar boundaries, including both ends.
+  * @param positions signed native horizontal widths corresponding to [offsets].
+  */
+-internal class MinecraftTextLine(
++internal class MinecraftTextLine private constructor(
+     @get:JvmSynthetic
+     internal val start: Int,
+     @get:JvmSynthetic
+@@ -27,9 +28,23 @@ internal class MinecraftTextLine(
+     internal val run: MinecraftTextRun,
+     offsets: IntArray,
+     positions: IntArray,
++    ownership: Ownership,
+ ) {
+-    private val offsets = offsets.copyOf()
+-    private val positions = positions.copyOf()
++    /**
++     * Snapshots arbitrary caller-owned arrays through the original six-argument JVM construction contract.
++     * Scalar-boundary/coordinate inputs and detached ownership follow the enclosing line contract.
++     */
++    internal constructor(
++        start: Int,
++        end: Int,
++        nextStart: Int,
++        run: MinecraftTextRun,
++        offsets: IntArray,
++        positions: IntArray,
++    ) : this(start, end, nextStart, run, offsets, positions, Ownership.Defensive)
++
++    private val offsets = if (ownership === Ownership.Exclusive) offsets else offsets.copyOf()
++    private val positions = if (ownership === Ownership.Exclusive) positions else positions.copyOf()
+     private val monotone = (1 until this.positions.size).all { index -> this.positions[index - 1] <= this.positions[index] }
+ 
+     /**
+@@ -148,4 +163,39 @@ internal class MinecraftTextLine(
+         }
+         return nearest
+     }
++
++    private enum class Ownership {
++        Defensive,
++        Exclusive,
++    }
++
++    /**
++     * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
++     */
++    companion object {
++        /**
++         * Consumes fresh producer-private scalar boundaries and their matching rounded coordinates.
++         * The producer must relinquish both arrays after this call; no array or mutable view is exposed by the result.
++         * Each array contains exactly the visible scalar boundaries, including both ends and at least one boundary.
++         * Ellipsis input must already be compact, without a discarded suffix or previous-layout history.
++         * The current layout owns the detached line until replacement or release; no renderer or resource owner is retained.
++         *
++         * @param start inclusive original UTF-16 start.
++         * @param end exclusive visible logical end before a hard break or ellipsis.
++         * @param nextStart original next-line start after any consumed break.
++         * @param run detached immutable run with original font provenance.
++         * @param offsets exclusive ordered original scalar boundaries.
++         * @param positions exclusive rounded logical caret coordinates with the same length as [offsets].
++         * @return one detached immutable current line.
++         */
++        @JvmSynthetic
++        internal fun createOwned(
++            start: Int,
++            end: Int,
++            nextStart: Int,
++            run: MinecraftTextRun,
++            offsets: IntArray,
++            positions: IntArray,
++        ): MinecraftTextLine = MinecraftTextLine(start, end, nextStart, run, offsets, positions, Ownership.Exclusive)
++    }
+ }
+diff --git a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker.kt b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker.kt
+index 1bb7ca668f65186b0b565fe68b76486b602f6250..38753fa81c679d8f4dd3e2f5d483b7ea9663f988 100644
+--- a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker.kt
++++ b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineBreaker.kt
+@@ -203,7 +203,8 @@ internal object MinecraftTextLineBreaker {
+             }
+         val run = renderer.create(text, style, enabled, logicalOrder = logicalOrder)
+         val positions = IntArray(last + 1) { renderer.roundedWidth(widths[it]) }
+-        return MinecraftTextLine(range.start, end, range.nextStart, run, offsets.copyOf(last + 1), positions)
++        val visibleOffsets = if (last < offsets.lastIndex) offsets.copyOf(last + 1) else offsets
++        return MinecraftTextLine.createOwned(range.start, end, range.nextStart, run, visibleOffsets, positions)
+     }
+ 
+     private fun ellipsisEnd(
+diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineOwnershipTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineOwnershipTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f20088d0d144e6e9c9f20d138e2fdffb23adc86
+--- /dev/null
++++ b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineOwnershipTest.kt
+@@ -0,0 +1,202 @@
++package dev.s7a.strata.runtime.minecraft
++
++import dev.s7a.strata.component.TextAreaState
++import dev.s7a.strata.component.TextStyle
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.render.createDrawImage
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.TextLayout
++import dev.s7a.strata.text.TextOverflow
++import dev.s7a.strata.text.TextWrap
++import dev.s7a.strata.text.UiText
++import org.junit.jupiter.api.Assertions.assertArrayEquals
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertNull
++import org.junit.jupiter.api.Assertions.assertSame
++import org.junit.jupiter.api.Assertions.assertThrows
++import org.junit.jupiter.api.Assertions.assertTrue
++import org.junit.jupiter.api.Test
++import java.lang.reflect.Modifier
++
++/**
++ * Preserves defensive binary construction, compact current-line metrics and immutable old layouts across owner changes.
++ * Tests borrow the real deterministic font service and retained editor; no game or native library is required.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class MinecraftTextLineOwnershipTest {
++    @Test
++    fun arbitraryArraysStayIsolatedThroughTheOriginalSixArgumentJvmConstructor() {
++        MinecraftTextRenderer.legacy(emptyMap()).use { renderer ->
++            val run = renderer.create(UiText.Literal(""), TextStyle.Normal)
++            val constructor =
++                MinecraftTextLine::class.java.getDeclaredConstructor(
++                    Integer.TYPE,
++                    Integer.TYPE,
++                    Integer.TYPE,
++                    MinecraftTextRun::class.java,
++                    IntArray::class.java,
++                    IntArray::class.java,
++                )
++            assertTrue(Modifier.isPublic(constructor.modifiers) && constructor.isSynthetic.not())
++            val offsets = intArrayOf(0, 1, 3, 4)
++            val positions = intArrayOf(0, 4, 4, -2)
++            val line = constructor.newInstance(0, 4, 6, run, offsets, positions)
++            offsets.fill(99)
++            positions.fill(Int.MIN_VALUE)
++            assertArrayEquals(intArrayOf(0, 1, 3, 4), array(line, "offsets"))
++            assertArrayEquals(intArrayOf(0, 4, 4, -2), array(line, "positions"))
++            assertEquals(1, line.offsetAt(4))
++            assertEquals(-2..4, line.caretExtents(0, 4))
++            assertSame(run, line.run)
++            assertEquals(6, line.nextStart)
++        }
++    }
++
++    @Test
++    fun privilegedFreshLineMatchesDefensiveScalarAndSignedCoordinateLookups() {
++        MinecraftTextRenderer.legacy(emptyMap()).use { renderer ->
++            val run = renderer.create(UiText.Literal(""), TextStyle.Normal)
++            val offsets = intArrayOf(0, 1, 3, 4, 5, 6)
++            val positions = intArrayOf(0, 4, 4, -3, Int.MAX_VALUE, Int.MIN_VALUE)
++            val expected = MinecraftTextLine(0, 6, 8, run, offsets, positions)
++            val actual = MinecraftTextLine.createOwned(0, 6, 8, run, offsets.copyOf(), positions.copyOf())
++            for (offset in 0..6) assertEquals(expected.caretX(offset), actual.caretX(offset))
++            for (x in listOf(Int.MIN_VALUE, -4, 0, 2, 4, Int.MAX_VALUE)) assertEquals(expected.offsetAt(x), actual.offsetAt(x))
++            for (start in 0..6) {
++                for (end in start..6) assertEquals(expected.caretExtents(start, end), actual.caretExtents(start, end))
++            }
++            assertSame(run, actual.run)
++            assertEquals(8, actual.nextStart)
++        }
++    }
++
++    @Test
++    fun producerKeepsOnlyTheVisibleEllipsisBoundariesForFirstMiddleAndLastCuts() {
++        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++        MinecraftTextAreaFixture(glyph = { _, _ -> MinecraftFontGlyph(3f, 0f, 0f, 1f, 1f, image) }).use { fixture ->
++            val renderer = fixture.configuration(TextAreaState()).renderer
++            val value = "A".repeat(32_767)
++            for (width in listOf(9, 12, 48, 98_298)) {
++                val line =
++                    MinecraftTextLineBreaker
++                        .create(
++                            MinecraftTextContent.create(UiText.Literal(value), multiline = true),
++                            renderer,
++                            TextLayout.Multiline(TextWrap.None, overflow = TextOverflow.Ellipsis),
++                            width,
++                            TextStyle.Normal,
++                            logicalOrder = true,
++                        ).lines
++                        .single()
++                val visible = (width - 9) / 3
++                assertEquals(visible, line.end)
++                assertEquals(value.length, line.nextStart)
++                assertArrayEquals(IntArray(visible + 1) { it }, array(line, "offsets"))
++                assertArrayEquals(IntArray(visible + 1) { it * 3 }, array(line, "positions"))
++                assertEquals(value.take(visible) + "...", MinecraftTextContent.create(line.run.text).value)
++            }
++        }
++    }
++
++    @Test
++    fun supplementaryAndCrLfLinesRetainOriginalOffsetsAndConsumedBreakStarts() {
++        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++        MinecraftTextAreaFixture(glyph = { _, _ -> MinecraftFontGlyph(3f, 0f, 0f, 1f, 1f, image) }).use { fixture ->
++            val renderer = fixture.configuration(TextAreaState()).renderer
++            val layout =
++                MinecraftTextLineBreaker.create(
++                    MinecraftTextContent.create(UiText.Literal("A🙂\r\nBZ\n"), multiline = true),
++                    renderer,
++                    TextLayout.Multiline(TextWrap.None),
++                    Int.MAX_VALUE,
++                    TextStyle.Normal,
++                    logicalOrder = true,
++                )
++            val expected = listOf(intArrayOf(0, 1, 3), intArrayOf(5, 6, 7), intArrayOf(8))
++            assertEquals(3, layout.lines.size)
++            assertEquals(listOf(5, 8, 8), layout.lines.map { it.nextStart })
++            for ((line, offsets) in layout.lines.zip(expected)) {
++                assertArrayEquals(offsets, array(line, "offsets"))
++                assertArrayEquals(IntArray(offsets.size) { it * 3 }, array(line, "positions"))
++                assertEquals(0..((offsets.size - 1) * 3), line.caretExtents(line.start, line.end))
++            }
++        }
++    }
++
++    @Test
++    fun oldLinesRemainImmutableAfterEditReflowCompositionLossDetachAndDisposal() {
++        MinecraftTextAreaFixture(cacheEntries = 0).use { fixture ->
++            val state = TextAreaState("AB🙂CD")
++            val editor = MinecraftTextAreaEditor(fixture.configuration(state)) { _ -> }
++            editor.attach()
++            editor.focus(true)
++            editor.measure()
++            val field = MinecraftTextAreaEditor::class.java.getDeclaredField("layout").apply { isAccessible = true }
++            val original = checkNotNull(field.get(editor)) as MinecraftTextLayout
++            val snapshots = original.lines.map { line -> array(line, "offsets").copyOf() to array(line, "positions").copyOf() }
++            try {
++                state.value = "🙂BZ\nCD"
++                editor.measure()
++                editor.update(fixture.configuration(state, IntSize(20, 26)))
++                editor.measure()
++                editor.textInput(TextInputEvent.Preedit("🙂Z", 2, listOf("🙂", "Z"), 0))
++                editor.measure()
++                state.value = "A"
++                editor.measure()
++                editor.detach()
++                assertNull(field.get(editor))
++                editor.dispose()
++                assertNull(field.get(editor))
++                val current =
++                    MinecraftTextAreaEditor::class.java
++                        .getDeclaredField("current")
++                        .apply { isAccessible = true }
++                        .get(editor)
++                assertNull(current)
++                for ((line, snapshot) in original.lines.zip(snapshots)) {
++                    assertArrayEquals(snapshot.first, array(line, "offsets"))
++                    assertArrayEquals(snapshot.second, array(line, "positions"))
++                }
++            } finally {
++                editor.dispose()
++            }
++            state.observe {}.close()
++        }
++    }
++
++    @Test
++    fun failedLayoutDoesNotPublishPartialMetricsOrRetainTheStateAfterDisposal() {
++        val failure = IllegalArgumentException("Rejected line glyph")
++        var reject = false
++        MinecraftTextAreaFixture(glyph = { _, _ -> if (reject) throw failure else MinecraftFontGlyph(3f, 0f, 0f, 0f, 0f, null) }, cacheEntries = 0).use { fixture ->
++            val state = TextAreaState("AB")
++            val editor = MinecraftTextAreaEditor(fixture.configuration(state)) { _ -> }
++            editor.attach()
++            editor.measure()
++            val field = MinecraftTextAreaEditor::class.java.getDeclaredField("layout").apply { isAccessible = true }
++            val original = checkNotNull(field.get(editor)) as MinecraftTextLayout
++            val snapshot = array(original.lines.single(), "positions").copyOf()
++            state.value = "ZZ"
++            reject = true
++            try {
++                assertSame(failure, assertThrows(IllegalArgumentException::class.java) { editor.measure() })
++                assertNull(field.get(editor))
++                assertArrayEquals(snapshot, array(original.lines.single(), "positions"))
++            } finally {
++                editor.dispose()
++            }
++            state.observe {}.close()
++        }
++    }
++
++    private fun array(
++        line: MinecraftTextLine,
++        name: String,
++    ): IntArray =
++        MinecraftTextLine::class.java
++            .getDeclaredField(name)
++            .apply { isAccessible = true }
++            .get(line) as IntArray
++}
+diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineStorageTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineStorageTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..55cb0db0ed275380e0fe1350a84a13157206740c
+--- /dev/null
++++ b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextLineStorageTest.kt
+@@ -0,0 +1,42 @@
++package dev.s7a.strata.runtime.minecraft
++
++import dev.s7a.strata.component.TextStyle
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.UiText
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertSame
++import org.junit.jupiter.api.Assertions.assertTrue
++import org.junit.jupiter.api.Test
++import java.lang.reflect.Modifier
++
++/**
++ * Requires the candidate's exclusive array transfer without changing shared semantic and defensive-constructor controls.
++ * The copying neutral runtime executes every shared ownership test and omits only this storage-identity class.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class MinecraftTextLineStorageTest {
++    @Test
++    fun ownedAdmissionRetainsExactlyTheTwoExclusiveArraysAndDetachedRun() {
++        MinecraftTextRenderer.legacy(emptyMap()).use { renderer ->
++            val run = renderer.create(UiText.Literal(""), TextStyle.Normal)
++            val offsets = intArrayOf(0, 1, 3, 4)
++            val positions = intArrayOf(0, 4, 4, -2)
++            val line = MinecraftTextLine.createOwned(0, 4, 6, run, offsets, positions)
++            assertSame(offsets, array(line, "offsets"))
++            assertSame(positions, array(line, "positions"))
++            assertSame(run, line.run)
++            val ownedFields = MinecraftTextLine::class.java.declaredFields.filter { field -> Modifier.isStatic(field.modifiers).not() }
++            assertEquals(2, ownedFields.count { field -> field.type === IntArray::class.java })
++            assertTrue(ownedFields.all { field -> field.type.isPrimitive || field.type === IntArray::class.java || field.type === MinecraftTextRun::class.java || field.type === MinecraftTextInkBounds::class.java })
++        }
++    }
++
++    private fun array(
++        line: MinecraftTextLine,
++        name: String,
++    ): IntArray =
++        MinecraftTextLine::class.java
++            .getDeclaredField(name)
++            .apply { isAccessible = true }
++            .get(line) as IntArray
++}
