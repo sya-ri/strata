@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
       "patches": [
         {
           "path": ".github/performance/issue154-full/candidate.patch",
-          "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
         }
       ]
     },
     "baseline": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "d27a996707ff181fc78da7b34c066a53d32fc6eb",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
       "patches": [
         {
           "path": ".github/performance/issue154-full/baseline.patch",
-          "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
+          "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
         }
       ]
     },
     "candidate": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
       "patches": [
         {
           "path": ".github/performance/issue154-full/candidate.patch",
-          "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
         }
       ]
     }
@@ -64,21 +64,21 @@
       "label": "modifier-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue154-full/baseline.patch",
-        "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
+        "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
       }
     },
     {
       "label": "modifier-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue154-full/candidate.patch",
-        "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+        "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
       }
     },
     {
       "label": "modifier-source-provenance",
       "pin": {
         "path": ".github/performance/issue154-full/source-provenance.json",
-        "sha256": "4b74d9e561567e9e372713695a596989a8c46db1f6130ed43663d3628de0b89b"
+        "sha256": "ce7967d2ac24ee3bf163fee1b67277b0b2a5532de2220dfed04420a7e2020558"
       }
     },
     {

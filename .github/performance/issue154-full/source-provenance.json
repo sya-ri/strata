@@ -1,10 +1,10 @@
 {
   "schema": "strata.issue154.prepared-source-provenance.v1",
-  "status": "Source preparation; complete Java/Node/CI/work/metrics qualification Pending",
-  "base_public_commit": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-  "accepted_master": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-  "baseline_tree": "d27a996707ff181fc78da7b34c066a53d32fc6eb",
-  "candidate_fixture_tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+  "status": "New accepted-master source epoch; old complete raw metrics retained separately, current combined closure qualification and metrics Pending",
+  "base_public_commit": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+  "accepted_master": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+  "baseline_tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
+  "candidate_fixture_tree": "18b49ffb2d7de827e002240c0664f163b1822062",
   "runtime_delta_paths": [
     "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt"
   ],
@@ -281,11 +281,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue154-full/baseline.patch",
-      "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
+      "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
     },
     "candidate": {
       "path": ".github/performance/issue154-full/candidate.patch",
-      "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+      "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
     }
   },
   "compiled_pins": "Optional empty; existing driver retains actual loaded closure",
@@ -296,5 +296,42 @@
   "Java_started": 0,
   "helper_invocations": 0,
   "accepted_score_cells": 0,
-  "accepted_operation_rows": 0
+  "accepted_operation_rows": 0,
+  "original_complete_inventory_unchanged": true,
+  "prior_accepted_source_epoch": {
+    "sources": {
+      "fixture": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/candidate.patch",
+            "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          }
+        ]
+      },
+      "baseline": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "d27a996707ff181fc78da7b34c066a53d32fc6eb",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/baseline.patch",
+            "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
+          }
+        ]
+      },
+      "candidate": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/candidate.patch",
+            "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          }
+        ]
+      }
+    },
+    "manifest_sha256": "4dc9e4fc113d33a4bb26732d0165c14c3e332fe7fe7813815e7efc4805db6df2",
+    "metrics": "Historical exact prior closure; no rebinding"
+  }
 }
