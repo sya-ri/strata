@@ -12,40 +12,40 @@ index 497536b70..0c6f1f2a8 100644
  *.yaml text eol=lf
 diff --git a/.github/performance/paired-jvm.json b/.github/performance/paired-jvm.json
 deleted file mode 100644
-index b839a7634..000000000
+index 769cf4e2c..000000000
 --- a/.github/performance/paired-jvm.json
 +++ /dev/null
-@@ -1,106 +0,0 @@
+@@ -1,90 +0,0 @@
 -{
 -  "schema": "strata-paired-jvm-ci-v1",
 -  "sources": {
 -    "fixture": {
--      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
--      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
+-      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+-      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
 -      "patches": [
 -        {
--          "path": ".github/performance/issue154-full/candidate.patch",
--          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
+-          "path": ".github/performance/operation-guards-full/candidate.patch",
+-          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
 -        }
 -      ]
 -    },
 -    "baseline": {
--      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
--      "tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
+-      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+-      "tree": "d6a2365eebae12cfdd8fa2707ccb4a0ead8df329",
 -      "patches": [
 -        {
--          "path": ".github/performance/issue154-full/baseline.patch",
--          "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
+-          "path": ".github/performance/operation-guards-full/baseline.patch",
+-          "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
 -        }
 -      ]
 -    },
 -    "candidate": {
--      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
--      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
+-      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+-      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
 -      "patches": [
 -        {
--          "path": ".github/performance/issue154-full/candidate.patch",
--          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
+-          "path": ".github/performance/operation-guards-full/candidate.patch",
+-          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
 -        }
 -      ]
 -    }
@@ -58,59 +58,43 @@ index b839a7634..000000000
 -  "suites": [
 -    {
 -      "project": ":quality:benchmarks",
--      "name": "issue154-full",
+-      "name": "operation-guards-full",
 -      "benchmarks": [
--        "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark"
+-        "dev.s7a.strata.quality.benchmark.OperationGuardBenchmark"
 -      ],
 -      "workloads": [],
 -      "parameters": {},
--      "expected_cases": 21,
--      "profilers": [],
--      "operation_reports": {
--        "adapters": {
--          "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark": "dev.s7a.strata.quality.benchmark.ModifierReconciliationOperationReport"
--        },
--        "warmup": 30,
--        "samples": 60,
--        "expected_rows": 21,
--        "expected_controls": 15
--      }
+-      "expected_cases": 14,
+-      "profilers": []
 -    }
 -  ],
 -  "inputs": [
 -    {
--      "label": "modifier-baseline-source-patch",
+-      "label": "operation-guard-baseline-patch",
 -      "pin": {
--        "path": ".github/performance/issue154-full/baseline.patch",
--        "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
+-        "path": ".github/performance/operation-guards-full/baseline.patch",
+-        "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
 -      }
 -    },
 -    {
--      "label": "modifier-candidate-source-patch",
+-      "label": "operation-guard-candidate-patch",
 -      "pin": {
--        "path": ".github/performance/issue154-full/candidate.patch",
--        "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
+-        "path": ".github/performance/operation-guards-full/candidate.patch",
+-        "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
 -      }
 -    },
 -    {
--      "label": "modifier-source-provenance",
+-      "label": "operation-guard-source-provenance",
 -      "pin": {
--        "path": ".github/performance/issue154-full/source-provenance.json",
--        "sha256": "ce7967d2ac24ee3bf163fee1b67277b0b2a5532de2220dfed04420a7e2020558"
+-        "path": ".github/performance/operation-guards-full/source-provenance.json",
+-        "sha256": "6d3fbc45001a67809d793e3c36533b409e3242be5e18d4a93d6f69b0ba47939b"
 -      }
 -    },
 -    {
--      "label": "modifier-fixed-ModifierReconciliationBenchmark",
+-      "label": "operation-guard-fixed-fixture",
 -      "pin": {
--        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationBenchmark.kt",
--        "sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36"
--      }
--    },
--    {
--      "label": "modifier-fixed-ModifierReconciliationOperationReport",
--      "pin": {
--        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
--        "sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f"
+-        "path": ".github/performance/operation-guards-full/inputs/OperationGuardBenchmark.kt",
+-        "sha256": "3a1e59f22ff160b0deb23870b928c512baa0e4f68cdf22df9383dac0bbe43188"
 -      }
 -    }
 -  ],
@@ -427,7 +411,7 @@ index 8a0cff69f..5ded42625 100644
                  apply(plugin = "java")
                  repositories { mavenCentral() }
 diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
-index d8854ac35..074423824 100644
+index 64bafbe33..3941d4717 100644
 --- a/docs/development/performance-testkit.md
 +++ b/docs/development/performance-testkit.md
 @@ -78,7 +78,7 @@ The collector archives these files alongside resolved control libraries and reje
@@ -439,7 +423,7 @@ index d8854ac35..074423824 100644
  Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
  The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
  Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
-@@ -717,3 +717,10 @@ It compiles an independent test controller into the existing generated remote fi
+@@ -727,3 +727,10 @@ It compiles an independent test controller into the existing generated remote fi
  Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
  The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
  This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.
@@ -579,7 +563,7 @@ index dda0bcd97..a74595b8b 100644
          }
      }
 diff --git a/gradle/performance/paired-jvm.py b/gradle/performance/paired-jvm.py
-index 7de981bdf..bf15dc0bb 100644
+index 414cb9ced..2b679f9e3 100644
 --- a/gradle/performance/paired-jvm.py
 +++ b/gradle/performance/paired-jvm.py
 @@ -89,7 +89,7 @@ def load_manifest(root, path):
@@ -699,7 +683,7 @@ index 7de981bdf..bf15dc0bb 100644
  def class_load_inventory(owner, expected=None):
      """Capture one fixed attempt-owned staging directory without reading aliases or foreign paths."""
      require(owner.is_dir() and not owner.is_symlink(), "Missing owned class-load staging directory")
-@@ -531,6 +610,14 @@ def class_entry(classpath, name):
+@@ -550,6 +629,14 @@ def class_entry(classpath, name):
      return matches[0]
  
  
@@ -714,7 +698,7 @@ index 7de981bdf..bf15dc0bb 100644
  def preflight_request(root, output, suite, side, classpath_path, runtime, sources, java, inputs):
      """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
      specification = suite["preflight"]
-@@ -660,7 +747,7 @@ def verify_test_gate(directory, gate):
+@@ -679,7 +766,7 @@ def verify_test_gate(directory, gate):
                                                  "counts": counts, "reports": inventory["reports"]})
  
  
@@ -723,7 +707,7 @@ index 7de981bdf..bf15dc0bb 100644
      """Render the existing processor's medians and deltas without new aggregation or timing gates."""
      rows = []
      for suite, mode, comparison in comparisons:
-@@ -684,6 +771,14 @@ def table(output, comparisons, phases, operations=()):
+@@ -703,6 +790,14 @@ def table(output, comparisons, phases, operations=()):
                  rows.append({"suite": suite, "mode": "owner-thread-operation", "benchmark": phase["operation_id"], "params": "{}",
                               "metric": metric, "unit": unit, "baseline": before, "candidate": phase["after"][metric],
                               "delta": phase["delta"][metric], "candidate_to_baseline": None})
@@ -738,7 +722,7 @@ index 7de981bdf..bf15dc0bb 100644
      with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
          writer = csv.DictWriter(target, fieldnames=list(rows[0]))
          writer.writeheader()
-@@ -747,8 +842,40 @@ def invoke(arguments, root, console):
+@@ -766,8 +861,40 @@ def invoke(arguments, root, console):
          process.stdout.close()
  
  
@@ -781,7 +765,7 @@ index 7de981bdf..bf15dc0bb 100644
      require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
      output.mkdir(parents=True, exist_ok=False)
      started = time.monotonic()
-@@ -823,6 +950,7 @@ def run(root, manifest_path, output):
+@@ -842,6 +969,7 @@ def run(root, manifest_path, output):
              return directory
  
          data = load_manifest(root, manifest_path)
@@ -789,7 +773,7 @@ index 7de981bdf..bf15dc0bb 100644
          java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
          write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                               "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
-@@ -845,6 +973,7 @@ def run(root, manifest_path, output):
+@@ -864,6 +992,7 @@ def run(root, manifest_path, output):
          fixture = workspaces["fixture"]
          owners = sorted({suite["project"] for suite in data["suites"]})
          fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
@@ -797,7 +781,7 @@ index 7de981bdf..bf15dc0bb 100644
          for side in ("baseline", "candidate"):
              tasks = [archive_task(project) for project in data["runtime_projects"]]
              if workspaces[side] == fixture:
-@@ -871,6 +1000,7 @@ def run(root, manifest_path, output):
+@@ -890,6 +1019,7 @@ def run(root, manifest_path, output):
                            for index, item in enumerate(data["inputs"])}
          properties(inputs, {label: item["path"] for label, item in input_archives.items()})
          collector = archive_file(fixture, ":performance-testkit")
@@ -805,7 +789,7 @@ index 7de981bdf..bf15dc0bb 100644
          prepared = output / "compiled"
          prepared.mkdir()
          shutil.copyfile(collector, prepared / collector.name)
-@@ -994,6 +1124,59 @@ def run(root, manifest_path, output):
+@@ -1013,6 +1143,59 @@ def run(root, manifest_path, output):
                  comparison = read_json(comparison_path)
                  require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
                  operation_comparisons.append((suite["name"], comparison))
@@ -865,7 +849,7 @@ index 7de981bdf..bf15dc0bb 100644
          for side, workspace in workspaces.items():
              source_guard(workspace, data["sources"][side]["tree"])
              for value in data["compiled_pins"][side]:
-@@ -1008,7 +1191,13 @@ def run(root, manifest_path, output):
+@@ -1027,7 +1210,13 @@ def run(root, manifest_path, output):
          require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
          record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
          record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
@@ -880,7 +864,7 @@ index 7de981bdf..bf15dc0bb 100644
          record["status"] = "passed"
      except BaseException as failure:
          record["error"] = f"{type(failure).__name__}: {failure}"
-@@ -1019,7 +1208,7 @@ def run(root, manifest_path, output):
+@@ -1038,7 +1227,7 @@ def run(root, manifest_path, output):
          write_new(output / "file-inventory.json", {path.relative_to(output).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
                                                    for path in sorted(output.rglob("*")) if path.is_file() and path.relative_to(output).parts[0] != "workspaces"})
          archive = pack(output)
@@ -888,33 +872,77 @@ index 7de981bdf..bf15dc0bb 100644
 +        print(f"Preserved {record['status']} attempt: {archive}", flush=True)
  
  
- def main():
-@@ -1028,9 +1217,11 @@ def main():
-     parser.add_argument("--manifest", default=".github/performance/paired-jvm.json")
+ def select_manifest(root, explicit=None, base=None, head=None):
+@@ -1088,8 +1277,10 @@ def main():
+     parser.add_argument("--head")
      parser.add_argument("--select", action="store_true")
      parser.add_argument("--output", type=Path)
 +    parser.add_argument("--owner-report", help="Continue one complete declared independent owner domain; does not establish whole Issue acceptance")
      args = parser.parse_args()
      root = Path(__file__).resolve().parents[2]
-     path = relative_path(root, args.manifest)
 +    require(not args.select or args.owner_report is None, "CI selection retains the whole declared manifest")
      if args.select:
-         selected = args.manifest if path.exists() else ""
-         if selected:
-@@ -1041,7 +1232,7 @@ def main():
-         print(selected)
-     else:
+         selected = select_manifest(root, args.manifest, args.base, args.head)
+         if os.environ.get("GITHUB_OUTPUT"):
+@@ -1100,7 +1291,7 @@ def main():
+         require(args.base is None and args.head is None, "PR selection arguments require --select")
          require(args.output is not None, "Supply a fresh attempt output directory")
+         path = relative_path(root, args.manifest if args.manifest is not None else ".github/performance/paired-jvm.json")
 -        run(root, path, args.output.resolve())
 +        run(root, path, args.output.resolve(), args.owner_report)
  
  
  if __name__ == "__main__":
+diff --git a/gradle/tests/test_jvm_fixture_collection.py b/gradle/tests/test_jvm_fixture_collection.py
+new file mode 100644
+index 000000000..a00b15591
+--- /dev/null
++++ b/gradle/tests/test_jvm_fixture_collection.py
+@@ -0,0 +1,39 @@
++"""Keep scoped fixture admission strict as the existing JVM model includes Velocity."""
++import importlib.util
++from pathlib import Path
++import unittest
++
++
++SPEC = importlib.util.spec_from_file_location("jvm_fixture_collection", Path(__file__).resolve().parents[1] / "verify-jvm-fixture-collection.py")
++VERIFIER = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(VERIFIER)
++
++
++class ScopedFixtureCollectionTest(unittest.TestCase):
++    """Missing or unrelated projects cannot certify the required scoped task closure."""
++    PROJECTS = {":api", ":runtime:core", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks",
++                ":quality:remote-benchmarks", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl",
++                ":runtime:remote", ":quality:detekt-rules", ":integration:api", ":velocity-api", ":runtime:velocity"}
++
++    def closure(self, projects):
++        return "Ordinary Gradle output\nEXPLICIT_JVM_PROJECTS=" + ",".join(sorted(projects)) + "\nBUILD SUCCESSFUL\n"
++
++    def test_complete_model_including_velocity_is_admitted(self):
++        VERIFIER.verify_project_selection(self.closure(self.PROJECTS), self.PROJECTS)
++
++    def test_either_missing_velocity_project_is_rejected(self):
++        for project in (":velocity-api", ":runtime:velocity"):
++            with self.subTest(project=project), self.assertRaises(AssertionError):
++                VERIFIER.verify_project_selection(self.closure(self.PROJECTS - {project}), self.PROJECTS)
++
++    def test_unrelated_project_is_rejected(self):
++        with self.assertRaises(AssertionError):
++            VERIFIER.verify_project_selection(self.closure(self.PROJECTS | {":fabric:minecraft-1-20"}), self.PROJECTS)
++
++    def test_absent_model_receipt_is_rejected(self):
++        with self.assertRaises(StopIteration):
++            VERIFIER.verify_project_selection("BUILD SUCCESSFUL\n", self.PROJECTS)
++
++
++if __name__ == "__main__":
++    unittest.main()
 diff --git a/gradle/tests/test_paired_jvm.py b/gradle/tests/test_paired_jvm.py
-index efff347a6..b75d4c3df 100644
+index 29bcaaf93..373302733 100644
 --- a/gradle/tests/test_paired_jvm.py
 +++ b/gradle/tests/test_paired_jvm.py
-@@ -74,6 +74,169 @@ class PairedJvmTest(unittest.TestCase):
+@@ -274,6 +274,169 @@ class PairedJvmTest(unittest.TestCase):
              with self.subTest(profilers=profilers), self.assertRaises(ValueError):
                  self.load(changed)
  
@@ -1084,6 +1112,41 @@ index efff347a6..b75d4c3df 100644
      def test_operation_connection_is_optional_and_rejects_partial_or_stale_registration(self):
          value = copy.deepcopy(self.manifest)
          value["suites"][0]["operation_reports"] = {"adapters": {"example.Fixture": "example.Adapter"}, "warmup": 30,
+diff --git a/gradle/verify-jvm-fixture-collection.py b/gradle/verify-jvm-fixture-collection.py
+index 65e3b8c75..8a55d29a5 100644
+--- a/gradle/verify-jvm-fixture-collection.py
++++ b/gradle/verify-jvm-fixture-collection.py
+@@ -176,6 +176,12 @@ public open class ScopedRemoteFixtureBenchmark {
+         resource.unlink(missing_ok=True)
+ 
+ 
++def verify_project_selection(closure_log, projects):
++    """Require the entire explicit scoped model before admitting a fixture collection."""
++    selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
++    assert set(selected.split(",")) == projects
++
++
+ def main():
+     """Keep generated sources temporary and preserve all success and failure evidence in build outputs."""
+     root = Path(__file__).resolve().parent.parent
+@@ -200,6 +206,7 @@ def main():
+     benchmarks = {":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks"}
+     projects = multiplatform | benchmarks | {
+         ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote", ":quality:detekt-rules", ":integration:api",
++        ":velocity-api", ":runtime:velocity",
+     }
+     published = projects - benchmarks - {":quality:detekt-rules", ":integration:api"}
+     tasks = [f"{owner}:{task}" for owner in sorted(projects) for task in ("formatKotlin", "lintKotlin", "detekt", "classes")]
+@@ -218,8 +225,7 @@ def main():
+     with (evidence / "task-closure.log").open("w", encoding="utf-8") as log:
+         subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
+     closure_log = (evidence / "task-closure.log").read_text(encoding="utf-8")
+-    selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
+-    assert set(selected.split(",")) == projects
++    verify_project_selection(closure_log, projects)
+     assert "verifyPublishedHostInventory SKIPPED" not in closure_log and "verifyPublishedPerformanceInventory SKIPPED" not in closure_log
+     (evidence / "project-model.json").write_text(json.dumps({"explicit_projects": sorted(projects), "explicit_project_count": len(projects), "requested_tasks": tasks}, indent=2), encoding="utf-8")
+     arguments = [
 diff --git a/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainBenchmark.kt b/quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainBenchmark.kt
 new file mode 100644
 index 000000000..47e2f7f32

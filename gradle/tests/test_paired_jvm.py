@@ -1,8 +1,10 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
+from contextlib import redirect_stdout
 import copy
 import csv
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -48,6 +50,204 @@ class PairedJvmTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return PAIRED.load_manifest(self.root, path)
+
+    def selector_git(self, *arguments):
+        """Build real isolated fixture histories without invoking commit signing."""
+        return subprocess.check_output(["git", "-c", "core.bare=false", "-c", "commit.gpgsign=false",
+                                        "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                                        "-C", str(self.root), *arguments], text=True, encoding="utf-8").strip()
+
+    def selector_manifest(self, path, value=None):
+        """Keep the complete fixture and existing input pin in every selector control."""
+        target = self.root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(self.manifest if value is None else value), encoding="utf-8")
+        return path
+
+    def selector_commit(self):
+        self.selector_git("add", "--all")
+        self.selector_git("commit", "--quiet", "--allow-empty", "-m", "Preserve complete selector fixture")
+        return self.selector_git("rev-parse", "HEAD")
+
+    def selector_repository(self, legacy=True):
+        self.selector_git("init", "--quiet")
+        self.selector_git("config", "core.autocrlf", "false")
+        if legacy:
+            self.selector_manifest(".github/performance/paired-jvm.json")
+        return self.selector_commit()
+
+    def test_real_git_inherited_default_does_not_schedule_unrelated_work_or_shadow_owned_nested(self):
+        base = self.selector_repository()
+        (self.root / "ordinary-source.txt").write_text("ordinary change", encoding="utf-8")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+        legacy = ".github/performance/paired-jvm.json"
+        self.assertEqual(PAIRED.select_manifest(self.root), legacy)
+        self.assertEqual(PAIRED.select_manifest(self.root, legacy, base, head), legacy)
+        nested = self.selector_manifest(".github/performance/independent-full/manifest.json")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), nested)
+        self.assertEqual(PAIRED.load_manifest(self.root, self.root / nested), self.manifest)
+        self.assertEqual((self.root / nested).read_bytes(), subprocess.check_output(
+            ["git", "-C", str(self.root), "show", f"{head}:{nested}"]))
+        with self.assertRaises(ValueError):
+            PAIRED.select_manifest(self.root, ".github/performance/missing/manifest.json", base, head)
+
+    def test_real_git_introduced_and_changed_legacy_keep_priority_over_multiple_nested_choices(self):
+        base = self.selector_repository(legacy=False)
+        legacy = self.selector_manifest(".github/performance/paired-jvm.json")
+        first = self.selector_manifest(".github/performance/first/manifest.json")
+        self.selector_manifest(".github/performance/second/manifest.json")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), legacy)
+        self.assertEqual(PAIRED.select_manifest(self.root, first, base, head), first)
+        base = head
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["name"] = "changed-complete-corpus"
+        self.selector_manifest(legacy, value)
+        self.selector_manifest(first, value)
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), legacy)
+        base = head
+        (self.root / legacy).unlink()
+        self.selector_manifest(first, self.manifest)
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), first)
+
+    def test_real_git_identical_changed_nested_choices_are_ambiguous_and_manual_selection_resolves(self):
+        base = self.selector_repository()
+        first = self.selector_manifest(".github/performance/first/manifest.json")
+        second = self.selector_manifest(".github/performance/second/manifest.json")
+        head = self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "Ambiguous.*first/manifest.json.*second/manifest.json"):
+            PAIRED.select_manifest(self.root, base=base, head=head)
+        self.assertEqual(PAIRED.select_manifest(self.root, second, base, head), second)
+        self.assertEqual((self.root / first).read_bytes(), (self.root / second).read_bytes())
+
+    def test_real_git_deleted_and_renamed_nested_manifest_follow_no_rename_diff(self):
+        base = self.selector_repository(legacy=False)
+        old = self.selector_manifest(".github/performance/old/manifest.json")
+        base = self.selector_commit()
+        new = ".github/performance/new/manifest.json"
+        (self.root / new).parent.mkdir()
+        (self.root / old).rename(self.root / new)
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), new)
+        base = head
+        (self.root / new).unlink()
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+        self.assertEqual(PAIRED.select_manifest(self.root), "")
+
+    def test_real_git_other_json_and_unchanged_or_flat_examples_do_not_become_candidates(self):
+        self.selector_repository()
+        self.selector_manifest(".github/performance/pilot/manifest.json")
+        base = self.selector_commit()
+        self.selector_manifest(".github/performance/ordinary/receipt.json", {"schema": "independent-receipt-v1"})
+        self.selector_manifest(".github/performance/paired-jvm.example.json")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+
+    def test_real_git_selection_rejects_invalid_schema_pins_json_and_unsafe_paths(self):
+        base = self.selector_repository()
+        path = self.selector_manifest(".github/performance/owned/manifest.json")
+        valid = json.dumps(self.manifest)
+        unsupported = copy.deepcopy(self.manifest)
+        unsupported["schema"] = "strata-paired-jvm-ci-v2"
+        malformed_schema = copy.deepcopy(self.manifest)
+        malformed_schema["schema"] = 17
+        wrong_schema = copy.deepcopy(self.manifest)
+        wrong_schema["schema"] = "unrelated-receipt-v1"
+        invalid_pin = copy.deepcopy(self.manifest)
+        invalid_pin["inputs"][0]["pin"]["sha256"] = "0" * 64
+        missing_schema = copy.deepcopy(self.manifest)
+        missing_schema.pop("schema")
+        incomplete = copy.deepcopy(self.manifest)
+        incomplete.pop("sources")
+        for content in ("{", '{"schema":"strata-paired-jvm-ci-v1","schema":"strata-paired-jvm-ci-v1"}',
+                        json.dumps(unsupported), json.dumps(malformed_schema), json.dumps(wrong_schema),
+                        json.dumps(dict(self.manifest, schema=None)), json.dumps(dict(self.manifest, schema=[])),
+                        json.dumps(invalid_pin), json.dumps(incomplete), json.dumps(missing_schema)):
+            with self.subTest(content=content):
+                (self.root / path).write_text(content, encoding="utf-8")
+                head = self.selector_commit()
+                with self.assertRaises(ValueError):
+                    PAIRED.select_manifest(self.root, base=base, head=head)
+        (self.root / path).write_text(valid, encoding="utf-8")
+        head = self.selector_commit()
+        for unsafe in ("../manifest.json", "/manifest.json", ".github/performance/owned/../owned/manifest.json"):
+            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
+                PAIRED.select_manifest(self.root, unsafe, base, head)
+        unsafe = self.selector_manifest(".github/performance/unsafe name/manifest.json")
+        head = self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "Invalid repository path"):
+            PAIRED.select_manifest(self.root, base=base, head=head)
+        self.assertTrue((self.root / unsafe).is_file())
+
+    def test_real_git_selection_rejects_wrong_checkout_and_uncommitted_manifest(self):
+        base = self.selector_repository()
+        path = self.selector_manifest(".github/performance/owned/manifest.json")
+        head = self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "checkout differs"):
+            PAIRED.select_manifest(self.root, base=base, head=base)
+        with self.assertRaisesRegex(ValueError, "both PR"):
+            PAIRED.select_manifest(self.root, base=base)
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["name"] = "uncommitted"
+        self.selector_manifest(path, value)
+        with self.assertRaisesRegex(ValueError, "manifest differs"):
+            PAIRED.select_manifest(self.root, base=base, head=head)
+        self.selector_manifest(path)
+        self.input.write_text("changed pinned input", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            PAIRED.select_manifest(self.root, base=base, head=head)
+
+    def test_real_git_base_branch_changes_are_not_current_pull_request_intent(self):
+        common = self.selector_repository()
+        (self.root / "own-source.txt").write_text("own source change", encoding="utf-8")
+        head = self.selector_commit()
+        self.selector_git("checkout", "--quiet", "--detach", common)
+        value = copy.deepcopy(self.manifest)
+        value["suites"][0]["name"] = "base-branch-corpus"
+        self.selector_manifest(".github/performance/paired-jvm.json", value)
+        base = self.selector_commit()
+        self.selector_git("checkout", "--quiet", "--detach", head)
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+
+    def test_real_git_cli_emits_exact_owned_path_and_preserves_workflow_head_binding(self):
+        base = self.selector_repository()
+        path = self.selector_manifest(".github/performance/owned/manifest.json")
+        head = self.selector_commit()
+        output = self.root / "github-output"
+        console = io.StringIO()
+        arguments = ["paired-jvm.py", "--select", "--base", base, "--head", head]
+        with patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                patch.object(PAIRED.sys, "argv", arguments), patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}), \
+                redirect_stdout(console):
+            PAIRED.main()
+        self.assertEqual(console.getvalue(), path + "\n")
+        self.assertEqual(output.read_text(encoding="utf-8"), "paired_manifest=" + path + "\n")
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        planning, execution = workflow.split("  paired-jvm:", 1)
+        head_ref = "ref: ${{ github.event.pull_request.head.sha || github.sha }}"
+        self.assertIn(head_ref, planning)
+        self.assertIn(head_ref, execution)
+        self.assertIn('args+=(--base "$BASE" --head "$HEAD")', planning)
+        self.assertIn('args+=(--manifest "$MANIFEST")', planning)
+        self.assertNotIn('MANIFEST:-', planning)
+
+    def test_explicit_empty_cli_path_never_falls_back_or_invokes_collector(self):
+        self.selector_repository()
+        for selection in (False, True):
+            arguments = ["paired-jvm.py", "--manifest", ""]
+            arguments += ["--select"] if selection else ["--output", str(self.root / "fresh-attempt")]
+            with self.subTest(selection=selection), \
+                    patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                    patch.object(PAIRED.sys, "argv", arguments), patch.object(PAIRED, "run") as collector:
+                with self.assertRaises(ValueError):
+                    PAIRED.main()
+                collector.assert_not_called()
+                self.assertFalse((self.root / "fresh-attempt").exists())
 
     def test_generated_selection_without_fixture_registry(self):
         self.assertEqual(self.load(self.manifest), self.manifest)
@@ -929,6 +1129,66 @@ class PairedJvmTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
 
+    def test_unique_java_generation_keeps_closed_helpers_and_rejects_missing_or_altered_proof(self):
+        modes = ("complete", "two-java", "two-javaw", "missing-file", "console-only", "unclosed-helper", "failed-helper", "foreign-helper",
+                 "wrong-helper-affinity", "overlapping-helper", "missing-helper-image", "wrong-java-image", "changed-pin", "missing-flag", "duplicate-origin")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory = self.root / ("closed-helper-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
+                flag = "../../class-loads/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid8188-2026-10-13_06-15-25.log"
+                vm.write_text(f"<hotspot_log process='8188' time_ms='1791872124997'>\n<vm_arguments><args>{args}</args>\n"
+                              f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                              "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                              "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                helper = {"pid": 8188, "creationFileTime": 134363456004687052, "exitFileTime": 134363456096932060,
+                          "image": str(directory / "conhost.exe"), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                member = {**helper, "creationFileTime": 134363457249718371, "exitFileTime": 134363457345207482, "image": str(executable)}
+                if mode in ("two-java", "two-javaw"):
+                    helper["image"] = str(directory / "earlier-jdk/bin" / ("javaw.exe" if mode == "two-javaw" else "java.exe"))
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                elif mode == "failed-helper":
+                    helper["exitCode"] = 1
+                elif mode == "foreign-helper":
+                    helper["inOwnedJob"] = False
+                elif mode == "wrong-helper-affinity":
+                    helper["affinityMask"] = 1
+                elif mode == "overlapping-helper":
+                    helper["exitFileTime"] = member["creationFileTime"] + 1
+                elif mode == "missing-helper-image":
+                    helper.pop("image")
+                elif mode == "wrong-java-image":
+                    member["image"] = str(directory / "different-jdk/bin/java.exe")
+                terminal = {"members": {"8188": [helper, member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                pin = {"path": str(diagnostic), "source": str(diagnostic), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostic.parent), "previous": {}, "copied": [pin]})
+                (directory / "console.log").write_text(origin if mode == "console-only" else "", encoding="utf-8")
+                if mode in ("missing-file", "console-only"):
+                    diagnostic.unlink()
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    result = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(result["os_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["unique_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                    self.assertEqual(result["actual_loaded_main"], "file:/frozen.jar")
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
         home = self.root / "probe-reuse-jdk"
         executable = home / "bin/java.exe"
@@ -1087,6 +1347,10 @@ class PairedJvmTest(unittest.TestCase):
         exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
             exec(compile(script, "jvm-workflow-result", "exec"), {})
+        for result in ("failure", "cancelled"):
+            jobs["paired-jvm"]["result"] = result
+            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+                exec(compile(script, "jvm-workflow-result", "exec"), {})
         jobs["paired-jvm"]["result"] = "success"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
             exec(compile(script, "jvm-workflow-result", "exec"), {})

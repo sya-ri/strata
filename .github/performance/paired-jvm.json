@@ -3,31 +3,31 @@
   "sources": {
     "fixture": {
       "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
-      "tree": "d67013b67341466e994c9dacbb9b758a9deec6b3",
+      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
       "patches": [
         {
-          "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "0c806176c3c16eec3b4ae07267f875b00fb51758c1064b0581fcc3f8538590b5"
-        }
-      ]
-    },
-    "candidate": {
-      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
-      "tree": "d67013b67341466e994c9dacbb9b758a9deec6b3",
-      "patches": [
-        {
-          "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "0c806176c3c16eec3b4ae07267f875b00fb51758c1064b0581fcc3f8538590b5"
+          "path": ".github/performance/operation-guards-full/candidate.patch",
+          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
         }
       ]
     },
     "baseline": {
       "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
-      "tree": "42d09093d800e3e29ccc29475bbd8dcab36a8f8d",
+      "tree": "d6a2365eebae12cfdd8fa2707ccb4a0ead8df329",
       "patches": [
         {
-          "path": ".github/performance/transport-drain-full/baseline.patch",
-          "sha256": "841558154c33eddf195bb34a3a3be353db384163e609d7416843cbef2c83d88b"
+          "path": ".github/performance/operation-guards-full/baseline.patch",
+          "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
+      "patches": [
+        {
+          "path": ".github/performance/operation-guards-full/candidate.patch",
+          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
         }
       ]
     }
@@ -35,116 +35,48 @@
   "runtime_projects": [
     ":api",
     ":runtime:core",
-    ":runtime:remote",
-    ":velocity-api",
-    ":runtime:velocity"
+    ":runtime:headless"
   ],
   "suites": [
     {
-      "project": ":quality:remote-benchmarks",
-      "name": "transport-drain-full",
+      "project": ":quality:benchmarks",
+      "name": "operation-guards-full",
       "benchmarks": [
-        "TransportDrainBenchmark"
+        "dev.s7a.strata.quality.benchmark.OperationGuardBenchmark"
       ],
       "workloads": [],
-      "parameters": {
-        "peers": [
-          "1",
-          "100",
-          "1000"
-        ],
-        "workload": [
-          "Idle",
-          "One",
-          "Sparse",
-          "Seven",
-          "Eight",
-          "SixtyThree",
-          "ExactLimit",
-          "LimitPlusOne",
-          "SequenceGap",
-          "BusyProducer"
-        ]
-      },
-      "expected_cases": 30
+      "parameters": {},
+      "expected_cases": 14,
+      "profilers": []
     }
   ],
   "inputs": [
     {
-      "label": "transport-fixture-0",
+      "label": "operation-guard-baseline-patch",
       "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainBenchmark.kt",
-        "sha256": "57c52d2b0bdf22e9ded64bd7d77d35bcb116900d78c2cd748f60f1c2f7ffeaa2"
+        "path": ".github/performance/operation-guards-full/baseline.patch",
+        "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
       }
     },
     {
-      "label": "transport-fixture-1",
+      "label": "operation-guard-candidate-patch",
       "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainCpuComparison.kt",
-        "sha256": "4827bd3712d99b6842167d4e20debc94ee345a42b834cf7e57098b1845a5137b"
+        "path": ".github/performance/operation-guards-full/candidate.patch",
+        "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
       }
     },
     {
-      "label": "transport-fixture-2",
+      "label": "operation-guard-source-provenance",
       "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainCpuEvidence.kt",
-        "sha256": "8b1e359cb5e9a68c8564e53416066bb6d990389559c90b57475bfaec4a92a0db"
+        "path": ".github/performance/operation-guards-full/source-provenance.json",
+        "sha256": "6d3fbc45001a67809d793e3c36533b409e3242be5e18d4a93d6f69b0ba47939b"
       }
     },
     {
-      "label": "transport-fixture-3",
+      "label": "operation-guard-fixed-fixture",
       "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainFleet.kt",
-        "sha256": "7164d6482eda09de62d841e07da6bbe5a9619f0835e00e98c749c5020565f86c"
-      }
-    },
-    {
-      "label": "transport-fixture-4",
-      "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainProbeEvidence.kt",
-        "sha256": "585803b94dc64c11755fa5d4ab84ac44205adb9ec9e5014053b0982b29ec25d7"
-      }
-    },
-    {
-      "label": "transport-fixture-5",
-      "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainProbeTarget.kt",
-        "sha256": "ff042f29ce9967bb81843aa8e549d58c2e8801a34744b5463ccc2d96fef5880e"
-      }
-    },
-    {
-      "label": "transport-fixture-6",
-      "pin": {
-        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TransportDrainWorkload.kt",
-        "sha256": "d69352c6eab282ccfe48073c81b1177ba09d0cd54c89d4478e096a1087850fb3"
-      }
-    },
-    {
-      "label": "transport-fixture-7",
-      "pin": {
-        "path": "runtime/velocity/src/test/kotlin/dev/s7a/strata/runtime/velocity/VelocityDrainCpuComparison.kt",
-        "sha256": "fd6eb516254bbcc60ecc9a569434f2765428672cf266def8fdae9f75225d72c9"
-      }
-    },
-    {
-      "label": "transport-fixture-8",
-      "pin": {
-        "path": "runtime/velocity/src/test/kotlin/dev/s7a/strata/runtime/velocity/VelocityDrainCpuEvidence.kt",
-        "sha256": "a16c15e700f2443c2306f1e14e2346ca3fdaf52847bc22ece7a9535a8711b2ac"
-      }
-    },
-    {
-      "label": "transport-fixture-9",
-      "pin": {
-        "path": "runtime/velocity/src/test/kotlin/dev/s7a/strata/runtime/velocity/VelocityDrainFixture.kt",
-        "sha256": "e9d91af884b9837c0130ad372794c8b4cc2e1aba255753f563a2eece2bc297ed"
-      }
-    },
-    {
-      "label": "transport-fixture-10",
-      "pin": {
-        "path": "runtime/velocity/src/test/kotlin/dev/s7a/strata/runtime/velocity/VelocityDrainWorkload.kt",
-        "sha256": "3683ad8745c74d0d8414d700abd129f1d31bc039ad47f2b6c314e61e5b248c4d"
+        "path": ".github/performance/operation-guards-full/inputs/OperationGuardBenchmark.kt",
+        "sha256": "3a1e59f22ff160b0deb23870b928c512baa0e4f68cdf22df9383dac0bbe43188"
       }
     }
   ],
@@ -154,224 +86,5 @@
     "candidate": []
   },
   "dependency_pins": [],
-  "java_pins": [],
-  "owner_reports": [
-    {
-      "name": "transport-drain-owner",
-      "project": ":quality:remote-benchmarks",
-      "template": "jmhRemote",
-      "kind": "java-exec",
-      "main": "dev.s7a.strata.quality.benchmark.TransportDrainCpuEvidence",
-      "comparison": "dev.s7a.strata.quality.benchmark.TransportDrainCpuComparison",
-      "workload_id": "bounded-transport-drain-v1",
-      "phase_keys": [
-        "peers",
-        "workload"
-      ],
-      "rows": [
-        {
-          "peers": 1,
-          "workload": "Idle"
-        },
-        {
-          "peers": 1,
-          "workload": "One"
-        },
-        {
-          "peers": 1,
-          "workload": "Sparse"
-        },
-        {
-          "peers": 1,
-          "workload": "Seven"
-        },
-        {
-          "peers": 1,
-          "workload": "Eight"
-        },
-        {
-          "peers": 1,
-          "workload": "SixtyThree"
-        },
-        {
-          "peers": 1,
-          "workload": "ExactLimit"
-        },
-        {
-          "peers": 1,
-          "workload": "LimitPlusOne"
-        },
-        {
-          "peers": 1,
-          "workload": "SequenceGap"
-        },
-        {
-          "peers": 1,
-          "workload": "BusyProducer"
-        },
-        {
-          "peers": 100,
-          "workload": "Idle"
-        },
-        {
-          "peers": 100,
-          "workload": "One"
-        },
-        {
-          "peers": 100,
-          "workload": "Sparse"
-        },
-        {
-          "peers": 100,
-          "workload": "Seven"
-        },
-        {
-          "peers": 100,
-          "workload": "Eight"
-        },
-        {
-          "peers": 100,
-          "workload": "SixtyThree"
-        },
-        {
-          "peers": 100,
-          "workload": "ExactLimit"
-        },
-        {
-          "peers": 100,
-          "workload": "LimitPlusOne"
-        },
-        {
-          "peers": 100,
-          "workload": "SequenceGap"
-        },
-        {
-          "peers": 100,
-          "workload": "BusyProducer"
-        },
-        {
-          "peers": 1000,
-          "workload": "Idle"
-        },
-        {
-          "peers": 1000,
-          "workload": "One"
-        },
-        {
-          "peers": 1000,
-          "workload": "Sparse"
-        },
-        {
-          "peers": 1000,
-          "workload": "Seven"
-        },
-        {
-          "peers": 1000,
-          "workload": "Eight"
-        },
-        {
-          "peers": 1000,
-          "workload": "SixtyThree"
-        },
-        {
-          "peers": 1000,
-          "workload": "ExactLimit"
-        },
-        {
-          "peers": 1000,
-          "workload": "LimitPlusOne"
-        },
-        {
-          "peers": 1000,
-          "workload": "SequenceGap"
-        },
-        {
-          "peers": 1000,
-          "workload": "BusyProducer"
-        }
-      ],
-      "warmup": 100,
-      "samples": 200,
-      "runtime_classes": {
-        "api": {
-          "project": ":api",
-          "class": "dev.s7a.strata.projection.ProjectionValue"
-        },
-        "core": {
-          "project": ":runtime:core",
-          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
-        },
-        "remote": {
-          "project": ":runtime:remote",
-          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
-        }
-      }
-    },
-    {
-      "name": "velocity-drain-owner",
-      "project": ":runtime:velocity",
-      "template": "test",
-      "kind": "test",
-      "main": "dev.s7a.strata.runtime.velocity.VelocityDrainCpuEvidence",
-      "comparison": "dev.s7a.strata.runtime.velocity.VelocityDrainCpuComparison",
-      "workload_id": "bounded-velocity-drain-v1",
-      "phase_keys": [
-        "workload"
-      ],
-      "rows": [
-        {
-          "workload": "Idle"
-        },
-        {
-          "workload": "One"
-        },
-        {
-          "workload": "Seven"
-        },
-        {
-          "workload": "Eight"
-        },
-        {
-          "workload": "SixtyThree"
-        },
-        {
-          "workload": "ExactLimit"
-        },
-        {
-          "workload": "LimitPlusOne"
-        },
-        {
-          "workload": "BusyProducer"
-        }
-      ],
-      "warmup": 100,
-      "samples": 200,
-      "runtime_classes": {
-        "api": {
-          "project": ":api",
-          "class": "dev.s7a.strata.projection.ProjectionValue"
-        },
-        "core": {
-          "project": ":runtime:core",
-          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
-        },
-        "remote": {
-          "project": ":runtime:remote",
-          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
-        },
-        "velocity-api": {
-          "project": ":velocity-api",
-          "class": "dev.s7a.strata.velocity.VelocityUi"
-        },
-        "velocity": {
-          "project": ":runtime:velocity",
-          "class": "dev.s7a.strata.runtime.velocity.VelocityScreens"
-        }
-      },
-      "controls": [
-        "untimed_command_polls_per_cycle",
-        "post_empty_arrival"
-      ]
-    }
-  ]
+  "java_pins": []
 }

@@ -29,6 +29,11 @@ public class StateObservation(
     private var parent: StateObservation? = null
     private val children = LinkedHashSet<StateObservation>()
 
+    // Links exist only during synchronous operations; the outermost guard owns the current tail.
+    private var previousOperation: StateObservation? = null
+    private var nextOperation: StateObservation? = null
+    private var lastOperation: StateObservation? = null
+
     /**
      * Shared mutation guard identity for independently evaluated regions of one session.
      */
@@ -56,9 +61,17 @@ public class StateObservation(
      */
     public fun enterOperation() {
         checkOwner()
-        val guards = operations.current ?: ArrayList<StateObservation>().also { operations.current = it }
-        check((this in guards).not()) { "A state observation operation is already active." }
-        guards.add(this)
+        check(previousOperation == null && lastOperation == null) { "A state observation operation is already active." }
+        val first = operations.current
+        if (first == null) {
+            operations.current = this
+            lastOperation = this
+        } else {
+            val previous = checkNotNull(first.lastOperation)
+            previousOperation = previous
+            previous.nextOperation = this
+            first.lastOperation = this
+        }
     }
 
     /**
@@ -67,10 +80,17 @@ public class StateObservation(
      */
     public fun leaveOperation() {
         checkOwner()
-        val guards = checkNotNull(operations.current) { "No state observation operation is active." }
-        check(guards.last() === this) { "State observation operations must leave in reverse order." }
-        guards.removeAt(guards.lastIndex)
-        if (guards.isEmpty()) operations.current = null
+        val first = checkNotNull(operations.current) { "No state observation operation is active." }
+        check(first.lastOperation === this) { "State observation operations must leave in reverse order." }
+        val previous = previousOperation
+        if (previous == null) {
+            lastOperation = null
+            operations.current = null
+        } else {
+            previous.nextOperation = null
+            first.lastOperation = previous
+            previousOperation = null
+        }
     }
 
     /**
@@ -135,7 +155,7 @@ public class StateObservation(
     internal companion object {
         private val active = EvaluationContext<StateObservation>()
         private val comparing = EvaluationContext<Boolean>()
-        private val operations = EvaluationContext<MutableList<StateObservation>>()
+        private val operations = EvaluationContext<StateObservation>()
 
         /**
          * Records a state read in the innermost screen evaluation on this thread.
@@ -158,7 +178,11 @@ public class StateObservation(
          */
         internal fun checkMutation() {
             check(active.current == null) { "State mutation is forbidden during screen evaluation." }
-            operations.current?.forEach { observation -> observation.validateMutation() }
+            var observation = operations.current
+            while (observation != null) {
+                observation.validateMutation()
+                observation = observation.nextOperation
+            }
         }
 
         /**

@@ -29,6 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 0
         persist-credentials: false
     - uses: ./.github/actions/setup-strata-java
@@ -40,7 +41,18 @@ jobs:
       shell: bash
       env:
         MANIFEST: ${{ inputs.paired_manifest }}
-      run: python3 -B gradle/performance/paired-jvm.py --select --manifest "${MANIFEST:-.github/performance/paired-jvm.json}"
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |-
+        args=(--select)
+        if [[ -n "$MANIFEST" ]]; then
+          args+=(--manifest "$MANIFEST")
+        fi
+        if [[ "$EVENT" == pull_request ]]; then
+          args+=(--base "$BASE" --head "$HEAD")
+        fi
+        python3 -B gradle/performance/paired-jvm.py "${args[@]}"
     - name: Select changed inputs
       run: |-
         args=(--full)

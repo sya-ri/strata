@@ -530,8 +530,16 @@ These native-free retained owners do not replace real Paper/Velocity scheduling,
 ## Opt-in paired JVM CI
 
 The `JVM checks` workflow runs a complete frozen CPU comparison in one Windows runner when a paired manifest is selected.
-Ordinary pull requests skip this job unless they deliberately provide `.github/performance/paired-jvm.json`; manual runs accept another repository-relative `paired_manifest` path.
-The checked-in [fixed pilot](../../.github/performance/pilot-issue145/manifest.json) is selected only by an explicit manual request.
+A nonempty manual `paired_manifest` input has first priority and must pass the existing path, schema, source and pin validation; a missing or invalid explicit selection fails without fallback.
+Pull request planning checks out the exact head used by the paired job and inspects its merge-base-to-head diff with rename detection disabled.
+A shared `.github/performance/paired-jvm.json` introduced or changed by that pull request keeps priority; an unchanged inherited default is ignored.
+Otherwise, exactly one changed nested JSON file under `.github/performance/` declaring the paired CI schema selects its complete frozen comparison.
+Deleted manifests and other JSON schemas are not candidates, while an unsupported paired CI schema or invalid candidate fails validation.
+Multiple candidates fail with their paths and require an explicit manual selection, even when their bytes are identical; no candidate skips the job.
+Manual runs without an explicit input retain the shared-default route.
+The selected manifest bytes must match the actual pull request head; planning cannot borrow a merge checkout or an uncommitted manifest.
+Independent performance pull requests can therefore edit their owning nested manifests without sharing a default path or triggering an unrelated inherited comparison.
+The checked-in [fixed pilot](../../.github/performance/pilot-issue145/manifest.json) remains unchanged and is selected only by an explicit manual request.
 Dispatch `jvm.yml` on the intended driver branch with `paired_manifest=.github/performance/pilot-issue145/manifest.json` to exercise it.
 A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
 
@@ -696,8 +704,10 @@ Separate per-VM files have no rotation and a 1 MiB limit per file; immutable cop
 Previously captured staging files must remain byte-identical before the next invocation.
 The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
 Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
-When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured owned PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
-This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, owned generation or candidate file keeps attribution ambiguous.
+When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured Java executable PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
+This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, Java executable generation or candidate file keeps attribution ambiguous.
+Closed non-Java helper generations that reuse the PID remain separately recorded with their actual image, birth, exit, Job membership and affinity; the sole Java generation must match the VM's actual executable and lifetime.
+Both standard Java launcher names, `java.exe` and `javaw.exe`, count as Java generations; this distinction does not admit a different main executable.
 Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
 Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
