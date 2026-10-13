@@ -214,7 +214,7 @@ public class MinecraftFontEngine
             miss: RasterKey,
         ): MutableList<RasterKey>? {
             if (resolutionLimit <= 1 + (misses?.size ?: 0)) return null
-            return (misses ?: ArrayList<RasterKey>()).also { it.add(miss) }
+            return (misses ?: ArrayList()).also { it.add(miss) }
         }
 
         /**

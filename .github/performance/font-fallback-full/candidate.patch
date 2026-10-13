@@ -4464,7 +4464,7 @@ index 1183151b50d1b69d6a664884a0ef127f6563d59a..11f418911e8c0f6d8b9ab7b882b36690
              outputs.dir(comparisonOutput)
              outputs.upToDateWhen { false }
 diff --git a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt
-index 080b3c12a57db5beeae6061dd30d026cf66a26a4..8fdb6806244cd933a2f6b70e783179b50f603fa2 100644
+index 080b3c12a57db5beeae6061dd30d026cf66a26a4..db3a75ca9151a522fdc034054ab71deb334d6769 100644
 --- a/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt
 +++ b/runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt
 @@ -15,12 +15,23 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -4571,7 +4571,7 @@ index 080b3c12a57db5beeae6061dd30d026cf66a26a4..8fdb6806244cd933a2f6b70e783179b5
 +            miss: RasterKey,
 +        ): MutableList<RasterKey>? {
 +            if (resolutionLimit <= 1 + (misses?.size ?: 0)) return null
-+            return (misses ?: ArrayList<RasterKey>()).also { it.add(miss) }
++            return (misses ?: ArrayList()).also { it.add(miss) }
 +        }
 +
          /**

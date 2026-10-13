@@ -20,21 +20,21 @@
     },
     "candidate": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "a79e4623944365c6f533c731cb6fbc1cd680a248",
+      "tree": "2531a15bb6309f87006b73b39677560b3aa5684c",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "56661e5450d392aa68bc816b489d448797e1431234177beabb01022087f09687"
+          "sha256": "1fe1afc07a0c1a8bbc56175cdc0f38e3479f07573088d3bf682bf124286c9350"
         }
       ]
     },
     "fixture": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "a79e4623944365c6f533c731cb6fbc1cd680a248",
+      "tree": "2531a15bb6309f87006b73b39677560b3aa5684c",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "56661e5450d392aa68bc816b489d448797e1431234177beabb01022087f09687"
+          "sha256": "1fe1afc07a0c1a8bbc56175cdc0f38e3479f07573088d3bf682bf124286c9350"
         }
       ]
     }
@@ -126,5 +126,26 @@
   },
   "current_work_admission": "Pending actual existing full B/C prepare, original unfiltered test gates and complete112 work gates before the first timing phase",
   "formal_timing_credit": false,
-  "native_presentation_timing": "Not measured by these JVM operations"
+  "native_presentation_timing": "Not measured by these JVM operations",
+  "actual_inferred_type_correction": {
+    "receipt_sha256": "315a0506cd6ab915dd77238ae6f62e9479abfe9e7989b2fca7bd6075b632be6a",
+    "actual_compiled_tree": "999240e26bb952dc6a07f8f7977ffbff22258dd5",
+    "formal_reconstructed_tree": "2531a15bb6309f87006b73b39677560b3aa5684c",
+    "only_metadata_difference": [
+      ".github/performance/font-fallback-full/baseline.patch",
+      ".github/performance/font-fallback-full/candidate.patch",
+      ".github/performance/font-fallback-full/source-provenance.json",
+      ".github/performance/paired-jvm.json"
+    ],
+    "affected_tests": {
+      "tests": 516,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "closed_VM_count": 5,
+    "all_runtime_JAR_entries_identical_to_prior_qualified_candidate": true,
+    "status": "Actual unfiltered affected tests/ABI/lint/Detekt passed; unchanged baseline/font workers use their original bound evidence"
+  },
+  "canonical_input_pins": "Declared pins match canonical LF raw bytes and staged Git blobs; original failed run is retained"
 }

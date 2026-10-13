@@ -13,21 +13,21 @@
     },
     "candidate": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "a79e4623944365c6f533c731cb6fbc1cd680a248",
+      "tree": "2531a15bb6309f87006b73b39677560b3aa5684c",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "56661e5450d392aa68bc816b489d448797e1431234177beabb01022087f09687"
+          "sha256": "1fe1afc07a0c1a8bbc56175cdc0f38e3479f07573088d3bf682bf124286c9350"
         }
       ]
     },
     "fixture": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "a79e4623944365c6f533c731cb6fbc1cd680a248",
+      "tree": "2531a15bb6309f87006b73b39677560b3aa5684c",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "56661e5450d392aa68bc816b489d448797e1431234177beabb01022087f09687"
+          "sha256": "1fe1afc07a0c1a8bbc56175cdc0f38e3479f07573088d3bf682bf124286c9350"
         }
       ]
     }
@@ -127,14 +127,14 @@
       "label": "font-fallback-candidate-source",
       "pin": {
         "path": ".github/performance/font-fallback-full/candidate.patch",
-        "sha256": "56661e5450d392aa68bc816b489d448797e1431234177beabb01022087f09687"
+        "sha256": "1fe1afc07a0c1a8bbc56175cdc0f38e3479f07573088d3bf682bf124286c9350"
       }
     },
     {
       "label": "font-fallback-source-provenance",
       "pin": {
         "path": ".github/performance/font-fallback-full/source-provenance.json",
-        "sha256": "edf872efa9193c3e6157230fe8a4e1510c073e79861f6ae004766e5f94834296"
+        "sha256": "2568527a653dc5f4a003bde938fe9841a082ff2c041a93493c27d1d1956cd911"
       }
     }
   ],
