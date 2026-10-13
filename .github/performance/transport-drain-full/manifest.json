@@ -373,5 +373,25 @@
         "post_empty_arrival"
       ]
     }
-  ]
+  ],
+  "owner_continuation": {
+    "name": "velocity-drain-owner",
+    "runtime_sha256": {
+      "baseline": {
+        ":api": "0b919ab75ce26b23cc42cb1d80aebd936b04db479d1772207b06a7639fdc3e01",
+        ":runtime:core": "e3b49acd6cc0ece27a7550fe80923f065d60ad1d61d34ac1ff357801c4fd63dc",
+        ":runtime:remote": "6174ad71feb6052119839c878a85e640ecabb4b02cb34fca446671b9c40ba474",
+        ":velocity-api": "dc9ec3cc6cbaecddfc61cfcc2dc438cf41cadc5e514e5aeecc62cc1c37493c18",
+        ":runtime:velocity": "2ec540f917aef884e76d5342277feae67322fadd9d676690962b366d8a276512"
+      },
+      "candidate": {
+        ":api": "0b919ab75ce26b23cc42cb1d80aebd936b04db479d1772207b06a7639fdc3e01",
+        ":runtime:core": "e3b49acd6cc0ece27a7550fe80923f065d60ad1d61d34ac1ff357801c4fd63dc",
+        ":runtime:remote": "5cabfaae90838ee3a4a87fad3c4cff7e3202206d4d7c213e54bfd97b61533bd2",
+        ":velocity-api": "dc9ec3cc6cbaecddfc61cfcc2dc438cf41cadc5e514e5aeecc62cc1c37493c18",
+        ":runtime:velocity": "a9d170f2b941fec52a3a54f50fd9e74e4ca3e48d232082a18f91e5323602f066"
+      }
+    },
+    "collector_sha256": "d13cf3616cd586a81b59a05e0c0eb7c679f122cccee8e1dddc036cce4fc799ae"
+  }
 }
