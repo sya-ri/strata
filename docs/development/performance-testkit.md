@@ -77,6 +77,11 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+The component task accepts `-Pstrata.performance.profilers=<comma-separated-JMH-profiler-identifiers>` for additional metrics from standard JMH profilers.
+It appends the requested profilers to the unchanged GC and loaded-fork provenance profilers; omission preserves the existing collection.
+Use the same selection on both runtime sides and retain it in the raw receipt's arguments.
+JMH resolves each identifier and rejects unavailable profilers before a successful collection receipt.
+
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
 This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
 Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
