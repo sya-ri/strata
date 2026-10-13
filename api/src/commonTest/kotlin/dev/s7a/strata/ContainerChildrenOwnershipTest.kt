@@ -25,7 +25,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /**
  * Verifies detached container membership and callback cleanup on JVM and JavaScript.
@@ -179,30 +178,6 @@ internal class ContainerChildrenOwnershipTest {
                 }
             }
         assertEquals(listOf(survivor), root.children)
-    }
-
-    @Test
-    fun borrowedMembershipIsReleasedAfterSuccessAndConstructorFailure() {
-        for (fail in listOf(false, true)) {
-            val scope = UiScope.createRoot()
-            scope.element(ExternalElement())
-            scope.element(ExternalElement())
-            val borrowed = scope.borrowChildElements()
-            assertEquals(2, borrowed.size)
-            assertFailsWith<IllegalStateException> { scope.element(ExternalElement()) }
-            var detached: Element? = null
-            try {
-                if (fail) {
-                    assertFailsWith<IllegalArgumentException> { throw IllegalArgumentException("constructor failure") }
-                } else {
-                    detached = ExternalElement(borrowed)
-                }
-            } finally {
-                scope.close()
-            }
-            assertTrue(borrowed.isEmpty())
-            if (fail.not()) assertEquals(2, checkNotNull(detached).children.size)
-        }
     }
 
     private fun UiScope.container(

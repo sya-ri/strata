@@ -77,7 +77,8 @@ public class RemotePacketStream(
     }
 
     /**
-     * Delivers at most [maxFrames] consecutive fragments and checks deadlines even without new network input.
+     * Delivers at most [maxFrames] consecutive fragments, stopping at the first missing sequence.
+     * Checks deadlines before delivery and records the remaining gap after delivery, even without new input.
      */
     public fun drain(
         nowMillis: Long,
@@ -88,8 +89,8 @@ public class RemotePacketStream(
         check(outgoing != null) { "Remote packet stream is closed." }
         require(0 < maxFrames)
         expire(nowMillis)
-        repeat(maxFrames) {
-            val bytes = pending.remove(nextIncoming) ?: return@repeat
+        for (index in 0 until maxFrames) {
+            val bytes = pending.remove(nextIncoming) ?: break
             nextIncoming++
             pendingBytes -= bytes.size
             receive(bytes)

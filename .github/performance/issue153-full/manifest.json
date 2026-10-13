@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "5ae22713884a8e67b0917998175132bded20a619",
+      "ref": "5100f08bd7519c9d901bbf91fea01a866e434192",
+      "tree": "1c7c7ffdce1172ce57d1e25ff5481ca696af306d",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
-          "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
+          "sha256": "f0e3224d4ff378f76b96305ebc269b1b19858a4100518c0ebfb71f3c94d2194b"
         }
       ]
     },
     "baseline": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "ace46ae5f6e37028b29b2e55dae3438790e88b34",
+      "ref": "5100f08bd7519c9d901bbf91fea01a866e434192",
+      "tree": "3103bb20ea9ac3dd0563bffcd0ca15a69ceda7fa",
       "patches": [
         {
           "path": ".github/performance/issue153-full/baseline.patch",
-          "sha256": "b55e1335e2b034dc45e988d802b19d1d8d2187f3ed809d2620e67c5963f4aa99"
+          "sha256": "6449b1f87ee4fb892e5337e6decf308fb9456a174dd8e81e2aa208e2c4f81f18"
         }
       ]
     },
     "candidate": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "5ae22713884a8e67b0917998175132bded20a619",
+      "ref": "5100f08bd7519c9d901bbf91fea01a866e434192",
+      "tree": "1c7c7ffdce1172ce57d1e25ff5481ca696af306d",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
-          "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
+          "sha256": "f0e3224d4ff378f76b96305ebc269b1b19858a4100518c0ebfb71f3c94d2194b"
         }
       ]
     }
@@ -56,7 +56,31 @@
         "samples": 60,
         "expected_rows": 84,
         "expected_controls": 24
-      }
+      },
+      "test_gates": [
+        {
+          "task": ":api:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#everyContainerDetachesEmptySmallAndWideMembershipAndPreservesEarlierDeclarations",
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#callbackFailureClosesEveryChildScopeWithoutEmittingAPartialParent",
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#nestedBuildersKeepIntermediateDeclarationsAndOuterEmissionOrder",
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#externalSubclassStillSnapshotsCallerListsAndVarargMembership",
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#parentConstructionEndsCallbackAccessBeforeExternalSourceGetters",
+            "dev.s7a.strata.ContainerChildrenOwnershipTest#constructorFailureClosesScopeAndLeavesTheOuterBuilderUsable"
+          ]
+        },
+        {
+          "task": ":runtime:core:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#rowPreservesRetainedContracts",
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#flowRowPreservesRetainedContracts",
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#columnPreservesRetainedContracts",
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#stackPreservesRetainedContracts",
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#gridPreservesRetainedContracts",
+            "dev.s7a.strata.runtime.PortableContainerBuilderTest#tiledImagePreservesRetainedContracts"
+          ]
+        }
+      ]
     }
   ],
   "inputs": [
@@ -64,21 +88,21 @@
       "label": "container-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue153-full/baseline.patch",
-        "sha256": "b55e1335e2b034dc45e988d802b19d1d8d2187f3ed809d2620e67c5963f4aa99"
+        "sha256": "6449b1f87ee4fb892e5337e6decf308fb9456a174dd8e81e2aa208e2c4f81f18"
       }
     },
     {
       "label": "container-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue153-full/candidate.patch",
-        "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
+        "sha256": "f0e3224d4ff378f76b96305ebc269b1b19858a4100518c0ebfb71f3c94d2194b"
       }
     },
     {
       "label": "container-source-provenance",
       "pin": {
         "path": ".github/performance/issue153-full/source-provenance.json",
-        "sha256": "4a0fba76cd50f2df6a31db27318267f04add1f008ccb4acc7cb5f2f9bcde3abe"
+        "sha256": "002b9991e987ac09617ddc9880fb01967f542a1657d5e7e9e39ad14bb2822527"
       }
     },
     {

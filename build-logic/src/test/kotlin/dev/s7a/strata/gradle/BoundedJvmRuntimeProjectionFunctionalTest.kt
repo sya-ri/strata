@@ -55,6 +55,7 @@ internal class BoundedJvmRuntimeProjectionFunctionalTest {
                 args(selected + "support")
                 maxHeapSize = "64m"
                 doFirst {
+                    val reportRequest: Map<*, *>? = null
                     val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
             $replacement
                 }
