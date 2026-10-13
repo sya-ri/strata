@@ -1,33 +1,33 @@
 {
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
-    "baseline": {
-      "ref": "8db2c7112951bb3a5ba662fb85602918bacb83aa",
-      "tree": "c9b17813eeaf0846c16dee314b3f2eb2632381d4",
+    "fixture": {
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
       "patches": [
         {
-          "path": ".github/performance/grid-track/baseline.patch",
-          "sha256": "d534076cfce004997ff9fdfacb05a9c17724fe58cf8a9040f1560d042aa325c5"
+          "path": ".github/performance/focused-input-full/candidate.patch",
+          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "4322af8181c7aadc08b464d5c8a3b199820a26d2",
+      "patches": [
+        {
+          "path": ".github/performance/focused-input-full/baseline.patch",
+          "sha256": "b7d5a48c70ccb8233128dcf66d4e42bd9e6e286e74c65da2a825b6f676dd0828"
         }
       ]
     },
     "candidate": {
-      "ref": "9e361c02d398c574890d46b6e07896d24788d82d",
-      "tree": "94963c6c3ab3792449e9309864df617188997720",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
       "patches": [
         {
-          "path": ".github/performance/grid-track/candidate.patch",
-          "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
-        }
-      ]
-    },
-    "fixture": {
-      "ref": "9e361c02d398c574890d46b6e07896d24788d82d",
-      "tree": "94963c6c3ab3792449e9309864df617188997720",
-      "patches": [
-        {
-          "path": ".github/performance/grid-track/candidate.patch",
-          "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
+          "path": ".github/performance/focused-input-full/candidate.patch",
+          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
         }
       ]
     }
@@ -40,61 +40,51 @@
   "suites": [
     {
       "project": ":quality:benchmarks",
-      "name": "grid-track-full",
+      "name": "focused-input-full",
       "benchmarks": [
-        "dev.s7a.strata.quality.benchmark.GridTrackBenchmark"
+        "FocusedInputBenchmark"
       ],
       "workloads": [],
       "parameters": {},
-      "expected_cases": 28,
-      "test_gates": [
-        {
-          "task": ":api:jvmTest",
-          "required_tests": [
-            "dev.s7a.strata.LayoutTokenContractTest#layoutElementTypesAreStableAndLinearVariantsShareOneToken",
-            "dev.s7a.strata.LayoutTokenContractTest#layoutElementUpdatesReportOnlyAffectedPhases",
-            "dev.s7a.strata.LayoutTokenContractTest#parentDataFamiliesHaveStableKeysAndNarrowUpdateMasks",
-            "dev.s7a.strata.LayoutTokenContractTest#flowRowUpdatesInvalidateOnlyTheAffectedLayoutPhase",
-            "dev.s7a.strata.LayoutTokenContractTest#internalDescriptionsEnforceTheirConstructionAndTokenBoundaries"
-          ]
-        },
-        {
-          "task": ":runtime:core:jvmTest",
-          "required_tests": [
-            "dev.s7a.strata.runtime.UiTreeTest#geometryIsCheckedAndHalfOpen",
-            "dev.s7a.strata.runtime.UiTreeTest#updatesReuseNodeAndInvalidateOnlyPaint",
-            "dev.s7a.strata.runtime.UiTreeTest#duplicateKeysFailBeforeLifecycleMutation",
-            "dev.s7a.strata.runtime.UiTreeTest#validationFailuresPreserveCachedTreeForRetry",
-            "dev.s7a.strata.runtime.UiTreeTest#emptyTreeOperationsAreNoOpsAndCloseIsIdempotent",
-            "dev.s7a.strata.runtime.UiSessionLifecycleFailureTest#normalClosePreservesBindingAndTreeCleanupOrderAndIdentity",
-            "dev.s7a.strata.runtime.UiSessionLifecycleFailureTest#primaryFailureAndAllCleanupFailuresAreRetainedInOrder"
-          ]
-        }
-      ],
+      "expected_cases": 32,
       "operation_reports": {
         "adapters": {
-          "dev.s7a.strata.quality.benchmark.GridTrackBenchmark": "dev.s7a.strata.quality.benchmark.GridTrackOperationReport"
+          "dev.s7a.strata.quality.benchmark.FocusedInputBenchmark": "dev.s7a.strata.quality.benchmark.FocusedInputOperationReport"
         },
-        "warmup": 30,
-        "samples": 60,
-        "expected_rows": 28,
-        "expected_controls": 10
+        "warmup": 100,
+        "samples": 200,
+        "expected_rows": 32,
+        "expected_controls": 2
       }
     }
   ],
   "inputs": [
     {
-      "label": "grid-baseline-source",
+      "label": "focused-source-0",
       "pin": {
-        "path": ".github/performance/grid-track/baseline.patch",
-        "sha256": "d534076cfce004997ff9fdfacb05a9c17724fe58cf8a9040f1560d042aa325c5"
+        "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/FocusedInputPipeline.kt",
+        "sha256": "b4ab55ba057673643bf9bd7449eebd9b6e22863951a3473d6a1430687facf475"
       }
     },
     {
-      "label": "grid-candidate-source",
+      "label": "focused-source-1",
       "pin": {
-        "path": ".github/performance/grid-track/candidate.patch",
-        "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
+        "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt",
+        "sha256": "c28001cedb397298f15a8bae320c3fd64778aef745b262e7604b51e8585de92b"
+      }
+    },
+    {
+      "label": "focused-source-2",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt",
+        "sha256": "d5a54d8cc9615467904b4d46eec86e0cd870ebd135ca35638b1887de649b650a"
+      }
+    },
+    {
+      "label": "focused-owner-adapter",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt",
+        "sha256": "41f083278ab69a73d7e0547cebd89b5d0d1df481b9f1ce96f63ed814d5291491"
       }
     }
   ],
