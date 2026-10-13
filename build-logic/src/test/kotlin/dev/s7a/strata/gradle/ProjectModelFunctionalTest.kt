@@ -217,6 +217,71 @@ internal class ProjectModelFunctionalTest {
         assertEquals(setOf(":runtime:minecraft-fabric-1.20", ":integration:minecraft-fabric-1.20"), selected.filter { ":minecraft-fabric-" in it }.toSet())
     }
 
+    @Test
+    fun `Minecraft source scope retains selected project dependencies and native Test options`() {
+        val full = included("check")
+        val common = full.filter { it.contains(":minecraft-fabric-").not() && it != ":integration:docs" }.toSet()
+        listOf("1.20", "26.3").forEach { version ->
+            val selected = setOf(":runtime:minecraft-fabric-$version", ":integration:minecraft-fabric-$version")
+            assertEquals(
+                common + selected,
+                included(
+                    "-Pstrata.minecraftSourceOnly=true",
+                    "-Pstrata.minecraftVersions=$version",
+                    ":runtime:core:jvmTest",
+                    "--tests",
+                    "model.FilterTest.selected",
+                    ":runtime:minecraft-fabric-$version:jar",
+                    ":integration:minecraft-fabric-$version:gametestClasses",
+                ),
+            )
+            assertJUnit("runtime/core", "jvmTest")
+        }
+        assertEquals(
+            common + setOf(":runtime:minecraft-fabric-1.20", ":integration:minecraft-fabric-1.20", ":runtime:minecraft-fabric-26.3", ":integration:minecraft-fabric-26.3"),
+            included("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=1.20,26.3", ":runtime:core:classes"),
+        )
+        val unknown = runner("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", ":runtime:minecraft-fabric-1.20:jar").buildAndFail()
+        assertTrue(unknown.output.contains("not found"), unknown.output)
+    }
+
+    @Test
+    fun `Minecraft source scope rejects incompatible selections before tasks execute`() {
+        listOf("", "1.20,", "1.20,,26.3", "1.20,1.20").forEach { versions ->
+            rejected("nonempty distinct", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=$versions", ":runtime:core:classes")
+        }
+        rejected("Unsupported source-preparation", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=1.19", ":runtime:core:classes")
+        listOf("-Pstrata.jvmOnly=true", "-Pstrata.webOnly=true").forEach { incompatible ->
+            rejected(
+                "Choose one",
+                true,
+                "-Pstrata.minecraftSourceOnly=true",
+                "-Pstrata.minecraftVersions=26.3",
+                incompatible,
+                ":runtime:core:classes",
+            )
+        }
+        listOf("-Pstrata.completeIdeaModel=true", "-Didea.sync.active=true").forEach { incompatible ->
+            rejected("IDE/Qodana", true, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", incompatible, ":runtime:core:classes")
+        }
+        listOf(":check", ":koverHtmlReport", ":performance-testkit:publishToMavenLocal", ":ciMinecraftCheck", ":benchmarkMinecraftQuick", ":integration:minecraft-fabric-26.3:runClientGameTest", ":integration:minecraft-fabric-26.3:runProductionClientGameTest").forEach { complete ->
+            rejected("complete build", false, "-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", ":runtime:core:classes", complete)
+        }
+    }
+
+    @Test
+    fun `Minecraft source configuration cache cannot narrow complete acceptance`() {
+        val source = arrayOf("-Pstrata.minecraftSourceOnly=true", "-Pstrata.minecraftVersions=26.3", "--configuration-cache", ":runtime:core:classes")
+        val stored = runner(*source).build()
+        assertTrue(stored.output.contains("Configuration cache entry stored."), stored.output)
+        val reused = runner(*source).build()
+        assertTrue(reused.output.contains("Configuration cache entry reused."), reused.output)
+        repeat(2) { rejected("complete build", false, *source, ":check") }
+        val full = included(":check", "-Pstrata.minecraftVersions=26.3")
+        assertEquals(22, full.count { it.startsWith(":runtime:minecraft-fabric-") })
+        assertEquals(22, full.count { it.startsWith(":integration:minecraft-fabric-") })
+    }
+
     /** Reads actual fresh JUnit output, proving the option selected one of the two real tests. */
     private fun assertJUnit(
         project: String,
@@ -292,6 +357,7 @@ internal class ProjectModelFunctionalTest {
 
     private val fixtureBuild =
         """
+        import org.gradle.api.tasks.JavaExec
         import org.gradle.api.tasks.SourceSetContainer
         import org.gradle.api.tasks.testing.Test
         import org.gradle.language.base.plugins.LifecycleBasePlugin
@@ -329,12 +395,16 @@ internal class ProjectModelFunctionalTest {
                 "jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses", "jmhHistorical", "jmhComponents", "jmhRemote",
                 "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "processEvidence", "checkApiOnlyClasspath",
                 "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory", "capturePublishedHostInventory",
-                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick")
+                "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick", "gametestClasses")
             available.filter { tasks.names.contains(it).not() }.forEach { name -> tasks.register(name) }
             listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
                 tasks.register(name) { group = LifecycleBasePlugin.VERIFICATION_GROUP }
             }
             if (tasks.names.contains("jvmTest").not()) tasks.register("jvmTest")
+            if (path.startsWith(":integration:minecraft-fabric-")) {
+                tasks.register<JavaExec>("runClientGameTest")
+                tasks.register("runProductionClientGameTest")
+            }
             tasks.register("publishToMavenLocal") { group = "publishing" }
             val executedTasks = rootProject.file("executed-tasks.txt")
             tasks.configureEach {
