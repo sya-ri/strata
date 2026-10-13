@@ -70,6 +70,112 @@ public open class ScopedModelFixtureBenchmark {
 """
 
 
+def verify_remote_selection(root, wrapper, evidence):
+    """Compile a supplemental remote fixture and exercise the same generated selectors and pre-fork rejections."""
+    module = root / "quality/remote-benchmarks"
+    source = module / "src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ScopedRemoteFixtureBenchmark.kt"
+    resource = module / "src/jmh/resources/scoped-remote-fixture.txt"
+    if source.exists() or resource.exists():
+        raise RuntimeError("Refusing to replace an existing remote fixture")
+    source_text = """package dev.s7a.strata.quality.benchmark
+
+import dev.s7a.strata.performance.JmhFixtureSelection
+import dev.s7a.strata.performance.JmhWorkloadInventory
+import org.openjdk.jmh.annotations.Benchmark
+import org.openjdk.jmh.annotations.Level
+import org.openjdk.jmh.annotations.Param
+import org.openjdk.jmh.annotations.Scope
+import org.openjdk.jmh.annotations.Setup
+import org.openjdk.jmh.annotations.State
+import java.nio.file.Files
+
+/** Unregistered remote-source-set fixture; it leaves the default protocol and session matrices unchanged. */
+@State(Scope.Thread)
+public open class ScopedRemoteFixtureBenchmark {
+    /** Two generated values, selected using the ordinary parameter manifest. */
+    @JvmField
+    @Param("8", "16")
+    public var width: Int = 8
+    private var value = 0
+
+    /** Reads the compiled control outside timing. */
+    @Setup(Level.Trial)
+    public fun setup() {
+        value = checkNotNull(javaClass.getResourceAsStream("/scoped-remote-fixture.txt")).bufferedReader().use { it.readText().trim().toInt() }
+    }
+
+    /** Returns fresh consumed storage rather than retaining measurement output. */
+    @Benchmark
+    public fun snapshot(): IntArray = IntArray(width) { value }
+
+    /** Owns input and detached-output checks independently of the driver. */
+    public companion object {
+        /** Verifies both declared cases and the source-backed external input before timing. */
+        @JvmStatic
+        public fun verifyWork() {
+            check(JmhWorkloadInventory.capture(listOf(ScopedRemoteFixtureBenchmark::class.java), setOf("avgt")).size == 2)
+            val input = checkNotNull(JmhFixtureSelection.inputs()["scoped-remote-input"])
+            val compiled = checkNotNull(ScopedRemoteFixtureBenchmark::class.java.getResourceAsStream("/scoped-remote-fixture.txt")).use { it.readBytes() }
+            check(Files.readAllBytes(input).contentEquals(compiled)) { "Remote fixture external input differs from compiled resource" }
+            listOf(8, 16).forEach { width ->
+                val state = ScopedRemoteFixtureBenchmark().apply { this.width = width; setup() }
+                val snapshot = state.snapshot()
+                check(snapshot.size == width && snapshot.all { it == 17 })
+                snapshot.fill(0)
+                check(state.snapshot().all { it == 17 })
+            }
+            println("Verified unregistered remote fixture, external input and both compiled widths")
+        }
+    }
+}
+"""
+    directory = evidence / "remote"
+    directory.mkdir()
+    extra = directory / "extra-input.txt"
+    extra.write_text("17\n", encoding="utf-8")
+    parameters = directory / "parameters.properties"
+    parameters.write_text("width=16\n", encoding="utf-8")
+    inputs = directory / "inputs.properties"
+    inputs.write_text(f"scoped-remote-input={extra.as_posix()}\n", encoding="utf-8")
+    arguments = [":quality:remote-benchmarks:jmhRemote", "-Pstrata.jvmOnly=true", "-Pstrata.performance.quick=true",
+                 "-Pstrata.performance.benchmarks=ScopedRemoteFixtureBenchmark", "-Pstrata.performance.workloads=ScopedRemoteFixtureBenchmark.snapshot",
+                 f"-Pstrata.performance.parameters={parameters}", f"-Pstrata.performance.fixtureInputs={inputs}"]
+
+    def call(name, extra_arguments, expected_success):
+        """Keep every positive and negative launch log; failed pre-fork selection must leave no receipt directory."""
+        destination = directory / name
+        with (directory / (name + ".log")).open("w", encoding="utf-8") as log:
+            process = subprocess.run(wrapper + arguments + extra_arguments + [f"-Pstrata.performance.output={destination}"], cwd=root, stdout=log, stderr=subprocess.STDOUT)
+        assert (process.returncode == 0) == expected_success, (directory / (name + ".log")).read_text(encoding="utf-8")[-6000:]
+        if not expected_success:
+            assert destination.exists() is False
+        return destination
+
+    try:
+        source.write_text(source_text, encoding="utf-8")
+        resource.parent.mkdir(parents=True, exist_ok=True)
+        resource.write_bytes(extra.read_bytes())
+        (directory / source.name).write_text(source_text, encoding="utf-8")
+        result = call("selected", [], True)
+        receipt = json.loads((result / "receipt.json").read_text(encoding="utf-8"))
+        rows = json.loads((result / "results.json").read_text(encoding="utf-8"))
+        assert receipt["status"] == "passed" and receipt["fork_verification"] == "loaded-artifacts-per-iteration-v1"
+        assert len(receipt["registered_workloads"]) == len(rows) == 1
+        assert rows[0]["benchmark"].endswith("ScopedRemoteFixtureBenchmark.snapshot") and rows[0]["params"] == {"width": "16"}
+        assert rows[0]["secondaryMetrics"]["strata.provenance"]["score"] == 1
+        assert "scoped-remote-input" in receipt["inputs"]
+        call("unknown-fixture", ["-Pstrata.performance.benchmarks=UnknownRemoteFixture"], False)
+        call("unknown-method", ["-Pstrata.performance.workloads=ScopedRemoteFixtureBenchmark.missing"], False)
+        parameters.write_text("width=32\n", encoding="utf-8")
+        call("unknown-parameter", [], False)
+        parameters.write_text("width=16\n", encoding="utf-8")
+        extra.write_text("18\n", encoding="utf-8")
+        call("changed-input", [], False)
+    finally:
+        source.unlink(missing_ok=True)
+        resource.unlink(missing_ok=True)
+
+
 def main():
     """Keep generated sources temporary and preserve all success and failure evidence in build outputs."""
     root = Path(__file__).resolve().parent.parent
@@ -154,6 +260,7 @@ def main():
     finally:
         source.unlink(missing_ok=True)
         resource.unlink(missing_ok=True)
+    verify_remote_selection(root, wrapper, evidence)
     print(f"Verified new generated fixture, exact selection, extra inputs, independent fork and pre-fork rejection: {evidence}")
 
 

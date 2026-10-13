@@ -1,0 +1,418 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
+      "tree": "9a7b6694190ce3637e73bcc97ca1ed9a084e5b68",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/candidate.patch",
+          "sha256": "c796404bed2ee4ca4db6fcf7a94d5b893f1875e2851ac28a25ece1ac0447ff9c"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
+      "tree": "9a7b6694190ce3637e73bcc97ca1ed9a084e5b68",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/candidate.patch",
+          "sha256": "c796404bed2ee4ca4db6fcf7a94d5b893f1875e2851ac28a25ece1ac0447ff9c"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
+      "tree": "0b0aba2bf4889670dbe9aac1eb042f5049de784c",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/baseline.patch",
+          "sha256": "2d4401b1307abee6af2d67313e3c2048e2678ca6bac5c67b03bd6ae569b955bf"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:remote"
+  ],
+  "suites": [
+    {
+      "project": ":quality:remote-benchmarks",
+      "name": "editable-entry-full",
+      "benchmarks": [
+        "RemoteClientStatesBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {
+        "entries": [
+          "100",
+          "1000",
+          "8192"
+        ],
+        "membership": [
+          "None",
+          "Few",
+          "All"
+        ]
+      },
+      "expected_cases": 45
+    }
+  ],
+  "inputs": [
+    {
+      "label": "editable-original-0",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesBenchmark.kt",
+        "sha256": "8b6dd3e808216341935cde9deaf84305a1ca775475ad479f816d74cc4bfa86ec"
+      }
+    },
+    {
+      "label": "editable-original-1",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuComparison.kt",
+        "sha256": "a1591cf422154f0fec582a3d07ee638745212f837d1588b2b8c8aa9b9e5a2175"
+      }
+    },
+    {
+      "label": "editable-original-2",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuEvidence.kt",
+        "sha256": "f168214ae31a7c3e3a7a571a999d86895160c08c880e8acb2120577051702ecd"
+      }
+    },
+    {
+      "label": "editable-original-3",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuPair.kt",
+        "sha256": "f632d641f0928a7c27c04e19d8257f8fa9ce71d9a56ee8eadd8f1521a6082878"
+      }
+    },
+    {
+      "label": "editable-original-4",
+      "pin": {
+        "path": "runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt",
+        "sha256": "d3689b13121de0f2943669d476c290fc2e4a3746865f07e7cfa69c112b497f7f"
+      }
+    },
+    {
+      "label": "editable-original-5",
+      "pin": {
+        "path": "runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStates.kt",
+        "sha256": "3f56f1017d69534d520c8a171e640a10379366e2f5b5c1c80827db34d1c04277"
+      }
+    },
+    {
+      "label": "editable-original-6",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientFlushLifetimeTest.kt",
+        "sha256": "8463d59089a30258a97a0f4b4a0912af11a4546ed2ad4db77c9e482490bf88a8"
+      }
+    },
+    {
+      "label": "editable-original-7",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientLifetimeTest.kt",
+        "sha256": "9ec1cebb1a07cf684c5fabcbba2eede707eec2f2661364bd49821436e7df6ccc"
+      }
+    },
+    {
+      "label": "editable-original-8",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStateReentryTest.kt",
+        "sha256": "56e4b440c6eef87f6c1e36fc41fbf0fc1c4d818294b72cf177d6713a6afaf6c1"
+      }
+    },
+    {
+      "label": "editable-original-9",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStatesTest.kt",
+        "sha256": "c0daf6393e779e1971b2ebce3142c04b3b4de861fc8feda65581abdeda377d52"
+      }
+    },
+    {
+      "label": "editable-remote-api",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/resources/remote-api.tsv",
+        "sha256": "ccb509a7e22a24b6f8a59c710f38286b9421d45190b1955bd3df40e648f33d1e"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": [],
+  "owner_reports": [
+    {
+      "name": "editable-entry-owner",
+      "project": ":quality:remote-benchmarks",
+      "template": "jmhRemote",
+      "kind": "java-exec",
+      "main": "dev.s7a.strata.quality.benchmark.RemoteClientStatesCpuEvidence",
+      "comparison": "dev.s7a.strata.quality.benchmark.RemoteClientStatesCpuComparison",
+      "workload_id": "current-client-editable-states-v1",
+      "phase_keys": [
+        "entries",
+        "membership",
+        "operation"
+      ],
+      "rows": [
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Churn"
+        }
+      ],
+      "warmup": 100,
+      "samples": 200,
+      "runtime_classes": {
+        "api": {
+          "project": ":api",
+          "class": "dev.s7a.strata.projection.ProjectionValue"
+        },
+        "core": {
+          "project": ":runtime:core",
+          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
+        },
+        "remote": {
+          "project": ":runtime:remote",
+          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
+        }
+      },
+      "controls": [
+        "operations_per_sample",
+        "measured_operations",
+        "processed_operations",
+        "last_result"
+      ],
+      "paired_jmh": {
+        "suite": "editable-entry-full",
+        "fixture_class": "dev.s7a.strata.quality.benchmark.RemoteClientStatesBenchmark"
+      }
+    }
+  ]
+}

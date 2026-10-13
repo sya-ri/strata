@@ -64,6 +64,25 @@ Shared-kit owner CPU intervals supplement JMH elapsed time and normalized alloca
 Each CPU report validates and hashes its exact paired JMH receipt/results, actual runtime archives, fixture tree, collector, full workload controls and actual JVM/OS/argument metadata before and after collection.
 An immutable external source plan binds both exact revisions to their archive inventories and the frozen fixture revision/tree; it is archived as the same fixture input on both sides.
 
+### Current CycleButton selection
+
+Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
+Paint and semantics always read the state under its execution owner before checking that reference by identity.
+Only the exact same immutable selected object can reuse an index; a different accepted alias uses the existing directional `indexOf` search, even when it also compares equal to a cached later option.
+The current state identity owns the immutable option snapshot, and state replacement, detach and disposal clear the borrowed key.
+Labels and enabled colors always come from the current declaration rather than a cached label pair.
+This key does not depend on notifications and therefore resolves a changed value after an earlier observer failure or a bounded nested write when the relevant consumer next evaluates.
+Validation, publication, cycling and declaration preparation retain their existing work.
+
+The separate CycleButton selection corpus registers nine immutable option-count/position fixtures with two complete-operation modes and thirty independent controls.
+Its deterministic admission compares typed input, action and observer order, semantics, command geometry and actual detached Headless pixels; loaded adapter input and presentation require their own native evidence.
+Use the shared collection and comparison contract for all forty-eight rows, including the clean and one-option controls, without an elapsed-time CI threshold.
+
+The existing loaded-client suite separately runs sixteen independent CycleButton adapter cases through version-owned screen callbacks and real native cursor movement.
+It checks selection, callback consumption, notification and action order, native semantics, state and label replacement, detach/reattach, and exact full-viewport screenshots against fresh literal-input Headless references.
+Completed host frames fence every capture, and each case writes its own native PNG, Headless PNG and parity receipt in the ordinary runner output directory.
+These checks establish native adapter callback and presentation parity; operating-system device input and operation performance require their own evidence.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
