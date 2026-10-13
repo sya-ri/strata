@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "b1d362954e7f65edbe25de1b61b674b05711c175",
-      "tree": "dd1afa548a4af646c5e46bca82371d590c8a059d",
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "0dd770fe3722ac9cd09cdae40a4fc2dbcf51e060",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/candidate.patch",
-          "sha256": "e662d14067a2926b9532d772d5e772db13504b62a2f1a3b385132c2a8b50a648"
+          "sha256": "2a8f0a76253c9d1f770a5d0a5de977f08c90953c37557b121fc174cd1ac10736"
         }
       ]
     },
     "baseline": {
-      "ref": "b1d362954e7f65edbe25de1b61b674b05711c175",
-      "tree": "068b5ccb75f4a9b3fc4e89547129fb0e71581f60",
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "581c4dfc4ce79995816b2c2543708af708f187fc",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/baseline.patch",
-          "sha256": "8a5f3ec5d00681efb9a7e1ec00d37b83ac82f1487bd47f6c890b735f70765246"
+          "sha256": "3dbc203378703458e5b29db647e692b86202def7a0fc97b1477c77bbb9f02d61"
         }
       ]
     },
     "candidate": {
-      "ref": "b1d362954e7f65edbe25de1b61b674b05711c175",
-      "tree": "dd1afa548a4af646c5e46bca82371d590c8a059d",
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "0dd770fe3722ac9cd09cdae40a4fc2dbcf51e060",
       "patches": [
         {
           "path": ".github/performance/unihex-bounds/candidate.patch",
-          "sha256": "e662d14067a2926b9532d772d5e772db13504b62a2f1a3b385132c2a8b50a648"
+          "sha256": "2a8f0a76253c9d1f770a5d0a5de977f08c90953c37557b121fc174cd1ac10736"
         }
       ]
     }

@@ -2,6 +2,7 @@
 """Run one opt-in frozen JVM pair using the existing Gradle collectors and processor."""
 import argparse
 import csv
+from contextlib import contextmanager
 from enum import Enum
 import hashlib
 import html
@@ -12,6 +13,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import tomllib
@@ -203,7 +205,7 @@ def source_guard(workspace, tree):
     subprocess.run(["git", "-C", str(workspace), "diff", "--exit-code", "--no-ext-diff"], check=True)
 
 
-def materialize(root, output, side, source):
+def materialize(root, output, side, source, input_root=None):
     """Reconstruct the exact source tree from a fetched commit plus immutable binary patches."""
     workspace = output / "workspaces" / side
     if subprocess.run(["git", "-C", str(root), "cat-file", "-e", source["ref"] + "^{commit}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
@@ -217,7 +219,7 @@ def materialize(root, output, side, source):
     attributes.write_bytes(b"* -text\n")
     git(workspace, "checkout", "--quiet", "--detach", source["ref"])
     for patch in source["patches"]:
-        subprocess.run(["git", "-C", str(workspace), "apply", "--index", "--binary", str(pin(root, patch))], check=True)
+        subprocess.run(["git", "-C", str(workspace), "apply", "--index", "--binary", str(pin(root if input_root is None else input_root, patch))], check=True)
     require(git(workspace, "write-tree") == source["tree"], "Frozen patched index changed")
     git(workspace, "checkout-index", "--all", "--force")
     source_guard(workspace, source["tree"])
@@ -550,7 +552,7 @@ def class_entry(classpath, name):
     return matches[0]
 
 
-def preflight_request(root, output, suite, side, classpath_path, runtime, sources, java, inputs):
+def preflight_request(input_root, output, suite, side, classpath_path, runtime, sources, java, inputs):
     """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
     specification = suite["preflight"]
     classpath = prepared_classpath(classpath_path)
@@ -560,7 +562,7 @@ def preflight_request(root, output, suite, side, classpath_path, runtime, source
         require(classes[name]["sha256"] == runtime[project]["sha256"], "Preflight class resolves outside its actual runtime archive")
     directory = output / "preflight" / suite["name"] / side
     directory.mkdir(parents=True, exist_ok=False)
-    qualification = preserve_file(pin(root, specification["qualification"]), directory / "qualification.json")
+    qualification = preserve_file(pin(input_root, specification["qualification"]), directory / "qualification.json")
     request = {"schema": "strata-paired-jvm-preflight-request-v1", "project": suite["project"], "suite": suite["name"], "side": side,
                "main": specification["main"], "controls": specification["controls"], "qualification": qualification,
                "classpath": classpath, "required_classes": classes, "runtime": runtime, "sources": sources,
@@ -766,8 +768,9 @@ def invoke(arguments, root, console):
         process.stdout.close()
 
 
-def run(root, manifest_path, output):
+def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None):
     """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
+    input_root = root if input_root is None else input_root
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
     output.mkdir(parents=True, exist_ok=False)
     started = time.monotonic()
@@ -776,7 +779,9 @@ def run(root, manifest_path, output):
     helper = Path(__file__).with_name("invoke-windows.ps1")
     init = Path(__file__).with_name("bounded-jvm.init.gradle.kts")
     try:
-        record.update(driver_head=git(root, "rev-parse", "HEAD"), manifest_sha256=digest(manifest_path))
+        actual_head = git(root, "rev-parse", "HEAD")
+        require(execution_head is None or actual_head == execution_head, "Paired execution head changed after selection")
+        record.update(driver_head=actual_head, input_producer=input_producer, manifest_sha256=digest(manifest_path))
         homes = sorted({os.environ["STRATA_PAIRED_TOOLCHAIN"], os.environ["JAVA_HOME"]})
         versions = tomllib.loads((root / "gradle/libs.versions.toml").read_text(encoding="utf-8"))["versions"]
         for key, provider, version in (("STRATA_PAIRED_TOOLCHAIN", "Eclipse Adoptium", versions["performance-toolchain"].split("+", 1)[0]), ("JAVA_HOME", "Oracle Corporation", versions["performance-launcher"])):
@@ -797,6 +802,8 @@ def run(root, manifest_path, output):
         def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
             nonlocal captured_class_loads
+            require(git(root, "rev-parse", "HEAD") == record["driver_head"], "Paired execution head changed before invocation")
+            verify_driver_sources(record["driver_sources"])
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
             for executable, expected in allowed_java.items():
                 require(digest(Path(executable)) == expected, "Pinned Java executable bytes changed before invocation")
@@ -825,6 +832,7 @@ def run(root, manifest_path, output):
                 finally:
                     if test_gate is not None:
                         preserve_test_reports(workspace, directory, test_gate)
+            verify_driver_sources(record["driver_sources"])
             terminal = read_json(directory / "terminal.json")
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
@@ -841,7 +849,7 @@ def run(root, manifest_path, output):
                 require(digest(release) == expected, "Pinned Java release bytes changed during invocation")
             return directory
 
-        data = load_manifest(root, manifest_path)
+        data = load_manifest(input_root, manifest_path)
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
@@ -853,14 +861,18 @@ def run(root, manifest_path, output):
         write_new(output / "host.json", json.loads(hardware))
         shutil.copyfile(manifest_path, output / "manifest.json")
         record["executables"] = [{"path": str(path), "sha256": digest(path)} for path in [Path(sys.executable), Path(shutil.which("pwsh")), *[Path(home, "bin/java.exe") for home in homes]]]
-        record["driver_files"] = {path.name: digest(path) for path in (Path(__file__), helper, init)}
+        record["driver_sources"] = preserve_driver_sources(root, output)
+        require(all(item["execution_head"] == record["driver_head"] for item in record["driver_sources"].values()), "Driver head changed during preservation")
+        record["driver_files"] = {name: item["sha256"] for name, item in record["driver_sources"].items()}
         workspaces = {}
         for side, source in data["sources"].items():
             identical = next((key for key in workspaces if data["sources"][key] == source), None)
             if identical is None:
-                workspaces[side], record["sources"][side] = materialize(root, output, side, source)
+                workspaces[side], record["sources"][side] = materialize(root, output, side, source, input_root)
             else:
                 workspaces[side], record["sources"][side] = workspaces[identical], record["sources"][identical]
+        if input_producer:
+            require(source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == source_files(root, record["driver_head"]), "Candidate source differs from execution head")
         fixture = workspaces["fixture"]
         owners = sorted({suite["project"] for suite in data["suites"]})
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
@@ -886,7 +898,7 @@ def run(root, manifest_path, output):
             properties(runtime_manifests[side], mapping)
             record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
         inputs = output / "fixture-inputs.properties"
-        input_archives = {item["label"]: preserve_file(pin(root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
+        input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
                           for index, item in enumerate(data["inputs"])}
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
@@ -924,7 +936,7 @@ def run(root, manifest_path, output):
                     classpaths[side] = retained / "classpath.json"
                 phase(f"admit-{suite['name']}-{side}", fixture, [project + ":" + verifier] + flags + selectors)
                 if "preflight" in suite:
-                    control = preflight_request(root, output, suite, side, classpaths[side], runtime_archives[side], record["sources"], java_identity, input_archives)
+                    control = preflight_request(input_root, output, suite, side, classpaths[side], runtime_archives[side], record["sources"], java_identity, input_archives)
                     classpaths[side] = {"path": classpaths[side], "sha256": digest(classpaths[side])}
                     request_hash = digest(control / "request.json")
                     actual = phase(f"preflight-{suite['name']}-{side}", fixture,
@@ -948,7 +960,7 @@ def run(root, manifest_path, output):
                         for item in input_archives.values():
                             require(digest(Path(item["path"])) == item["sha256"], "Frozen input bytes changed before collection")
                         if "preflight" in suite:
-                            pin(root, suite["preflight"]["qualification"])
+                            pin(input_root, suite["preflight"]["qualification"])
                         destination = output / "raw" / suite["name"] / mode / side / f"run-{repetition}"
                         flags = [f"-Pstrata.performance.mode={mode}", f"-Pstrata.performance.repetition={repetition}",
                                  f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
@@ -995,7 +1007,7 @@ def run(root, manifest_path, output):
                         if side in classpaths:
                             require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before operation collection")
                             prepared_classpath(classpaths[side]["path"])
-                            pin(root, suite["preflight"]["qualification"])
+                            pin(input_root, suite["preflight"]["qualification"])
                             flags.append(f"-Pstrata.paired.classpath={classpaths[side]['path']}")
                         phase(f"collect-{suite['name']}-operations-{side}-{repetition}", fixture,
                               [project + ":" + task] + flags + selectors, 0)
@@ -1041,66 +1053,136 @@ def run(root, manifest_path, output):
         print(f"Preserved {record['status']} whole attempt: {archive}", flush=True)
 
 
-def select_manifest(root, explicit=None, base=None, head=None):
-    """Select current PR intent at its exact head, or the existing manual/default route."""
-    legacy = ".github/performance/paired-jvm.json"
+def source_files(root, tree):
+    """Compare all tracked source paths, modes and blob identities, excluding only transient inputs."""
+    rows = {}
+    for entry in git(root, "ls-tree", "-r", "-z", tree).split("\0"):
+        if entry:
+            identity, path = entry.split("\t", 1)
+            if path != ".github/performance" and not path.startswith(".github/performance/"):
+                rows[path] = identity
+    return rows
+
+
+def declared_inputs(root, head):
+    """Resolve one immutable trailer only from a clean head whose sole parent owns the data."""
+    require(not git(root, "ls-tree", "-z", head, "--", ".github/performance"), "Execution head contains transient performance inputs")
+    message = subprocess.check_output(["git", "-C", str(root), "show", "-s", "--format=%B", head])
+    parsed = subprocess.check_output(["git", "-C", str(root), "interpret-trailers", "--parse"], input=message).decode("utf-8").splitlines()
+    markers = [line for line in parsed if line.partition(":")[0].lower() == "performance-inputs"]
+    raw_markers = [line for line in message.decode("utf-8").splitlines() if re.match(r"\s*Performance-Inputs\b", line, re.IGNORECASE)]
+    if not raw_markers and not markers:
+        return None
+    require(len(markers) == len(raw_markers) == 1, "Missing, malformed or duplicate Performance-Inputs trailer")
+    match = re.fullmatch(r"Performance-Inputs: ([0-9a-f]{40}):(.+)", markers[0])
+    require(match is not None and raw_markers[0] == markers[0], "Malformed Performance-Inputs trailer")
+    producer, manifest = match.groups()
+    relative_path(root, manifest)
+    require(manifest.startswith(".github/performance/") and manifest.endswith(".json"), "Manifest must belong to the transient input subtree")
+    require(git(root, "rev-list", "--parents", "-n", "1", head).split() == [head, producer], "Input producer is not the sole execution-head parent")
+    changes = git(root, "diff", "--no-renames", "--name-status", "-z", producer, head).split("\0")
+    require(changes[-1] == "" and len(changes) % 2 == 1 and len(changes) != 1,
+            "Consumer must remove its transient input subtree")
+    require(all(changes[index] == "D" and changes[index + 1].startswith(".github/performance/")
+                for index in range(0, len(changes) - 1, 2)), "Consumer changes nondata source or modes")
+    require(source_files(root, producer) == source_files(root, head), "Producer source differs from execution head")
+    for entry in git(root, "ls-tree", "-r", "-z", producer, "--", ".github/performance").split("\0"):
+        if entry:
+            require(entry.split("\t", 1)[0].split()[:2] in (["100644", "blob"], ["100755", "blob"]), "Unsafe producer input entry")
+    return producer, manifest
+
+
+@contextmanager
+def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, manifest_sha256=None, expected_head=None):
+    """Keep Git execution and privately checked-out pinned data separate for the full consumer lifetime."""
+    execution_head = git(root, "rev-parse", "HEAD")
+    require(expected_head is None or execution_head == expected_head, "Paired execution checkout differs from expected head")
     require((base is None) == (head is None), "Supply both PR base and head")
     if head is not None:
         require(all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (base, head)), "Use exact PR commit identities")
-        require(git(root, "rev-parse", "HEAD") == head, "Paired planning checkout differs from PR head")
+        require(execution_head == head, "Paired planning checkout differs from PR head")
+    declaration = declared_inputs(root, execution_head)
+    require(data_ref is None or declaration is not None and data_ref == declaration[0], "Producer differs from execution-head trailer")
+    if declaration is not None:
+        producer, manifest = declaration
+        require(explicit is None or explicit == manifest, "Explicit manifest differs from execution-head trailer")
+        with tempfile.TemporaryDirectory(prefix="strata-paired-inputs-") as temporary:
+            output = Path(temporary)
+            input_root, _ = materialize(root, output, "input-producer", {"ref": producer, "tree": git(root, "rev-parse", producer + "^{tree}"), "patches": []})
+            path = relative_path(input_root, manifest)
+            data = load_manifest(input_root, path)
+            candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
+            require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
+            actual_sha = digest(path)
+            require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
+            require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during materialization")
+            yield {"root": input_root, "path": path, "manifest": manifest, "producer": producer, "sha256": actual_sha, "execution_head": execution_head}
+    else:
+        require(explicit is None and data_ref is None and manifest_sha256 is None, "Missing Performance-Inputs trailer for explicit input")
+        require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during selection")
+        yield {"root": root, "path": None, "manifest": "", "producer": "", "sha256": "", "execution_head": execution_head}
 
-    def validate(value):
-        path = relative_path(root, value)
-        load_manifest(root, path)
-        if head is not None:
-            committed = subprocess.check_output(["git", "-C", str(root), "show", f"{head}:{value}"])
-            require(path.read_bytes() == committed, "Selected manifest differs from PR head")
-        return value
 
-    if explicit is not None:
-        return validate(explicit)
-    if head is None:
-        return validate(legacy) if relative_path(root, legacy).exists() else ""
-    changed = git(root, "diff", "--no-renames", "--name-only", "-z", f"{base}...{head}").split("\0")
-    if legacy in changed and relative_path(root, legacy).exists():
-        return validate(legacy)
-    candidates = []
-    for value in changed:
-        if not value.startswith(".github/performance/") or not value.endswith(".json") or len(PurePosixPath(value).parts) <= 3:
-            continue
-        path = relative_path(root, value)
-        if not path.exists():
-            continue
-        data = read_json(path)
-        schema = data.get("schema") if isinstance(data, dict) else None
-        paired_fields = isinstance(data, dict) and {"sources", "suites", "runtime_projects"} <= set(data)
-        if paired_fields or isinstance(schema, str) and schema.startswith("strata-paired-jvm-ci-"):
-            candidates.append(validate(value))
-    require(len(candidates) <= 1, "Ambiguous changed paired manifests: " + ", ".join(candidates))
-    return candidates[0] if candidates else ""
+def select_manifest(root, explicit=None, base=None, head=None):
+    """Select immutable commit intent or an explicit manual input without a historical default."""
+    with selected_inputs(root, explicit, base, head) as selection:
+        return selection["manifest"]
+
+
+def preserve_driver_sources(root, output):
+    """Retain the three actual live controller sources separately from prepared source archives."""
+    records = {}
+    for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+        path = root / "gradle/performance" / name
+        relative = path.relative_to(root).as_posix()
+        mode, kind, blob = git(root, "ls-tree", "HEAD", "--", relative).split("\t", 1)[0].split()
+        require(kind == "blob" and mode in ("100644", "100755"), "Unsafe driver source mode")
+        records[name] = {"source": str(path), "git_path": relative, "git_blob": blob, "git_mode": mode,
+                         "execution_head": git(root, "rev-parse", "HEAD"), **preserve_file(path, output / "driver" / name)}
+    verify_driver_sources(records)
+    return records
+
+
+def verify_driver_sources(records):
+    """Refuse changes to the live or retained driver closure before and after each invocation."""
+    for item in records.values():
+        root = Path(item["source"]).parents[2]
+        require(git(root, "rev-parse", "HEAD") == item["execution_head"], "Execution head changed")
+        require(git(root, "hash-object", "--path=" + item["git_path"], item["source"]) == item["git_blob"], "Driver bytes differ from execution head")
+        require(git(root, "ls-files", "--stage", "--", item["git_path"]).split("\t", 1)[0] == f"{item['git_mode']} {item['git_blob']} 0", "Driver tracked mode or identity changed")
+        require(digest(Path(item["source"])) == digest(Path(item["path"])) == item["sha256"], "Actual driver source changed")
+
 
 
 def main():
     """Select the opt-in manifest during CI planning or execute one fresh Windows attempt."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest")
+    parser.add_argument("--data-ref")
+    parser.add_argument("--manifest-sha256")
+    parser.add_argument("--expected-head")
     parser.add_argument("--base")
     parser.add_argument("--head")
     parser.add_argument("--select", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    if args.select:
-        selected = select_manifest(root, args.manifest, args.base, args.head)
-        if os.environ.get("GITHUB_OUTPUT"):
-            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as target:
-                target.write(f"paired_manifest={selected}\n")
-        print(selected)
-    else:
-        require(args.base is None and args.head is None, "PR selection arguments require --select")
-        require(args.output is not None, "Supply a fresh attempt output directory")
-        path = relative_path(root, args.manifest if args.manifest is not None else ".github/performance/paired-jvm.json")
-        run(root, path, args.output.resolve())
+    if args.expected_head is not None:
+        require(re.fullmatch(r"[0-9a-f]{40}", args.expected_head) is not None and git(root, "rev-parse", "HEAD") == args.expected_head,
+                "Paired execution checkout differs from expected head")
+    require(args.select or args.base is None and args.head is None, "PR selection arguments require --select")
+    with selected_inputs(root, args.manifest, args.base, args.head, args.data_ref, args.manifest_sha256, args.expected_head) as selection:
+        if args.select:
+            if os.environ.get("GITHUB_OUTPUT"):
+                with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as target:
+                    for key in ("manifest", "data_ref", "manifest_sha256"):
+                        value = selection[{"manifest": "manifest", "data_ref": "producer", "manifest_sha256": "sha256"}[key]]
+                        target.write(f"paired_{key}={value}\n")
+            print(selection["manifest"])
+        else:
+            require(args.output is not None, "Supply a fresh attempt output directory")
+            require(selection["path"] is not None, "Supply explicit paired inputs")
+            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"])
 
 
 if __name__ == "__main__":

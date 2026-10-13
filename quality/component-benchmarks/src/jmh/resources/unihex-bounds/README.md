@@ -1,11 +1,11 @@
 # Unihex natural-bounds comparison inputs
 
 This complete corpus compares the actual runtime natural-bound helper and public consumers while changing only `FontHexGlyph.bounds`.
-The fixed baseline is synced master `2e8088d8c9281b0a3bb34249fdd058cdd7231112`, including accepted complete-JMH Qodana tooling and the shared compiled-preflight paired JVM route.
+The historical fixed baseline was synced master `2e8088d8c9281b0a3bb34249fdd058cdd7231112`, including accepted complete-JMH Qodana tooling and the shared compiled-preflight paired JVM route.
 Its runtime source is unchanged from the original baseline `414cb972ffa8c89a4aee2102d1dc2834dbe32eae`; both sides include the identical fixture and collector preparation.
 Accepted prerequisites, if required, must be identical on both runtime sides and declared before collection.
 Formal whole-corpus traces, all thirty acceptance controls and measurements remain Pending.
-The external observer has a separate [actual compiled qualification](../../../../../../.github/performance/unihex-bounds/trace-qualification.json) for exact method and marker entries, bounded origin transport and zero-bounds class preparation.
+The external observer's actual compiled qualification is a producer-owned input referenced by the final HEAD commit's `Performance-Inputs` trailer; it verifies exact method and marker entries, bounded origin transport and zero-bounds class preparation.
 It binds one, three and zero real bounds calls, one caught closed-engine failure and original TrueType, Bitmap and SnapshotLoad rows to actual loaded byte and owning-process evidence; it does not certify the complete corpus or a performance gain.
 
 The committed [fixture table](fixtures.tsv) contains 36 immutable fixtures.
@@ -39,7 +39,7 @@ Select `UnihexBoundsBenchmark,UnihexBoundsControlBenchmark` through the existing
 Preparation/checks use the existing JVM-only model; complete acceptance uses the complete model.
 No benchmark-specific Gradle task or property is added.
 
-The [full paired manifest](../../../../../../.github/performance/paired-jvm.json) binds this complete corpus to the shared Windows CPU route.
+The full paired manifest is a producer-owned input selected through the final commit's `Performance-Inputs` trailer and binds this complete corpus to the shared Windows CPU route.
 Its immutable source patches reconstruct the same prepared fixture and collector on both runtime sides from the accepted master; only `FontHexGlyph.kt` differs.
 The driver retains all 132 cases in each of three baseline and three candidate AverageTime collections (792 required cells), plus the separate complete SampleTime comparison (792 additional cells).
 Input attributes preserve the original five resource blobs and the actual qualification bytes across checkouts.
