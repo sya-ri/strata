@@ -470,18 +470,32 @@ def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
                                      path.read_text(encoding="utf-8"))) for path in vm_files)
         require(len(candidates) == same_pid == 1, "Missing reused-PID VM diagnostic timestamp")
         return candidates[0]
-    matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{name[1]}.log"]
+    stamps = {name[1]}
+    if terminal is not None:
+        starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'",
+                            vm_diagnostic.read_text(encoding="utf-8"))
+        require(len(starts) == 1, "Ambiguous VM diagnostic start")
+        stamps.add(time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(int(starts[0]) // 1000)))
+    matching = [item for item in candidates if Path(item["path"]).name in {f"classes-{pid}-{stamp}.log" for stamp in stamps}]
     require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
-    if matching:
+    if matching and Path(matching[0]["path"]).name == f"classes-{pid}-{name[1]}.log":
         return matching[0]
     return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal)
 
 
 def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
-    """Bind independent filename expansions only through a unique VM, owned lifetime and fresh pinned file."""
+    """Bind an exact header-start file or unique independent expansion to its owned lifetime and fresh pin."""
     same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
                                  path.read_text(encoding="utf-8"))) for path in vm_files)
-    if terminal is None or len(candidates) != 1 or same_pid != 1:
+    if terminal is None:
+        return None
+    raw = vm_diagnostic.read_text(encoding="utf-8")
+    starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'", raw)
+    require(len(starts) == 1, "Ambiguous unique VM diagnostic")
+    stamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(int(starts[0]) // 1000))
+    matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{stamp}.log"]
+    require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
+    if not matching and (len(candidates) != 1 or same_pid != 1):
         return None
     history = terminal["members"].get(str(pid), [])
     if not isinstance(history, list) or not history:
@@ -491,16 +505,13 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
         if any(not isinstance(item, dict) or not isinstance(item.get("image"), str) or not item["image"] for item in history):
             return None
         java = [item for item in history if Path(item["image"]).name.casefold() in {"java.exe", "javaw.exe"}]
-        if len(java) != 1:
+        if not matching and len(java) != 1:
             return None
-        helpers = [item for item in history if item is not java[0]]
-    raw = vm_diagnostic.read_text(encoding="utf-8")
-    starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'", raw)
-    require(len(starts) == 1, "Ambiguous unique VM diagnostic")
+        helpers = [item for item in history if item not in java]
     member = owned_generation(terminal, pid, int(starts[0]))
     if helpers:
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
-        require(len(homes) == 1 and member is java[0]
+        require(len(homes) == 1 and member in java
                 and os.path.normcase(member["image"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe"))),
                 "Unique JVM and actual Java generation disagree")
         for helper in helpers:
@@ -514,7 +525,7 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
     require(len(flags) == 1, "Missing unique-generation class-file flag")
     flag = Path(flags[0])
     require(flag.name.count("%p") == flag.name.count("%t") == 1, "Changed unique-generation class-file pattern")
-    candidate = candidates[0]
+    candidate = matching[0] if matching else candidates[0]
     diagnostic = Path(candidate["path"])
     pattern = re.escape(flag.name).replace("%p", str(pid)).replace("%t", "[0-9_-]+")
     require(re.fullmatch(pattern, diagnostic.name) is not None, "Class-file flag and fresh diagnostic disagree")
