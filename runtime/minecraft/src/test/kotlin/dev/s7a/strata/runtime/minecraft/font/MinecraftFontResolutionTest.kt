@@ -163,7 +163,7 @@ internal class MinecraftFontResolutionTest {
             MinecraftFontEngine(snapshot, { FontTestBackend() }).use { reference ->
                 repeat(3) { assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code) }
                 assertEquals(if (uniform) advance.toFloat() else 3f, candidate.glyph(FontTestResources.defaultFont, 'A'.code).advance)
-                assertEquals(if (uniform && filtered.not()) 0 else 1, resolutionEntries(candidate))
+                assertEquals(0, resolutionEntries(candidate))
                 assertEquals(0, resolutionEntries(reference))
             }
         }

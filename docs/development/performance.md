@@ -563,7 +563,9 @@ Decoded bitmap sheets use detached resource identity; scanned cells use that res
 TrueType faces and glyphs use resource identity and exact size, oversampling, and shift settings, with provider-specific skips checked before lookup.
 Other glyph results use snapshot-local provider identity and Unicode scalar keys.
 An independent engine-local resolution map keys the selected font identifier and scalar within that captured snapshot and its options.
-Each entry retains only the selected provider or a complete-chain missing result and the preceding cached-miss raster keys; hits touch those keys in their original order before using the ordinary selected-provider cache.
+The first applicable provider is resolved before creating a selection key; a successful result bypasses the resolution map, including atlas-rejected rasters.
+Only fallback resolution derives a key, and empty miss prefixes are not admitted.
+Each entry retains only the selected provider or a complete-chain missing result and the preceding cached-miss raster keys; hits retain the first provider's actual touch and replay the remaining keys in their original order before using the ordinary selected-provider cache.
 This preserves raster LRU pressure and subsequent native face reopening or failure instead of treating selection as a detached final-glyph cache.
 Resolution entries and all retained prefix keys share a combined access-ordered limit of `min(cacheEntries, 4096)` units, so zero disables reuse and long chains cannot multiply the scalar-history bound.
 Raster replacement or eviction, permanent face poisoning and face-opening failure clear all resolutions; a fallback walk that changes that raster epoch is not admitted.

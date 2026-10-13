@@ -21,6 +21,8 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Hits touch the same preceding raster keys in order before retrieving the winner, preserving raster eviction semantics.
  * Raster replacement or eviction and permanent face failure clear resolutions; walks that evict raster entries bypass admission.
  * Every resolution still preflights its font and retrieves the selected provider's ordinary glyph cache.
+ * The first applicable provider runs before resolution metadata; its successful result bypasses selection keys and entries.
+ * Fallback hits replay only later prefix touches, and empty prefixes are not admitted.
  * Provider sequences with at most one entry use the original walk without resolution metadata.
  * Miss-prefix storage is lazy and stops when the captured raster epoch changes or its existing admission bound cannot fit.
  * Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled.
@@ -156,7 +158,7 @@ public class MinecraftFontEngine
         }
 
         /**
-         * Resolves the prepared provider sequence with epoch-bound metadata while preserving earlier miss touches.
+         * Resolves the first applicable provider before deriving fallback-only selection metadata and later miss touches.
          */
         private fun preparedGlyph(
             selected: ResourceId,
@@ -164,27 +166,58 @@ public class MinecraftFontEngine
             providers: List<FontProviderEntry>,
             current: MinecraftFontSnapshot,
         ): MinecraftFontGlyph {
-            val key = if (resolutionLimit == 0 || providers.size <= 1) null else ResolutionKey(selected, codePoint)
-            key?.let { resolutions[it] }?.let { resolution ->
-                resolution.misses.forEach { rasters[it] }
+            if (resolutionLimit == 0 || providers.size <= 1) return walkGlyph(null, codePoint, providers, current)
+            val epoch = rasterEpoch
+            var firstIndex = 0
+            while (firstIndex < providers.size && applies(providers[firstIndex].filter, current.options).not()) firstIndex++
+            if (firstIndex == providers.size) return missingGlyph
+            val first = providers[firstIndex]
+            cachedGlyph(first, codePoint)?.let { return it }
+            if (firstIndex == providers.lastIndex) return missingGlyph
+            if (epoch !== rasterEpoch) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
+            val key = ResolutionKey(selected, codePoint)
+            resolutions[key]?.let { resolution ->
+                val firstMiss = missingRasterKey(first, codePoint)
+                touchResolutionMisses(resolution, firstMiss)
                 return resolution.provider?.let { cachedGlyph(it, codePoint) } ?: missingGlyph
             }
-            return walkGlyph(key, codePoint, providers, current)
+            return walkGlyph(key, codePoint, providers, current, firstIndex + 1, epoch)
         }
 
         /**
-         * Walks applicable providers in original order and admits only epoch-current, bounded resolution metadata.
+         * Replays the retained prefix after the first actual provider touch, preserving later duplicate miss keys.
+         */
+        private fun touchResolutionMisses(
+            resolution: Resolution,
+            firstMiss: RasterKey?,
+        ) {
+            for (index in resolution.misses.indices) {
+                val miss = resolution.misses[index]
+                if (index != 0 || miss != firstMiss) rasters[miss]
+            }
+        }
+
+        /**
+         * Continues the original provider order after an already attempted first provider, preserving its captured epoch and miss weight.
          */
         private fun walkGlyph(
             key: ResolutionKey?,
             codePoint: Int,
             providers: List<FontProviderEntry>,
             current: MinecraftFontSnapshot,
+            startIndex: Int = 0,
+            epoch: Any = rasterEpoch,
         ): MinecraftFontGlyph {
-            val epoch = rasterEpoch
             var misses: MutableList<RasterKey>? = null
-            var canAdmit = key != null
-            for (entry in providers) {
+            var canAdmit = key != null && epoch === rasterEpoch
+            if (canAdmit && 0 < startIndex) {
+                missingRasterKey(providers[startIndex - 1], codePoint)?.let { firstMiss ->
+                    misses = appendResolutionMiss(null, firstMiss)
+                    canAdmit = misses != null
+                }
+            }
+            for (index in startIndex until providers.size) {
+                val entry = providers[index]
                 if (applies(entry.filter, current.options).not()) continue
                 val glyph = cachedGlyph(entry, codePoint)
                 if (epoch !== rasterEpoch) {
@@ -617,7 +650,7 @@ public class MinecraftFontEngine
             misses: List<RasterKey>,
             epoch: Any,
         ) {
-            if (closed) return
+            if (closed || misses.isEmpty()) return
             val units = 1 + misses.size
             if (resolutionLimit < units || epoch !== rasterEpoch) return
             // A backend may admit this same key while reentering the outer glyph walk.
