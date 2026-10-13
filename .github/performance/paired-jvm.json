@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "baseline": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "c66e7e32f0b9b5abdf5772894b62d6bd54bcd5a8",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "753ef000aa055b182714caa19dc55476630521a5",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/baseline.patch",
-          "sha256": "a9a67e84717d5ccbddb189d6a56bf5b2cb3cfc4ee4b56b62e69839f9ba23258b"
+          "sha256": "be3b6dc39188435ef76d0ebb49f4edc8698c3aa5261686d40abeee4cb6f131d0"
         }
       ]
     },
     "candidate": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "d96040420c590aba9bb63c222f452e837ac3e769609e20a1bf6809e373094bc5"
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
         }
       ]
     },
     "fixture": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "d96040420c590aba9bb63c222f452e837ac3e769609e20a1bf6809e373094bc5"
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
         }
       ]
     }
@@ -120,21 +120,21 @@
       "label": "font-fallback-baseline-source",
       "pin": {
         "path": ".github/performance/font-fallback-full/baseline.patch",
-        "sha256": "a9a67e84717d5ccbddb189d6a56bf5b2cb3cfc4ee4b56b62e69839f9ba23258b"
+        "sha256": "be3b6dc39188435ef76d0ebb49f4edc8698c3aa5261686d40abeee4cb6f131d0"
       }
     },
     {
       "label": "font-fallback-candidate-source",
       "pin": {
         "path": ".github/performance/font-fallback-full/candidate.patch",
-        "sha256": "d96040420c590aba9bb63c222f452e837ac3e769609e20a1bf6809e373094bc5"
+        "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
       }
     },
     {
       "label": "font-fallback-source-provenance",
       "pin": {
         "path": ".github/performance/font-fallback-full/source-provenance.json",
-        "sha256": "b84944b1cabf9f450658d4ffbaad39650d0d9bc13a73d87a8ae442fbf6d401ee"
+        "sha256": "f6e379a9d1528e47e55587c8a533c1d65715032c128c95bb7ed7332ee8445b1d"
       }
     }
   ],

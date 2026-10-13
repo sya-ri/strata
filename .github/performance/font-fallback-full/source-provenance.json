@@ -2,39 +2,39 @@
   "schema": "strata-font-fallback-whole-source-v1",
   "issue": 144,
   "pull_request": 204,
-  "status": "Actual original B/C source/all9worker/ABI/quality plus component/generated48 passed; fresh complete112 admission and all48 comparisons Pending",
-  "original_candidate": "c6c5c73c52c7f76669baed11e960c60e01fd30f5",
-  "ordinary_master_merge": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+  "status": "Approved reader source correction and accepted ordinary master integration; current hosted full admissions/comparison Pending",
+  "original_candidate": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+  "ordinary_master_merge": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
   "common_correctness_source": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
-  "common_correctness_acceptance": "Applicable current loaded OpenGL/Vulkan font lifetime acceptance remains Pending",
+  "common_correctness_acceptance": "Current production OpenGL/Vulkan font-owner lifetime acceptance remains Pending",
   "sources": {
     "baseline": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "c66e7e32f0b9b5abdf5772894b62d6bd54bcd5a8",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "753ef000aa055b182714caa19dc55476630521a5",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/baseline.patch",
-          "sha256": "a9a67e84717d5ccbddb189d6a56bf5b2cb3cfc4ee4b56b62e69839f9ba23258b"
+          "sha256": "be3b6dc39188435ef76d0ebb49f4edc8698c3aa5261686d40abeee4cb6f131d0"
         }
       ]
     },
     "candidate": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "d96040420c590aba9bb63c222f452e837ac3e769609e20a1bf6809e373094bc5"
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
         }
       ]
     },
     "fixture": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
       "patches": [
         {
           "path": ".github/performance/font-fallback-full/candidate.patch",
-          "sha256": "d96040420c590aba9bb63c222f452e837ac3e769609e20a1bf6809e373094bc5"
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
         }
       ]
     }
@@ -72,63 +72,20 @@
     "FontRasterWorkEvidence": 22,
     "FontFallbackWorkEvidence": 48
   },
-  "actual_source_qualification": {
-    "receipt_sha256": "0450b419899bb2ba470bd290bbcf6b9a3ea67ece800d796893f7dba7e4a6d462",
-    "groups": {
-      "baseline-source": {
-        "runtime/minecraft": {
-          "tests": 502,
-          "failures": 0,
-          "errors": 0,
-          "skipped": 0
-        },
-        "runtime/minecraft-fonts-lwjgl": {
-          "tests": 568,
-          "failures": 0,
-          "errors": 0,
-          "skipped": 0
-        }
-      },
-      "candidate-source": {
-        "runtime/minecraft": {
-          "tests": 520,
-          "failures": 0,
-          "errors": 0,
-          "skipped": 0
-        },
-        "runtime/minecraft-fonts-lwjgl": {
-          "tests": 568,
-          "failures": 0,
-          "errors": 0,
-          "skipped": 0
-        }
-      },
-      "candidate-component": {
-        "quality/component-benchmarks": {
-          "tests": 11,
-          "failures": 0,
-          "errors": 0,
-          "skipped": 0
-        }
-      }
-    },
-    "actual_VM_counts": {
-      "baseline-source": 15,
-      "candidate-source": 15,
-      "candidate-component": 10
-    },
-    "only18_Engine_family_class_differences": true,
-    "all_current_source_Jobs_natural_closed_owned_zero": true
+  "historical_first_provider_source": {
+    "candidate_tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+    "baseline_tree": "c66e7e32f0b9b5abdf5772894b62d6bd54bcd5a8",
+    "qualification_receipt_sha256": "0450b419899bb2ba470bd290bbcf6b9a3ea67ece800d796893f7dba7e4a6d462",
+    "binding": "Original f8 runtime/source acceptance retained at that source epoch; no relabelling as current master acceptance"
   },
-  "actual_generated_registry": "6931a456b0f2d1f3e572f202b2eea740f1fac2543951e2f16432781fc6fef231",
-  "original_input_receipt_sha256": "b71a740fd2839fa282944691f0bdf82cb6f1f4ba21f2befd5a899478869c96a7",
-  "historical_c6": {
-    "whole576_plus288_receipt_sha256": "937de4b362e81fe62e1fb3864a13e22705260fe97255e6fab1bc4f4facd7a523",
-    "status": "Complete actual adverse tables/raw preserved at c6; no new-source adoption"
+  "historical_failed_d6_collection": {
+    "run_id": 38352617697,
+    "inner_raw_sha256": "d3ef08c2869bed3ae85eab96a717f8d8c0ff2927548a514dd8c410aee77f4122",
+    "status": "Failed shared reader attribution after partial avgt; no partial scores adopted and no timing credit"
   },
-  "historical_88": {
-    "whole576_plus288_receipt_sha256": "de808f7c7d25009b29e6633401b816e1993bc2ce84fed8768c1661139453e6d2",
-    "status": "Original complete actual adverse tables/raw preserved"
+  "reviewed_reader_correction": {
+    "source_patch_sha256": "2161c276c923ae1a7c9693eba00d2a9abab1b5f4b55f08e9c897952eb9df4d61",
+    "scope": "Distinct closed non-Java helper records retained; java.exe/javaw.exe both count as Java, actual main remains strict java.exe"
   },
   "current_work_admission": "Pending actual full B/C original unfiltered test gates and complete112 work checks before the first timing phase",
   "formal_timing_credit": false,
