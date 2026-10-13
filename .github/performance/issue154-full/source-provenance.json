@@ -1,0 +1,337 @@
+{
+  "schema": "strata.issue154.prepared-source-provenance.v1",
+  "status": "New accepted-master source epoch; old complete raw metrics retained separately, current combined closure qualification and metrics Pending",
+  "base_public_commit": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+  "accepted_master": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+  "baseline_tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
+  "candidate_fixture_tree": "18b49ffb2d7de827e002240c0664f163b1822062",
+  "runtime_delta_paths": [
+    "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt"
+  ],
+  "all_other_baseline_candidate_source_bytes_identical": true,
+  "source_delta_bindings": [
+    {
+      "path": "docs/development/performance-testkit.md",
+      "canonical_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "raw_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "git_blob": "d8854ac3573d0f61e452f5918763c222ccd0191d"
+    },
+    {
+      "path": "docs/development/performance.md",
+      "canonical_sha256": "9160a3b495decc6aa16230618963551225558b1800e3d29380a0fde35e8fe4a0",
+      "raw_sha256": "9160a3b495decc6aa16230618963551225558b1800e3d29380a0fde35e8fe4a0",
+      "git_blob": "49846ceffca32469eb4a84ef1f24c5fdcb670470"
+    },
+    {
+      "path": "gradle/performance/invoke-windows.ps1",
+      "canonical_sha256": "ccf80c916b421b74dc037b7b21f83db90dbe7944e56a43308bd102558db18206",
+      "raw_sha256": "7e508e8ae17cf29fd01514228fa54f3452c2f8f9d5cc2c4a417116859a53e761",
+      "git_blob": "fe5b5f85812ad85d7376a6f5c4a12ef52bc8c8c4"
+    },
+    {
+      "path": "gradle/performance/paired-jvm.py",
+      "canonical_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "raw_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "git_blob": "7de981bdfd4d87a979cbfbd29639ff468175c8d5"
+    },
+    {
+      "path": "gradle/performance/verify-windows-boundary.py",
+      "canonical_sha256": "e80462a7aa5d8392d67bd4ced471fdcff6a776af52e288bb906ff64927d2034c",
+      "raw_sha256": "013715c3978eedd074669ab388c641064b9d4722ab03cb8b18fb17d8cf5fa35b",
+      "git_blob": "9015b3658cb9b8fce3033204a2d10487770b06a7"
+    },
+    {
+      "path": "gradle/performance/windows-process-history.py",
+      "canonical_sha256": "c1f47a3b601806c970fcbda884997c05ef151ddc7cece87970e99ea215c340c2",
+      "raw_sha256": "4f543ec1b43041a6cc0e7821dd11929cea4a393dfb7359718d818034774b7bee",
+      "git_blob": "65c9c8b98f76d975550ea2007eeb862fd726c359"
+    },
+    {
+      "path": "gradle/tests/test_paired_jvm.py",
+      "canonical_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "raw_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "git_blob": "efff347a6a3261e443b4acfdfcfd4554c0a9b0e9"
+    },
+    {
+      "path": "integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ParentDataIntegrationTest.kt",
+      "canonical_sha256": "ad06ab0971760c9b4a9d9d91af1074003412ca205607009012af540232c15547",
+      "raw_sha256": "ad06ab0971760c9b4a9d9d91af1074003412ca205607009012af540232c15547",
+      "git_blob": "2f6cd475114f7d2cdb880270e312ac038b548b36"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationBenchmark.kt",
+      "canonical_sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36",
+      "raw_sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36",
+      "git_blob": "e4ee820da536df74268717f0f49d9e50a9c5811a"
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
+      "canonical_sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f",
+      "raw_sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f",
+      "git_blob": "d268798fc2fef1802df1182fa5dcbec86c41b39d"
+    },
+    {
+      "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/IdenticalModifierChainTest.kt",
+      "canonical_sha256": "38e09d7c83b5f712a6714def22bf538157ace4d03439f7c4e6baa3786ba96542",
+      "raw_sha256": "38e09d7c83b5f712a6714def22bf538157ace4d03439f7c4e6baa3786ba96542",
+      "git_blob": "2dafdf6c66de8fc609a60e853caffc8fc2e6d763"
+    },
+    {
+      "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt",
+      "canonical_sha256": "ed75602b4cbbebdb660745faa735f82f6a06f38212a387f5a3e9719e3c78b7f2",
+      "raw_sha256": "ed75602b4cbbebdb660745faa735f82f6a06f38212a387f5a3e9719e3c78b7f2",
+      "git_blob": "51275dbc926f48c83800b4f496ecce8831cce778"
+    }
+  ],
+  "original_fixture_sha256": "477de35d3364752568973bffdd4b1d61b869287ba26ffefdeccd42abca235059",
+  "original_oracles_and_inventory_preserved": true,
+  "inventory": [
+    {
+      "method": "update",
+      "workload": "Same1x0",
+      "entries": 1,
+      "modifiers": 0,
+      "mutation": "Same",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Same1x1",
+      "entries": 1,
+      "modifiers": 1,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Same1x8",
+      "entries": 1,
+      "modifiers": 8,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Same1x32",
+      "entries": 1,
+      "modifiers": 32,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Same1000x0",
+      "entries": 1000,
+      "modifiers": 0,
+      "mutation": "Same",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Same1000x1",
+      "entries": 1000,
+      "modifiers": 1,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Same1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Same1000x32",
+      "entries": 1000,
+      "modifiers": 32,
+      "mutation": "Same",
+      "control": false
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1x1",
+      "entries": 1,
+      "modifiers": 1,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1x8",
+      "entries": 1,
+      "modifiers": 8,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1x32",
+      "entries": 1,
+      "modifiers": 32,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1000x1",
+      "entries": 1000,
+      "modifiers": 1,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Equivalent1000x32",
+      "entries": 1000,
+      "modifiers": 32,
+      "mutation": "Equivalent",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "FreshDescriptions1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "FreshDescriptions",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "OneChanged1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "OneChanged",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "ModifierType1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "ModifierType",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "ComponentType1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "ComponentType",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "AddRemove1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "AddRemove",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Reordered1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "Reordered",
+      "control": true
+    },
+    {
+      "method": "update",
+      "workload": "Keyed1000x8",
+      "entries": 1000,
+      "modifiers": 8,
+      "mutation": "Keyed",
+      "control": true
+    }
+  ],
+  "expected_rows": 21,
+  "expected_controls": 15,
+  "normal_JMH_modes": [
+    "avgt",
+    "sample"
+  ],
+  "repetitions_per_side": 3,
+  "standard_JMH_cells": 252,
+  "supplemental_operation_rows": 126,
+  "operation_warmup": 30,
+  "operation_samples": 60,
+  "operations_per_sample": 1,
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "common_generic_source": "b9723dfa231dc512776a4bf1aeaa6f66fce69ac0",
+  "operation_boundary": "Original complete Scene.update; immutable declaration setup, original verifyWork, serialization and terminal close outside sampling.",
+  "control_classification": "All 13 original changed-chain/structural workloads and the two m=0 Same rows; all six nonempty Same target rows also retained.",
+  "deterministic_work": "Original full 21 Scene lifecycle/callback verification; portable identity/validation/dirty/ancestry/geometry/source-cutoff/owner/failure controls retained.",
+  "source_forecast": "Masks and comparison pairs are source-level work counts, not assumed surviving allocation bytes.",
+  "native_metrics": "CPU-only API/core fixture has no native presentation/upload/GPU interval; N/A. Applicable platform correctness remains required final CI.",
+  "source_patches": {
+    "baseline": {
+      "path": ".github/performance/issue154-full/baseline.patch",
+      "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
+    },
+    "candidate": {
+      "path": ".github/performance/issue154-full/candidate.patch",
+      "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
+    }
+  },
+  "compiled_pins": "Optional empty; existing driver retains actual loaded closure",
+  "measurement_selection": "Own full21 default equals nested manifest byte-for-byte; one automatic full comparison, no unrelated cleanup46 or pilot credit.",
+  "driver_metadata_scope": "New issue154-full and own default driver metadata excluded from measured source trees; accepted master default is retained identically in measured trees; the top-level published default selects only the own whole21 corpus; every other measured B/C byte is identical.",
+  "patch_encoding": "Standard Git binary hunks using temporary generation attributes; permanent/shared attributes unchanged.",
+  "old_44_staged_paths": "Protected raw/index archives plus retained stash 26b6a012cdd16cf3bfb709857b42d62117febab9; no wholesale old-helper adoption.",
+  "Java_started": 0,
+  "helper_invocations": 0,
+  "accepted_score_cells": 0,
+  "accepted_operation_rows": 0,
+  "original_complete_inventory_unchanged": true,
+  "prior_accepted_source_epoch": {
+    "sources": {
+      "fixture": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/candidate.patch",
+            "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          }
+        ]
+      },
+      "baseline": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "d27a996707ff181fc78da7b34c066a53d32fc6eb",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/baseline.patch",
+            "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
+          }
+        ]
+      },
+      "candidate": {
+        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+        "tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
+        "patches": [
+          {
+            "path": ".github/performance/issue154-full/candidate.patch",
+            "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
+          }
+        ]
+      }
+    },
+    "manifest_sha256": "4dc9e4fc113d33a4bb26732d0165c14c3e332fe7fe7813815e7efc4805db6df2",
+    "metrics": "Historical exact prior closure; no rebinding"
+  }
+}

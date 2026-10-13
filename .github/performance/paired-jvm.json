@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
       "patches": [
         {
-          "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
+          "path": ".github/performance/issue154-full/candidate.patch",
+          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
         }
       ]
     },
     "baseline": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "4322af8181c7aadc08b464d5c8a3b199820a26d2",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
       "patches": [
         {
-          "path": ".github/performance/focused-input-full/baseline.patch",
-          "sha256": "b7d5a48c70ccb8233128dcf66d4e42bd9e6e286e74c65da2a825b6f676dd0828"
+          "path": ".github/performance/issue154-full/baseline.patch",
+          "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
         }
       ]
     },
     "candidate": {
-      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
       "patches": [
         {
-          "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
+          "path": ".github/performance/issue154-full/candidate.patch",
+          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
         }
       ]
     }
@@ -40,51 +40,59 @@
   "suites": [
     {
       "project": ":quality:benchmarks",
-      "name": "focused-input-full",
+      "name": "issue154-full",
       "benchmarks": [
-        "FocusedInputBenchmark"
+        "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark"
       ],
       "workloads": [],
       "parameters": {},
-      "expected_cases": 32,
+      "expected_cases": 21,
+      "profilers": [],
       "operation_reports": {
         "adapters": {
-          "dev.s7a.strata.quality.benchmark.FocusedInputBenchmark": "dev.s7a.strata.quality.benchmark.FocusedInputOperationReport"
+          "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark": "dev.s7a.strata.quality.benchmark.ModifierReconciliationOperationReport"
         },
-        "warmup": 100,
-        "samples": 200,
-        "expected_rows": 32,
-        "expected_controls": 2
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 21,
+        "expected_controls": 15
       }
     }
   ],
   "inputs": [
     {
-      "label": "focused-source-0",
+      "label": "modifier-baseline-source-patch",
       "pin": {
-        "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/FocusedInputPipeline.kt",
-        "sha256": "b4ab55ba057673643bf9bd7449eebd9b6e22863951a3473d6a1430687facf475"
+        "path": ".github/performance/issue154-full/baseline.patch",
+        "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
       }
     },
     {
-      "label": "focused-source-1",
+      "label": "modifier-candidate-source-patch",
       "pin": {
-        "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt",
-        "sha256": "c28001cedb397298f15a8bae320c3fd64778aef745b262e7604b51e8585de92b"
+        "path": ".github/performance/issue154-full/candidate.patch",
+        "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
       }
     },
     {
-      "label": "focused-source-2",
+      "label": "modifier-source-provenance",
       "pin": {
-        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt",
-        "sha256": "d5a54d8cc9615467904b4d46eec86e0cd870ebd135ca35638b1887de649b650a"
+        "path": ".github/performance/issue154-full/source-provenance.json",
+        "sha256": "ce7967d2ac24ee3bf163fee1b67277b0b2a5532de2220dfed04420a7e2020558"
       }
     },
     {
-      "label": "focused-owner-adapter",
+      "label": "modifier-fixed-ModifierReconciliationBenchmark",
       "pin": {
-        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt",
-        "sha256": "41f083278ab69a73d7e0547cebd89b5d0d1df481b9f1ce96f63ed814d5291491"
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationBenchmark.kt",
+        "sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36"
+      }
+    },
+    {
+      "label": "modifier-fixed-ModifierReconciliationOperationReport",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
+        "sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f"
       }
     }
   ],
