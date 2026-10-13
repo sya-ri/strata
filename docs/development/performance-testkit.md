@@ -617,6 +617,11 @@ Time is per declared fixture batch; it has no cross-machine improvement interpre
 JMH Thread CPU per operation is unavailable unless a separately declared profiler supplies it; Job CPU includes preparation and descendants.
 Supplemental owner-thread operation reports have their own explicit boundary and protocol described below.
 
+The optional `owner_reports[].paired_jmh` connection preserves an existing four-argument collector whose final arguments are its original JMH receipt and prepared source plan.
+It declares one complete suite and its compiled fixture class, binds both actual prepared source trees and ordinary runtime JARs after preparation, and creates that immutable source plan once before collection.
+Owner invocations reuse the original JMH input-property origin and complete selectors through the existing JavaExec template; the collector, sampler, comparison processor and all VM flags remain unchanged.
+Producer payload pins are read through the immutable input root, while execution-head source and live driver guards remain separate.
+
 ### Supplemental operation reports
 
 A suite can opt into `operation_reports` without changing its JMH selectors, modes, forks, iterations or deterministic work gates.

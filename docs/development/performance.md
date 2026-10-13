@@ -692,6 +692,16 @@ Empty and singleton snapshots use their exact list forms without intermediate ma
 Later reconciliation and terminal close cannot mutate lists in an earlier snapshot; this does not cache projections or suppress endpoint encoding.
 The retained remote corpus measures this path separately for idle projection, one-source updates, and complete lifecycle operations.
 
+### Remote editable membership
+
+`RemoteClientStates` owns an ordered list of its current editable entries under the same execution owner as the authoritative entry map.
+Each list item is the existing entry record, keyed by its remote identity and trusted state type; distinct keys sharing one value retain distinct callbacks.
+Admission adds an editable record once, retirement removes obsolete membership before release callbacks, and terminal close clears membership before releasing values.
+The list is bounded by current admitted entries and the negotiated collection limit; it caches capability membership, never authoritative values or edit results.
+If retirement throws, membership is rebuilt from the remaining authoritative entries in their original admission order before the same primary failure is rethrown.
+Every current editable value is still polled, and recursive polling, owner isolation, irreversible terminal close and callback failure semantics remain unchanged.
+Untimed independent collection controls verify ordered visits and release; timed fixtures use ordinary collections and retain every churn case.
+
 ### Remote topology allocation
 
 Tree validation uses one declaration identity set for component and modifier uniqueness, a component visit count for connectivity, and parallel primitive identity/depth stacks bounded by the admitted node count.

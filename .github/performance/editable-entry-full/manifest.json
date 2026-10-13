@@ -1,0 +1,442 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "e2241a7a43c711643871cbe9c280df7984ecf460",
+      "tree": "ae05e2926efc2d3b7656fb1a1a21746d6eea67ed",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/candidate.patch",
+          "sha256": "deb9cf38944dd3c7800026eaff65221d3163646b8b6306577679ddd93dfc65b1"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "e2241a7a43c711643871cbe9c280df7984ecf460",
+      "tree": "ae05e2926efc2d3b7656fb1a1a21746d6eea67ed",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/candidate.patch",
+          "sha256": "deb9cf38944dd3c7800026eaff65221d3163646b8b6306577679ddd93dfc65b1"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "e2241a7a43c711643871cbe9c280df7984ecf460",
+      "tree": "32c0dbbe6aed677735e7f56a2a466d6d1d6a834a",
+      "patches": [
+        {
+          "path": ".github/performance/editable-entry-full/baseline.patch",
+          "sha256": "e8070bbfda674a4b7ed8e3c0e7fa029a7302930abad052fde31a31661808fe94"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:remote"
+  ],
+  "suites": [
+    {
+      "project": ":quality:remote-benchmarks",
+      "name": "editable-entry-full",
+      "benchmarks": [
+        "RemoteClientStatesBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {
+        "entries": [
+          "100",
+          "1000",
+          "8192"
+        ],
+        "membership": [
+          "None",
+          "Few",
+          "All"
+        ]
+      },
+      "expected_cases": 45,
+      "test_gates": [
+        {
+          "task": ":runtime:remote:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.remote.RemoteClientStateLifecycleTest#recursionDoesNotRepollAndFailureRestoresTheFlushGuard",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateLifecycleTest#caughtRetirementFailureKeepsRemainingEditorsInOriginalOrder",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateLifecycleTest#independentOwnersCannotPollMutateOrCloseEachOthersMembership",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#closingFromFactoryReleasesItsReturnedValueWithoutAdmissionOrResurrection",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#closingFromUpdateReleasesTheCurrentValueOnceAndNeverRestoresIdle",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#closingThePreparationPhaseWithoutAnEntryCannotRestoreIdle",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#closingFromRetirementReleasesEveryRemainingEntryOnceInOrder",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#closingFromPollingStopsBeforeAnyReleasedSiblingIsVisited",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#nestedFactoryPreparationIsRejectedBeforeCreatingEitherAddress",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#nestedUpdatePreparationIsRejectedBeforeCreatingOrUpdatingEitherAddress",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#retirementCannotReadmitTheRemovedAddressOrAnotherAddress",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#pollingCannotStartPreparationButRecursiveFlushStillReturnsWithoutRepolling",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#throwingFreshResultReleaseRemainsPrimaryAfterFactoryCloses",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#cleanupFailureDuringUpdateCloseKeepsTheFirstFailureAndSuppressionOrder",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#recursiveCloseFromReleaseIsIdempotentAndOrdinaryPreparationRemainsUsableUntilClose",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#aFactoryCannotCloseAnotherOwnersStoreOrAdmitUnderAnotherOwner",
+            "dev.s7a.strata.runtime.remote.RemoteClientStateReentryTest#callbackFailuresAfterCloseRemainPrimaryAcrossEveryBoundary"
+          ]
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "label": "editable-original-0",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesBenchmark.kt",
+        "sha256": "d12cb0c910edf27f5e939d863024213307c86f3f0f3f698a12d661d534d1c3cc"
+      }
+    },
+    {
+      "label": "editable-original-1",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuComparison.kt",
+        "sha256": "a1591cf422154f0fec582a3d07ee638745212f837d1588b2b8c8aa9b9e5a2175"
+      }
+    },
+    {
+      "label": "editable-original-2",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuEvidence.kt",
+        "sha256": "f168214ae31a7c3e3a7a571a999d86895160c08c880e8acb2120577051702ecd"
+      }
+    },
+    {
+      "label": "editable-original-3",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/RemoteClientStatesCpuPair.kt",
+        "sha256": "f632d641f0928a7c27c04e19d8257f8fa9ce71d9a56ee8eadd8f1521a6082878"
+      }
+    },
+    {
+      "label": "editable-original-4",
+      "pin": {
+        "path": "runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientSession.kt",
+        "sha256": "d3689b13121de0f2943669d476c290fc2e4a3746865f07e7cfa69c112b497f7f"
+      }
+    },
+    {
+      "label": "editable-original-5",
+      "pin": {
+        "path": "runtime/remote/src/main/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStates.kt",
+        "sha256": "7cb9b0a7392c91d5f1523a906ece6f995a42ea43882d007422e3ee359de3806f"
+      }
+    },
+    {
+      "label": "editable-original-6",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientFlushLifetimeTest.kt",
+        "sha256": "8463d59089a30258a97a0f4b4a0912af11a4546ed2ad4db77c9e482490bf88a8"
+      }
+    },
+    {
+      "label": "editable-original-7",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientLifetimeTest.kt",
+        "sha256": "9ec1cebb1a07cf684c5fabcbba2eede707eec2f2661364bd49821436e7df6ccc"
+      }
+    },
+    {
+      "label": "editable-original-8",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStateReentryTest.kt",
+        "sha256": "83da420f4b08d5a0c4906c7939eb1a4e9833c64687c79bd70d28c33e62555c6b"
+      }
+    },
+    {
+      "label": "editable-original-9",
+      "pin": {
+        "path": "runtime/remote/src/test/kotlin/dev/s7a/strata/runtime/remote/RemoteClientStatesTest.kt",
+        "sha256": "4729f27215cf16a71503cafc4b374950d9bf3e7283671083967baf9b4c043ecd"
+      }
+    },
+    {
+      "label": "editable-remote-api",
+      "pin": {
+        "path": "quality/remote-benchmarks/src/jmh/resources/remote-api.tsv",
+        "sha256": "ed62131552f101ed3cfec13451b8550375fddc39603344c2eb2ec284ad774ca1"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": [],
+  "owner_reports": [
+    {
+      "name": "editable-entry-owner",
+      "project": ":quality:remote-benchmarks",
+      "template": "jmhRemote",
+      "kind": "java-exec",
+      "main": "dev.s7a.strata.quality.benchmark.RemoteClientStatesCpuEvidence",
+      "comparison": "dev.s7a.strata.quality.benchmark.RemoteClientStatesCpuComparison",
+      "workload_id": "current-client-editable-states-v1",
+      "phase_keys": [
+        "entries",
+        "membership",
+        "operation"
+      ],
+      "rows": [
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 100,
+          "membership": "All",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 1000,
+          "membership": "All",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "None",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "Few",
+          "operation": "Churn"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Idle"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Edits"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "PreAction"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Incoming"
+        },
+        {
+          "entries": 8192,
+          "membership": "All",
+          "operation": "Churn"
+        }
+      ],
+      "warmup": 100,
+      "samples": 200,
+      "runtime_classes": {
+        "api": {
+          "project": ":api",
+          "class": "dev.s7a.strata.projection.ProjectionValue"
+        },
+        "core": {
+          "project": ":runtime:core",
+          "class": "dev.s7a.strata.runtime.spi.RuntimeUiSession"
+        },
+        "remote": {
+          "project": ":runtime:remote",
+          "class": "dev.s7a.strata.runtime.remote.RemoteTree"
+        }
+      },
+      "controls": [
+        "operations_per_sample",
+        "measured_operations",
+        "processed_operations",
+        "last_result"
+      ],
+      "paired_jmh": {
+        "suite": "editable-entry-full",
+        "fixture_class": "dev.s7a.strata.quality.benchmark.RemoteClientStatesBenchmark"
+      }
+    }
+  ]
+}
