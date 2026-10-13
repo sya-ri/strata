@@ -690,6 +690,82 @@ class PairedJvmTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
 
+    def test_preflight_keeps_unique_generation_metadata_separate_from_complete_class_file_identity(self):
+        for mode in ("complete", "changed-core-pin"):
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("unique-preflight-" + mode)
+                console = phase / "console.log"
+                diagnostic = phase / "class-loads/classes-123-2026-10-12_00-00-00.log"
+                diagnostic.write_text(console.read_text(encoding="utf-8"), encoding="utf-8")
+                console.write_text("", encoding="utf-8")
+                member = {**terminal["members"]["123"], "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
+                terminal["members"]["123"] = [member]
+                vm = phase / "vm-pid123-2026-10-12_00-00-01.log"
+                vm.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments><args>"
+                              "-Xlog:class+load=info:file=../../class-loads/classes-%p-%t.log:pid,level,tags:filecount=0"
+                              "</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
+                pin = {"source": str(phase / "class-loads" / diagnostic.name), "path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)}
+                PAIRED.write_new(phase / "class-load-inventory.json", {"owner": str(phase / "class-loads"), "previous": {}, "copied": [pin]})
+                _, identities = PAIRED.class_loads(phase)
+                bound = PAIRED.class_diagnostic(identities, 123, vm, [vm], terminal)
+                self.assertEqual(bound["unique_generation"], member)
+                if mode == "changed-core-pin":
+                    bound["sha256"] = "0" * 64
+                records = PAIRED.read_json(phase / "vms.json")
+                records[0]["class_load_diagnostic"] = bound
+                (phase / "vms.json").write_text(json.dumps(records), encoding="utf-8")
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "complete":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
+                else:
+                    with self.assertRaisesRegex(ValueError, "Control changed its captured class-load diagnostic"):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+
+    def test_independent_log_filename_expansions_require_a_unique_pinned_owned_generation(self):
+        for mode in ("complete", "two-vms", "two-generations", "two-files", "changed-pin", "old-file", "wrong-owner", "wrong-flag", "missing-flag", "failed-process"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("independent-expansion-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-44.log"
+                diagnostic.write_text("[3708][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
+                flag = "../../../../class-loads/classes-%p-%t.log"
+                if mode == "wrong-flag":
+                    flag = "../../../../other-owner/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid3708-2026-10-12_23-45-45.log"
+                vm.write_text(f"<hotspot_log process='3708' time_ms='1791848744997'><vm_arguments><args>{args}</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
+                files = [vm]
+                if mode == "two-vms":
+                    other = directory / "vm-pid3708-2026-10-12_23-46-00.log"
+                    other.write_text("<hotspot_log process='3708' time_ms='1791848760000'></hotspot_log>\n", encoding="utf-8")
+                    files.append(other)
+                member = {"pid": 3708, "creationFileTime": 134363223449669511, "exitFileTime": 134363224864077401,
+                          "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 1 if mode == "failed-process" else 0}
+                history = [member]
+                if mode == "two-generations":
+                    history.append({**member, "creationFileTime": 134363224900000000, "exitFileTime": 134363225000000000})
+                terminal = {"members": {"3708": history}}
+                owner = directory / ("wrong" if mode == "wrong-owner" else "class-loads")
+                pin = {"path": str(diagnostic), "source": str(owner / diagnostic.name), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                previous = {diagnostic.name: pin["sha256"]} if mode == "old-file" else {}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(owner), "previous": previous, "copied": [pin]})
+                candidates = {str(diagnostic): {"path": str(diagnostic), "sha256": PAIRED.digest(diagnostic), "pid": 3708}}
+                if mode == "two-files":
+                    other = directory / "class-loads/classes-3708-2026-10-12_23-46-00.log"
+                    other.write_text(diagnostic.read_text(encoding="utf-8"), encoding="utf-8")
+                    candidates[str(other)] = {"path": str(other), "sha256": PAIRED.digest(other), "pid": 3708}
+                if mode == "complete":
+                    result = PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
+                    self.assertEqual(result["path"], str(diagnostic))
+                    self.assertEqual(result["unique_generation"], member)
+                    self.assertEqual(result["actual_file_flag"], flag)
+                elif mode in ("two-vms", "two-generations", "two-files"):
+                    self.assertIsNone(PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
+
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
         home = self.root / "probe-reuse-jdk"
         executable = home / "bin/java.exe"

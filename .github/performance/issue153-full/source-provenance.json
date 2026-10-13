@@ -1,9 +1,9 @@
 {
   "schema": "strata.issue153.prepared-source-provenance.v1",
   "status": "Source preparation only; source quality and full measurements Pending",
-  "base_public_commit": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-  "baseline_tree": "cebefd1f432cb0025b215acd3df4ed820f50de12",
-  "candidate_fixture_tree": "89c0dd7ef2b6aeafe67e5bdf3539040d92b3d14f",
+  "base_public_commit": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+  "baseline_tree": "ace46ae5f6e37028b29b2e55dae3438790e88b34",
+  "candidate_fixture_tree": "5ae22713884a8e67b0917998175132bded20a619",
   "runtime_delta_paths": [
     "api/src/main/kotlin/dev/s7a/strata/component/ProfileComponents.kt",
     "api/src/main/kotlin/dev/s7a/strata/component/TiledImageComponents.kt",
@@ -21,10 +21,10 @@
     },
     {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionOperationReport.kt",
-      "raw_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
-      "canonical_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
-      "canonical_bytes": 3609,
-      "git_blob": "180f8b5c4507b206beea044a213882d9ffb1b2c9"
+      "raw_sha256": "78938e230477a53fe20b3c6fad9da22485256ebb1898d3dfe28a6e166b3dca17",
+      "canonical_sha256": "78938e230477a53fe20b3c6fad9da22485256ebb1898d3dfe28a6e166b3dca17",
+      "canonical_bytes": 3879,
+      "git_blob": "ba67424b84b5a425d3fc8786436c5d00ee550ceb"
     },
     {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerDeclarationFixture.kt",
@@ -71,6 +71,48 @@
       "git_blob": "89f571c271eb8857fbd68e9c4a619c47c8b532a6"
     },
     {
+      "path": "docs/development/performance-testkit.md",
+      "raw_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "canonical_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "canonical_bytes": 90383,
+      "git_blob": "d8854ac3573d0f61e452f5918763c222ccd0191d"
+    },
+    {
+      "path": "gradle/performance/invoke-windows.ps1",
+      "raw_sha256": "7e508e8ae17cf29fd01514228fa54f3452c2f8f9d5cc2c4a417116859a53e761",
+      "canonical_sha256": "ccf80c916b421b74dc037b7b21f83db90dbe7944e56a43308bd102558db18206",
+      "canonical_bytes": 22824,
+      "git_blob": "fe5b5f85812ad85d7376a6f5c4a12ef52bc8c8c4"
+    },
+    {
+      "path": "gradle/performance/paired-jvm.py",
+      "raw_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "canonical_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "canonical_bytes": 76332,
+      "git_blob": "7de981bdfd4d87a979cbfbd29639ff468175c8d5"
+    },
+    {
+      "path": "gradle/performance/verify-windows-boundary.py",
+      "raw_sha256": "013715c3978eedd074669ab388c641064b9d4722ab03cb8b18fb17d8cf5fa35b",
+      "canonical_sha256": "e80462a7aa5d8392d67bd4ced471fdcff6a776af52e288bb906ff64927d2034c",
+      "canonical_bytes": 6931,
+      "git_blob": "9015b3658cb9b8fce3033204a2d10487770b06a7"
+    },
+    {
+      "path": "gradle/performance/windows-process-history.py",
+      "raw_sha256": "4f543ec1b43041a6cc0e7821dd11929cea4a393dfb7359718d818034774b7bee",
+      "canonical_sha256": "c1f47a3b601806c970fcbda884997c05ef151ddc7cece87970e99ea215c340c2",
+      "canonical_bytes": 2622,
+      "git_blob": "65c9c8b98f76d975550ea2007eeb862fd726c359"
+    },
+    {
+      "path": "gradle/tests/test_paired_jvm.py",
+      "raw_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "canonical_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "canonical_bytes": 66152,
+      "git_blob": "efff347a6a3261e443b4acfdfcfd4554c0a9b0e9"
+    },
+    {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionBenchmark.kt",
       "raw_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
       "canonical_sha256": "fb32a73785528c4e8de4a906bed70ea51d02ed50cb4eceae12540fb380c6ab49",
@@ -79,10 +121,10 @@
     },
     {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionOperationReport.kt",
-      "raw_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
-      "canonical_sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f",
-      "canonical_bytes": 3609,
-      "git_blob": "180f8b5c4507b206beea044a213882d9ffb1b2c9"
+      "raw_sha256": "78938e230477a53fe20b3c6fad9da22485256ebb1898d3dfe28a6e166b3dca17",
+      "canonical_sha256": "78938e230477a53fe20b3c6fad9da22485256ebb1898d3dfe28a6e166b3dca17",
+      "canonical_bytes": 3879,
+      "git_blob": "ba67424b84b5a425d3fc8786436c5d00ee550ceb"
     },
     {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerDeclarationFixture.kt",
@@ -625,23 +667,23 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue153-full/baseline.patch",
-      "sha256": "590379f1cd35767a2c52497390490e13426ac2e9d98cb47b12151142a10cb0ae"
+      "sha256": "b55e1335e2b034dc45e988d802b19d1d8d2187f3ed809d2620e67c5963f4aa99"
     },
     "candidate": {
       "path": ".github/performance/issue153-full/candidate.patch",
-      "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
+      "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
     }
   },
-  "common_collector_master": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-  "accepted_master": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-  "common_generic_source": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+  "common_collector_master": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+  "accepted_master": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+  "common_generic_source": "b9723dfa231dc512776a4bf1aeaa6f66fce69ac0",
   "operation_boundaries": "Original complete construct and rebuildFrame methods; original trial setup, result-type checks, report serialization and terminal surviving-session close outside the sample.",
   "deterministic_work": "Original 42 full public declaration/geometry/pixel/input/semantics/lifecycle fixtures and parent-data/session-owner controls run through the existing verifyWork hook.",
   "candidate_internal_borrow_regression": "Final candidate API JVM/JavaScript source checks; private new internal method is not a baseline paired-test gate.",
   "compiled_pins": "Optional empty; actual loaded fixture/collector/runtime/dependency/Java closure retained by existing driver",
   "measurement_selection": "Own complete84 automatically selected by byte-identical default/nested manifests; no unrelated inherited corpus or duplicate dispatch",
   "patch_encoding": "Standard Git binary hunks; temporary generation attributes; repository attributes unchanged",
-  "driver_metadata_scope": "Measured source trees exclude own issue153-full metadata and default manifest, avoiding self-reference; common483 source has no default",
+  "driver_metadata_scope": "Measured source trees exclude own issue153-full metadata and default manifest, avoiding self-reference; accepted master default is retained identically in measured trees; only the published top-level default selects the own whole84 corpus",
   "Java_started": 0,
   "helper_calls": 0,
   "completed_score_cells": 0,

@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "89c0dd7ef2b6aeafe67e5bdf3539040d92b3d14f",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "5ae22713884a8e67b0917998175132bded20a619",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
-          "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
+          "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
         }
       ]
     },
     "baseline": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "cebefd1f432cb0025b215acd3df4ed820f50de12",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "ace46ae5f6e37028b29b2e55dae3438790e88b34",
       "patches": [
         {
           "path": ".github/performance/issue153-full/baseline.patch",
-          "sha256": "590379f1cd35767a2c52497390490e13426ac2e9d98cb47b12151142a10cb0ae"
+          "sha256": "b55e1335e2b034dc45e988d802b19d1d8d2187f3ed809d2620e67c5963f4aa99"
         }
       ]
     },
     "candidate": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "89c0dd7ef2b6aeafe67e5bdf3539040d92b3d14f",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "5ae22713884a8e67b0917998175132bded20a619",
       "patches": [
         {
           "path": ".github/performance/issue153-full/candidate.patch",
-          "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
+          "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
         }
       ]
     }
@@ -64,21 +64,21 @@
       "label": "container-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue153-full/baseline.patch",
-        "sha256": "590379f1cd35767a2c52497390490e13426ac2e9d98cb47b12151142a10cb0ae"
+        "sha256": "b55e1335e2b034dc45e988d802b19d1d8d2187f3ed809d2620e67c5963f4aa99"
       }
     },
     {
       "label": "container-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue153-full/candidate.patch",
-        "sha256": "0f7310b8036b28b310db7b0c60662c801c6d7dead1cbd42940b9965c4a00b63b"
+        "sha256": "0bed6d6a024f6bf8f8dde6a52dae3ac93323d2b77572388ad229827d3e80e79f"
       }
     },
     {
       "label": "container-source-provenance",
       "pin": {
         "path": ".github/performance/issue153-full/source-provenance.json",
-        "sha256": "c7b070930b6218f15be0b11c6ec3104674b349c0a847f72f530c143c60d7ea24"
+        "sha256": "4a0fba76cd50f2df6a31db27318267f04add1f008ccb4acc7cb5f2f9bcde3abe"
       }
     },
     {
@@ -99,7 +99,7 @@
       "label": "container-fixed-ContainerConstructionOperationReport",
       "pin": {
         "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ContainerConstructionOperationReport.kt",
-        "sha256": "ccce0fe14177c57f595768e945fae90a1f7413bafb4b0cf51b7bb28ee0086e7f"
+        "sha256": "78938e230477a53fe20b3c6fad9da22485256ebb1898d3dfe28a6e166b3dca17"
       }
     }
   ],

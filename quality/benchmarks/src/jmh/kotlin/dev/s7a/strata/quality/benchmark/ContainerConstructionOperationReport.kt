@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.element.Element
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
@@ -11,6 +12,7 @@ import dev.s7a.strata.quality.benchmark.ContainerConstructionBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.ContainerConstructionBenchmark.Shape
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.nio.file.Path
 
 /**
  * All 84 original construction/frame rows, including 24 empty/single-child controls.
@@ -19,6 +21,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public object ContainerConstructionOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, Path>
+        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
+
     private enum class Operation(
         val method: String,
         val boundary: String,
