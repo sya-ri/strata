@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -245,6 +246,12 @@ public open class TextAreaInputBenchmark {
      * Untimed acceptance discovered automatically by the generic shared collector.
      */
     public companion object {
+        /**
+         * Connects all original operation boundaries to the shared owner-thread meter without changing JMH sampling.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = TextAreaInputOperationReport
+
         /**
          * Requires the complete 60-case registry, input oracle, clean reuse and exact resource release.
          */

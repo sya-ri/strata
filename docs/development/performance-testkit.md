@@ -77,11 +77,14 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
-Use `-Pstrata.jvmOnly=true` for fully qualified JVM fixture preparation and collection tasks.
-This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules without versioned Fabric projects or Web applications.
-It accepts `formatKotlin` (including the native font backend), JVM tests and archives, ABI checks, `jmhClasses`, `jmhRunBytecodeGenerator`, `jmhCompileGeneratedClasses`, `jmhHistorical`, `jmhComponents`, `jmhRemote` and `processEvidence`.
+Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
+This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
+Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
+The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
 Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
-The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and fail at settings when combined with the flag.
+The scope describes preparation and collection, not completed acceptance: `check`, publication, aggregate Kover and published-host inventory tasks require the complete model and are rejected when combined with the flag.
+The guard inspects the actual resolved task graph, so an option value cannot be mistaken for a complete-acceptance task.
+Complete-acceptance tasks opt out of configuration caching in the scoped model, so later requests reconfigure and are refused before any task executes.
 Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
 Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
 
@@ -93,8 +96,8 @@ Six initial-layout rows include fresh host creation, attach, first frame and ter
 Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive method handle, with the same handle cost on both runtime sides.
 
 Each input operation includes the fixed public opportunity restoration, settled frame and target dispatch in one cycle: a clean frame before an ordinary press, an opposite navigation key plus frame before a directional key, or Home/frame/preedit/frame before composition cancellation.
-CPU and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
-The fixture uses no invocation-level setup, so it avoids per-call setup timestamps and allocation that the iteration-scoped [JMH GC profiler](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) would include outside a dispatch-only CPU interval.
+Measured JMH elapsed time and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
+The fixture uses no invocation-level setup, so it avoids per-call setup timestamps and allocation that the iteration-scoped [JMH GC profiler](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) would include outside a dispatch-only elapsed-time interval.
 Reflection, independent oracle scans, font/backend construction and resource generation remain outside the cycle; all pointer/key events are prebuilt.
 The independent lookup rows isolate the actual line method, while complete initial-layout rows separately expose new-line admission and ownership costs.
 Do not interpret the cycle score as single-event latency or subtract noisy control scores to invent a dispatch-only allocation result.
@@ -108,6 +111,13 @@ Use the existing packaged collector entry point and the same resolved execution 
 Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
 Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
 The corpus makes no native latency, upload, FPS or GPU claim.
+
+Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
+Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
+Scene setup, independent oracles, coordinate-read diagnostics and surviving-owner cleanup remain outside samples.
+The six clean-frame rows are unchanged controls; small-line, signed-fallback and initial-layout costs remain visible in the complete comparison.
+Supplemental reports preserve actual owner-thread CPU, owner/all-thread allocation and wall time with unavailable counters left unavailable.
+The isolated lookup reports retain one untimed coordinate diagnostic after sampling; a baseline without that diagnostic records unavailable reads rather than an inferred zero.
 
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
@@ -167,6 +177,11 @@ Invoke it three times with independent directories and the same selection for ea
 The explicit `:integration:minecraft-fabric-<version>:runProductionClientGameTest` entry remains available for existing automation.
 The native fixture delegates preparation, 30 warm-up frames, 60 complete operation frames per phase, runtime diagnostics and presentation counters to `MinecraftPerformanceMeter`.
 It requests 1920×1080 at GUI scales 1–4 with Vsync disabled and a 120 FPS limit, verifies actual window/options on every frame, restores pacing and viewport afterward, and saves PNGs outside measurement.
+The fixture borrows the formal `minimized` inactivity setting and observes the actual selected and applied limiter at the initial sampling boundary and every completed frame.
+The configured limit is not evidence of the effective limit; modern menu or extracted render-state policies remain explicit in the receipt and must stay stable during each formal interval.
+`-Pstrata.performance.inactivity=afk` selects a separate diagnostic condition rather than changing the formal default.
+The paced fixture uses a distinct workload identity, and success is published only after borrowed options and native resources have been restored.
+An explicit backend request must match the loaded device before sampling; an OpenGL fallback cannot certify Vulkan performance.
 Legacy GLFW performance windows temporarily remove decorations so a full-height framebuffer fits the desktop; the previous decoration state is restored independently of viewport cleanup.
 The 108-phase corpus measures settled presentation; it does not measure input, mutation, resize, release latency or GPU completion.
 Terminal native resource release is a correctness assertion outside timing.
@@ -177,14 +192,22 @@ For legacy production clients, window validation resolves intermediary client/wi
 Missing mappings, missing host members, dead handles and iconified windows reject collection rather than producing a valid zero-cost interval.
 
 Process the three reports with `:quality:component-benchmarks:processNativeComponentEvidence -Pstrata.performance.request=<UTF-8-JSON-request>`.
-The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report with the same runtime binaries).
+The request supplies `collector` (the processor's actual loaded testkit JAR), `runs` (three `report.json` paths), a new `output`, and `cpu_report` (an actual JVM report or current JMH `receipt.json` with the same runtime binaries).
 For selected collection, supply the same comma-separated IDs as `workloads`; sampled-image collection also requires `sampled_images: true`.
 Selected standard evidence keeps the default warm-up, sample counts and three independent invocations, but certifies only its declared workloads rather than full-suite acceptance.
-That JVM report supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
-The adapter selects the four shared API/core/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
+That JVM report or receipt supplies loaded archive/class-tree provenance only; its measurements are neither synthesized nor compared with native latency.
+The adapter reads exactly one legacy `strata` or current `runtime_metadata` inventory without rewriting the raw receipt, requires a successful invocation and current per-iteration fork verification, and preserves strict file/resource/class-tree checks.
+The adapter selects the five shared API/core/headless/Minecraft/font representatives from its real metadata, while Fabric remains native-only.
 The shared kit validates collectors, independent invocations, registered conditions, exact phase matrices and actual CPU/native archive/class-tree bytes, then aggregates declared metrics.
 The adapter additionally verifies the fixture archive, preserved PNG bytes, exact complete-frame counts and balanced native release.
 Only invocation-specific output/terminal-receipt arguments are excluded from controlled JVM arguments.
+
+For a baseline/candidate comparison, use the same processing task with `command: "comparison"`, `backend: "opengl"` or `"vulkan"`, and nested `baseline` and `candidate` objects that each contain three `runs` and their own `cpu_report`.
+The unchanged top-level `collector`, `output`, `workloads` and `sampled_images` fields still apply.
+Request file paths resolve from the repository root.
+Each raw invocation remains bound to its side's actual CPU origins; duplicate invocation IDs, driver fallback, mixed fixture epochs and unequal controlled conditions reject comparison.
+`JvmPerformanceReports.compare` owns all aggregation and metric comparison, and `compareImages` verifies the complete PNG inventory for each paired repetition.
+Preserve raw reports, PNGs and the actual loaded archive paths until processing completes; copying a receipt does not change its recorded origins.
 
 Rendering/extraction-family representatives are 1.20.6, 1.21.1, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1, 26.2 and 26.3, selected from the existing target declarations.
 These ten tuples cover the current UI, Canvas and test-extraction families; they do not certify all combinations of transport, input, Java compatibility or resource loading across the 22 supported targets.
@@ -250,9 +273,14 @@ The other category includes unsupported mapping, clips and adapter/source limits
 Older measured runtimes expose unavailable payload values as null rather than zero.
 
 GPU queries are opt-in through `strata.performance.gpuQueries=true`, recorded in the controlled report conditions.
-The compiled RenderPearl fixture records timestamp pairs immediately around the real native GUI consumer and uses the actual device's timestamp period to convert ticks to nanoseconds.
-`GpuPerformanceMeter` requires every requested pair to complete before publishing p50, p95 and p99 GPU distributions.
-The GPU scope includes all host commands between those timestamps; it excludes CPU preparation, uploads and sampled-target passes recorded before GUI consumption.
+The compiled RenderPearl fixture records two timestamp pairs and uses the actual device's timestamp period to convert ticks to nanoseconds.
+The GUI-only pair surrounds the real native GUI consumer and excludes uploads and sampled-target passes recorded before GUI consumption.
+The full presentation pair starts before owner-thread frame preparation and ends after GUI consumption, covering intervening source/metadata uploads and ordered offscreen composition.
+Its GPU duration does not measure CPU preparation time; the timestamps bound commands on the native device timeline.
+`GpuPerformanceMeter` requires every requested pair to complete before publishing separate p50, p95 and p99 GPU distributions.
+The native processor requires both complete scopes when GUI queries are available and rejects using the GUI-only scope as full presentation evidence.
+Older unsupported adapters may omit the full-scope ancestor while their GUI queries are explicitly unavailable; the adapter registers no missing-path projection and preserves full GPU metrics as null with a reason.
+Mixed ancestor presence or GUI/full-scope measurement availability across one complete raw matrix is rejected, and available scopes must retain complete duration and completion-observation sample counts.
 A separate owner-operation-to-first-observed-GUI-completion distribution includes CPU work, queueing and polling delay and supplies an upper bound at that host observation cadence.
 Neither measurement certifies swapchain presentation, input-to-display latency or FPS.
 Queries and their callbacks are owned by the fixture, bounded by the sample count, and completed and released outside measurement.
@@ -529,3 +557,203 @@ It measures unchanged projection, real shared revisions and complete create/atta
 The work gate checks exact node and changed-record counts, no unchanged declaration traffic, unchanged peer subscriptions during an independent lifetime, and zero retained nodes/subscriptions after close while handles remain reachable.
 The 8192-node and 16-HUD defaults are verified against the loaded protocol limits rather than silently assuming future limits remain unchanged.
 These native-free retained owners do not replace real Paper/Velocity scheduling, plugin messaging, backend switching or negotiated native presentation evidence.
+
+## Opt-in paired JVM CI
+
+The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
+Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
+Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
+The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
+The reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
+This keeps experiment data reachable through Git history without including it in the merged product tree.
+
+Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
+The selector returns the manifest path, producer SHA and manifest SHA-256; the paired job passes all three with the expected driver head and preserves their binding in the attempt evidence.
+A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
+Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
+Manual dispatch uses the same declaration contract and needs no additional workflow input.
+A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
+
+Start another comparison from [the manifest template](../../gradle/performance/paired-jvm.example.json).
+The schema requires these fields:
+
+| Field | Contract |
+| --- | --- |
+| `sources` | Exact commit and final tree SHAs for `fixture`, `baseline` and `candidate`; optional binary patches have repository-relative paths and SHA-256 pins. |
+| `runtime_projects` | The actual JVM project archives replaced in both the work gate and collection classpath. |
+| `suites` | Existing collector project, independent output name, generated benchmark/method selectors, compiled parameter values and complete expected case count. |
+| `inputs` | Unique input labels bound to immutable repository-relative file pins and passed to the existing provenance collector. |
+| `compiled_pins` | Optional predeclared fixture and runtime artifact pins for each source binding; a rebuild mismatch rejects the attempt. |
+| `dependency_pins` | Optional frozen control JAR pins relative to the actual Gradle user home. |
+| `java_pins` | Optional fixed Windows `java.exe` and `release` pins for the `toolchain` and `launcher` roles. |
+
+A suite may additionally declare `profilers` as unique compiled JMH profiler class names.
+The driver passes these through `strata.performance.profilers` to the standard JMH `-prof` option only during collection; the existing GC and provenance profilers remain enabled.
+No fixture class name is registered in the build script or driver.
+Custom secondary metrics remain in the complete raw JMH results and the shared processor reports their independent-run medians, units and baseline/candidate deltas alongside its standard latency/allocation/GC metrics.
+Additional metrics require complete per-fork/per-iteration scalar data, the same metric inventory in every repetition and both sides, and unchanged units.
+An owner requiring an additional CPU metric must verify its actual availability across the whole selected matrix before accepting that corpus.
+Such a corpus freezes the collector containing this generic secondary-metric processing; an earlier frozen collector is not silently replaced or certified as supporting the new output.
+Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
+
+A suite may declare optional `test_gates` for independent tests on both original reconstructed runtime sources before any timed collection.
+Each gate has an existing runtime `task` and a nonempty `required_tests` inventory of exact `class#method` bindings; filters and additional task arguments are not allowed.
+The driver runs the complete task on baseline and candidate without the fixture overlay, preserves all actual JUnit XML even on failure, and checks report counts and successful execution of each required method exactly once.
+These independent tests supplement the fixture's complete work and loaded-runtime controls.
+
+A suite may also declare an optional `preflight` object for a qualified compiled untimed controller.
+It has exactly four fields: `main` is a qualified class name already compiled in that suite's fixture classpath; `qualification` is an immutable repository-relative file pin containing the owner's independent controller qualification evidence; `runtime_classes` maps every declared runtime project to its loaded representative class; and `controls` is the complete ordered inventory of unique `id` and `arguments` records.
+Arguments are data passed in a pinned JSON request, never shell commands or additional JVM options.
+The same control inventory and qualification bytes apply to both runtime sides.
+Controller qualification remains an independent owner responsibility: a pinned record and a generic work gate cannot certify a particular tracer, native path or lifetime control.
+
+The controller's static `main(String[])` receives one absolute request-file path.
+The `strata-paired-jvm-preflight-request-v1` request records the suite, side, full control inventory, preserved qualification, runtime/classpath byte pins, required loaded classes, source archives, actual Java identities, frozen inputs and a fresh output directory.
+The controller executes every requested control before returning and writes `receipt.json` with schema `strata-paired-jvm-preflight-receipt-v1`, `status: passed`, the actual request's `request_sha256`, and its complete ordered `controls` array.
+Each control contains its `id`, `status: passed`, nonempty structured `observations`, `origins` for every required class as `{ "pid": actualJvmPid }`, and nonempty `artifacts` containing repository-style relative `path` and actual `sha256` pins inside that control's output directory.
+Separate observation files retain actual traces, counters and independent proof rather than replacing them with a success boolean.
+Missing, repeated, reordered, failed or unavailable controls, changed request/qualification/input/classpath bytes, unsafe observation paths and mismatched loaded origins fail the attempt.
+
+The shared init script creates the generic controller JavaExec from the existing suite work gate's dependency graph, launcher, native-access options and classpath.
+Its measured-fork count must be zero.
+An external controller launching its own untimed JVM must keep the inherited diagnostic/resource profile, emit its actual `paired.jvm.origin` record, and provide naturally released owning Job generations and PID-qualified class-load origins for those observations.
+Tracing belongs to this separate untimed route; the driver supplies no instrumentation option to timed JVMs and retains the same immutable fixture/runtime/collector/harness closure for collection.
+Every selected suite's full work gates and both sides' independent controls complete before the first timed collection in the attempt.
+
+Supported collector projects are `:quality:benchmarks`, `:quality:component-benchmarks` and `:quality:remote-benchmarks`.
+They use the existing `jmhHistorical`, `jmhComponents` and `jmhRemote` tasks and full `verifyHistoricalWorkloads`, `verifyComponentRenderingWork` and `verifyRemoteWorkloads` work gates.
+Generated fixture selection does not require a central benchmark registry or a fixture-specific build-script branch.
+Remote protocol and retained-session defaults remain separate existing scopes; a supplemental compiled remote fixture uses the same generated selection contract.
+Select CPU fixtures whose required toolchains fit the fixed catalog profile.
+The existing component task also supplies OS-classified LWJGL/STB/FreeType native JARs, fixed font inputs and native access for CPU font-library controls.
+These controls do not require a graphics window or loaded game, but their actual DLL load, workload parity and release must pass in the job; a missing native library or required control fails the whole corpus.
+GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A in this CPU route; real game, browser and Paper/Velocity host evidence uses its own integration route.
+This manifest does not bind versioned Fabric adapter archives, Web/browser runs or Velocity main/probe and separately registered remote inventories.
+It also does not reproduce an unrestricted toolchain-discovery control or change its original RAM/metaspace conditions.
+Such owners retain their existing complete evidence routes; JVM success cannot substitute for those domains, and a changed measurement environment cannot be presented as the same comparison.
+
+Each source is reconstructed in a private checkout with `core.autocrlf=false`, staged patches and an exact `git write-tree` guard.
+Private checkout attributes disable text conversion so working files preserve the frozen Git blob bytes, including older nonnormalized CRLF blobs.
+Both those attributes and the complete working tree remain guarded between invocations.
+The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
+No old workstation owner directory, private index or missing historical metadata file is a prerequisite.
+Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
+
+All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
+For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
+Quick, smoke, repetition and timing overrides are not manifest fields.
+The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
+The report displays the processor's baseline/candidate medians, absolute deltas, allocation and GC metrics, and SampleTime percentile medians.
+Time is per declared fixture batch; it has no cross-machine improvement interpretation or wall-time pass threshold.
+JMH Thread CPU per operation is unavailable unless a separately declared profiler supplies it; Job CPU includes preparation and descendants.
+Supplemental owner-thread operation reports have their own explicit boundary and protocol described below.
+
+### Supplemental operation reports
+
+A suite can opt into `operation_reports` without changing its JMH selectors, modes, forks, iterations or deterministic work gates.
+The existing three supported fixture projects use their existing collector tasks and classpaths; no fixture-specific Gradle task or launcher is required.
+Omitting this field never discovers or invokes an adapter, and the fixed pilot remains unchanged.
+The field requires an `adapters` object mapping each selected fixture's binary class name to its compiled adapter class name, `warmup`, `samples`, `expected_rows` and `expected_controls`.
+The complete operation row count must equal the original selected JMH method/parameter count for one mode; each row also binds both original AverageTime and SampleTime inventories.
+The six supplemental invocations and their cell counts are distinct from the twelve original JMH invocations.
+
+```json
+"operation_reports": {
+  "adapters": {
+    "dev.s7a.strata.quality.benchmark.CycleSelectionBenchmark": "dev.s7a.strata.quality.benchmark.CycleSelectionOperationReport"
+  },
+  "warmup": 30,
+  "samples": 60,
+  "expected_rows": 48,
+  "expected_controls": 30
+}
+```
+
+The fixture declares a public static no-argument `operationReport()` returning `JvmOperationReportAdapter`; Kotlin companions expose it with `@JvmStatic`.
+`collectVerified` runs the fixture's original complete work hook before collection by default.
+An adapter whose original hook permanently closes its owner may override this boundary to verify and sample inside the same original owner lifetime.
+That override must preserve all original controls and terminal release; it cannot reset the owner or omit verification.
+The adapter declares `JvmOperationReportRow` identities, complete method/parameter bindings, boundaries, control identities and explicit operations per sample.
+Missing required, duplicate, ambiguous, invalid or stale hooks fail before collection can publish valid evidence.
+Every selected JMH method and parameter row must bind exactly once; the adapter cannot silently drop independent controls.
+The shipped [selection adapter](../../quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/CycleSelectionOperationReport.kt) preserves all 39 fixtures, 48 complete operation rows and 30 controls.
+The independent [composition adapter](../../quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NonuniformOverlayOperationReport.kt) binds every row of its existing six-case corpus.
+
+Adapters use `JvmPerformanceRunner.warmup` and `sequence` rather than implementing a sampling loop, clock or counter.
+Prepare and prime fixtures before `sequence.sample`, execute every required complete-operation step inside its callback, and keep assertions, report serialization and ordinary surviving-resource teardown after it.
+Lifecycle rows retain required terminal close inside the actual operation; setup allocation is never subtracted from stock JMH GC allocation.
+Retained main fixtures and fresh invocation controls keep their own original ownership and preparation rules.
+Failed operations, incomplete sample counts or terminal cleanup failures cannot publish a successful report.
+
+Supplemental invocations run serially in `B0/C0/B1/C1/B2/C2` order on the same qualified host, outside JMH timing, with the same frozen fixture/collector/adapter and external inputs against each runtime.
+Each raw `report.json` binds its independent UUID to the corresponding complete original AverageTime invocation and preserved receipt digest.
+Loaded fixture, adapter, collector, runtime class trees, actual JVM/host properties and input identities are checked around collection; source/tree/archive bindings remain in every report and the whole attempt archive.
+Adapters declare actual consumed resource and external file paths through `inputs`; every original JMH input must match a current source file, including resolved control libraries.
+The collector re-reads mappings and bytes after collection, and processing revalidates both those actual files and the semantic input-manifest mappings alongside the original JMH archives.
+Missing, unknown, redirected or changed inputs fail instead of reusing an old archive identity.
+Processing uses `JvmPerformanceReports.compare`, `PerformanceReportContract` and registered `PerformanceReportMetric` projections.
+A changed adapter or collector requires a new paired freeze and fresh evidence on both sides.
+
+Owner-thread CPU is `owner_thread_cpu_ns / samples` in ns/sample; owner-thread allocation is `owner_thread_allocated_bytes / samples` in B/sample.
+A sample is the declared complete operation or explicit batch; raw totals, exact denominators, operations per sample and original distributions remain preserved.
+CPU/allocation percentiles keep their own units; the existing allocation distribution's legacy `_ns` field suffix denotes the collector's stored numeric distribution rather than converting allocated bytes to time.
+The comparison preserves independent per-run values and medians, absolute deltas and nullable unavailable fields.
+Unsupported CPU or allocation counters remain JSON null through collection, comparison and rendered tables, never a fabricated zero.
+Wall time, process/all-thread counters, job CPU, heap-boundary samples and stock JMH GC allocation retain their separate scopes.
+Heap-boundary changes do not establish retained-object size, and these counters do not certify browser, GPU, native upload or loaded-game costs.
+Existing meter reads and adapter dispatch have collection cost; cost comparisons require actual matching fixture measurements and remain Pending until collected.
+
+Every supplemental preparation, collection, processing and cleanup phase uses the same fresh RAM admission, fixed JVM caps, worker and affinity controls, owned Windows Job, deadlines, no-breakaway and terminal resource checks.
+A failed attempt cannot donate rows to a later attempt; an unsupported whole workload is reported as a failure without substituting a subset.
+Full original JMH and applicable native/runtime Issue acceptance remain independently required.
+
+Every Gradle invocation requires fresh available physical RAM of at least 4096 MiB, checked again inside its owning Windows Job immediately before Java.
+The suspended caller is assigned before it can start Gradle; descendants inherit a 3 GiB committed-memory limit, kill-on-close and no breakaway.
+One invocation has 1800 seconds of work and 30 seconds of cleanup, one Gradle worker and one test fork.
+The hosted job has a six-hour bound, with a reserve for terminal evidence and upload; these limits are fixed rather than exposed as manifest overrides.
+An entire suite and all twelve collections must fit those bounds.
+A selection whose required full iterations already exceed the invocation or attempt bound is unsupported; do not shorten its iterations, drop controls, select fewer cases or combine partial runs to make it fit.
+This single-runner route does not shard a corpus across distributed executors.
+The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB, probe 32/256 MiB, compiler/generator/test worker 512/256 MiB and JavaExec/JMH fork 768/384 MiB.
+The inherited Java environment supplies the probe heap cap, while each ordinary launcher retains its explicit profile.
+JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
+These probes remain separate diagnostic records and never count as measured forks.
+The boundary queries at most 256 live members and retains only still-active owned process handles.
+An incomplete Job list is never admitted; membership changes trigger another complete bounded query at the original 100 ms polling cadence within the same phase deadline.
+First and last incomplete query headers remain recorded separately from genuine capacity refusal.
+The existing 4 MiB terminal-reader capacity bounds history before insertion: each generation charges 1024 bytes for fixed fields/PID/list formatting plus six bytes per UTF-16 image character for worst JSON escaping.
+Accepted history has a 3 MiB serialized upper bound; the first refused generation is preserved before failure, with at most 197,632 additional bytes from the existing 32,768-character image buffer.
+The remaining report capacity covers fixed terminal metadata without truncating a generation or increasing the reader limit.
+Each signalled owned handle records its actual exit and PID/creation-time identity before closing; immutable generation lists preserve legitimate PID reuse instead of replacing history.
+VM checks select exactly one matching birth and reject missing, ambiguous, altered, active or wrong-affinity generations.
+The real boundary controls include 288 completed observed descendants with eight concurrent children, alongside the unchanged normal, failure, RAM-refusal, timeout and leaked-child cases.
+A separate eight-concurrent-child control reaches the actual history budget under the same source-control deadline and memory profile, retains the first refused generation and proves bounded-report failure plus zero owned cleanup.
+Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
+Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
+Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
+Previously captured staging files must remain byte-identical before the next invocation.
+The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
+Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
+When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured Java executable PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
+This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, Java executable generation or candidate file keeps attribution ambiguous.
+Closed non-Java helper generations that reuse the PID remain separately recorded with their actual image, birth, exit, Job membership and affinity; the sole Java generation must match the VM's actual executable and lifetime.
+Both standard Java launcher names, `java.exe` and `javaw.exe`, count as Java generations; this distinction does not admit a different main executable.
+Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
+Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
+Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
+The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
+An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
+
+The artifact retains source archives, frozen manifest and its producer/driver binding, the exact shared driver sources, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
+Runtime JARs and immutable inputs are copied before the first work gate; a preflight suite additionally preserves every classpath archive/directory, including fixture, collector, harness and control tooling, before that gate's JVM starts.
+Copies are checked against original bytes before and after preservation, independently guarded across control and collection phases, and kept outside reusable workspaces even when the first control fails.
+Independent preflight requests, qualification records, actual observations, receipts and verified inventories remain in the failed or successful attempt archive.
+`attempt.json` is authoritative about success or failure; caches and private build workspaces are excluded from acceptance evidence.
+The workflow uploads failed attempts and checks failure, RAM-refusal, timeout and leaked-child cleanup through the same process boundary after collection.
+Acceptance requires the whole selected case matrix and both comparisons, the process-boundary controls, and ordinary quality/ABI/Qodana and supported-version checks on the final driver revision.
+
+Changes to the shared performance controller select the hosted `Qualified compiled fixture controls` qualification job.
+It compiles an independent test controller into the existing generated remote fixture classpath without editing a collector build script, completes both modes' whole three-baseline/three-candidate pair, and records actual collection and control phase costs.
+Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
+The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
+This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.

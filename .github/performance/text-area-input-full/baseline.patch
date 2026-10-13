@@ -1,0 +1,1382 @@
+diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
+index d020eab93aa37b938bfe493505ea61e4a35c99ac..b108ba7effcf65a44e4d0d8feeba65434de0aabb 100644
+--- a/docs/development/performance-testkit.md
++++ b/docs/development/performance-testkit.md
+@@ -88,6 +88,37 @@ Complete-acceptance tasks opt out of configuration caching in the scoped model,
+ Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
+ Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
+ 
++The generated `TextAreaInputBenchmark` fixture adds a separate 60-case logical editing corpus through the existing component entry point:
++`:quality:component-benchmarks:jmhComponents '-Pstrata.jvmOnly=true' '-Pstrata.performance.benchmarks=TextAreaInputBenchmark' '-Pstrata.performance.suite=text-area-input'`.
++Its 30 input rows cover beginning/middle/end primary presses on short wrapped, long BMP, supplementary, plateau and signed-coordinate lines, vertical/page navigation between two long hard-break lines, and three composition mapping regions.
++Each source respects the default state capacity; middle/end unwrapped inputs preserve real caret-following horizontal pan.
++Six initial-layout rows include fresh host creation, attach, first frame and terminal close with resource bytes prepared, while six clean-frame rows retain the existing frame.
++Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive method handle, with the same handle cost on both runtime sides.
++
++Each input operation includes the fixed public opportunity restoration, settled frame and target dispatch in one cycle: a clean frame before an ordinary press, an opposite navigation key plus frame before a directional key, or Home/frame/preedit/frame before composition cancellation.
++Measured JMH elapsed time and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
++The fixture uses no invocation-level setup, so it avoids per-call setup timestamps and allocation that the iteration-scoped [JMH GC profiler](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) would include outside a dispatch-only elapsed-time interval.
++Reflection, independent oracle scans, font/backend construction and resource generation remain outside the cycle; all pointer/key events are prebuilt.
++The independent lookup rows isolate the actual line method, while complete initial-layout rows separately expose new-line admission and ownership costs.
++Do not interpret the cycle score as single-event latency or subtract noisy control scores to invent a dispatch-only allocation result.
++The untimed verifier independently checks complete Long-distance winners, scalar offsets, scroll/pan, focus token identity, committed semantics, exact headless pixels at scales one through three, clean frame reuse and terminal resource release.
++Candidate coordinate-read checks use the loaded runtime's inlined search diagnostic; an older runtime without that diagnostic still executes the same complete winner oracle.
++Source-derived baseline call/read counts must be labeled separately from observed diagnostics and measured CPU/allocation.
++
++For a paired runtime comparison, freeze the fixture, its Java primitive-handle helper, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
++A fixture-only archive can combine the Kotlin and Java compiled fixture roots and generated JMH roots without embedding any target runtime classes; this binds the helper to the same preserved fixture code source.
++Use the existing packaged collector entry point and the same resolved execution classpath, replacing only the selected actual Minecraft runtime archive.
++Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
++Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
++The corpus makes no native latency, upload, FPS or GPU claim.
++
++Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
++Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
++Scene setup, independent oracles, coordinate-read diagnostics and surviving-owner cleanup remain outside samples.
++The six clean-frame rows are unchanged controls; small-line, signed-fallback and initial-layout costs remain visible in the complete comparison.
++Supplemental reports preserve actual owner-thread CPU, owner/all-thread allocation and wall time with unavailable counters left unavailable.
++The isolated lookup reports retain one untimed coordinate diagnostic after sampling; a baseline without that diagnostic records unavailable reads rather than an inferred zero.
++
+ For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
+ The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
+ JDK Properties requires escaped colons in these project-path keys and escaped backslashes in Windows paths.
+diff --git a/docs/development/performance.md b/docs/development/performance.md
+index 666b429f0b56f5266b5965e66a8b5c1260bbd711..ce79e632fe8aa77f5fb08f3c0f83aa99f3f573b6 100644
+--- a/docs/development/performance.md
++++ b/docs/development/performance.md
+@@ -738,6 +738,29 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar
+ This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
+ The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+ 
++### Logical multiline insertion lookup
++
++Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
++Only a nondecreasing coordinate sequence admits logarithmic lower-bound lookup; raw glyph advances, visual ordering and font capabilities do not establish admission.
++The insertion winner uses exact Long distance and the earliest original logical scalar boundary for coordinate plateaus and equal-distance ties.
++Non-monotone signed, overflow-wrapped or non-finite-derived coordinates retain the complete ordered scan.
++No input lookup allocates an array, calls a font backend or retains a coordinate/result history.
++The flag is released with its current line when layout changes; editor detach clears the layout and terminal disposal clears borrowed inputs.
++
++A normal primary press reuses its already resolved boundary through the same placement and soft-wrap-affinity operation used by vertical navigation.
++Composition mapping still uses the composed layout before cancellation and preserves the committed scalar insertion offset.
++Independent runtime tests compare the search with complete ordered scans, actual release-selected rounded Float prefixes and exact headless cursor/glyph images.
++Existing editor navigation, viewport, composition and replacement tests remain required controls for preferred columns, hard breaks, soft wraps, pan, scroll and ownership.
++
++The separate `TextAreaInputBenchmark` corpus keeps actual public input cycles apart from isolated lookup, complete initial host/layout ownership and clean frames.
++The cycle includes its public opportunity restoration and frame settlement in both measured JMH elapsed time and normalized allocation; composed cycles include layout replacement and do not claim isolated event latency.
++Its bounded coordinate-read diagnostic executes the same inlined search outside measurement; ordinary input carries no counter or callback.
++At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B.
++The constructor's admission scan remains part of the separately measured initial-layout cost.
++JMH elapsed-time and normalized-allocation comparisons require the complete frozen corpus and independent Standard repetitions described in [the testkit contract](performance-testkit.md); structural bounds alone establish no measured speedup.
++The optional shared operation-report adapter measures all 60 original boundaries with owner-thread CPU and allocation counters separately from JMH elapsed time; unavailable counters remain explicit.
++This corpus measures neither native input latency, uploads nor GPU time.
++
+ ## Interpreting measurements
+ 
+ `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
+diff --git a/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/TextAreaLookupAccess.java b/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/TextAreaLookupAccess.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9e07e108673ae0a15341f676f820adc189573af4
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/java/dev/s7a/strata/quality/benchmark/TextAreaLookupAccess.java
+@@ -0,0 +1,31 @@
++package dev.s7a.strata.quality.benchmark;
++
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.reflect.Method;
++import java.util.Arrays;
++import java.util.function.IntUnaryOperator;
++
++/** Provides one prebound primitive lookup handle for an actual retained line. */
++final class TextAreaLookupAccess {
++    private TextAreaLookupAccess() {}
++
++    /** Resolves the existing synthetic internal method outside sampling, without boxing its timed argument or result. */
++    static IntUnaryOperator create(Object line) throws IllegalAccessException {
++        Method method = Arrays.stream(line.getClass().getDeclaredMethods())
++            .filter(candidate -> candidate.getName().split("\\$")[0].equals("offsetAt"))
++            .filter(candidate -> Arrays.equals(candidate.getParameterTypes(), new Class<?>[] {int.class}))
++            .findFirst().orElseThrow();
++        method.setAccessible(true);
++        MethodHandle handle = MethodHandles.lookup().unreflect(method).bindTo(line);
++        return x -> {
++            try {
++                return (int) handle.invokeExact(x);
++            } catch (RuntimeException | Error failure) {
++                throw failure;
++            } catch (Throwable failure) {
++                throw new IllegalStateException("Logical insertion lookup failed", failure);
++            }
++        };
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputAccess.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputAccess.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..b62f0bacc9f59fdcc1fb54f238c925d32d0797c4
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputAccess.kt
+@@ -0,0 +1,149 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import java.lang.reflect.Field
++import kotlin.math.abs
++
++// Why: the external-symbol adapter keeps all untimed reads and independent line oracles in one place.
++
++/**
++ * Untimed read-only access to the exact current retained editor and detached line data.
++ * Reflection resolves existing internal symbols, never mutates runtime fields, and never participates in session input timing.
++ */
++@Suppress("TooManyFunctions")
++@OptIn(InternalStrataRuntimeApi::class)
++internal object TextAreaInputAccess {
++    private val editorClass = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextAreaEditor")
++
++    /**
++     * Locates the single actual editor through its known retained ownership chain.
++     */
++    internal fun editor(host: MinecraftUiHost): Any {
++        val session = field(field(host, "session"), "session")
++        val root = field(field(session, "tree"), "root")
++        return checkNotNull(findEditor(root))
++    }
++
++    /**
++     * Reads one required current field without copying or retaining ownership history.
++     */
++    internal fun field(
++        owner: Any,
++        name: String,
++    ): Any = checkNotNull(optional(owner, name))
++
++    /**
++     * Reads nullable current ownership, used only outside collection.
++     */
++    internal fun optional(
++        owner: Any,
++        name: String,
++    ): Any? =
++        member(owner.javaClass, name)
++            .apply { isAccessible = true }
++            .get(owner)
++
++    /**
++     * Borrows the current line list without exposing it to timed session code.
++     */
++    internal fun lines(layout: Any): List<Any> = (field(layout, "lines") as List<*>).map(::checkNotNull)
++
++    /**
++     * Finds the current visual line independently from scalar intervals and decoded soft-wrap affinity.
++     */
++    internal fun lineIndex(
++        layout: Any,
++        cursor: Any,
++    ): Int {
++        val offset = field(cursor, "offset") as Int
++        val lines = lines(layout)
++        val index = lines.indexOfLast { line -> (field(line, "start") as Int) <= offset }.coerceAtLeast(0)
++        val upstream = enumValueOf<Affinity>((field(cursor, "affinity") as Enum<*>).name) === Affinity.Upstream
++        if (upstream && 0 < index && field(lines[index], "start") == offset) {
++            val previous = lines[index - 1]
++            if (field(previous, "end") == offset && field(previous, "nextStart") == offset) return index - 1
++        }
++        return index
++    }
++
++    /**
++     * Selects pointer line boxes by the complete spacing-gap midpoint rule, independently of runtime lookup.
++     */
++    internal fun pointerLine(
++        layout: Any,
++        y: Int,
++    ): Int {
++        val lines = lines(layout)
++        val step = field(layout, "lineStep") as Int
++        val index = Math.floorDiv(y.coerceAtLeast(0), step).coerceAtMost(lines.lastIndex)
++        val afterMidpoint = 9 + step < 2L * (y.toLong() - index.toLong() * step)
++        return if (index < lines.lastIndex && afterMidpoint) index + 1 else index
++    }
++
++    /**
++     * Complete independent Long-distance scan with earliest logical ties.
++     */
++    internal fun nearest(
++        line: Any,
++        x: Int,
++    ): Int {
++        val positions = field(line, "positions") as IntArray
++        val offsets = field(line, "offsets") as IntArray
++        val nearest = positions.indices.minBy { index -> abs(positions[index].toLong() - x.toLong()) }
++        return offsets[nearest]
++    }
++
++    /**
++     * Reads an exact scalar coordinate by its original UTF-16 boundary.
++     */
++    internal fun coordinate(
++        line: Any,
++        offset: Int,
++    ): Int {
++        val offsets = field(line, "offsets") as IntArray
++        return (field(line, "positions") as IntArray)[offsets.indexOf(offset)]
++    }
++
++    /**
++     * Checks candidate coordinate reads when available; old runtimes still execute the identical complete-scan oracle.
++     */
++    internal fun verifyVisits(
++        line: Any,
++        x: Int,
++    ) {
++        val method = line.javaClass.declaredMethods.singleOrNull { candidate -> candidate.name.startsWith("boundaryVisits") }
++        if (method == null) return
++        method.isAccessible = true
++        val visits = method.invoke(line, x) as Int
++        val positions = field(line, "positions") as IntArray
++        val monotone = (1 until positions.size).all { index -> positions[index - 1] <= positions[index] }
++        val bound = if (monotone) 2 * (32 - Integer.numberOfLeadingZeros(positions.size)) + 2 else positions.size
++        check(visits <= bound)
++        if (monotone.not()) check(visits == positions.size)
++    }
++
++    private fun findEditor(entry: Any): Any? {
++        val node = field(entry, "node")
++        val editor = node.javaClass.declaredFields.singleOrNull { candidate -> candidate.type === editorClass }
++        if (editor != null) return editor.apply { isAccessible = true }.get(node)
++        for (child in field(entry, "children") as List<*>) findEditor(checkNotNull(child))?.let { return it }
++        return null
++    }
++
++    private fun member(
++        type: Class<*>,
++        name: String,
++    ): Field =
++        try {
++            type.getDeclaredField(name)
++        } catch (missing: NoSuchFieldException) {
++            val parent = type.superclass ?: throw missing
++            member(parent, name)
++        }
++
++    private enum class Affinity {
++        Upstream,
++        Downstream,
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputBenchmark.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..5fa12fdf25b2be1a0bbb19cd7752565abbcbd9e5
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputBenchmark.kt
+@@ -0,0 +1,280 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import org.openjdk.jmh.annotations.Benchmark
++import org.openjdk.jmh.annotations.Level
++import org.openjdk.jmh.annotations.Param
++import org.openjdk.jmh.annotations.Scope
++import org.openjdk.jmh.annotations.Setup
++import org.openjdk.jmh.annotations.State
++import org.openjdk.jmh.annotations.TearDown
++import java.util.function.IntUnaryOperator
++
++/**
++ * Measures actual retained TextArea input cycles, complete initial-layout ownership, clean frames and isolated logical lookup separately.
++ * Immutable synthetic glyph metrics and resources are prepared outside timing; the shared kit owns forks and allocation collection.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public open class TextAreaInputBenchmark {
++    /**
++     * Includes public opportunity restoration and one prebuilt target input, so CPU and allocation share the same cycle boundary.
++     */
++    @Benchmark
++    public fun input(scene: InputScene): InputResult = scene.input()
++
++    /**
++     * Creates, attaches, lays out and closes a fresh host using prepared resources, exposing admission/construction cost separately.
++     */
++    @Benchmark
++    public fun initialLayout(scene: LayoutScene): RuntimeUiFrame = scene.initialLayout()
++
++    /**
++     * Reuses the prepared frame without input or layout replacement.
++     */
++    @Benchmark
++    public fun clean(scene: LayoutScene): RuntimeUiFrame = scene.clean()
++
++    /**
++     * Calls the real line through a prebound primitive handle; handle invocation is common to both runtime sides.
++     */
++    @Benchmark
++    public fun lookup(scene: LookupScene): Int = scene.lookup()
++
++    /**
++     * Fixed whole-input matrix, rather than a Cartesian product with mostly redundant rows.
++     */
++    public enum class Workload(
++        internal val shape: Shape,
++        internal val operation: Operation,
++        internal val point: Point,
++        internal val composed: Boolean = false,
++    ) {
++        ShortPressBeginning(Shape.ShortWrapped, Operation.Primary, Point.Beginning),
++        ShortPressMiddle(Shape.ShortWrapped, Operation.Primary, Point.Middle),
++        ShortPressEnd(Shape.ShortWrapped, Operation.Primary, Point.End),
++        BmpPressBeginning(Shape.LongBmp, Operation.Primary, Point.Beginning),
++        BmpPressMiddle(Shape.LongBmp, Operation.Primary, Point.Middle),
++        BmpPressEnd(Shape.LongBmp, Operation.Primary, Point.End),
++        SupplementaryPressBeginning(Shape.Supplementary, Operation.Primary, Point.Beginning),
++        SupplementaryPressMiddle(Shape.Supplementary, Operation.Primary, Point.Middle),
++        SupplementaryPressEnd(Shape.Supplementary, Operation.Primary, Point.End),
++        UpBeginning(Shape.TwoLines, Operation.Up, Point.Beginning),
++        UpMiddle(Shape.TwoLines, Operation.Up, Point.Middle),
++        UpEnd(Shape.TwoLines, Operation.Up, Point.End),
++        DownBeginning(Shape.TwoLines, Operation.Down, Point.Beginning),
++        DownMiddle(Shape.TwoLines, Operation.Down, Point.Middle),
++        DownEnd(Shape.TwoLines, Operation.Down, Point.End),
++        PageUpBeginning(Shape.TwoLines, Operation.PageUp, Point.Beginning),
++        PageUpMiddle(Shape.TwoLines, Operation.PageUp, Point.Middle),
++        PageUpEnd(Shape.TwoLines, Operation.PageUp, Point.End),
++        PageDownBeginning(Shape.TwoLines, Operation.PageDown, Point.Beginning),
++        PageDownMiddle(Shape.TwoLines, Operation.PageDown, Point.Middle),
++        PageDownEnd(Shape.TwoLines, Operation.PageDown, Point.End),
++        PlateauPressBeginning(Shape.Plateau, Operation.Primary, Point.Beginning),
++        PlateauPressMiddle(Shape.Plateau, Operation.Primary, Point.Middle),
++        PlateauPressEnd(Shape.Plateau, Operation.Primary, Point.End),
++        SignedPressBeginning(Shape.Signed, Operation.Primary, Point.Beginning),
++        SignedPressMiddle(Shape.Signed, Operation.Primary, Point.Middle),
++        SignedPressEnd(Shape.Signed, Operation.Primary, Point.End),
++        ComposedBefore(Shape.LongBmp, Operation.Primary, Point.Beginning, composed = true),
++        ComposedInside(Shape.LongBmp, Operation.Primary, Point.Middle, composed = true),
++        ComposedAfter(Shape.LongBmp, Operation.Primary, Point.End, composed = true),
++    }
++
++    /**
++     * Prepared source and actual face metrics; every source respects the default UTF-16 capacity.
++     */
++    public enum class Shape {
++        ShortWrapped,
++        LongBmp,
++        Supplementary,
++        TwoLines,
++        Plateau,
++        Signed,
++    }
++
++    /**
++     * Logical starting column, or before/inside/after the fixed composition.
++     */
++    public enum class Point {
++        Beginning,
++        Middle,
++        End,
++    }
++
++    /**
++     * One target public input operation; measured cycles include restoration through its opposite direction.
++     */
++    internal enum class Operation {
++        Primary,
++        Up,
++        Down,
++        PageUp,
++        PageDown,
++    }
++
++    /**
++     * Actual public input owner; each measured cycle restores its opportunity through public input and frame settlement.
++     */
++    @State(Scope.Thread)
++    public open class InputScene {
++        /**
++         * Exact input case generated by JMH.
++         */
++        @JvmField
++        @Param
++        public var workload: Workload = Workload.ShortPressBeginning
++
++        private lateinit var fixture: TextAreaInputFixture
++
++        /**
++         * Prepares and independently verifies this real editor before sampling.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = TextAreaInputFixture(workload.shape, workload.point, workload.operation, workload.composed)
++            fixture.verifyInput()
++        }
++
++        /**
++         * Includes fixed preparation and target dispatch without per-invocation setup timestamps or hidden profiler allocation.
++         */
++        public fun input(): InputResult = fixture.inputCycle()
++
++        /**
++         * Closes the host and requires zero face/backend ownership and a released state observer.
++         */
++        @TearDown(Level.Trial)
++        public fun close(): Unit = fixture.close()
++    }
++
++    /**
++     * Prepared initial-layout and clean-frame controls for every metric/source family.
++     */
++    @State(Scope.Thread)
++    public open class LayoutScene {
++        /**
++         * Source family shared with the input corpus.
++         */
++        @JvmField
++        @Param
++        public var shape: Shape = Shape.ShortWrapped
++
++        private lateinit var fixture: TextAreaInputFixture
++
++        /**
++         * Prepares immutable resources and the independent clean control.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = TextAreaInputFixture(shape)
++            fixture.verifyClean()
++        }
++
++        /**
++         * Returns an unchanged frame.
++         */
++        public fun clean(): RuntimeUiFrame = fixture.frame()
++
++        /**
++         * Includes all ownership around a first real layout, excluding resource-byte generation.
++         */
++        public fun initialLayout(): RuntimeUiFrame = fixture.initialLayout()
++
++        /**
++         * Releases the current control host.
++         */
++        @TearDown(Level.Trial)
++        public fun close(): Unit = fixture.close()
++    }
++
++    /**
++     * One real current-line lookup with common primitive handle dispatch and no session preparation inside timing.
++     */
++    @State(Scope.Thread)
++    public open class LookupScene {
++        /**
++         * Source/metric family; small, plateau and signed rows remain controls.
++         */
++        @JvmField
++        @Param
++        public var shape: Shape = Shape.ShortWrapped
++
++        /**
++         * Three independent compiled probe positions.
++         */
++        @JvmField
++        @Param
++        public var point: Point = Point.Beginning
++
++        private lateinit var fixture: TextAreaInputFixture
++        private lateinit var operation: IntUnaryOperator
++        private var x = 0
++
++        /**
++         * Resolves the existing line method and checks it against the complete scan outside timing.
++         */
++        @Setup(Level.Trial)
++        public fun setUp() {
++            fixture = TextAreaInputFixture(shape, point)
++            val line = fixture.currentLine()
++            x = fixture.lookupX(line, point)
++            operation = TextAreaLookupAccess.create(line)
++            fixture.verifyLookup(line, x, operation)
++        }
++
++        /**
++         * Returns a primitive offset without reflective argument/result boxing.
++         */
++        public fun lookup(): Int = operation.applyAsInt(x)
++
++        /**
++         * Releases the owning host after the line's final use.
++         */
++        @TearDown(Level.Trial)
++        public fun close() {
++            fixture.close()
++            operation = IntUnaryOperator.identity()
++        }
++    }
++
++    /**
++     * Untimed acceptance discovered automatically by the generic shared collector.
++     */
++    public companion object {
++        /**
++         * Connects all original operation boundaries to the shared owner-thread meter without changing JMH sampling.
++         */
++        @JvmStatic
++        public fun operationReport(): JvmOperationReportAdapter = TextAreaInputOperationReport
++
++        /**
++         * Requires the complete 60-case registry, input oracle, clean reuse and exact resource release.
++         */
++        @JvmStatic
++        public fun verifyWork() {
++            check(JmhWorkloadInventory.capture(listOf(TextAreaInputBenchmark::class.java), setOf("avgt")).size == 60)
++            for (workload in Workload.entries) {
++                TextAreaInputFixture(workload.shape, workload.point, workload.operation, workload.composed).use { fixture -> fixture.verifyInput() }
++            }
++            for (shape in Shape.entries) verifyControls(shape)
++        }
++
++        private fun verifyControls(shape: Shape) {
++            TextAreaInputFixture(shape).use { fixture ->
++                fixture.verifyClean()
++                fixture.initialLayout()
++            }
++            for (point in Point.entries) {
++                TextAreaInputFixture(shape, point).use { fixture ->
++                    val line = fixture.currentLine()
++                    fixture.verifyLookup(line, fixture.lookupX(line, point), TextAreaLookupAccess.create(line))
++                }
++            }
++        }
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputFixture.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputFixture.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..ee326acf96eabd1e413733c69b61557043d92230
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputFixture.kt
+@@ -0,0 +1,442 @@
++package dev.s7a.strata.quality.benchmark
++
++import dev.s7a.strata.component.TextArea
++import dev.s7a.strata.component.TextAreaState
++import dev.s7a.strata.component.TextAreaViewport
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntRect
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.input.KeyCode
++import dev.s7a.strata.input.KeyboardEvent
++import dev.s7a.strata.input.KeyboardModifiers
++import dev.s7a.strata.input.PointerButton
++import dev.s7a.strata.input.PointerEvent
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.modifier.Modifier
++import dev.s7a.strata.modifier.initialFocus
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Operation
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Point
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Shape
++import dev.s7a.strata.render.DrawImage
++import dev.s7a.strata.render.createDrawImage
++import dev.s7a.strata.runtime.FrameTime
++import dev.s7a.strata.runtime.headless.rasterizeHeadless
++import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
++import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackend
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontBackendFactory
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontSnapshot
++import dev.s7a.strata.runtime.minecraft.font.MinecraftMemoryFontAssetSource
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeFace
++import dev.s7a.strata.runtime.minecraft.font.MinecraftTrueTypeSettings
++import dev.s7a.strata.runtime.render.DrawCommand
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.semantics.SemanticsRole
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.TextWrap
++import dev.s7a.strata.text.UiText
++import dev.s7a.strata.ui.UiDefinition
++import java.util.function.IntUnaryOperator
++
++// Why: this single current editor owns preparation, independent input/control oracles and terminal release together.
++
++/**
++ * One actual retained editor with fixed synthetic resources, current-layout oracles and bounded face ownership.
++ * The constructor establishes an arbitrary canonical column through the caller state before first layout.
++ * Navigation cycles restore through the opposite public key; composition cycles restore through public Home and preedit.
++ * No reflection, font creation, frame production or oracle scan occurs in [input].
++ */
++@Suppress("TooManyFunctions")
++@OptIn(InternalStrataRuntimeApi::class)
++internal class TextAreaInputFixture(
++    private val shape: Shape,
++    private val point: Point = Point.Beginning,
++    private val operation: Operation = Operation.Primary,
++    private val composed: Boolean = false,
++) : AutoCloseable {
++    private val size = IntSize(32, 44)
++    private val time = FrameTime(0)
++    private val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++    private val value = value()
++    private var backends = 0
++    private var faces = 0
++    private var glyphCalls = 0
++    private val profile = profile()
++    private val state = TextAreaState(value.substring(0, initialOffset()))
++    private val host = fresh(state)
++    private val key = KeyboardEvent.Press(key(operation), 0)
++    private val opposite = KeyboardEvent.Press(opposite(operation), 0)
++    private val home = KeyboardEvent.Press(KeyCode.Home, 0, KeyboardModifiers(control = true))
++    private val composition = TextInputEvent.Preedit("🙂B", 2, listOf("🙂", "B"), 0)
++    private val press: PointerEvent.Press
++    private val committedControl: RuntimeUiFrame
++
++    init {
++        host.attach()
++        state.value = value
++        frame()
++        val offset = TextAreaInputAccess.field(cursor(), "offset") as Int
++        val first = if (offset == 0) KeyCode.Right else KeyCode.Left
++        val second = if (offset == 0) KeyCode.Left else KeyCode.Right
++        host.dispatchKeyboard(KeyboardEvent.Press(first, 0))
++        host.dispatchKeyboard(KeyboardEvent.Press(second, 0))
++        committedControl = frame()
++        press = pointer()
++    }
++
++    /**
++     * Restores the fixed public input opportunity and settles geometry; measured cycles include this work.
++     */
++    internal fun prepareInput() {
++        if (composed) {
++            host.dispatchKeyboard(home)
++            frame()
++            host.dispatchTextInput(composition)
++        } else if (operation !== Operation.Primary) {
++            host.dispatchKeyboard(opposite)
++        }
++        frame()
++    }
++
++    /**
++     * Measures the complete public opportunity cycle, including preparation allocation and preedit layout replacement.
++     * No per-invocation timestamp, reflective access or independent oracle participates in this operation.
++     */
++    internal fun inputCycle(): InputResult {
++        prepareInput()
++        return input()
++    }
++
++    /**
++     * Delivers exactly one fixed public event; preedit cancellation remains part of a composed press.
++     */
++    internal fun input(): InputResult = if (operation === Operation.Primary) host.dispatchPointer(press) else host.dispatchKeyboard(key)
++
++    /**
++     * Returns one fixed-time current frame without adding it to the input interval.
++     */
++    internal fun frame(): RuntimeUiFrame = host.frame(size, time)
++
++    /**
++     * Includes complete fresh host ownership and first frame, with resource bytes already prepared.
++     */
++    internal fun initialLayout(): RuntimeUiFrame =
++        fresh(TextAreaState(value)).use { next ->
++            next.attach()
++            next.frame(size, time)
++        }
++
++    /**
++     * Borrows one actual line for a separate method-only corpus.
++     */
++    internal fun currentLine(): Any {
++        val layout = TextAreaInputAccess.field(editor(), "layout")
++        return TextAreaInputAccess.lines(layout)[TextAreaInputAccess.lineIndex(layout, cursor())]
++    }
++
++    /**
++     * Selects beginning/middle/end coordinates from the actual immutable rounded positions.
++     */
++    internal fun lookupX(
++        line: Any,
++        selected: Point,
++    ): Int {
++        val positions = TextAreaInputAccess.field(line, "positions") as IntArray
++        val index =
++            when (selected) {
++                Point.Beginning -> 0
++                Point.Middle -> positions.size / 2
++                Point.End -> positions.lastIndex
++            }
++        return positions[index]
++    }
++
++    /**
++     * Requires exact loaded lookup output, no font work and the candidate's actual coordinate-read ceiling.
++     */
++    internal fun verifyLookup(
++        line: Any,
++        x: Int,
++        lookup: IntUnaryOperator,
++    ) {
++        val calls = glyphCalls
++        check(lookup.applyAsInt(x) == TextAreaInputAccess.nearest(line, x))
++        TextAreaInputAccess.verifyVisits(line, x)
++        check(glyphCalls == calls)
++    }
++
++    /**
++     * Requires identity/pixel reuse for the clean control and independent first-layout lifetime.
++     */
++    internal fun verifyClean() {
++        val first = frame()
++        val calls = glyphCalls
++        check(frame() === first)
++        val next = initialLayout()
++        check(backends == 1 && faces == 1)
++        check(
++            next.semantics
++                .single { entry -> entry.semantics.role === SemanticsRole.TextArea }
++                .semantics
++                .value == UiText.Literal(value),
++        )
++        val expected = first.drawCommands.filterNot { command -> command is DrawCommand.FillRectangle }
++        val actual = next.drawCommands.filterNot { command -> command is DrawCommand.FillRectangle }
++        for (scale in 1..3) {
++            check(rasterizeHeadless(expected, size, scale).copyArgb().contentEquals(rasterizeHeadless(actual, size, scale).copyArgb()))
++        }
++        check(calls < glyphCalls)
++    }
++
++    /**
++     * Checks real input against a complete scalar scan, unchanged committed semantics and current-layout ownership.
++     */
++    internal fun verifyInput() {
++        prepareInput()
++        val previous = TextAreaInputAccess.field(editor(), "layout")
++        val before = if (composed) committedControl else frame()
++        val scroll = state.scrollState.metrics.offset
++        val pan = TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") as Int
++        val calls = glyphCalls
++        val token = host.textInputFocus
++        val expected = expectedPlacement(previous)
++        val result = input()
++        check(result === if (operation === Operation.Primary) InputResult.Ignored else InputResult.Consumed)
++        check(TextAreaInputAccess.field(cursor(), "offset") == expected.offset)
++        check(glyphCalls == calls)
++        check(state.value == value)
++        check(host.textInputFocus === token)
++        if (composed.not()) check(TextAreaInputAccess.field(editor(), "layout") === previous)
++        val after = frame()
++        check(
++            after.semantics
++                .single { entry -> entry.semantics.role === SemanticsRole.TextArea }
++                .semantics
++                .value == UiText.Literal(value),
++        )
++        check(state.scrollState.metrics.offset == scroll)
++        check(TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") == pan)
++        verifyPixels(before, after, expected, pan, scroll.toInt())
++        verifyCleanFrame(after)
++    }
++
++    private fun verifyCleanFrame(frame: RuntimeUiFrame) {
++        val calls = glyphCalls
++        check(this.frame() === frame)
++        check(glyphCalls == calls)
++    }
++
++    private fun verifyPixels(
++        before: RuntimeUiFrame,
++        after: RuntimeUiFrame,
++        placement: Placement,
++        pan: Int,
++        scroll: Int,
++    ) {
++        val layout = TextAreaInputAccess.field(editor(), "layout")
++        val line = TextAreaInputAccess.lines(layout)[placement.line]
++        val coordinate = TextAreaInputAccess.coordinate(line, placement.offset) - pan
++        val left = if (coordinate == size.width - 8) coordinate - 1 else coordinate
++        val top = placement.line * (TextAreaInputAccess.field(layout, "lineStep") as Int) - scroll
++        val bounds = IntRect(4 + left, 4 + maxOf(0, top), 5 + left, 4 + minOf(size.height - 8, top + 9))
++        val reference = before.drawCommands.map { command -> if (command is DrawCommand.FillRectangle) command.copy(bounds = bounds) else command }
++        check(
++            after.drawCommands
++                .filterIsInstance<DrawCommand.FillRectangle>()
++                .single()
++                .bounds == bounds,
++        )
++        for (scale in 1..3) {
++            check(rasterizeHeadless(reference, size, scale).copyArgb().contentEquals(rasterizeHeadless(after.drawCommands, size, scale).copyArgb()))
++        }
++    }
++
++    private fun expectedPlacement(layout: Any): Placement {
++        val placement = if (operation === Operation.Primary) pointerPlacement(layout) else keyPlacement(layout)
++        if (composed.not()) return placement
++        val offset = TextAreaInputAccess.field(cursor(), "offset") as Int
++        val next = placement.offset
++        val committed =
++            if (next <= offset) {
++                next
++            } else if (next < offset + composition.fullText.length) {
++                offset
++            } else {
++                next - composition.fullText.length
++            }
++        return Placement(committed, 0)
++    }
++
++    private fun pointerPlacement(layout: Any): Placement {
++        val pan = TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") as Int
++        val scroll = state.scrollState.metrics.offset
++        val y = (press.position.y - 4).coerceIn(0, size.height - 9) + scroll.toInt()
++        val index = TextAreaInputAccess.pointerLine(layout, y)
++        val x = (press.position.x - 4).coerceIn(0, size.width - 8) + pan
++        return nearest(TextAreaInputAccess.lines(layout), index, x)
++    }
++
++    private fun keyPlacement(layout: Any): Placement {
++        val current = cursor()
++        val offset = TextAreaInputAccess.field(current, "offset") as Int
++        val lines = TextAreaInputAccess.lines(layout)
++        val source = TextAreaInputAccess.lineIndex(layout, current)
++        val step = TextAreaInputAccess.field(layout, "lineStep") as Int
++        val distance = if (operation === Operation.PageUp || operation === Operation.PageDown) maxOf(1, (size.height - 8) / step) else 1
++        val delta = if (operation === Operation.Up || operation === Operation.PageUp) -distance else distance
++        val index = (source + delta).coerceIn(0, lines.lastIndex)
++        val x = TextAreaInputAccess.optional(current, "preferredX") as Int? ?: TextAreaInputAccess.coordinate(lines[source], offset)
++        return nearest(lines, index, x)
++    }
++
++    private fun nearest(
++        lines: List<Any>,
++        index: Int,
++        x: Int,
++    ): Placement {
++        val offset = TextAreaInputAccess.nearest(lines[index], x)
++        TextAreaInputAccess.verifyVisits(lines[index], x)
++        return Placement(offset, index)
++    }
++
++    private fun pointer(): PointerEvent.Press {
++        if (composed) {
++            val x =
++                when (point) {
++                    Point.Beginning -> 0
++                    Point.Middle -> 3
++                    Point.End -> 12
++                }
++            return PointerEvent.Press(IntOffset(4 + x, 4), PointerButton.Primary)
++        }
++        val layout = TextAreaInputAccess.field(editor(), "layout")
++        val current = cursor()
++        val index = TextAreaInputAccess.lineIndex(layout, current)
++        val line = TextAreaInputAccess.lines(layout)[index]
++        val x = TextAreaInputAccess.coordinate(line, TextAreaInputAccess.field(current, "offset") as Int)
++        val pan = TextAreaInputAccess.field(TextAreaInputAccess.field(editor(), "viewport"), "horizontalOffset") as Int
++        val step = TextAreaInputAccess.field(layout, "lineStep") as Int
++        val scroll = state.scrollState.metrics.offset
++        val y = index * step - scroll.toInt()
++        return PointerEvent.Press(
++            IntOffset(
++                4 + (x - pan).coerceIn(0, size.width - 8),
++                4 + y.coerceIn(0, size.height - 9),
++            ),
++            PointerButton.Primary,
++        )
++    }
++
++    private fun editor(): Any = TextAreaInputAccess.editor(host)
++
++    private fun cursor(): Any = TextAreaInputAccess.field(editor(), "cursor")
++
++    private fun initialOffset(): Int {
++        if (composed) return 0
++        val rows = value.split('\n')
++        val second = operation === Operation.Up || operation === Operation.PageUp
++        val row = if (second) rows.last() else rows.first()
++        val count = row.codePointCount(0, row.length)
++        val column =
++            when (point) {
++                Point.Beginning -> 0
++                Point.Middle -> count / 2
++                Point.End -> count
++            }
++        return (if (second) rows.first().length + 1 else 0) + row.offsetByCodePoints(0, column)
++    }
++
++    private fun value(): String =
++        when (shape) {
++            Shape.ShortWrapped -> "AB🙂CD".repeat(8)
++            Shape.LongBmp -> "A".repeat(if (composed) 32_764 else 32_767)
++            Shape.Supplementary -> "🙂".repeat(16_383)
++            Shape.TwoLines -> "A".repeat(16_383) + "\n" + "A".repeat(16_383)
++            Shape.Plateau, Shape.Signed -> "AB".repeat(16_383) + "A"
++        }
++
++    private fun profile(): MinecraftUiProfile {
++        val source = MinecraftMemoryFontAssetSource("text-area-input-v1", mapOf("assets/minecraft/font/default.json" to """{"providers":[{"type":"ttf","file":"strata_benchmark:input.ttf"}]}""".toByteArray(Charsets.UTF_8), "assets/strata_benchmark/font/input.ttf" to byteArrayOf(1)))
++        val compatibility = ComponentFontAssets.snapshot().compatibility.copy(saturatingCeil = true)
++        val snapshot = MinecraftFontSnapshot.load(listOf(source), compatibility)
++        check(snapshot.diagnostics.isEmpty())
++        return ComponentProfile.create(snapshot)
++    }
++
++    private fun fresh(state: TextAreaState): MinecraftUiHost =
++        createMinecraftUiHost(
++            UiDefinition("Logical TextArea input") { TextArea(state, TextAreaViewport.Size(size), wrap = if (shape === Shape.ShortWrapped) TextWrap.Character else TextWrap.None, lineSpacing = 2, modifier = Modifier.Empty.initialFocus()) },
++            profile,
++            fontBackend = MinecraftFontBackendFactory { backend() },
++        )
++
++    private fun backend(): MinecraftFontBackend {
++        backends += 1
++        return object : MinecraftFontBackend {
++            override fun decodePng(bytes: ByteArray): DrawImage = error("The metric fixture has no bitmap provider")
++
++            override fun openTrueType(
++                bytes: ByteArray,
++                settings: MinecraftTrueTypeSettings,
++            ): MinecraftTrueTypeFace {
++                faces += 1
++                return object : MinecraftTrueTypeFace {
++                    override fun glyph(codePoint: Int): MinecraftFontGlyph {
++                        glyphCalls += 1
++                        val advance =
++                            if (codePoint == 'B'.code) {
++                                when (shape) {
++                                    Shape.Plateau -> 0f
++                                    Shape.Signed -> -2f
++                                    else -> 3f
++                                }
++                            } else {
++                                3f
++                            }
++                        return MinecraftFontGlyph(advance, 0f, 0f, 1f, 1f, image)
++                    }
++
++                    override fun close() {
++                        faces -= 1
++                    }
++                }
++            }
++
++            override fun close() {
++                backends -= 1
++            }
++        }
++    }
++
++    private fun key(operation: Operation): KeyCode =
++        when (operation) {
++            Operation.Primary -> KeyCode.Enter
++            Operation.Up -> KeyCode.Up
++            Operation.Down -> KeyCode.Down
++            Operation.PageUp -> KeyCode.PageUp
++            Operation.PageDown -> KeyCode.PageDown
++        }
++
++    private fun opposite(operation: Operation): KeyCode =
++        when (operation) {
++            Operation.Primary -> KeyCode.Enter
++            Operation.Up -> KeyCode.Down
++            Operation.Down -> KeyCode.Up
++            Operation.PageUp -> KeyCode.PageDown
++            Operation.PageDown -> KeyCode.PageUp
++        }
++
++    private data class Placement(
++        val offset: Int,
++        val line: Int,
++    )
++
++    override fun close() {
++        host.close()
++        check(backends == 0 && faces == 0)
++        state.observe {}.close()
++    }
++}
+diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputOperationReport.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputOperationReport.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..852904171aff22c9e3b33e113fdc0b89af15e360
+--- /dev/null
++++ b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/TextAreaInputOperationReport.kt
+@@ -0,0 +1,224 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import dev.s7a.strata.component.TextAreaState
++import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.performance.JmhPerformanceRunner
++import dev.s7a.strata.performance.JmhWorkloadInventory
++import dev.s7a.strata.performance.JvmOperationReportAdapter
++import dev.s7a.strata.performance.JvmOperationReportRow
++import dev.s7a.strata.performance.JvmPerformanceRunner
++import dev.s7a.strata.performance.PerformancePlan
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Operation
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Point
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Shape
++import dev.s7a.strata.quality.benchmark.TextAreaInputBenchmark.Workload
++import dev.s7a.strata.runtime.minecraft.MinecraftUiHost
++import dev.s7a.strata.runtime.spi.RuntimeUiFrame
++import dev.s7a.strata.semantics.SemanticsRole
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.UiText
++import java.nio.file.Path
++
++/**
++ * Measures all 60 original logical input, layout, clean-frame and lookup boundaries with the shared owner-thread meter.
++ * Original scene setup and complete independent oracles run before sampling; assertions, coordinate diagnostics and surviving-owner close remain outside samples.
++ * Fresh initial-layout ownership remains inside its original operation, and failure or cleanup rejection prevents a complete report.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++public object TextAreaInputOperationReport : JvmOperationReportAdapter {
++    override val inputs: Map<String, Path>
++        get() = cleanupOperationInputs()
++
++    private enum class LayoutOperation(
++        val method: String,
++        val boundary: String,
++    ) {
++        InitialLayout("initialLayout", "Create, attach, lay out and close one fresh host using already prepared resource bytes."),
++        Clean("clean", "Return one unchanged frame from the prepared retained host."),
++    }
++
++    override val rows: List<JvmOperationReportRow> =
++        Workload.entries.map(::inputRow) +
++            LayoutOperation.entries.flatMap { operation -> Shape.entries.map { shape -> layoutRow(operation, shape) } } +
++            Shape.entries.flatMap { shape -> Point.entries.map { point -> lookupRow(shape, point) } }
++
++    /**
++     * Requires every original generated method/parameter combination in both modes and six unchanged clean-frame controls.
++     */
++    public fun verifyRows() {
++        val expected = JmhWorkloadInventory.capture(listOf(TextAreaInputBenchmark::class.java), setOf("avgt", "sample"))
++        val actual =
++            rows.flatMap { row ->
++                listOf("avgt", "sample").map { mode -> JmhPerformanceRunner.workloadIdentity(row.benchmark, mode, row.parameters) }
++            }
++        check(rows.size == 60 && rows.map { it.id }.distinct().size == 60)
++        check(actual.size == 120 && actual.toSet() == expected)
++        check(rows.count { it.control } == 6 && rows.all { it.operationsPerSample == 1 })
++    }
++
++    override fun collect(plan: PerformancePlan): Map<String, JsonObject> {
++        verifyRows()
++        val reports = linkedMapOf<String, JsonObject>()
++        Workload.entries.forEach { workload -> reports.putAll(inputReport(workload, plan)) }
++        LayoutOperation.entries.forEach { operation -> Shape.entries.forEach { shape -> reports.putAll(layoutReport(operation, shape, plan)) } }
++        Shape.entries.forEach { shape -> Point.entries.forEach { point -> reports.putAll(lookupReport(shape, point, plan)) } }
++        check(reports.keys == rows.map { it.id }.toSet())
++        return reports
++    }
++
++    private fun inputReport(
++        workload: Workload,
++        plan: PerformancePlan,
++    ): Map<String, JsonObject> {
++        val scene = TextAreaInputBenchmark.InputScene().apply { this.workload = workload }
++        return AutoCloseable { scene.close() }.use { _ ->
++            scene.setUp()
++            val fixture = TextAreaInputAccess.field(scene, "fixture") as TextAreaInputFixture
++            val host = TextAreaInputAccess.field(fixture, "host") as MinecraftUiHost
++            val cursor = TextAreaInputAccess.field(TextAreaInputAccess.editor(host), "cursor")
++            val expectedOffset = TextAreaInputAccess.field(cursor, "offset") as Int
++            val state = TextAreaInputAccess.field(fixture, "state") as TextAreaState
++            val committed = state.value
++            val focus = host.textInputFocus
++            val expectedResult = if (workload.operation === Operation.Primary) InputResult.Ignored else InputResult.Consumed
++            val benchmark = TextAreaInputBenchmark()
++            var last: InputResult = InputResult.Ignored
++            val id = inputRow(workload).id
++            JvmPerformanceRunner.warmup(plan.warmup) { last = benchmark.input(scene) }
++            JvmPerformanceRunner.sequence(plan.samples, mapOf(id to plan.samples)) { _, sequence ->
++                sequence.sample(id) { last = benchmark.input(scene) }
++                check(last === expectedResult)
++                check(TextAreaInputAccess.field(cursor, "offset") == expectedOffset)
++                check(state.value == committed && host.textInputFocus === focus)
++            }
++        }
++    }
++
++    private fun layoutReport(
++        operation: LayoutOperation,
++        shape: Shape,
++        plan: PerformancePlan,
++    ): Map<String, JsonObject> {
++        val scene = TextAreaInputBenchmark.LayoutScene().apply { this.shape = shape }
++        return AutoCloseable { scene.close() }.use { _ ->
++            scene.setUp()
++            val fixture = TextAreaInputAccess.field(scene, "fixture") as TextAreaInputFixture
++            val committed = TextAreaInputAccess.field(fixture, "value") as String
++            val expected = scene.clean()
++            val calls = TextAreaInputAccess.field(fixture, "glyphCalls") as Int
++            val benchmark = TextAreaInputBenchmark()
++            var last: RuntimeUiFrame = expected
++            val id = layoutRow(operation, shape).id
++            JvmPerformanceRunner.warmup(plan.warmup) { last = layout(operation, benchmark, scene) }
++            JvmPerformanceRunner.sequence(plan.samples, mapOf(id to plan.samples)) { _, sequence ->
++                sequence.sample(id) { last = layout(operation, benchmark, scene) }
++                when (operation) {
++                    LayoutOperation.Clean -> {
++                        check(last === expected)
++                        check(TextAreaInputAccess.field(fixture, "glyphCalls") == calls)
++                    }
++
++                    LayoutOperation.InitialLayout -> {
++                        check(
++                            last.semantics
++                                .single { entry -> entry.semantics.role === SemanticsRole.TextArea }
++                                .semantics.value == UiText.Literal(committed),
++                        )
++                        check(TextAreaInputAccess.field(fixture, "backends") == 1 && TextAreaInputAccess.field(fixture, "faces") == 1)
++                    }
++                }
++            }
++        }
++    }
++
++    private fun lookupReport(
++        shape: Shape,
++        point: Point,
++        plan: PerformancePlan,
++    ): Map<String, JsonObject> {
++        val scene =
++            TextAreaInputBenchmark.LookupScene().apply {
++                this.shape = shape
++                this.point = point
++            }
++        return AutoCloseable { scene.close() }.use { _ ->
++            scene.setUp()
++            val fixture = TextAreaInputAccess.field(scene, "fixture") as TextAreaInputFixture
++            val line = fixture.currentLine()
++            val x = TextAreaInputAccess.field(scene, "x") as Int
++            val expected = TextAreaInputAccess.nearest(line, x)
++            val calls = TextAreaInputAccess.field(fixture, "glyphCalls") as Int
++            val benchmark = TextAreaInputBenchmark()
++            var last = 0
++            val id = lookupRow(shape, point).id
++            JvmPerformanceRunner.warmup(plan.warmup) { last = benchmark.lookup(scene) }
++            JvmPerformanceRunner
++                .sequence(plan.samples, mapOf(id to plan.samples)) { _, sequence ->
++                    sequence.sample(id) { last = benchmark.lookup(scene) }
++                    check(last == expected && TextAreaInputAccess.field(fixture, "glyphCalls") == calls)
++                    TextAreaInputAccess.verifyVisits(line, x)
++                }.also { reports -> reports.getValue(id).add("untimed_lookup_work", lookupWork(line, x)) }
++        }
++    }
++
++    private fun lookupWork(
++        line: Any,
++        x: Int,
++    ): JsonObject {
++        val methods = line.javaClass.declaredMethods.filter { method -> method.name.startsWith("boundaryVisits") }
++        check(methods.size <= 1)
++        val positions = TextAreaInputAccess.field(line, "positions") as IntArray
++        val method = methods.singleOrNull()
++        val observed = method?.apply { isAccessible = true }?.invoke(line, x) as Int?
++        return JsonObject().apply {
++            addProperty("scope", "One actual coordinate diagnostic invocation after sampling; not a timed call count")
++            addProperty("x", x)
++            addProperty("current_line_boundaries", positions.size)
++            addProperty("nondecreasing_coordinates", (1 until positions.size).all { index -> positions[index - 1] <= positions[index] })
++            addProperty("observed_coordinate_reads", observed)
++            addProperty("diagnostic_available", method != null)
++        }
++    }
++
++    private fun layout(
++        operation: LayoutOperation,
++        benchmark: TextAreaInputBenchmark,
++        scene: TextAreaInputBenchmark.LayoutScene,
++    ): RuntimeUiFrame =
++        when (operation) {
++            LayoutOperation.InitialLayout -> benchmark.initialLayout(scene)
++            LayoutOperation.Clean -> benchmark.clean(scene)
++        }
++
++    private fun inputRow(workload: Workload): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "input-${workload.name}",
++            "${TextAreaInputBenchmark::class.java.name}.input",
++            mapOf("workload" to workload.name),
++            "Restore the original public input opportunity, settle the frame and dispatch the prebuilt target event once.",
++        )
++
++    private fun layoutRow(
++        operation: LayoutOperation,
++        shape: Shape,
++    ): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "${operation.method}-${shape.name}",
++            "${TextAreaInputBenchmark::class.java.name}.${operation.method}",
++            mapOf("shape" to shape.name),
++            operation.boundary,
++            control = operation === LayoutOperation.Clean,
++        )
++
++    private fun lookupRow(
++        shape: Shape,
++        point: Point,
++    ): JvmOperationReportRow =
++        JvmOperationReportRow(
++            "lookup-${shape.name}-${point.name}",
++            "${TextAreaInputBenchmark::class.java.name}.lookup",
++            mapOf("shape" to shape.name, "point" to point.name),
++            "Invoke the original current-line lookup through its prebound primitive handle once.",
++        )
++}
+diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextAreaLookupTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextAreaLookupTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..d6ebe98be4961e55eb73e9cddc9355ef0de0813d
+--- /dev/null
++++ b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/MinecraftTextAreaLookupTest.kt
+@@ -0,0 +1,144 @@
++package dev.s7a.strata.runtime.minecraft
++
++import dev.s7a.strata.component.TextAreaState
++import dev.s7a.strata.geometry.IntOffset
++import dev.s7a.strata.geometry.IntSize
++import dev.s7a.strata.input.KeyCode
++import dev.s7a.strata.input.KeyboardModifiers
++import dev.s7a.strata.input.PointerButton
++import dev.s7a.strata.input.PointerEvent
++import dev.s7a.strata.input.TextInputEvent
++import dev.s7a.strata.render.createDrawImage
++import dev.s7a.strata.runtime.UiTree
++import dev.s7a.strata.runtime.headless.rasterizeHeadless
++import dev.s7a.strata.runtime.minecraft.font.MinecraftFontGlyph
++import dev.s7a.strata.runtime.render.DrawCommand
++import dev.s7a.strata.spi.InternalStrataRuntimeApi
++import dev.s7a.strata.text.UiText
++import org.junit.jupiter.api.Assertions.assertArrayEquals
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.Assertions.assertNull
++import org.junit.jupiter.api.Assertions.assertSame
++import org.junit.jupiter.api.Assertions.assertThrows
++import org.junit.jupiter.api.Test
++import kotlin.math.abs
++
++/**
++ * Compares pointer placement with independent committed scalar navigation and exact retained editor pixels.
++ * Composition mapping and failure cleanup run through the real owner-thread editor without a game or native IME.
++ */
++@OptIn(InternalStrataRuntimeApi::class)
++internal class MinecraftTextAreaLookupTest {
++    @Test
++    fun ordinaryPressMatchesScalarPlacementPixelsAndSemanticsForPlateausAndSignedMetrics() {
++        val size = IntSize(64, 26)
++        val value = "AZB🙂C"
++        val offsets = intArrayOf(0, 1, 2, 3, 5, 6)
++        val advances = mapOf('A'.code to 4f, 'Z'.code to 0f, 'B'.code to -4f, 0x1F642 to 3f, 'C'.code to 0f)
++        val positions = intArrayOf(0, 4, 4, 0, 3, 3)
++        val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
++        MinecraftTextAreaFixture(glyph = { _, scalar -> MinecraftFontGlyph(advances[scalar] ?: 1f, 0f, 0f, 1f, 1f, image) }, cacheEntries = 0).use { fixture ->
++            for (x in 0..8) {
++                val boundary = positions.indices.minBy { index -> abs(positions[index].toLong() - x.toLong()) }
++                val pointerState = TextAreaState(value)
++                val scalarState = TextAreaState(value)
++                UiTree().use { pointer ->
++                    UiTree().use { scalar ->
++                        pointer.update(fixture.description(pointerState, size))
++                        scalar.update(fixture.description(scalarState, size))
++                        fixture.frame(pointer, size)
++                        fixture.frame(scalar, size)
++                        fixture.key(scalar, KeyCode.Home, size, KeyboardModifiers(control = true))
++                        repeat(boundary) { fixture.key(scalar, KeyCode.Right, size) }
++                        val calls = fixture.glyphCalls
++                        pointer.dispatchPointer(PointerEvent.Press(IntOffset(4 + x, 4), PointerButton.Primary))
++                        assertEquals(calls, fixture.glyphCalls)
++                        val actual = fixture.frame(pointer, size)
++                        val expected = fixture.frame(scalar, size)
++                        assertPixels(expected, actual, size)
++                        val semanticValue =
++                            pointer
++                                .semantics()
++                                .single()
++                                .semantics
++                                .value
++                        assertEquals(UiText.Literal(value), semanticValue)
++                        fixture.input(pointer, TextInputEvent.Character('M'.code), size)
++                        fixture.input(scalar, TextInputEvent.Character('M'.code), size)
++                        assertEquals(value.substring(0, offsets[boundary]) + "M" + value.substring(offsets[boundary]), pointerState.value)
++                        assertEquals(scalarState.value, pointerState.value)
++                        assertPixels(fixture.frame(scalar, size), fixture.frame(pointer, size), size)
++                    }
++                }
++                pointerState.observe {}.close()
++                scalarState.observe {}.close()
++            }
++        }
++    }
++
++    @Test
++    fun composedPressMapsBeforeInsideAndAfterSupplementaryPreeditWithoutCommittingIt() {
++        val size = IntSize(64, 26)
++        MinecraftTextAreaFixture().use { fixture ->
++            for ((x, insertion) in listOf(0 to 0, 3 to 1, 6 to 1, 9 to 1, 12 to 2, 15 to 3)) {
++                val state = TextAreaState("ABC")
++                UiTree().use { tree ->
++                    tree.update(fixture.description(state, size))
++                    fixture.frame(tree, size)
++                    fixture.key(tree, KeyCode.Home, size, KeyboardModifiers(control = true))
++                    fixture.key(tree, KeyCode.Right, size)
++                    fixture.input(tree, TextInputEvent.Preedit("🙂Z", 2, listOf("🙂", "Z"), 0), size)
++                    tree.dispatchPointer(PointerEvent.Press(IntOffset(4 + x, 4), PointerButton.Primary))
++                    fixture.frame(tree, size)
++                    assertEquals("ABC", state.value)
++                    fixture.input(tree, TextInputEvent.Character('M'.code), size)
++                    assertEquals("ABC".substring(0, insertion) + "M" + "ABC".substring(insertion), state.value)
++                }
++            }
++        }
++    }
++
++    @Test
++    fun inputFailureAndDetachReleaseTheCurrentLayoutAndBorrowedInputs() {
++        MinecraftTextAreaFixture().use { fixture ->
++            val state = TextAreaState("AB🙂")
++            val failure = IllegalArgumentException("Rejected editor invalidation")
++            var reject = false
++            val editor = MinecraftTextAreaEditor(fixture.configuration(state)) { if (reject) throw failure }
++            editor.attach()
++            editor.measure()
++            val layout = MinecraftTextAreaEditor::class.java.getDeclaredField("layout").apply { isAccessible = true }
++            val previous = layout.get(editor)
++            editor.detach()
++            assertNull(layout.get(editor))
++            state.observe {}.close()
++            editor.attach()
++            editor.measure()
++            assertEquals(false, previous === layout.get(editor))
++            reject = true
++            try {
++                assertSame(failure, assertThrows(IllegalArgumentException::class.java) { editor.pointer(PointerEvent.Press(IntOffset(4, 4), PointerButton.Primary), IntOffset(4, 4)) })
++            } finally {
++                editor.dispose()
++            }
++            assertNull(layout.get(editor))
++            val current =
++                MinecraftTextAreaEditor::class.java
++                    .getDeclaredField("current")
++                    .apply { isAccessible = true }
++                    .get(editor)
++            assertNull(current)
++            state.observe {}.close()
++        }
++    }
++
++    private fun assertPixels(
++        expected: List<DrawCommand>,
++        actual: List<DrawCommand>,
++        size: IntSize,
++    ) {
++        for (scale in 1..3) {
++            assertArrayEquals(rasterizeHeadless(expected, size, scale).copyArgb(), rasterizeHeadless(actual, size, scale).copyArgb())
++        }
++    }
++}
