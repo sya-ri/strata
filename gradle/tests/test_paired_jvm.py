@@ -1143,7 +1143,8 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(mode=mode):
                 directory = self.root / ("independent-expansion-" + mode)
                 (directory / "class-loads").mkdir(parents=True)
-                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-44.log"
+                # Keep the legacy unique-file path distinct from an exact header-start match.
+                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-43.log"
                 diagnostic.write_text("[3708][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
                 flag = "../../../../class-loads/classes-%p-%t.log"
                 if mode == "wrong-flag":
@@ -1195,7 +1196,8 @@ class PairedJvmTest(unittest.TestCase):
                 executable.write_bytes(b"frozen executable")
                 allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
                 origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
-                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                # This control still exercises the sole-Java fallback, not header-start selection.
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-23.log"
                 diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
                 flag = "../../class-loads/classes-%p-%t.log"
                 args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
@@ -1240,6 +1242,68 @@ class PairedJvmTest(unittest.TestCase):
                 else:
                     with self.assertRaises(ValueError):
                         PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_header_start_binds_two_java_generations_without_borrowing_ambiguous_files(self):
+        for mode in ("complete", "wrong-generation", "wrong-source", "changed-pin", "old-file", "missing-flag",
+                     "ambiguous-stamps", "duplicate-origin", "unclosed-helper"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("header-generation-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                starts = (1791917369287, 1791918056998)
+                stamps = [PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.localtime(start // 1000)) for start in starts]
+                late_stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.localtime(starts[1] // 1000 + 1))
+                files = [directory / f"vm-pid5804-{stamp}.log" for stamp in (stamps[0], late_stamp)]
+                flag = "../../class-loads/classes-%p-%t.log"
+                for index, (vm, start) in enumerate(zip(files, starts)):
+                    args = "" if mode == "missing-flag" and index == 1 else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                    vm.write_text(f"<hotspot_log process='5804' time_ms='{start}'>\n<vm_arguments><args>{args}</args>\n"
+                                  f"<command>org.openjdk.jmh.runner.ForkedMain {index}</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                                  "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                  "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                origin = "[5804][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostics, pins = [], []
+                for index, stamp in enumerate(stamps):
+                    diagnostic = directory / f"class-loads/classes-5804-{stamp}.log"
+                    diagnostic.write_text(origin * (2 if mode == "duplicate-origin" and index == 1 else 1), encoding="utf-8")
+                    diagnostics.append(diagnostic)
+                    source = directory / "other-owner" / diagnostic.name if mode == "wrong-source" and index == 1 else diagnostic
+                    pins.append({"path": str(diagnostic), "source": str(source), "sha256": PAIRED.digest(diagnostic)})
+                if mode == "ambiguous-stamps":
+                    diagnostic = directory / f"class-loads/classes-5804-{late_stamp}.log"
+                    diagnostic.write_text(origin, encoding="utf-8")
+                    pins.append({"path": str(diagnostic), "source": str(diagnostic), "sha256": PAIRED.digest(diagnostic)})
+                elif mode == "changed-pin":
+                    pins[1]["sha256"] = "0" * 64
+                previous = {diagnostics[1].name: pins[1]["sha256"]} if mode == "old-file" else {}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostics[0].parent), "previous": previous, "copied": pins})
+                shared = {"pid": 5804, "image": str(executable), "inOwnedJob": True, "completed": True,
+                          "handleClosed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                early = {**shared, "creationFileTime": 134363909692619104, "exitFileTime": 134363909785816017}
+                helper = {**shared, "image": str(directory / "conhost.exe"), "creationFileTime": 134363913039074374,
+                          "exitFileTime": 134363913132529824}
+                late = {**shared, "creationFileTime": 134363916569731556, "exitFileTime": 134363916666050451}
+                if mode == "wrong-generation":
+                    late["creationFileTime"] += 10000000
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                terminal = {"members": {"5804": [early, helper, late]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                (directory / "console.log").write_text("", encoding="utf-8")
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    rows = PAIRED.read_json(directory / "vms.json")
+                    self.assertEqual([row["os_generation"] for row in rows], [early, late])
+                    self.assertEqual([row["class_load_diagnostic"]["path"] for row in rows], list(map(str, diagnostics)))
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["unique_generation"], late)
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 2)
                     self.assertFalse((directory / "vms.json").exists())
 
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
