@@ -89,7 +89,7 @@ def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(required <= set(data) <= required | {"owner_reports"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}, "Invalid source binding")
@@ -224,6 +224,17 @@ def load_manifest(root, path):
                     and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", paired["fixture_class"])
                     and paired["fixture_class"].rsplit(".", 1)[1] in {name.rsplit(".", 1)[-1] for name in matches[0]["benchmarks"]},
                     "Declare the actual paired compiled fixture class")
+    continuation = data.get("owner_continuation")
+    if continuation is not None:
+        require(isinstance(continuation, dict) and set(continuation) == {"name", "runtime_sha256", "collector_sha256"}, "Invalid complete owner continuation")
+        selected = [report for report in reports if report["name"] == continuation["name"]]
+        require(len(selected) == 1 and "paired_jmh" not in selected[0], "Continuation requires one complete independent owner domain")
+        runtime = continuation["runtime_sha256"]
+        require(isinstance(runtime, dict) and set(runtime) == {"baseline", "candidate"}, "Continuation requires both original runtime inventories")
+        for values in runtime.values():
+            require(isinstance(values, dict) and set(values) == set(projects)
+                    and all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in values.values()), "Incomplete original runtime byte pins")
+        require(isinstance(continuation["collector_sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", continuation["collector_sha256"]), "Missing original collector byte pin")
     labels = set()
     for suite in data["suites"]:
         if "operation_reports" in suite:
@@ -708,6 +719,7 @@ def class_entry(classpath, name):
     return matches[0]
 
 
+
 def owner_processing_collector(classpath, collector):
     """Use the actual retained processing JAR path after proving the original collector bytes."""
     selected = class_entry(prepared_classpath(classpath), "dev.s7a.strata.performance.JvmPerformanceMeter")
@@ -939,8 +951,40 @@ def invoke(arguments, root, console):
         process.stdout.close()
 
 
-def run(root, manifest_path, output):
-    """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
+
+def continuation_scope(data, owner_report):
+    """Select one entire independent owner domain while retaining the complete outer frozen manifest."""
+    configured = data.get("owner_continuation", {}).get("name")
+    require(owner_report is None or configured is None or owner_report == configured, "Explicit owner domain differs from the frozen continuation")
+    owner_report = configured if owner_report is None else owner_report
+    if owner_report is None:
+        return data, {"kind": "whole-manifest", "whole_issue_acceptance": False}
+    matches = [report for report in data.get("owner_reports", []) if report["name"] == owner_report]
+    require(len(matches) == 1 and "paired_jmh" not in matches[0], "Select one complete independent owner report")
+    return {**data, "suites": [], "owner_reports": matches}, {
+        "kind": "complete-owner-domain-continuation", "owner_report": owner_report,
+        "complete_rows": len(matches[0]["rows"]), "whole_issue_acceptance": False,
+        "original_jmh_suites": [{"name": suite["name"], "complete_rows": suite["expected_cases"]} for suite in data["suites"]],
+        "original_owner_reports": [{"name": report["name"], "complete_rows": len(report["rows"])} for report in data.get("owner_reports", [])],
+        "prior_rows_adopted": False}
+
+
+
+def verify_continuation_archives(data, runtime, collector):
+    """Reject changed compiled bytes before collecting a complete independent continuation."""
+    continuation = data.get("owner_continuation")
+    if continuation is None:
+        return
+    require(set(runtime) == {"baseline", "candidate"}, "Missing prepared continuation runtime")
+    for side, expected in continuation["runtime_sha256"].items():
+        require(set(runtime[side]) == set(expected), "Prepared continuation runtime inventory changed")
+        for project, sha in expected.items():
+            require(digest(Path(runtime[side][project]["path"])) == sha, "Continuation runtime differs from original measured bytes")
+    require(digest(collector) == continuation["collector_sha256"], "Continuation collector differs from original measured bytes")
+
+
+def run(root, manifest_path, output, owner_report=None):
+    """Own a complete selected scope; an exception preserves failure and never adopts prior rows."""
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
     output.mkdir(parents=True, exist_ok=False)
     started = time.monotonic()
@@ -1015,6 +1059,7 @@ def run(root, manifest_path, output):
             return directory
 
         data = load_manifest(root, manifest_path)
+        data, record["scope"] = continuation_scope(data, owner_report)
         if any(project in (":velocity-api", ":runtime:velocity") for project in data["runtime_projects"]):
             common.remove("-Pstrata.jvmOnly=true")
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
@@ -1076,6 +1121,7 @@ def run(root, manifest_path, output):
                 paired_owner_plans[specification["name"]] = item
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
+        verify_continuation_archives(data, runtime_archives, collector)
         prepared = output / "compiled"
         prepared.mkdir()
         shutil.copyfile(collector, prepared / collector.name)
@@ -1293,7 +1339,7 @@ def run(root, manifest_path, output):
         write_new(output / "file-inventory.json", {path.relative_to(output).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
                                                   for path in sorted(output.rglob("*")) if path.is_file() and path.relative_to(output).parts[0] != "workspaces"})
         archive = pack(output)
-        print(f"Preserved {record['status']} whole attempt: {archive}", flush=True)
+        print(f"Preserved {record['status']} attempt: {archive}", flush=True)
 
 
 def main():
@@ -1302,9 +1348,11 @@ def main():
     parser.add_argument("--manifest", default=".github/performance/paired-jvm.json")
     parser.add_argument("--select", action="store_true")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--owner-report", help="Continue one complete declared independent owner domain; does not establish whole Issue acceptance")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     path = relative_path(root, args.manifest)
+    require(not args.select or args.owner_report is None, "CI selection retains the whole declared manifest")
     if args.select:
         selected = args.manifest if path.exists() else ""
         if selected:
@@ -1315,7 +1363,7 @@ def main():
         print(selected)
     else:
         require(args.output is not None, "Supply a fresh attempt output directory")
-        run(root, path, args.output.resolve())
+        run(root, path, args.output.resolve(), args.owner_report)
 
 
 if __name__ == "__main__":

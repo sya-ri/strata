@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
-      "tree": "9a7b6694190ce3637e73bcc97ca1ed9a084e5b68",
+      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
+      "tree": "2e0ffaeb2498c6dc27492f9a672cf4dfde5b6e23",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/candidate.patch",
-          "sha256": "c796404bed2ee4ca4db6fcf7a94d5b893f1875e2851ac28a25ece1ac0447ff9c"
+          "sha256": "5fc86d3f43d217b0480767579c3e5a7166dbfd25feb13fc157777501d7c507b4"
         }
       ]
     },
     "candidate": {
-      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
-      "tree": "9a7b6694190ce3637e73bcc97ca1ed9a084e5b68",
+      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
+      "tree": "2e0ffaeb2498c6dc27492f9a672cf4dfde5b6e23",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/candidate.patch",
-          "sha256": "c796404bed2ee4ca4db6fcf7a94d5b893f1875e2851ac28a25ece1ac0447ff9c"
+          "sha256": "5fc86d3f43d217b0480767579c3e5a7166dbfd25feb13fc157777501d7c507b4"
         }
       ]
     },
     "baseline": {
-      "ref": "6899f1fd3d738e3d03101ea821066ff28eb9df57",
-      "tree": "0b0aba2bf4889670dbe9aac1eb042f5049de784c",
+      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
+      "tree": "896592179380309517e172ddfbe36fd9e22f3f49",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/baseline.patch",
-          "sha256": "2d4401b1307abee6af2d67313e3c2048e2678ca6bac5c67b03bd6ae569b955bf"
+          "sha256": "e5cb1af37edb85ccfc3b9bc122c38c2060e2409204fb271e0febd65cd9637d32"
         }
       ]
     }

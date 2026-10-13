@@ -711,3 +711,10 @@ It compiles an independent test controller into the existing generated remote fi
 Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
 The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
 This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.
+
+An optional `owner_continuation` selects one complete independent `owner_reports` domain by its exact `name`; the outer manifest retains every original JMH suite, owner row and source/input binding.
+It pins `runtime_sha256` for every original baseline/candidate runtime project and `collector_sha256`, and the driver rejects changed compiled bytes before collection.
+The ordinary CI entry then prepares and collects all rows of that domain in three independent repetitions per side using the existing owner collector and processor.
+The attempt explicitly records `complete-owner-domain-continuation`, `whole_issue_acceptance=false` and `prior_rows_adopted=false`; it cannot certify the whole issue or turn a prior failed attempt into a completed one.
+Previously retained reports remain separately bound historical evidence and require their own source, archive, control and acceptance review.
+The optional `--owner-report` entry selects an entire declared independent domain under the same scope rules and cannot override a configured continuation or select individual rows.

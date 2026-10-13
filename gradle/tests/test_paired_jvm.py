@@ -214,6 +214,75 @@ class PairedJvmTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             PAIRED.owner_processing_collector(inventory, original)
 
+    def test_automatic_complete_continuation_requires_exact_original_runtime_and_collector(self):
+        value = copy.deepcopy(self.manifest)
+        value["owner_reports"] = [self.owner_specification()]
+        jar = self.root / "original.jar"
+        jar.write_bytes(b"original compiled archive")
+        sha = PAIRED.digest(jar)
+        value["owner_continuation"] = {"name": "independent-owner", "runtime_sha256": {
+            side: {project: sha for project in value["runtime_projects"]} for side in ("baseline", "candidate")}, "collector_sha256": sha}
+        self.assertEqual(self.load(value), value)
+        selected, scope = PAIRED.continuation_scope(value, None)
+        self.assertEqual(selected["owner_reports"], value["owner_reports"])
+        self.assertEqual(scope["complete_rows"], 2)
+        self.assertFalse(scope["whole_issue_acceptance"])
+        self.assertFalse(scope["prior_rows_adopted"])
+        runtime = {side: {project: {"path": str(jar)} for project in value["runtime_projects"]} for side in ("baseline", "candidate")}
+        PAIRED.verify_continuation_archives(selected, runtime, jar)
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(value, "another-owner")
+        changed = self.root / "substituted.jar"
+        changed.write_bytes(b"substituted compiled archive")
+        for side in ("baseline", "candidate"):
+            redirected = copy.deepcopy(runtime)
+            redirected[side][value["runtime_projects"][0]]["path"] = str(changed)
+            with self.subTest(side=side), self.assertRaises(ValueError):
+                PAIRED.verify_continuation_archives(selected, redirected, jar)
+        with self.assertRaises(ValueError):
+            PAIRED.verify_continuation_archives(selected, runtime, changed)
+        changes = [lambda option: option.update(name="independent-owner:row-1"),
+                   lambda option: option.update(rows=["control"]),
+                   lambda option: option["runtime_sha256"].pop("baseline"),
+                   lambda option: option["runtime_sha256"]["candidate"].pop(value["runtime_projects"][0]),
+                   lambda option: option.update(collector_sha256="missing")]
+        for change in changes:
+            negative = copy.deepcopy(value)
+            change(negative["owner_continuation"])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(negative)
+
+    def test_complete_owner_continuation_keeps_all_rows_source_pins_and_outer_inventory(self):
+        value = copy.deepcopy(self.manifest)
+        report = self.owner_specification()
+        report["name"] = "complete-owner"
+        report["rows"] = [{"workload": str(index)} for index in range(8)]
+        value["owner_reports"] = [report]
+        full, full_scope = PAIRED.continuation_scope(value, None)
+        self.assertIs(full, value)
+        self.assertEqual(full_scope["kind"], "whole-manifest")
+        selected, scope = PAIRED.continuation_scope(value, "complete-owner")
+        self.assertEqual(selected["owner_reports"], [report])
+        self.assertEqual(selected["suites"], [])
+        for key in ("sources", "runtime_projects", "inputs", "compiled_pins", "dependency_pins", "java_pins"):
+            self.assertEqual(selected[key], value[key])
+        self.assertEqual(scope["complete_rows"], 8)
+        self.assertFalse(scope["prior_rows_adopted"])
+        self.assertFalse(scope["whole_issue_acceptance"])
+        self.assertEqual(scope["original_jmh_suites"], [{"name": value["suites"][0]["name"], "complete_rows": 2}])
+        self.assertEqual(len(value["suites"]), 1)
+        for name in ("missing", "complete-owner:row-1", "complete"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                PAIRED.continuation_scope(value, name)
+        duplicate = copy.deepcopy(value)
+        duplicate["owner_reports"].append(report)
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(duplicate, "complete-owner")
+        paired = copy.deepcopy(value)
+        paired["owner_reports"][0]["paired_jmh"] = {"suite": value["suites"][0]["name"], "fixture_class": "example.Fixture"}
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(paired, "complete-owner")
+
     def test_owner_table_keeps_cycle_units_nulls_and_adverse_deltas(self):
         specification = self.owner_specification()
         comparison = {"phases": [{"workload": "all", "before": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 4.0},
