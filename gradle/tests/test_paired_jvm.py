@@ -819,6 +819,96 @@ class PairedJvmTest(unittest.TestCase):
                         PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
                     self.assertFalse((directory / "verified.json").exists())
 
+    def test_independent_file_flags_bind_reused_control_pids_without_inventing_a_working_directory(self):
+        modes = ("positive", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
+                 "ambiguous-file", "ambiguous-vm", "wrong-birth", "wrong-origin", "reordered-controls", "console-only", "oversized")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("independent-files-" + mode)
+                original = terminal["members"]["123"]
+                original.update(pid=123, exitFileTime=116444736020000000, handleClosed=True)
+                later = {**original, "creationFileTime": 116444736050000000, "exitFileTime": 116444736060000000}
+                terminal["members"]["123"] = [original, later]
+                classes = (phase / "console.log").read_text(encoding="utf-8")
+                (phase / "console.log").write_text(classes + classes, encoding="utf-8")
+                (directory.parents[2] / "vms").mkdir()
+                template = PAIRED.read_json(phase / "vms.json")[0]
+                vms, paths = [], []
+                for index, result in enumerate(receipt["controls"]):
+                    path = directory / result["id"] / "class-load.log"
+                    path.parent.mkdir()
+                    path.write_text(classes, encoding="utf-8")
+                    artifact = {"path": path.relative_to(directory).as_posix(), "sha256": PAIRED.digest(path)}
+                    result["artifacts"].append(artifact)
+                    flag = "../../" + result["id"] + "/class-load.log"
+                    start = (1001, 5001)[index]
+                    log = directory.parents[2] / "vms" / f"vm-{index}.log"
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start}'><vm_arguments>"
+                                   f"<args>-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0 </args>"
+                                   "</vm_arguments><hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+                    vms.append({**template, "vm_start_ms": start, "diagnostic_path": str(log),
+                                "diagnostic_sha256": PAIRED.digest(log), "class_load_file_flags": [flag]})
+                    paths.append(path)
+                if mode == "changed-flag":
+                    vms[0]["class_load_file_flags"] = vms[1]["class_load_file_flags"]
+                elif mode == "changed-vm":
+                    Path(vms[0]["diagnostic_path"]).write_text("changed original VM arguments\n", encoding="utf-8")
+                elif mode == "changed-file":
+                    paths[0].write_text(classes + "changed\n", encoding="utf-8")
+                elif mode == "missing-file":
+                    paths[0].unlink()
+                elif mode in ("wrong-pid", "truncated", "wrong-origin", "oversized"):
+                    text = classes.replace("[123]", "[456]") if mode == "wrong-pid" else classes.rstrip("\n") if mode == "truncated" else \
+                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes) if mode == "wrong-origin" else classes + "x" * (1024 * 1024) + "\n"
+                    paths[0].write_text(text, encoding="utf-8")
+                    receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
+                elif mode == "ambiguous-file":
+                    receipt["controls"][0]["artifacts"].append(copy.deepcopy(receipt["controls"][0]["artifacts"][-1]))
+                elif mode == "ambiguous-vm":
+                    vms.append(copy.deepcopy(vms[0]))
+                elif mode == "wrong-birth":
+                    original["creationFileTime"] = 116444736030000000
+                elif mode == "reordered-controls":
+                    receipt["controls"].reverse()
+                elif mode == "console-only":
+                    receipt["controls"][0]["artifacts"].pop()
+                (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "positive":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    files = PAIRED.read_json(directory / "verified.json")["independent_class_load_files"]
+                    self.assertEqual(len(files), 2)
+                    self.assertEqual([item["vm_start_ms"] for item in files], [1001, 5001])
+                    self.assertTrue(all(item["working_directory_observation"] is None for item in files))
+                    self.assertTrue(all(item["relative_path_relationship"].startswith("inferred") for item in files))
+                else:
+                    with self.assertRaises((ValueError, FileNotFoundError)):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_vm_argument_file_capture_keeps_its_original_diagnostic_pin(self):
+        directory = self.root / "file-flag-capture"
+        (directory / "class-loads").mkdir(parents=True)
+        home = self.root / "file-flag-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"source-only executable fixture")
+        origin = {"main": "independent.Controller", "executable": str(executable), "classpath": "frozen.jar"}
+        (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+        log = directory / "vm.log"
+        flag = "../../independent-a/class-load.log"
+        log.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments>"
+                       f"<args>-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0 </args>"
+                       f"<command>independent.Controller input</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                       "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                       "<hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+        PAIRED.verify_vms(directory, [log], {"members": {}}, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 0)
+        actual = PAIRED.read_json(directory / "vms.json")[0]
+        self.assertEqual(actual["class_load_file_flags"], [flag])
+        self.assertEqual(actual["diagnostic_path"], str(log))
+        self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
+        self.assertNotIn("working_directory", actual)
+
     def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
         original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}
         legacy = {"members": {"123": copy.deepcopy(original)}}

@@ -591,6 +591,10 @@ Missing, repeated, reordered, failed or unavailable controls, changed request/qu
 The shared init script creates the generic controller JavaExec from the existing suite work gate's dependency graph, launcher, native-access options and classpath.
 Its measured-fork count must be zero.
 An external controller launching its own untimed JVM must keep the inherited diagnostic/resource profile, emit its actual `paired.jvm.origin` record, and provide naturally released owning Job generations and PID-qualified class-load origins for those observations.
+An independent controller may retain a complete class-load file as a pinned control artifact.
+The reader binds that artifact to the exact file flag in its immutable VM diagnostic and selects the corresponding captured PID/birth generation, including legitimate PID reuse.
+For relative flags, the correspondence to a fresh absolute artifact follows the verified executed controller's path construction; the reader records that relationship as an inference and leaves the working-directory observation unavailable.
+Missing, changed, duplicate, wrong-PID or ambiguous file/generation attribution fails, and console output cannot supply another generation's origin.
 Tracing belongs to this separate untimed route; the driver supplies no instrumentation option to timed JVMs and retains the same immutable fixture/runtime/collector/harness closure for collection.
 Every selected suite's full work gates and both sides' independent controls complete before the first timed collection in the attempt.
 
