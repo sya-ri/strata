@@ -84,15 +84,9 @@ val componentClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(
 val verifyComponentRenderingWork = tasks.register<JavaExec>("verifyComponentRenderingWork") {
     group = "verification"
     description = "Exercises every shipped public component through a real Minecraft-profile host and the shared work assertions."
-    dependsOn(componentGenerated, componentGenerator)
-    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.ComponentWorkEvidence")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
-
-tasks.named("check") { dependsOn(verifyComponentRenderingWork) }
 
 tasks.register<JavaExec>("captureComponentInventory") {
     group = "verification"
@@ -151,56 +145,48 @@ tasks.withType<JavaExec>().matching { it.name in setOf("verifyComponentRendering
 val verifyStressRenderingWork = tasks.register<JavaExec>("verifyStressRenderingWork") {
     group = "verification"
     description = "Checks real stress edits, navigation, animation, multipixel tiling and terminal lifetimes without time thresholds."
-    dependsOn(componentGenerated, componentGenerator)
-    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.StressWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
     verifyStressRenderingWork.configure { systemProperty("strata.performance.workloads", selected) }
 }
 
-tasks.named("check") { dependsOn(verifyStressRenderingWork) }
-
 val verifyExceptionalTextWork = tasks.register<JavaExec>("verifyExceptionalTextWork") {
     group = "verification"
     description = "Checks supplemental exceptional TextField metrics, clean frames, real updates and terminal font release."
-    dependsOn(componentGenerated, componentGenerator)
-    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.ExceptionalTextWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
-
-tasks.named("check") { dependsOn(verifyExceptionalTextWork) }
 
 val verifyFontWork = tasks.register<JavaExec>("verifyFontWork") {
     group = "verification"
     description = "Checks actual font providers, visual ordering, reference limits and bounded native/cache release."
-    dependsOn(componentGenerated, componentGenerator)
-    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.FontWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
 }
-
-tasks.named("check") { dependsOn(verifyFontWork) }
 
 val verifyPortableTextWork = tasks.register<JavaExec>("verifyPortableTextWork") {
     group = "verification"
     description = "Checks detached Unicode and large custom-font glyph composition with changing destinations."
-    dependsOn(componentGenerated, componentGenerator)
-    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.PortableTextWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
 }
 
-tasks.named("check") { dependsOn(verifyPortableTextWork) }
+listOf(
+    verifyComponentRenderingWork,
+    verifyStressRenderingWork,
+    verifyExceptionalTextWork,
+    verifyFontWork,
+    verifyPortableTextWork,
+).forEach { work ->
+    work.configure {
+        dependsOn(componentGenerated, componentGenerator)
+        classpath = componentClasspath
+        javaLauncher.set(componentLauncher)
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
+    }
+    tasks.named("check") { dependsOn(work) }
+}
 
 tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
     group = "verification"

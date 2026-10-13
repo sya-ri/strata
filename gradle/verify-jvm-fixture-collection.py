@@ -176,6 +176,12 @@ public open class ScopedRemoteFixtureBenchmark {
         resource.unlink(missing_ok=True)
 
 
+def verify_project_selection(closure_log, projects):
+    """Require the entire explicit scoped model before admitting a fixture collection."""
+    selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
+    assert set(selected.split(",")) == projects
+
+
 def main():
     """Keep generated sources temporary and preserve all success and failure evidence in build outputs."""
     root = Path(__file__).resolve().parent.parent
@@ -200,6 +206,7 @@ def main():
     benchmarks = {":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks"}
     projects = multiplatform | benchmarks | {
         ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote", ":quality:detekt-rules", ":integration:api",
+        ":velocity-api", ":runtime:velocity",
     }
     published = projects - benchmarks - {":quality:detekt-rules", ":integration:api"}
     tasks = [f"{owner}:{task}" for owner in sorted(projects) for task in ("formatKotlin", "lintKotlin", "detekt", "classes")]
@@ -218,8 +225,7 @@ def main():
     with (evidence / "task-closure.log").open("w", encoding="utf-8") as log:
         subprocess.run(wrapper + ["-Pstrata.jvmOnly=true", "--dry-run", "-I", str(init)] + tasks, cwd=root, stdout=log, stderr=subprocess.STDOUT, check=True)
     closure_log = (evidence / "task-closure.log").read_text(encoding="utf-8")
-    selected = next(line.removeprefix("EXPLICIT_JVM_PROJECTS=") for line in closure_log.splitlines() if line.startswith("EXPLICIT_JVM_PROJECTS="))
-    assert set(selected.split(",")) == projects
+    verify_project_selection(closure_log, projects)
     assert "verifyPublishedHostInventory SKIPPED" not in closure_log and "verifyPublishedPerformanceInventory SKIPPED" not in closure_log
     (evidence / "project-model.json").write_text(json.dumps({"explicit_projects": sorted(projects), "explicit_project_count": len(projects), "requested_tasks": tasks}, indent=2), encoding="utf-8")
     arguments = [
