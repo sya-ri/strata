@@ -91,7 +91,7 @@ def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(set(data) == required and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}, "Invalid source binding")
@@ -101,7 +101,7 @@ def load_manifest(root, path):
             pin(root, patch)
     projects = data["runtime_projects"]
     require(isinstance(projects, list) and projects and len(set(projects)) == len(projects), "Missing or duplicate runtime project")
-    require(all(re.fullmatch(r":(?:api|runtime:(?:core|headless|remote|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
+    require(all(re.fullmatch(r":(?:api|velocity-api|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
             "Unsupported CPU runtime project")
     require(isinstance(data["suites"], list) and data["suites"], "No paired suites selected")
     names = set()
@@ -152,6 +152,52 @@ def load_manifest(root, path):
                         and all(isinstance(value, str) and len(value) <= 4096 and "\x00" not in value for value in item["arguments"]), "Use bounded compiled control arguments")
                 identifiers.append(item["id"])
             require(len(identifiers) == len(set(identifiers)), "Duplicate preflight control identity")
+    reports = data.get("owner_reports", [])
+    require(isinstance(reports, list) and len(reports) <= 256, "Invalid owner report inventory")
+    for report in reports:
+        fields = {"name", "project", "template", "kind", "main", "comparison", "workload_id", "phase_keys", "rows", "warmup", "samples", "runtime_classes"}
+        require(isinstance(report, dict) and fields <= set(report) <= fields | {"controls"}, "Invalid compiled owner report fields")
+        require(isinstance(report["name"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", report["name"])
+                and report["name"] not in names, "Invalid or duplicate owner report name")
+        names.add(report["name"])
+        kind = report["kind"]
+        require(kind in ("java-exec", "test"), "Use an existing JavaExec or Test template")
+        require((kind == "java-exec" and FixtureProject.decode(report["project"]) is not None)
+                or (kind == "test" and report["project"] in projects), "Owner report template is outside frozen projects")
+        require(re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", report["template"]), "Use one existing template task")
+        require(all(isinstance(report[key], str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", report[key])
+                    for key in ("main", "comparison")), "Declare compiled owner report entry points")
+        require(isinstance(report["workload_id"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", report["workload_id"]), "Invalid owner workload identity")
+        keys, rows = report["phase_keys"], report["rows"]
+        require(isinstance(keys, list) and keys and len(keys) == len(set(keys))
+                and all(isinstance(key, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", key) for key in keys), "Declare owner phase keys")
+        require(isinstance(rows, list) and 0 < len(rows) <= 16_384
+                and all(isinstance(row, dict) and set(row) == set(keys)
+                        and all(isinstance(value, (str, int)) and not isinstance(value, bool) for value in row.values()) for row in rows)
+                and len({json.dumps(row, sort_keys=True) for row in rows}) == len(rows), "Declare the complete unique owner row inventory")
+        require(all(isinstance(report[key], int) and not isinstance(report[key], bool) for key in ("warmup", "samples"))
+                and 0 <= report["warmup"] <= 1_000_000 and 0 < report["samples"] <= 1_000_000, "Invalid owner profile counts")
+        controls = report.get("controls", [])
+        require(isinstance(controls, list) and len(controls) <= 256 and len(controls) == len(set(controls))
+                and all(isinstance(field, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", field) for field in controls), "Invalid raw owner control fields")
+        classes = report["runtime_classes"]
+        require(isinstance(classes, dict) and classes and len(classes) <= len(projects), "Missing actual owner runtime bindings")
+        for module, binding in classes.items():
+            require(re.fullmatch(r"[A-Za-z0-9_-]+", module) and isinstance(binding, dict) and set(binding) == {"project", "class"}
+                    and binding["project"] in projects and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", binding["class"]),
+                    "Invalid actual owner runtime representative")
+        require(len({binding["project"] for binding in classes.values()}) == len(classes), "Duplicate owner runtime binding")
+    continuation = data.get("owner_continuation")
+    if continuation is not None:
+        require(isinstance(continuation, dict) and set(continuation) == {"name", "runtime_sha256", "collector_sha256"}, "Invalid complete owner continuation")
+        selected = [report for report in reports if report["name"] == continuation["name"]]
+        require(len(selected) == 1 and "paired_jmh" not in selected[0], "Continuation requires one complete independent owner domain")
+        runtime = continuation["runtime_sha256"]
+        require(isinstance(runtime, dict) and set(runtime) == {"baseline", "candidate"}, "Continuation requires both original runtime inventories")
+        for values in runtime.values():
+            require(isinstance(values, dict) and set(values) == set(projects)
+                    and all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in values.values()), "Incomplete original runtime byte pins")
+        require(isinstance(continuation["collector_sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", continuation["collector_sha256"]), "Missing original collector byte pin")
     labels = set()
     for suite in data["suites"]:
         if "operation_reports" in suite:
@@ -236,9 +282,42 @@ def archive_task(project):
 def archive_file(workspace, project):
     """Require one ordinary binary archive rather than selecting a sources or old release JAR."""
     libraries = workspace.joinpath(*project.strip(":").split(":"), "build", "libs")
-    values = [path for path in libraries.glob("*.jar") if not path.name.endswith(("-sources.jar", "-javadoc.jar", "-all.jar"))]
+    values = [path for path in libraries.glob("*.jar") if not path.name.endswith(("-sources.jar", "-javadoc.jar", "-all.jar", "-plugin.jar"))]
     require(len(values) == 1, f"Expected one current runtime archive: {project}")
     return values[0]
+
+
+def verify_owner_report(report, specification, repetition, runtime, seen):
+    """Validate raw complete rows and actual loaded B/C JARs; processing remains in the shared kit."""
+    require(report.get("status") == "passed" and report.get("schema_version") == 1
+            and report.get("workload_id") == specification["workload_id"] and report.get("repetition") == repetition,
+            "Wrong or incomplete owner report")
+    identity = report.get("run_id")
+    require(isinstance(identity, str) and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", identity)
+            and identity not in seen, "Missing or reused owner invocation")
+    phases = report.get("phases", [])
+    keys = specification["phase_keys"]
+    actual = [{key: phase.get(key) for key in keys} for phase in phases]
+    require(len(actual) == len(specification["rows"])
+            and {json.dumps(row, sort_keys=True) for row in actual} == {json.dumps(row, sort_keys=True) for row in specification["rows"]}
+            and all(phase.get("samples") == specification["samples"] and phase.get("warmup") == specification["warmup"] for phase in phases),
+            "Incomplete or changed owner row/profile inventory")
+    require(all(all(field in phase for field in specification.get("controls", [])) for phase in phases), "Missing original untimed owner controls")
+    modules = report.get("runtime_metadata", {}).get("modules", [])
+    require(len(modules) == len(specification["runtime_classes"]), "Incomplete owner runtime origin inventory")
+    loaded = {module.get("module"): module for module in modules}
+    require(set(loaded) == set(specification["runtime_classes"]), "Changed owner runtime modules")
+    for label, binding in specification["runtime_classes"].items():
+        module = loaded[label]
+        archive = runtime[binding["project"]]
+        resource = binding["class"].replace(".", "/") + ".class"
+        with zipfile.ZipFile(archive["path"]) as jar:
+            expected = hashlib.sha256(jar.read(resource)).hexdigest()
+        require(module.get("status") == "resolved" and module.get("representativeClass") == binding["class"]
+                and module.get("codeSource", {}).get("status") == "available" and module["codeSource"].get("sha256") == archive["sha256"]
+                and module.get("classResource", {}).get("status") == "available" and module["classResource"].get("sha256") == expected
+                and module.get("classTree", {}).get("status") == "available", "Owner report loaded a substituted runtime")
+    seen.add(identity)
 
 
 def class_load_inventory(owner, expected=None):
@@ -552,6 +631,14 @@ def class_entry(classpath, name):
     return matches[0]
 
 
+
+def owner_processing_collector(classpath, collector):
+    """Use the actual retained processing JAR path after proving the original collector bytes."""
+    selected = class_entry(prepared_classpath(classpath), "dev.s7a.strata.performance.JvmPerformanceMeter")
+    require(selected["sha256"] == digest(collector), "Selected owner comparison collector bytes changed")
+    return selected["path"]
+
+
 def preflight_request(input_root, output, suite, side, classpath_path, runtime, sources, java, inputs):
     """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
     specification = suite["preflight"]
@@ -681,7 +768,7 @@ def verify_test_gate(directory, gate):
                                                 "counts": counts, "reports": inventory["reports"]})
 
 
-def table(output, comparisons, phases, operations=()):
+def table(output, comparisons, phases, operations=(), owners=()):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
     for suite, mode, comparison in comparisons:
@@ -705,6 +792,14 @@ def table(output, comparisons, phases, operations=()):
                 rows.append({"suite": suite, "mode": "owner-thread-operation", "benchmark": phase["operation_id"], "params": "{}",
                              "metric": metric, "unit": unit, "baseline": before, "candidate": phase["after"][metric],
                              "delta": phase["delta"][metric], "candidate_to_baseline": None})
+    for specification, comparison in owners:
+        for phase in comparison["phases"]:
+            identity = {key: phase[key] for key in specification["phase_keys"]}
+            for metric, before in phase["before"].items():
+                unit = "B/cycle" if metric.endswith("bytes_per_cycle") else "ns/cycle" if metric.endswith("ns_per_cycle") else ""
+                rows.append({"suite": specification["name"], "mode": "owner-thread-report", "benchmark": specification["workload_id"],
+                             "params": json.dumps(identity, sort_keys=True), "metric": metric, "unit": unit,
+                             "baseline": before, "candidate": phase["after"][metric], "delta": phase["delta"][metric], "candidate_to_baseline": None})
     with (output / "table.csv").open("x", encoding="utf-8", newline="") as target:
         writer = csv.DictWriter(target, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -768,7 +863,39 @@ def invoke(arguments, root, console):
         process.stdout.close()
 
 
-def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None):
+
+def continuation_scope(data, owner_report):
+    """Select one entire independent owner domain while retaining the complete outer frozen manifest."""
+    configured = data.get("owner_continuation", {}).get("name")
+    require(owner_report is None or configured is None or owner_report == configured, "Explicit owner domain differs from the frozen continuation")
+    owner_report = configured if owner_report is None else owner_report
+    if owner_report is None:
+        return data, {"kind": "whole-manifest", "whole_issue_acceptance": False}
+    matches = [report for report in data.get("owner_reports", []) if report["name"] == owner_report]
+    require(len(matches) == 1 and "paired_jmh" not in matches[0], "Select one complete independent owner report")
+    return {**data, "suites": [], "owner_reports": matches}, {
+        "kind": "complete-owner-domain-continuation", "owner_report": owner_report,
+        "complete_rows": len(matches[0]["rows"]), "whole_issue_acceptance": False,
+        "original_jmh_suites": [{"name": suite["name"], "complete_rows": suite["expected_cases"]} for suite in data["suites"]],
+        "original_owner_reports": [{"name": report["name"], "complete_rows": len(report["rows"])} for report in data.get("owner_reports", [])],
+        "prior_rows_adopted": False}
+
+
+
+def verify_continuation_archives(data, runtime, collector):
+    """Reject changed compiled bytes before collecting a complete independent continuation."""
+    continuation = data.get("owner_continuation")
+    if continuation is None:
+        return
+    require(set(runtime) == {"baseline", "candidate"}, "Missing prepared continuation runtime")
+    for side, expected in continuation["runtime_sha256"].items():
+        require(set(runtime[side]) == set(expected), "Prepared continuation runtime inventory changed")
+        for project, sha in expected.items():
+            require(digest(Path(runtime[side][project]["path"])) == sha, "Continuation runtime differs from original measured bytes")
+    require(digest(collector) == continuation["collector_sha256"], "Continuation collector differs from original measured bytes")
+
+
+def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None):
     """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
     input_root = root if input_root is None else input_root
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
@@ -850,6 +977,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             return directory
 
         data = load_manifest(input_root, manifest_path)
+        data, record["scope"] = continuation_scope(data, owner_report)
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
@@ -876,6 +1004,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         fixture = workspaces["fixture"]
         owners = sorted({suite["project"] for suite in data["suites"]})
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
+        fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
         for side in ("baseline", "candidate"):
             tasks = [archive_task(project) for project in data["runtime_projects"]]
             if workspaces[side] == fixture:
@@ -902,6 +1031,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                           for index, item in enumerate(data["inputs"])}
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
+        verify_continuation_archives(data, runtime_archives, collector)
         prepared = output / "compiled"
         prepared.mkdir()
         shutil.copyfile(collector, prepared / collector.name)
@@ -1025,6 +1155,59 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 comparison = read_json(comparison_path)
                 require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
                 operation_comparisons.append((suite["name"], comparison))
+        owner_comparisons, owner_ids, owner_controls = [], set(), []
+        for specification in data.get("owner_reports", []):
+            runs, classpaths = {"baseline": [], "candidate": []}, {}
+            library_manifest = output / (specification["name"] + "-libraries.properties")
+            for repetition in range(3):
+                for side in ("baseline", "candidate"):
+                    for key, workspace in workspaces.items():
+                        source_guard(workspace, data["sources"][key]["tree"])
+                    for archives in runtime_archives.values():
+                        for item in archives.values():
+                            require(digest(Path(item["path"])) == item["sha256"], "Prepared owner runtime changed")
+                    destination = output / "raw" / specification["name"] / side / f"run-{repetition}.json"
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    request = output / f"{specification['name']}-{side}-{repetition}-owner-request.json"
+                    write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                        "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
+                                        "arguments": [str(destination), str(repetition)], "inputs": str(library_manifest)})
+                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.paired.runtime={runtime_manifests[side]}",
+                             f"-Pstrata.performance.fixtureInputs={inputs}"]
+                    if side not in classpaths:
+                        retained = output / "prepared-classpaths" / specification["name"] / side
+                        flags.append(f"-Pstrata.paired.preserveClasspath={retained}")
+                        classpaths[side] = retained / "classpath.json"
+                    else:
+                        prepared_classpath(classpaths[side])
+                        flags.append(f"-Pstrata.paired.classpath={classpaths[side]}")
+                    phase(f"collect-{specification['name']}-owner-{side}-{repetition}", fixture,
+                          [specification["project"] + ":strataPairedEvidence"] + flags, 0)
+                    prepared = prepared_classpath(classpaths[side])
+                    require(class_entry(prepared, "dev.s7a.strata.performance.JvmPerformanceMeter")["sha256"] == digest(collector), "Owner report substituted its collector")
+                    verify_owner_report(read_json(destination), specification, repetition, runtime_archives[side], invocation_ids | operation_ids | owner_ids)
+                    raw = read_json(destination)
+                    owner_ids.add(raw["run_id"])
+                    if specification.get("controls"):
+                        owner_controls.append({"suite": specification["name"], "side": side, "repetition": repetition, "run_id": raw["run_id"],
+                                               "rows": [{**{key: row[key] for key in specification["phase_keys"]},
+                                                         **{key: row[key] for key in specification["controls"]}} for row in raw["phases"]]})
+                    runs[side].append(str(destination))
+            comparison_path = output / (specification["name"] + "-owner-comparison.json")
+            request = output / (specification["name"] + "-comparison-owner-request.json")
+            processing_collector = owner_processing_collector(classpaths["candidate"], collector)
+            write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                "template": specification["template"], "kind": specification["kind"], "main": specification["comparison"],
+                                "arguments": runs["baseline"] + runs["candidate"] + [processing_collector, str(comparison_path)], "inputs": str(library_manifest)})
+            phase(f"compare-{specification['name']}-owner", fixture,
+                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
+                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}"])
+            comparison = read_json(comparison_path)
+            require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
+            owner_comparisons.append((specification, comparison))
+        require(len(owner_ids) == len(data.get("owner_reports", [])) * 6, "Whole owner report attempt incomplete")
+        record["owner_report_cells"] = sum(len(report["rows"]) * 6 for report in data.get("owner_reports", []))
+        write_new(output / "owner-controls.json", owner_controls)
         for side, workspace in workspaces.items():
             source_guard(workspace, data["sources"][side]["tree"])
             for value in data["compiled_pins"][side]:
@@ -1039,7 +1222,13 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
         record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
         record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
-        table(output, comparisons, record["phases"], operation_comparisons)
+        table(output, comparisons, record["phases"], operation_comparisons, owner_comparisons)
+        if owner_controls:
+            with (output / "report.md").open("a", encoding="utf-8") as target:
+                target.write("\nUntimed original owner controls are raw counts/transitions, not wall-time or percentile measurements. Every independent invocation is retained.\n\n| Suite | Side | Repetition | Original row/control fields |\n| --- | --- | ---: | --- |\n")
+                for control in owner_controls:
+                    for row in control["rows"]:
+                        target.write(f"| {control['suite']} | {control['side']} | {control['repetition']} | {json.dumps(row, sort_keys=True)} |\n")
         record["status"] = "passed"
     except BaseException as failure:
         record["error"] = f"{type(failure).__name__}: {failure}"
@@ -1050,7 +1239,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         write_new(output / "file-inventory.json", {path.relative_to(output).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
                                                   for path in sorted(output.rglob("*")) if path.is_file() and path.relative_to(output).parts[0] != "workspaces"})
         archive = pack(output)
-        print(f"Preserved {record['status']} whole attempt: {archive}", flush=True)
+        print(f"Preserved {record['status']} attempt: {archive}", flush=True)
 
 
 def source_files(root, tree):
@@ -1165,8 +1354,10 @@ def main():
     parser.add_argument("--head")
     parser.add_argument("--select", action="store_true")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--owner-report", help="Continue one complete declared independent owner domain; does not establish whole Issue acceptance")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
+    require(not args.select or args.owner_report is None, "CI selection retains the whole declared manifest")
     if args.expected_head is not None:
         require(re.fullmatch(r"[0-9a-f]{40}", args.expected_head) is not None and git(root, "rev-parse", "HEAD") == args.expected_head,
                 "Paired execution checkout differs from expected head")
@@ -1182,7 +1373,7 @@ def main():
         else:
             require(args.output is not None, "Supply a fresh attempt output directory")
             require(selection["path"] is not None, "Supply explicit paired inputs")
-            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"])
+            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report)
 
 
 if __name__ == "__main__":
