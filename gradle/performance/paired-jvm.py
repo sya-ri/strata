@@ -1041,25 +1041,65 @@ def run(root, manifest_path, output):
         print(f"Preserved {record['status']} whole attempt: {archive}", flush=True)
 
 
+def select_manifest(root, explicit=None, base=None, head=None):
+    """Select current PR intent at its exact head, or the existing manual/default route."""
+    legacy = ".github/performance/paired-jvm.json"
+    require((base is None) == (head is None), "Supply both PR base and head")
+    if head is not None:
+        require(all(re.fullmatch(r"[0-9a-f]{40}", value) for value in (base, head)), "Use exact PR commit identities")
+        require(git(root, "rev-parse", "HEAD") == head, "Paired planning checkout differs from PR head")
+
+    def validate(value):
+        path = relative_path(root, value)
+        load_manifest(root, path)
+        if head is not None:
+            committed = subprocess.check_output(["git", "-C", str(root), "show", f"{head}:{value}"])
+            require(path.read_bytes() == committed, "Selected manifest differs from PR head")
+        return value
+
+    if explicit is not None:
+        return validate(explicit)
+    if head is None:
+        return validate(legacy) if relative_path(root, legacy).exists() else ""
+    changed = git(root, "diff", "--no-renames", "--name-only", "-z", f"{base}...{head}").split("\0")
+    if legacy in changed and relative_path(root, legacy).exists():
+        return validate(legacy)
+    candidates = []
+    for value in changed:
+        if not value.startswith(".github/performance/") or not value.endswith(".json") or len(PurePosixPath(value).parts) <= 3:
+            continue
+        path = relative_path(root, value)
+        if not path.exists():
+            continue
+        data = read_json(path)
+        schema = data.get("schema") if isinstance(data, dict) else None
+        paired_fields = isinstance(data, dict) and {"sources", "suites", "runtime_projects"} <= set(data)
+        if paired_fields or isinstance(schema, str) and schema.startswith("strata-paired-jvm-ci-"):
+            candidates.append(validate(value))
+    require(len(candidates) <= 1, "Ambiguous changed paired manifests: " + ", ".join(candidates))
+    return candidates[0] if candidates else ""
+
+
 def main():
     """Select the opt-in manifest during CI planning or execute one fresh Windows attempt."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", default=".github/performance/paired-jvm.json")
+    parser.add_argument("--manifest")
+    parser.add_argument("--base")
+    parser.add_argument("--head")
     parser.add_argument("--select", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    path = relative_path(root, args.manifest)
     if args.select:
-        selected = args.manifest if path.exists() else ""
-        if selected:
-            load_manifest(root, path)
+        selected = select_manifest(root, args.manifest, args.base, args.head)
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as target:
                 target.write(f"paired_manifest={selected}\n")
         print(selected)
     else:
+        require(args.base is None and args.head is None, "PR selection arguments require --select")
         require(args.output is not None, "Supply a fresh attempt output directory")
+        path = relative_path(root, args.manifest if args.manifest is not None else ".github/performance/paired-jvm.json")
         run(root, path, args.output.resolve())
 
 
