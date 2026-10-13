@@ -529,13 +529,21 @@ These native-free retained owners do not replace real Paper/Velocity scheduling,
 
 ## Opt-in paired JVM CI
 
-The `JVM checks` workflow runs a complete frozen CPU comparison in one Windows runner when a paired manifest is selected.
-Ordinary pull requests skip this job unless they deliberately provide `.github/performance/paired-jvm.json`; manual runs accept another repository-relative `paired_manifest` path.
-The checked-in [fixed pilot](../../.github/performance/pilot-issue145/manifest.json) is selected only by an explicit manual request.
-Dispatch `jvm.yml` on the intended driver branch with `paired_manifest=.github/performance/pilot-issue145/manifest.json` to exercise it.
+The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
+Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
+Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
+The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
+The reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
+This keeps experiment data reachable through Git history without including it in the merged product tree.
+
+Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
+The selector returns the manifest path, producer SHA and manifest SHA-256; the paired job passes all three with the expected driver head and preserves their binding in the attempt evidence.
+A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
+Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
+Manual dispatch uses the same declaration contract and needs no additional workflow input.
 A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
 
-Start another comparison from [the manifest template](../../.github/performance/paired-jvm.example.json).
+Start another comparison from [the manifest template](../../gradle/performance/paired-jvm.example.json).
 The schema requires these fields:
 
 | Field | Contract |
@@ -598,7 +606,6 @@ Private checkout attributes disable text conversion so working files preserve th
 Both those attributes and the complete working tree remain guarded between invocations.
 The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
 No old workstation owner directory, private index or missing historical metadata file is a prerequisite.
-The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
 All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
@@ -696,15 +703,17 @@ Separate per-VM files have no rotation and a 1 MiB limit per file; immutable cop
 Previously captured staging files must remain byte-identical before the next invocation.
 The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
 Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
-When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured owned PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
-This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, owned generation or candidate file keeps attribution ambiguous.
+When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured Java executable PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
+This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, Java executable generation or candidate file keeps attribution ambiguous.
+Closed non-Java helper generations that reuse the PID remain separately recorded with their actual image, birth, exit, Job membership and affinity; the sole Java generation must match the VM's actual executable and lifetime.
+Both standard Java launcher names, `java.exe` and `javaw.exe`, count as Java generations; this distinction does not admit a different main executable.
 Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
 Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
 
-The artifact retains source archives, frozen manifest, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
+The artifact retains source archives, frozen manifest and its producer/driver binding, the exact shared driver sources, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
 Runtime JARs and immutable inputs are copied before the first work gate; a preflight suite additionally preserves every classpath archive/directory, including fixture, collector, harness and control tooling, before that gate's JVM starts.
 Copies are checked against original bytes before and after preservation, independently guarded across control and collection phases, and kept outside reusable workspaces even when the first control fails.
 Independent preflight requests, qualification records, actual observations, receipts and verified inventories remain in the failed or successful attempt archive.

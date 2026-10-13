@@ -2,13 +2,17 @@
 
 This is the remaining Issue 132 measurement plan, using the existing standalone `benchmarkMinecraft` fixture and `processNativeComponentEvidence` consumer.
 All native performance values, compiled pins and final revision acceptance are Pending until actual collection and validation complete.
-The two request JSON files beside this document are inputs to the existing processor, not launchers or collected receipts.
+The two request JSON files beside this document are producer-only inputs to the existing processor, not launchers or collected receipts.
+Resolve them from the pinned producer checkout; keep the processing source checkout and actual report paths separate.
 
 ## Common fixture and runtime binding
 
 Freeze the final candidate source revision and its actual built testkit, native fixture and runtime archives before starting either side.
 Use that same source revision for both build checkouts, restoring only `runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt` on the baseline side from `7ebd9c94f3da521cadb76eadd4312289eaf88d7e`.
-The baseline blob is `c96a54946b8fdd6c940d7ab4951243182db6842f`; the candidate blob at public `3e3c141b221095bbdb8c9014a494fd9950836c9d` is `2e20f6bf2d6498467cf2a160a1e71bcdc782469f`.
+The baseline blob is `c96a54946b8fdd6c940d7ab4951243182db6842f`; the prepared candidate blob is `2e20f6bf2d6498467cf2a160a1e71bcdc782469f`.
+Both source trees are reconstructed from accepted master `ecc3eef17e4d06a5eb9ef3e63a8639df541ae896` with the pinned binary patches in this producer namespace.
+The source-only candidate tree is `772be0518cd1224755d08ba413b42e2a2d3313d8`; compilation and every current native receipt remain Pending.
+Baseline omits the candidate-specific channel-admission test source; all six independent scalar pixel tests remain common, and all five candidate admission/retention/failure tests remain required on candidate.
 Verify the actual path and blob before replacing it; both sides retain identical pacing, rollback, workloads, resources, compiler and collector sources.
 Record the complete side diff, the common fixture archive SHA-256, the actual collector archive SHA-256, and actual representative resource and class-tree receipts.
 A changed collector or fixture digest requires refreezing and recollecting both native sides.

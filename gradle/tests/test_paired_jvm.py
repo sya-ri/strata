@@ -1,8 +1,10 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
+from contextlib import redirect_stdout
 import copy
 import csv
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -48,6 +50,217 @@ class PairedJvmTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return PAIRED.load_manifest(self.root, path)
+
+    def selector_git(self, *arguments):
+        """Build real isolated fixture histories without invoking commit signing."""
+        return subprocess.check_output(["git", "-c", "core.bare=false", "-c", "commit.gpgsign=false",
+                                        "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                                        "-C", str(self.root), *arguments], text=True, encoding="utf-8").strip()
+
+    def selector_manifest(self, path, value=None):
+        """Keep the complete fixture and existing input pin in every selector control."""
+        target = self.root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(self.manifest if value is None else value), encoding="utf-8")
+        return path
+
+    def selector_commit(self, message="Preserve complete selector fixture"):
+        self.selector_git("add", "--all")
+        self.selector_git("commit", "--quiet", "--allow-empty", "-m", message)
+        return self.selector_git("rev-parse", "HEAD")
+
+    def selector_repository(self):
+        self.selector_git("init", "--quiet")
+        self.selector_git("config", "core.autocrlf", "false")
+        self.selector_git("config", "core.longpaths", "true")
+        (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
+        return self.selector_commit()
+
+    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None):
+        """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
+        base = self.selector_repository()
+        source = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}"), "patches": []}
+        if candidate_patch:
+            (self.root / "source.txt").write_text("candidate source\n", encoding="utf-8")
+            self.selector_git("add", "source.txt")
+            source["tree"] = self.selector_git("write-tree")
+            raw = subprocess.check_output(["git", "-C", str(self.root), "diff", "--cached", "--binary", "--full-index", base, "--", "source.txt"])
+            path = self.root / ".github/performance/owned/candidate.patch"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(raw)
+            source["patches"] = [{"path": path.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(path)}]
+        manifest = copy.deepcopy(self.manifest if value is None else value)
+        manifest["sources"] = {side: copy.deepcopy(source) for side in ("fixture", "baseline", "candidate")}
+        path = self.selector_manifest(".github/performance/owned/manifest.json", manifest)
+        if mismatch == "blob":
+            (self.root / "source.txt").write_text("a different final source\n", encoding="utf-8")
+        if mismatch == "path":
+            (self.root / "unrepresented.txt").write_text("extra final source\n", encoding="utf-8")
+        producer = self.selector_commit("Freeze complete paired inputs")
+        if mismatch == "mode":
+            self.selector_git("update-index", "--chmod=+x", "source.txt")
+            self.selector_git("commit", "--quiet", "-m", "Retain final source mode")
+            producer = self.selector_git("rev-parse", "HEAD")
+        self.selector_git("rm", "--quiet", "-r", ".github/performance")
+        trailer = f"Performance-Inputs: {producer}:{path}" if malformed is None else malformed.format(producer=producer, path=path, base=base)
+        self.selector_git("commit", "--quiet", "-m", "Consume immutable paired inputs\n\n" + trailer)
+        return base, producer, self.selector_git("rev-parse", "HEAD"), path, manifest
+
+    def test_clean_commit_trailer_selects_the_complete_pinned_recipe_and_distinct_data_root(self):
+        base, producer, head, path, manifest = self.input_consumer(candidate_patch=True)
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), path)
+        self.assertFalse((self.root / ".github/performance").exists())
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer) as selection:
+            self.assertNotEqual(selection["root"], self.root)
+            self.assertEqual(PAIRED.load_manifest(selection["root"], selection["path"]), manifest)
+            self.assertEqual(selection["producer"], producer)
+            self.assertEqual(selection["path"].read_bytes(), subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"]))
+            self.assertEqual(selection["sha256"], PAIRED.digest(selection["path"]))
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_no_declaration_skips_cleanup_but_explicit_input_never_uses_a_historical_default(self):
+        base = self.selector_repository()
+        (self.root / "ordinary.txt").write_text("cleanup source", encoding="utf-8")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+        self.assertEqual(PAIRED.select_manifest(self.root), "")
+        self.selector_manifest("gradle/performance/paired-jvm.example.json")
+        for explicit in ("", "gradle/performance/paired-jvm.example.json", ".github/performance/paired-jvm.json"):
+            with self.subTest(explicit=explicit), self.assertRaises(ValueError):
+                PAIRED.select_manifest(self.root, explicit)
+
+    def test_tracked_payload_rejects_even_with_no_explicit_intent_or_trailer(self):
+        self.selector_repository()
+        self.selector_manifest(".github/performance/old/manifest.json")
+        self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "Execution head contains"):
+            PAIRED.select_manifest(self.root)
+
+    def test_missing_duplicate_nontrailer_or_malformed_declarations_do_not_select(self):
+        bad = ["Performance-Inputs", "Performance-Inputs: not-a-sha:{path}",
+               "performance-inputs: {producer}:{path}", "Performance-Inputs: {producer}:../manifest.json",
+               "Performance-Inputs: {producer}:.github/performance-other/manifest.json",
+               "Performance-Inputs: {producer}:{path}\nPerformance-Inputs: {producer}:{path}",
+               "Performance-Inputs: {producer}:{path}\n\nThis is ordinary final prose."]
+        for index, declaration in enumerate(bad):
+            with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(malformed=declaration)
+                    with self.assertRaises(ValueError):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
+
+    def test_wrong_producer_parent_and_multiple_head_parents_reject(self):
+        base, producer, head, path, _ = self.input_consumer(malformed="Performance-Inputs: {base}:{path}")
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+        tree = self.selector_git("rev-parse", head + "^{tree}")
+        message = f"Consume inputs\n\nPerformance-Inputs: {producer}:{path}\n"
+        merged = subprocess.check_output(["git", "-C", str(self.root), "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit-tree", tree, "-p", producer, "-p", base], input=message.encode()).decode().strip()
+        self.selector_git("checkout", "--quiet", "--detach", merged)
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+
+    def test_consumer_nondata_byte_path_and_mode_changes_reject(self):
+        _, _, _, _, _ = self.input_consumer()
+        (self.root / "source.txt").write_text("changed consumer source\n", encoding="utf-8")
+        self.selector_git("add", "source.txt")
+        self.selector_git("commit", "--quiet", "--amend", "--no-edit")
+        with self.assertRaisesRegex(ValueError, "nondata source or modes"):
+            PAIRED.select_manifest(self.root)
+
+    def test_patched_candidate_blob_path_and_mode_mismatch_rejects_current_head_credit(self):
+        for mismatch in ("blob", "path", "mode"):
+            with self.subTest(mismatch=mismatch), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(candidate_patch=True, mismatch=mismatch)
+                    with self.assertRaisesRegex(ValueError, "Candidate source differs"):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
+
+    def test_changed_planned_manifest_producer_or_explicit_path_reject_before_run(self):
+        _, producer, _, path, _ = self.input_consumer()
+        for arguments in ({"explicit":".github/performance/other/manifest.json"}, {"data_ref":"0" * 40},
+                          {"data_ref":""}, {"manifest_sha256":"0" * 64}, {"manifest_sha256":""}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                with PAIRED.selected_inputs(self.root, **arguments):
+                    self.fail("Invalid planning identity accepted")
+
+    def test_wrong_checkout_or_partial_pr_binding_rejects(self):
+        base, _, head, _, _ = self.input_consumer()
+        with self.assertRaisesRegex(ValueError, "checkout differs"):
+            PAIRED.select_manifest(self.root, base=base, head=base)
+        with self.assertRaisesRegex(ValueError, "both PR"):
+            PAIRED.select_manifest(self.root, base=base)
+
+    def test_same_source_empty_commit_cannot_move_head_during_input_materialization(self):
+        _, _, head, _, _ = self.input_consumer(candidate_patch=True)
+        materialize = PAIRED.materialize
+        def move_head(*arguments, **keywords):
+            result = materialize(*arguments, **keywords)
+            if arguments[2] == "input-producer":
+                self.selector_commit("Move head without changing source")
+            return result
+        with patch.object(PAIRED, "materialize", side_effect=move_head), self.assertRaisesRegex(ValueError, "head changed during materialization"):
+            PAIRED.select_manifest(self.root)
+        self.assertNotEqual(self.selector_git("rev-parse", "HEAD"), head)
+
+    def test_invalid_producer_schema_and_patched_input_pins_reject(self):
+        bad = copy.deepcopy(self.manifest)
+        bad["schema"] = "strata-paired-jvm-ci-v2"
+        self.input_consumer(value=bad)
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            PAIRED.select_manifest(self.root)
+
+    def test_cli_emits_exact_head_producer_and_manifest_hash_without_a_mutable_body(self):
+        base, producer, head, path, _ = self.input_consumer(candidate_patch=True)
+        expected_sha = hashlib.sha256(subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"])).hexdigest()
+        output = self.root / "github-output"
+        console = io.StringIO()
+        with patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--select", "--base", base, "--head", head]), \
+                patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}), redirect_stdout(console):
+            PAIRED.main()
+        self.assertEqual(console.getvalue(), path + "\n")
+        self.assertEqual(output.read_text(), f"paired_manifest={path}\npaired_data_ref={producer}\npaired_manifest_sha256={expected_sha}\n")
+
+    def test_execution_head_and_explicit_empty_flags_refuse_before_collector(self):
+        self.selector_repository()
+        for flags in (["--manifest", ""], ["--expected-head", "0" * 40], ["--data-ref", ""], ["--manifest-sha256", ""]):
+            with self.subTest(flags=flags), patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                    patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--output", str(self.root / "fresh-attempt"), *flags]), \
+                    patch.object(PAIRED, "run") as collector:
+                with self.assertRaises(ValueError):
+                    PAIRED.main()
+                collector.assert_not_called()
+                self.assertFalse((self.root / "fresh-attempt").exists())
+
+    def test_actual_driver_copy_binds_git_blobs_and_raw_crlf_bytes_then_rejects_mutation(self):
+        self.selector_repository()
+        (self.root / ".gitattributes").write_text("*.py text eol=lf\n", encoding="utf-8")
+        for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+            path = self.root / "gradle/performance" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"original driver source\r\n")
+        self.selector_commit()
+        records = PAIRED.preserve_driver_sources(self.root, self.root / "retained")
+        PAIRED.verify_driver_sources(records)
+        self.assertEqual(set(records), {"paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"})
+        for item in records.values():
+            self.assertEqual(Path(item["path"]).read_bytes(), Path(item["source"]).read_bytes())
+            self.assertEqual(item["execution_head"], self.selector_git("rev-parse", "HEAD"))
+        Path(records["paired-jvm.py"]["source"]).write_bytes(b"different driver source\r\n")
+        with self.assertRaisesRegex(ValueError, "Driver bytes differ"):
+            PAIRED.verify_driver_sources(records)
 
     def test_generated_selection_without_fixture_registry(self):
         self.assertEqual(self.load(self.manifest), self.manifest)
@@ -227,7 +440,7 @@ class PairedJvmTest(unittest.TestCase):
                         PAIRED.verify_test_gate(directory, gate)
                     self.assertFalse((directory / "junit-verified.json").exists())
 
-    def preflight_fixture(self, name):
+    def preflight_fixture(self, name, input_root=None, qualification=None):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
         output = self.root / name
         output.mkdir()
@@ -242,11 +455,11 @@ class PairedJvmTest(unittest.TestCase):
         item = {"source": str(original), **PAIRED.preserve_file(original, retained / "classpath-0.jar")}
         PAIRED.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [item]})
         suite = copy.deepcopy(self.manifest["suites"][0])
-        suite["preflight"] = {"main": names[0], "qualification": self.pin,
+        suite["preflight"] = {"main": names[0], "qualification": self.pin if qualification is None else qualification,
                               "runtime_classes": {project: names[1] for project in runtime},
                               "controls": [{"id": "independent-a", "arguments": []}, {"id": "independent-b", "arguments": []}]}
         inputs = {"input": PAIRED.preserve_file(self.input, output / "inputs" / "input.bin")}
-        directory = PAIRED.preflight_request(self.root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
+        directory = PAIRED.preflight_request(self.root if input_root is None else input_root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
         request = PAIRED.read_json(directory / "request.json")
         controls = []
         for control in suite["preflight"]["controls"]:
@@ -267,6 +480,18 @@ class PairedJvmTest(unittest.TestCase):
                                         "affinityMask": 15, "systemAffinityMask": 15, "image": str(output / "jdk/bin/java.exe"),
                                         "creationFileTime": 116444736010000000}}}
         return directory, phase, terminal, receipt
+
+    def test_qualified_preflight_reads_exact_distinct_data_root_bytes(self):
+        data_root = self.root / "distinct-producer-inputs"
+        data_root.mkdir()
+        qualification = data_root / "fixture.txt"
+        qualification.write_bytes(b"independently qualified producer bytes")
+        pin = {"path":"fixture.txt", "sha256":PAIRED.digest(qualification)}
+        directory, _, _, _ = self.preflight_fixture("distinct-data-preflight", data_root, pin)
+        self.assertEqual((directory / "qualification.json").read_bytes(), qualification.read_bytes())
+        self.assertNotEqual(qualification.read_bytes(), self.input.read_bytes())
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.preflight_fixture("wrong-root-preflight", self.root, pin)
 
     def test_complete_preflight_rejects_missing_failed_changed_or_wrong_origin_controls(self):
         def replace_request(directory, phase, terminal, receipt):
@@ -766,6 +991,66 @@ class PairedJvmTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
 
+    def test_unique_java_generation_keeps_closed_helpers_and_rejects_missing_or_altered_proof(self):
+        modes = ("complete", "two-java", "two-javaw", "missing-file", "console-only", "unclosed-helper", "failed-helper", "foreign-helper",
+                 "wrong-helper-affinity", "overlapping-helper", "missing-helper-image", "wrong-java-image", "changed-pin", "missing-flag", "duplicate-origin")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory = self.root / ("closed-helper-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
+                flag = "../../class-loads/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid8188-2026-10-13_06-15-25.log"
+                vm.write_text(f"<hotspot_log process='8188' time_ms='1791872124997'>\n<vm_arguments><args>{args}</args>\n"
+                              f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                              "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                              "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                helper = {"pid": 8188, "creationFileTime": 134363456004687052, "exitFileTime": 134363456096932060,
+                          "image": str(directory / "conhost.exe"), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                member = {**helper, "creationFileTime": 134363457249718371, "exitFileTime": 134363457345207482, "image": str(executable)}
+                if mode in ("two-java", "two-javaw"):
+                    helper["image"] = str(directory / "earlier-jdk/bin" / ("javaw.exe" if mode == "two-javaw" else "java.exe"))
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                elif mode == "failed-helper":
+                    helper["exitCode"] = 1
+                elif mode == "foreign-helper":
+                    helper["inOwnedJob"] = False
+                elif mode == "wrong-helper-affinity":
+                    helper["affinityMask"] = 1
+                elif mode == "overlapping-helper":
+                    helper["exitFileTime"] = member["creationFileTime"] + 1
+                elif mode == "missing-helper-image":
+                    helper.pop("image")
+                elif mode == "wrong-java-image":
+                    member["image"] = str(directory / "different-jdk/bin/java.exe")
+                terminal = {"members": {"8188": [helper, member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                pin = {"path": str(diagnostic), "source": str(diagnostic), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostic.parent), "previous": {}, "copied": [pin]})
+                (directory / "console.log").write_text(origin if mode == "console-only" else "", encoding="utf-8")
+                if mode in ("missing-file", "console-only"):
+                    diagnostic.unlink()
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    result = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(result["os_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["unique_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                    self.assertEqual(result["actual_loaded_main"], "file:/frozen.jar")
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
         home = self.root / "probe-reuse-jdk"
         executable = home / "bin/java.exe"
@@ -924,6 +1209,10 @@ class PairedJvmTest(unittest.TestCase):
         exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
             exec(compile(script, "jvm-workflow-result", "exec"), {})
+        for result in ("failure", "cancelled"):
+            jobs["paired-jvm"]["result"] = result
+            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+                exec(compile(script, "jvm-workflow-result", "exec"), {})
         jobs["paired-jvm"]["result"] = "success"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
             exec(compile(script, "jvm-workflow-result", "exec"), {})

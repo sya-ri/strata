@@ -1,0 +1,380 @@
+{
+  "status": "Source preparation only; current compilation and comparisons Pending",
+  "public_pr_head": "b9723dfa231dc512776a4bf1aeaa6f66fce69ac0",
+  "accepted_master": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+  "baseline_tree": "6cf70eab0b79431286b6d6016077ad93e60cd0bc",
+  "candidate_and_fixture_tree": "772be0518cd1224755d08ba413b42e2a2d3313d8",
+  "production_difference": "runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt",
+  "candidate_only_test_source": "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDestinationPaletteTest.kt",
+  "candidate_only_test_methods": [
+    "earlyDestinationChangesNeverAllocateChannelRowsOrReadmitThem",
+    "uniformAdmissionKeepsSixteenRowsAndReleasesThemOnAnyArgbChange",
+    "repeatedPairsDiscardedSourcesAndZeroAlphaResultsDoNotAdmitTables",
+    "scalarSpansAndOpaqueSourcesKeepAdmissionDormant",
+    "frameFailureClosesSharedScratchAfterUniformPaletteAdmission"
+  ],
+  "common_required_pixel_methods": [
+    "whiteSourceOverOpaqueTintPreservesEveryChannelAndBothAlphaValues",
+    "everyAlphaPairPreservesOrderedFloatComposition",
+    "fractionalSamplingPreservesEveryCoveredPixel",
+    "denseChannelReusePreservesDestinationChangesAndEverySourceByte",
+    "repeatedSourceRowsPreserveChangesAtEitherEndOfTheDestination",
+    "destinationPaletteAdmissionPreservesUniformEarlyChangedAndPatternedPixels"
+  ],
+  "own_preserved_sources": [
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/fabric/MinecraftNativePerformanceFixtureCompilation.kt",
+      "mode": "100644",
+      "blob": "aeb2b7b9b6dc263c7866a9d544ad6562231fc757",
+      "sha256": "41b20b5e6d77dc38c6fb268ea7b6544239fd55bda839b21056ed1f0b877bad27",
+      "bytes": 1090
+    },
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/fabric/MinecraftNativePerformanceOptionLeaseTest.kt",
+      "mode": "100644",
+      "blob": "8ea948accd134327399edf36da5fc14aae5acd97",
+      "sha256": "bd0ff216d0d1b3330adf5c96bb102e81be322da1b608efd6fd7dd28fb96e12cd",
+      "bytes": 11682
+    },
+    {
+      "path": "build-logic/src/test/kotlin/dev/s7a/strata/gradle/fabric/MinecraftNativePerformancePacingTest.kt",
+      "mode": "100644",
+      "blob": "a2a3ceb84ca724d7982087e2eed1b87be034dd60",
+      "sha256": "27031393bbb89e773a076cc5196c086521dbeb91c43a022539d6142ec50cc21c",
+      "bytes": 9144
+    },
+    {
+      "path": "build.gradle.kts",
+      "mode": "100644",
+      "blob": "f479bff933d40f26a3d3c249c0cd86b507954261",
+      "sha256": "da6741156158f8adfa3b600c82ad17bd434ce8738a23be6b6516e860b82bbfc1",
+      "bytes": 137000
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.1/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "d35b5973dd3a309332f11cad9a572d749891694b",
+      "sha256": "b49b05ad0ab6204776de529e785e46a3a9ebef67baa023b31bd647e68a6498b9",
+      "bytes": 808
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.2/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.3/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.4/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.5/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "475b3df14e30da2dbff1d34d2911ea9af8d12a69",
+      "sha256": "60d993d070fb8e9cd5934b10ff0f8e3127227ee39919e108a12c3d41197f7311",
+      "bytes": 715
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20.6/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/minecraft-fabric-1.20/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "933b4603d734457d2f0073f240341b5eb6f969f0",
+      "sha256": "81a26f95b285db1fb0f44153f415d369d8f349bec2211ee0ab8bceedc82013d0",
+      "bytes": 857
+    },
+    {
+      "path": "integration/minecraft-fabric-1.21.1/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/minecraft-fabric-1.21/src/gametest/resources/fabric.mod.json",
+      "mode": "100644",
+      "blob": "0f63ccf45fda73eacc581aa6acdb9e539e8c5102",
+      "sha256": "e231abace3f5e0f36a8a8e37a1091f2082f3a4e350cd17219e18c869a2aa4837",
+      "bytes": 662
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/java/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceOptionLease.java",
+      "mode": "100644",
+      "blob": "95b8b5176f5d3d8b50764b9db2ad50e4b2c44653",
+      "sha256": "c7a8708e60561841ef3193f389509f49675efa4d4741edae4dd8f45c0654d25f",
+      "bytes": 3874
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/java/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.java",
+      "mode": "100644",
+      "blob": "c7f9b601ebd7dd216ef2b843b07a149342a2f2a7",
+      "sha256": "b821dd72b1843a8066e397f5f6d563ba1b8d280322319ed05d85ec92bf196b95",
+      "bytes": 3402
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftCanvasGameTest.kt",
+      "mode": "100644",
+      "blob": "590df33b39f747fa5b89079feb6834476c453651",
+      "sha256": "aa9126ac13d8ffa5918c148b9c2aff1ac5f4326890fa3ed21d080bbf954b226b",
+      "bytes": 13080
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftDestinationPaletteGameTest.kt",
+      "mode": "100644",
+      "blob": "686b2c2069ba8cfbfc12baf217fd6547adb21ca0",
+      "sha256": "03cea19d795bdbf501043f92d95d3e73e5ec0a5242daf99d5b15255dc9674ebe",
+      "bytes": 8918
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceArtifacts.kt",
+      "mode": "100644",
+      "blob": "e49b66c65d73e504087d3525bf2953ffb61c037d",
+      "sha256": "8b8792178bbbf74e74b84d8e9fb3e4d1e4c8df3147dc7abd884df662efaf7355",
+      "bytes": 1481
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceEntry.kt",
+      "mode": "100644",
+      "blob": "221001d863d4c1e32921d0050d6915890acc5de4",
+      "sha256": "3b09fb2a0644d0d31f188c0309769076f1fa59d9c0f36a99002053806eb7e111",
+      "bytes": 3369
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceOptions.kt",
+      "mode": "100644",
+      "blob": "1c49b7dc59b306a942caa0ff1f1de628fd4b18a0",
+      "sha256": "5b4d6e90c29a6c84da5de64f2863e8f28105eb06b8d8037c67ebdd06335d058d",
+      "bytes": 7978
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacingGameTest.kt",
+      "mode": "100644",
+      "blob": "f2ff1a63a8ec2a1c465991577ed3bc9995ae4fb4",
+      "sha256": "994a4df98f57cee8bf21c6e782b287aa9e454a9863a28cff8adea718f6e9ca00",
+      "bytes": 9845
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/common/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformanceProbe.kt",
+      "mode": "100644",
+      "blob": "1bb5a6d469155694c1bd57fa14b9514241f1c9e3",
+      "sha256": "050788cfdcbfbf5de5c1fa350b4d005ea73b08a193dd12033c7f4fbb2d1900ee",
+      "bytes": 14048
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/game-state-accessor/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.kt",
+      "mode": "100644",
+      "blob": "3acdf299092c770cd94d42ec511755424652c5cc",
+      "sha256": "0f3a9494b4c4d5047ff397007ff56680875a81901fa572581b311912afc80c78",
+      "bytes": 2420
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/game-state-getter/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.kt",
+      "mode": "100644",
+      "blob": "b218590e0ce16ce35e390b236a83e3b1a519e046",
+      "sha256": "0dd16eab01efbbecf9b747860445cb92ff0f218f606f6a3fe08d8f40fca5f1d7",
+      "bytes": 2418
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/legacy/src/gametest/java/dev/s7a/strata/integration/minecraft/fabric/mixin/pacing/MinecraftNativePerformanceClientAccess.java",
+      "mode": "100644",
+      "blob": "5c117848fd12517c293d96183876a2b3964c1bf3",
+      "sha256": "841d06b17ac538beabda588622ee840dc3a9e378356afbc65ae54e47ce55967a",
+      "bytes": 662
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/legacy/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.kt",
+      "mode": "100644",
+      "blob": "4eb48f20d03969189fa011ce331afa94161e846f",
+      "sha256": "1a3e0ccbe1b79a4683d2e02c0cf8f8f142f88695ce3dbf0a05309aa986b7a86b",
+      "bytes": 1546
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/legacy/src/gametest/resources/strata.native.performance.mixins.json",
+      "mode": "100644",
+      "blob": "94d01f40862644f3ee2454efe7e552b4c04b7863",
+      "sha256": "9ef8c872d5024dbc3033dbb83f4e923937c47a0dbcb9f2165709eb5335809ba2",
+      "bytes": 248
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/reason/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.kt",
+      "mode": "100644",
+      "blob": "a2e2214789157ac4b8c832ad4d1585b58acb89ba",
+      "sha256": "fa78a5c3a2290239ef5a3eb3a92aec8b9201ffdf1e5c1b9f60cda680d93f0010",
+      "bytes": 2381
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/canvas/pacing/tracker/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/MinecraftNativePerformancePacing.kt",
+      "mode": "100644",
+      "blob": "807a5ae45393996fa0f0f618ed3c40771c69dfc8",
+      "sha256": "0f11eefb53ddc8e359ff47bdbac0175b5bdf402603eb5ca7a6d26b73fbe32a5f",
+      "bytes": 1775
+    },
+    {
+      "path": "integration/shared/minecraft-fabric/runner/gui-graphics/src/gametest/kotlin/dev/s7a/strata/integration/minecraft/fabric/VerificationViewport.kt",
+      "mode": "100644",
+      "blob": "f6f670b9abb3ff2618ebf0ac4688f86f17c11bcb",
+      "sha256": "8e9384dfda432d394bf38430427cb4a8d2bc600a5792526bdb9b146d4ea75002",
+      "bytes": 3523
+    },
+    {
+      "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/DestinationPaletteBenchmark.kt",
+      "mode": "100644",
+      "blob": "5519d8ae245ec6a58a53e820570799493392ed74",
+      "sha256": "e6a619d06aa46de7e43db01af589ae7e92c27c1053f8d809ba393dc56ff5eb96",
+      "bytes": 9549
+    },
+    {
+      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ComponentPerformanceEvidence.kt",
+      "mode": "100644",
+      "blob": "2c4fe1a82d6bf62a7fdbcda621de0abc995a849c",
+      "sha256": "d5b25f27e57796e8a16d0305cfdbc184264929423bc0f371b255b3293ce2e4b6",
+      "bytes": 5891
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentGpuEvidence.kt",
+      "mode": "100644",
+      "blob": "ceddd3f2e037f091ae3aae988e12c59df11ce4b4",
+      "sha256": "fc0402937e1e53ebf506cd2b96f61b6f795bd42328dda5c3c1c2b97346219152",
+      "bytes": 3506
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentJvmArguments.kt",
+      "mode": "100644",
+      "blob": "bbd2cb7fdf526e44f256a3887b1e742efedf33d6",
+      "sha256": "b06a9ed5160e5475de2f86913ccf03c1229a998e68fd826c0be20a01afa9cfd0",
+      "bytes": 4056
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentPerformanceEvidence.kt",
+      "mode": "100644",
+      "blob": "c0e41c5f126d1e46f6a4e80a0bcad18b068a28c9",
+      "sha256": "414c9df40eb4ffab9edf13270532dea9fabe1e0f43c3732a2c60f906e2f7b4ba",
+      "bytes": 21213
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeEvidenceBackend.kt",
+      "mode": "100644",
+      "blob": "45b07925092c3279d1acd0e9beeb474ec29ab549",
+      "sha256": "b52680391d165ab8c2ecaa799cd5232ceb30ba02b5701bb402cc90e3e1ce1dc1",
+      "bytes": 1003
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativeEvidenceCommand.kt",
+      "mode": "100644",
+      "blob": "4fa6d348d3c83adc7508744272c2275a2f1a5627",
+      "sha256": "d3bd6090a00c089803b418726fb7ca9b744b5905fe148e2623cd523280b9cee1",
+      "bytes": 810
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativePacingEvidence.kt",
+      "mode": "100644",
+      "blob": "f3cd120675ebfb67b380b025fb268c09bd69a0d6",
+      "sha256": "ed5e3249d4bb8c42b8181290b2f64e906097a6c32edcc27fe02edc24679f5bcc",
+      "bytes": 7285
+    },
+    {
+      "path": "quality/component-benchmarks/src/main/kotlin/dev/s7a/strata/quality/benchmark/NativePresentationEpoch.kt",
+      "mode": "100644",
+      "blob": "70e73c19191b0c9477869e044864d2dbe374602c",
+      "sha256": "6d036bda49127d08e6ca97187b70ab56d72a91771c13afcee7bda24d43b60b2c",
+      "bytes": 2951
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentJvmArgumentsTest.kt",
+      "mode": "100644",
+      "blob": "ee22608af5d50939a32f6002d914075a3cd324d6",
+      "sha256": "4418fda5be70a82b9d21973602027aa33ab1bed411ab097d7d625024f7424ba4",
+      "bytes": 6574
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativeComponentPerformanceEvidenceTest.kt",
+      "mode": "100644",
+      "blob": "ee452eb48cef4eebe253c60d60934e3a8aa22caa",
+      "sha256": "89659fc860e29139e0a9750409a6cbe449de47445f47b4d61e1b30873c95955e",
+      "bytes": 17182
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativeCpuProvenanceTest.kt",
+      "mode": "100644",
+      "blob": "b5ef402effbdc09098e8fdb7dc67e7eb3285d162",
+      "sha256": "d9040a0973fe188995cb2ef2bf589041b667bbe2a7b9ca4cf6614a9de2513ea6",
+      "bytes": 8815
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativePacingEvidenceTest.kt",
+      "mode": "100644",
+      "blob": "f1d3724f825005a07373918ae9b1d886ed8b9039",
+      "sha256": "67e64484061775820829010cb62ecb89f290ef208dbf09b5ffa1b5eae248d858",
+      "bytes": 7730
+    },
+    {
+      "path": "quality/component-benchmarks/src/test/kotlin/dev/s7a/strata/quality/benchmark/NativePresentationEpochTest.kt",
+      "mode": "100644",
+      "blob": "c671baf6bad00096f344c43c3c03462bbc388e0f",
+      "sha256": "5c29f07de93617182bdbedc42e4ea3c7870bc2492820745720c06a547e472b72",
+      "bytes": 1748
+    },
+    {
+      "path": "runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/SampledImageRasterizer.kt",
+      "mode": "100644",
+      "blob": "2e20f6bf2d6498467cf2a160a1e71bcdc782469f",
+      "sha256": "ef458d34069effae4fcd5e8a7249a9429a51526453de04f88387f98e0bf67dd8",
+      "bytes": 18899
+    },
+    {
+      "path": "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDestinationPaletteTest.kt",
+      "mode": "100644",
+      "blob": "dfed02b5028359839e17efd386cd5b7e752bba45",
+      "sha256": "a07ceea55aee326abc0711b3d1676bb86a095810954b551ce2cacda02266e281",
+      "bytes": 6563
+    },
+    {
+      "path": "runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessSampledRasterParityTest.kt",
+      "mode": "100644",
+      "blob": "4d910f479a98b4e58bf5efc23eac07e29b943505",
+      "sha256": "0626a3ddb07d5dab48d9e11a2ecf3be8f2996df468841b2fb6cf4b9b62a3192e",
+      "bytes": 15081
+    }
+  ],
+  "ordinary_auto_merged_integration_files": [
+    {
+      "path": "docs/development/performance.md",
+      "mode": "100644",
+      "blob": "4e4cf698872a6e1cec7871559b202f47324ad217",
+      "sha256": "0b156ef6689e8a30aabba17bb9a96f33a6e623cd4e6cc9107551480c4ca48057",
+      "bytes": 100609
+    },
+    {
+      "path": "quality/component-benchmarks/build.gradle.kts",
+      "mode": "100644",
+      "blob": "7c21baae664ee4431fab2faf7c535a2ae5bf3709",
+      "sha256": "176d3aacbb987e92897e2af5a0d3db7a47317f1d872ace8d1bbdab478908b1fc",
+      "bytes": 14300
+    }
+  ],
+  "primary_cells": 180,
+  "primary_cells_per_mode": 90,
+  "owner_cpu_supplemental_cells": 0,
+  "primary_metrics": "JMH elapsed time plus stock GC allocation; owner-thread CPU unavailable in this fixture",
+  "native_logical_rows": 32,
+  "native_independent_processes": 12,
+  "native_phase_cells": 192,
+  "historical_runtime_or_scores_rebound": false,
+  "compiled_pins": "Captured and verified by the existing runner during fresh preparation; no old compiled identities reused"
+}
