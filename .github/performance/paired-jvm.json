@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "c6a826ae2398df438826dd1ac5125959fc4cbc3d",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "5a8768c2965283e8436a1c21795bb49298299801",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "5002a88a4f12744317c50687780e5794eb21c4d3b6b82613a619326f411625bf"
+          "sha256": "77986f9115879660339c73874560a0a84d1a3a1307f917760f69279140d71c03"
         }
       ]
     },
     "candidate": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "c6a826ae2398df438826dd1ac5125959fc4cbc3d",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "5a8768c2965283e8436a1c21795bb49298299801",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "5002a88a4f12744317c50687780e5794eb21c4d3b6b82613a619326f411625bf"
+          "sha256": "77986f9115879660339c73874560a0a84d1a3a1307f917760f69279140d71c03"
         }
       ]
     },
     "baseline": {
-      "ref": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-      "tree": "53e48f3a8297e3d799dbf129df50e6c45dbabaa7",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "bd825bd8e1f409eef8c469a17bc8c888d2508774",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/baseline.patch",
-          "sha256": "28a9a08e207436e218807cf24bcb4029aa5e98747312b1c045bf92b480166cf8"
+          "sha256": "00e310e587b7f68d26f2a1bf611335ed4a7804bc31a069833c13f73adea3142b"
         }
       ]
     }
@@ -373,25 +373,5 @@
         "post_empty_arrival"
       ]
     }
-  ],
-  "owner_continuation": {
-    "name": "velocity-drain-owner",
-    "runtime_sha256": {
-      "baseline": {
-        ":api": "0b919ab75ce26b23cc42cb1d80aebd936b04db479d1772207b06a7639fdc3e01",
-        ":runtime:core": "e3b49acd6cc0ece27a7550fe80923f065d60ad1d61d34ac1ff357801c4fd63dc",
-        ":runtime:remote": "6174ad71feb6052119839c878a85e640ecabb4b02cb34fca446671b9c40ba474",
-        ":velocity-api": "dc9ec3cc6cbaecddfc61cfcc2dc438cf41cadc5e514e5aeecc62cc1c37493c18",
-        ":runtime:velocity": "2ec540f917aef884e76d5342277feae67322fadd9d676690962b366d8a276512"
-      },
-      "candidate": {
-        ":api": "0b919ab75ce26b23cc42cb1d80aebd936b04db479d1772207b06a7639fdc3e01",
-        ":runtime:core": "e3b49acd6cc0ece27a7550fe80923f065d60ad1d61d34ac1ff357801c4fd63dc",
-        ":runtime:remote": "5cabfaae90838ee3a4a87fad3c4cff7e3202206d4d7c213e54bfd97b61533bd2",
-        ":velocity-api": "dc9ec3cc6cbaecddfc61cfcc2dc438cf41cadc5e514e5aeecc62cc1c37493c18",
-        ":runtime:velocity": "a9d170f2b941fec52a3a54f50fd9e74e4ca3e48d232082a18f91e5323602f066"
-      }
-    },
-    "collector_sha256": "d13cf3616cd586a81b59a05e0c0eb7c679f122cccee8e1dddc036cce4fc799ae"
-  }
+  ]
 }
