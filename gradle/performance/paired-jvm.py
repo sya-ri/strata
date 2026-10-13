@@ -312,8 +312,8 @@ def owned_generation(terminal, pid, vm_start):
     return member
 
 
-def class_diagnostic(identities, pid, vm_diagnostic, vm_files):
-    """Match actual start stamps; legacy unstamped diagnostics require a unique VM PID."""
+def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
+    """Use exact start stamps or uniquely pinned owned generations when logging expands filenames independently."""
     candidates = [item for item in identities.values() if item["pid"] == pid]
     if not candidates:
         return None
@@ -325,7 +325,52 @@ def class_diagnostic(identities, pid, vm_diagnostic, vm_files):
         return candidates[0]
     matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{name[1]}.log"]
     require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
-    return matching[0] if matching else None
+    if matching:
+        return matching[0]
+    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal)
+
+
+def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
+    """Bind independent filename expansions only through a unique VM, owned lifetime and fresh pinned file."""
+    same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
+                                 path.read_text(encoding="utf-8"))) for path in vm_files)
+    if terminal is None or len(candidates) != 1 or same_pid != 1:
+        return None
+    history = terminal["members"].get(str(pid), [])
+    if not isinstance(history, list) or len(history) != 1:
+        return None
+    raw = vm_diagnostic.read_text(encoding="utf-8")
+    starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'", raw)
+    require(len(starts) == 1, "Ambiguous unique VM diagnostic")
+    member = owned_generation(terminal, pid, int(starts[0]))
+    arguments = re.findall(r"<args>\s*([^<]+?)\s*</args>", raw)
+    flags = re.findall(r"(?:^|\s)-Xlog:class\+load=info:file=(.+?):pid,level,tags:filecount=0(?=\s|$)",
+                       html.unescape(arguments[0]) if len(arguments) == 1 else "")
+    require(len(flags) == 1, "Missing unique-generation class-file flag")
+    flag = Path(flags[0])
+    require(flag.name.count("%p") == flag.name.count("%t") == 1, "Changed unique-generation class-file pattern")
+    candidate = candidates[0]
+    diagnostic = Path(candidate["path"])
+    pattern = re.escape(flag.name).replace("%p", str(pid)).replace("%t", "[0-9_-]+")
+    require(re.fullmatch(pattern, diagnostic.name) is not None, "Class-file flag and fresh diagnostic disagree")
+    inventory = read_json(diagnostic.parent.parent / "class-load-inventory.json")
+    pins = [pin for pin in inventory["copied"] if Path(pin["path"]).resolve() == diagnostic.resolve()]
+    require(len(pins) == 1 and diagnostic.name not in inventory["previous"]
+            and pins[0]["sha256"] == candidate["sha256"] == digest(diagnostic)
+            and Path(pins[0]["source"]).parent.resolve() == Path(inventory["owner"]).resolve()
+            and Path(pins[0]["source"]).name == diagnostic.name, "Changed or missing fresh class-file pin")
+    parts = list(flag.parent.parts)
+    while parts and parts[0] == "..":
+        parts.pop(0)
+    require(parts and not any(part in ("..", ".") for part in parts), "Ambiguous class-file flag path")
+    source_parent = Path(pins[0]["source"]).parent
+    if flag.is_absolute():
+        require(flag.parent.resolve() == source_parent.resolve(), "Wrong absolute class-file owner")
+    else:
+        require([os.path.normcase(part) for part in source_parent.parts[-len(parts):]]
+                == [os.path.normcase(part) for part in parts], "Wrong relative class-file owner")
+    return {**candidate, "unique_generation": member, "actual_file_flag": flags[0],
+            "relative_path_relationship": "inferred from the verified bounded launcher" if not flag.is_absolute() else None}
 
 
 def verify_vms(directory, files, terminal, allowed, expected_forks=None):
@@ -384,9 +429,15 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
-        diagnostic = class_diagnostic(class_identities, pid, path, files)
+        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal)
         if diagnostic is not None:
             evidence["class_load_diagnostic"] = diagnostic
+            if "unique_generation" in diagnostic:
+                member = diagnostic["unique_generation"]
+                require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
+                        and member["affinityMask"] == terminal["inheritedAffinityMask"]
+                        and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Unique JVM changed executable or affinity")
+                evidence["os_generation"] = member
         if role == "fork":
             member = owned_generation(terminal, pid, vm_start)
             require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
@@ -514,7 +565,9 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
     console = (phase_directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(phase_directory)
     vms = read_json(phase_directory / "vms.json")
-    captured_class_identities = {vm["class_load_diagnostic"]["path"]: {"pid": vm["pid"], **vm["class_load_diagnostic"]} for vm in vms if "class_load_diagnostic" in vm}
+    captured_class_identities = {vm["class_load_diagnostic"]["path"]:
+                                 {"pid": vm["pid"], "path": vm["class_load_diagnostic"]["path"], "sha256": vm["class_load_diagnostic"]["sha256"]}
+                                 for vm in vms if "class_load_diagnostic" in vm}
     require(class_identities == captured_class_identities, "Control changed its captured class-load diagnostic")
     artifacts = set()
     for result in receipt["controls"]:

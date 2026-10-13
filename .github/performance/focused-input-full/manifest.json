@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "4f8d76fece1b895d83f112d5636ea0bcef1a7bdd",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
       "patches": [
         {
           "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "faf6c1d4511c666717b95faa0bace61b4a2958df3d29795dee33e0a506c95eff"
-        }
-      ]
-    },
-    "candidate": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "4f8d76fece1b895d83f112d5636ea0bcef1a7bdd",
-      "patches": [
-        {
-          "path": ".github/performance/focused-input-full/candidate.patch",
-          "sha256": "faf6c1d4511c666717b95faa0bace61b4a2958df3d29795dee33e0a506c95eff"
+          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
         }
       ]
     },
     "baseline": {
-      "ref": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-      "tree": "168b9fd2d260d563f2d12868669c58be8423857d",
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "4322af8181c7aadc08b464d5c8a3b199820a26d2",
       "patches": [
         {
           "path": ".github/performance/focused-input-full/baseline.patch",
-          "sha256": "e96f512b99b72a4e0d4f4dd7035bacb7a8a39bc6b4fd76df4ba9678cb85d8556"
+          "sha256": "b7d5a48c70ccb8233128dcf66d4e42bd9e6e286e74c65da2a825b6f676dd0828"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
+      "patches": [
+        {
+          "path": ".github/performance/focused-input-full/candidate.patch",
+          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
         }
       ]
     }
@@ -84,7 +84,7 @@
       "label": "focused-owner-adapter",
       "pin": {
         "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt",
-        "sha256": "e4bd652ade5ec450567172a3c8233338b6ebce6380e255176b9f6473a51b7368"
+        "sha256": "41f083278ab69a73d7e0547cebd89b5d0d1df481b9f1ce96f63ed814d5291491"
       }
     }
   ],

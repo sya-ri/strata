@@ -2,12 +2,14 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.input.InputResult
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.PerformancePlan
+import java.nio.file.Path
 
 /**
  * Measures one original clean-frame dispatch for every frozen workload using the shared owner-thread meter.
@@ -15,6 +17,9 @@ import dev.s7a.strata.performance.PerformancePlan
  * Every scene retains the same state transitions and callback work as its original JMH trial.
  */
 public object FocusedInputOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, Path>
+        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
+
     override val rows: List<JvmOperationReportRow> =
         FocusedInputBenchmark.Workload.entries.map { workload ->
             JvmOperationReportRow(

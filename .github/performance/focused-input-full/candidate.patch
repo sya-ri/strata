@@ -1,3 +1,981 @@
+diff --git a/.github/performance/paired-jvm.json b/.github/performance/paired-jvm.json
+deleted file mode 100644
+index 431f7986e..000000000
+--- a/.github/performance/paired-jvm.json
++++ /dev/null
+@@ -1,108 +0,0 @@
+-{
+-  "schema": "strata-paired-jvm-ci-v1",
+-  "sources": {
+-    "baseline": {
+-      "ref": "8db2c7112951bb3a5ba662fb85602918bacb83aa",
+-      "tree": "c9b17813eeaf0846c16dee314b3f2eb2632381d4",
+-      "patches": [
+-        {
+-          "path": ".github/performance/grid-track/baseline.patch",
+-          "sha256": "d534076cfce004997ff9fdfacb05a9c17724fe58cf8a9040f1560d042aa325c5"
+-        }
+-      ]
+-    },
+-    "candidate": {
+-      "ref": "9e361c02d398c574890d46b6e07896d24788d82d",
+-      "tree": "94963c6c3ab3792449e9309864df617188997720",
+-      "patches": [
+-        {
+-          "path": ".github/performance/grid-track/candidate.patch",
+-          "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
+-        }
+-      ]
+-    },
+-    "fixture": {
+-      "ref": "9e361c02d398c574890d46b6e07896d24788d82d",
+-      "tree": "94963c6c3ab3792449e9309864df617188997720",
+-      "patches": [
+-        {
+-          "path": ".github/performance/grid-track/candidate.patch",
+-          "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
+-        }
+-      ]
+-    }
+-  },
+-  "runtime_projects": [
+-    ":api",
+-    ":runtime:core",
+-    ":runtime:headless"
+-  ],
+-  "suites": [
+-    {
+-      "project": ":quality:benchmarks",
+-      "name": "grid-track-full",
+-      "benchmarks": [
+-        "dev.s7a.strata.quality.benchmark.GridTrackBenchmark"
+-      ],
+-      "workloads": [],
+-      "parameters": {},
+-      "expected_cases": 28,
+-      "test_gates": [
+-        {
+-          "task": ":api:jvmTest",
+-          "required_tests": [
+-            "dev.s7a.strata.LayoutTokenContractTest#layoutElementTypesAreStableAndLinearVariantsShareOneToken",
+-            "dev.s7a.strata.LayoutTokenContractTest#layoutElementUpdatesReportOnlyAffectedPhases",
+-            "dev.s7a.strata.LayoutTokenContractTest#parentDataFamiliesHaveStableKeysAndNarrowUpdateMasks",
+-            "dev.s7a.strata.LayoutTokenContractTest#flowRowUpdatesInvalidateOnlyTheAffectedLayoutPhase",
+-            "dev.s7a.strata.LayoutTokenContractTest#internalDescriptionsEnforceTheirConstructionAndTokenBoundaries"
+-          ]
+-        },
+-        {
+-          "task": ":runtime:core:jvmTest",
+-          "required_tests": [
+-            "dev.s7a.strata.runtime.UiTreeTest#geometryIsCheckedAndHalfOpen",
+-            "dev.s7a.strata.runtime.UiTreeTest#updatesReuseNodeAndInvalidateOnlyPaint",
+-            "dev.s7a.strata.runtime.UiTreeTest#duplicateKeysFailBeforeLifecycleMutation",
+-            "dev.s7a.strata.runtime.UiTreeTest#validationFailuresPreserveCachedTreeForRetry",
+-            "dev.s7a.strata.runtime.UiTreeTest#emptyTreeOperationsAreNoOpsAndCloseIsIdempotent",
+-            "dev.s7a.strata.runtime.UiSessionLifecycleFailureTest#normalClosePreservesBindingAndTreeCleanupOrderAndIdentity",
+-            "dev.s7a.strata.runtime.UiSessionLifecycleFailureTest#primaryFailureAndAllCleanupFailuresAreRetainedInOrder"
+-          ]
+-        }
+-      ],
+-      "operation_reports": {
+-        "adapters": {
+-          "dev.s7a.strata.quality.benchmark.GridTrackBenchmark": "dev.s7a.strata.quality.benchmark.GridTrackOperationReport"
+-        },
+-        "warmup": 30,
+-        "samples": 60,
+-        "expected_rows": 28,
+-        "expected_controls": 10
+-      }
+-    }
+-  ],
+-  "inputs": [
+-    {
+-      "label": "grid-baseline-source",
+-      "pin": {
+-        "path": ".github/performance/grid-track/baseline.patch",
+-        "sha256": "d534076cfce004997ff9fdfacb05a9c17724fe58cf8a9040f1560d042aa325c5"
+-      }
+-    },
+-    {
+-      "label": "grid-candidate-source",
+-      "pin": {
+-        "path": ".github/performance/grid-track/candidate.patch",
+-        "sha256": "e8e219ec9789f50bcf3d7510ca02b0066996329d330b88cd42b9db07b83b1352"
+-      }
+-    }
+-  ],
+-  "compiled_pins": {
+-    "fixture": [],
+-    "baseline": [],
+-    "candidate": []
+-  },
+-  "dependency_pins": [],
+-  "java_pins": []
+-}
+diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
+index 8e23995ed..a8122321e 100644
+--- a/docs/development/performance-testkit.md
++++ b/docs/development/performance-testkit.md
+@@ -662,11 +662,26 @@ The finite heap/metaspace profiles are wrapper 64/256 MiB, daemon 768/1024 MiB,
+ The inherited Java environment supplies the probe heap cap, while each ordinary launcher retains its explicit profile.
+ JMH compiler-blackhole `-version` probes have no main or classpath in HotSpot diagnostics; only their exact inherited arguments and known compiler-hint options are admitted, with a pinned Java home and a validated JavaExec that loaded JMH compiler hints.
+ These probes remain separate diagnostic records and never count as measured forks.
++The boundary queries at most 256 live members and retains only still-active owned process handles.
++An incomplete Job list is never admitted; membership changes trigger another complete bounded query at the original 100 ms polling cadence within the same phase deadline.
++First and last incomplete query headers remain recorded separately from genuine capacity refusal.
++The existing 4 MiB terminal-reader capacity bounds history before insertion: each generation charges 1024 bytes for fixed fields/PID/list formatting plus six bytes per UTF-16 image character for worst JSON escaping.
++Accepted history has a 3 MiB serialized upper bound; the first refused generation is preserved before failure, with at most 197,632 additional bytes from the existing 32,768-character image buffer.
++The remaining report capacity covers fixed terminal metadata without truncating a generation or increasing the reader limit.
++Each signalled owned handle records its actual exit and PID/creation-time identity before closing; immutable generation lists preserve legitimate PID reuse instead of replacing history.
++VM checks select exactly one matching birth and reject missing, ambiguous, altered, active or wrong-affinity generations.
++The real boundary controls include 288 completed observed descendants with eight concurrent children, alongside the unchanged normal, failure, RAM-refusal, timeout and leaked-child cases.
++A separate eight-concurrent-child control reaches the actual history budget under the same source-control deadline and memory profile, retains the first refused generation and proves bounded-report failure plus zero owned cleanup.
+ Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
+ Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
+ Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
+ Previously captured staging files must remain byte-identical before the next invocation.
+-The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; missing or changed fork attribution fails instead of borrowing console output.
++The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
++Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
++When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured owned PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
++This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, owned generation or candidate file keeps attribution ambiguous.
++Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
++Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
+ Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
+ The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
+ An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
+diff --git a/gradle/performance/invoke-windows.ps1 b/gradle/performance/invoke-windows.ps1
+index 5016bddde..fe5b5f858 100644
+--- a/gradle/performance/invoke-windows.ps1
++++ b/gradle/performance/invoke-windows.ps1
+@@ -14,6 +14,7 @@ using System.Collections.Generic;
+ using System.ComponentModel;
+ using System.Diagnostics;
+ using System.Runtime.InteropServices;
++using System.Threading;
+ 
+ /// <summary>Bounds one Gradle process tree without changing affinity or measuring application work.</summary>
+ public static class StrataPerformanceProcess {
+@@ -96,14 +97,58 @@ public static class StrataPerformanceProcess {
+         } finally { Require(CloseHandle(job)); }
+     }
+ 
+-    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, Dictionary<string, object>> records) {
++    // Only signalled owned handles retire; history keeps every immutable PID/birth identity.
++    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records) {
++        foreach (var item in new List<KeyValuePair<uint, IntPtr>>(handles)) {
++            uint wait = WaitForSingleObject(item.Value, 0);
++            if (wait == 0x102) continue;
++            Require(wait == 0);
++            long created, exited, kernel, user;
++            uint code;
++            Require(GetProcessTimes(item.Value, out created, out exited, out kernel, out user));
++            Require(GetExitCodeProcess(item.Value, out code));
++            var history = records[item.Key];
++            var record = history[history.Count - 1];
++            if ((long)record["creationFileTime"] != created || exited == 0)
++                throw new InvalidOperationException("Completed owned process generation changed.");
++            record["exitCode"] = code;
++            record["exitFileTime"] = exited;
++            record["completed"] = true;
++            Require(CloseHandle(item.Value));
++            record["handleClosed"] = true;
++            handles.Remove(item.Key);
++        }
++    }
++
++    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds) {
++        Retire(handles, records);
+         const int maximumMembers = 256;
++        const long maximumHistoryBytes = 3 * 1024 * 1024;
+         int bytes = 8 + maximumMembers * IntPtr.Size;
+         IntPtr buffer = Marshal.AllocHGlobal(bytes);
+         try {
+-            Require(QueryMembers(job, 3, buffer, (uint)bytes, IntPtr.Zero));
+-            int assigned = Marshal.ReadInt32(buffer), count = Marshal.ReadInt32(buffer, 4);
+-            if (assigned != count || count < 0 || maximumMembers < count) throw new InvalidOperationException("Owned member inventory exceeds its bound.");
++            int assigned, count;
++            while (true) {
++                Marshal.WriteInt32(buffer, 0, 0);
++                Marshal.WriteInt32(buffer, 4, 0);
++                bool complete = QueryMembers(job, 3, buffer, (uint)bytes, IntPtr.Zero);
++                int error = complete ? 0 : Marshal.GetLastWin32Error();
++                assigned = Marshal.ReadInt32(buffer);
++                count = Marshal.ReadInt32(buffer, 4);
++                var query = new Dictionary<string, object> {{"complete", complete}, {"assigned", assigned}, {"returned", count}, {"capacity", maximumMembers}, {"error", error}};
++                result["lastMemberQuery"] = query;
++                if (complete == false) throw new Win32Exception(error);
++                if (count < 0 || assigned < count || maximumMembers < assigned) throw new InvalidOperationException("Owned member inventory exceeds its bound.");
++                if (assigned == count) break;
++                // Exits can change the list while it is queried; only a complete snapshot is admitted.
++                if (result.ContainsKey("firstIncompleteMemberQuery") == false) result["firstIncompleteMemberQuery"] = query;
++                result["lastIncompleteMemberQuery"] = query;
++                result["incompleteMemberQueries"] = (int)result["incompleteMemberQueries"] + 1;
++                if (seconds <= clock.Elapsed.TotalSeconds) throw new InvalidOperationException("Owned member inventory remained incomplete at the phase deadline.");
++                Retire(handles, records);
++                Thread.Sleep((int)Math.Min(100, Math.Max(0, (seconds - clock.Elapsed.TotalSeconds) * 1000)));
++            }
++            result["maximumListedMembers"] = Math.Max((int)result["maximumListedMembers"], count);
+             for (int index = 0; index < count; index++) {
+                 uint pid = (uint)Marshal.ReadIntPtr(buffer, 8 + index * IntPtr.Size).ToInt64();
+                 if (handles.ContainsKey(pid)) continue;
+@@ -121,9 +166,22 @@ public static class StrataPerformanceProcess {
+                     if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) continue;
+                     UIntPtr affinity, system;
+                     if (GetProcessAffinityMask(handle, out affinity, out system) == false) continue;
+-                    records[pid] = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}};
+-                    handles[pid] = handle;
++                    List<Dictionary<string, object>> history;
++                    if (records.TryGetValue(pid, out history) == false) {
++                        history = new List<Dictionary<string, object>>();
++                        records.Add(pid, history);
++                    }
++                    foreach (var previous in history)
++                        if ((long)previous["creationFileTime"] == created) throw new InvalidOperationException("Owned process generation was captured twice.");
++                    history.Add(new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}});
++                    handles.Add(pid, handle);
+                     retained = true;
++                    result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
++                    // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
++                    long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * executable.Length;
++                    result["memberHistorySerializedByteBound"] = historyBytes;
++                    if (maximumHistoryBytes < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
++                    if (maximumMembers < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
+                 } finally { if (retained == false) Require(CloseHandle(handle)); }
+             }
+         } finally { Marshal.FreeHGlobal(buffer); }
+@@ -133,7 +191,9 @@ public static class StrataPerformanceProcess {
+             UIntPtr affinity, system;
+             Require(IsProcessInJob(item.Value, job, out member));
+             Require(GetProcessAffinityMask(item.Value, out affinity, out system));
+-            if (member == false || (ulong)records[item.Key]["affinityMask"] != affinity.ToUInt64() || (ulong)records[item.Key]["systemAffinityMask"] != system.ToUInt64())
++            var history = records[item.Key];
++            var record = history[history.Count - 1];
++            if (member == false || (ulong)record["affinityMask"] != affinity.ToUInt64() || (ulong)record["systemAffinityMask"] != system.ToUInt64())
+                 throw new InvalidOperationException("Owned process membership or unchanged affinity changed.");
+         }
+     }
+@@ -149,10 +209,15 @@ public static class StrataPerformanceProcess {
+         ProcessInfo process = new ProcessInfo();
+         bool assigned = false;
+         var memberHandles = new Dictionary<uint, IntPtr>();
+-        var members = new Dictionary<uint, Dictionary<string, object>>();
++        var members = new Dictionary<uint, List<Dictionary<string, object>>>();
+         Stopwatch cleanup = null;
+-        var serializedMembers = new Dictionary<string, Dictionary<string, object>>();
++        var serializedMembers = new Dictionary<string, List<Dictionary<string, object>>>();
+         result["members"] = serializedMembers;
++        result["maximumRetainedHandles"] = 0;
++        result["maximumListedMembers"] = 0;
++        result["incompleteMemberQueries"] = 0;
++        result["memberHistorySerializedByteBound"] = 0L;
++        result["memberHistorySerializedByteLimit"] = 3 * 1024 * 1024;
+         try {
+             var memory = new Memory {length=(uint)Marshal.SizeOf<Memory>()};
+             Require(GlobalMemoryStatusEx(ref memory));
+@@ -180,7 +245,7 @@ public static class StrataPerformanceProcess {
+             result["callerPid"] = process.processId;
+             uint wait;
+             do {
+-                Capture(job, memberHandles, members);
++                Capture(job, memberHandles, members, result, clock, workSeconds);
+                 wait = WaitForSingleObject(process.process, 100);
+             } while (wait == 0x102 && clock.Elapsed.TotalSeconds < workSeconds);
+             if (wait == 0x102) {
+@@ -191,8 +256,8 @@ public static class StrataPerformanceProcess {
+             var accounting = Account(job);
+             double killReserve = Math.Min(1, cleanupSeconds / 2.0);
+             while (0 < accounting.activeProcesses && cleanup.Elapsed.TotalSeconds + killReserve < cleanupSeconds) {
+-                Capture(job, memberHandles, members);
+-                System.Threading.Thread.Sleep(100);
++                Capture(job, memberHandles, members, result, cleanup, cleanupSeconds - killReserve);
++                Thread.Sleep(100);
+                 accounting = Account(job);
+             }
+             result["activeProcessesAtRelease"] = accounting.activeProcesses;
+@@ -211,12 +276,7 @@ public static class StrataPerformanceProcess {
+             Require(GetExitCodeProcess(process.process, out exitCode));
+             result["exitCode"] = exitCode;
+             if (0 < accounting.activeProcesses) Require(TerminateJobObject(job, 125));
+-            foreach (var item in memberHandles) {
+-                uint code;
+-                Require(GetExitCodeProcess(item.Value, out code));
+-                members[item.Key]["exitCode"] = code;
+-                members[item.Key]["completed"] = WaitForSingleObject(item.Value, 0) == 0;
+-            }
++            Retire(memberHandles, members);
+         } catch (Exception failure) {
+             result["error"] = failure.Message;
+         } finally {
+@@ -226,10 +286,14 @@ public static class StrataPerformanceProcess {
+                 if (cleanup == null) cleanup = Stopwatch.StartNew();
+                 try {
+                     if ((bool)result["naturalRelease"] == false) closed &= TerminateJobObject(job, 126);
+-                    while (0 < Account(job).activeProcesses && cleanup.Elapsed.TotalSeconds < cleanupSeconds) System.Threading.Thread.Sleep(10);
++                    while ((0 < Account(job).activeProcesses || 0 < memberHandles.Count) && cleanup.Elapsed.TotalSeconds < cleanupSeconds) {
++                        Retire(memberHandles, members);
++                        if (0 < Account(job).activeProcesses || 0 < memberHandles.Count) Thread.Sleep(10);
++                    }
+                     result["activeProcessesAfterCleanup"] = Account(job).activeProcesses;
++                    Retire(memberHandles, members);
+                     result["cleanupElapsedSeconds"] = cleanup.Elapsed.TotalSeconds;
+-                    closed &= (uint)result["activeProcessesAfterCleanup"] == 0 && cleanup.Elapsed.TotalSeconds < cleanupSeconds;
++                    closed &= (uint)result["activeProcessesAfterCleanup"] == 0 && memberHandles.Count == 0 && cleanup.Elapsed.TotalSeconds < cleanupSeconds;
+                 } catch (Exception failure) {
+                     result["cleanupError"] = failure.Message;
+                     closed = false;
+@@ -263,7 +327,7 @@ if ([string]::IsNullOrWhiteSpace($Report) -or (Test-Path -LiteralPath $Report))
+ $pwsh = (Get-Process -Id $PID).Path
+ $command = '"{0}" -NoLogo -NoProfile -NonInteractive -File "{1}" -Child -Request "{2}"' -f $pwsh, $PSCommandPath, (Resolve-Path -LiteralPath $Request).Path
+ $result = [StrataPerformanceProcess]::Run($pwsh, $command, $invocation.workspace, $invocation.minimumFreePhysicalBytes, $invocation.jobCommittedBytes, $invocation.workSeconds, $invocation.cleanupSeconds)
+-$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Report -Encoding utf8
++$result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Report -Encoding utf8
+ if ($result.exitCode -ne 0 -or $result.naturalRelease -ne $true -or $result.handlesClosed -ne $true -or $result.ContainsKey('error')) {
+     throw "Bounded Gradle invocation failed; inspect $Report"
+ }
+diff --git a/gradle/performance/paired-jvm.py b/gradle/performance/paired-jvm.py
+index 5f9db3aaa..7de981bdf 100644
+--- a/gradle/performance/paired-jvm.py
++++ b/gradle/performance/paired-jvm.py
+@@ -263,7 +263,7 @@ def preserve_class_loads(owner, directory, previous):
+ 
+ 
+ def class_loads(directory):
+-    """Retain complete bounded per-VM attribution with exact PID filenames and no rotation/truncation."""
++    """Retain complete per-VM files; PID reuse keeps independent timestamped diagnostics."""
+     owner = directory / "class-loads"
+     require(owner.is_dir() and not owner.is_symlink(), "Missing owned class-load directory")
+     texts, identities = [], {}
+@@ -274,12 +274,105 @@ def class_loads(directory):
+         pid = int(name[1])
+         text = path.read_text(encoding="utf-8")
+         observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
+-        require(pid not in identities and observed == {pid} and text.endswith("\n"), "Missing, duplicate, wrong-PID or truncated class-load diagnostic")
++        require(observed == {pid} and text.endswith("\n"), "Missing, wrong-PID or truncated class-load diagnostic")
+         texts.append(text)
+-        identities[pid] = {"path": str(path), "sha256": digest(path)}
++        identities[str(path)] = {"path": str(path), "sha256": digest(path), "pid": pid}
+     return "".join(texts), identities
+ 
+ 
++def owned_generation(terminal, pid, vm_start):
++    """Select one captured PID/birth generation; legacy single-record receipts remain readable."""
++    histories = terminal["members"].get(str(pid), [])
++    legacy = isinstance(histories, dict)
++    histories = [histories] if legacy else histories
++    require(isinstance(histories, list), "Invalid owned process history")
++    births, matching, previous_exit = set(), [], None
++    for member in histories:
++        require(isinstance(member, dict) and member.get("pid", pid if legacy else None) == pid
++                and isinstance(member.get("creationFileTime"), int) and not isinstance(member["creationFileTime"], bool), "Altered owned process identity")
++        birth = member["creationFileTime"]
++        require(birth not in births, "Duplicate owned process generation")
++        require(previous_exit is None or previous_exit <= birth, "Overlapping or reordered owned process generations")
++        births.add(birth)
++        if "exitFileTime" in member:
++            require(isinstance(member["exitFileTime"], int) and not isinstance(member["exitFileTime"], bool)
++                    and birth <= member["exitFileTime"], "Altered owned process lifetime")
++            previous_exit = member["exitFileTime"]
++        else:
++            require(legacy and len(histories) == 1, "Missing actual process lifetime proof")
++        birth_ms = (birth - 116444736000000000) // 10000
++        exit_ms = (member["exitFileTime"] - 116444736000000000) // 10000 if "exitFileTime" in member else None
++        require(exit_ms is None or birth_ms <= exit_ms, "Altered owned process lifetime")
++        if 0 <= vm_start - birth_ms <= 2000 and (exit_ms is None or vm_start <= exit_ms):
++            matching.append(member)
++    require(len(matching) == 1, "Missing or ambiguous owned process generation")
++    member = matching[0]
++    require(member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
++            and member.get("handleClosed", legacy) is True, "Actual JVM generation or zero-exit proof missing")
++    return member
++
++
++def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
++    """Use exact start stamps or uniquely pinned owned generations when logging expands filenames independently."""
++    candidates = [item for item in identities.values() if item["pid"] == pid]
++    if not candidates:
++        return None
++    name = re.fullmatch(r"vm-pid" + str(pid) + r"-([0-9_-]+)\.log", vm_diagnostic.name)
++    if name is None:
++        same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
++                                     path.read_text(encoding="utf-8"))) for path in vm_files)
++        require(len(candidates) == same_pid == 1, "Missing reused-PID VM diagnostic timestamp")
++        return candidates[0]
++    matching = [item for item in candidates if Path(item["path"]).name == f"classes-{pid}-{name[1]}.log"]
++    require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
++    if matching:
++        return matching[0]
++    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal)
++
++
++def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
++    """Bind independent filename expansions only through a unique VM, owned lifetime and fresh pinned file."""
++    same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
++                                 path.read_text(encoding="utf-8"))) for path in vm_files)
++    if terminal is None or len(candidates) != 1 or same_pid != 1:
++        return None
++    history = terminal["members"].get(str(pid), [])
++    if not isinstance(history, list) or len(history) != 1:
++        return None
++    raw = vm_diagnostic.read_text(encoding="utf-8")
++    starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'", raw)
++    require(len(starts) == 1, "Ambiguous unique VM diagnostic")
++    member = owned_generation(terminal, pid, int(starts[0]))
++    arguments = re.findall(r"<args>\s*([^<]+?)\s*</args>", raw)
++    flags = re.findall(r"(?:^|\s)-Xlog:class\+load=info:file=(.+?):pid,level,tags:filecount=0(?=\s|$)",
++                       html.unescape(arguments[0]) if len(arguments) == 1 else "")
++    require(len(flags) == 1, "Missing unique-generation class-file flag")
++    flag = Path(flags[0])
++    require(flag.name.count("%p") == flag.name.count("%t") == 1, "Changed unique-generation class-file pattern")
++    candidate = candidates[0]
++    diagnostic = Path(candidate["path"])
++    pattern = re.escape(flag.name).replace("%p", str(pid)).replace("%t", "[0-9_-]+")
++    require(re.fullmatch(pattern, diagnostic.name) is not None, "Class-file flag and fresh diagnostic disagree")
++    inventory = read_json(diagnostic.parent.parent / "class-load-inventory.json")
++    pins = [pin for pin in inventory["copied"] if Path(pin["path"]).resolve() == diagnostic.resolve()]
++    require(len(pins) == 1 and diagnostic.name not in inventory["previous"]
++            and pins[0]["sha256"] == candidate["sha256"] == digest(diagnostic)
++            and Path(pins[0]["source"]).parent.resolve() == Path(inventory["owner"]).resolve()
++            and Path(pins[0]["source"]).name == diagnostic.name, "Changed or missing fresh class-file pin")
++    parts = list(flag.parent.parts)
++    while parts and parts[0] == "..":
++        parts.pop(0)
++    require(parts and not any(part in ("..", ".") for part in parts), "Ambiguous class-file flag path")
++    source_parent = Path(pins[0]["source"]).parent
++    if flag.is_absolute():
++        require(flag.parent.resolve() == source_parent.resolve(), "Wrong absolute class-file owner")
++    else:
++        require([os.path.normcase(part) for part in source_parent.parts[-len(parts):]]
++                == [os.path.normcase(part) for part in parts], "Wrong relative class-file owner")
++    return {**candidate, "unique_generation": member, "actual_file_flag": flags[0],
++            "relative_path_relationship": "inferred from the verified bounded launcher" if not flag.is_absolute() else None}
++
++
+ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
+     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
+     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
+@@ -330,36 +423,42 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
+             require(len(flags) == 1 and int(flags[0]) == cap * 1024**2, f"Changed or unavailable actual finite VM cap: {role}/{name}")
+             caps[name] = int(flags[0])
+         pid, vm_start = map(int, headers[0])
+-        member = terminal["members"].get(str(pid))
+         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
+         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
+         evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+         if version_probe:
+             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
+             version_probes.append(evidence)
++        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal)
++        if diagnostic is not None:
++            evidence["class_load_diagnostic"] = diagnostic
++            if "unique_generation" in diagnostic:
++                member = diagnostic["unique_generation"]
++                require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
++                        and member["affinityMask"] == terminal["inheritedAffinityMask"]
++                        and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Unique JVM changed executable or affinity")
++                evidence["os_generation"] = member
+         if role == "fork":
+-            require(member is not None and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0,
+-                    "Actual JMH fork generation or zero-exit proof missing")
+-            birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
+-            require(0 <= vm_start - birth_ms <= 2000 and os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
++            member = owned_generation(terminal, pid, vm_start)
++            require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable)), "JMH fork OS generation and diagnostic disagree")
+             require(member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"], "JMH fork changed inherited affinity")
+-            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", loaded_classes)
++            require(diagnostic is not None, "PID-qualified JMH fork main origin missing or ambiguous")
++            loaded = re.findall(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.ForkedMain source: ([^\r\n]+)", Path(diagnostic["path"]).read_text(encoding="utf-8"))
+             require(len(loaded) == 1, "PID-qualified JMH fork main origin missing or ambiguous")
+             evidence["actual_loaded_main"] = loaded[0].strip()
+             evidence["os_generation"] = member
+-            forks.append(pid)
++            forks.append((pid, member["creationFileTime"]))
+         records.append(evidence)
+     for probe in version_probes:
+-        authorities = [record["pid"] for record in records if record["role"] == "java_exec" and record["home"] == probe["home"]]
+-        require(any(re.search(r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+", loaded_classes)
+-                    for pid in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
+-    require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or reused JMH fork")
++        authorities = [record for record in records if record["role"] == "java_exec" and record["home"] == probe["home"] and "class_load_diagnostic" in record]
++        require(any(re.search(r"(?m)^\s*\[" + str(record["pid"]) + r"\]\[info *\]\[class,load *\]\s+org\.openjdk\.jmh\.runner\.CompilerHints source: [^\r\n]+",
++                              Path(record["class_load_diagnostic"]["path"]).read_text(encoding="utf-8"))
++                    for record in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
++    require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or duplicate JMH fork generation")
+     if expected_forks is not None:
+         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
+-    require(set(class_identities) <= {record["pid"] for record in records}, "Unbound class-load JVM identity")
+-    for record in records:
+-        if record["pid"] in class_identities:
+-            record["class_load_diagnostic"] = class_identities[record["pid"]]
++    captured = [record["class_load_diagnostic"]["path"] for record in records if "class_load_diagnostic" in record]
++    require(set(captured) == set(class_identities) and len(captured) == len(set(captured)), "Unbound or duplicate class-load JVM identity")
+     write_new(directory / "vms.json", records)
+ 
+ 
+@@ -465,8 +564,10 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
+             "Incomplete or reordered whole preflight control inventory")
+     console = (phase_directory / "console.log").read_text(encoding="utf-8", errors="replace")
+     loaded_classes, class_identities = class_loads(phase_directory)
+-    vms = {item["pid"]: item for item in read_json(phase_directory / "vms.json")}
+-    captured_class_identities = {pid: vm["class_load_diagnostic"] for pid, vm in vms.items() if "class_load_diagnostic" in vm}
++    vms = read_json(phase_directory / "vms.json")
++    captured_class_identities = {vm["class_load_diagnostic"]["path"]:
++                                 {"pid": vm["pid"], "path": vm["class_load_diagnostic"]["path"], "sha256": vm["class_load_diagnostic"]["sha256"]}
++                                 for vm in vms if "class_load_diagnostic" in vm}
+     require(class_identities == captured_class_identities, "Control changed its captured class-load diagnostic")
+     artifacts = set()
+     for result in receipt["controls"]:
+@@ -477,8 +578,10 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
+             require(isinstance(origin, dict) and set(origin) == {"pid"} and isinstance(origin["pid"], int)
+                     and not isinstance(origin["pid"], bool), "Invalid actual control JVM identity")
+             pid = origin["pid"]
+-            vm = vms.get(pid)
+-            member = terminal["members"].get(str(pid))
++            matching = [vm for vm in vms if vm["pid"] == pid and vm["role"] == "java_exec"]
++            require(len(matching) == 1, "Missing or ambiguous actual control JVM identity")
++            vm = matching[0]
++            member = owned_generation(terminal, pid, vm["vm_start_ms"])
+             require(vm is not None and vm["role"] == "java_exec" and member is not None
+                     and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
+                     and member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"],
+@@ -487,10 +590,15 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
+             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
+             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
+             pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"
+-            loaded = re.findall(pattern, loaded_classes)
++            diagnostic = vm.get("class_load_diagnostic")
++            vm_classes = Path(diagnostic["path"]).read_text(encoding="utf-8") if diagnostic is not None else ""
++            require(diagnostic is not None or len([item for item in vms if item["pid"] == pid]) == 1,
++                    "Ambiguous independent control process generation")
++            loaded = re.findall(pattern, vm_classes)
+             observed = re.findall(pattern, console)
+             require((len(loaded) == 1 and (not observed or observed == loaded))
+-                    or (not loaded and len(observed) == 1), "Missing or ambiguous PID-qualified control class load")
++                    or (not loaded and len(observed) == 1 and len([item for item in vms if item["pid"] == pid]) == 1),
++                    "Missing or ambiguous PID-qualified control class load")
+             loaded = loaded or observed
+             location = urlparse(loaded[0].strip())
+             require(location.scheme == "file" and not location.netloc, "Control loaded class from a non-local origin")
+diff --git a/gradle/performance/verify-windows-boundary.py b/gradle/performance/verify-windows-boundary.py
+index 38e594d18..9015b3658 100644
+--- a/gradle/performance/verify-windows-boundary.py
++++ b/gradle/performance/verify-windows-boundary.py
+@@ -5,6 +5,7 @@ import importlib.util
+ import os
+ from pathlib import Path
+ import subprocess
++import sys
+ 
+ 
+ SPEC = importlib.util.spec_from_file_location("paired_jvm", Path(__file__).with_name("paired-jvm.py"))
+@@ -22,8 +23,11 @@ def main():
+     records = []
+     try:
+         helper = Path(__file__).with_name("invoke-windows.ps1")
++        history = Path(__file__).with_name("windows-process-history.py").resolve()
+         for name, body, minimum, work in (
+             ("normal", "@exit /b 0\n", 4 * 1024**3, 30),
++            ("completed-history", f'@"{sys.executable}" -B "{history}" --output descendants\n', 4 * 1024**3, 120),
++            ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 192\n', 4 * 1024**3, 120),
+             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
+             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
+             ("timeout", '@python -c "import time; time.sleep(30)"\n', 4 * 1024**3, 2),
+@@ -40,10 +44,38 @@ def main():
+                 process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
+             terminal = PAIRED.read_json(directory / "terminal.json")
+             records.append({"case": name, "exit": process.returncode, "terminal": terminal})
+-            PAIRED.require((process.returncode == 0) == (name == "normal"), f"Unexpected actual boundary result: {name}")
++            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history")), f"Unexpected actual boundary result: {name}")
+             PAIRED.require(terminal["handlesClosed"] is True, f"Owned handles or cleanup leaked: {name}")
+             PAIRED.require(terminal.get("activeProcessesAfterCleanup", 0) == 0, f"Owned descendants remain: {name}")
+-            if name == "ram-refusal":
++            PAIRED.require(all(member["completed"] is True and member["handleClosed"] is True
++                               and member["creationFileTime"] <= member["exitFileTime"]
++                               for generations in terminal["members"].values() for member in generations),
++                           f"Observed generation lost actual terminal history: {name}")
++            if name == "completed-history":
++                actual = PAIRED.read_json(workspace / "descendants/completed.json")
++                observed = {(member["pid"], member["creationFileTime"]): member
++                            for generations in terminal["members"].values() for member in generations}
++                PAIRED.require(len(actual["generations"]) == 288 and actual["concurrentChildren"] == 8,
++                               "Incomplete independent completed-descendant inventory")
++                identities = {(member["pid"], member["creationFileTime"]) for member in actual["generations"]}
++                PAIRED.require(len(identities) == 288 and identities <= set(observed), "Boundary missed an actual completed descendant generation")
++                PAIRED.require(all(observed[identity]["completed"] is True and observed[identity]["exitCode"] == 0
++                                   and observed[identity]["handleClosed"] is True and observed[identity]["creationFileTime"] <= observed[identity]["exitFileTime"]
++                                   for identity in identities), "Completed descendant lost exit, birth or handle release")
++                PAIRED.require(terminal["maximumRetainedHandles"] <= 256 and terminal["maximumListedMembers"] <= 256
++                               and terminal["naturalRelease"] is True, "History exceeded the unchanged live inventory bound")
++            elif name == "history-budget-refusal":
++                limit = 3 * 1024**2
++                PAIRED.require("history exceeds the existing terminal report bound" in terminal.get("error", "")
++                               and terminal["naturalRelease"] is False and terminal["timedOut"] is False,
++                               "History budget did not refuse the owned phase before its deadline")
++                PAIRED.require(limit < terminal["memberHistorySerializedByteBound"] <= limit + 1024 + 6 * 32768
++                               and (directory / "terminal.json").stat().st_size <= 4 * 1024**2,
++                               "Refused history escaped the unchanged terminal-reader capacity")
++                PAIRED.require(256 < sum(len(generations) for generations in terminal["members"].values())
++                               and terminal["maximumRetainedHandles"] <= 256 and terminal["maximumListedMembers"] <= 256,
++                               "History refusal did not preserve complete bounded process generations")
++            elif name == "ram-refusal":
+                 PAIRED.require(terminal["nativeInvoked"] is False and terminal["naturalRelease"] is False, "RAM refusal launched a child")
+             elif name == "timeout":
+                 PAIRED.require(terminal["timedOut"] is True and terminal["naturalRelease"] is False, "Deadline did not reject the owned tree")
+diff --git a/gradle/performance/windows-process-history.py b/gradle/performance/windows-process-history.py
+new file mode 100644
+index 000000000..65c9c8b98
+--- /dev/null
++++ b/gradle/performance/windows-process-history.py
+@@ -0,0 +1,56 @@
++#!/usr/bin/env python3
++"""Create bounded real owned descendants and retain their independently read PID/birth identities."""
++import argparse
++import ctypes
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++import time
++
++
++def main():
++    """Run eight concurrent children per batch; each remains observable for five capture periods."""
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--child", type=Path)
++    parser.add_argument("--output", type=Path)
++    parser.add_argument("--batches", type=int, default=36)
++    arguments = parser.parse_args()
++    if arguments.child is not None:
++        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
++        kernel.GetCurrentProcess.restype = ctypes.c_void_p
++        kernel.GetProcessTimes.argtypes = [ctypes.c_void_p] + [ctypes.POINTER(ctypes.c_ulonglong)] * 4
++        created, exited, system, user = (ctypes.c_ulonglong() for _ in range(4))
++        if not kernel.GetProcessTimes(kernel.GetCurrentProcess(), ctypes.byref(created), ctypes.byref(exited), ctypes.byref(system), ctypes.byref(user)):
++            raise ctypes.WinError(ctypes.get_last_error())
++        with arguments.child.open("x", encoding="utf-8") as target:
++            json.dump({"pid": os.getpid(), "creationFileTime": created.value}, target)
++        time.sleep(0.5)
++        return
++    if arguments.output is None:
++        parser.error("Supply an output for the owned descendant history")
++    arguments.output.mkdir(parents=True, exist_ok=False)
++    records = []
++    if arguments.batches < 1:
++        parser.error("Supply a positive batch count")
++    for batch in range(arguments.batches):
++        children = []
++        for index in range(8):
++            receipt = arguments.output / f"child-{batch * 8 + index}.json"
++            process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).resolve()), "--child", str(receipt)], creationflags=subprocess.CREATE_NO_WINDOW)
++            children.append((process, receipt))
++        for process, receipt in children:
++            code = process.wait()
++            if code != 0:
++                raise ValueError("Owned history child failed")
++            record = json.loads(receipt.read_text(encoding="utf-8"))
++            if record["pid"] != process.pid:
++                raise ValueError("Owned child receipt identity changed")
++            records.append({**record, "exitCode": code})
++    with (arguments.output / "completed.json").open("x", encoding="utf-8") as target:
++        json.dump({"concurrentChildren": 8, "generations": records}, target, indent=2)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/gradle/tests/test_paired_jvm.py b/gradle/tests/test_paired_jvm.py
+index 78f125b49..efff347a6 100644
+--- a/gradle/tests/test_paired_jvm.py
++++ b/gradle/tests/test_paired_jvm.py
+@@ -519,6 +519,129 @@ class PairedJvmTest(unittest.TestCase):
+                 with self.assertRaises(ValueError):
+                     PAIRED.verify_vms(directory, [log], actual, allowed, 1)
+ 
++    def test_reused_pid_preserves_both_completed_fork_generations_and_rejects_ambiguous_or_altered_history(self):
++        home = self.root / "reuse-jdk"
++        executable = home / "bin/java.exe"
++        executable.parent.mkdir(parents=True)
++        executable.write_bytes(b"frozen executable")
++        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
++        epoch = 116444736000000000
++        records = [{"pid": 123, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
++                    "creationFileTime": epoch + start * 10000, "exitFileTime": epoch + (start + 1000) * 10000,
++                    "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15} for start in (1000, 5000)]
++        changes = [lambda history: None, lambda history: history.pop(0),
++                   lambda history: history.append(copy.deepcopy(history[0])),
++                   lambda history: history[0].update(pid=999), lambda history: history[0].update(completed=False),
++                   lambda history: history[0].update(handleClosed=False), lambda history: history[0].update(exitCode=1),
++                   lambda history: history[0].update(affinityMask=3),
++                   lambda history: history[0].update(creationFileTime=epoch + 2000 * 10000),
++                   lambda history: history[0].update(exitFileTime=epoch + 500 * 10000),
++                   lambda history: history.append({**history[0], "creationFileTime": epoch + 999 * 10000})]
++        for index, change in enumerate(changes):
++            with self.subTest(change=index):
++                directory = self.root / f"pid-reuse-{index}"
++                (directory / "class-loads").mkdir(parents=True)
++                (directory / "console.log").write_text("", encoding="utf-8")
++                files = []
++                for start, stamp in ((1000, "2026-10-12_00-00-01"), (5000, "2026-10-12_00-00-05")):
++                    log = directory / f"vm-pid123-{stamp}.log"
++                    log.write_text(f"<hotspot_log process='123' time_ms='{start + 1}'>\n<vm_arguments>"
++                                   f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\n"
++                                   "java.class.path=frozen.jar\n</vm_arguments>\n"
++                                   "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
++                                   "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
++                    (directory / f"class-loads/classes-123-{stamp}.log").write_text(
++                        "[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
++                    files.append(log)
++                history = copy.deepcopy(records)
++                change(history)
++                terminal = {"members": {"123": history}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
++                if index == 0:
++                    PAIRED.verify_vms(directory, files, terminal, allowed, 2)
++                    vms = PAIRED.read_json(directory / "vms.json")
++                    self.assertEqual([vm["os_generation"] for vm in vms], records)
++                    self.assertEqual(len({vm["class_load_diagnostic"]["path"] for vm in vms}), 2)
++                    self.assertEqual(terminal["members"]["123"], records)
++                else:
++                    with self.assertRaises(ValueError):
++                        PAIRED.verify_vms(directory, files, terminal, allowed, 2)
++                    self.assertFalse((directory / "vms.json").exists())
++
++    def test_control_selects_actual_birth_without_borrowing_a_reused_pid_and_rejects_ambiguous_vm_origin(self):
++        for mode in ("history", "ambiguous-vm", "wrong-birth", "active", "wrong-affinity"):
++            with self.subTest(mode=mode):
++                directory, phase, terminal, receipt = self.preflight_fixture("reuse-control-" + mode)
++                original = terminal["members"]["123"]
++                original.update(pid=123, exitFileTime=116444736020000000, handleClosed=True)
++                later = {**original, "creationFileTime": 116444736050000000, "exitFileTime": 116444736060000000}
++                terminal["members"]["123"] = [original, later]
++                if mode == "ambiguous-vm":
++                    vms = PAIRED.read_json(phase / "vms.json")
++                    vms.append({**vms[0], "vm_start_ms": 5001})
++                    (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
++                elif mode == "wrong-birth":
++                    original["creationFileTime"] = 116444736030000000
++                elif mode == "active":
++                    original["completed"] = False
++                elif mode == "wrong-affinity":
++                    original["affinityMask"] = 3
++                PAIRED.write_new(directory / "receipt.json", receipt)
++                if mode == "history":
++                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++                    self.assertTrue((directory / "verified.json").is_file())
++                else:
++                    with self.assertRaises(ValueError):
++                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++                    self.assertFalse((directory / "verified.json").exists())
++
++    def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
++        original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}
++        legacy = {"members": {"123": copy.deepcopy(original)}}
++        self.assertEqual(PAIRED.owned_generation(legacy, 123, 1001), original)
++        current = {**original, "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
++        for missing in (None, "handleClosed", "exitFileTime", "pid"):
++            with self.subTest(missing=missing):
++                member = copy.deepcopy(current)
++                if missing is not None:
++                    member.pop(missing)
++                terminal = {"members": {"123": [member]}}
++                if missing is None:
++                    self.assertEqual(PAIRED.owned_generation(terminal, 123, 1001), current)
++                else:
++                    with self.assertRaises(ValueError):
++                        PAIRED.owned_generation(terminal, 123, 1001)
++
++    def test_control_cannot_borrow_class_attribution_from_another_generation_with_the_same_pid(self):
++        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-class")
++        classes = (phase / "console.log").read_text(encoding="utf-8")
++        (phase / "console.log").write_text("", encoding="utf-8")
++        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
++        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
++        later = phase / "class-loads/classes-123-2026-10-12_00-00-05.log"
++        later.write_text(classes, encoding="utf-8")
++        vm = PAIRED.read_json(phase / "vms.json")[0]
++        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
++        other = {**vm, "role": "worker", "vm_start_ms": 5001,
++                 "class_load_diagnostic": {"path": str(later), "sha256": PAIRED.digest(later), "pid": 123}}
++        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
++        PAIRED.write_new(directory / "receipt.json", receipt)
++        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
++            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++        self.assertFalse((directory / "verified.json").exists())
++
++    def test_control_rejects_another_generations_console_origin_even_with_an_unrelated_own_class_file(self):
++        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-console")
++        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
++        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
++        vm = PAIRED.read_json(phase / "vms.json")[0]
++        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
++        other = {"pid": 123, "role": "worker", "vm_start_ms": 5001, "home": vm["home"]}
++        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
++        PAIRED.write_new(directory / "receipt.json", receipt)
++        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
++            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++        self.assertFalse((directory / "verified.json").exists())
++
+     def test_jmh_version_probes_require_exact_arguments_caps_and_bound_compiler_hints(self):
+         home = self.root / "jdk"
+         executable = home / "bin/java.exe"
+@@ -567,6 +690,129 @@ class PairedJvmTest(unittest.TestCase):
+                         with self.assertRaises(ValueError):
+                             PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
+ 
++    def test_preflight_keeps_unique_generation_metadata_separate_from_complete_class_file_identity(self):
++        for mode in ("complete", "changed-core-pin"):
++            with self.subTest(mode=mode):
++                directory, phase, terminal, receipt = self.preflight_fixture("unique-preflight-" + mode)
++                console = phase / "console.log"
++                diagnostic = phase / "class-loads/classes-123-2026-10-12_00-00-00.log"
++                diagnostic.write_text(console.read_text(encoding="utf-8"), encoding="utf-8")
++                console.write_text("", encoding="utf-8")
++                member = {**terminal["members"]["123"], "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
++                terminal["members"]["123"] = [member]
++                vm = phase / "vm-pid123-2026-10-12_00-00-01.log"
++                vm.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments><args>"
++                              "-Xlog:class+load=info:file=../../class-loads/classes-%p-%t.log:pid,level,tags:filecount=0"
++                              "</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
++                pin = {"source": str(phase / "class-loads" / diagnostic.name), "path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)}
++                PAIRED.write_new(phase / "class-load-inventory.json", {"owner": str(phase / "class-loads"), "previous": {}, "copied": [pin]})
++                _, identities = PAIRED.class_loads(phase)
++                bound = PAIRED.class_diagnostic(identities, 123, vm, [vm], terminal)
++                self.assertEqual(bound["unique_generation"], member)
++                if mode == "changed-core-pin":
++                    bound["sha256"] = "0" * 64
++                records = PAIRED.read_json(phase / "vms.json")
++                records[0]["class_load_diagnostic"] = bound
++                (phase / "vms.json").write_text(json.dumps(records), encoding="utf-8")
++                PAIRED.write_new(directory / "receipt.json", receipt)
++                if mode == "complete":
++                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++                    self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
++                else:
++                    with self.assertRaisesRegex(ValueError, "Control changed its captured class-load diagnostic"):
++                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
++
++    def test_independent_log_filename_expansions_require_a_unique_pinned_owned_generation(self):
++        for mode in ("complete", "two-vms", "two-generations", "two-files", "changed-pin", "old-file", "wrong-owner", "wrong-flag", "missing-flag", "failed-process"):
++            with self.subTest(mode=mode):
++                directory = self.root / ("independent-expansion-" + mode)
++                (directory / "class-loads").mkdir(parents=True)
++                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-44.log"
++                diagnostic.write_text("[3708][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
++                flag = "../../../../class-loads/classes-%p-%t.log"
++                if mode == "wrong-flag":
++                    flag = "../../../../other-owner/classes-%p-%t.log"
++                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
++                vm = directory / "vm-pid3708-2026-10-12_23-45-45.log"
++                vm.write_text(f"<hotspot_log process='3708' time_ms='1791848744997'><vm_arguments><args>{args}</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
++                files = [vm]
++                if mode == "two-vms":
++                    other = directory / "vm-pid3708-2026-10-12_23-46-00.log"
++                    other.write_text("<hotspot_log process='3708' time_ms='1791848760000'></hotspot_log>\n", encoding="utf-8")
++                    files.append(other)
++                member = {"pid": 3708, "creationFileTime": 134363223449669511, "exitFileTime": 134363224864077401,
++                          "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 1 if mode == "failed-process" else 0}
++                history = [member]
++                if mode == "two-generations":
++                    history.append({**member, "creationFileTime": 134363224900000000, "exitFileTime": 134363225000000000})
++                terminal = {"members": {"3708": history}}
++                owner = directory / ("wrong" if mode == "wrong-owner" else "class-loads")
++                pin = {"path": str(diagnostic), "source": str(owner / diagnostic.name), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
++                previous = {diagnostic.name: pin["sha256"]} if mode == "old-file" else {}
++                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(owner), "previous": previous, "copied": [pin]})
++                candidates = {str(diagnostic): {"path": str(diagnostic), "sha256": PAIRED.digest(diagnostic), "pid": 3708}}
++                if mode == "two-files":
++                    other = directory / "class-loads/classes-3708-2026-10-12_23-46-00.log"
++                    other.write_text(diagnostic.read_text(encoding="utf-8"), encoding="utf-8")
++                    candidates[str(other)] = {"path": str(other), "sha256": PAIRED.digest(other), "pid": 3708}
++                if mode == "complete":
++                    result = PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
++                    self.assertEqual(result["path"], str(diagnostic))
++                    self.assertEqual(result["unique_generation"], member)
++                    self.assertEqual(result["actual_file_flag"], flag)
++                elif mode in ("two-vms", "two-generations", "two-files"):
++                    self.assertIsNone(PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal))
++                else:
++                    with self.assertRaises(ValueError):
++                        PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
++
++    def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
++        home = self.root / "probe-reuse-jdk"
++        executable = home / "bin/java.exe"
++        executable.parent.mkdir(parents=True)
++        executable.write_bytes(b"frozen executable")
++        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
++        environment = "-Xmx32m -XX:MaxMetaspaceSize=256m -XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile=owned/vm-%p-%t.log"
++        probe = ("<hotspot_log process='5704' time_ms='1791843175150'>\n<vm_arguments><args>\n"
++                 f"{environment} -XX:+UnlockExperimentalVMOptions -XX:CompileCommand=blackhole,some/fake/Class.method </args>\n"
++                 f"<launcher>SUN_STANDARD</launcher>\n<properties>\njava.home={home}\njava.class.path=\n</properties></vm_arguments>\n"
++                 "-XX:MaxHeapSize=33554432 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
++        def document(pid, start, main):
++            return (f"<hotspot_log process='{pid}' time_ms='{start}'>\n<vm_arguments><command>{main}</command>\n"
++                    f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
++                    "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
++        member = {"pid": 5704, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
++                  "creationFileTime": 134363168979685947, "exitFileTime": 134363169071356647,
++                  "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15}
++        for mode in ("complete", "wrong-fork-stamp", "unstamped-reused-pid"):
++            with self.subTest(mode=mode):
++                directory = self.root / ("probe-fork-" + mode)
++                (directory / "class-loads").mkdir(parents=True)
++                PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
++                origin = {"main": "fixture.Collector", "executable": str(executable), "classpath": "frozen.jar"}
++                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
++                files = [directory / name for name in ("vm-pid5704-2026-10-12_22-12-55.log", "vm-pid5704-2026-10-12_22-14-57.log", "vm-pid456-2026-10-12_22-12-54.log")]
++                if mode == "unstamped-reused-pid":
++                    files[0] = directory / "probe.log"
++                    files[1] = directory / "fork.log"
++                for path, value in zip(files, (probe, document(5704, 1791843297993, "org.openjdk.jmh.runner.ForkedMain 1"), document(456, 1791843174001, "fixture.Collector"))):
++                    path.write_text(value, encoding="utf-8")
++                stamp = "2026-10-12_22-12-55" if mode == "wrong-fork-stamp" else "2026-10-12_22-14-57"
++                fork_class = directory / f"class-loads/classes-5704-{stamp}.log"
++                fork_class.write_text("[5704][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
++                (directory / "class-loads/classes-456-2026-10-12_22-12-54.log").write_text("[456][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
++                terminal = {"members": {"5704": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
++                if mode == "complete":
++                    PAIRED.verify_vms(directory, files, terminal, allowed, 1)
++                    rows = PAIRED.read_json(directory / "vms.json")
++                    self.assertNotIn("class_load_diagnostic", rows[0])
++                    self.assertEqual(rows[1]["class_load_diagnostic"]["sha256"], PAIRED.digest(fork_class))
++                    self.assertEqual(rows[1]["os_generation"], member)
++                else:
++                    with self.assertRaises(ValueError):
++                        PAIRED.verify_vms(directory, files, terminal, allowed, 1)
++                    self.assertFalse((directory / "vms.json").exists())
++
+     def test_fixed_class_load_staging_retains_only_fresh_phase_bytes_and_rejects_previous_mutation(self):
+         for mode in ("complete", "partial", "changed-previous", "deleted-previous"):
+             with self.subTest(mode=mode):
+@@ -603,7 +849,7 @@ class PairedJvmTest(unittest.TestCase):
+                     else:
+                         observed, identities = PAIRED.class_loads(directory)
+                         self.assertEqual(observed, line)
+-                        self.assertEqual(set(identities), {123})
++                        self.assertEqual({item["pid"] for item in identities.values()}, {123})
+                         self.assertEqual(PAIRED.class_load_inventory(owner, captured), captured)
+                         fresh.write_bytes(b"changed between phases")
+                         with self.assertRaisesRegex(ValueError, "captured class-load staging bytes"):
+@@ -623,7 +869,7 @@ class PairedJvmTest(unittest.TestCase):
+             (owner / f"classes-{pid}-2026-10-12_00-00-00.log").write_text(record * 7000, encoding="utf-8")
+         text, identities = PAIRED.class_loads(directory)
+         self.assertGreater(len(text), 16 * 1024**2)
+-        self.assertEqual(set(identities), set(range(1, 49)))
++        self.assertEqual({item["pid"] for item in identities.values()}, set(range(1, 49)))
+         self.assertEqual(text.count("fixture.Complete source:"), 48 * 7000)
+ 
+     def test_class_load_inventory_rejects_missing_duplicate_wrong_pid_rotation_and_truncation(self):
+@@ -642,6 +888,10 @@ class PairedJvmTest(unittest.TestCase):
+             if index == 0:
+                 text, identities = PAIRED.class_loads(directory)
+                 self.assertEqual((text, identities), ("", {}))
++            elif index == 4:
++                text, identities = PAIRED.class_loads(directory)
++                self.assertEqual(len(identities), 2)
++                self.assertEqual({item["pid"] for item in identities.values()}, {123})
+             else:
+                 with self.assertRaises(ValueError):
+                     PAIRED.class_loads(directory)
 diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt
 new file mode 100644
 index 000000000..646783cbb
@@ -477,20 +1455,22 @@ index 000000000..646783cbb
 +}
 diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt
 new file mode 100644
-index 000000000..324159473
+index 000000000..14044a7d5
 --- /dev/null
 +++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,81 @@
 +package dev.s7a.strata.quality.benchmark
 +
 +import com.google.gson.JsonObject
 +import dev.s7a.strata.input.InputResult
++import dev.s7a.strata.performance.JmhFixtureSelection
 +import dev.s7a.strata.performance.JmhPerformanceRunner
 +import dev.s7a.strata.performance.JmhWorkloadInventory
 +import dev.s7a.strata.performance.JvmOperationReportAdapter
 +import dev.s7a.strata.performance.JvmOperationReportRow
 +import dev.s7a.strata.performance.JvmPerformanceRunner
 +import dev.s7a.strata.performance.PerformancePlan
++import java.nio.file.Path
 +
 +/**
 + * Measures one original clean-frame dispatch for every frozen workload using the shared owner-thread meter.
@@ -498,6 +1478,9 @@ index 000000000..324159473
 + * Every scene retains the same state transitions and callback work as its original JMH trial.
 + */
 +public object FocusedInputOperationReport : JvmOperationReportAdapter {
++    override val inputs: Map<String, Path>
++        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
++
 +    override val rows: List<JvmOperationReportRow> =
 +        FocusedInputBenchmark.Workload.entries.map { workload ->
 +            JvmOperationReportRow(
