@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
@@ -8,6 +9,7 @@ import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.NativeCanvasPresentationBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.NativeCanvasPresentationBenchmark.Workload
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.nio.file.Path
 
 /**
  * All 16 original CPU publication and preparation rows, including six Canvas-free controls.
@@ -16,6 +18,15 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public object NativeCanvasPresentationOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, Path>
+        get() =
+            JmhFixtureSelection.inputs() +
+                mapOf(
+                    "cc0-geometric-font" to Path.of(checkNotNull(System.getProperty("strata.performance.fontFixture"))),
+                    "component-api" to Path.of(checkNotNull(javaClass.getResource("/component-api.tsv")).toURI()),
+                    "runtime-api" to Path.of(checkNotNull(javaClass.getResource("/runtime-api.tsv")).toURI()),
+                )
+
     private enum class Operation(
         val method: String,
         val boundary: String,

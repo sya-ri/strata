@@ -3,31 +3,31 @@
   "sources": {
     "fixture": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "876694c3ac4776fefaf7a824632dd6dd76a65380",
+      "tree": "061191f4b1e8bd6bccfb892781a98a51ce6b46f4",
       "patches": [
         {
           "path": ".github/performance/issue169-full/candidate.patch",
-          "sha256": "0c5a021b730affa5fd44460826d50a7f347f544f886f2279c1e9686a7da6cdfc"
+          "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
         }
       ]
     },
     "baseline": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "6b936073a211b499bfa2df49e6e56dbb1e5e28aa",
+      "tree": "854df180ada0efab34de2827b822689ef03d22ac",
       "patches": [
         {
           "path": ".github/performance/issue169-full/baseline.patch",
-          "sha256": "863acba0d70325a5be7f2e67f171ddf08a3ce80fb53e95ce9f8d22fc5b01f225"
+          "sha256": "7a9b888d90ba4adce0d20e9ad4467f8edf701dcb9d14f9fc9aed80dd74a1b683"
         }
       ]
     },
     "candidate": {
       "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-      "tree": "876694c3ac4776fefaf7a824632dd6dd76a65380",
+      "tree": "061191f4b1e8bd6bccfb892781a98a51ce6b46f4",
       "patches": [
         {
           "path": ".github/performance/issue169-full/candidate.patch",
-          "sha256": "0c5a021b730affa5fd44460826d50a7f347f544f886f2279c1e9686a7da6cdfc"
+          "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
         }
       ]
     }
@@ -65,21 +65,21 @@
       "label": "canvas-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue169-full/baseline.patch",
-        "sha256": "863acba0d70325a5be7f2e67f171ddf08a3ce80fb53e95ce9f8d22fc5b01f225"
+        "sha256": "7a9b888d90ba4adce0d20e9ad4467f8edf701dcb9d14f9fc9aed80dd74a1b683"
       }
     },
     {
       "label": "canvas-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue169-full/candidate.patch",
-        "sha256": "0c5a021b730affa5fd44460826d50a7f347f544f886f2279c1e9686a7da6cdfc"
+        "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
       }
     },
     {
       "label": "canvas-source-provenance",
       "pin": {
         "path": ".github/performance/issue169-full/source-provenance.json",
-        "sha256": "b591ee51c52322f86672fcb6ce36c8f473a3273524135bdb1213b060ab899cec"
+        "sha256": "d9ee040e0f8e0f7335750510d39bc22f1788da06c70e3a5848cd711c4bb97c04"
       }
     },
     {
@@ -100,7 +100,7 @@
       "label": "canvas-fixed-NativeCanvasPresentationOperationReport",
       "pin": {
         "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationOperationReport.kt",
-        "sha256": "8d3bc31e87682c32b83682c3dcdb3d5abee4c27b2111329f1a26fdd35c7c5241"
+        "sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da"
       }
     }
   ],

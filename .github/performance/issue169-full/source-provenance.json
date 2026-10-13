@@ -3,8 +3,8 @@
   "status": "Source preparation only; fresh source quality and whole CPU/native measurements Pending",
   "base_public_commit": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
   "accepted_master": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-  "baseline_tree": "6b936073a211b499bfa2df49e6e56dbb1e5e28aa",
-  "candidate_fixture_tree": "876694c3ac4776fefaf7a824632dd6dd76a65380",
+  "baseline_tree": "854df180ada0efab34de2827b822689ef03d22ac",
+  "candidate_fixture_tree": "061191f4b1e8bd6bccfb892781a98a51ce6b46f4",
   "runtime_delta_paths": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice.kt",
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation.kt"
@@ -20,10 +20,10 @@
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationOperationReport.kt",
-      "raw_sha256": "8d3bc31e87682c32b83682c3dcdb3d5abee4c27b2111329f1a26fdd35c7c5241",
-      "canonical_sha256": "8d3bc31e87682c32b83682c3dcdb3d5abee4c27b2111329f1a26fdd35c7c5241",
-      "bytes": 3012,
-      "git_blob": "51799e3a966e5a35eef5ae6ce9c3c064339babfe"
+      "raw_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
+      "canonical_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
+      "bytes": 3583,
+      "git_blob": "32e998f04ec644affe2a88698cbbb6260d5313e0"
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationWorkload.kt",
@@ -36,10 +36,10 @@
   "all_source_delta_bindings": [
     {
       "path": "docs/development/performance-testkit.md",
-      "raw_sha256": "f4e5b7801b9fa99b555bf573873aa82d07aa938d06d24a1ef895879950461d66",
-      "canonical_sha256": "f4e5b7801b9fa99b555bf573873aa82d07aa938d06d24a1ef895879950461d66",
-      "bytes": 86945,
-      "git_blob": "21f9db5b6dcc8ab72349e1d3ad087a8f4ac9a464"
+      "raw_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "canonical_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "bytes": 90383,
+      "git_blob": "d8854ac3573d0f61e452f5918763c222ccd0191d"
     },
     {
       "path": "docs/development/performance.md",
@@ -57,10 +57,10 @@
     },
     {
       "path": "gradle/performance/paired-jvm.py",
-      "raw_sha256": "c277adc402ff6a4b5c5d16fa0ab14654edd576dc8921e69390b7be26e8ffa5c3",
-      "canonical_sha256": "c277adc402ff6a4b5c5d16fa0ab14654edd576dc8921e69390b7be26e8ffa5c3",
-      "bytes": 72637,
-      "git_blob": "f3ecf9075a614fc6f580d6e8673d02ce8a65c96c"
+      "raw_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "canonical_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "bytes": 76332,
+      "git_blob": "7de981bdfd4d87a979cbfbd29639ff468175c8d5"
     },
     {
       "path": "gradle/performance/verify-windows-boundary.py",
@@ -78,10 +78,10 @@
     },
     {
       "path": "gradle/tests/test_paired_jvm.py",
-      "raw_sha256": "04d73e79ae9b491bdf51a874e0a214422e8300c1dca571dafe72b941bc2270b8",
-      "canonical_sha256": "04d73e79ae9b491bdf51a874e0a214422e8300c1dca571dafe72b941bc2270b8",
-      "bytes": 59919,
-      "git_blob": "8f8734eb967e16e4e47b95a0f4e396b72c43fc9d"
+      "raw_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "canonical_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "bytes": 66152,
+      "git_blob": "efff347a6a3261e443b4acfdfcfd4554c0a9b0e9"
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationBenchmark.kt",
@@ -92,10 +92,10 @@
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationOperationReport.kt",
-      "raw_sha256": "8d3bc31e87682c32b83682c3dcdb3d5abee4c27b2111329f1a26fdd35c7c5241",
-      "canonical_sha256": "8d3bc31e87682c32b83682c3dcdb3d5abee4c27b2111329f1a26fdd35c7c5241",
-      "bytes": 3012,
-      "git_blob": "51799e3a966e5a35eef5ae6ce9c3c064339babfe"
+      "raw_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
+      "canonical_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
+      "bytes": 3583,
+      "git_blob": "32e998f04ec644affe2a88698cbbb6260d5313e0"
     },
     {
       "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationWorkload.kt",
@@ -229,11 +229,11 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue169-full/baseline.patch",
-      "sha256": "863acba0d70325a5be7f2e67f171ddf08a3ce80fb53e95ce9f8d22fc5b01f225"
+      "sha256": "7a9b888d90ba4adce0d20e9ad4467f8edf701dcb9d14f9fc9aed80dd74a1b683"
     },
     "candidate": {
       "path": ".github/performance/issue169-full/candidate.patch",
-      "sha256": "0c5a021b730affa5fd44460826d50a7f347f544f886f2279c1e9686a7da6cdfc"
+      "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
     }
   },
   "operation_boundaries": "Original publishMembership constructor handle and prepareBatch admission/mapping/validation/capture/cancellation methods; original setup, complete work oracle, serialization and terminal close outside samples.",
