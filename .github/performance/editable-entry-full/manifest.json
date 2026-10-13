@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
-      "tree": "2e0ffaeb2498c6dc27492f9a672cf4dfde5b6e23",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "1538b28cf8f213dcca3e1f513029c60ffbd537a1",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/candidate.patch",
-          "sha256": "5fc86d3f43d217b0480767579c3e5a7166dbfd25feb13fc157777501d7c507b4"
+          "sha256": "c85bcde697251419321d115df15373f221d007ed8c1744387c29dde2ea442784"
         }
       ]
     },
     "candidate": {
-      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
-      "tree": "2e0ffaeb2498c6dc27492f9a672cf4dfde5b6e23",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "1538b28cf8f213dcca3e1f513029c60ffbd537a1",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/candidate.patch",
-          "sha256": "5fc86d3f43d217b0480767579c3e5a7166dbfd25feb13fc157777501d7c507b4"
+          "sha256": "c85bcde697251419321d115df15373f221d007ed8c1744387c29dde2ea442784"
         }
       ]
     },
     "baseline": {
-      "ref": "5afceeef702bc14d3c5a01a8f720be747f737854",
-      "tree": "896592179380309517e172ddfbe36fd9e22f3f49",
+      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+      "tree": "fb5a8b376b78f0c26e8ef617045ebadab97b2289",
       "patches": [
         {
           "path": ".github/performance/editable-entry-full/baseline.patch",
-          "sha256": "e5cb1af37edb85ccfc3b9bc122c38c2060e2409204fb271e0febd65cd9637d32"
+          "sha256": "c995798899ac5e744af8d9c3d73926ccc2ea224b622ba93aae55d0617088c558"
         }
       ]
     }
@@ -135,7 +135,7 @@
       "label": "editable-remote-api",
       "pin": {
         "path": "quality/remote-benchmarks/src/jmh/resources/remote-api.tsv",
-        "sha256": "ccb509a7e22a24b6f8a59c710f38286b9421d45190b1955bd3df40e648f33d1e"
+        "sha256": "ed62131552f101ed3cfec13451b8550375fddc39603344c2eb2ec284ad774ca1"
       }
     }
   ],

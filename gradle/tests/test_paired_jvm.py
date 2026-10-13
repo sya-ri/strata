@@ -345,6 +345,12 @@ class PairedJvmTest(unittest.TestCase):
         self.input.write_text("changed input\n", encoding="utf-8")
         with self.assertRaises(ValueError):
             self.load(self.manifest)
+        self.input.write_bytes(b"fixed input\n")
+        self.pin["sha256"] = PAIRED.digest(self.input)
+        self.assertEqual(self.load(self.manifest), self.manifest)
+        self.input.write_bytes(b"fixed input\r\n")
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.load(self.manifest)
 
     def test_optional_compiled_preflight_keeps_whole_control_inventory_and_pins(self):
         value = copy.deepcopy(self.manifest)
