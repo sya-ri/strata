@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasPresentation
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -101,6 +102,12 @@ public open class NativeCanvasPresentationBenchmark {
      * Untimed independent command, pixel and terminal-retention acceptance discovered by the generic fixture runner.
      */
     public companion object {
+        /**
+         * Exposes every original CPU operation row to the optional supplemental collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = NativeCanvasPresentationOperationReport
+
         /**
          * Checks the compiled matrix and every small/large, zero/one/many, unchanged/changed request combination.
          */

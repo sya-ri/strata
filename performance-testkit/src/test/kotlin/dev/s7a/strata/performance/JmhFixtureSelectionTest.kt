@@ -68,6 +68,26 @@ class JmhFixtureSelectionTest {
         assertSame(FailedFixture.failure, assertFailsWith<IllegalStateException> { JmhFixtureSelection.verifyWork(listOf(FailedFixture::class.java)) })
     }
 
+    @Test
+    fun selectedVerifierDoesNotInvokeAnUnrelatedFailedFixture() {
+        CheckedFixture.calls = 0
+        val defaults = listOf(PlainFixture::class.java, CheckedFixture::class.java, FailedFixture::class.java)
+        val selected = JmhFixtureSelection.select(defaults, CheckedFixture::class.java.name)
+        assertEquals(listOf(CheckedFixture::class.java), selected)
+        JmhFixtureSelection.verifyWork(selected)
+        assertEquals(1, CheckedFixture.calls)
+    }
+
+    @Test
+    fun absentSelectionInvokesTheCompleteDefaultWorkGateAndPreservesItsFailure() {
+        CheckedFixture.calls = 0
+        val defaults = listOf(PlainFixture::class.java, CheckedFixture::class.java, FailedFixture::class.java)
+        val selected = JmhFixtureSelection.select(defaults, requested = null)
+        assertEquals(defaults, selected)
+        assertSame(FailedFixture.failure, assertFailsWith<IllegalStateException> { JmhFixtureSelection.verifyWork(selected) })
+        assertEquals(1, CheckedFixture.calls)
+    }
+
     /**
      * Represents a generated benchmark without an optional deterministic verifier.
      */

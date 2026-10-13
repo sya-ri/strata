@@ -54,8 +54,22 @@ public object JvmPerformanceReports {
             JvmPerformanceEvidence.verifyEqual(old + new, contract.phaseConditions)
             rows.add(
                 identityRow(identity, contract).apply {
-                    add("before", aggregate(old, metrics))
-                    add("after", aggregate(new, metrics))
+                    val beforeMetrics = aggregate(old, metrics)
+                    val afterMetrics = aggregate(new, metrics)
+                    add("before", beforeMetrics)
+                    add("after", afterMetrics)
+                    add("before_runs", JsonArray().apply { old.forEach { add(aggregate(listOf(it), metrics)) } })
+                    add("after_runs", JsonArray().apply { new.forEach { add(aggregate(listOf(it), metrics)) } })
+                    add(
+                        "delta",
+                        JsonObject().apply {
+                            metrics.forEach { metric ->
+                                val first = beforeMetrics.get(metric.name)
+                                val second = afterMetrics.get(metric.name)
+                                add(metric.name, if (first.isJsonNull || second.isJsonNull) JsonNull.INSTANCE else JsonPrimitive(second.asDouble - first.asDouble))
+                            }
+                        },
+                    )
                 },
             )
         }
