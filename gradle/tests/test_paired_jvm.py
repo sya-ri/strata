@@ -64,190 +64,203 @@ class PairedJvmTest(unittest.TestCase):
         target.write_text(json.dumps(self.manifest if value is None else value), encoding="utf-8")
         return path
 
-    def selector_commit(self):
+    def selector_commit(self, message="Preserve complete selector fixture"):
         self.selector_git("add", "--all")
-        self.selector_git("commit", "--quiet", "--allow-empty", "-m", "Preserve complete selector fixture")
+        self.selector_git("commit", "--quiet", "--allow-empty", "-m", message)
         return self.selector_git("rev-parse", "HEAD")
 
-    def selector_repository(self, legacy=True):
+    def selector_repository(self):
         self.selector_git("init", "--quiet")
         self.selector_git("config", "core.autocrlf", "false")
-        if legacy:
-            self.selector_manifest(".github/performance/paired-jvm.json")
+        self.selector_git("config", "core.longpaths", "true")
+        (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
         return self.selector_commit()
 
-    def test_real_git_inherited_default_does_not_schedule_unrelated_work_or_shadow_owned_nested(self):
+    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None):
+        """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
         base = self.selector_repository()
-        (self.root / "ordinary-source.txt").write_text("ordinary change", encoding="utf-8")
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
-        legacy = ".github/performance/paired-jvm.json"
-        self.assertEqual(PAIRED.select_manifest(self.root), legacy)
-        self.assertEqual(PAIRED.select_manifest(self.root, legacy, base, head), legacy)
-        nested = self.selector_manifest(".github/performance/independent-full/manifest.json")
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), nested)
-        self.assertEqual(PAIRED.load_manifest(self.root, self.root / nested), self.manifest)
-        self.assertEqual((self.root / nested).read_bytes(), subprocess.check_output(
-            ["git", "-C", str(self.root), "show", f"{head}:{nested}"]))
-        with self.assertRaises(ValueError):
-            PAIRED.select_manifest(self.root, ".github/performance/missing/manifest.json", base, head)
+        source = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}"), "patches": []}
+        if candidate_patch:
+            (self.root / "source.txt").write_text("candidate source\n", encoding="utf-8")
+            self.selector_git("add", "source.txt")
+            source["tree"] = self.selector_git("write-tree")
+            raw = subprocess.check_output(["git", "-C", str(self.root), "diff", "--cached", "--binary", "--full-index", base, "--", "source.txt"])
+            path = self.root / ".github/performance/owned/candidate.patch"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(raw)
+            source["patches"] = [{"path": path.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(path)}]
+        manifest = copy.deepcopy(self.manifest if value is None else value)
+        manifest["sources"] = {side: copy.deepcopy(source) for side in ("fixture", "baseline", "candidate")}
+        path = self.selector_manifest(".github/performance/owned/manifest.json", manifest)
+        if mismatch == "blob":
+            (self.root / "source.txt").write_text("a different final source\n", encoding="utf-8")
+        if mismatch == "path":
+            (self.root / "unrepresented.txt").write_text("extra final source\n", encoding="utf-8")
+        producer = self.selector_commit("Freeze complete paired inputs")
+        if mismatch == "mode":
+            self.selector_git("update-index", "--chmod=+x", "source.txt")
+            self.selector_git("commit", "--quiet", "-m", "Retain final source mode")
+            producer = self.selector_git("rev-parse", "HEAD")
+        self.selector_git("rm", "--quiet", "-r", ".github/performance")
+        trailer = f"Performance-Inputs: {producer}:{path}" if malformed is None else malformed.format(producer=producer, path=path, base=base)
+        self.selector_git("commit", "--quiet", "-m", "Consume immutable paired inputs\n\n" + trailer)
+        return base, producer, self.selector_git("rev-parse", "HEAD"), path, manifest
 
-    def test_real_git_introduced_and_changed_legacy_keep_priority_over_multiple_nested_choices(self):
-        base = self.selector_repository(legacy=False)
-        legacy = self.selector_manifest(".github/performance/paired-jvm.json")
-        first = self.selector_manifest(".github/performance/first/manifest.json")
-        self.selector_manifest(".github/performance/second/manifest.json")
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), legacy)
-        self.assertEqual(PAIRED.select_manifest(self.root, first, base, head), first)
-        base = head
-        value = copy.deepcopy(self.manifest)
-        value["suites"][0]["name"] = "changed-complete-corpus"
-        self.selector_manifest(legacy, value)
-        self.selector_manifest(first, value)
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), legacy)
-        base = head
-        (self.root / legacy).unlink()
-        self.selector_manifest(first, self.manifest)
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), first)
+    def test_clean_commit_trailer_selects_the_complete_pinned_recipe_and_distinct_data_root(self):
+        base, producer, head, path, manifest = self.input_consumer(candidate_patch=True)
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), path)
+        self.assertFalse((self.root / ".github/performance").exists())
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer) as selection:
+            self.assertNotEqual(selection["root"], self.root)
+            self.assertEqual(PAIRED.load_manifest(selection["root"], selection["path"]), manifest)
+            self.assertEqual(selection["producer"], producer)
+            self.assertEqual(selection["path"].read_bytes(), subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"]))
+            self.assertEqual(selection["sha256"], PAIRED.digest(selection["path"]))
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
 
-    def test_real_git_identical_changed_nested_choices_are_ambiguous_and_manual_selection_resolves(self):
+    def test_no_declaration_skips_cleanup_but_explicit_input_never_uses_a_historical_default(self):
         base = self.selector_repository()
-        first = self.selector_manifest(".github/performance/first/manifest.json")
-        second = self.selector_manifest(".github/performance/second/manifest.json")
-        head = self.selector_commit()
-        with self.assertRaisesRegex(ValueError, "Ambiguous.*first/manifest.json.*second/manifest.json"):
-            PAIRED.select_manifest(self.root, base=base, head=head)
-        self.assertEqual(PAIRED.select_manifest(self.root, second, base, head), second)
-        self.assertEqual((self.root / first).read_bytes(), (self.root / second).read_bytes())
-
-    def test_real_git_deleted_and_renamed_nested_manifest_follow_no_rename_diff(self):
-        base = self.selector_repository(legacy=False)
-        old = self.selector_manifest(".github/performance/old/manifest.json")
-        base = self.selector_commit()
-        new = ".github/performance/new/manifest.json"
-        (self.root / new).parent.mkdir()
-        (self.root / old).rename(self.root / new)
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), new)
-        base = head
-        (self.root / new).unlink()
+        (self.root / "ordinary.txt").write_text("cleanup source", encoding="utf-8")
         head = self.selector_commit()
         self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
         self.assertEqual(PAIRED.select_manifest(self.root), "")
+        self.selector_manifest("gradle/performance/paired-jvm.example.json")
+        for explicit in ("", "gradle/performance/paired-jvm.example.json", ".github/performance/paired-jvm.json"):
+            with self.subTest(explicit=explicit), self.assertRaises(ValueError):
+                PAIRED.select_manifest(self.root, explicit)
 
-    def test_real_git_other_json_and_unchanged_or_flat_examples_do_not_become_candidates(self):
+    def test_tracked_payload_rejects_even_with_no_explicit_intent_or_trailer(self):
         self.selector_repository()
-        self.selector_manifest(".github/performance/pilot/manifest.json")
-        base = self.selector_commit()
-        self.selector_manifest(".github/performance/ordinary/receipt.json", {"schema": "independent-receipt-v1"})
-        self.selector_manifest(".github/performance/paired-jvm.example.json")
-        head = self.selector_commit()
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+        self.selector_manifest(".github/performance/old/manifest.json")
+        self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "Execution head contains"):
+            PAIRED.select_manifest(self.root)
 
-    def test_real_git_selection_rejects_invalid_schema_pins_json_and_unsafe_paths(self):
-        base = self.selector_repository()
-        path = self.selector_manifest(".github/performance/owned/manifest.json")
-        valid = json.dumps(self.manifest)
-        unsupported = copy.deepcopy(self.manifest)
-        unsupported["schema"] = "strata-paired-jvm-ci-v2"
-        malformed_schema = copy.deepcopy(self.manifest)
-        malformed_schema["schema"] = 17
-        wrong_schema = copy.deepcopy(self.manifest)
-        wrong_schema["schema"] = "unrelated-receipt-v1"
-        invalid_pin = copy.deepcopy(self.manifest)
-        invalid_pin["inputs"][0]["pin"]["sha256"] = "0" * 64
-        missing_schema = copy.deepcopy(self.manifest)
-        missing_schema.pop("schema")
-        incomplete = copy.deepcopy(self.manifest)
-        incomplete.pop("sources")
-        for content in ("{", '{"schema":"strata-paired-jvm-ci-v1","schema":"strata-paired-jvm-ci-v1"}',
-                        json.dumps(unsupported), json.dumps(malformed_schema), json.dumps(wrong_schema),
-                        json.dumps(dict(self.manifest, schema=None)), json.dumps(dict(self.manifest, schema=[])),
-                        json.dumps(invalid_pin), json.dumps(incomplete), json.dumps(missing_schema)):
-            with self.subTest(content=content):
-                (self.root / path).write_text(content, encoding="utf-8")
-                head = self.selector_commit()
-                with self.assertRaises(ValueError):
-                    PAIRED.select_manifest(self.root, base=base, head=head)
-        (self.root / path).write_text(valid, encoding="utf-8")
-        head = self.selector_commit()
-        for unsafe in ("../manifest.json", "/manifest.json", ".github/performance/owned/../owned/manifest.json"):
-            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
-                PAIRED.select_manifest(self.root, unsafe, base, head)
-        unsafe = self.selector_manifest(".github/performance/unsafe name/manifest.json")
-        head = self.selector_commit()
-        with self.assertRaisesRegex(ValueError, "Invalid repository path"):
-            PAIRED.select_manifest(self.root, base=base, head=head)
-        self.assertTrue((self.root / unsafe).is_file())
+    def test_missing_duplicate_nontrailer_or_malformed_declarations_do_not_select(self):
+        bad = ["Performance-Inputs", "Performance-Inputs: not-a-sha:{path}",
+               "performance-inputs: {producer}:{path}", "Performance-Inputs: {producer}:../manifest.json",
+               "Performance-Inputs: {producer}:.github/performance-other/manifest.json",
+               "Performance-Inputs: {producer}:{path}\nPerformance-Inputs: {producer}:{path}",
+               "Performance-Inputs: {producer}:{path}\n\nThis is ordinary final prose."]
+        for index, declaration in enumerate(bad):
+            with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(malformed=declaration)
+                    with self.assertRaises(ValueError):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
 
-    def test_real_git_selection_rejects_wrong_checkout_and_uncommitted_manifest(self):
-        base = self.selector_repository()
-        path = self.selector_manifest(".github/performance/owned/manifest.json")
-        head = self.selector_commit()
+    def test_wrong_producer_parent_and_multiple_head_parents_reject(self):
+        base, producer, head, path, _ = self.input_consumer(malformed="Performance-Inputs: {base}:{path}")
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+        tree = self.selector_git("rev-parse", head + "^{tree}")
+        message = f"Consume inputs\n\nPerformance-Inputs: {producer}:{path}\n"
+        merged = subprocess.check_output(["git", "-C", str(self.root), "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit-tree", tree, "-p", producer, "-p", base], input=message.encode()).decode().strip()
+        self.selector_git("checkout", "--quiet", "--detach", merged)
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+
+    def test_consumer_nondata_byte_path_and_mode_changes_reject(self):
+        _, _, _, _, _ = self.input_consumer()
+        (self.root / "source.txt").write_text("changed consumer source\n", encoding="utf-8")
+        self.selector_git("add", "source.txt")
+        self.selector_git("commit", "--quiet", "--amend", "--no-edit")
+        with self.assertRaisesRegex(ValueError, "nondata source or modes"):
+            PAIRED.select_manifest(self.root)
+
+    def test_patched_candidate_blob_path_and_mode_mismatch_rejects_current_head_credit(self):
+        for mismatch in ("blob", "path", "mode"):
+            with self.subTest(mismatch=mismatch), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(candidate_patch=True, mismatch=mismatch)
+                    with self.assertRaisesRegex(ValueError, "Candidate source differs"):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
+
+    def test_changed_planned_manifest_producer_or_explicit_path_reject_before_run(self):
+        _, producer, _, path, _ = self.input_consumer()
+        for arguments in ({"explicit":".github/performance/other/manifest.json"}, {"data_ref":"0" * 40},
+                          {"data_ref":""}, {"manifest_sha256":"0" * 64}, {"manifest_sha256":""}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                with PAIRED.selected_inputs(self.root, **arguments):
+                    self.fail("Invalid planning identity accepted")
+
+    def test_wrong_checkout_or_partial_pr_binding_rejects(self):
+        base, _, head, _, _ = self.input_consumer()
         with self.assertRaisesRegex(ValueError, "checkout differs"):
             PAIRED.select_manifest(self.root, base=base, head=base)
         with self.assertRaisesRegex(ValueError, "both PR"):
             PAIRED.select_manifest(self.root, base=base)
-        value = copy.deepcopy(self.manifest)
-        value["suites"][0]["name"] = "uncommitted"
-        self.selector_manifest(path, value)
-        with self.assertRaisesRegex(ValueError, "manifest differs"):
-            PAIRED.select_manifest(self.root, base=base, head=head)
-        self.selector_manifest(path)
-        self.input.write_text("changed pinned input", encoding="utf-8")
-        with self.assertRaises(ValueError):
-            PAIRED.select_manifest(self.root, base=base, head=head)
 
-    def test_real_git_base_branch_changes_are_not_current_pull_request_intent(self):
-        common = self.selector_repository()
-        (self.root / "own-source.txt").write_text("own source change", encoding="utf-8")
-        head = self.selector_commit()
-        self.selector_git("checkout", "--quiet", "--detach", common)
-        value = copy.deepcopy(self.manifest)
-        value["suites"][0]["name"] = "base-branch-corpus"
-        self.selector_manifest(".github/performance/paired-jvm.json", value)
-        base = self.selector_commit()
-        self.selector_git("checkout", "--quiet", "--detach", head)
-        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+    def test_same_source_empty_commit_cannot_move_head_during_input_materialization(self):
+        _, _, head, _, _ = self.input_consumer(candidate_patch=True)
+        materialize = PAIRED.materialize
+        def move_head(*arguments, **keywords):
+            result = materialize(*arguments, **keywords)
+            if arguments[2] == "input-producer":
+                self.selector_commit("Move head without changing source")
+            return result
+        with patch.object(PAIRED, "materialize", side_effect=move_head), self.assertRaisesRegex(ValueError, "head changed during materialization"):
+            PAIRED.select_manifest(self.root)
+        self.assertNotEqual(self.selector_git("rev-parse", "HEAD"), head)
 
-    def test_real_git_cli_emits_exact_owned_path_and_preserves_workflow_head_binding(self):
-        base = self.selector_repository()
-        path = self.selector_manifest(".github/performance/owned/manifest.json")
-        head = self.selector_commit()
+    def test_invalid_producer_schema_and_patched_input_pins_reject(self):
+        bad = copy.deepcopy(self.manifest)
+        bad["schema"] = "strata-paired-jvm-ci-v2"
+        self.input_consumer(value=bad)
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            PAIRED.select_manifest(self.root)
+
+    def test_cli_emits_exact_head_producer_and_manifest_hash_without_a_mutable_body(self):
+        base, producer, head, path, _ = self.input_consumer(candidate_patch=True)
+        expected_sha = hashlib.sha256(subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"])).hexdigest()
         output = self.root / "github-output"
         console = io.StringIO()
-        arguments = ["paired-jvm.py", "--select", "--base", base, "--head", head]
         with patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
-                patch.object(PAIRED.sys, "argv", arguments), patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}), \
-                redirect_stdout(console):
+                patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--select", "--base", base, "--head", head]), \
+                patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}), redirect_stdout(console):
             PAIRED.main()
         self.assertEqual(console.getvalue(), path + "\n")
-        self.assertEqual(output.read_text(encoding="utf-8"), "paired_manifest=" + path + "\n")
-        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
-        planning, execution = workflow.split("  paired-jvm:", 1)
-        head_ref = "ref: ${{ github.event.pull_request.head.sha || github.sha }}"
-        self.assertIn(head_ref, planning)
-        self.assertIn(head_ref, execution)
-        self.assertIn('args+=(--base "$BASE" --head "$HEAD")', planning)
-        self.assertIn('args+=(--manifest "$MANIFEST")', planning)
-        self.assertNotIn('MANIFEST:-', planning)
+        self.assertEqual(output.read_text(), f"paired_manifest={path}\npaired_data_ref={producer}\npaired_manifest_sha256={expected_sha}\n")
 
-    def test_explicit_empty_cli_path_never_falls_back_or_invokes_collector(self):
+    def test_execution_head_and_explicit_empty_flags_refuse_before_collector(self):
         self.selector_repository()
-        for selection in (False, True):
-            arguments = ["paired-jvm.py", "--manifest", ""]
-            arguments += ["--select"] if selection else ["--output", str(self.root / "fresh-attempt")]
-            with self.subTest(selection=selection), \
-                    patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
-                    patch.object(PAIRED.sys, "argv", arguments), patch.object(PAIRED, "run") as collector:
+        for flags in (["--manifest", ""], ["--expected-head", "0" * 40], ["--data-ref", ""], ["--manifest-sha256", ""]):
+            with self.subTest(flags=flags), patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                    patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--output", str(self.root / "fresh-attempt"), *flags]), \
+                    patch.object(PAIRED, "run") as collector:
                 with self.assertRaises(ValueError):
                     PAIRED.main()
                 collector.assert_not_called()
                 self.assertFalse((self.root / "fresh-attempt").exists())
+
+    def test_actual_driver_copy_binds_git_blobs_and_raw_crlf_bytes_then_rejects_mutation(self):
+        self.selector_repository()
+        (self.root / ".gitattributes").write_text("*.py text eol=lf\n", encoding="utf-8")
+        for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+            path = self.root / "gradle/performance" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"original driver source\r\n")
+        self.selector_commit()
+        records = PAIRED.preserve_driver_sources(self.root, self.root / "retained")
+        PAIRED.verify_driver_sources(records)
+        self.assertEqual(set(records), {"paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"})
+        for item in records.values():
+            self.assertEqual(Path(item["path"]).read_bytes(), Path(item["source"]).read_bytes())
+            self.assertEqual(item["execution_head"], self.selector_git("rev-parse", "HEAD"))
+        Path(records["paired-jvm.py"]["source"]).write_bytes(b"different driver source\r\n")
+        with self.assertRaisesRegex(ValueError, "Driver bytes differ"):
+            PAIRED.verify_driver_sources(records)
 
     def test_generated_selection_without_fixture_registry(self):
         self.assertEqual(self.load(self.manifest), self.manifest)
@@ -427,7 +440,7 @@ class PairedJvmTest(unittest.TestCase):
                         PAIRED.verify_test_gate(directory, gate)
                     self.assertFalse((directory / "junit-verified.json").exists())
 
-    def preflight_fixture(self, name):
+    def preflight_fixture(self, name, input_root=None, qualification=None):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
         output = self.root / name
         output.mkdir()
@@ -442,11 +455,11 @@ class PairedJvmTest(unittest.TestCase):
         item = {"source": str(original), **PAIRED.preserve_file(original, retained / "classpath-0.jar")}
         PAIRED.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [item]})
         suite = copy.deepcopy(self.manifest["suites"][0])
-        suite["preflight"] = {"main": names[0], "qualification": self.pin,
+        suite["preflight"] = {"main": names[0], "qualification": self.pin if qualification is None else qualification,
                               "runtime_classes": {project: names[1] for project in runtime},
                               "controls": [{"id": "independent-a", "arguments": []}, {"id": "independent-b", "arguments": []}]}
         inputs = {"input": PAIRED.preserve_file(self.input, output / "inputs" / "input.bin")}
-        directory = PAIRED.preflight_request(self.root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
+        directory = PAIRED.preflight_request(self.root if input_root is None else input_root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
         request = PAIRED.read_json(directory / "request.json")
         controls = []
         for control in suite["preflight"]["controls"]:
@@ -467,6 +480,18 @@ class PairedJvmTest(unittest.TestCase):
                                         "affinityMask": 15, "systemAffinityMask": 15, "image": str(output / "jdk/bin/java.exe"),
                                         "creationFileTime": 116444736010000000}}}
         return directory, phase, terminal, receipt
+
+    def test_qualified_preflight_reads_exact_distinct_data_root_bytes(self):
+        data_root = self.root / "distinct-producer-inputs"
+        data_root.mkdir()
+        qualification = data_root / "fixture.txt"
+        qualification.write_bytes(b"independently qualified producer bytes")
+        pin = {"path":"fixture.txt", "sha256":PAIRED.digest(qualification)}
+        directory, _, _, _ = self.preflight_fixture("distinct-data-preflight", data_root, pin)
+        self.assertEqual((directory / "qualification.json").read_bytes(), qualification.read_bytes())
+        self.assertNotEqual(qualification.read_bytes(), self.input.read_bytes())
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.preflight_fixture("wrong-root-preflight", self.root, pin)
 
     def test_complete_preflight_rejects_missing_failed_changed_or_wrong_origin_controls(self):
         def replace_request(directory, phase, terminal, receipt):
