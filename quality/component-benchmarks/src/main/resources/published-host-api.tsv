@@ -4618,8 +4618,10 @@
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract fun collect (Ldev/s7a/strata/performance/PerformancePlan;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract fun getRows ()Ljava/util/List;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract interface class dev/s7a/strata/performance/JvmOperationReportAdapter {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public fun collectVerified (Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public fun getInputs ()Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public final class dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public static fun collectVerified (Ldev/s7a/strata/performance/JvmOperationReportAdapter;Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public static fun getInputs (Ldev/s7a/strata/performance/JvmOperationReportAdapter;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final class dev/s7a/strata/performance/JvmOperationReportRow {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component1 ()Ljava/lang/String;

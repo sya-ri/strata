@@ -537,7 +537,7 @@ def verify_test_gate(directory, gate):
         require(suite.tag == "testsuite", "Invalid independent JUnit report root")
         actual = {name: 0 for name in counts}
         for case in suite.findall("testcase"):
-            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("()")
+            identity = case.get("classname", "") + "#" + case.get("name", "").removesuffix("[jvm]").removesuffix("()")
             actual["tests"] += 1
             for name, tag in (("failures", "failure"), ("errors", "error"), ("skipped", "skipped")):
                 actual[name] += int(case.find(tag) is not None)
