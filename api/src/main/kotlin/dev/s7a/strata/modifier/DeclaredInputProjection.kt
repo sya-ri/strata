@@ -12,6 +12,7 @@ import dev.s7a.strata.projection.DeclarationProjection
 import dev.s7a.strata.projection.ProjectionAction
 import dev.s7a.strata.projection.ProjectionInputCodec
 import dev.s7a.strata.projection.ProjectionValue
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiSession
 
 /**
@@ -131,5 +132,6 @@ internal object DeclaredInputProjection {
 
     private fun result(value: InputResult): ProjectionValue = ProjectionValue.Integer(value.ordinal.toLong())
 
-    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence(if (values.size <= 1) values.toList() else values.asList())
+    @OptIn(InternalStrataRuntimeApi::class)
+    private fun fields(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence.fromArray(values)
 }

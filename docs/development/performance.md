@@ -694,9 +694,9 @@ The retained remote corpus measures this path separately for idle projection, on
 
 ### Projection field snapshots
 
-Positional built-in properties, declared input policies/endpoints, standard input encoders and remote profile property records pass a transient array view directly to the defensive `ProjectionValue.Sequence` constructor when they contain multiple fields.
-The constructor still snapshots membership synchronously; only its detached result can be captured by a declaration encoder.
-Empty and singleton varargs retain their original specialized-list path.
+Positional built-in properties, declared input policies/endpoints, standard input encoders and remote profile property records use the internal array snapshot entry of `ProjectionValue.Sequence`.
+The entry copies array membership directly into one owned snapshot; only its detached result can be captured by a declaration encoder.
+Empty and singleton array snapshots retain the standard specialized list forms.
 Caller mutation, duplicate references, nested values, schemas and endpoint ownership obey the unchanged [declaration projection](../reference/declaration-projection.md) contract.
 
 The supplemental `ProjectionFieldSnapshotBenchmark` uses the existing remote collector with `:quality:remote-benchmarks:jmhRemote -Pstrata.performance.benchmarks=ProjectionFieldSnapshotBenchmark -Pstrata.performance.suite=projection-field-snapshots`.
@@ -708,7 +708,17 @@ The empty menu-background and singleton loading-record controls remain even when
 
 Only redundant intermediate membership materialization is removed; vararg/spread arrays, property values, the final defensive snapshot and complete encoding remain.
 Review all small-case, pointer, direct-sequence and retained-owner controls alongside average/sample time and normalized allocation from separate standard B3/C3 suites.
-Array-view overhead and escape analysis determine the net result, so source operation counts are not measured allocation or application speedups.
+Source operation counts are not measured allocation or application speedups.
+
+### Remote editable membership
+
+`RemoteClientStates` owns an ordered list of its current editable entries under the same execution owner as the authoritative entry map.
+Each list item is the existing entry record, keyed by its remote identity and trusted state type; distinct keys sharing one value retain distinct callbacks.
+Admission adds an editable record once, retirement removes obsolete membership before release callbacks, and terminal close clears membership before releasing values.
+The list is bounded by current admitted entries and the negotiated collection limit; it caches capability membership, never authoritative values or edit results.
+If retirement throws, membership is rebuilt from the remaining authoritative entries in their original admission order before the same primary failure is rethrown.
+Every current editable value is still polled, and recursive polling, owner isolation, irreversible terminal close and callback failure semantics remain unchanged.
+Untimed independent collection controls verify ordered visits and release; timed fixtures use ordinary collections and retain every churn case.
 
 ### Remote topology allocation
 
@@ -756,6 +766,29 @@ A deterministic uncached-font test requires exactly one glyph lookup per scalar 
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
 
+### Logical multiline insertion lookup
+
+Each detached TextArea line owns one admission flag computed from its immutable rounded caret positions.
+Only a nondecreasing coordinate sequence admits logarithmic lower-bound lookup; raw glyph advances, visual ordering and font capabilities do not establish admission.
+The insertion winner uses exact Long distance and the earliest original logical scalar boundary for coordinate plateaus and equal-distance ties.
+Non-monotone signed, overflow-wrapped or non-finite-derived coordinates retain the complete ordered scan.
+No input lookup allocates an array, calls a font backend or retains a coordinate/result history.
+The flag is released with its current line when layout changes; editor detach clears the layout and terminal disposal clears borrowed inputs.
+
+A normal primary press reuses its already resolved boundary through the same placement and soft-wrap-affinity operation used by vertical navigation.
+Composition mapping still uses the composed layout before cancellation and preserves the committed scalar insertion offset.
+Independent runtime tests compare the search with complete ordered scans, actual release-selected rounded Float prefixes and exact headless cursor/glyph images.
+Existing editor navigation, viewport, composition and replacement tests remain required controls for preferred columns, hard breaks, soft wraps, pan, scroll and ownership.
+
+The separate `TextAreaInputBenchmark` corpus keeps actual public input cycles apart from isolated lookup, complete initial host/layout ownership and clean frames.
+The cycle includes its public opportunity restoration and frame settlement in both measured JMH elapsed time and normalized allocation; composed cycles include layout replacement and do not claim isolated event latency.
+Its bounded coordinate-read diagnostic executes the same inlined search outside measurement; ordinary input carries no counter or callback.
+At B boundaries, admitted lookup reads at most `2 * bitLength(B) + 2` coordinates; fallback reads exactly B.
+The constructor's admission scan remains part of the separately measured initial-layout cost.
+JMH elapsed-time and normalized-allocation comparisons require the complete frozen corpus and independent Standard repetitions described in [the testkit contract](performance-testkit.md); structural bounds alone establish no measured speedup.
+The optional shared operation-report adapter measures all 60 original boundaries with owner-thread CPU and allocation counters separately from JMH elapsed time; unavailable counters remain explicit.
+This corpus measures neither native input latency, uploads nor GPU time.
+
 ## Interpreting measurements
 
 `OverlayRenderingBenchmark` separates retained command generation from full headless source-over composition with one changing opaque lower layer and 1, 16, or 64 immutable translucent foregrounds.
@@ -765,7 +798,7 @@ These are different costs, and the headless timings are not native GPU frame-rat
 The eligible nonuniform full-area fill run performs at most 65,536 rounded channel-state blends per layer plus one mapping per physical pixel; other nonuniform alpha composition still scales with its covered area and layers.
 Do not recommend dense full-area translucent stacks for frequent updates without measuring their intended physical resolution and composition path.
 
-`:quality:benchmarks:verifyOverlayRenderingWork` uses the same fixture for deterministic retention and pixel checks.
+`:quality:benchmarks:verifyHistoricalWorkloads` invokes the Overlay fixture's shared work hook for deterministic retention and pixel checks.
 Each layer count runs 10,000 changes, requires exactly one lower paint and Observe evaluation per update, no measure/layout or node creation/disposal, one active source subscription, bounded node/display-list counts, and no subscription after close.
 Every verification image is compared pixel-for-pixel with an independently calculated source-over color.
 For a longer local soak, invoke `OverlayWorkEvidence` from the JMH jar with explicit update count, raster frame count, and viewport width; it keeps the same assertions and never accumulates frame history.

@@ -76,17 +76,21 @@ class PairedJvmTest(unittest.TestCase):
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
         return self.selector_commit()
 
-    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None):
+    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None):
         """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
         base = self.selector_repository()
         source = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}"), "patches": []}
+        for relative, contents in (payload or {}).items():
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(contents)
         if candidate_patch:
             (self.root / "source.txt").write_text("candidate source\n", encoding="utf-8")
             self.selector_git("add", "source.txt")
             source["tree"] = self.selector_git("write-tree")
             raw = subprocess.check_output(["git", "-C", str(self.root), "diff", "--cached", "--binary", "--full-index", base, "--", "source.txt"])
             path = self.root / ".github/performance/owned/candidate.patch"
-            path.parent.mkdir(parents=True)
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(raw)
             source["patches"] = [{"path": path.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(path)}]
         manifest = copy.deepcopy(self.manifest if value is None else value)
@@ -116,6 +120,30 @@ class PairedJvmTest(unittest.TestCase):
             self.assertEqual(selection["producer"], producer)
             self.assertEqual(selection["path"].read_bytes(), subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"]))
             self.assertEqual(selection["sha256"], PAIRED.digest(selection["path"]))
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_complete_owner_reports_read_only_the_deleted_producer_input_bytes(self):
+        relative = ".github/performance/owned/owner-input.json"
+        contents = b'{"complete-owner-input":"immutable"}\n'
+        value = copy.deepcopy(self.manifest)
+        value["owner_reports"] = [self.owner_specification()]
+        value["inputs"] = [{"label": "owner-input", "pin": {"path": relative, "sha256": hashlib.sha256(contents).hexdigest()}}]
+        _, producer, head, path, manifest = self.input_consumer(value=value, payload={relative: contents})
+        self.assertFalse((self.root / relative).exists())
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selection:
+            selected = PAIRED.load_manifest(selection["root"], selection["path"])
+            self.assertEqual(selected, manifest)
+            whole, scope = PAIRED.continuation_scope(selected, None)
+            self.assertEqual(whole["owner_reports"], value["owner_reports"])
+            self.assertEqual(scope["kind"], "whole-manifest")
+            pinned = PAIRED.pin(selection["root"], selected["inputs"][0]["pin"])
+            self.assertEqual(pinned.read_bytes(), contents)
+            with self.assertRaises(ValueError):
+                PAIRED.load_manifest(self.root, selection["path"])
+            pinned.write_bytes(b"substituted producer input\n")
+            with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+                PAIRED.load_manifest(selection["root"], selection["path"])
         self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
         self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
 
@@ -286,6 +314,169 @@ class PairedJvmTest(unittest.TestCase):
             changed["suites"][0]["profilers"] = profilers
             with self.subTest(profilers=profilers), self.assertRaises(ValueError):
                 self.load(changed)
+
+    def owner_specification(self):
+        return {"name": "independent-owner", "project": ":runtime:headless", "template": "test", "kind": "test",
+                "main": "independent.OwnerEvidence", "comparison": "independent.OwnerComparison", "workload_id": "independent-owner-v1",
+                "phase_keys": ["workload"], "rows": [{"workload": "all"}, {"workload": "control"}], "warmup": 100, "samples": 200,
+                "runtime_classes": {"headless": {"project": ":runtime:headless", "class": "independent.Runtime"}}}
+
+    def test_owner_reports_are_independent_of_jmh_rows_and_reject_incomplete_bindings(self):
+        value = copy.deepcopy(self.manifest)
+        value["runtime_projects"] += [":velocity-api", ":runtime:velocity"]
+        value["owner_reports"] = [self.owner_specification()]
+        self.assertEqual(self.load(value), value)
+        changes = [lambda report: report.update(kind="shell"), lambda report: report.update(template="test --tests subset"),
+                   lambda report: report.update(main="bad;Main"), lambda report: report.update(rows=[]),
+                   lambda report: report["rows"].append(report["rows"][0]), lambda report: report.update(samples=True),
+                   lambda report: report.update(phase_keys=[]), lambda report: report.update(project=":runtime:unknown"),
+                   lambda report: report["runtime_classes"]["headless"].update(project=":unknown"),
+                   lambda report: report.update(command="arbitrary")]
+        for change in changes:
+            changed = copy.deepcopy(value)
+            change(changed["owner_reports"][0])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(changed)
+
+    def test_owner_raw_rejects_substitution_reused_uuid_partial_rows_and_changed_profile(self):
+        archive = self.root / "actual.jar"
+        binary = b"actual compiled representative"
+        with zipfile.ZipFile(archive, "w") as target:
+            target.writestr("independent/Runtime.class", binary)
+        runtime = {":runtime:headless": {"path": str(archive), "sha256": PAIRED.digest(archive)}}
+        specification = self.owner_specification()
+        identity = "12345678-1234-1234-1234-123456789abc"
+        report = {"schema_version": 1, "status": "passed", "workload_id": "independent-owner-v1", "repetition": 0, "run_id": identity,
+                  "phases": [{"workload": row["workload"], "warmup": 100, "samples": 200} for row in specification["rows"]],
+                  "runtime_metadata": {"modules": [{"module": "headless", "status": "resolved", "representativeClass": "independent.Runtime",
+                                                    "codeSource": {"status": "available", "sha256": PAIRED.digest(archive)},
+                                                    "classResource": {"status": "available", "sha256": hashlib.sha256(binary).hexdigest()},
+                                                    "classTree": {"status": "available"}}]}}
+        seen = set()
+        PAIRED.verify_owner_report(report, specification, 0, runtime, seen)
+        self.assertEqual(seen, {identity})
+        with self.assertRaises(ValueError):
+            PAIRED.verify_owner_report(report, specification, 0, runtime, seen)
+        changes = [lambda value: value["phases"].pop(), lambda value: value["phases"][0].update(samples=199),
+                   lambda value: value["phases"][0].update(workload="substituted"), lambda value: value.update(repetition=1),
+                   lambda value: value["runtime_metadata"]["modules"][0]["codeSource"].update(sha256="0" * 64),
+                   lambda value: value["runtime_metadata"]["modules"][0]["classResource"].update(sha256="0" * 64)]
+        for change in changes:
+            changed = copy.deepcopy(report)
+            change(changed)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                PAIRED.verify_owner_report(changed, specification, 0, runtime, set())
+
+    def test_owner_processing_uses_selected_copy_and_rejects_changed_or_shadowed_collectors(self):
+        original = self.root / "original-collector.jar"
+        retained = self.root / "prepared/classpath-4.jar"
+        retained.parent.mkdir()
+        resource = "dev/s7a/strata/performance/JvmPerformanceMeter.class"
+        with zipfile.ZipFile(original, "w") as archive:
+            archive.writestr(resource, b"original collector")
+        retained.write_bytes(original.read_bytes())
+        inventory = retained.parent / "classpath.json"
+        entry = {"source": str(original), "path": str(retained), "sha256": PAIRED.digest(original)}
+        inventory.write_text(json.dumps({"schema": "strata-paired-jvm-classpath-v1", "entries": [entry]}), encoding="utf-8")
+        self.assertEqual(PAIRED.owner_processing_collector(inventory, original), str(retained))
+        self.assertNotEqual(str(original), str(retained))
+        other = self.root / "substituted.jar"
+        with zipfile.ZipFile(other, "w") as archive:
+            archive.writestr(resource, b"substituted collector")
+        with self.assertRaises(ValueError):
+            PAIRED.owner_processing_collector(inventory, other)
+        shadow = retained.parent / "classpath-5.jar"
+        shadow.write_bytes(other.read_bytes())
+        entries = [entry, {"source": str(other), "path": str(shadow), "sha256": PAIRED.digest(other)}]
+        inventory.write_text(json.dumps({"schema": "strata-paired-jvm-classpath-v1", "entries": entries}), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            PAIRED.owner_processing_collector(inventory, original)
+        inventory.write_text(json.dumps({"schema": "strata-paired-jvm-classpath-v1", "entries": [entry]}), encoding="utf-8")
+        retained.write_bytes(other.read_bytes())
+        with self.assertRaises(ValueError):
+            PAIRED.owner_processing_collector(inventory, original)
+
+    def test_automatic_complete_continuation_requires_exact_original_runtime_and_collector(self):
+        value = copy.deepcopy(self.manifest)
+        value["owner_reports"] = [self.owner_specification()]
+        jar = self.root / "original.jar"
+        jar.write_bytes(b"original compiled archive")
+        sha = PAIRED.digest(jar)
+        value["owner_continuation"] = {"name": "independent-owner", "runtime_sha256": {
+            side: {project: sha for project in value["runtime_projects"]} for side in ("baseline", "candidate")}, "collector_sha256": sha}
+        self.assertEqual(self.load(value), value)
+        selected, scope = PAIRED.continuation_scope(value, None)
+        self.assertEqual(selected["owner_reports"], value["owner_reports"])
+        self.assertEqual(scope["complete_rows"], 2)
+        self.assertFalse(scope["whole_issue_acceptance"])
+        self.assertFalse(scope["prior_rows_adopted"])
+        runtime = {side: {project: {"path": str(jar)} for project in value["runtime_projects"]} for side in ("baseline", "candidate")}
+        PAIRED.verify_continuation_archives(selected, runtime, jar)
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(value, "another-owner")
+        changed = self.root / "substituted.jar"
+        changed.write_bytes(b"substituted compiled archive")
+        for side in ("baseline", "candidate"):
+            redirected = copy.deepcopy(runtime)
+            redirected[side][value["runtime_projects"][0]]["path"] = str(changed)
+            with self.subTest(side=side), self.assertRaises(ValueError):
+                PAIRED.verify_continuation_archives(selected, redirected, jar)
+        with self.assertRaises(ValueError):
+            PAIRED.verify_continuation_archives(selected, runtime, changed)
+        changes = [lambda option: option.update(name="independent-owner:row-1"),
+                   lambda option: option.update(rows=["control"]),
+                   lambda option: option["runtime_sha256"].pop("baseline"),
+                   lambda option: option["runtime_sha256"]["candidate"].pop(value["runtime_projects"][0]),
+                   lambda option: option.update(collector_sha256="missing")]
+        for change in changes:
+            negative = copy.deepcopy(value)
+            change(negative["owner_continuation"])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.load(negative)
+
+    def test_complete_owner_continuation_keeps_all_rows_source_pins_and_outer_inventory(self):
+        value = copy.deepcopy(self.manifest)
+        report = self.owner_specification()
+        report["name"] = "complete-owner"
+        report["rows"] = [{"workload": str(index)} for index in range(8)]
+        value["owner_reports"] = [report]
+        full, full_scope = PAIRED.continuation_scope(value, None)
+        self.assertIs(full, value)
+        self.assertEqual(full_scope["kind"], "whole-manifest")
+        selected, scope = PAIRED.continuation_scope(value, "complete-owner")
+        self.assertEqual(selected["owner_reports"], [report])
+        self.assertEqual(selected["suites"], [])
+        for key in ("sources", "runtime_projects", "inputs", "compiled_pins", "dependency_pins", "java_pins"):
+            self.assertEqual(selected[key], value[key])
+        self.assertEqual(scope["complete_rows"], 8)
+        self.assertFalse(scope["prior_rows_adopted"])
+        self.assertFalse(scope["whole_issue_acceptance"])
+        self.assertEqual(scope["original_jmh_suites"], [{"name": value["suites"][0]["name"], "complete_rows": 2}])
+        self.assertEqual(len(value["suites"]), 1)
+        for name in ("missing", "complete-owner:row-1", "complete"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                PAIRED.continuation_scope(value, name)
+        duplicate = copy.deepcopy(value)
+        duplicate["owner_reports"].append(report)
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(duplicate, "complete-owner")
+        paired = copy.deepcopy(value)
+        paired["owner_reports"][0]["paired_jmh"] = {"suite": value["suites"][0]["name"], "fixture_class": "example.Fixture"}
+        with self.assertRaises(ValueError):
+            PAIRED.continuation_scope(paired, "complete-owner")
+
+    def test_owner_table_keeps_cycle_units_nulls_and_adverse_deltas(self):
+        specification = self.owner_specification()
+        comparison = {"phases": [{"workload": "all", "before": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 4.0},
+                                  "after": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 7.0},
+                                  "delta": {"owner_cpu_ns_per_cycle": None, "owner_allocated_bytes_per_cycle": 3.0}}]}
+        PAIRED.table(self.root, [], [], owners=[(specification, comparison)])
+        with (self.root / "table.csv").open(encoding="utf-8", newline="") as source:
+            rows = list(csv.DictReader(source))
+        self.assertEqual(rows[0]["unit"], "ns/cycle")
+        self.assertEqual(rows[0]["baseline"], "")
+        self.assertEqual(rows[1]["unit"], "B/cycle")
+        self.assertEqual(rows[1]["delta"], "3.0")
 
     def test_operation_connection_is_optional_and_rejects_partial_or_stale_registration(self):
         value = copy.deepcopy(self.manifest)
@@ -952,7 +1143,8 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(mode=mode):
                 directory = self.root / ("independent-expansion-" + mode)
                 (directory / "class-loads").mkdir(parents=True)
-                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-44.log"
+                # Keep the legacy unique-file path distinct from an exact header-start match.
+                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-43.log"
                 diagnostic.write_text("[3708][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
                 flag = "../../../../class-loads/classes-%p-%t.log"
                 if mode == "wrong-flag":
@@ -1004,7 +1196,8 @@ class PairedJvmTest(unittest.TestCase):
                 executable.write_bytes(b"frozen executable")
                 allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
                 origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
-                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                # This control still exercises the sole-Java fallback, not header-start selection.
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-23.log"
                 diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
                 flag = "../../class-loads/classes-%p-%t.log"
                 args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
@@ -1049,6 +1242,68 @@ class PairedJvmTest(unittest.TestCase):
                 else:
                     with self.assertRaises(ValueError):
                         PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_header_start_binds_two_java_generations_without_borrowing_ambiguous_files(self):
+        for mode in ("complete", "wrong-generation", "wrong-source", "changed-pin", "old-file", "missing-flag",
+                     "ambiguous-stamps", "duplicate-origin", "unclosed-helper"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("header-generation-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                starts = (1791917369287, 1791918056998)
+                stamps = [PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.localtime(start // 1000)) for start in starts]
+                late_stamp = PAIRED.time.strftime("%Y-%m-%d_%H-%M-%S", PAIRED.time.localtime(starts[1] // 1000 + 1))
+                files = [directory / f"vm-pid5804-{stamp}.log" for stamp in (stamps[0], late_stamp)]
+                flag = "../../class-loads/classes-%p-%t.log"
+                for index, (vm, start) in enumerate(zip(files, starts)):
+                    args = "" if mode == "missing-flag" and index == 1 else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                    vm.write_text(f"<hotspot_log process='5804' time_ms='{start}'>\n<vm_arguments><args>{args}</args>\n"
+                                  f"<command>org.openjdk.jmh.runner.ForkedMain {index}</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                                  "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                  "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                origin = "[5804][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostics, pins = [], []
+                for index, stamp in enumerate(stamps):
+                    diagnostic = directory / f"class-loads/classes-5804-{stamp}.log"
+                    diagnostic.write_text(origin * (2 if mode == "duplicate-origin" and index == 1 else 1), encoding="utf-8")
+                    diagnostics.append(diagnostic)
+                    source = directory / "other-owner" / diagnostic.name if mode == "wrong-source" and index == 1 else diagnostic
+                    pins.append({"path": str(diagnostic), "source": str(source), "sha256": PAIRED.digest(diagnostic)})
+                if mode == "ambiguous-stamps":
+                    diagnostic = directory / f"class-loads/classes-5804-{late_stamp}.log"
+                    diagnostic.write_text(origin, encoding="utf-8")
+                    pins.append({"path": str(diagnostic), "source": str(diagnostic), "sha256": PAIRED.digest(diagnostic)})
+                elif mode == "changed-pin":
+                    pins[1]["sha256"] = "0" * 64
+                previous = {diagnostics[1].name: pins[1]["sha256"]} if mode == "old-file" else {}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostics[0].parent), "previous": previous, "copied": pins})
+                shared = {"pid": 5804, "image": str(executable), "inOwnedJob": True, "completed": True,
+                          "handleClosed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                early = {**shared, "creationFileTime": 134363909692619104, "exitFileTime": 134363909785816017}
+                helper = {**shared, "image": str(directory / "conhost.exe"), "creationFileTime": 134363913039074374,
+                          "exitFileTime": 134363913132529824}
+                late = {**shared, "creationFileTime": 134363916569731556, "exitFileTime": 134363916666050451}
+                if mode == "wrong-generation":
+                    late["creationFileTime"] += 10000000
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                terminal = {"members": {"5804": [early, helper, late]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                (directory / "console.log").write_text("", encoding="utf-8")
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    rows = PAIRED.read_json(directory / "vms.json")
+                    self.assertEqual([row["os_generation"] for row in rows], [early, late])
+                    self.assertEqual([row["class_load_diagnostic"]["path"] for row in rows], list(map(str, diagnostics)))
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["unique_generation"], late)
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 2)
                     self.assertFalse((directory / "vms.json").exists())
 
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):

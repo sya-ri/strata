@@ -22,7 +22,7 @@ class ProjectionValueSnapshotTest {
         val nestedInput = mutableListOf<ProjectionValue>(ProjectionValue.Integer(7))
         val nested = ProjectionValue.Sequence(nestedInput)
         val input = mutableListOf<ProjectionValue>(shared, nested, shared)
-        val old = ProjectionValue.Sequence(input)
+        val old = ProjectionValue.Sequence(values = input)
         val hash = old.hashCode()
         input[0] = ProjectionValue.Absent
         input.removeAt(1)

@@ -1,5 +1,7 @@
 package dev.s7a.strata.projection
 
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
+
 /**
  * Detached immutable data admitted at a declaration projection boundary.
  * Values contain no state sources, handlers, platform objects, or executable code.
@@ -69,13 +71,40 @@ public sealed interface ProjectionValue {
     /**
      * An ordered defensive snapshot of schema fields or homogeneous collection entries.
      */
-    public class Sequence(
-        values: List<ProjectionValue>,
-    ) : ProjectionValue {
-        public val values: List<ProjectionValue> = values.toList()
+    public class Sequence : ProjectionValue {
+        /**
+         * Read-only membership owned by this snapshot; element references remain shared.
+         */
+        public val values: List<ProjectionValue>
+
+        /**
+         * Detaches ordered membership from the caller's list.
+         */
+        public constructor(values: List<ProjectionValue>) {
+            this.values = values.toList()
+        }
+
+        /**
+         * Detaches ordered membership from the caller's array in one snapshot.
+         */
+        private constructor(values: Array<out ProjectionValue>) {
+            this.values = values.toList()
+        }
 
         override fun equals(other: Any?): Boolean = other is Sequence && values == other.values
 
         override fun hashCode(): Int = values.hashCode()
+
+        /**
+         * Snapshot construction shared by declaration and runtime field factories.
+         */
+        public companion object {
+            /**
+             * Detaches array membership in one snapshot while preserving ordered element references.
+             * Later caller-array changes cannot alter the returned sequence.
+             */
+            @InternalStrataRuntimeApi
+            public fun fromArray(values: Array<out ProjectionValue>): Sequence = Sequence(values)
+        }
     }
 }

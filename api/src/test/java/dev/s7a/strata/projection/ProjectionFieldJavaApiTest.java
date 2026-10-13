@@ -2,16 +2,26 @@ package dev.s7a.strata.projection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import dev.s7a.strata.render.DrawImage;
 import dev.s7a.strata.text.UiText;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
  * Passes the caller's actual Java array to the public vararg API without a Kotlin spread copy.
  */
 final class ProjectionFieldJavaApiTest {
+    @Test
+    void listConstructorPreservesUntypedNullResolutionAndRejectsNullContainers() {
+        assertThrows(NullPointerException.class,
+                () -> new ProjectionValue.Sequence(null));
+        assertThrows(NullPointerException.class,
+                () -> new ProjectionValue.Sequence((List<ProjectionValue>) null));
+    }
+
     @Test
     void snapshotsDirectVarargArraysBeforeReturningTheDeclaration() {
         ProjectionScope scope = new Scope();

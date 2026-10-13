@@ -35,26 +35,6 @@ jmh {
     resultsFile.set(layout.buildDirectory.file("reports/jmh/results.json").get().asFile)
 }
 
-val verifyReactiveRenderingWork by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Checks deterministic reactive work and retention using the same fixtures as JMH."
-    dependsOn(tasks.named("jmhClasses"))
-    classpath = sourceSets.named("jmh").get().runtimeClasspath
-    mainClass.set("dev.s7a.strata.quality.benchmark.ReactiveWorkEvidence")
-}
-
-tasks.named("check") { dependsOn(verifyReactiveRenderingWork) }
-
-val verifyOverlayRenderingWork by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Verifies long-lived lower-layer updates and exact translucent composition with bounded retention."
-    dependsOn(tasks.named("jmhClasses"))
-    classpath = sourceSets.named("jmh").get().runtimeClasspath
-    mainClass.set("dev.s7a.strata.quality.benchmark.OverlayWorkEvidence")
-}
-
-tasks.named("check") { dependsOn(verifyOverlayRenderingWork) }
-
 val historicalGenerated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
 val historicalGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
 val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir })

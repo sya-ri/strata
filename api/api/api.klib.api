@@ -1278,6 +1278,10 @@ sealed interface dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.p
 
         final fun equals(kotlin/Any?): kotlin/Boolean // dev.s7a.strata.projection/ProjectionValue.Sequence.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // dev.s7a.strata.projection/ProjectionValue.Sequence.hashCode|hashCode(){}[0]
+
+        final object Companion { // dev.s7a.strata.projection/ProjectionValue.Sequence.Companion|null[0]
+            final fun fromArray(kotlin/Array<out dev.s7a.strata.projection/ProjectionValue>): dev.s7a.strata.projection/ProjectionValue.Sequence // dev.s7a.strata.projection/ProjectionValue.Sequence.Companion.fromArray|fromArray(kotlin.Array<out|dev.s7a.strata.projection.ProjectionValue>){}[0]
+        }
     }
 
     final class Text : dev.s7a.strata.projection/ProjectionValue { // dev.s7a.strata.projection/ProjectionValue.Text|null[0]

@@ -35,7 +35,7 @@ internal object RemoteProperties {
     /**
      * Captures a complete ordered property record.
      */
-    fun record(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence(if (values.size <= 1) values.toList() else values.asList())
+    fun record(vararg values: ProjectionValue): ProjectionValue = ProjectionValue.Sequence.fromArray(values)
 
     /**
      * Encodes an integer property.
