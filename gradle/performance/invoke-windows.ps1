@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 /// <summary>Bounds one Gradle process tree without changing affinity or measuring application work.</summary>
 public static class StrataPerformanceProcess {
@@ -96,14 +97,58 @@ public static class StrataPerformanceProcess {
         } finally { Require(CloseHandle(job)); }
     }
 
-    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, Dictionary<string, object>> records) {
+    // Only signalled owned handles retire; history keeps every immutable PID/birth identity.
+    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records) {
+        foreach (var item in new List<KeyValuePair<uint, IntPtr>>(handles)) {
+            uint wait = WaitForSingleObject(item.Value, 0);
+            if (wait == 0x102) continue;
+            Require(wait == 0);
+            long created, exited, kernel, user;
+            uint code;
+            Require(GetProcessTimes(item.Value, out created, out exited, out kernel, out user));
+            Require(GetExitCodeProcess(item.Value, out code));
+            var history = records[item.Key];
+            var record = history[history.Count - 1];
+            if ((long)record["creationFileTime"] != created || exited == 0)
+                throw new InvalidOperationException("Completed owned process generation changed.");
+            record["exitCode"] = code;
+            record["exitFileTime"] = exited;
+            record["completed"] = true;
+            Require(CloseHandle(item.Value));
+            record["handleClosed"] = true;
+            handles.Remove(item.Key);
+        }
+    }
+
+    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds) {
+        Retire(handles, records);
         const int maximumMembers = 256;
+        const long maximumHistoryBytes = 3 * 1024 * 1024;
         int bytes = 8 + maximumMembers * IntPtr.Size;
         IntPtr buffer = Marshal.AllocHGlobal(bytes);
         try {
-            Require(QueryMembers(job, 3, buffer, (uint)bytes, IntPtr.Zero));
-            int assigned = Marshal.ReadInt32(buffer), count = Marshal.ReadInt32(buffer, 4);
-            if (assigned != count || count < 0 || maximumMembers < count) throw new InvalidOperationException("Owned member inventory exceeds its bound.");
+            int assigned, count;
+            while (true) {
+                Marshal.WriteInt32(buffer, 0, 0);
+                Marshal.WriteInt32(buffer, 4, 0);
+                bool complete = QueryMembers(job, 3, buffer, (uint)bytes, IntPtr.Zero);
+                int error = complete ? 0 : Marshal.GetLastWin32Error();
+                assigned = Marshal.ReadInt32(buffer);
+                count = Marshal.ReadInt32(buffer, 4);
+                var query = new Dictionary<string, object> {{"complete", complete}, {"assigned", assigned}, {"returned", count}, {"capacity", maximumMembers}, {"error", error}};
+                result["lastMemberQuery"] = query;
+                if (complete == false) throw new Win32Exception(error);
+                if (count < 0 || assigned < count || maximumMembers < assigned) throw new InvalidOperationException("Owned member inventory exceeds its bound.");
+                if (assigned == count) break;
+                // Exits can change the list while it is queried; only a complete snapshot is admitted.
+                if (result.ContainsKey("firstIncompleteMemberQuery") == false) result["firstIncompleteMemberQuery"] = query;
+                result["lastIncompleteMemberQuery"] = query;
+                result["incompleteMemberQueries"] = (int)result["incompleteMemberQueries"] + 1;
+                if (seconds <= clock.Elapsed.TotalSeconds) throw new InvalidOperationException("Owned member inventory remained incomplete at the phase deadline.");
+                Retire(handles, records);
+                Thread.Sleep((int)Math.Min(100, Math.Max(0, (seconds - clock.Elapsed.TotalSeconds) * 1000)));
+            }
+            result["maximumListedMembers"] = Math.Max((int)result["maximumListedMembers"], count);
             for (int index = 0; index < count; index++) {
                 uint pid = (uint)Marshal.ReadIntPtr(buffer, 8 + index * IntPtr.Size).ToInt64();
                 if (handles.ContainsKey(pid)) continue;
@@ -121,9 +166,22 @@ public static class StrataPerformanceProcess {
                     if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) continue;
                     UIntPtr affinity, system;
                     if (GetProcessAffinityMask(handle, out affinity, out system) == false) continue;
-                    records[pid] = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}};
-                    handles[pid] = handle;
+                    List<Dictionary<string, object>> history;
+                    if (records.TryGetValue(pid, out history) == false) {
+                        history = new List<Dictionary<string, object>>();
+                        records.Add(pid, history);
+                    }
+                    foreach (var previous in history)
+                        if ((long)previous["creationFileTime"] == created) throw new InvalidOperationException("Owned process generation was captured twice.");
+                    history.Add(new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}});
+                    handles.Add(pid, handle);
                     retained = true;
+                    result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
+                    // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
+                    long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * executable.Length;
+                    result["memberHistorySerializedByteBound"] = historyBytes;
+                    if (maximumHistoryBytes < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
+                    if (maximumMembers < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
                 } finally { if (retained == false) Require(CloseHandle(handle)); }
             }
         } finally { Marshal.FreeHGlobal(buffer); }
@@ -133,7 +191,9 @@ public static class StrataPerformanceProcess {
             UIntPtr affinity, system;
             Require(IsProcessInJob(item.Value, job, out member));
             Require(GetProcessAffinityMask(item.Value, out affinity, out system));
-            if (member == false || (ulong)records[item.Key]["affinityMask"] != affinity.ToUInt64() || (ulong)records[item.Key]["systemAffinityMask"] != system.ToUInt64())
+            var history = records[item.Key];
+            var record = history[history.Count - 1];
+            if (member == false || (ulong)record["affinityMask"] != affinity.ToUInt64() || (ulong)record["systemAffinityMask"] != system.ToUInt64())
                 throw new InvalidOperationException("Owned process membership or unchanged affinity changed.");
         }
     }
@@ -149,10 +209,15 @@ public static class StrataPerformanceProcess {
         ProcessInfo process = new ProcessInfo();
         bool assigned = false;
         var memberHandles = new Dictionary<uint, IntPtr>();
-        var members = new Dictionary<uint, Dictionary<string, object>>();
+        var members = new Dictionary<uint, List<Dictionary<string, object>>>();
         Stopwatch cleanup = null;
-        var serializedMembers = new Dictionary<string, Dictionary<string, object>>();
+        var serializedMembers = new Dictionary<string, List<Dictionary<string, object>>>();
         result["members"] = serializedMembers;
+        result["maximumRetainedHandles"] = 0;
+        result["maximumListedMembers"] = 0;
+        result["incompleteMemberQueries"] = 0;
+        result["memberHistorySerializedByteBound"] = 0L;
+        result["memberHistorySerializedByteLimit"] = 3 * 1024 * 1024;
         try {
             var memory = new Memory {length=(uint)Marshal.SizeOf<Memory>()};
             Require(GlobalMemoryStatusEx(ref memory));
@@ -180,7 +245,7 @@ public static class StrataPerformanceProcess {
             result["callerPid"] = process.processId;
             uint wait;
             do {
-                Capture(job, memberHandles, members);
+                Capture(job, memberHandles, members, result, clock, workSeconds);
                 wait = WaitForSingleObject(process.process, 100);
             } while (wait == 0x102 && clock.Elapsed.TotalSeconds < workSeconds);
             if (wait == 0x102) {
@@ -191,8 +256,8 @@ public static class StrataPerformanceProcess {
             var accounting = Account(job);
             double killReserve = Math.Min(1, cleanupSeconds / 2.0);
             while (0 < accounting.activeProcesses && cleanup.Elapsed.TotalSeconds + killReserve < cleanupSeconds) {
-                Capture(job, memberHandles, members);
-                System.Threading.Thread.Sleep(100);
+                Capture(job, memberHandles, members, result, cleanup, cleanupSeconds - killReserve);
+                Thread.Sleep(100);
                 accounting = Account(job);
             }
             result["activeProcessesAtRelease"] = accounting.activeProcesses;
@@ -211,12 +276,7 @@ public static class StrataPerformanceProcess {
             Require(GetExitCodeProcess(process.process, out exitCode));
             result["exitCode"] = exitCode;
             if (0 < accounting.activeProcesses) Require(TerminateJobObject(job, 125));
-            foreach (var item in memberHandles) {
-                uint code;
-                Require(GetExitCodeProcess(item.Value, out code));
-                members[item.Key]["exitCode"] = code;
-                members[item.Key]["completed"] = WaitForSingleObject(item.Value, 0) == 0;
-            }
+            Retire(memberHandles, members);
         } catch (Exception failure) {
             result["error"] = failure.Message;
         } finally {
@@ -226,10 +286,14 @@ public static class StrataPerformanceProcess {
                 if (cleanup == null) cleanup = Stopwatch.StartNew();
                 try {
                     if ((bool)result["naturalRelease"] == false) closed &= TerminateJobObject(job, 126);
-                    while (0 < Account(job).activeProcesses && cleanup.Elapsed.TotalSeconds < cleanupSeconds) System.Threading.Thread.Sleep(10);
+                    while ((0 < Account(job).activeProcesses || 0 < memberHandles.Count) && cleanup.Elapsed.TotalSeconds < cleanupSeconds) {
+                        Retire(memberHandles, members);
+                        if (0 < Account(job).activeProcesses || 0 < memberHandles.Count) Thread.Sleep(10);
+                    }
                     result["activeProcessesAfterCleanup"] = Account(job).activeProcesses;
+                    Retire(memberHandles, members);
                     result["cleanupElapsedSeconds"] = cleanup.Elapsed.TotalSeconds;
-                    closed &= (uint)result["activeProcessesAfterCleanup"] == 0 && cleanup.Elapsed.TotalSeconds < cleanupSeconds;
+                    closed &= (uint)result["activeProcessesAfterCleanup"] == 0 && memberHandles.Count == 0 && cleanup.Elapsed.TotalSeconds < cleanupSeconds;
                 } catch (Exception failure) {
                     result["cleanupError"] = failure.Message;
                     closed = false;
@@ -263,7 +327,7 @@ if ([string]::IsNullOrWhiteSpace($Report) -or (Test-Path -LiteralPath $Report)) 
 $pwsh = (Get-Process -Id $PID).Path
 $command = '"{0}" -NoLogo -NoProfile -NonInteractive -File "{1}" -Child -Request "{2}"' -f $pwsh, $PSCommandPath, (Resolve-Path -LiteralPath $Request).Path
 $result = [StrataPerformanceProcess]::Run($pwsh, $command, $invocation.workspace, $invocation.minimumFreePhysicalBytes, $invocation.jobCommittedBytes, $invocation.workSeconds, $invocation.cleanupSeconds)
-$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Report -Encoding utf8
+$result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Report -Encoding utf8
 if ($result.exitCode -ne 0 -or $result.naturalRelease -ne $true -or $result.handlesClosed -ne $true -or $result.ContainsKey('error')) {
     throw "Bounded Gradle invocation failed; inspect $Report"
 }
