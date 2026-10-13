@@ -12,40 +12,40 @@ index 497536b70..0c6f1f2a8 100644
  *.yaml text eol=lf
 diff --git a/.github/performance/paired-jvm.json b/.github/performance/paired-jvm.json
 deleted file mode 100644
-index 283189f9a..000000000
+index b839a7634..000000000
 --- a/.github/performance/paired-jvm.json
 +++ /dev/null
-@@ -1,98 +0,0 @@
+@@ -1,106 +0,0 @@
 -{
 -  "schema": "strata-paired-jvm-ci-v1",
 -  "sources": {
 -    "fixture": {
--      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
--      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
+-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+-      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
 -      "patches": [
 -        {
--          "path": ".github/performance/focused-input-full/candidate.patch",
--          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
+-          "path": ".github/performance/issue154-full/candidate.patch",
+-          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
 -        }
 -      ]
 -    },
 -    "baseline": {
--      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
--      "tree": "4322af8181c7aadc08b464d5c8a3b199820a26d2",
+-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+-      "tree": "4bc7f26aa9e4ba1e965d3b30a2badea240089b44",
 -      "patches": [
 -        {
--          "path": ".github/performance/focused-input-full/baseline.patch",
--          "sha256": "b7d5a48c70ccb8233128dcf66d4e42bd9e6e286e74c65da2a825b6f676dd0828"
+-          "path": ".github/performance/issue154-full/baseline.patch",
+-          "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
 -        }
 -      ]
 -    },
 -    "candidate": {
--      "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
--      "tree": "36ecdea6bd35fc934f583aa53768475330121937",
+-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
+-      "tree": "18b49ffb2d7de827e002240c0664f163b1822062",
 -      "patches": [
 -        {
--          "path": ".github/performance/focused-input-full/candidate.patch",
--          "sha256": "9a9d0440efc7af2a24246b196fc79d1f1b235995be91b097ffd5c072dd2b8314"
+-          "path": ".github/performance/issue154-full/candidate.patch",
+-          "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
 -        }
 -      ]
 -    }
@@ -58,51 +58,59 @@ index 283189f9a..000000000
 -  "suites": [
 -    {
 -      "project": ":quality:benchmarks",
--      "name": "focused-input-full",
+-      "name": "issue154-full",
 -      "benchmarks": [
--        "FocusedInputBenchmark"
+-        "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark"
 -      ],
 -      "workloads": [],
 -      "parameters": {},
--      "expected_cases": 32,
+-      "expected_cases": 21,
+-      "profilers": [],
 -      "operation_reports": {
 -        "adapters": {
--          "dev.s7a.strata.quality.benchmark.FocusedInputBenchmark": "dev.s7a.strata.quality.benchmark.FocusedInputOperationReport"
+-          "dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark": "dev.s7a.strata.quality.benchmark.ModifierReconciliationOperationReport"
 -        },
--        "warmup": 100,
--        "samples": 200,
--        "expected_rows": 32,
--        "expected_controls": 2
+-        "warmup": 30,
+-        "samples": 60,
+-        "expected_rows": 21,
+-        "expected_controls": 15
 -      }
 -    }
 -  ],
 -  "inputs": [
 -    {
--      "label": "focused-source-0",
+-      "label": "modifier-baseline-source-patch",
 -      "pin": {
--        "path": "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/FocusedInputPipeline.kt",
--        "sha256": "b4ab55ba057673643bf9bd7449eebd9b6e22863951a3473d6a1430687facf475"
+-        "path": ".github/performance/issue154-full/baseline.patch",
+-        "sha256": "f619549eaf0007ee2e830c3e7732d358d9f4f0a1bc1903bac4ac59df0f6fc482"
 -      }
 -    },
 -    {
--      "label": "focused-source-1",
+-      "label": "modifier-candidate-source-patch",
 -      "pin": {
--        "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/PortableFocusedInputTest.kt",
--        "sha256": "c28001cedb397298f15a8bae320c3fd64778aef745b262e7604b51e8585de92b"
+-        "path": ".github/performance/issue154-full/candidate.patch",
+-        "sha256": "b15049c262a1178e4bb400b968fd4f87e53da80d844396c0eb59c9ef0ec0632f"
 -      }
 -    },
 -    {
--      "label": "focused-source-2",
+-      "label": "modifier-source-provenance",
 -      "pin": {
--        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputBenchmark.kt",
--        "sha256": "d5a54d8cc9615467904b4d46eec86e0cd870ebd135ca35638b1887de649b650a"
+-        "path": ".github/performance/issue154-full/source-provenance.json",
+-        "sha256": "ce7967d2ac24ee3bf163fee1b67277b0b2a5532de2220dfed04420a7e2020558"
 -      }
 -    },
 -    {
--      "label": "focused-owner-adapter",
+-      "label": "modifier-fixed-ModifierReconciliationBenchmark",
 -      "pin": {
--        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FocusedInputOperationReport.kt",
--        "sha256": "41f083278ab69a73d7e0547cebd89b5d0d1df481b9f1ce96f63ed814d5291491"
+-        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationBenchmark.kt",
+-        "sha256": "c2896a9ce929450f068c6da482727272e5256618fc1f9c799a01a1eb7fdcdd36"
+-      }
+-    },
+-    {
+-      "label": "modifier-fixed-ModifierReconciliationOperationReport",
+-      "pin": {
+-        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
+-        "sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f"
 -      }
 -    }
 -  ],
@@ -353,11 +361,85 @@ index 61fbd96ad..987e822f1 100644
                      val requested = rootProject.providers.gradleProperty("strata.paired.runtime").orNull
              $replacement
                  }
+diff --git a/build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt
+index 8a0cff69f..5ded42625 100644
+--- a/build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt
++++ b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/ProjectModelFunctionalTest.kt
+@@ -46,7 +46,7 @@ internal class ProjectModelFunctionalTest {
+         }
+         Files.createDirectories(directory.resolve("gradle"))
+         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
+-        listOf("runtime/core", "integration/api").forEach { project ->
++        listOf("runtime/core", "integration/api", "velocity-api", "runtime/velocity").forEach { project ->
+             val sources = directory.resolve("$project/src/test/java/model")
+             Files.createDirectories(sources)
+             Files.writeString(
+@@ -89,6 +89,24 @@ internal class ProjectModelFunctionalTest {
+         assertEquals(jvmProjects, included("-Pstrata.jvmOnly=true"))
+     }
+ 
++    @Test
++    fun `Velocity archive and owner tasks use the scoped JVM model`() {
++        assertEquals(
++            jvmProjects,
++            included(
++                "-Pstrata.jvmOnly=true",
++                ":velocity-api:jar",
++                ":runtime:velocity:jar",
++                ":runtime:velocity:testClasses",
++                ":runtime:velocity:test",
++                "--tests",
++                "model.FilterTest.selected",
++            ),
++        )
++        assertJUnit("runtime/velocity", "test")
++        assertTrue(Files.readAllLines(directory.resolve("executed-tasks.txt")).contains(":runtime:velocity:koverFindJar"))
++    }
++
+     @Test
+     fun `native Test options preserve exact executed JUnit counts`() {
+         assertEquals(
+@@ -115,6 +133,8 @@ internal class ProjectModelFunctionalTest {
+             ":check",
+             ":quality:component-benchmarks:check",
+             ":runtime:minecraft-fonts-lwjgl:check",
++            ":runtime:velocity:check",
++            ":velocity-api:publishToMavenLocal",
+             ":verifyPublishedPerformanceInventory",
+             ":quality:component-benchmarks:verifyPublishedHostInventory",
+             ":quality:component-benchmarks:capturePublishedHostInventory",
+@@ -288,7 +308,7 @@ internal class ProjectModelFunctionalTest {
+             ":quality:component-benchmarks",
+             ":quality:remote-benchmarks",
+         )
+-    private val jvmProjects = sharedJvmProjects + ":integration:api"
++    private val jvmProjects = sharedJvmProjects + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
+ 
+     private val fixtureBuild =
+         """
+@@ -300,7 +320,7 @@ internal class ProjectModelFunctionalTest {
+         val junitLauncher = libs.junit.platform.launcher
+         allprojects {
+             apply(plugin = "base")
+-            val fixtureTests = path in setOf(":runtime:core", ":integration:api")
++            val fixtureTests = path in setOf(":runtime:core", ":integration:api", ":velocity-api", ":runtime:velocity")
+             if (fixtureTests) {
+                 apply(plugin = "java")
+                 repositories { mavenCentral() }
 diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
-index a8122321e..299814017 100644
+index d8854ac35..074423824 100644
 --- a/docs/development/performance-testkit.md
 +++ b/docs/development/performance-testkit.md
-@@ -699,3 +699,10 @@ It compiles an independent test controller into the existing generated remote fi
+@@ -78,7 +78,7 @@ The collector archives these files alongside resolved control libraries and reje
+ For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
+ 
+ Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
+-This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
++This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules, the API-only JVM integration consumer, and the Velocity API/runtime owners, without versioned Fabric projects or Web applications.
+ Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
+ The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
+ Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
+@@ -717,3 +717,10 @@ It compiles an independent test controller into the existing generated remote fi
  Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
  The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
  This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.
@@ -497,7 +579,7 @@ index dda0bcd97..a74595b8b 100644
          }
      }
 diff --git a/gradle/performance/paired-jvm.py b/gradle/performance/paired-jvm.py
-index 7de981bdf..b8d2d35aa 100644
+index 7de981bdf..bf15dc0bb 100644
 --- a/gradle/performance/paired-jvm.py
 +++ b/gradle/performance/paired-jvm.py
 @@ -89,7 +89,7 @@ def load_manifest(root, path):
@@ -699,17 +781,15 @@ index 7de981bdf..b8d2d35aa 100644
      require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
      output.mkdir(parents=True, exist_ok=False)
      started = time.monotonic()
-@@ -823,6 +950,9 @@ def run(root, manifest_path, output):
+@@ -823,6 +950,7 @@ def run(root, manifest_path, output):
              return directory
  
          data = load_manifest(root, manifest_path)
 +        data, record["scope"] = continuation_scope(data, owner_report)
-+        if any(project in (":velocity-api", ":runtime:velocity") for project in data["runtime_projects"]):
-+            common.remove("-Pstrata.jvmOnly=true")
          java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
          write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                               "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
-@@ -845,6 +975,7 @@ def run(root, manifest_path, output):
+@@ -845,6 +973,7 @@ def run(root, manifest_path, output):
          fixture = workspaces["fixture"]
          owners = sorted({suite["project"] for suite in data["suites"]})
          fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
@@ -717,7 +797,7 @@ index 7de981bdf..b8d2d35aa 100644
          for side in ("baseline", "candidate"):
              tasks = [archive_task(project) for project in data["runtime_projects"]]
              if workspaces[side] == fixture:
-@@ -871,6 +1002,7 @@ def run(root, manifest_path, output):
+@@ -871,6 +1000,7 @@ def run(root, manifest_path, output):
                            for index, item in enumerate(data["inputs"])}
          properties(inputs, {label: item["path"] for label, item in input_archives.items()})
          collector = archive_file(fixture, ":performance-testkit")
@@ -725,7 +805,7 @@ index 7de981bdf..b8d2d35aa 100644
          prepared = output / "compiled"
          prepared.mkdir()
          shutil.copyfile(collector, prepared / collector.name)
-@@ -994,6 +1126,59 @@ def run(root, manifest_path, output):
+@@ -994,6 +1124,59 @@ def run(root, manifest_path, output):
                  comparison = read_json(comparison_path)
                  require(comparison["status"] == "passed" and len(comparison["phases"]) == operation["expected_rows"], "Incomplete operation comparison")
                  operation_comparisons.append((suite["name"], comparison))
@@ -785,7 +865,7 @@ index 7de981bdf..b8d2d35aa 100644
          for side, workspace in workspaces.items():
              source_guard(workspace, data["sources"][side]["tree"])
              for value in data["compiled_pins"][side]:
-@@ -1008,7 +1193,13 @@ def run(root, manifest_path, output):
+@@ -1008,7 +1191,13 @@ def run(root, manifest_path, output):
          require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
          record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
          record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
@@ -800,7 +880,7 @@ index 7de981bdf..b8d2d35aa 100644
          record["status"] = "passed"
      except BaseException as failure:
          record["error"] = f"{type(failure).__name__}: {failure}"
-@@ -1019,7 +1210,7 @@ def run(root, manifest_path, output):
+@@ -1019,7 +1208,7 @@ def run(root, manifest_path, output):
          write_new(output / "file-inventory.json", {path.relative_to(output).as_posix(): {"sha256": digest(path), "bytes": path.stat().st_size}
                                                    for path in sorted(output.rglob("*")) if path.is_file() and path.relative_to(output).parts[0] != "workspaces"})
          archive = pack(output)
@@ -809,7 +889,7 @@ index 7de981bdf..b8d2d35aa 100644
  
  
  def main():
-@@ -1028,9 +1219,11 @@ def main():
+@@ -1028,9 +1217,11 @@ def main():
      parser.add_argument("--manifest", default=".github/performance/paired-jvm.json")
      parser.add_argument("--select", action="store_true")
      parser.add_argument("--output", type=Path)
@@ -821,7 +901,7 @@ index 7de981bdf..b8d2d35aa 100644
      if args.select:
          selected = args.manifest if path.exists() else ""
          if selected:
-@@ -1041,7 +1234,7 @@ def main():
+@@ -1041,7 +1232,7 @@ def main():
          print(selected)
      else:
          require(args.output is not None, "Supply a fresh attempt output directory")
@@ -2559,3 +2639,16 @@ index 68da04884..60b67ee94 100644
          fun activate(snapshot: RemoteMessage.Snapshot) {
              val press =
                  snapshot.tree.nodes.values
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index 0049b3df1..9d69b1b42 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -147,7 +147,7 @@ val sharedJvmProjectPaths = setOf(
+     ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
+     ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
+ )
+-val jvmProjectPaths = sharedJvmProjectPaths + ":integration:api"
++val jvmProjectPaths = sharedJvmProjectPaths + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
+ val webProjectPaths = sharedJvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
+ if (webOnly || jvmOnly) {
+     require((webOnly && jvmOnly).not()) { "Choose one scoped project model: strata.webOnly or strata.jvmOnly." }

@@ -147,7 +147,7 @@ val sharedJvmProjectPaths = setOf(
     ":api", ":runtime:core", ":runtime:headless", ":runtime:minecraft", ":runtime:minecraft-fonts-lwjgl", ":runtime:remote",
     ":quality:detekt-rules", ":performance-testkit", ":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks",
 )
-val jvmProjectPaths = sharedJvmProjectPaths + ":integration:api"
+val jvmProjectPaths = sharedJvmProjectPaths + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
 val webProjectPaths = sharedJvmProjectPaths + setOf(":runtime:web", ":integration:web", ":examples:web")
 if (webOnly || jvmOnly) {
     require((webOnly && jvmOnly).not()) { "Choose one scoped project model: strata.webOnly or strata.jvmOnly." }

@@ -951,8 +951,6 @@ def run(root, manifest_path, output, owner_report=None):
 
         data = load_manifest(root, manifest_path)
         data, record["scope"] = continuation_scope(data, owner_report)
-        if any(project in (":velocity-api", ":runtime:velocity") for project in data["runtime_projects"]):
-            common.remove("-Pstrata.jvmOnly=true")
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}

@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "5a8768c2965283e8436a1c21795bb49298299801",
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "d67013b67341466e994c9dacbb9b758a9deec6b3",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "77986f9115879660339c73874560a0a84d1a3a1307f917760f69279140d71c03"
+          "sha256": "0c806176c3c16eec3b4ae07267f875b00fb51758c1064b0581fcc3f8538590b5"
         }
       ]
     },
     "candidate": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "5a8768c2965283e8436a1c21795bb49298299801",
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "d67013b67341466e994c9dacbb9b758a9deec6b3",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/candidate.patch",
-          "sha256": "77986f9115879660339c73874560a0a84d1a3a1307f917760f69279140d71c03"
+          "sha256": "0c806176c3c16eec3b4ae07267f875b00fb51758c1064b0581fcc3f8538590b5"
         }
       ]
     },
     "baseline": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "bd825bd8e1f409eef8c469a17bc8c888d2508774",
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "42d09093d800e3e29ccc29475bbd8dcab36a8f8d",
       "patches": [
         {
           "path": ".github/performance/transport-drain-full/baseline.patch",
-          "sha256": "00e310e587b7f68d26f2a1bf611335ed4a7804bc31a069833c13f73adea3142b"
+          "sha256": "841558154c33eddf195bb34a3a3be353db384163e609d7416843cbef2c83d88b"
         }
       ]
     }

@@ -46,7 +46,7 @@ internal class ProjectModelFunctionalTest {
         }
         Files.createDirectories(directory.resolve("gradle"))
         Files.copy(repository.resolve("gradle/libs.versions.toml"), directory.resolve("gradle/libs.versions.toml"))
-        listOf("runtime/core", "integration/api").forEach { project ->
+        listOf("runtime/core", "integration/api", "velocity-api", "runtime/velocity").forEach { project ->
             val sources = directory.resolve("$project/src/test/java/model")
             Files.createDirectories(sources)
             Files.writeString(
@@ -90,6 +90,24 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
+    fun `Velocity archive and owner tasks use the scoped JVM model`() {
+        assertEquals(
+            jvmProjects,
+            included(
+                "-Pstrata.jvmOnly=true",
+                ":velocity-api:jar",
+                ":runtime:velocity:jar",
+                ":runtime:velocity:testClasses",
+                ":runtime:velocity:test",
+                "--tests",
+                "model.FilterTest.selected",
+            ),
+        )
+        assertJUnit("runtime/velocity", "test")
+        assertTrue(Files.readAllLines(directory.resolve("executed-tasks.txt")).contains(":runtime:velocity:koverFindJar"))
+    }
+
+    @Test
     fun `native Test options preserve exact executed JUnit counts`() {
         assertEquals(
             jvmProjects,
@@ -115,6 +133,8 @@ internal class ProjectModelFunctionalTest {
             ":check",
             ":quality:component-benchmarks:check",
             ":runtime:minecraft-fonts-lwjgl:check",
+            ":runtime:velocity:check",
+            ":velocity-api:publishToMavenLocal",
             ":verifyPublishedPerformanceInventory",
             ":quality:component-benchmarks:verifyPublishedHostInventory",
             ":quality:component-benchmarks:capturePublishedHostInventory",
@@ -288,7 +308,7 @@ internal class ProjectModelFunctionalTest {
             ":quality:component-benchmarks",
             ":quality:remote-benchmarks",
         )
-    private val jvmProjects = sharedJvmProjects + ":integration:api"
+    private val jvmProjects = sharedJvmProjects + setOf(":integration:api", ":velocity-api", ":runtime:velocity")
 
     private val fixtureBuild =
         """
@@ -300,7 +320,7 @@ internal class ProjectModelFunctionalTest {
         val junitLauncher = libs.junit.platform.launcher
         allprojects {
             apply(plugin = "base")
-            val fixtureTests = path in setOf(":runtime:core", ":integration:api")
+            val fixtureTests = path in setOf(":runtime:core", ":integration:api", ":velocity-api", ":runtime:velocity")
             if (fixtureTests) {
                 apply(plugin = "java")
                 repositories { mavenCentral() }
