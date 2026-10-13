@@ -766,6 +766,66 @@ class PairedJvmTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
 
+    def test_unique_java_generation_keeps_closed_helpers_and_rejects_missing_or_altered_proof(self):
+        modes = ("complete", "two-java", "two-javaw", "missing-file", "console-only", "unclosed-helper", "failed-helper", "foreign-helper",
+                 "wrong-helper-affinity", "overlapping-helper", "missing-helper-image", "wrong-java-image", "changed-pin", "missing-flag", "duplicate-origin")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory = self.root / ("closed-helper-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
+                flag = "../../class-loads/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid8188-2026-10-13_06-15-25.log"
+                vm.write_text(f"<hotspot_log process='8188' time_ms='1791872124997'>\n<vm_arguments><args>{args}</args>\n"
+                              f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                              "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                              "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                helper = {"pid": 8188, "creationFileTime": 134363456004687052, "exitFileTime": 134363456096932060,
+                          "image": str(directory / "conhost.exe"), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                member = {**helper, "creationFileTime": 134363457249718371, "exitFileTime": 134363457345207482, "image": str(executable)}
+                if mode in ("two-java", "two-javaw"):
+                    helper["image"] = str(directory / "earlier-jdk/bin" / ("javaw.exe" if mode == "two-javaw" else "java.exe"))
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                elif mode == "failed-helper":
+                    helper["exitCode"] = 1
+                elif mode == "foreign-helper":
+                    helper["inOwnedJob"] = False
+                elif mode == "wrong-helper-affinity":
+                    helper["affinityMask"] = 1
+                elif mode == "overlapping-helper":
+                    helper["exitFileTime"] = member["creationFileTime"] + 1
+                elif mode == "missing-helper-image":
+                    helper.pop("image")
+                elif mode == "wrong-java-image":
+                    member["image"] = str(directory / "different-jdk/bin/java.exe")
+                terminal = {"members": {"8188": [helper, member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                pin = {"path": str(diagnostic), "source": str(diagnostic), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostic.parent), "previous": {}, "copied": [pin]})
+                (directory / "console.log").write_text(origin if mode == "console-only" else "", encoding="utf-8")
+                if mode in ("missing-file", "console-only"):
+                    diagnostic.unlink()
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    result = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(result["os_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["unique_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                    self.assertEqual(result["actual_loaded_main"], "file:/frozen.jar")
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
         home = self.root / "probe-reuse-jdk"
         executable = home / "bin/java.exe"

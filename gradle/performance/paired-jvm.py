@@ -337,12 +337,30 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
     if terminal is None or len(candidates) != 1 or same_pid != 1:
         return None
     history = terminal["members"].get(str(pid), [])
-    if not isinstance(history, list) or len(history) != 1:
+    if not isinstance(history, list) or not history:
         return None
+    helpers = []
+    if len(history) != 1:
+        if any(not isinstance(item, dict) or not isinstance(item.get("image"), str) or not item["image"] for item in history):
+            return None
+        java = [item for item in history if Path(item["image"]).name.casefold() in {"java.exe", "javaw.exe"}]
+        if len(java) != 1:
+            return None
+        helpers = [item for item in history if item is not java[0]]
     raw = vm_diagnostic.read_text(encoding="utf-8")
     starts = re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='([0-9]+)'", raw)
     require(len(starts) == 1, "Ambiguous unique VM diagnostic")
     member = owned_generation(terminal, pid, int(starts[0]))
+    if helpers:
+        homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
+        require(len(homes) == 1 and member is java[0]
+                and os.path.normcase(member["image"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe"))),
+                "Unique JVM and actual Java generation disagree")
+        for helper in helpers:
+            require(Path(helper["image"]).is_absolute() and helper["inOwnedJob"] is True and helper["completed"] is True
+                    and helper["handleClosed"] is True and helper["exitCode"] == 0
+                    and helper["affinityMask"] == terminal["inheritedAffinityMask"]
+                    and helper["systemAffinityMask"] == terminal["systemAffinityMask"], "Unbound or unclosed non-Java helper generation")
     arguments = re.findall(r"<args>\s*([^<]+?)\s*</args>", raw)
     flags = re.findall(r"(?:^|\s)-Xlog:class\+load=info:file=(.+?):pid,level,tags:filecount=0(?=\s|$)",
                        html.unescape(arguments[0]) if len(arguments) == 1 else "")
@@ -370,6 +388,7 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
         require([os.path.normcase(part) for part in source_parent.parts[-len(parts):]]
                 == [os.path.normcase(part) for part in parts], "Wrong relative class-file owner")
     return {**candidate, "unique_generation": member, "actual_file_flag": flags[0],
+            "closed_non_java_helper_generations": helpers,
             "relative_path_relationship": "inferred from the verified bounded launcher" if not flag.is_absolute() else None}
 
 

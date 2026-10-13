@@ -696,8 +696,10 @@ Separate per-VM files have no rotation and a 1 MiB limit per file; immutable cop
 Previously captured staging files must remain byte-identical before the next invocation.
 The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
 Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
-When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured owned PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
-This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, owned generation or candidate file keeps attribution ambiguous.
+When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured Java executable PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
+This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, Java executable generation or candidate file keeps attribution ambiguous.
+Closed non-Java helper generations that reuse the PID remain separately recorded with their actual image, birth, exit, Job membership and affinity; the sole Java generation must match the VM's actual executable and lifetime.
+Both standard Java launcher names, `java.exe` and `javaw.exe`, count as Java generations; this distinction does not admit a different main executable.
 Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
 Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
