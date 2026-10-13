@@ -57,6 +57,25 @@ class PairedJvmTest(unittest.TestCase):
         value["suites"][0].update(project=":quality:remote-benchmarks", benchmarks=[], workloads=["RemoteProtocolBenchmark.diff"])
         self.assertEqual(self.load(value), value)
 
+    def test_catalog_checkout_preserves_pinned_lf_with_windows_autocrlf(self):
+        repository = self.root / "catalog-checkout"
+        subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+        PAIRED.git(repository, "config", "core.autocrlf", "true")
+        source_root = Path(__file__).resolve().parents[2]
+        (repository / ".gitattributes").write_bytes((source_root / ".gitattributes").read_bytes())
+        catalog = repository / "catalog.tsv"
+        canonical = b"Class\tmethod\t()V\n"
+        catalog.write_bytes(canonical)
+        PAIRED.git(repository, "add", ".gitattributes", "catalog.tsv")
+        catalog.unlink()
+        PAIRED.git(repository, "checkout-index", "--all", "--force")
+        self.assertEqual(catalog.read_bytes(), canonical)
+        frozen = {"path": "catalog.tsv", "sha256": hashlib.sha256(canonical).hexdigest()}
+        self.assertEqual(PAIRED.pin(repository, frozen), catalog)
+        catalog.write_bytes(canonical.replace(b"\n", b"\r\n"))
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            PAIRED.pin(repository, frozen)
+
     def test_preserve_existing_dotted_input_labels_and_compiled_profiler_names(self):
         value = copy.deepcopy(self.manifest)
         value["inputs"][0]["label"] = "unihex-bounds-assets.zip"
