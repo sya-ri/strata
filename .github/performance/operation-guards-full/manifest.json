@@ -1,0 +1,90 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
+      "patches": [
+        {
+          "path": ".github/performance/operation-guards-full/candidate.patch",
+          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "d6a2365eebae12cfdd8fa2707ccb4a0ead8df329",
+      "patches": [
+        {
+          "path": ".github/performance/operation-guards-full/baseline.patch",
+          "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+      "tree": "52f6d2a9d06478b789d6c9cd0567227f8064f4f8",
+      "patches": [
+        {
+          "path": ".github/performance/operation-guards-full/candidate.patch",
+          "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "operation-guards-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.OperationGuardBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 14,
+      "profilers": []
+    }
+  ],
+  "inputs": [
+    {
+      "label": "operation-guard-baseline-patch",
+      "pin": {
+        "path": ".github/performance/operation-guards-full/baseline.patch",
+        "sha256": "2770c2455abe5635fbf8dc465848758f1ae5976d5065c74634f87d81a12413c5"
+      }
+    },
+    {
+      "label": "operation-guard-candidate-patch",
+      "pin": {
+        "path": ".github/performance/operation-guards-full/candidate.patch",
+        "sha256": "cba888dfca8c7ad98c401c7708874004577126b238b3cf1d9e14eba772892705"
+      }
+    },
+    {
+      "label": "operation-guard-source-provenance",
+      "pin": {
+        "path": ".github/performance/operation-guards-full/source-provenance.json",
+        "sha256": "6d3fbc45001a67809d793e3c36533b409e3242be5e18d4a93d6f69b0ba47939b"
+      }
+    },
+    {
+      "label": "operation-guard-fixed-fixture",
+      "pin": {
+        "path": ".github/performance/operation-guards-full/inputs/OperationGuardBenchmark.kt",
+        "sha256": "3a1e59f22ff160b0deb23870b928c512baa0e4f68cdf22df9383dac0bbe43188"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
