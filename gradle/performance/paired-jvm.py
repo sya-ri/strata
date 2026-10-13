@@ -156,7 +156,7 @@ def load_manifest(root, path):
     require(isinstance(reports, list) and len(reports) <= 256, "Invalid owner report inventory")
     for report in reports:
         fields = {"name", "project", "template", "kind", "main", "comparison", "workload_id", "phase_keys", "rows", "warmup", "samples", "runtime_classes"}
-        require(isinstance(report, dict) and fields <= set(report) <= fields | {"controls"}, "Invalid compiled owner report fields")
+        require(isinstance(report, dict) and fields <= set(report) <= fields | {"controls", "paired_jmh"}, "Invalid compiled owner report fields")
         require(isinstance(report["name"], str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", report["name"])
                 and report["name"] not in names, "Invalid or duplicate owner report name")
         names.add(report["name"])
@@ -187,6 +187,17 @@ def load_manifest(root, path):
                     and binding["project"] in projects and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", binding["class"]),
                     "Invalid actual owner runtime representative")
         require(len({binding["project"] for binding in classes.values()}) == len(classes), "Duplicate owner runtime binding")
+        if "paired_jmh" in report:
+            paired = report["paired_jmh"]
+            require(isinstance(paired, dict) and set(paired) == {"suite", "fixture_class"}
+                    and report["kind"] == "java-exec", "Use one declared original JavaExec pairing")
+            matches = [suite for suite in data["suites"] if suite["name"] == paired["suite"]]
+            require(len(matches) == 1 and matches[0]["project"] == report["project"]
+                    and matches[0]["expected_cases"] == len(report["rows"]), "Pair owner rows to one complete JMH suite")
+            require(isinstance(paired["fixture_class"], str)
+                    and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", paired["fixture_class"])
+                    and paired["fixture_class"].rsplit(".", 1)[1] in {name.rsplit(".", 1)[-1] for name in matches[0]["benchmarks"]},
+                    "Declare the actual paired compiled fixture class")
     continuation = data.get("owner_continuation")
     if continuation is not None:
         require(isinstance(continuation, dict) and set(continuation) == {"name", "runtime_sha256", "collector_sha256"}, "Invalid complete owner continuation")
@@ -272,6 +283,61 @@ def materialize(root, output, side, source, input_root=None):
     archive = output / f"source-{side}.zip"
     git(workspace, "archive", "--format=zip", f"--output={archive}", source["tree"])
     return workspace, {"ref": source["ref"], "tree": source["tree"], "archive_sha256": digest(archive), "patches": source["patches"], "raw_checkout_attributes_sha256": digest(attributes)}
+
+
+def compiled_application_tree(root):
+    """Match the existing ArtifactIdentity selected-entry hash before any sampler runs."""
+    files = sorted(root.rglob("*"), key=lambda path: path.relative_to(root).as_posix().encode("utf-16-be"))
+    require(root.is_dir() and not root.is_symlink() and len(files) <= 16_384
+            and all(not path.is_symlink() for path in files), "Unsafe compiled fixture tree")
+    selected = [path for path in files if path.is_file() and (path.suffix == ".class"
+                or path.relative_to(root).as_posix().startswith(("assets/", "data/")))]
+    require(selected and sum(path.stat().st_size for path in selected) <= 64 * 1024**2, "Missing or oversized compiled fixture")
+    identity = hashlib.sha256()
+    for path in selected:
+        name = path.relative_to(root).as_posix().encode("utf-8")
+        identity.update(str(len(name)).encode("ascii") + b":" + name + bytes((0,)))
+        identity.update(path.read_bytes())
+        identity.update(bytes((255,)))
+    return identity.hexdigest()
+
+
+def paired_owner_source_plan(fixture, specification, sources, runtime):
+    """Bind both actual prepared source trees and archive inventories to one unchanged compiled fixture."""
+    resource = specification["paired_jmh"]["fixture_class"].replace(".", "/") + ".class"
+    build = fixture.joinpath(*specification["project"].strip(":").split(":"), "build")
+    roots = [build / relative for relative in ("classes/kotlin/jmh", "classes/java/jmh", "jmh-generated-classes")]
+    matches = [root for root in roots if root.joinpath(*PurePosixPath(resource).parts).is_file()]
+    require(len(matches) == 1, "Missing or shadowed paired compiled fixture")
+    rows = []
+    for side in ("baseline", "candidate"):
+        source = sources[side]
+        archives = {label: runtime[side][binding["project"]]["sha256"]
+                    for label, binding in specification["runtime_classes"].items()}
+        rows.append({"revision": source["tree"], "prepared_source_kind": "Git tree after exact ref and patches",
+                     "source_binding": source, "archives": archives})
+    require(rows[0]["revision"] != rows[1]["revision"] and rows[0]["archives"] != rows[1]["archives"],
+            "Paired sources or actual runtime archives do not distinguish baseline and candidate")
+    return {"fixture_revision": sources["fixture"]["tree"], "fixture_source_binding": sources["fixture"],
+            "fixture_tree_sha256": compiled_application_tree(matches[0]), "sources": rows}
+
+
+def paired_owner_arguments(directory, repetition, plan, fixture, expected_rows):
+    """Retain the original four arguments and actual JMH library-property origin without changing VM flags."""
+    receipt = directory / "receipt.json"
+    metadata = read_json(receipt)
+    require(metadata["status"] == "passed" and metadata["repetition"] == repetition
+            and digest(directory / "results.json") == metadata["results_sha256"], "Original paired JMH receipt changed")
+    require(digest(Path(plan["path"])) == plan["sha256"], "Immutable paired source plan changed")
+    rows = read_json(directory / "results.json")
+    require(len(rows) == expected_rows, "Incomplete original paired JMH results")
+    prefix = "-Dstrata.performance.inputs="
+    paths = [[value[len(prefix):] for value in row["jvmArgs"] if value.startswith(prefix)] for row in rows]
+    require(all(len(value) == 1 and value == paths[0] for value in paths), "Missing or inconsistent actual JMH library-input origin")
+    libraries = Path(paths[0][0])
+    require(libraries.is_file() and not libraries.is_symlink() and libraries.resolve().is_relative_to(fixture.resolve()),
+            "Paired library-input origin escaped the owned fixture")
+    return [str(receipt), plan["path"]], libraries
 
 
 def archive_task(project):
@@ -1029,6 +1095,16 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         inputs = output / "fixture-inputs.properties"
         input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
                           for index, item in enumerate(data["inputs"])}
+        paired_owner_plans = {}
+        for specification in data.get("owner_reports", []):
+            if "paired_jmh" in specification:
+                destination = output / "prepared" / "inputs" / (specification["name"] + "-source-plan.json")
+                write_new(destination, paired_owner_source_plan(fixture, specification, record["sources"], runtime_archives))
+                item = {"path": str(destination), "sha256": digest(destination)}
+                label = "paired-source-" + specification["name"]
+                require(label not in input_archives, "Paired source plan overlaps an original input label")
+                input_archives[label] = item
+                paired_owner_plans[specification["name"]] = item
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
         collector = archive_file(fixture, ":performance-testkit")
         verify_continuation_archives(data, runtime_archives, collector)
@@ -1076,6 +1152,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     verify_preflight(control, actual, record["phases"][-1]["terminal"], request_hash)
                     require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Control changed its prepared classpath inventory")
             admitted_suites.append((suite, project, task, selectors, classpaths))
+        paired_jmh_bindings = {}
         for suite, project, task, selectors, classpaths in admitted_suites:
             bindings = {"baseline": [], "candidate": []}
             for mode in ("avgt", "sample"):
@@ -1122,6 +1199,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 comparison = read_json(comparison_path)
                 require(comparison["status"] == "passed" and len(comparison["cases"]) == suite["expected_cases"], "Incomplete paired comparison")
                 comparisons.append((suite["name"], mode, comparison))
+            paired_jmh_bindings[suite["name"]] = {"runs": bindings, "selectors": selectors}
             if "operation_reports" in suite:
                 operation = suite["operation_reports"]
                 runs = {"baseline": [], "candidate": []}
@@ -1169,9 +1247,17 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     destination = output / "raw" / specification["name"] / side / f"run-{repetition}.json"
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     request = output / f"{specification['name']}-{side}-{repetition}-owner-request.json"
+                    arguments, paired_selectors = [str(destination), str(repetition)], []
+                    if "paired_jmh" in specification:
+                        paired = paired_jmh_bindings[specification["paired_jmh"]["suite"]]
+                        plan = paired_owner_plans[specification["name"]]
+                        extra, library_manifest = paired_owner_arguments(Path(paired["runs"][side][repetition]), repetition,
+                                                                       plan, fixture, len(specification["rows"]))
+                        arguments += extra
+                        paired_selectors = paired["selectors"]
                     write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
                                         "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
-                                        "arguments": [str(destination), str(repetition)], "inputs": str(library_manifest)})
+                                        "arguments": arguments, "inputs": str(library_manifest)})
                     flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.paired.runtime={runtime_manifests[side]}",
                              f"-Pstrata.performance.fixtureInputs={inputs}"]
                     if side not in classpaths:
@@ -1182,7 +1268,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                         prepared_classpath(classpaths[side])
                         flags.append(f"-Pstrata.paired.classpath={classpaths[side]}")
                     phase(f"collect-{specification['name']}-owner-{side}-{repetition}", fixture,
-                          [specification["project"] + ":strataPairedEvidence"] + flags, 0)
+                          [specification["project"] + ":strataPairedEvidence"] + flags + paired_selectors, 0)
                     prepared = prepared_classpath(classpaths[side])
                     require(class_entry(prepared, "dev.s7a.strata.performance.JvmPerformanceMeter")["sha256"] == digest(collector), "Owner report substituted its collector")
                     verify_owner_report(read_json(destination), specification, repetition, runtime_archives[side], invocation_ids | operation_ids | owner_ids)
