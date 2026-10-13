@@ -1,20 +1,56 @@
 {
   "schema": "strata.issue154.prepared-source-provenance.v1",
   "status": "Source preparation; complete Java/Node/CI/work/metrics qualification Pending",
-  "base_public_commit": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
-  "accepted_master": "d9f3389ca0ddbd1c9f666f00e9294fc8c4580264",
-  "baseline_tree": "29d363d584a76747b98fc80ce6ef568b85f1ea14",
-  "candidate_fixture_tree": "29f5b1b6573fb0be23a85b3e029ef8f242499ca8",
+  "base_public_commit": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+  "accepted_master": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
+  "baseline_tree": "d27a996707ff181fc78da7b34c066a53d32fc6eb",
+  "candidate_fixture_tree": "e73dd22d06ff3259ea8e744dc8d951527a8310ac",
   "runtime_delta_paths": [
     "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt"
   ],
   "all_other_baseline_candidate_source_bytes_identical": true,
   "source_delta_bindings": [
     {
+      "path": "docs/development/performance-testkit.md",
+      "canonical_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "raw_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
+      "git_blob": "d8854ac3573d0f61e452f5918763c222ccd0191d"
+    },
+    {
       "path": "docs/development/performance.md",
-      "canonical_sha256": "20382d8da8f8e92bb07bc2284e3235653500cc995f67cf0497279a0b856914b2",
-      "raw_sha256": "20382d8da8f8e92bb07bc2284e3235653500cc995f67cf0497279a0b856914b2",
-      "git_blob": "5dca36ef5e356f9f32fbd1ec792214eecee61af6"
+      "canonical_sha256": "9160a3b495decc6aa16230618963551225558b1800e3d29380a0fde35e8fe4a0",
+      "raw_sha256": "9160a3b495decc6aa16230618963551225558b1800e3d29380a0fde35e8fe4a0",
+      "git_blob": "49846ceffca32469eb4a84ef1f24c5fdcb670470"
+    },
+    {
+      "path": "gradle/performance/invoke-windows.ps1",
+      "canonical_sha256": "ccf80c916b421b74dc037b7b21f83db90dbe7944e56a43308bd102558db18206",
+      "raw_sha256": "7e508e8ae17cf29fd01514228fa54f3452c2f8f9d5cc2c4a417116859a53e761",
+      "git_blob": "fe5b5f85812ad85d7376a6f5c4a12ef52bc8c8c4"
+    },
+    {
+      "path": "gradle/performance/paired-jvm.py",
+      "canonical_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "raw_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
+      "git_blob": "7de981bdfd4d87a979cbfbd29639ff468175c8d5"
+    },
+    {
+      "path": "gradle/performance/verify-windows-boundary.py",
+      "canonical_sha256": "e80462a7aa5d8392d67bd4ced471fdcff6a776af52e288bb906ff64927d2034c",
+      "raw_sha256": "013715c3978eedd074669ab388c641064b9d4722ab03cb8b18fb17d8cf5fa35b",
+      "git_blob": "9015b3658cb9b8fce3033204a2d10487770b06a7"
+    },
+    {
+      "path": "gradle/performance/windows-process-history.py",
+      "canonical_sha256": "c1f47a3b601806c970fcbda884997c05ef151ddc7cece87970e99ea215c340c2",
+      "raw_sha256": "4f543ec1b43041a6cc0e7821dd11929cea4a393dfb7359718d818034774b7bee",
+      "git_blob": "65c9c8b98f76d975550ea2007eeb862fd726c359"
+    },
+    {
+      "path": "gradle/tests/test_paired_jvm.py",
+      "canonical_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "raw_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
+      "git_blob": "efff347a6a3261e443b4acfdfcfd4554c0a9b0e9"
     },
     {
       "path": "integration/api/src/test/kotlin/dev/s7a/strata/integration/external/ParentDataIntegrationTest.kt",
@@ -30,9 +66,9 @@
     },
     {
       "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ModifierReconciliationOperationReport.kt",
-      "canonical_sha256": "a41ce07e4d234c8605a5b2b0ecf6d3e951101aeb273c1d3b96b21b87bfa289a2",
-      "raw_sha256": "a41ce07e4d234c8605a5b2b0ecf6d3e951101aeb273c1d3b96b21b87bfa289a2",
-      "git_blob": "c7595effcc55566f0cfdefeb7de91854493d1097"
+      "canonical_sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f",
+      "raw_sha256": "830d7b4e5abb6bc44259c78c06d069d7c0c31d795d617fdd43092e9b51c5569f",
+      "git_blob": "d268798fc2fef1802df1182fa5dcbec86c41b39d"
     },
     {
       "path": "runtime/core/src/commonTest/kotlin/dev/s7a/strata/runtime/IdenticalModifierChainTest.kt",
@@ -236,7 +272,7 @@
     ":runtime:core",
     ":runtime:headless"
   ],
-  "common_generic_source": "48397d89d7fd61fccc87185bd57d432aa90a96c8",
+  "common_generic_source": "b9723dfa231dc512776a4bf1aeaa6f66fce69ac0",
   "operation_boundary": "Original complete Scene.update; immutable declaration setup, original verifyWork, serialization and terminal close outside sampling.",
   "control_classification": "All 13 original changed-chain/structural workloads and the two m=0 Same rows; all six nonempty Same target rows also retained.",
   "deterministic_work": "Original full 21 Scene lifecycle/callback verification; portable identity/validation/dirty/ancestry/geometry/source-cutoff/owner/failure controls retained.",
@@ -245,16 +281,16 @@
   "source_patches": {
     "baseline": {
       "path": ".github/performance/issue154-full/baseline.patch",
-      "sha256": "d4ccfb6eea90fc835923f74568087916266478cef40bcd7c87e204e125c4037d"
+      "sha256": "164113ef062bd787d4e6bed5ab97fef6bfe5b6e4bac27d7a78dbe573a26d3816"
     },
     "candidate": {
       "path": ".github/performance/issue154-full/candidate.patch",
-      "sha256": "469a103bd6785870dadf898f7e36248328e891ddc4bc39eaf1e352abda2b43ae"
+      "sha256": "6c7116691b4eb4686ac87360cbed8f860b2ae2d3647814e1844237c70e4e45c2"
     }
   },
   "compiled_pins": "Optional empty; existing driver retains actual loaded closure",
   "measurement_selection": "Own full21 default equals nested manifest byte-for-byte; one automatic full comparison, no unrelated cleanup46 or pilot credit.",
-  "driver_metadata_scope": "New issue154-full and own default driver metadata excluded from measured source trees; the published48397 common source has no inherited default; every other measured B/C byte is identical.",
+  "driver_metadata_scope": "New issue154-full and own default driver metadata excluded from measured source trees; accepted master default is retained identically in measured trees; the top-level published default selects only the own whole21 corpus; every other measured B/C byte is identical.",
   "patch_encoding": "Standard Git binary hunks using temporary generation attributes; permanent/shared attributes unchanged.",
   "old_44_staged_paths": "Protected raw/index archives plus retained stash 26b6a012cdd16cf3bfb709857b42d62117febab9; no wholesale old-helper adoption.",
   "Java_started": 0,

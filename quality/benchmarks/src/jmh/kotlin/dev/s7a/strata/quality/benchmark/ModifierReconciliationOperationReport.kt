@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonObject
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
@@ -10,6 +11,7 @@ import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Scene
 import dev.s7a.strata.quality.benchmark.ModifierReconciliationBenchmark.Workload
 import dev.s7a.strata.runtime.UiTree
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.nio.file.Path
 
 /**
  * All 21 original alternating reconciliation rows, including changed-chain and empty-chain controls.
@@ -18,6 +20,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  */
 @OptIn(InternalStrataRuntimeApi::class)
 public object ModifierReconciliationOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, Path>
+        get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
+
     override val rows: List<JvmOperationReportRow> =
         Workload.entries.map { workload ->
             JvmOperationReportRow(
