@@ -1,8 +1,10 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
+from contextlib import redirect_stdout
 import copy
 import csv
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -48,6 +50,217 @@ class PairedJvmTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return PAIRED.load_manifest(self.root, path)
+
+    def selector_git(self, *arguments):
+        """Build real isolated fixture histories without invoking commit signing."""
+        return subprocess.check_output(["git", "-c", "core.bare=false", "-c", "commit.gpgsign=false",
+                                        "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                                        "-C", str(self.root), *arguments], text=True, encoding="utf-8").strip()
+
+    def selector_manifest(self, path, value=None):
+        """Keep the complete fixture and existing input pin in every selector control."""
+        target = self.root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(self.manifest if value is None else value), encoding="utf-8")
+        return path
+
+    def selector_commit(self, message="Preserve complete selector fixture"):
+        self.selector_git("add", "--all")
+        self.selector_git("commit", "--quiet", "--allow-empty", "-m", message)
+        return self.selector_git("rev-parse", "HEAD")
+
+    def selector_repository(self):
+        self.selector_git("init", "--quiet")
+        self.selector_git("config", "core.autocrlf", "false")
+        self.selector_git("config", "core.longpaths", "true")
+        (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
+        return self.selector_commit()
+
+    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None):
+        """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
+        base = self.selector_repository()
+        source = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}"), "patches": []}
+        if candidate_patch:
+            (self.root / "source.txt").write_text("candidate source\n", encoding="utf-8")
+            self.selector_git("add", "source.txt")
+            source["tree"] = self.selector_git("write-tree")
+            raw = subprocess.check_output(["git", "-C", str(self.root), "diff", "--cached", "--binary", "--full-index", base, "--", "source.txt"])
+            path = self.root / ".github/performance/owned/candidate.patch"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(raw)
+            source["patches"] = [{"path": path.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(path)}]
+        manifest = copy.deepcopy(self.manifest if value is None else value)
+        manifest["sources"] = {side: copy.deepcopy(source) for side in ("fixture", "baseline", "candidate")}
+        path = self.selector_manifest(".github/performance/owned/manifest.json", manifest)
+        if mismatch == "blob":
+            (self.root / "source.txt").write_text("a different final source\n", encoding="utf-8")
+        if mismatch == "path":
+            (self.root / "unrepresented.txt").write_text("extra final source\n", encoding="utf-8")
+        producer = self.selector_commit("Freeze complete paired inputs")
+        if mismatch == "mode":
+            self.selector_git("update-index", "--chmod=+x", "source.txt")
+            self.selector_git("commit", "--quiet", "-m", "Retain final source mode")
+            producer = self.selector_git("rev-parse", "HEAD")
+        self.selector_git("rm", "--quiet", "-r", ".github/performance")
+        trailer = f"Performance-Inputs: {producer}:{path}" if malformed is None else malformed.format(producer=producer, path=path, base=base)
+        self.selector_git("commit", "--quiet", "-m", "Consume immutable paired inputs\n\n" + trailer)
+        return base, producer, self.selector_git("rev-parse", "HEAD"), path, manifest
+
+    def test_clean_commit_trailer_selects_the_complete_pinned_recipe_and_distinct_data_root(self):
+        base, producer, head, path, manifest = self.input_consumer(candidate_patch=True)
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), path)
+        self.assertFalse((self.root / ".github/performance").exists())
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer) as selection:
+            self.assertNotEqual(selection["root"], self.root)
+            self.assertEqual(PAIRED.load_manifest(selection["root"], selection["path"]), manifest)
+            self.assertEqual(selection["producer"], producer)
+            self.assertEqual(selection["path"].read_bytes(), subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"]))
+            self.assertEqual(selection["sha256"], PAIRED.digest(selection["path"]))
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_no_declaration_skips_cleanup_but_explicit_input_never_uses_a_historical_default(self):
+        base = self.selector_repository()
+        (self.root / "ordinary.txt").write_text("cleanup source", encoding="utf-8")
+        head = self.selector_commit()
+        self.assertEqual(PAIRED.select_manifest(self.root, base=base, head=head), "")
+        self.assertEqual(PAIRED.select_manifest(self.root), "")
+        self.selector_manifest("gradle/performance/paired-jvm.example.json")
+        for explicit in ("", "gradle/performance/paired-jvm.example.json", ".github/performance/paired-jvm.json"):
+            with self.subTest(explicit=explicit), self.assertRaises(ValueError):
+                PAIRED.select_manifest(self.root, explicit)
+
+    def test_tracked_payload_rejects_even_with_no_explicit_intent_or_trailer(self):
+        self.selector_repository()
+        self.selector_manifest(".github/performance/old/manifest.json")
+        self.selector_commit()
+        with self.assertRaisesRegex(ValueError, "Execution head contains"):
+            PAIRED.select_manifest(self.root)
+
+    def test_missing_duplicate_nontrailer_or_malformed_declarations_do_not_select(self):
+        bad = ["Performance-Inputs", "Performance-Inputs: not-a-sha:{path}",
+               "performance-inputs: {producer}:{path}", "Performance-Inputs: {producer}:../manifest.json",
+               "Performance-Inputs: {producer}:.github/performance-other/manifest.json",
+               "Performance-Inputs: {producer}:{path}\nPerformance-Inputs: {producer}:{path}",
+               "Performance-Inputs: {producer}:{path}\n\nThis is ordinary final prose."]
+        for index, declaration in enumerate(bad):
+            with self.subTest(declaration=declaration), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(malformed=declaration)
+                    with self.assertRaises(ValueError):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
+
+    def test_wrong_producer_parent_and_multiple_head_parents_reject(self):
+        base, producer, head, path, _ = self.input_consumer(malformed="Performance-Inputs: {base}:{path}")
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+        tree = self.selector_git("rev-parse", head + "^{tree}")
+        message = f"Consume inputs\n\nPerformance-Inputs: {producer}:{path}\n"
+        merged = subprocess.check_output(["git", "-C", str(self.root), "-c", "commit.gpgsign=false", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit-tree", tree, "-p", producer, "-p", base], input=message.encode()).decode().strip()
+        self.selector_git("checkout", "--quiet", "--detach", merged)
+        with self.assertRaisesRegex(ValueError, "sole execution-head parent"):
+            PAIRED.select_manifest(self.root)
+
+    def test_consumer_nondata_byte_path_and_mode_changes_reject(self):
+        _, _, _, _, _ = self.input_consumer()
+        (self.root / "source.txt").write_text("changed consumer source\n", encoding="utf-8")
+        self.selector_git("add", "source.txt")
+        self.selector_git("commit", "--quiet", "--amend", "--no-edit")
+        with self.assertRaisesRegex(ValueError, "nondata source or modes"):
+            PAIRED.select_manifest(self.root)
+
+    def test_patched_candidate_blob_path_and_mode_mismatch_rejects_current_head_credit(self):
+        for mismatch in ("blob", "path", "mode"):
+            with self.subTest(mismatch=mismatch), tempfile.TemporaryDirectory() as temporary:
+                original = self.root
+                self.root = Path(temporary)
+                (self.root / "fixture.txt").write_text("fixed input\n", encoding="utf-8")
+                try:
+                    self.input_consumer(candidate_patch=True, mismatch=mismatch)
+                    with self.assertRaisesRegex(ValueError, "Candidate source differs"):
+                        PAIRED.select_manifest(self.root)
+                finally:
+                    self.root = original
+
+    def test_changed_planned_manifest_producer_or_explicit_path_reject_before_run(self):
+        _, producer, _, path, _ = self.input_consumer()
+        for arguments in ({"explicit":".github/performance/other/manifest.json"}, {"data_ref":"0" * 40},
+                          {"data_ref":""}, {"manifest_sha256":"0" * 64}, {"manifest_sha256":""}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                with PAIRED.selected_inputs(self.root, **arguments):
+                    self.fail("Invalid planning identity accepted")
+
+    def test_wrong_checkout_or_partial_pr_binding_rejects(self):
+        base, _, head, _, _ = self.input_consumer()
+        with self.assertRaisesRegex(ValueError, "checkout differs"):
+            PAIRED.select_manifest(self.root, base=base, head=base)
+        with self.assertRaisesRegex(ValueError, "both PR"):
+            PAIRED.select_manifest(self.root, base=base)
+
+    def test_same_source_empty_commit_cannot_move_head_during_input_materialization(self):
+        _, _, head, _, _ = self.input_consumer(candidate_patch=True)
+        materialize = PAIRED.materialize
+        def move_head(*arguments, **keywords):
+            result = materialize(*arguments, **keywords)
+            if arguments[2] == "input-producer":
+                self.selector_commit("Move head without changing source")
+            return result
+        with patch.object(PAIRED, "materialize", side_effect=move_head), self.assertRaisesRegex(ValueError, "head changed during materialization"):
+            PAIRED.select_manifest(self.root)
+        self.assertNotEqual(self.selector_git("rev-parse", "HEAD"), head)
+
+    def test_invalid_producer_schema_and_patched_input_pins_reject(self):
+        bad = copy.deepcopy(self.manifest)
+        bad["schema"] = "strata-paired-jvm-ci-v2"
+        self.input_consumer(value=bad)
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            PAIRED.select_manifest(self.root)
+
+    def test_cli_emits_exact_head_producer_and_manifest_hash_without_a_mutable_body(self):
+        base, producer, head, path, _ = self.input_consumer(candidate_patch=True)
+        expected_sha = hashlib.sha256(subprocess.check_output(["git", "-C", str(self.root), "show", f"{producer}:{path}"])).hexdigest()
+        output = self.root / "github-output"
+        console = io.StringIO()
+        with patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--select", "--base", base, "--head", head]), \
+                patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}), redirect_stdout(console):
+            PAIRED.main()
+        self.assertEqual(console.getvalue(), path + "\n")
+        self.assertEqual(output.read_text(), f"paired_manifest={path}\npaired_data_ref={producer}\npaired_manifest_sha256={expected_sha}\n")
+
+    def test_execution_head_and_explicit_empty_flags_refuse_before_collector(self):
+        self.selector_repository()
+        for flags in (["--manifest", ""], ["--expected-head", "0" * 40], ["--data-ref", ""], ["--manifest-sha256", ""]):
+            with self.subTest(flags=flags), patch.object(PAIRED, "__file__", str(self.root / "gradle/performance/paired-jvm.py")), \
+                    patch.object(PAIRED.sys, "argv", ["paired-jvm.py", "--output", str(self.root / "fresh-attempt"), *flags]), \
+                    patch.object(PAIRED, "run") as collector:
+                with self.assertRaises(ValueError):
+                    PAIRED.main()
+                collector.assert_not_called()
+                self.assertFalse((self.root / "fresh-attempt").exists())
+
+    def test_actual_driver_copy_binds_git_blobs_and_raw_crlf_bytes_then_rejects_mutation(self):
+        self.selector_repository()
+        (self.root / ".gitattributes").write_text("*.py text eol=lf\n", encoding="utf-8")
+        for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+            path = self.root / "gradle/performance" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"original driver source\r\n")
+        self.selector_commit()
+        records = PAIRED.preserve_driver_sources(self.root, self.root / "retained")
+        PAIRED.verify_driver_sources(records)
+        self.assertEqual(set(records), {"paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"})
+        for item in records.values():
+            self.assertEqual(Path(item["path"]).read_bytes(), Path(item["source"]).read_bytes())
+            self.assertEqual(item["execution_head"], self.selector_git("rev-parse", "HEAD"))
+        Path(records["paired-jvm.py"]["source"]).write_bytes(b"different driver source\r\n")
+        with self.assertRaisesRegex(ValueError, "Driver bytes differ"):
+            PAIRED.verify_driver_sources(records)
 
     def test_generated_selection_without_fixture_registry(self):
         self.assertEqual(self.load(self.manifest), self.manifest)
@@ -200,7 +413,34 @@ class PairedJvmTest(unittest.TestCase):
                 self.assertFalse((directory / "junit-verified.json").exists())
                 self.assertTrue((directory / "junit-inventory.json").is_file())
 
-    def preflight_fixture(self, name):
+    def test_independent_junit_gate_accepts_actual_jvm_platform_names_without_accepting_other_platforms_or_duplicates(self):
+        gate = {"task": ":runtime:core:jvmTest", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+        reports = self.root / "runtime/core/build/test-results/jvmTest"
+        reports.mkdir(parents=True)
+        cases = [
+            (("owner()[jvm]", "failure()[jvm]"), True),
+            (("owner()[jvm]", "failure()"), True),
+            (("owner()[js]", "failure()[jvm]"), False),
+            (("owner()[jvm][jvm]", "failure()[jvm]"), False),
+            (("owner()[jvm]", "owner()", "failure()[jvm]"), False),
+        ]
+        for index, (names, accepted) in enumerate(cases):
+            with self.subTest(names=names):
+                directory = self.root / f"jvm-platform-{index}"
+                directory.mkdir()
+                report = reports / "TEST-independent.Controls.xml"
+                body = ''.join(f'<testcase classname="independent.Controls" name="{name}"/>' for name in names)
+                report.write_text(f'<testsuite tests="{len(names)}" failures="0" errors="0" skipped="0">{body}</testsuite>', encoding="utf-8")
+                PAIRED.preserve_test_reports(self.root, directory, gate)
+                if accepted:
+                    PAIRED.verify_test_gate(directory, gate)
+                    self.assertEqual(PAIRED.read_json(directory / "junit-verified.json")["counts"]["tests"], len(names))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_test_gate(directory, gate)
+                    self.assertFalse((directory / "junit-verified.json").exists())
+
+    def preflight_fixture(self, name, input_root=None, qualification=None):
         """Model independently retained class loads and OS generations for source-only rejection checks."""
         output = self.root / name
         output.mkdir()
@@ -215,11 +455,11 @@ class PairedJvmTest(unittest.TestCase):
         item = {"source": str(original), **PAIRED.preserve_file(original, retained / "classpath-0.jar")}
         PAIRED.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [item]})
         suite = copy.deepcopy(self.manifest["suites"][0])
-        suite["preflight"] = {"main": names[0], "qualification": self.pin,
+        suite["preflight"] = {"main": names[0], "qualification": self.pin if qualification is None else qualification,
                               "runtime_classes": {project: names[1] for project in runtime},
                               "controls": [{"id": "independent-a", "arguments": []}, {"id": "independent-b", "arguments": []}]}
         inputs = {"input": PAIRED.preserve_file(self.input, output / "inputs" / "input.bin")}
-        directory = PAIRED.preflight_request(self.root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
+        directory = PAIRED.preflight_request(self.root if input_root is None else input_root, output, suite, "baseline", retained / "classpath.json", runtime, {}, {}, inputs)
         request = PAIRED.read_json(directory / "request.json")
         controls = []
         for control in suite["preflight"]["controls"]:
@@ -240,6 +480,18 @@ class PairedJvmTest(unittest.TestCase):
                                         "affinityMask": 15, "systemAffinityMask": 15, "image": str(output / "jdk/bin/java.exe"),
                                         "creationFileTime": 116444736010000000}}}
         return directory, phase, terminal, receipt
+
+    def test_qualified_preflight_reads_exact_distinct_data_root_bytes(self):
+        data_root = self.root / "distinct-producer-inputs"
+        data_root.mkdir()
+        qualification = data_root / "fixture.txt"
+        qualification.write_bytes(b"independently qualified producer bytes")
+        pin = {"path":"fixture.txt", "sha256":PAIRED.digest(qualification)}
+        directory, _, _, _ = self.preflight_fixture("distinct-data-preflight", data_root, pin)
+        self.assertEqual((directory / "qualification.json").read_bytes(), qualification.read_bytes())
+        self.assertNotEqual(qualification.read_bytes(), self.input.read_bytes())
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.preflight_fixture("wrong-root-preflight", self.root, pin)
 
     def test_complete_preflight_rejects_missing_failed_changed_or_wrong_origin_controls(self):
         def replace_request(directory, phase, terminal, receipt):
@@ -492,6 +744,129 @@ class PairedJvmTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     PAIRED.verify_vms(directory, [log], actual, allowed, 1)
 
+    def test_reused_pid_preserves_both_completed_fork_generations_and_rejects_ambiguous_or_altered_history(self):
+        home = self.root / "reuse-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        epoch = 116444736000000000
+        records = [{"pid": 123, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                    "creationFileTime": epoch + start * 10000, "exitFileTime": epoch + (start + 1000) * 10000,
+                    "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15} for start in (1000, 5000)]
+        changes = [lambda history: None, lambda history: history.pop(0),
+                   lambda history: history.append(copy.deepcopy(history[0])),
+                   lambda history: history[0].update(pid=999), lambda history: history[0].update(completed=False),
+                   lambda history: history[0].update(handleClosed=False), lambda history: history[0].update(exitCode=1),
+                   lambda history: history[0].update(affinityMask=3),
+                   lambda history: history[0].update(creationFileTime=epoch + 2000 * 10000),
+                   lambda history: history[0].update(exitFileTime=epoch + 500 * 10000),
+                   lambda history: history.append({**history[0], "creationFileTime": epoch + 999 * 10000})]
+        for index, change in enumerate(changes):
+            with self.subTest(change=index):
+                directory = self.root / f"pid-reuse-{index}"
+                (directory / "class-loads").mkdir(parents=True)
+                (directory / "console.log").write_text("", encoding="utf-8")
+                files = []
+                for start, stamp in ((1000, "2026-10-12_00-00-01"), (5000, "2026-10-12_00-00-05")):
+                    log = directory / f"vm-pid123-{stamp}.log"
+                    log.write_text(f"<hotspot_log process='123' time_ms='{start + 1}'>\n<vm_arguments>"
+                                   f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\n"
+                                   "java.class.path=frozen.jar\n</vm_arguments>\n"
+                                   "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                                   "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                    (directory / f"class-loads/classes-123-{stamp}.log").write_text(
+                        "[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                    files.append(log)
+                history = copy.deepcopy(records)
+                change(history)
+                terminal = {"members": {"123": history}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if index == 0:
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    vms = PAIRED.read_json(directory / "vms.json")
+                    self.assertEqual([vm["os_generation"] for vm in vms], records)
+                    self.assertEqual(len({vm["class_load_diagnostic"]["path"] for vm in vms}), 2)
+                    self.assertEqual(terminal["members"]["123"], records)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 2)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_control_selects_actual_birth_without_borrowing_a_reused_pid_and_rejects_ambiguous_vm_origin(self):
+        for mode in ("history", "ambiguous-vm", "wrong-birth", "active", "wrong-affinity"):
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("reuse-control-" + mode)
+                original = terminal["members"]["123"]
+                original.update(pid=123, exitFileTime=116444736020000000, handleClosed=True)
+                later = {**original, "creationFileTime": 116444736050000000, "exitFileTime": 116444736060000000}
+                terminal["members"]["123"] = [original, later]
+                if mode == "ambiguous-vm":
+                    vms = PAIRED.read_json(phase / "vms.json")
+                    vms.append({**vms[0], "vm_start_ms": 5001})
+                    (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
+                elif mode == "wrong-birth":
+                    original["creationFileTime"] = 116444736030000000
+                elif mode == "active":
+                    original["completed"] = False
+                elif mode == "wrong-affinity":
+                    original["affinityMask"] = 3
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "history":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertTrue((directory / "verified.json").is_file())
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertFalse((directory / "verified.json").exists())
+
+    def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
+        original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}
+        legacy = {"members": {"123": copy.deepcopy(original)}}
+        self.assertEqual(PAIRED.owned_generation(legacy, 123, 1001), original)
+        current = {**original, "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
+        for missing in (None, "handleClosed", "exitFileTime", "pid"):
+            with self.subTest(missing=missing):
+                member = copy.deepcopy(current)
+                if missing is not None:
+                    member.pop(missing)
+                terminal = {"members": {"123": [member]}}
+                if missing is None:
+                    self.assertEqual(PAIRED.owned_generation(terminal, 123, 1001), current)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.owned_generation(terminal, 123, 1001)
+
+    def test_control_cannot_borrow_class_attribution_from_another_generation_with_the_same_pid(self):
+        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-class")
+        classes = (phase / "console.log").read_text(encoding="utf-8")
+        (phase / "console.log").write_text("", encoding="utf-8")
+        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
+        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
+        later = phase / "class-loads/classes-123-2026-10-12_00-00-05.log"
+        later.write_text(classes, encoding="utf-8")
+        vm = PAIRED.read_json(phase / "vms.json")[0]
+        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
+        other = {**vm, "role": "worker", "vm_start_ms": 5001,
+                 "class_load_diagnostic": {"path": str(later), "sha256": PAIRED.digest(later), "pid": 123}}
+        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
+        PAIRED.write_new(directory / "receipt.json", receipt)
+        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
+            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+        self.assertFalse((directory / "verified.json").exists())
+
+    def test_control_rejects_another_generations_console_origin_even_with_an_unrelated_own_class_file(self):
+        directory, phase, terminal, receipt = self.preflight_fixture("cross-generation-console")
+        current = phase / "class-loads/classes-123-2026-10-12_00-00-01.log"
+        current.write_text("[123][info][class,load] unrelated.Class source: file:/unrelated.jar\n", encoding="utf-8")
+        vm = PAIRED.read_json(phase / "vms.json")[0]
+        vm["class_load_diagnostic"] = {"path": str(current), "sha256": PAIRED.digest(current), "pid": 123}
+        other = {"pid": 123, "role": "worker", "vm_start_ms": 5001, "home": vm["home"]}
+        (phase / "vms.json").write_text(json.dumps([vm, other]), encoding="utf-8")
+        PAIRED.write_new(directory / "receipt.json", receipt)
+        with self.assertRaisesRegex(ValueError, "Missing or ambiguous PID-qualified"):
+            PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+        self.assertFalse((directory / "verified.json").exists())
+
     def test_jmh_version_probes_require_exact_arguments_caps_and_bound_compiler_hints(self):
         home = self.root / "jdk"
         executable = home / "bin/java.exe"
@@ -540,6 +915,189 @@ class PairedJvmTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             PAIRED.verify_vms(directory, [probe, collector], {"members": {}}, allowed, 0)
 
+    def test_preflight_keeps_unique_generation_metadata_separate_from_complete_class_file_identity(self):
+        for mode in ("complete", "changed-core-pin"):
+            with self.subTest(mode=mode):
+                directory, phase, terminal, receipt = self.preflight_fixture("unique-preflight-" + mode)
+                console = phase / "console.log"
+                diagnostic = phase / "class-loads/classes-123-2026-10-12_00-00-00.log"
+                diagnostic.write_text(console.read_text(encoding="utf-8"), encoding="utf-8")
+                console.write_text("", encoding="utf-8")
+                member = {**terminal["members"]["123"], "pid": 123, "handleClosed": True, "exitFileTime": 116444736020000000}
+                terminal["members"]["123"] = [member]
+                vm = phase / "vm-pid123-2026-10-12_00-00-01.log"
+                vm.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments><args>"
+                              "-Xlog:class+load=info:file=../../class-loads/classes-%p-%t.log:pid,level,tags:filecount=0"
+                              "</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
+                pin = {"source": str(phase / "class-loads" / diagnostic.name), "path": str(diagnostic), "sha256": PAIRED.digest(diagnostic)}
+                PAIRED.write_new(phase / "class-load-inventory.json", {"owner": str(phase / "class-loads"), "previous": {}, "copied": [pin]})
+                _, identities = PAIRED.class_loads(phase)
+                bound = PAIRED.class_diagnostic(identities, 123, vm, [vm], terminal)
+                self.assertEqual(bound["unique_generation"], member)
+                if mode == "changed-core-pin":
+                    bound["sha256"] = "0" * 64
+                records = PAIRED.read_json(phase / "vms.json")
+                records[0]["class_load_diagnostic"] = bound
+                (phase / "vms.json").write_text(json.dumps(records), encoding="utf-8")
+                PAIRED.write_new(directory / "receipt.json", receipt)
+                if mode == "complete":
+                    PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+                    self.assertEqual(PAIRED.read_json(directory / "verified.json")["controls"], ["independent-a", "independent-b"])
+                else:
+                    with self.assertRaisesRegex(ValueError, "Control changed its captured class-load diagnostic"):
+                        PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
+
+    def test_independent_log_filename_expansions_require_a_unique_pinned_owned_generation(self):
+        for mode in ("complete", "two-vms", "two-generations", "two-files", "changed-pin", "old-file", "wrong-owner", "wrong-flag", "missing-flag", "failed-process"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("independent-expansion-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                diagnostic = directory / "class-loads/classes-3708-2026-10-12_23-45-44.log"
+                diagnostic.write_text("[3708][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
+                flag = "../../../../class-loads/classes-%p-%t.log"
+                if mode == "wrong-flag":
+                    flag = "../../../../other-owner/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid3708-2026-10-12_23-45-45.log"
+                vm.write_text(f"<hotspot_log process='3708' time_ms='1791848744997'><vm_arguments><args>{args}</args></vm_arguments></hotspot_log>\n", encoding="utf-8")
+                files = [vm]
+                if mode == "two-vms":
+                    other = directory / "vm-pid3708-2026-10-12_23-46-00.log"
+                    other.write_text("<hotspot_log process='3708' time_ms='1791848760000'></hotspot_log>\n", encoding="utf-8")
+                    files.append(other)
+                member = {"pid": 3708, "creationFileTime": 134363223449669511, "exitFileTime": 134363224864077401,
+                          "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 1 if mode == "failed-process" else 0}
+                history = [member]
+                if mode == "two-generations":
+                    history.append({**member, "creationFileTime": 134363224900000000, "exitFileTime": 134363225000000000})
+                terminal = {"members": {"3708": history}}
+                owner = directory / ("wrong" if mode == "wrong-owner" else "class-loads")
+                pin = {"path": str(diagnostic), "source": str(owner / diagnostic.name), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                previous = {diagnostic.name: pin["sha256"]} if mode == "old-file" else {}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(owner), "previous": previous, "copied": [pin]})
+                candidates = {str(diagnostic): {"path": str(diagnostic), "sha256": PAIRED.digest(diagnostic), "pid": 3708}}
+                if mode == "two-files":
+                    other = directory / "class-loads/classes-3708-2026-10-12_23-46-00.log"
+                    other.write_text(diagnostic.read_text(encoding="utf-8"), encoding="utf-8")
+                    candidates[str(other)] = {"path": str(other), "sha256": PAIRED.digest(other), "pid": 3708}
+                if mode == "complete":
+                    result = PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
+                    self.assertEqual(result["path"], str(diagnostic))
+                    self.assertEqual(result["unique_generation"], member)
+                    self.assertEqual(result["actual_file_flag"], flag)
+                elif mode in ("two-vms", "two-generations", "two-files"):
+                    self.assertIsNone(PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.class_diagnostic(candidates, 3708, vm, files, terminal)
+
+    def test_unique_java_generation_keeps_closed_helpers_and_rejects_missing_or_altered_proof(self):
+        modes = ("complete", "two-java", "two-javaw", "missing-file", "console-only", "unclosed-helper", "failed-helper", "foreign-helper",
+                 "wrong-helper-affinity", "overlapping-helper", "missing-helper-image", "wrong-java-image", "changed-pin", "missing-flag", "duplicate-origin")
+        for mode in modes:
+            with self.subTest(mode=mode):
+                directory = self.root / ("closed-helper-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"frozen executable")
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                origin = "[8188][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n"
+                diagnostic = directory / "class-loads/classes-8188-2026-10-13_06-15-24.log"
+                diagnostic.write_text(origin * (2 if mode == "duplicate-origin" else 1), encoding="utf-8")
+                flag = "../../class-loads/classes-%p-%t.log"
+                args = "" if mode == "missing-flag" else f"-Xlog:class+load=info:file={flag}:pid,level,tags:filecount=0"
+                vm = directory / "vm-pid8188-2026-10-13_06-15-25.log"
+                vm.write_text(f"<hotspot_log process='8188' time_ms='1791872124997'>\n<vm_arguments><args>{args}</args>\n"
+                              f"<command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                              "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                              "<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                helper = {"pid": 8188, "creationFileTime": 134363456004687052, "exitFileTime": 134363456096932060,
+                          "image": str(directory / "conhost.exe"), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                member = {**helper, "creationFileTime": 134363457249718371, "exitFileTime": 134363457345207482, "image": str(executable)}
+                if mode in ("two-java", "two-javaw"):
+                    helper["image"] = str(directory / "earlier-jdk/bin" / ("javaw.exe" if mode == "two-javaw" else "java.exe"))
+                elif mode == "unclosed-helper":
+                    helper["handleClosed"] = False
+                elif mode == "failed-helper":
+                    helper["exitCode"] = 1
+                elif mode == "foreign-helper":
+                    helper["inOwnedJob"] = False
+                elif mode == "wrong-helper-affinity":
+                    helper["affinityMask"] = 1
+                elif mode == "overlapping-helper":
+                    helper["exitFileTime"] = member["creationFileTime"] + 1
+                elif mode == "missing-helper-image":
+                    helper.pop("image")
+                elif mode == "wrong-java-image":
+                    member["image"] = str(directory / "different-jdk/bin/java.exe")
+                terminal = {"members": {"8188": [helper, member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                pin = {"path": str(diagnostic), "source": str(diagnostic), "sha256": "0" * 64 if mode == "changed-pin" else PAIRED.digest(diagnostic)}
+                PAIRED.write_new(directory / "class-load-inventory.json", {"owner": str(diagnostic.parent), "previous": {}, "copied": [pin]})
+                (directory / "console.log").write_text(origin if mode == "console-only" else "", encoding="utf-8")
+                if mode in ("missing-file", "console-only"):
+                    diagnostic.unlink()
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    result = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(result["os_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["unique_generation"], member)
+                    self.assertEqual(result["class_load_diagnostic"]["closed_non_java_helper_generations"], [helper])
+                    self.assertEqual(result["actual_loaded_main"], "file:/frozen.jar")
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, [vm], terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_short_probe_does_not_borrow_later_same_pid_fork_class_log(self):
+        home = self.root / "probe-reuse-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"frozen executable")
+        allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+        environment = "-Xmx32m -XX:MaxMetaspaceSize=256m -XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile=owned/vm-%p-%t.log"
+        probe = ("<hotspot_log process='5704' time_ms='1791843175150'>\n<vm_arguments><args>\n"
+                 f"{environment} -XX:+UnlockExperimentalVMOptions -XX:CompileCommand=blackhole,some/fake/Class.method </args>\n"
+                 f"<launcher>SUN_STANDARD</launcher>\n<properties>\njava.home={home}\njava.class.path=\n</properties></vm_arguments>\n"
+                 "-XX:MaxHeapSize=33554432 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        def document(pid, start, main):
+            return (f"<hotspot_log process='{pid}' time_ms='{start}'>\n<vm_arguments><command>{main}</command>\n"
+                    f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
+                    "-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n")
+        member = {"pid": 5704, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                  "creationFileTime": 134363168979685947, "exitFileTime": 134363169071356647,
+                  "image": str(executable), "affinityMask": 15, "systemAffinityMask": 15}
+        for mode in ("complete", "wrong-fork-stamp", "unstamped-reused-pid"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("probe-fork-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                PAIRED.write_new(directory / "request.json", {"environment": {"JAVA_TOOL_OPTIONS": environment}})
+                origin = {"main": "fixture.Collector", "executable": str(executable), "classpath": "frozen.jar"}
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                files = [directory / name for name in ("vm-pid5704-2026-10-12_22-12-55.log", "vm-pid5704-2026-10-12_22-14-57.log", "vm-pid456-2026-10-12_22-12-54.log")]
+                if mode == "unstamped-reused-pid":
+                    files[0] = directory / "probe.log"
+                    files[1] = directory / "fork.log"
+                for path, value in zip(files, (probe, document(5704, 1791843297993, "org.openjdk.jmh.runner.ForkedMain 1"), document(456, 1791843174001, "fixture.Collector"))):
+                    path.write_text(value, encoding="utf-8")
+                stamp = "2026-10-12_22-12-55" if mode == "wrong-fork-stamp" else "2026-10-12_22-14-57"
+                fork_class = directory / f"class-loads/classes-5704-{stamp}.log"
+                fork_class.write_text("[5704][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                (directory / "class-loads/classes-456-2026-10-12_22-12-54.log").write_text("[456][info][class,load] org.openjdk.jmh.runner.CompilerHints source: file:/frozen.jar\n", encoding="utf-8")
+                terminal = {"members": {"5704": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    rows = PAIRED.read_json(directory / "vms.json")
+                    self.assertNotIn("class_load_diagnostic", rows[0])
+                    self.assertEqual(rows[1]["class_load_diagnostic"]["sha256"], PAIRED.digest(fork_class))
+                    self.assertEqual(rows[1]["os_generation"], member)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, files, terminal, allowed, 1)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_fixed_class_load_staging_retains_only_fresh_phase_bytes_and_rejects_previous_mutation(self):
         for mode in ("complete", "partial", "changed-previous", "deleted-previous"):
             with self.subTest(mode=mode):
@@ -576,7 +1134,7 @@ class PairedJvmTest(unittest.TestCase):
                     else:
                         observed, identities = PAIRED.class_loads(directory)
                         self.assertEqual(observed, line)
-                        self.assertEqual(set(identities), {123})
+                        self.assertEqual({item["pid"] for item in identities.values()}, {123})
                         self.assertEqual(PAIRED.class_load_inventory(owner, captured), captured)
                         fresh.write_bytes(b"changed between phases")
                         with self.assertRaisesRegex(ValueError, "captured class-load staging bytes"):
@@ -596,7 +1154,7 @@ class PairedJvmTest(unittest.TestCase):
             (owner / f"classes-{pid}-2026-10-12_00-00-00.log").write_text(record * 7000, encoding="utf-8")
         text, identities = PAIRED.class_loads(directory)
         self.assertGreater(len(text), 16 * 1024**2)
-        self.assertEqual(set(identities), set(range(1, 49)))
+        self.assertEqual({item["pid"] for item in identities.values()}, set(range(1, 49)))
         self.assertEqual(text.count("fixture.Complete source:"), 48 * 7000)
 
     def test_class_load_inventory_rejects_missing_duplicate_wrong_pid_rotation_and_truncation(self):
@@ -615,6 +1173,10 @@ class PairedJvmTest(unittest.TestCase):
             if index == 0:
                 text, identities = PAIRED.class_loads(directory)
                 self.assertEqual((text, identities), ("", {}))
+            elif index == 4:
+                text, identities = PAIRED.class_loads(directory)
+                self.assertEqual(len(identities), 2)
+                self.assertEqual({item["pid"] for item in identities.values()}, {123})
             else:
                 with self.assertRaises(ValueError):
                     PAIRED.class_loads(directory)
@@ -647,6 +1209,10 @@ class PairedJvmTest(unittest.TestCase):
         exposed["paired_manifest"] = ".github/performance/pilot-issue145/manifest.json"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
             exec(compile(script, "jvm-workflow-result", "exec"), {})
+        for result in ("failure", "cancelled"):
+            jobs["paired-jvm"]["result"] = result
+            with self.subTest(result=result), patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}), self.assertRaises(AssertionError):
+                exec(compile(script, "jvm-workflow-result", "exec"), {})
         jobs["paired-jvm"]["result"] = "success"
         with patch.dict(os.environ, {"RESULTS": json.dumps(jobs)}):
             exec(compile(script, "jvm-workflow-result", "exec"), {})

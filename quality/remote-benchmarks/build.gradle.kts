@@ -1,8 +1,7 @@
+import dev.s7a.strata.gradle.performance.configureJmhEvidence
 import dev.detekt.gradle.extensions.DetektExtension
 import me.champeau.jmh.JMHTask
 import me.champeau.jmh.JmhBytecodeGeneratorTask
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import java.util.Properties
 
 plugins { alias(libs.plugins.jmh) }
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
@@ -58,26 +57,10 @@ tasks.register<JavaExec>("jmhRemote") {
     val suite = (if (quick) "$label-quick" else if (smoke) "$label-smoke" else label) + (if (workloads != null || selected) "-selected" else "") + (if (mode in setOf("sample")) "-sample" else "")
     val includes = if (sessions) "RemoteSessionBenchmark.*" else "RemoteProtocolBenchmark.*"
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), includes, "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    configureJmhEvidence(result.get(), repetition, includes, mode, short)
     systemProperty("strata.performance.remoteSessions", sessions)
     systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && selected.not()))
     systemProperty("strata.performance.mode", mode)
-    val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
-    doFirst {
-        val entries = Properties()
-        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
-            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
-            if (module != null) {
-                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
-                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
-            }
-        }
-        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
-        val manifest = inputsManifest.get().asFile
-        manifest.parentFile.mkdirs()
-        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
-        systemProperty("strata.performance.inputs", manifest.absolutePath)
-    }
 }
 
 tasks.register<JavaExec>("captureRemoteInventory") {

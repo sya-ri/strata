@@ -48,6 +48,25 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Current CycleButton selection
+
+Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
+Paint and semantics always read the state under its execution owner before checking that reference by identity.
+Only the exact same immutable selected object can reuse an index; a different accepted alias uses the existing directional `indexOf` search, even when it also compares equal to a cached later option.
+The current state identity owns the immutable option snapshot, and state replacement, detach and disposal clear the borrowed key.
+Labels and enabled colors always come from the current declaration rather than a cached label pair.
+This key does not depend on notifications and therefore resolves a changed value after an earlier observer failure or a bounded nested write when the relevant consumer next evaluates.
+Validation, publication, cycling and declaration preparation retain their existing work.
+
+The separate CycleButton selection corpus registers nine immutable option-count/position fixtures with two complete-operation modes and thirty independent controls.
+Its deterministic admission compares typed input, action and observer order, semantics, command geometry and actual detached Headless pixels; loaded adapter input and presentation require their own native evidence.
+Use the shared collection and comparison contract for all forty-eight rows, including the clean and one-option controls, without an elapsed-time CI threshold.
+
+The existing loaded-client suite separately runs sixteen independent CycleButton adapter cases through version-owned screen callbacks and real native cursor movement.
+It checks selection, callback consumption, notification and action order, native semantics, state and label replacement, detach/reattach, and exact full-viewport screenshots against fresh literal-input Headless references.
+Completed host frames fence every capture, and each case writes its own native PNG, Headless PNG and parity receipt in the ordinary runner output directory.
+These checks establish native adapter callback and presentation parity; operating-system device input and operation performance require their own evidence.
+
 ### Repeated sampled rows
 
 Large vertically magnified sampled images reuse the immediately preceding output row when the nearest-sampled source row is unchanged.
@@ -86,6 +105,50 @@ These markers track existing phase participation; they do not skip required meas
 `ChildLayoutBenchmark` separately measures one, 128, and 4,096 dense children and two participating endpoints among 4,096 current children while leaf measurements stay cached.
 Its `jmhHistorical -Pstrata.performance.benchmarks=ChildLayoutBenchmark -Pstrata.performance.suite=child-layout` corpus uses the shared receipt collector and leaves the historical fixture matrix unchanged.
 
+### Synchronous operation guards
+
+`StateObservation` links only the currently entered observations instead of allocating an outer-operation list and backing array.
+The execution context owns the outermost guard, whose tail supports constant-time entry, reentry detection and reverse-order exit; state-write validation follows the forward links in outer-to-inner order.
+The links are bounded by current synchronous nesting, belong to the paired owner-confined operation, and do not cache observations or retain a historical nesting maximum.
+Every successful entry must leave in `finally`, including after observation close or terminal session failure; leaving clears the departing link and the parent's forward link, and the final exit clears the tail and execution context.
+Runtime validators check operation phases without running application code.
+Common JVM and JavaScript tests cover guard order, reentry, wrong-order exit, deep nesting, cross-session mutation rejection and failure/close paths; JVM tests also cover physical-thread isolation, serial owner migration and deterministic null-reference checks after release.
+
+`OperationGuardBenchmark` freezes direct guard depths one, two and eight, actual mutation controls, clean/timed/dirty sessions, 128-session batches, a 10,000-frame headless loop and nested timed sessions.
+The same declarations and caller-owned state are prepared before sampling; dirty frames still reevaluate content and change paint/semantics, and timed frames still notify every capable node.
+The generic collector selects the compiled fixture with `strata.performance.benchmarks=OperationGuardBenchmark` and discovers its static work verifier.
+Report both batch metrics and their declared operation/frame counts; the high-rate and many-session controls are not single-frame results.
+Removing list bookkeeping does not establish a CPU-time or FPS improvement, and the JVM execution context may still allocate a ThreadLocal entry; paired measurements determine the surviving allocation change.
+
+### Identical immutable modifier chains
+
+A fresh compatible component description sharing the exact previous `Modifier` instance reuses its current active modifier membership without diff collections, per-position masks or comparison pairs.
+Complete incoming validation, component updates, deferred content, monitoring and ordinary child reconciliation still run.
+Structural child reconciliation refreshes effective parent links even when a child's chain is unchanged; distinct chains retain positional type reconciliation and lifecycle/failure ordering.
+This identity guard adds no cache, shared nodes or historical references.
+Common JVM/JavaScript tests cover validation, clean revisions, effective ancestry, shared-chain owner isolation, deferred source cutoff and terminal failure cleanup; the external SPI verifies parent-scope reads.
+`ModifierReconciliationBenchmark` freezes fresh alternating declarations with chains of zero, one, eight and 32 modifiers across one and 1,000 entries, plus equivalent-chain, changed-description, replacement, add/remove, reorder and keyed controls.
+Select this separate corpus with `-Pstrata.performance.benchmarks=ModifierReconciliationBenchmark -Pstrata.performance.suite=modifier-reconciliation`.
+It measures retained update work including validation and component/child callbacks, with declaration construction and presentation excluded; source-level bookkeeping counts are distinct from measured surviving allocation.
+
+### Measured Grid tracks
+
+A fixed-column Grid owns only the column-width and row-height maxima from its current successful measurement.
+The validity key is that node's completed measurement of the current row-major child membership, columns, child constraints and resulting sizes; the core must complete a new measure after child size, membership, columns, spacing or constraint invalidation before layout can reuse the tracks.
+Default and child parent-data alignment changes retain their existing layout-only behavior, read live parent data during placement and reuse those maxima.
+Measure first drops the old arrays and publishes replacements only after all child measurement and checked natural-size/constrain work succeeds.
+Each replacement has exactly C = min(columns, N) column values and R = ceil(N / columns) row values, including empty arrays for an empty Grid; shrinking never preserves historical capacity.
+The two owner-thread-confined primitive arrays retain no scope, child, description, callback or resource, and independent Grid nodes share no track storage.
+A transient session detach preserves the retained tree and derived geometry; terminal lifecycle detach/dispose releases both arrays after removal, replacement, failure or close, even when the retired node remains externally reachable or descendant cleanup throws.
+The existing completed-measure precondition rejects stale geometry rather than falling back to an older successful measurement.
+
+Layout builds current offsets and performs one checked size read and placement for each current child.
+Child measurement, placement, live parent-data lookup, checked extent/placement failure, overflow visibility and command/semantics order retain their original contracts.
+Require common/JVM geometry and exact-read controls, current-array churn and failure controls, core terminal cleanup and headless full-pixel/input/semantics parity before accepting the tradeoff.
+The supplemental `GridTrackBenchmark` selects seven empty/single, one-column, partial-row and large-square shapes through the ordinary generated-fixture selector.
+Its four separate boundaries are a primed clean frame, one retained leaf size mutation plus frame, actual constraint change plus frame, and default-alignment publication plus declaration rebuild and frame; preparation, oracle checks and terminal cleanup are untimed.
+Source-derived C + R retained Int values and two avoided layout track-array constructions are primitive-payload and operation estimates, not observed heap savings.
+Compare the same frozen fixture/collector with three independent Standard baseline and candidate runs, report actual AverageTime and normalized allocation for every case, and disclose controls and regressions without a fixed time threshold.
 ### Current-tree frame callbacks
 
 State-cutoff capture, commit and explicit time delivery use capability lists in effective parent-first order.

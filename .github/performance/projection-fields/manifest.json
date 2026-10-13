@@ -1,0 +1,98 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "f65cccc712d3456814ab6af3d125f8b00a25e8aa",
+      "patches": [
+        {
+          "path": ".github/performance/projection-fields/baseline.patch",
+          "sha256": "561f564fb9f67410f2088cd926953debe9772ac7174236d7c2be8cd490a6afe5"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "4b87c215ef7149fdcc0710cc2449a4676e12f882",
+      "patches": [
+        {
+          "path": ".github/performance/projection-fields/candidate.patch",
+          "sha256": "33d2c46f7f53dd946435c129ec21ee954e14855d3f58900cf920f8844128b921"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "ecc3eef17e4d06a5eb9ef3e63a8639df541ae896",
+      "tree": "4b87c215ef7149fdcc0710cc2449a4676e12f882",
+      "patches": [
+        {
+          "path": ".github/performance/projection-fields/candidate.patch",
+          "sha256": "33d2c46f7f53dd946435c129ec21ee954e14855d3f58900cf920f8844128b921"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:remote"
+  ],
+  "suites": [
+    {
+      "project": ":quality:remote-benchmarks",
+      "name": "projection-fields-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.ProjectionFieldSnapshotBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 73,
+      "test_gates": [
+        {
+          "task": ":api:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.DeclaredInputSnapshotTest#capturedPoliciesAndEndpointRecordsRemainIndependentWithoutInvokingHandlers",
+            "dev.s7a.strata.ProjectionValueSnapshotTest#ordinarySequencesDetachMutableMembershipAndPreserveDuplicateReferences",
+            "dev.s7a.strata.ProjectionValueSnapshotTest#positionalFactoriesPreserveIndependentSmallLargeAndNestedSnapshots",
+            "dev.s7a.strata.ProjectionInputCodecTest#preservesEveryExistingInputVariantAndCapturedCoordinates",
+            "dev.s7a.strata.ProjectionInputCodecTest#shortcutsSnapshotTheirKeySetAndIgnoreLockKeys",
+            "dev.s7a.strata.ProjectionInputCodecTest#rejectsMalformedVariantsRangesAndTrailingData",
+            "dev.s7a.strata.ProjectionInputCodecTest#keyboardFieldsHaveLiteralOrderAndIndependentNestedModifierSnapshots",
+            "dev.s7a.strata.ProjectionInputCodecTest#textButtonsAndFiltersPreserveLiteralSchemasIncludingSmallControls",
+            "dev.s7a.strata.ProjectionInputCodecTest#pointerControlsPreserveLiteralTreeAndOutOfBoundsLocalCoordinates",
+            "dev.s7a.strata.ProjectionInputCodecTest#everyDecoderRejectsTrailingFieldsAndWrongNestedFieldTypes",
+            "dev.s7a.strata.projection.ProjectionFieldJavaApiTest#snapshotsDirectVarargArraysBeforeReturningTheDeclaration"
+          ]
+        },
+        {
+          "task": ":runtime:remote:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.remote.RemotePropertyArrayTest#recordDoesNotRetainTheCallerArrayOrChangeEncodedBytes",
+            "dev.s7a.strata.runtime.remote.RemoteBindingTest#staleRepliesPreserveDraftsAndExplicitReplacementAdvancesGeneration",
+            "dev.s7a.strata.runtime.remote.RemoteBindingTest#anOldSourceCannotEditANewSourceAtTheSameComponentPosition",
+            "dev.s7a.strata.runtime.remote.RemoteBindingTest#bindingRecordsKeepIndependentSnapshotsAndRejectMalformedOrTrailingFields",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#filtersBeforeSendingAndRunsTheServerHandlerOnlyAfterDelivery",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#changedSubscriptionsRetireQueuedEventsWithoutInvokingReplacementHandlers",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#carriesPointerCoordinatesAndDeltasWithoutWaitingForTheServer",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#onlySubscribedTextVariantsCrossTheConnection",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#eachPointerSubscriptionDeliversOnlyItsVariantAndButton",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#allKeyboardAndTextOverloadsUseTypedNotifications",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#changingCaptureButtonDoesNotRetargetAnActiveGesture",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#captureAndCancellationUseTheExistingClientPipeline",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#serverRejectsForgedEventsOutsideTheDeclaredFilter",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#missingInputCapabilityRejectsTheWholeScreen",
+            "dev.s7a.strata.runtime.remote.RemoteInputSubscriptionTest#rejectsTrailingPayloadFieldsBeforeHandlersAndReleasesTheCurrentDeclaration"
+          ]
+        }
+      ]
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "baseline": [],
+    "candidate": [],
+    "fixture": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
