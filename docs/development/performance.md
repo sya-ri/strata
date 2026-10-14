@@ -585,6 +585,8 @@ Stable states retain 0/1/64 target or portable records and 0/1/256/512 sampled s
 Complete submission and fresh admission-through-retirement protocols include their real setup work in their measured boundaries.
 Submission with one attachment retains the actual two-target buffer after priming; 64 simultaneous attachments expose the existing full-capacity committed-generation fallback.
 One sampled owner admits at most 256 entries, so the 512-entry CPU fixture uses two owners.
+The optional shared operation-report adapter binds all 117 original method/parameter rows in both JMH modes and retains 45 empty-input or settled-poll controls.
+It measures owner-thread CPU and allocation separately from JMH elapsed time and stock GC allocation, with one complete original operation per sample; unavailable counters remain explicit.
 Native presentation scenes separately cover real targets, barrier-separated portable layers, changed/clean sampled sources and a 512-request single-screen overflow control; that overflow does not claim 512 admitted entries in one owner.
 CPU fake-driver results do not establish native GPU or frame-rate gains, and every comparison still requires full-presentation GPU/GUI/upload evidence from the shared native meter.
 

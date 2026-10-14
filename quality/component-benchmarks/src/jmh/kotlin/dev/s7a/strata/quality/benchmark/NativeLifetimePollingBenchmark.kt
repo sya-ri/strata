@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -168,10 +169,17 @@ public open class NativeLifetimePollingBenchmark {
      */
     public companion object {
         /**
+         * Supplies all 81 original boundaries to the optional shared owner-thread operation collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = LifetimePollingOperationReport(sampled = false)
+
+        /**
          * Verifies persistent membership and terminal release for every native/portable input before timing.
          */
         @JvmStatic
         public fun verifyWork() {
+            LifetimePollingOperationReport(sampled = false).verifyRows()
             Subject.entries.forEach { subject ->
                 listOf(0, 1, 64).forEach { count ->
                     Condition.entries.forEach { condition ->

@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -124,10 +125,17 @@ public open class SampledLifetimePollingBenchmark {
      */
     public companion object {
         /**
+         * Supplies all 36 original Fabric boundaries to the optional shared owner-thread operation collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = LifetimePollingOperationReport(sampled = true)
+
+        /**
          * Verifies actual bounded Fabric source admission, repeated state stability and terminal physical release.
          */
         @JvmStatic
         public fun verifyWork() {
+            LifetimePollingOperationReport(sampled = true).verifyRows()
             listOf(0, 1, 256, 512).forEach { count ->
                 NativeLifetimePollingBenchmark.Condition.entries.forEach { condition ->
                     SampledLifetimePollingWorkload(count, condition).use { workload ->
