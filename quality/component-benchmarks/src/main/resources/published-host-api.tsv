@@ -4615,6 +4615,37 @@
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmApiInventory#public final fun capture (Ljava/lang/ClassLoader;Ljava/util/Map;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmApiInventory#public final fun componentEntryPoints (Ljava/lang/ClassLoader;Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmApiInventory#public static final field INSTANCE Ldev/s7a/strata/performance/JvmApiInventory;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract fun collect (Ldev/s7a/strata/performance/PerformancePlan;)Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract fun getRows ()Ljava/util/List;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public abstract interface class dev/s7a/strata/performance/JvmOperationReportAdapter {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public fun collectVerified (Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter#public fun getInputs ()Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public final class dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public static fun collectVerified (Ldev/s7a/strata/performance/JvmOperationReportAdapter;Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls#public static fun getInputs (Ldev/s7a/strata/performance/JvmOperationReportAdapter;)Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final class dev/s7a/strata/performance/JvmOperationReportRow {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component1 ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component2 ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component3 ()Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component4 ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component5 ()I
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun component6 ()Z
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZ)Ldev/s7a/strata/performance/JvmOperationReportRow;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getBenchmark ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getBoundary ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getControl ()Z
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getId ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getOperationsPerSample ()I
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public final fun getParameters ()Ljava/util/Map;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZ)V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public fun equals (Ljava/lang/Object;)Z
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public fun hashCode ()I
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public fun toString ()Ljava/lang/String;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public static synthetic fun copy$default (Ldev/s7a/strata/performance/JvmOperationReportRow;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZILjava/lang/Object;)Ldev/s7a/strata/performance/JvmOperationReportRow;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReportRow#public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReports#public final class dev/s7a/strata/performance/JvmOperationReports {
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReports#public static final field INSTANCE Ldev/s7a/strata/performance/JvmOperationReports;
+:performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmOperationReports#public static final fun main ([Ljava/lang/String;)V
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmPerformanceEvidence#public final class dev/s7a/strata/performance/JvmPerformanceEvidence {
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmPerformanceEvidence#public final fun indexPhases (Lcom/google/gson/JsonObject;Ljava/util/List;Ljava/lang/Integer;)Ljava/util/Map;
 :performance-testkit@Collector	:performance-testkit@Collector	jvm:dev/s7a/strata/performance/JvmPerformanceEvidence#public final fun median (Ljava/util/List;)D
@@ -10065,6 +10096,7 @@
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions#public static final field INSTANCE Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions;
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions#public static synthetic fun open$default (Ldev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions;Ldev/s7a/strata/ui/UiDefinition;Ldev/s7a/strata/ui/UiSession;ILjava/lang/Object;)Ldev/s7a/strata/ui/UiSession;
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource#public abstract fun strataCanvasResourceDestroyed ()Z
+:runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource#public abstract fun strataDestroyCompletedResource ()V
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource#public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource {
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext#public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
 :runtime:minecraft-fabric-26.3@Minecraft	:runtime:minecraft-fabric-26.3@Minecraft	jvm:dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext#public final fun getEncoder ()Lcom/mojang/renderpearl/api/commands/CommandEncoder;

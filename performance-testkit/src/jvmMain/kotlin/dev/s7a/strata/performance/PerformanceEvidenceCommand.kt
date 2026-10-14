@@ -8,6 +8,7 @@ internal enum class PerformanceEvidenceCommand(
 ) {
     JmhSummary("jmh-summary"),
     JmhComparison("jmh-comparison"),
+    OperationComparison("operation-comparison"),
     ;
 
     /**
