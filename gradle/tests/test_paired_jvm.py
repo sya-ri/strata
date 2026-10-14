@@ -1100,6 +1100,49 @@ class PairedJvmTest(unittest.TestCase):
         self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
         self.assertNotIn("working_directory", actual)
 
+    def test_source_sized_vm_diagnostic_retains_all_bytes_without_weakening_terminal_or_caps(self):
+        for mode in ("complete", "default-bound", "explicit-overflow", "truncated", "duplicate-header", "changed-cap"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("source-sized-vm-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"synthetic executable bytes")
+                origin = {"main": "independent.Controller", "executable": str(executable), "classpath": "frozen.jar"}
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                document = ("<hotspot_log process='123' time_ms='1001'><vm_arguments>"
+                            f"<command>independent.Controller input</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                            "</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n"
+                            "<!--" + "x" * 1_300_000 + "-->\n<hotspot_log_done/></hotspot_log>\n")
+                if mode == "truncated":
+                    document = document.replace("<hotspot_log_done/></hotspot_log>", "")
+                elif mode == "duplicate-header":
+                    document += "<hotspot_log process='124' time_ms='1002'></hotspot_log>\n"
+                elif mode == "changed-cap":
+                    document = document.replace("MaxHeapSize=805306368", "MaxHeapSize=805306369")
+                log = directory / "vm.log"
+                log.write_bytes(document.encode())
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                bound = 1024**2 if mode == "default-bound" else len(log.read_bytes()) - 1 if mode == "explicit-overflow" else 16 * 1024**2
+                if mode == "complete":
+                    PAIRED.verify_vms(directory, [log], {"members": {}}, allowed, 0, maximum_diagnostic_bytes=bound)
+                    actual = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
+                    self.assertEqual(actual["diagnostic_bytes"], len(document.encode()))
+                    self.assertEqual(actual["diagnostic_byte_bound"], bound)
+                    self.assertEqual(log.read_bytes(), document.encode())
+                else:
+                    with self.assertRaises(ValueError):
+                        if mode == "default-bound":
+                            PAIRED.verify_vms(directory, [log], {"members": {}}, allowed, 0)
+                        else:
+                            PAIRED.verify_vms(directory, [log], {"members": {}}, allowed, 0, maximum_diagnostic_bytes=bound)
+                    self.assertFalse((directory / "vms.json").exists())
+        for invalid in (True, 0, -1, 16 * 1024**2 + 1):
+            with self.subTest(invalid_bound=invalid), self.assertRaisesRegex(ValueError, "finite VM diagnostic byte bound"):
+                PAIRED.verify_vms(self.root, [], {}, {}, maximum_diagnostic_bytes=invalid)
+
     def test_new_history_requires_explicit_closure_and_lifetime_while_legacy_receipts_remain_readable(self):
         original = {"inOwnedJob": True, "completed": True, "exitCode": 0, "creationFileTime": 116444736010000000}
         legacy = {"members": {"123": copy.deepcopy(original)}}

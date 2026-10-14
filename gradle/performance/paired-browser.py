@@ -379,7 +379,7 @@ def run(shared, root, selection, output):
                 first = record["phases"][0]["terminal"]
                 shared.require(terminal["inheritedAffinityMask"] == first["inheritedAffinityMask"] and terminal["systemAffinityMask"] == first["systemAffinityMask"], "Host affinity changed")
             if node_program is None:
-                shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java)
+                shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java, maximum_diagnostic_bytes=16 * 1024**2)
             else:
                 validate_node_generation(shared, terminal, node_program)
                 shared.require(shared.read_json(directory / "child-admission.json") == terminal["primaryAdmission"], "Node admission record differs from its suspended primary")

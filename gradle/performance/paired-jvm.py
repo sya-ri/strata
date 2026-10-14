@@ -602,15 +602,18 @@ def independent_class_file(directory, phase_directory, result, vm):
     return matches[0] if matches else None
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None):
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
+    require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
+            "Invalid finite VM diagnostic byte bound")
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
     records, forks, version_probes = [], [], []
     for path in files:
-        require(path.stat().st_size <= 1024 * 1024, "VM diagnostic exceeds its retained bound")
+        diagnostic_bytes = path.stat().st_size
+        require(diagnostic_bytes <= maximum_diagnostic_bytes, "VM diagnostic exceeds its retained bound")
         value = path.read_text(encoding="utf-8")
         headers = re.findall(r"<hotspot_log\b[^>]*\bprocess='([0-9]+)'\s+time_ms='([0-9]+)'", value)
         blocks = re.findall(r"<vm_arguments>([\s\S]*?)</vm_arguments>", value)
@@ -654,7 +657,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         pid, vm_start = map(int, headers[0])
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
-        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
         flags = class_file_flags(value)
         if flags:
             evidence.update(diagnostic_path=str(path), class_load_file_flags=flags)

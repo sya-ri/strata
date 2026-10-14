@@ -300,7 +300,9 @@ class PairedBrowserTest(unittest.TestCase):
             api.source_guard = lambda *args: None
             api.class_load_inventory = lambda *args: {}
             api.preserve_class_loads = lambda *args: {}
-            api.verify_vms = lambda *args: None
+            def verify_vms(*args, maximum_diagnostic_bytes):
+                self.assertEqual(maximum_diagnostic_bytes, 16 * 1024**2)
+            api.verify_vms = verify_vms
             api.preserve_test_reports = lambda *args: None
             api.verify_test_gate = lambda directory, gate: self.shared.write_new(directory / "junit-verified.json", {"counts": {"skipped": 0}})
             if copy_failure:
