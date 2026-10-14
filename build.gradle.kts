@@ -1314,10 +1314,19 @@ subprojects {
             js {
                 browser {
                     testTask {
-                        useKarma { useChromeHeadless() }
+                        useKarma {
+                            useChromeHeadless()
+                            useConfigDirectory(rootProject.file("gradle/karma.config.d"))
+                        }
                     }
                 }
-                if (hasJvmTarget) nodejs()
+                if (hasJvmTarget) {
+                    nodejs {
+                        testTask {
+                            useMocha { timeout = "30s" }
+                        }
+                    }
+                }
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)

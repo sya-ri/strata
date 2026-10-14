@@ -1,0 +1,148 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "fixture": {
+      "ref": "a9f00dbcae55549dfa0b5b2bfe27f1676115a3c6",
+      "tree": "e1dd9caad6e3180d7136329858d7d1b44cc31758",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/baseline.patch",
+          "sha256": "12cedc0debf88ce34410e651de2db0aa69ff6e287ce4ab92176c8b5af7bdf8e9"
+        }
+      ]
+    },
+    "baseline": {
+      "ref": "a9f00dbcae55549dfa0b5b2bfe27f1676115a3c6",
+      "tree": "e1dd9caad6e3180d7136329858d7d1b44cc31758",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/baseline.patch",
+          "sha256": "12cedc0debf88ce34410e651de2db0aa69ff6e287ce4ab92176c8b5af7bdf8e9"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "a9f00dbcae55549dfa0b5b2bfe27f1676115a3c6",
+      "tree": "762b2dc1ce8c1deb1c754b8eab5abf38bab0ecef",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/candidate.patch",
+          "sha256": "99d55f57cf3a0ebd2b50f80987b70c49d869a1da4f41490e570c94bb6fb784b9"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "empty-child",
+      "benchmarks": [
+        "EmptyChildBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {
+        "workload": [
+          "DirectChanged1",
+          "DirectChanged128",
+          "DirectChanged4096",
+          "ObservedChanged1",
+          "ObservedChanged128",
+          "ObservedChanged4096",
+          "DirectEqual1",
+          "DirectEqual128",
+          "DirectEqual4096",
+          "ObservedEqual1",
+          "ObservedEqual128",
+          "ObservedEqual4096",
+          "Same1",
+          "Same128",
+          "Same4096",
+          "Clean1",
+          "Clean128",
+          "Clean4096",
+          "DirectEmptyToOne1",
+          "DirectEmptyToOne128",
+          "ObservedEmptyToOne1",
+          "ObservedEmptyToOne128",
+          "DirectOneToEmpty1",
+          "DirectOneToEmpty128",
+          "ObservedOneToEmpty1",
+          "ObservedOneToEmpty128",
+          "DirectNonempty1",
+          "DirectNonempty128",
+          "ObservedNonempty1",
+          "ObservedNonempty128"
+        ],
+        "monitoring": [
+          "false",
+          "true"
+        ]
+      },
+      "expected_cases": 60,
+      "test_gates": [
+        {
+          "task": ":runtime:core:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#allSixtyWorkloadCases",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#attachFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#changedLeafPayload",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#coldCreation",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#componentUpdateFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#createFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#deferredEmptyOutput",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#detachFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#disposeFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#dynamicChangedOutput",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#dynamicEmptyOutput",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#effectiveAncestry",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#emptyToOne",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#frameIdentity",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#freshEquivalentLeaf",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#inputAndSemantics",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#invalidDuplicateKeys",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#keyedInsertion",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#keyedRemoval",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#keyedReorder",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#keyedTypeReplacement",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#localValidationFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#localizedUpdates",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#modifierIdentity",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#modifierUpdateFailure",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#monitoringParity",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#nonemptyToNonempty",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#oneToEmpty",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#ownerIsolation",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#pixelsAndGeometry",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#positionalReplacement",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#sameDescription",
+            "dev.s7a.strata.quality.fixture.EmptyChildControlsTest#terminalRetention"
+          ]
+        }
+      ]
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "fixture": [],
+    "baseline": [],
+    "candidate": []
+  },
+  "dependency_pins": [],
+  "java_pins": [
+    {
+      "role": "toolchain",
+      "executable_sha256": "5369cf92fc590944793e47cc9c9fef7955ce1a68de22ba22023cdd3513e87c2b",
+      "release_sha256": "666094d10d8d978e4b72e7a492c07fde713cc15db2d8d02be802e0170ec878d6"
+    },
+    {
+      "role": "launcher",
+      "executable_sha256": "63267782812f84001922687feeaa93c3218c7a1f03409f0650dcdbef2e7bc8cb",
+      "release_sha256": "d26c04834499b5f9f7b9ff32e7a36a56f7d384dc59408ca473c69d5853a16f62"
+    }
+  ]
+}
