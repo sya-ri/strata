@@ -21,8 +21,6 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-private val paintMask = DirtyMask.of(DirtyPhase.Paint)
-
 /**
  * Executes retained local paint and transforms commands into tree coordinates.
  */
@@ -467,6 +465,7 @@ internal class PaintPipeline(
     }
 
     private companion object {
+        val paintMask = DirtyMask.of(DirtyPhase.Paint)
         val SOLID_IMAGE: DrawImage = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val SOLID_SOURCE: FloatRect = FloatRect(0f, 0f, 1f, 1f)
     }

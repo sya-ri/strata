@@ -5,9 +5,6 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-private val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
-private val layoutDownstreamMask = DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)
-
 /**
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
@@ -97,5 +94,10 @@ internal class DirtyTracker(
 
     private fun advanceRevision() {
         currentRevision += 1L
+    }
+
+    private companion object {
+        val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
+        val layoutDownstreamMask = DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)
     }
 }

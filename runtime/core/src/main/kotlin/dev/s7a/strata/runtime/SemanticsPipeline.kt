@@ -9,8 +9,6 @@ import dev.s7a.strata.semantics.Semantics
 import dev.s7a.strata.semantics.SemanticsScope
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-private val semanticsMask = DirtyMask.of(DirtyPhase.Semantics)
-
 /**
  * Collects unresolved semantics from laid-out retained nodes.
  */
@@ -84,5 +82,9 @@ internal class SemanticsPipeline(
         fun close() {
             guard.close()
         }
+    }
+
+    private companion object {
+        val semanticsMask = DirtyMask.of(DirtyPhase.Semantics)
     }
 }

@@ -24,10 +24,6 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
-private val measureMask = DirtyMask.of(DirtyPhase.Measure)
-private val layoutMask = DirtyMask.of(DirtyPhase.Layout)
-private val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
-
 /**
  * Executes retained measure and layout work through virtual modifier ancestry.
  *
@@ -516,5 +512,11 @@ internal class Pipeline(
         }
         val capability = retained.node as? SessionAttachmentNode ?: return
         failures.capture(capability::sessionDetached)
+    }
+
+    private companion object {
+        val measureMask = DirtyMask.of(DirtyPhase.Measure)
+        val layoutMask = DirtyMask.of(DirtyPhase.Layout)
+        val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
     }
 }
