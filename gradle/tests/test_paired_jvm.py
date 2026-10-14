@@ -214,6 +214,7 @@ class PairedJvmTest(unittest.TestCase):
         self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
         self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
 
+    @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
     def test_explicit_manual_driver_keeps_full_subject_sources_without_copying_them_into_consumer(self):
         base, producer, head, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
         self.assertEqual((self.root / "source.txt").read_text(), "base source\n")
@@ -258,6 +259,7 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(driver=driver), self.assertRaisesRegex(ValueError, "driver commit and tree"):
                 self.load(value)
 
+    @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
     def test_separate_driver_rejects_wrong_tree_nonancestor_and_actual_working_script_changes(self):
         _, _, head, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
         wrong_tree = copy.deepcopy(manifest)
@@ -281,6 +283,7 @@ class PairedJvmTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "working bytes changed"):
             PAIRED.select_manifest(self.root, path)
 
+    @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
     def test_separate_driver_retains_existing_subject_tree_pin_and_producer_hash_rejections(self):
         _, producer, _, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
         for arguments in ({"manifest_sha256": "0" * 64}, {"data_ref": "0" * 40}):
