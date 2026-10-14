@@ -36,7 +36,7 @@ internal class ComponentObserverFixture(
     private val time = FrameTime(0)
 
     /**
-     * Weighted callback count distinguishes omitted or duplicated callback positions.
+     * Weighted callback checksum supplements the independent ordered publication controls.
      */
     var notifications: Long = 0
         private set
@@ -87,7 +87,7 @@ internal class ComponentObserverFixture(
     }
 
     /**
-     * Requires all weighted callbacks and the precise final value without counting setup or assertions as runtime work.
+     * Checks the expected callback checksum and final value outside collection; common controls independently verify exact membership and order.
      */
     fun verifyOperation(
         before: Long,

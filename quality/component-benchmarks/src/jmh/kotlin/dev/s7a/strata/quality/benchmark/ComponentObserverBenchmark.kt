@@ -82,7 +82,7 @@ public open class ComponentObserverBenchmark {
         public fun operationReport(): JvmOperationReportAdapter = ComponentObserverOperationReport
 
         /**
-         * Checks exact callback work, current values, completed-frame semantics/pixels and terminal release.
+         * Checks callback checksums, current values, completed-frame semantics/pixels and terminal release.
          */
         @JvmStatic
         public fun verifyWork() {
