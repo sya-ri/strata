@@ -227,7 +227,7 @@ public open class DirtyPhaseFrameBenchmark {
             val oldSemantics = original.semantics.toList()
             val monitor = if (monitoring) session.startRenderMonitoring() else null
             try {
-                repeat(3) {
+                repeat(3) { _ ->
                     monitor?.checkpoint()
                     val before = calls.copyOf()
                     val beforeDisposed = disposed
