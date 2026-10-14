@@ -210,8 +210,65 @@ internal class ProjectModelFunctionalTest {
     @Test
     fun `Web model retains its original project set and acceptance boundary`() {
         assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents"))
-        rejected("component check", true, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
-        rejected("component check", true, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
+        assertEquals(
+            sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"),
+            included("-Pstrata.webOnly=true", ":runtime:web:check", ":integration:web:check", ":performance-testkit:publishToMavenLocal"),
+        )
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
+    }
+
+    @Test
+    fun `Web source tasks use the complete scoped workspace without a CLI allowlist`() {
+        val tasks =
+            arrayOf(
+                ":runtime:web:compileKotlinJs",
+                ":runtime:web:compileTestKotlinJs",
+                ":runtime:web:checkKotlinAbi",
+                ":runtime:web:lintKotlin",
+                ":runtime:web:detekt",
+                ":integration:web:compileKotlinJs",
+                ":integration:web:lintKotlin",
+                ":integration:web:detekt",
+            )
+        assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", *tasks))
+        assertEquals(tasks.toSet(), Files.readAllLines(directory.resolve("executed-tasks.txt")).toSet())
+        assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", "lintKotlin"))
+    }
+
+    @Test
+    fun `Web model preserves native Test options and rejects resolved complete acceptance`() {
+        included("-Pstrata.webOnly=true", ":runtime:core:jvmTest", "--tests", "model.FilterTest.selected")
+        assertJUnit("runtime/core", "jvmTest")
+        listOf(
+            ":check",
+            ":quality:component-benchmarks:che",
+            ":verifyPublishedPerformanceInventory",
+            ":quality:component-benchmarks:verifyPublishedHostInventory",
+            ":quality:component-benchmarks:capturePublishedHostInventory",
+            ":runtime:web:publishToMavenLocal",
+            ":performance-testkit:publish",
+            ":koverHtmlReport",
+            ":koverXmlReport",
+            ":ciMinecraftCheck",
+            ":benchmarkMinecraftQuick",
+        ).forEach { task ->
+            rejected("complete build", false, "-Pstrata.webOnly=true", ":runtime:web:compileKotlinJs", task)
+        }
+        val unknown = runner("-Pstrata.webOnly=true", ":runtime:web:missingTask").buildAndFail()
+        assertTrue(unknown.output.contains("not found"), unknown.output)
+        val excluded = runner("-Pstrata.webOnly=true", ":runtime:minecraft-fabric-1.20:jar").buildAndFail()
+        assertTrue(excluded.output.contains("not found"), excluded.output)
+    }
+
+    @Test
+    fun `Web configuration cache preserves source admission and complete acceptance refusal`() {
+        val source = arrayOf("-Pstrata.webOnly=true", "--configuration-cache", ":runtime:web:compileKotlinJs")
+        val stored = runner(*source).build()
+        assertTrue(stored.output.contains("Configuration cache entry stored."), stored.output)
+        val reused = runner(*source).build()
+        assertTrue(reused.output.contains("Configuration cache entry reused."), reused.output)
+        repeat(2) { rejected("complete build", false, *source, ":quality:component-benchmarks:check") }
     }
 
     @Test
@@ -377,6 +434,7 @@ internal class ProjectModelFunctionalTest {
 
     private val fixtureBuild =
         """
+        import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
         import org.gradle.api.tasks.JavaExec
         import org.gradle.api.tasks.SourceSetContainer
         import org.gradle.api.tasks.testing.Test
@@ -411,7 +469,7 @@ internal class ProjectModelFunctionalTest {
                     }
                 }
             }
-            val available = listOf("formatKotlin", "lintKotlin", "detekt", "classes", "jar", "test", "jvmJar", "checkKotlinAbi",
+            val available = listOf("formatKotlin", "lintKotlin", "detekt", "classes", "jar", "test", "jvmJar", "checkKotlinAbi", "compileKotlinJs", "compileTestKotlinJs",
                 "jmhClasses", "jmhRunBytecodeGenerator", "jmhCompileGeneratedClasses", "jmhHistorical", "jmhComponents", "jmhRemote",
                 "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "processEvidence", "checkApiOnlyClasspath",
                 "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory", "capturePublishedHostInventory",
@@ -426,6 +484,14 @@ internal class ProjectModelFunctionalTest {
                 tasks.register("runProductionClientGameTest")
             }
             tasks.register("publishToMavenLocal") { group = "publishing" }
+            tasks.register("publish") { group = "publishing" }
+            if (path == ":performance-testkit") {
+                val localPublication = tasks.register<PublishToMavenLocal>("publishTestkitPublicationToMavenLocal") {
+                    group = "publishing"
+                    enabled = false
+                }
+                tasks.named("publishToMavenLocal") { dependsOn(localPublication) }
+            }
             val executedTasks = rootProject.file("executed-tasks.txt")
             tasks.configureEach {
                 val taskPath = path
