@@ -27,14 +27,30 @@ internal class HeadlessFlowMeasurementTest {
         for (arrangement in Arrangement.entries) {
             for (alignment in VerticalAlignment.entries) {
                 for (overridden in listOf(false, true)) {
-                    val description = evaluateComponentTree {
-                        FlowRow(horizontalSpacing = 1, verticalSpacing = 1, horizontalArrangement = arrangement, verticalAlignment = alignment) {
-                            val modifier = if (overridden) Modifier.Empty.align(VerticalAlignment.Bottom) else Modifier.Empty
-                            Spacer(modifier = modifier.size(2, 1).background(colors[0]))
-                            Spacer(modifier = Modifier.Empty.size(2, 2).background(colors[1]))
-                            Spacer(modifier = Modifier.Empty.size(2, 1).background(colors[2]))
+                    val description =
+                        evaluateComponentTree {
+                            FlowRow(horizontalSpacing = 1, verticalSpacing = 1, horizontalArrangement = arrangement, verticalAlignment = alignment) {
+                                val modifier = if (overridden) Modifier.Empty.align(VerticalAlignment.Bottom) else Modifier.Empty
+                                Spacer(
+                                    modifier =
+                                        modifier
+                                            .size(2, 1)
+                                            .background(colors[0]),
+                                )
+                                Spacer(
+                                    modifier =
+                                        Modifier.Empty
+                                            .size(2, 2)
+                                            .background(colors[1]),
+                                )
+                                Spacer(
+                                    modifier =
+                                        Modifier.Empty
+                                            .size(2, 1)
+                                            .background(colors[2]),
+                                )
+                            }
                         }
-                    }
                     assertFrames(description, colors, arrangement, alignment, overridden)
                 }
             }
@@ -53,23 +69,25 @@ internal class HeadlessFlowMeasurementTest {
     ) {
         val redTop = if (overridden || alignment == VerticalAlignment.Bottom) 1 else 0
         // The first row fills all five pixels; the last row has one two-pixel child and slack three.
-        val blueLeft = when (arrangement) {
-            Arrangement.Start, Arrangement.SpaceBetween -> 0
-            Arrangement.Center, Arrangement.SpaceAround, Arrangement.SpaceEvenly -> 1
-            Arrangement.End -> 3
-        }
+        val blueLeft =
+            when (arrangement) {
+                Arrangement.Start, Arrangement.SpaceBetween -> 0
+                Arrangement.Center, Arrangement.SpaceAround, Arrangement.SpaceEvenly -> 1
+                Arrangement.End -> 3
+            }
         for (density in listOf(1, 2, 3)) {
             val frame = renderHeadless(description, IntSize(5, 5), density)
             for (y in 0 until frame.image.size.height) {
                 for (x in 0 until frame.image.size.width) {
                     val logicalX = x / density
                     val logicalY = y / density
-                    val expected = when {
-                        logicalX < 2 && logicalY == redTop -> colors[0].value
-                        3 <= logicalX && logicalY < 2 -> colors[1].value
-                        blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
-                        else -> 0
-                    }
+                    val expected =
+                        when {
+                            logicalX < 2 && logicalY == redTop -> colors[0].value
+                            3 <= logicalX && logicalY < 2 -> colors[1].value
+                            blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
+                            else -> 0
+                        }
                     assertEquals(expected, frame.image.argbAt(x, y), "$arrangement/$alignment/$overridden/$density at ($x,$y)")
                 }
             }

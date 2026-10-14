@@ -68,15 +68,16 @@ internal class FlowMeasurementReleaseTest {
     ): Evidence {
         val source = ReleaseSource()
         val probe = TestProbe(failingMeasureTag = if (fails) TestProbe.ProbeId("0") else null)
-        val session = createRuntimeUiSession {
-            evaluateComponentTree {
-                Observe(source) { count ->
-                    FlowRow(horizontalSpacing = 1, verticalSpacing = 1) {
-                        repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) }
+        val session =
+            createRuntimeUiSession {
+                evaluateComponentTree {
+                    Observe(source) { count ->
+                        FlowRow(horizontalSpacing = 1, verticalSpacing = 1) {
+                            repeat(count) { element(probe.element(TestProbe.ProbeId(it.toString()))) }
+                        }
                     }
                 }
             }
-        }
         session.attach()
         assertEquals(fails, runCatching { session.frame(BOUNDS) }.isFailure)
         val observer = checkNotNull(source.observerReference)
