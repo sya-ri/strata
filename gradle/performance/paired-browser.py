@@ -128,7 +128,7 @@ def load_source_manifest(shared, root, data):
     require(isinstance(files, list) and len(files) == len(set(files)), "Duplicate differing Source file")
     for path in files:
         shared.relative_path(root, path)
-        require(path.endswith((".kt", ".kts", ".java")) and "/build/" not in path, "Declare only differing source files")
+        require(path.endswith((".kt", ".kts", ".java", ".tsv")) and "/build/" not in path, "Declare only differing source files")
     labels = set()
     require(isinstance(data["inputs"], list), "Invalid Source input inventory")
     for item in data["inputs"]:
@@ -137,13 +137,13 @@ def load_source_manifest(shared, root, data):
         shared.pin(root, item["pin"])
     tasks = data["tasks"]
     require(isinstance(tasks, list) and tasks and len(tasks) == len(set(tasks)) and len(tasks) <= 32, "Declare the complete unique Source task list")
-    endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory"}
+    endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory", "jvmJar", "jar", "jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "verifyRemoteWorkloads"}
     for task in tasks:
         require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:[A-Za-z0-9]+", task)
                 and task.rsplit(":", 1)[1] in endings, "Use existing Source preparation tasks")
     require(set(data["arguments"]) == {"baseline", "candidate"}, "Supply both Source argument lists")
     for arguments in data["arguments"].values():
-        require(arguments in ([], ["-Pstrata.webOnly=true"]), "Source arguments cannot change ownership, task or sampling bounds")
+        require(arguments in ([], ["-Pstrata.webOnly=true"], ["-Pstrata.jvmOnly=true"]), "Source arguments cannot change ownership, task or sampling bounds")
     require(type(data["repetitions"]) is int and data["repetitions"] in (1, 3), "Source preparation keeps one or three complete paired invocations")
     require(isinstance(data["artifacts"], list) and data["artifacts"] and len(data["artifacts"]) <= 32, "Declare actual Source outputs")
     patterns = set()
@@ -154,11 +154,11 @@ def load_source_manifest(shared, root, data):
         patterns.add(item["glob"])
     gate = data["test_gate"]
     if gate is not None:
-        require(set(gate) == {"task", "required_tests"} and gate["task"] in tasks and gate["task"].endswith(":jvmTest"), "Bind the existing full JVM test task")
+        require(set(gate) == {"task", "required_tests"} and gate["task"] in tasks and gate["task"].endswith((":test", ":jvmTest")), "Bind the existing full JVM test task")
         tests = gate["required_tests"]
         require(isinstance(tests, list) and tests and len(tests) == len(set(tests))
                 and all(re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*#[^#\r\n\x00]+", item) for item in tests), "Declare exact Source JVM parity tests")
-    require((any(task.endswith(":jvmTest") for task in tasks)) == (gate is not None), "Every Source JVM test invocation requires its full gate")
+    require(sum(task.endswith((":test", ":jvmTest")) for task in tasks) == int(gate is not None), "Every Source JVM test invocation requires its full gate")
     return data
 
 

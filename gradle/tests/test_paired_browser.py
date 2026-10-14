@@ -111,6 +111,27 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.load(invalid)
 
+    def test_source_runtime_archives_and_existing_quality_tasks_keep_full_jvm_gate(self):
+        value = self.source_manifest(1)
+        value["source_files"] = ["quality/component-benchmarks/src/jmh/resources/runtime-api.tsv"]
+        value["tasks"] = [":api:jvmJar", ":runtime:core:jvmJar", ":runtime:headless:jar", ":performance-testkit:jvmJar"]
+        value["tasks"] += [":quality:component-benchmarks:" + task for task in ("jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyComponentRenderingWork")]
+        value["tasks"] += [":quality:benchmarks:verifyHistoricalWorkloads", ":quality:remote-benchmarks:verifyRemoteWorkloads"]
+        value["arguments"] = {side: ["-Pstrata.jvmOnly=true"] for side in ("baseline", "candidate")}
+        value["test_gate"] = {"task": ":quality:component-benchmarks:test", "required_tests": ["dev.example.ParityTest#fullTransitions"]}
+        self.assertEqual(self.load(value), value)
+        for mutation in (
+            lambda item: item.update(test_gate=None),
+            lambda item: item["tasks"].append(":runtime:core:jvmTest"),
+            lambda item: item["test_gate"].update(task=":runtime:core:jvmTest"),
+            lambda item: item["arguments"].update(candidate=["-Pstrata.jvmOnly=false"]),
+            lambda item: item["tasks"].append(":quality:component-benchmarks:jmhComponents"),
+        ):
+            invalid = copy.deepcopy(value)
+            mutation(invalid)
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(invalid)
+
     def test_source_outputs_and_requested_tasks_require_actual_complete_bytes_and_execution(self):
         workspace = self.root / "source"
         directory = self.root / "source-evidence"
