@@ -50,7 +50,7 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ### Standard component notification membership
 
-Standard component states lazily retain one derived ordered callback snapshot under their construction execution owner.
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
 The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
 The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
 Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.

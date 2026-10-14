@@ -65,8 +65,13 @@ internal class ComponentObserverFixture(
      */
     fun execute(): Long {
         when (scenario) {
-            Scenario.Changed64 -> repeat(64) { state.toggle() }
-            Scenario.Equal64 -> repeat(64) { state.checked = state.checked }
+            Scenario.Changed64 -> {
+                repeat(64) { state.toggle() }
+            }
+
+            Scenario.Equal64 -> {
+                repeat(64) { state.checked = state.checked }
+            }
 
             Scenario.FirstWrite -> {
                 val current = callbacks.map(state::observe)
@@ -74,10 +79,12 @@ internal class ComponentObserverFixture(
                 current.forEach(ComponentStateSubscription::close)
             }
 
-            Scenario.Churn64 -> repeat(64) {
-                val handle = state.observe(extra)
-                state.toggle()
-                handle.close()
+            Scenario.Churn64 -> {
+                repeat(64) {
+                    val handle = state.observe(extra)
+                    state.toggle()
+                    handle.close()
+                }
             }
 
             Scenario.ChangedFrame -> {
@@ -85,7 +92,9 @@ internal class ComponentObserverFixture(
                 lastFrame = checkNotNull(host).frame(viewport, time)
             }
 
-            Scenario.CleanFrame -> lastFrame = checkNotNull(host).frame(viewport, time)
+            Scenario.CleanFrame -> {
+                lastFrame = checkNotNull(host).frame(viewport, time)
+            }
         }
         return notifications
     }
