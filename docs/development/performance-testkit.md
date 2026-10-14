@@ -813,7 +813,7 @@ The same hosted job accepts `strata-source-preparation-ci-v1` for explicit Sourc
 It binds all three source trees, the exact differing source-file list, immutable inputs, a complete existing Gradle task list and both argument lists, one or three alternating baseline/candidate invocations, required output patterns and an optional full JVM test gate.
 The common driver and prepared Source subjects have separate frozen identities; preparing another change does not require that change to contain the common driver.
 Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-Pstrata.jvmOnly=true`; worker, memory, deadline, cache, task and sampling overrides are rejected.
-Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources.
+Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources and compiler ABI snapshots.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
 For a comparison that requires provisioned dependency caches, set the optional boolean `provision_dependency_caches` to `true`.

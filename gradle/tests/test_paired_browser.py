@@ -274,7 +274,7 @@ class PairedBrowserTest(unittest.TestCase):
 
     def test_source_runtime_archives_and_existing_quality_tasks_keep_full_jvm_gate(self):
         value = self.source_manifest(1)
-        value["source_files"] = ["quality/component-benchmarks/src/jmh/resources/runtime-api.tsv"]
+        value["source_files"] = ["quality/component-benchmarks/src/jmh/resources/runtime-api.tsv", "api/api/api.api", "api/api/api.klib.api"]
         value["tasks"] = [":api:jvmJar", ":runtime:core:jvmJar", ":runtime:headless:jar", ":performance-testkit:jvmJar"]
         value["tasks"] += [":quality:component-benchmarks:" + task for task in ("jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyComponentRenderingWork")]
         value["tasks"] += [":quality:benchmarks:verifyHistoricalWorkloads", ":quality:remote-benchmarks:verifyRemoteWorkloads"]
@@ -286,6 +286,7 @@ class PairedBrowserTest(unittest.TestCase):
             lambda item: item["tasks"].append(":runtime:core:jvmTest"),
             lambda item: item["test_gate"].update(task=":runtime:core:jvmTest"),
             lambda item: item["arguments"].update(candidate=["-Pstrata.jvmOnly=false"]),
+            lambda item: item["source_files"].append("api/build/kotlin/abi/api.api"),
             lambda item: item["tasks"].append(":quality:component-benchmarks:jmhComponents"),
         ):
             invalid = copy.deepcopy(value)

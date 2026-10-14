@@ -135,7 +135,7 @@ def load_source_manifest(shared, root, data):
     require(isinstance(files, list) and len(files) == len(set(files)), "Duplicate differing Source file")
     for path in files:
         shared.relative_path(root, path)
-        require(path.endswith((".kt", ".kts", ".java", ".tsv")) and "/build/" not in path, "Declare only differing source files")
+        require(path.endswith((".kt", ".kts", ".java", ".tsv", ".api")) and "/build/" not in path, "Declare only differing source files")
     labels = set()
     require(isinstance(data["inputs"], list), "Invalid Source input inventory")
     for item in data["inputs"]:
