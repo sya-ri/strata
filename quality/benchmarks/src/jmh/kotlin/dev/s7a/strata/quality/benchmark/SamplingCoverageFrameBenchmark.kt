@@ -2,6 +2,7 @@
 
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -65,5 +66,16 @@ public open class SamplingCoverageFrameBenchmark {
             current = runtime.prepare(input, if (alternate) second else first)
             return current
         }
+    }
+
+    /**
+     * Shares the existing operation-report connection without changing the eight-case JMH inventory.
+     */
+    public companion object {
+        /**
+         * Registers all original frame controls with the shared owner-thread meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SamplingCoverageFrameOperationReport
     }
 }

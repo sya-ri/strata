@@ -3,6 +3,7 @@ package dev.s7a.strata.quality.benchmark
 import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.JvmPerformanceInputs
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
@@ -72,6 +73,12 @@ public open class SamplingCoverageBenchmark {
      */
     public companion object {
         /**
+         * Connects every original geometry boundary to the existing supplemental owner-thread meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SamplingCoverageOperationReport
+
+        /**
          * Runs automatically under generic fixture discovery without requiring a Fabric archive on that classpath.
          */
         @JvmStatic
@@ -80,10 +87,13 @@ public open class SamplingCoverageBenchmark {
             check(SamplingCoverageFixture.Geometry.entries.size == 45)
             check(SamplingCoverageFixture.FrameOnly.entries.size == 8)
             check(JmhWorkloadInventory.capture(listOf(SamplingCoverageBenchmark::class.java, SamplingCoverageFrameBenchmark::class.java), setOf("avgt")).size == 98)
+            SamplingCoverageOperationReport.verifyRows()
+            SamplingCoverageFrameOperationReport.verifyRows()
         }
 
         /**
          * Accepts a new output directory, independent repetition index and unchanged Standard JMH options.
+         * The existing template's generated selector occupies argument two; this entry replaces it with all 98 original includes.
          * The calling JVM supplies the actual Fabric archive on its normal classpath, plus identical external controls.
          * All native-independent controls execute before the collector creates receipts or starts any timing fork.
          */
@@ -103,7 +113,7 @@ public open class SamplingCoverageBenchmark {
             SamplingCoverageFrozenInputs.verifyExternal(inputs + fixtureInputs)
             SamplingCoverageLoadedControls.verify(inputs + fixtureInputs)
             JmhPerformanceRunner.run(
-                (includes + args.drop(2)).toTypedArray(),
+                (includes + args.drop(3)).toTypedArray(),
                 fixtures,
                 mapOf(
                     "api" to "dev.s7a.strata.component.UiScope",

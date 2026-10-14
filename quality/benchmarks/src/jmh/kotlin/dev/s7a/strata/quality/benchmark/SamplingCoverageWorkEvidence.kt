@@ -60,6 +60,8 @@ public object SamplingCoverageWorkEvidence {
      */
     public fun verify(runtime: SamplingCoverageRuntime) {
         check(Control.entries.size == 30)
+        SamplingCoverageFixture.Geometry.entries.forEach { runtime.verifyPreparationEntryPoints(SamplingCoverageFixture.geometry(it)) }
+        SamplingCoverageFixture.FrameOnly.entries.forEach { runtime.verifyPreparationEntryPoints(SamplingCoverageFixture.frame(it)) }
         for (control in Control.entries.take(28)) {
             verifyControl(runtime, control)
             println("Sampling coverage control ${control.ordinal + 1} $control: JVM verified")
