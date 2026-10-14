@@ -281,6 +281,7 @@ public open class TextInkAggregationBenchmark {
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(TextInkAggregationBenchmark::class.java), setOf("avgt", "sample")).size == 128)
             check(JmhWorkloadInventory.capture(listOf(TextInkAggregationBenchmark::class.java, PortableTextBenchmark::class.java), setOf("avgt", "sample")).size == 152)
+            PortableTextWorkEvidence.main(emptyArray())
             TextInkAggregationWorkEvidence.verify()
         }
     }
