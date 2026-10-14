@@ -55,7 +55,9 @@ internal class VelocityScreenService(
             }.get()
     private val ticker =
         executor.scheduleWithFixedDelay({
-            repeat(64) { commands.poll()?.run() }
+            for (index in 0 until 64) {
+                commands.poll()?.run() ?: break
+            }
             runCatching(host::tick).onFailure(report)
         }, 0, 50, TimeUnit.MILLISECONDS)
 

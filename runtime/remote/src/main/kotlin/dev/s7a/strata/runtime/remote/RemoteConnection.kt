@@ -92,7 +92,8 @@ public class RemoteConnection(
     }
 
     /**
-     * Flushes at most [maxFrames] queued frames, bounding work and transport pressure per adapter tick.
+     * Flushes at most [maxFrames] queued frames, stopping at the first empty queue.
+     * Bounds transport pressure per adapter tick and releases the write guard after success or failure.
      */
     public fun flush(maxFrames: Int = 8) {
         checkOwner()
@@ -102,8 +103,8 @@ public class RemoteConnection(
         sending = true
         try {
             guarded {
-                repeat(maxFrames) {
-                    val transfer = pending.firstOrNull() ?: return@repeat
+                for (index in 0 until maxFrames) {
+                    val transfer = pending.firstOrNull() ?: break
                     val frame = transfer.frames.removeFirst()
                     transfer.started = true
                     if (transfer.frames.isEmpty()) pending.removeFirst()
