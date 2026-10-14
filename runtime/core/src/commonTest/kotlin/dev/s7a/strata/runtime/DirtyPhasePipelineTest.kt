@@ -55,82 +55,99 @@ internal class DirtyPhasePipelineTest {
     fun allSubsetsPreserveCallbacksOrderedFramesCleanReuseAndLifecycleWithBothDiagnosticsModes() {
         for (monitoring in listOf(false, true)) {
             for (bits in 0 until 16) {
-                val phases = DirtyPhase.entries.filter { bits and (1 shl it.ordinal) != 0 }
-                val mask = DirtyMask.of(*phases.reversed().toTypedArray(), *phases.toTypedArray())
-                val probe = TestProbe()
-                val leafId = TestProbe.ProbeId("leaf")
-                val siblingId = TestProbe.ProbeId("sibling")
-                val branchId = TestProbe.ProbeId("branch")
-                val description = probe.root(listOf(probe.element(branchId, children = listOf(probe.element(leafId))), probe.element(siblingId)))
-                val session = createRuntimeUiSession { description }
-                try {
-                    session.attach()
-                    val constraints = Constraints.fixed(8, 8)
-                    val original = session.frame(constraints)
-                    val commands = original.drawCommands.toList()
-                    val semantics = original.semantics.toList()
-                    val monitor = if (monitoring) session.startRenderMonitoring() else null
-                    try {
-                        val before = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
-                        val leaf = probe.nodeForTag(leafId)
-                        repeat(2) { leaf.invalidateForTest(mask) }
-                        val frame = session.frame(constraints)
-                        val measure = DirtyPhase.Measure in phases
-                        val layout = measure || DirtyPhase.Layout in phases
-                        val paint = layout || DirtyPhase.Paint in phases
-                        val semantic = layout || DirtyPhase.Semantics in phases
-                        val expected =
-                            listOf(
-                                if (measure) 3 else 0,
-                                when {
-                                    measure -> 3
-                                    layout -> 1
-                                    else -> 0
-                                },
-                                when {
-                                    measure -> 3
-                                    paint -> 1
-                                    else -> 0
-                                },
-                                when {
-                                    measure -> 3
-                                    semantic -> 1
-                                    else -> 0
-                                },
-                            )
-                        val after = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
-                        assertEquals(expected, after.zip(before) { end, start -> end - start }, "Callbacks for mask $bits, monitoring=$monitoring")
-                        monitor?.snapshot()?.let { snapshot ->
-                            listOf(UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint, UiRenderMetric.Semantics).forEachIndexed { index, metric ->
-                                assertEquals(expected[index].toLong(), snapshot.counts[metric], "$metric for mask $bits")
-                            }
-                            assertEquals(if (measure) 4L else 0L, snapshot.counts[UiRenderMetric.AncestorInvalidation])
-                            assertEquals(if (phases.isEmpty()) 0L else 2L, snapshot.counts[UiRenderMetric.LocalInvalidation])
-                        }
-                        assertEquals(commands, frame.drawCommands)
-                        assertEquals(semantics, frame.semantics)
-                        assertEquals(commands, original.drawCommands)
-                        assertEquals(semantics, original.semantics)
-                        if (phases.isEmpty()) assertSame(original, frame)
-                        assertSame(frame, session.frame(constraints))
-                        assertEquals(after, listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls))
-                    } finally {
-                        monitor?.close()
-                    }
-                    session.detach()
-                    assertEquals(0, probe.events.count { it is TestProbe.Event.Detach })
-                    assertEquals(semantics, original.semantics)
-                    session.attach()
-                    assertEquals(4, probe.events.count { it is TestProbe.Event.Attach })
-                    assertEquals(commands, session.frame(constraints).drawCommands)
-                } finally {
-                    session.close()
-                }
-                assertEquals(4, probe.events.count { it is TestProbe.Event.Dispose })
-                assertEquals(4, probe.events.count { it is TestProbe.Event.Detach })
-                assertFailsWith<IllegalStateException> { probe.nodeForTag(leafId).invalidateForTest(mask) }
+                verifySubsetFrame(bits, monitoring)
             }
         }
+    }
+
+    /**
+     * Keeps each independent subset case and its complete session lifetime under one owner.
+     */
+    private fun verifySubsetFrame(
+        bits: Int,
+        monitoring: Boolean,
+    ) {
+        val phases = DirtyPhase.entries.filter { bits and (1 shl it.ordinal) != 0 }
+        val mask = DirtyMask.of(*phases.reversed().toTypedArray(), *phases.toTypedArray())
+        val probe = TestProbe()
+        val leafId = TestProbe.ProbeId("leaf")
+        val siblingId = TestProbe.ProbeId("sibling")
+        val branchId = TestProbe.ProbeId("branch")
+        val description = probe.root(listOf(probe.element(branchId, children = listOf(probe.element(leafId))), probe.element(siblingId)))
+        val session = createRuntimeUiSession { description }
+        try {
+            session.attach()
+            val constraints = Constraints.fixed(8, 8)
+            val original = session.frame(constraints)
+            val commands = original.drawCommands.toList()
+            val semantics = original.semantics.toList()
+            val monitor = if (monitoring) session.startRenderMonitoring() else null
+            try {
+                val before = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
+                val leaf = probe.nodeForTag(leafId)
+                repeat(2) { leaf.invalidateForTest(mask) }
+                val frame = session.frame(constraints)
+                val measure = DirtyPhase.Measure in phases
+                val expected = expectedCallbacks(phases)
+                val after = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
+                assertEquals(expected, after.zip(before) { end, start -> end - start }, "Callbacks for mask $bits, monitoring=$monitoring")
+                monitor?.snapshot()?.let { snapshot ->
+                    listOf(UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint, UiRenderMetric.Semantics).forEachIndexed { index, metric ->
+                        assertEquals(expected[index].toLong(), snapshot.counts[metric], "$metric for mask $bits")
+                    }
+                    assertEquals(if (measure) 4L else 0L, snapshot.counts[UiRenderMetric.AncestorInvalidation])
+                    assertEquals(if (phases.isEmpty()) 0L else 2L, snapshot.counts[UiRenderMetric.LocalInvalidation])
+                }
+                assertEquals(commands, frame.drawCommands)
+                assertEquals(semantics, frame.semantics)
+                assertEquals(commands, original.drawCommands)
+                assertEquals(semantics, original.semantics)
+                if (phases.isEmpty()) assertSame(original, frame)
+                assertSame(frame, session.frame(constraints))
+                assertEquals(after, listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls))
+            } finally {
+                monitor?.close()
+            }
+            session.detach()
+            assertEquals(0, probe.events.count { it is TestProbe.Event.Detach })
+            assertEquals(semantics, original.semantics)
+            session.attach()
+            assertEquals(4, probe.events.count { it is TestProbe.Event.Attach })
+            assertEquals(commands, session.frame(constraints).drawCommands)
+        } finally {
+            session.close()
+        }
+        assertEquals(4, probe.events.count { it is TestProbe.Event.Dispose })
+        assertEquals(4, probe.events.count { it is TestProbe.Event.Detach })
+        assertFailsWith<IllegalStateException> { probe.nodeForTag(leafId).invalidateForTest(mask) }
+    }
+
+    /**
+     * Computes literal callback counts from public phase membership without consulting the runtime.
+     */
+    private fun expectedCallbacks(phases: List<DirtyPhase>): List<Int> {
+        val measure = DirtyPhase.Measure in phases
+        val layout = measure || DirtyPhase.Layout in phases
+        val paint = layout || DirtyPhase.Paint in phases
+        val semantic = layout || DirtyPhase.Semantics in phases
+        return listOf(
+            if (measure) 3 else 0,
+            when {
+                measure -> 3
+                layout -> 1
+                else -> 0
+            },
+            when {
+                measure -> 3
+                paint -> 1
+                else -> 0
+            },
+            when {
+                measure -> 3
+                semantic -> 1
+                else -> 0
+            },
+        )
     }
 
     @Test
