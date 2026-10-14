@@ -4,11 +4,14 @@ import dev.s7a.strata.runtime.platform.identitySet
 
 /**
  * Accumulates failures without self-suppression or duplicate throwable instances.
+ * Identity storage belongs to this synchronous operation and is created only when a failure is recorded.
  */
 internal class FailureAccumulator(
     initial: Throwable? = null,
 ) {
-    private val seen: MutableSet<Throwable> = identitySet()
+    private var seen: MutableSet<Throwable>? = null
+    private val identities: MutableSet<Throwable>
+        get() = seen ?: identitySet<Throwable>().also { seen = it }
 
     /**
      * The first failure observed.
@@ -26,7 +29,7 @@ internal class FailureAccumulator(
      * @param failure the failure to record.
      */
     fun add(failure: Throwable) {
-        if (seen.add(failure).not()) {
+        if (identities.add(failure).not()) {
             return
         }
         val current = first
@@ -76,7 +79,7 @@ internal class FailureAccumulator(
     }
 
     private fun addFlattened(failure: Throwable) {
-        if (failure in seen) {
+        if (failure in identities) {
             return
         }
         add(failure)
@@ -84,7 +87,7 @@ internal class FailureAccumulator(
     }
 
     private fun markSeen(failure: Throwable) {
-        if (seen.add(failure).not()) {
+        if (identities.add(failure).not()) {
             return
         }
         failure.suppressedExceptions.forEach(::markSeen)

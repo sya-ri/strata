@@ -18,7 +18,7 @@ public class RemoteClientStates internal constructor(
     private val owner = RuntimeExecutionOwner.current()
     private val values = mutableMapOf<Key, Entry>()
     private val retained = mutableSetOf<Key>()
-    private val editable = mutableMapOf<Key, RemoteEditableValue>()
+    private val editable: MutableList<EditableEntry> = ArrayList()
     private var phase = Phase.Idle
     private var flushing = false
     private var preparingEntry = false
@@ -51,10 +51,16 @@ public class RemoteClientStates internal constructor(
                         release(value)
                         error("Remote state closed before a factory result could be admitted.")
                     }
-                    Entry(value) { release(value) }.also {
-                        values[address] = it
-                        if (value is RemoteEditableValue) editable[address] = value
-                    }
+                    val onRelease = { release(value) }
+                    val admitted =
+                        if (value is RemoteEditableValue) {
+                            EditableEntry(address, value, onRelease)
+                        } else {
+                            Entry(value, onRelease)
+                        }
+                    values[address] = admitted
+                    if (admitted is EditableEntry) editable.add(admitted)
+                    admitted
                 }
             retained.add(address)
             update(key.type.java.cast(entry.value))
@@ -85,7 +91,7 @@ public class RemoteClientStates internal constructor(
         if (flushing) return
         flushing = true
         try {
-            val iterator = editable.values.iterator()
+            val iterator = editable.iterator()
             while (iterator.hasNext()) {
                 iterator.next().flushEdits(actions)
                 check(phase == Phase.Idle) { "Remote state closed during edit polling." }
@@ -107,13 +113,7 @@ public class RemoteClientStates internal constructor(
             prepare()
             check(phase == Phase.Preparing) { "Remote state closed during preparation." }
             phase = Phase.Retiring
-            val obsolete = values.keys.filter { (it in retained).not() }
-            obsolete.forEach { address ->
-                val entry = values.remove(address)
-                editable.remove(address)
-                entry?.release?.invoke()
-                check(phase == Phase.Retiring) { "Remote state closed during retirement." }
-            }
+            retireEntries()
         } finally {
             retained.clear()
             if (phase != Phase.Closed) phase = Phase.Idle
@@ -146,15 +146,44 @@ public class RemoteClientStates internal constructor(
         check(RuntimeExecutionOwner.current() == owner) { "Remote presentation state belongs to another execution owner." }
     }
 
+    private fun retireEntries() {
+        val obsolete = values.keys.filter { (it in retained).not() }
+        editable.removeAll { (it.key in retained).not() }
+        runCatching {
+            obsolete.forEach { address ->
+                val entry = values.remove(address)
+                entry?.release?.invoke()
+                check(phase == Phase.Retiring) { "Remote state closed during retirement." }
+            }
+        }.exceptionOrNull()?.let { failure ->
+            // Unretired entries still belong to values after a failed callback; preserve their original polling order.
+            editable.clear()
+            values.values.forEach { entry ->
+                if (entry is EditableEntry) editable.add(entry)
+            }
+            throw failure
+        }
+    }
+
     private data class Key(
         val identity: Long,
         val type: RemoteStateKey<*>,
     )
 
-    private class Entry(
+    private open class Entry(
         val value: Any,
         val release: () -> Unit,
     )
+
+    private class EditableEntry(
+        val key: Key,
+        value: RemoteEditableValue,
+        release: () -> Unit,
+    ) : Entry(value, release) {
+        fun flushEdits(actions: RemoteClientActions) {
+            (value as RemoteEditableValue).flushEdits(actions)
+        }
+    }
 
     private enum class Phase { Idle, Preparing, Retiring, Closed }
 }

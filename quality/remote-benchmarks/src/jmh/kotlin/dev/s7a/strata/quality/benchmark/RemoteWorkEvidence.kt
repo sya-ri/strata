@@ -32,7 +32,7 @@ public object RemoteWorkEvidence {
             return
         }
         verifySurface()
-        JmhFixtureSelection.verifyWork(JmhFixtureSelection.all())
+        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(JmhFixtureSelection.all()))
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt"), includes = listOf("RemoteProtocolBenchmark.diff")).size == 6)
         val benchmark = RemoteProtocolBenchmark()
