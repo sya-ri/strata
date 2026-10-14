@@ -1,4 +1,7 @@
 [versions]
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+pyflakes = "4.0.3"
 hangar-publish = "0.1.4"
 kotlin = "2.4.20"
 paper-api = "1.20.1-R0.1-SNAPSHOT"

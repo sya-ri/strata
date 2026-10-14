@@ -16,7 +16,9 @@ import dev.s7a.strata.modifier.size
 import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.spi.RuntimeUiDiagnosticsOwner
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
 import dev.s7a.strata.runtime.spi.createRuntimeUiSession
@@ -165,9 +167,15 @@ public open class PendingSourceBenchmark {
 
         /**
          * Borrows the current session for the shared runner's untimed render-work diagnostics.
+         * Uses the existing explicit capacity for the complete large scene; overflow still rejects incomplete evidence.
          */
         public val diagnosticsOwner: Any
-            get() = session
+            get() {
+                val owner = session
+                return object : RuntimeUiDiagnosticsOwner by owner {
+                    override fun startRenderMonitoring(): UiRenderMonitor = owner.startRenderMonitoring(65_536)
+                }
+            }
 
         /**
          * Builds sources and immutable visible descriptions, establishes subscriptions and settles one frame.
