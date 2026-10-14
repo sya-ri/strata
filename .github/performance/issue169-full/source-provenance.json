@@ -1,288 +1,58 @@
 {
-  "schema": "strata.issue169.prepared-source-provenance.v1",
-  "status": "New accepted-master source epoch; old complete raw metrics retained separately, current combined closure qualification and metrics Pending",
-  "base_public_commit": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-  "accepted_master": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-  "baseline_tree": "42df6dfacfdbae3587251ce9c82fd9662087f439",
-  "candidate_fixture_tree": "34227ffdff4d7d700013889aa2341cc4ddf8db2a",
-  "runtime_delta_paths": [
+  "schema": "issue169-current-source-provenance-v1",
+  "published_pr_head": "4501f0d8fc546b66c5d62798258617a1a71009b6",
+  "source_base": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+  "sources": {
+    "baseline": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "d5c1c21d26b7d74013ad401e4e35567cc54d2d4d",
+      "patches": [
+        {
+          "path": ".github/performance/issue169-full/baseline.patch",
+          "sha256": "93852b62201631a95b4108576b9bf89e3f18494ab28bec5fcf5ae7b20be4e79d"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "16bf524d543b7c2a6b7b7fbaca310e836d776404",
+      "patches": [
+        {
+          "path": ".github/performance/issue169-full/candidate.patch",
+          "sha256": "69ff256da663653a079c4003496c2b00cbe8c0bf3b7561d3bdd4d23e84bd35c0"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "16bf524d543b7c2a6b7b7fbaca310e836d776404",
+      "patches": [
+        {
+          "path": ".github/performance/issue169-full/candidate.patch",
+          "sha256": "69ff256da663653a079c4003496c2b00cbe8c0bf3b7561d3bdd4d23e84bd35c0"
+        }
+      ]
+    }
+  },
+  "production_difference_only": [
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice.kt",
     "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation.kt"
   ],
-  "all_other_baseline_candidate_source_bytes_identical": true,
-  "same_fixture_source_bindings": [
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationBenchmark.kt",
-      "raw_sha256": "0cd1a7a867865d9c1cb41c56772796db91387853948bb8951d1f4eae833da910",
-      "canonical_sha256": "0cd1a7a867865d9c1cb41c56772796db91387853948bb8951d1f4eae833da910",
-      "bytes": 5559,
-      "git_blob": "7c61dad58bb276d89248b5579eefa5e8b8e685be"
-    },
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationOperationReport.kt",
-      "raw_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
-      "canonical_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
-      "bytes": 3583,
-      "git_blob": "32e998f04ec644affe2a88698cbbb6260d5313e0"
-    },
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationWorkload.kt",
-      "raw_sha256": "7d9126211d5c83102229b45f8396fbc421a8c31ae5f4542f6510b079841ddeed",
-      "canonical_sha256": "7d9126211d5c83102229b45f8396fbc421a8c31ae5f4542f6510b079841ddeed",
-      "bytes": 12123,
-      "git_blob": "898e3d37bb43e7ee27137739e1446817379b5fd1"
-    }
+  "candidate_only_assertion": "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationTransferTest.kt",
+  "timed_methods_literal": [
+    "@Benchmark\n    public fun publishMembership(state: Scene): NativeCanvasPresentation = state.publish()",
+    "@Benchmark\n    public fun prepareBatch(state: Scene): List<DrawCommand> = state.prepare()"
   ],
-  "all_source_delta_bindings": [
-    {
-      "path": "docs/development/performance-testkit.md",
-      "raw_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
-      "canonical_sha256": "cbeb79d37eaa04fd21e9852fb4d1817ed5257a8b4892fe3ff9fb3a3403d72a96",
-      "bytes": 90383,
-      "git_blob": "d8854ac3573d0f61e452f5918763c222ccd0191d"
-    },
-    {
-      "path": "docs/development/performance.md",
-      "raw_sha256": "7b53fc3b366bed4461b22ae3b241346904cda8d57bf6751b346479381f3dfa01",
-      "canonical_sha256": "7b53fc3b366bed4461b22ae3b241346904cda8d57bf6751b346479381f3dfa01",
-      "bytes": 96538,
-      "git_blob": "3922c998b03ecca29a2a8915809d353d80fee586"
-    },
-    {
-      "path": "gradle/performance/invoke-windows.ps1",
-      "raw_sha256": "ccf80c916b421b74dc037b7b21f83db90dbe7944e56a43308bd102558db18206",
-      "canonical_sha256": "ccf80c916b421b74dc037b7b21f83db90dbe7944e56a43308bd102558db18206",
-      "bytes": 22824,
-      "git_blob": "fe5b5f85812ad85d7376a6f5c4a12ef52bc8c8c4"
-    },
-    {
-      "path": "gradle/performance/paired-jvm.py",
-      "raw_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
-      "canonical_sha256": "627619ae8b5c312a387361be0649515638f0548021387433734fc0e15c1bc80c",
-      "bytes": 76332,
-      "git_blob": "7de981bdfd4d87a979cbfbd29639ff468175c8d5"
-    },
-    {
-      "path": "gradle/performance/verify-windows-boundary.py",
-      "raw_sha256": "e80462a7aa5d8392d67bd4ced471fdcff6a776af52e288bb906ff64927d2034c",
-      "canonical_sha256": "e80462a7aa5d8392d67bd4ced471fdcff6a776af52e288bb906ff64927d2034c",
-      "bytes": 6931,
-      "git_blob": "9015b3658cb9b8fce3033204a2d10487770b06a7"
-    },
-    {
-      "path": "gradle/performance/windows-process-history.py",
-      "raw_sha256": "c1f47a3b601806c970fcbda884997c05ef151ddc7cece87970e99ea215c340c2",
-      "canonical_sha256": "c1f47a3b601806c970fcbda884997c05ef151ddc7cece87970e99ea215c340c2",
-      "bytes": 2622,
-      "git_blob": "65c9c8b98f76d975550ea2007eeb862fd726c359"
-    },
-    {
-      "path": "gradle/tests/test_paired_jvm.py",
-      "raw_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
-      "canonical_sha256": "911dace3ca7ba7e635fc8034d1b07e77ee78d78e7f604ed3f7436cbda9757c43",
-      "bytes": 66152,
-      "git_blob": "efff347a6a3261e443b4acfdfcfd4554c0a9b0e9"
-    },
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationBenchmark.kt",
-      "raw_sha256": "0cd1a7a867865d9c1cb41c56772796db91387853948bb8951d1f4eae833da910",
-      "canonical_sha256": "0cd1a7a867865d9c1cb41c56772796db91387853948bb8951d1f4eae833da910",
-      "bytes": 5559,
-      "git_blob": "7c61dad58bb276d89248b5579eefa5e8b8e685be"
-    },
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationOperationReport.kt",
-      "raw_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
-      "canonical_sha256": "616ff567c8339a998a6bc52c8a4364f6de9bd8f1d0a2e5f64e1e790cf06079da",
-      "bytes": 3583,
-      "git_blob": "32e998f04ec644affe2a88698cbbb6260d5313e0"
-    },
-    {
-      "path": "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationWorkload.kt",
-      "raw_sha256": "7d9126211d5c83102229b45f8396fbc421a8c31ae5f4542f6510b079841ddeed",
-      "canonical_sha256": "7d9126211d5c83102229b45f8396fbc421a8c31ae5f4542f6510b079841ddeed",
-      "bytes": 12123,
-      "git_blob": "898e3d37bb43e7ee27137739e1446817379b5fd1"
-    },
-    {
-      "path": "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasDevice.kt",
-      "raw_sha256": "cf9473c8e455eccf40df02e94377574f460de26b4ec77a50d2c219f16950f83f",
-      "canonical_sha256": "cf9473c8e455eccf40df02e94377574f460de26b4ec77a50d2c219f16950f83f",
-      "bytes": 35233,
-      "git_blob": "565a7da4ada0f6dbeb3c4e1751ab9be5fb74beb1"
-    },
-    {
-      "path": "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentation.kt",
-      "raw_sha256": "cb759bed28824c22b6b027c616e2026602195aa33d596f6abfa95b1103963e06",
-      "canonical_sha256": "cb759bed28824c22b6b027c616e2026602195aa33d596f6abfa95b1103963e06",
-      "bytes": 3786,
-      "git_blob": "f0c7e19eb03e47302e73e074f419e23c0604f67a"
-    },
-    {
-      "path": "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationOwnershipTest.kt",
-      "raw_sha256": "766095ae5e04e78b6081503e70b3b0da3e7a53a22f403adc4396c784a324974b",
-      "canonical_sha256": "766095ae5e04e78b6081503e70b3b0da3e7a53a22f403adc4396c784a324974b",
-      "bytes": 5278,
-      "git_blob": "c37c57470e6538231bd436ed68d35a616c72cd69"
-    }
+  "workloads": [
+    "EmptyControl",
+    "SmallPortableControl",
+    "LargePortableControl",
+    "SingleUnchangedSmall",
+    "SingleChangedLarge",
+    "ManyUnchangedSmall",
+    "ManyChangedLarge",
+    "InitialUnavailable"
   ],
-  "inventory": [
-    {
-      "method": "publishMembership",
-      "workload": "EmptyControl",
-      "control": true
-    },
-    {
-      "method": "publishMembership",
-      "workload": "SmallPortableControl",
-      "control": true
-    },
-    {
-      "method": "publishMembership",
-      "workload": "LargePortableControl",
-      "control": true
-    },
-    {
-      "method": "publishMembership",
-      "workload": "SingleUnchangedSmall",
-      "control": false
-    },
-    {
-      "method": "publishMembership",
-      "workload": "SingleChangedLarge",
-      "control": false
-    },
-    {
-      "method": "publishMembership",
-      "workload": "ManyUnchangedSmall",
-      "control": false
-    },
-    {
-      "method": "publishMembership",
-      "workload": "ManyChangedLarge",
-      "control": false
-    },
-    {
-      "method": "publishMembership",
-      "workload": "InitialUnavailable",
-      "control": false
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "EmptyControl",
-      "control": true
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "SmallPortableControl",
-      "control": true
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "LargePortableControl",
-      "control": true
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "SingleUnchangedSmall",
-      "control": false
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "SingleChangedLarge",
-      "control": false
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "ManyUnchangedSmall",
-      "control": false
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "ManyChangedLarge",
-      "control": false
-    },
-    {
-      "method": "prepareBatch",
-      "workload": "InitialUnavailable",
-      "control": false
-    }
-  ],
-  "expected_rows": 16,
-  "expected_controls": 6,
-  "normal_JMH_modes": [
-    "avgt",
-    "sample"
-  ],
-  "formal_repetitions_per_side": 3,
-  "standard_JMH_cells": 192,
-  "supplemental_operation_rows": 96,
-  "operation_warmup": 30,
-  "operation_samples": 60,
-  "operations_per_sample": 1,
-  "runtime_projects": [
-    ":api",
-    ":runtime:core",
-    ":runtime:headless",
-    ":runtime:minecraft"
-  ],
-  "source_patches": {
-    "baseline": {
-      "path": ".github/performance/issue169-full/baseline.patch",
-      "sha256": "c9c0616c62942fc5427c32758db819ad09fc06f8d6576c82453a1de212a54be3"
-    },
-    "candidate": {
-      "path": ".github/performance/issue169-full/candidate.patch",
-      "sha256": "0fd54c88d6980056a3a90e324d19a0c6e305f272e84709b000ca70d78d395369"
-    }
-  },
-  "operation_boundaries": "Original publishMembership constructor handle and prepareBatch admission/mapping/validation/capture/cancellation methods; original setup, complete work oracle, serialization and terminal close outside samples.",
-  "deterministic_work": "Original full zero/one/16 Canvas by zero/eight/10000 portable fills by unchanged/changed cross-product and initial-unavailable capture rejection; literal independent pixel, ordering, ownership and release checks unchanged.",
-  "CPU_scope": "CPU-only driver callback protocol; no loaded Minecraft, native upload, GPU or FPS measurement",
-  "native_scope": "Pending full OpenGL/Vulkan NativeCanvas/Spacer at GUI1-4,1920x1080,three independent Standard B/C invocations; counts/bytes per actual upload category and offscreen-through-GUI vs GUI-only time remain independent acceptance.",
-  "compiled_pins": "Optional empty; actual loaded archive/class-tree/Java/dependency closure preserved by existing driver",
-  "measurement_selection": "Own complete16 default and nested manifests byte-identical; no unrelated default/pilot or additional dispatch",
-  "driver_metadata_scope": "Both measured trees exclude own issue169-full metadata and retain the unchanged accepted-master default; explicit fixture selection does not read that foundation default. Main PR default is own complete16 only.",
-  "patch_encoding": "Standard Git binary hunks; temporary generation attributes only; historical wrapper bytes preserved",
-  "Java_started": 0,
-  "helper_calls": 0,
-  "completed_score_cells": 0,
-  "completed_operation_rows": 0,
-  "original_complete_inventory_unchanged": true,
-  "prior_accepted_source_epoch": {
-    "sources": {
-      "fixture": {
-        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-        "tree": "061191f4b1e8bd6bccfb892781a98a51ce6b46f4",
-        "patches": [
-          {
-            "path": ".github/performance/issue169-full/candidate.patch",
-            "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
-          }
-        ]
-      },
-      "baseline": {
-        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-        "tree": "854df180ada0efab34de2827b822689ef03d22ac",
-        "patches": [
-          {
-            "path": ".github/performance/issue169-full/baseline.patch",
-            "sha256": "7a9b888d90ba4adce0d20e9ad4467f8edf701dcb9d14f9fc9aed80dd74a1b683"
-          }
-        ]
-      },
-      "candidate": {
-        "ref": "d7037b655aead1d1677827a5c0d3c908adcce4b5",
-        "tree": "061191f4b1e8bd6bccfb892781a98a51ce6b46f4",
-        "patches": [
-          {
-            "path": ".github/performance/issue169-full/candidate.patch",
-            "sha256": "884f74f6a57df173f45c2bfe464601c01b62c145b9934b9dce03864732083baf"
-          }
-        ]
-      }
-    },
-    "manifest_sha256": "3cda9cdbf89a21a9530e86b91a83a38caeb87558c0d098ce15588edb10655448",
-    "metrics": "Historical exact prior closure; no rebinding"
-  }
+  "source_epoch_compiled_qualification": "Pending",
+  "prior_4501_measured_result_credit": 0
 }

@@ -99,6 +99,7 @@ private data class MinecraftFabricTarget(
     val javaVersion: Int,
     val remapped: Boolean,
     val canvasFamily: CanvasFamily,
+    val nativePacingFamily: NativePacingFamily,
     val sourceLinkPaths: List<String>,
     val remoteNetworkFamily: RemoteNetworkFamily = RemoteNetworkFamily.StreamCodec,
     val paperDistribution: PaperDistribution = PaperDistribution.Available,
@@ -130,6 +131,7 @@ private data class MinecraftFabricTarget(
     val canvasTestSourcePaths: List<String> =
         (if (canvasFamily == CanvasFamily.RenderPearl) emptyList() else listOf("integration/shared/minecraft-fabric/canvas/target/blaze3d")) + listOf(
             "integration/shared/minecraft-fabric/canvas/common",
+            "integration/shared/minecraft-fabric/canvas/pacing/${nativePacingFamily.sourceRoot}",
             if (canvasFamily == CanvasFamily.RenderPearl) "integration/shared/minecraft-fabric/canvas/window/sdl" else "integration/shared/minecraft-fabric/canvas/window/glfw",
             "integration/shared/minecraft-fabric/canvas/${canvasFamily.testSource}",
             "integration/shared/minecraft-fabric/canvas/extraction/${canvasTestExtraction.sourceRoot}",
@@ -140,6 +142,10 @@ private data class MinecraftFabricTarget(
             },
         )
 
+    /** Fixture-only limiter APIs verified from exact mapped clients; no runtime version dispatch. */
+    enum class NativePacingFamily(val sourceRoot: String) {
+        Legacy("legacy"), Tracker("tracker"), Reason("reason"), GameStateGetter("game-state-getter"), GameStateAccessor("game-state-accessor"),
+    }
     /** Native HUD extraction signatures verified from the exact client archives. */
     enum class UiFamily(val sourceRoot: String) {
         Float("float-delta"), Delta("delta-tracker"), ExtractGui("gui-extractor"), ExtractHud("hud-extractor"),
@@ -185,6 +191,7 @@ val minecraftJavaVersion = libs.versions.java.minecraft.get().toInt()
 val minecraftJava21Version = libs.versions.java.minecraft121.get().toInt()
 private val legacyScrollTargets = setOf(libs.versions.minecraft120.get(), libs.versions.minecraft1201.get())
 private val fabricLoaderVersion = libs.versions.fabric.loader.get()
+private val fabricLanguageKotlinVersion = libs.versions.fabric.language.kotlin.get()
 private val fabricMixinDependency = libs.fabric.mixin
 private val canvasMixinDependency = libs.fabric.mixin
 private val canvasMixinExtrasDependency = libs.mixin.extras
@@ -197,6 +204,7 @@ private val minecraftFabricTargets =
     listOf(
         MinecraftFabricTarget(
             version = libs.versions.minecraft120.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -211,6 +219,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1201.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.IdentifierBuffer,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -224,6 +233,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1202.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -239,6 +249,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1203.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
@@ -255,6 +266,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1204.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             remoteNetworkFamily = MinecraftFabricTarget.RemoteNetworkFamily.CustomPayload,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
@@ -269,6 +281,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1205.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -283,6 +296,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1206.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Float,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -297,6 +311,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft121.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -311,6 +326,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1211.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Legacy,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlPlatformBuffers,
             javaVersion = minecraftJava21Version,
@@ -325,6 +341,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1212.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
@@ -340,6 +357,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1213.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -354,6 +372,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1214.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Tracker,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.OpenGlBuffers,
             javaVersion = minecraftJava21Version,
@@ -367,6 +386,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1215.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dDirectTextures,
             javaVersion = minecraftJava21Version,
@@ -380,6 +400,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1216.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -394,6 +415,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1217.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -408,6 +430,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1218.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             canvasTestExtraction = MinecraftFabricTarget.CanvasTestExtraction.BufferedLayered,
@@ -422,6 +445,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft1219.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -435,6 +459,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12110.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dTextureViews,
             javaVersion = minecraftJava21Version,
@@ -448,6 +473,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft12111.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.Reason,
             uiFamily = MinecraftFabricTarget.UiFamily.Delta,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dSamplers,
             javaVersion = minecraftJava21Version,
@@ -462,6 +488,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft261.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateGetter,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractGui,
             paperDistribution = MinecraftFabricTarget.PaperDistribution.Unavailable,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dGuiExtractor,
@@ -478,6 +505,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft262.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.Blaze3dBindGroups,
             javaVersion = minecraftJavaVersion,
@@ -493,6 +521,7 @@ private val minecraftFabricTargets =
         ),
         MinecraftFabricTarget(
             version = libs.versions.minecraft263.get(),
+            nativePacingFamily = MinecraftFabricTarget.NativePacingFamily.GameStateAccessor,
             uiFamily = MinecraftFabricTarget.UiFamily.ExtractHud,
             canvasFamily = MinecraftFabricTarget.CanvasFamily.RenderPearl,
             javaVersion = minecraftJavaVersion,
@@ -1715,6 +1744,11 @@ subprojects {
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.gpuQueries", enabled) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.gpuQueries=$enabled") }
                 }
+                providers.gradleProperty("strata.performance.inactivity").orNull?.let { selected ->
+                    require(selected in setOf("minimized", "afk")) { "strata.performance.inactivity must be minimized or afk." }
+                    tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.inactivity", selected) }
+                    tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.inactivity=$selected") }
+                }
                 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
                     tasks.withType<JavaExec>().configureEach { systemProperty("strata.performance.workloads", selected) }
                     tasks.withType<LibraryClientProductionRunTask>().configureEach { jvmArgs.add("-Dstrata.performance.workloads=$selected") }
@@ -1862,6 +1896,126 @@ subprojects {
             val mixinVersion = mixin.versionConstraint.requiredVersion
             val mixinGroup = mixin.module.group
             val toolchainManifest = FabricToolchainManifest(loaderVersion, mixinVersion, mixinGroup)
+            val languageKotlinVersion = fabricLanguageKotlinVersion
+            // Register after the original module script establishes Loom's mapping mode and archive tasks.
+            afterEvaluate {
+                val archiveTask = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
+                val verifyFabricModArtifact = tasks.register("verifyFabricModArtifact") {
+                    group = "verification"
+                    description = if (target.remapped) "Verifies the exact remapped Fabric mod metadata and nested common-runtime jars." else "Verifies the exact Fabric mod metadata and nested common-runtime jars."
+                    dependsOn(archiveTask)
+                    inputs.file(archiveTask.flatMap { task -> task.archiveFile })
+                    inputs.property("fabricLoaderVersion", loaderVersion)
+                    inputs.property("minecraftVersion", target.version)
+                    inputs.property("fabricLanguageKotlinVersion", languageKotlinVersion)
+                    inputs.property("javaVersion", target.javaVersion.toString())
+                    doLast {
+                        val artifact = archiveTask.get().archiveFile.get().asFile
+                        ZipFile(artifact).use { archive ->
+                            val entryNames = archive.entries().asSequence().map { entry -> entry.name }.toList()
+                            val nestedNames =
+                                entryNames
+                                    .filter { name -> name.startsWith("META-INF/jars/") && name.endsWith(".jar") }
+                                    .map { name -> name.substringAfterLast('/') }
+                                    .sorted()
+                            val expectedNestedNames =
+                                listOf(
+                                    "api-${project.version}.jar",
+                                    "core-${project.version}.jar",
+                                    "remote-${project.version}.jar",
+                                    "headless-${project.version}.jar",
+                                    "minecraft-${project.version}.jar",
+                                    "minecraft-fonts-lwjgl-${project.version}.jar",
+                                ).sorted()
+                            check(nestedNames == expectedNestedNames) {
+                                "Fabric artifact must contain each common runtime jar exactly once: $nestedNames"
+                            }
+
+                            val metadataEntries = entryNames.filter { name -> name == "fabric.mod.json" }
+                            check(metadataEntries.size == 1) {
+                                "Fabric artifact must contain exactly one top-level fabric.mod.json: $metadataEntries"
+                            }
+                            val metadata =
+                                archive.getInputStream(archive.getEntry(metadataEntries.single())).bufferedReader().use { reader ->
+                                    JsonSlurper().parse(reader) as Map<*, *>
+                                }
+                            check(metadata["schemaVersion"] == 1) {
+                                "Fabric metadata must use schema version 1."
+                            }
+                            check(metadata["id"] == "strata") {
+                                "Fabric metadata must use the reserved module id."
+                            }
+                            check(metadata["version"] == project.version.toString()) {
+                                "Fabric metadata must contain the expanded project version."
+                            }
+                            check(metadata["environment"] == "client") {
+                                "Fabric metadata must remain client-only."
+                            }
+                            if (target.canvasFamily == MinecraftFabricTarget.CanvasFamily.RenderPearl) {
+                                check(metadata["accessWidener"] == "strata-sampled-gui.accesswidener" && "strata-sampled-gui.accesswidener" in entryNames) {
+                                    "Exact GUI sampling requires its packaged host access contract."
+                                }
+                            }
+                            check(metadata["name"] == "Strata") {
+                                "Fabric metadata must use the stable project name."
+                            }
+                            check(metadata["description"] == "A declarative Minecraft UI library with a separately installed Fabric client runtime.") {
+                                "Fabric metadata must contain the shared project description."
+                            }
+                            check(metadata["authors"] == listOf("sya-ri")) {
+                                "Fabric metadata must contain the project author."
+                            }
+                            check(
+                                metadata["contact"] ==
+                                    mapOf(
+                                        "homepage" to "https://gh.s7a.dev/strata/",
+                                        "sources" to "https://github.com/sya-ri/strata",
+                                        "issues" to "https://github.com/sya-ri/strata/issues",
+                                    ),
+                            ) {
+                                "Fabric metadata contact links must match the canonical project links."
+                            }
+                            check(metadata["license"] == "MIT") {
+                                "Fabric metadata must declare the MIT license."
+                            }
+                            check(
+                                metadata["entrypoints"] ==
+                                    mapOf(
+                                        "client" to listOf("dev.s7a.strata.runtime.minecraft.fabric.StrataFabricClient"),
+                                    ),
+                            ) {
+                                "Fabric metadata must install the shared client entrypoint."
+                            }
+                            check("META-INF/LICENSE-strata" in entryNames) {
+                                "Fabric artifact must contain the project license."
+                            }
+                            val nestedMetadata =
+                                (metadata["jars"] as? List<*>)
+                                    ?.map { entry ->
+                                        val item = entry as? Map<*, *> ?: error("Fabric nested-jar metadata entries must be objects: $entry")
+                                        item["file"] as? String ?: error("Fabric nested-jar metadata entries must contain a file path: $entry")
+                                    }
+                                    ?.sorted()
+                            val expectedNestedMetadata = expectedNestedNames.map { name -> "META-INF/jars/$name" }.sorted()
+                            check(nestedMetadata == expectedNestedMetadata) {
+                                "Fabric metadata must reference each common runtime jar exactly once: $nestedMetadata"
+                            }
+                            check(
+                                metadata["depends"] ==
+                                    mapOf(
+                                        "fabricloader" to ">=${loaderVersion}",
+                                        "minecraft" to target.version,
+                                        "fabric-language-kotlin" to ">=${languageKotlinVersion}",
+                                        "java" to ">=${target.javaVersion.toString()}",
+                                    ),
+                            ) {
+                                "Fabric metadata dependencies must match the version catalog: ${metadata["depends"]}"
+                            }
+                        }
+                    }
+                }
+                tasks.named("check") { dependsOn(verifyFabricModArtifact) }
+            }
             tasks.matching { task -> task.name == "verifyFabricModArtifact" }.configureEach {
                 val artifact = tasks.named<AbstractArchiveTask>(if (target.remapped) "remapJar" else "jar")
                 inputs.file(artifact.flatMap { task -> task.archiveFile })

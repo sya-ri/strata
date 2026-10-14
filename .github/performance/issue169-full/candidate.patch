@@ -1,89 +1,18 @@
-diff --git a/.github/performance/paired-jvm.json b/.github/performance/paired-jvm.json
-deleted file mode 100644
-index 283189f9aef75579f5e908f9c4f4e78f319d3adb..0000000000000000000000000000000000000000
-GIT binary patch
-literal 0
-HcmV?d00001
-
-literal 2953
-zcmeHJ$#UFA487|sTs&uny)QcEkgA;GO68_<snA=7(r^jMk?eBm-vc(68C#w>j(yBU
-z;(!1MyncA-k2i1L6oWs+8j4$d8haRF*Fn|CuzPr_cfQ&^(c-7<)}DGF2lV@hKQS&<
-z@5fUgHv^jbn5H~I6Rw?-5+Vc|sM6Xn4bqdqy(I>M_fa^R6X#rGAE!hGSJ8(E$^|Zy
-zw_GG?IDq6@8KEWTgfeQmK1X&iV*OKDce$)7-CW@Ggf*eVVM@LKvl<U4S9Y;aZC^v<
-zW0_ii8nD%>=}zM=osP%SLlde1W8CM=+lO+l;Q&mkDVqfwh!7+uuOTsDf(hlQRruQm
-zny6!3S}R?&)Df#w3fR78Auwk+6~$KU%kuOt|9_dV#;P3*@mMuK7G1#^gJh_oSTr62
-zF-|Cfg&E*jyETjeQ-N(wPvHGfbl0~28C<7>1Yx`;-aErMr_2POlnNpW=7NnXGNYmv
-zUdaFq43kbJrBw*TF!MEVw=>3*T)FZ;cfX&zNZrieqCYibRmc0TZy%x`&(m4lLRT&H
-zDsC6ITi>FLEX3c82h@&Z9ERyI-^~his>X{+-%f7%$~2a@f1Ti1jUR4ZZ2X~y{&6^y
-zxq&*1%<HK?`&`6bDoXLotQ5aaLh<vOd*xX!FOThW+dm##2)X04xq}|RJ;pxEXT~VI
-z$M+q=6T`j7ai89CHp74l(4tVmShdZ4AG@~CAg(RrYY5P-3A1EO3DF+n(|*vfpS66y
-z;IZHO+JCtd#O|9Se_N~jJr}nku@GRX<r(_=)L~nckhL!?ae%tRlSMoG#J-`?x6hw~
-zfkE3#-!^049&`B8_$;B*-<c>`&L@Yv?69I%9KppSnv0bIL*8jSaz6jAYS3Yg!0)c>
-zW8rE!akU(JU)E4H<zqXdN|y*-iJ+G==;i8r3H95m%Ywdt9JjAcSZo``32;(6AW|#M
-zmEbN}7qk#IMwC2<l82hdt)#$(=0O1!oG7Cc_=LN0J%R;{8Sk}`tF6z=Ju~Oux9;1z
-zZks>iFn$Gqx5!&?$9M_E6m}H^&kP~d$Kbft%$h_c7zdFv;&}>6;7tNz(n30>Sk#K(
-zHG)PXjSSH;_uoLcTzJ>ce;K558>At#;GsTT!QfRud5OZNAy=Wm6(~h8-djbbP}*Xv
-zA_x_u$JIxCFq$ASD3>0%RNOdfj1Ex=<ccKljZn1DP3(7zs%#7`u9D(ad*6r0XL@oK
-z6+sg*oFNOGvVdctBauRTM8a4n1Ht=d5{5dPkVd%D6pz7ByyP%Tg{7aNvPlL~x~q<;
-z#Mtnp9P{8@+;Q&~HNU)>ZMMq`#ocs~%My=@+QlZ|w)n87og<0|c!IO(=H=#Zb|x=g
-
-diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
-index a8122321ed15fcbe388068d323a63588906519b9..d8854ac3573d0f61e452f5918763c222ccd0191d 100644
-GIT binary patch
-delta 2851
-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
-Y&nR@1AFf%C*|c#8-5<`sc3=GYA9jr?l>h($
-
-delta 208
-zcmeA_#Cm=W>xNyfn>To{v2DKMSI9UyAfS8ljX+-E{L&(Y;*7+i)D#8B08jno{G!y&
-zj6uvyo6Ewr<rFh>Q;SOya|;v-5;Kd66*6;kQ&Tb%OHy+x6%vc`OY>4D%atij-cjm3
-zd1rahWRVJuX!n3nh2rG=f>edfyyTqHl+<E{#GD+3jQrvfh2;F)+{C<;VuhsClJeBl
-xJcSaVaH>KH%$8znh0GF#)C#CRXP{99MX3deMTsSu`FT2%J<41*7go)C1^}#dP&fbp
-
 diff --git a/docs/development/performance.md b/docs/development/performance.md
-index 40b20fe973b0b647821799cb3c3b341273dc3bfe..3922c998b03ecca29a2a8915809d353d80fee586 100644
+index 8b096c827fe39472198a65bb13a81ecffd96e6dd..bdc5f6d6419a993cdd6baeeb29344ff08d33f92d 100644
 GIT binary patch
 delta 661
-zcmY+CO-|%M426Y8z3Ef<0MHj;Inu0<V8I2PDmP_K{mFJ3WfjiBIgmIIn&oWf1mj8z
-zL@y#GPTuqPUgh=g?)Bg9<?ZUvZha8yC}`X&m|)c-i2|F#QAkr>Ahgmm8Ab3x%O{FA
-zJ}Ouvj7umGcZ1C8B5PoYAd+E7F6pkJYG?mvw$x?=!{1z=06}RD%{>a0$=4?CpcT8O
-zW{3TK_2sVr!fVgf7bIeFrm7}$7}(bvMr}}L!zt6nOTf&iKpL=<LKEjL$Zmuu<c#YO
-z9DSV8NH&Y%dDuUCih{il&}lwyt%#@M3T=ReS;T`u$0awsh%j0?W2*T*N`xnBg-keL
-zcJ0*W8oeCtxQg>)$H2DS0+nvd=UPY1xdrC}4@a5G*f(J~mnVYDVSl$_e{1R5?P{Rx
-zdA4pwQ?uJ{4?-L30E~3vK(K0>Eqb#<R-2t0Ag>f!j^4=k1N1YI$Q5OQpIA?*H~x<h
-k{KCnTU3>}C(oxkLx5RpJid*<$;b~ZYP+s0Yc31EHKlwoWlK=n!
+zcmY+CO-|%M426Y8V$mmH=>yPx0hS}N7$FS{F5pzTDQoIaw$mu9a0O1n25An%WyX~j
+zBYF`jaq^zO_bQ+7*PkEPuOC+rH|wKNM?vFO!33)wNfg)=jzXI90-=?j$tZ#kT0T+S
+z`>0@zFfO4$+zm3Ti>!eqf=GrTxum;>s-68`*ixGf4F7O_1_Y%wH1{Y}CSRMlgI4UC
+znjLn(t1ox`f4ufmeL*4?XR2y4hk<>&Vblg?Hk>kDyaddQ3Zwx$DKv53g6u|kLe97j
+z!O_PVjbyVJo`>C&rzqI_0G;OJ){1y4uFwWpm_<AobX;=7iwL8YGp3r~qeOV7R>*_{
+zX4g(_uF=cUj;lB?b_{IG9Z>1Ee64lFoLg`%@Nkr=jC~V^b9o}T9Ci;I_P3U9-L3}8
+zo@eW3G&Q^J_8_#e4!}q!4g{;F*`hZ)WVPA30rE<r<>-xkKR`bdiCj?@_=)v|y7zyC
+l;2tMWcJU=lOGj02+!E`>DQ@A1g{NWpL3#Q6>*nfh{Rg%D`gi~U
 
 delta 17
-ZcmbRBiFMXn)`l&NPg%F8axiW!002sZ2ZsOv
+Zcmcb;h3)owwuUW?J`&r{NHO-;0{}@v2WtQT
 
 diff --git a/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationBenchmark.kt b/quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/NativeCanvasPresentationBenchmark.kt
 new file mode 100644
@@ -276,42 +205,58 @@ W+2w?a^AZb+GxAFi!kgXMo7n-oA{g8N
 
 diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationOwnershipTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationOwnershipTest.kt
 new file mode 100644
-index 0000000000000000000000000000000000000000..c37c57470e6538231bd436ed68d35a616c72cd69
+index 0000000000000000000000000000000000000000..16a56021038eb3edbe51b0f5c542a4a3bd37557c
 GIT binary patch
-literal 5278
-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
-O2p!<A@GESy`_aE9kZ@c8
+literal 4372
+zcmcInZExE)5dQ98LG;Vy)>WMr*oFcf8l*KAAYFnaz<_-jXz6UTqePXYoTNqm`<|0T
+zS+cFzEjGhQB>CR>+}(4hLMH#nC5e>QvHL~F&RgkaY|GrMjN(k?lvug&aU%1zbfb~V
+z3S<4Y{E|#Y-af?Vxxc2wA0c+5zS4l0r934YpW5a8%xGhu7E3HiPamwjJI`>GA>rmk
+zGb=N?#n}$Xtw^StoQth=o-Bg>y?Js#u?e2zIWt)%^K?ML6^h{^n@fFD!G2xGcv`5S
+zV(c>hT;|H-Z=oO?OK6=sN7gHoyI5A2r`F1ck6%iu-FIsKkkSnx{7yf&D{Jl!1b0i$
+zk4CSaKOc$b;>wyeIpJ3%R0EPoOjc;}l)lu;d9ebvX0Z_XCyH{eRU!&Yg+v7do1dIW
+zq}F6#W|Ymzx|J$~az<Cb#_Z!lEhu?NG>HVZmT;HJ2LTgWCM2|4lUPztwLK^1r58D^
+z$qK2F3iN=N$%;}z(rSeVh>!E_gu%5ed}&D(>YlV?cdth8FAIO3M?*<}`!><Y=XkU^
+zFyD(m5b>JMss_BW<S6&m87}V-8y|~-6W>MxpZ67re6=X^1`hgA2kJhRUd}b0=SAt=
+z%-Fxkn#-I{^YoL<A8H5W{#1UY@|z6c;g<_(mvn`eXUz-1?xJzytMY=QMm0B_8I&)Q
+z1>l^&Ttw4}IKlVlaaX?8VHRPN+ghwL{d+o{?x?Y97mAs>XN041Tsjip#G<|zFMq3$
+zVDau}Ej3d6r36+^yhHAt?*@(_gN1m(91%74Vs8mf#<5fRQsYWI4%%NRtzo;<`|%8q
+zm=RH5P)6$chOxo-HNNACXn8K0-p^(y)7R5C)7Trx!tHp_SzB%I_KNV?=cUpqpR|*)
+zE+*kxrfJj-`l@uRGp&lPc#)geLlFg2=pN8<)Jrd8%Ptt6A^3tm<W9AYLZ<c~za!j_
+z+Y}u3VWldPLD(LFe$y*ene4a61qHro+YyNmC4*_I5{hd!q9|l)BHHN_om?REC&QMF
+zRZE4*0IOXmak`l+4q+aMuVJBd+e-618unlF7W8)JAG)TZwsay;qCCc<s*uNVVu}YY
+z<^i(-h8T=1Erj+apq^;;T<VvRcmY=BEu`j*7vjz232Yn!+kd>Chk)}FrjD?(fuxtL
+z7Uri+bcT0SqdwUK`hL4lq+q|xtqKL63F)Y7d{?i}cbmKV>ak8^fAAQcerl&KrpQ$_
+z1#e2b#w5EY5O#XYgT=dR(nh8;sWiA8lDA~BbV_h0io`M9)`N{(o;xnE{JZ_Lpe-pZ
+zqaDql&0OB;)0)~_oglSP7L>VZXTXE4f+800!^07UvaS@M*lW=p+o4ig>9$68ME}DU
+z3~6`eJX0P-j5zxzX?Xir=4yrY`+naX4Q5h{G+Io=B{Icy-M7U!2GPQrv`nz4wDS`*
+zft?=b=V^yQk58C(yf{_Pdsu|D<aB>rR=WP16SMAakTnzVI@{ss3Y=aNhZGx<3Mrl7
+z(47A^qeFVfb^MmGqg#E`pj{lAkz}iO+saqS)q%9u8&tI%XV^iHYLH;MNkg++vw9z#
+zAa@{yAhxM0Y{*!X;`*(tp%FxOj?I6`?^Sp;{CJ;G!LJ0-vupZ{^$RO|Cy=nJKkG+S
+z*GB!`674nD?CbGoxt87au}2qM+hRCCq79Q<e+2dh6ZXR(+~&?pypK1`Sq(ufh`m<%
+zp@QzYJ+hc<o&T?pA8~kai{2*j0Li8R7RG+WYZ%j(-zkH<#6rHmAwmYYN%#|{+2iP6
+D`Wi=;
+
+literal 0
+HcmV?d00001
+
+diff --git a/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationTransferTest.kt b/runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/canvas/NativeCanvasPresentationTransferTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce23f2e10afb321911bc17bbb772023c3ab57d5e
+GIT binary patch
+literal 1483
+zcma)6?@!w>5dEIN!rCW?6+`!fNl26EU`UnNKoo7CkL1!A5<9Xlg>K@1-`P!DgXlz6
+zRjG6L?!9|2>7clWIf@b&%6|dn$pL|Ky&>JAYPG?_K}D(nvjCrEy6vo^m-TbBEs|TR
+zsiA8u=nZ8v{RelHIW#3YRX7B~GY1dTmO1V!9;gmYq5RagEtqmggYR^piOxVXi*m15
+z5R*=?TdbR_yWVKx-%fL_0`8i4kB+o8UO~K^LA#;#ddm%Z%CdvKy-e(hU+8qD(F>|k
+z@Ip&nvcP?7nx!ag+cij7?l;<#sQIp~D)FGHwmpdlgnKmF%ww;w!C}cJRA{_jpx|o3
+zEZHt-7|M{djaNMLAUnD2Xlmpx#mC1*!(#GG4=WMzzxWBnz^BpmD~BEp@rgAz4veqR
+z1!3ZECirs_MTV=YH(Mb;u)Rg+Yu!!#x{F!=UMZRw%Uf`RRhN!agSw+r+bv~200+ng
+z3(~=U@m0JCM9>scB*!B$&PRe3Oq_$|WhD<E&(FsnK7RUqq{woa%=0{QT|<)Pb$Z6U
+z;BCwC5s!Q(`6k?#;|oS5hPbe1&a~c(a1u`gCFOZ~E}ottvymZu0sFSsO&JC-_-df4
+ztosf{%?D7HG6}1?YJm7|D>aP-Qx1=jJRAxBMtwOCdNInacJ`)Gsh=|gov$s$QE|Di
+zfOm=MtR?MF^AL9wHnP?|5^Gv{wpq;fagp1)bb>0k&n<^B*c3j&{Q>S=V^jWz$Pi?8
+z2MbVhq%-6obKYW~eCG$v{@oTmMONBRiUPgYw@t_zxgIw(68dX#8<`P543w#!ByQ<3
+tzeYRi9m+gS!scBfqZuQ?#t85tjmNh}Q+y3x=|^mQu2#MciFnGMvVXvp{=5JH
 
 literal 0
 HcmV?d00001

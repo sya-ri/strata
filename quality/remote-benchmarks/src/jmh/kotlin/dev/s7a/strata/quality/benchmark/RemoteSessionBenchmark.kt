@@ -13,6 +13,19 @@ import org.openjdk.jmh.annotations.TearDown
  */
 public open class RemoteSessionBenchmark {
     /**
+     * Exposes the original deterministic gate to shared fixture selection.
+     */
+    public companion object {
+        /**
+         * Verifies every original retained-session workload and terminal release before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            RemoteSessionWorkEvidence.main(emptyArray())
+        }
+    }
+
+    /**
      * Projects unchanged retained owners without an outgoing declaration update.
      */
     @Benchmark

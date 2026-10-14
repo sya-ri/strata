@@ -78,7 +78,7 @@ The collector archives these files alongside resolved control libraries and reje
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
-This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules and the API-only JVM integration consumer, without versioned Fabric projects or Web applications.
+This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules, the API-only JVM integration consumer, and the Velocity API/runtime owners, without versioned Fabric projects or Web applications.
 Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
 The scope requires no task, test or fixture whitelist; missing tasks and projects retain Gradle's normal failure behavior.
 Selection, external-input preservation, generated-work verification and loaded-archive certification inside each independent JMH fork are unchanged.
@@ -87,6 +87,37 @@ The guard inspects the actual resolved task graph, so an option value cannot be 
 Complete-acceptance tasks opt out of configuration caching in the scoped model, so later requests reconfigure and are refused before any task executes.
 Do not combine a scoped flag with IDE/Qodana import, `strata.completeIdeaModel`, Minecraft target selection or another scoped flag.
 Without a scoped flag, combining collection with ordinary correctness tasks preserves the complete model.
+
+The generated `TextAreaInputBenchmark` fixture adds a separate 60-case logical editing corpus through the existing component entry point:
+`:quality:component-benchmarks:jmhComponents '-Pstrata.jvmOnly=true' '-Pstrata.performance.benchmarks=TextAreaInputBenchmark' '-Pstrata.performance.suite=text-area-input'`.
+Its 30 input rows cover beginning/middle/end primary presses on short wrapped, long BMP, supplementary, plateau and signed-coordinate lines, vertical/page navigation between two long hard-break lines, and three composition mapping regions.
+Each source respects the default state capacity; middle/end unwrapped inputs preserve real caret-following horizontal pan.
+Six initial-layout rows include fresh host creation, attach, first frame and terminal close with resource bytes prepared, while six clean-frame rows retain the existing frame.
+Eighteen isolated lookups cover all six source/metric families and three positions through one prebound primitive method handle, with the same handle cost on both runtime sides.
+
+Each input operation includes the fixed public opportunity restoration, settled frame and target dispatch in one cycle: a clean frame before an ordinary press, an opposite navigation key plus frame before a directional key, or Home/frame/preedit/frame before composition cancellation.
+Measured JMH elapsed time and normalized allocation therefore share the same complete cycle boundary; preedit layout replacement is included and cannot be attributed to isolated dispatch.
+The fixture uses no invocation-level setup, so it avoids per-call setup timestamps and allocation that the iteration-scoped [JMH GC profiler](https://github.com/openjdk/jmh/blob/1.37/jmh-core/src/main/java/org/openjdk/jmh/profile/GCProfiler.java) would include outside a dispatch-only elapsed-time interval.
+Reflection, independent oracle scans, font/backend construction and resource generation remain outside the cycle; all pointer/key events are prebuilt.
+The independent lookup rows isolate the actual line method, while complete initial-layout rows separately expose new-line admission and ownership costs.
+Do not interpret the cycle score as single-event latency or subtract noisy control scores to invent a dispatch-only allocation result.
+The untimed verifier independently checks complete Long-distance winners, scalar offsets, scroll/pan, focus token identity, committed semantics, exact headless pixels at scales one through three, clean frame reuse and terminal resource release.
+Candidate coordinate-read checks use the loaded runtime's inlined search diagnostic; an older runtime without that diagnostic still executes the same complete winner oracle.
+Source-derived baseline call/read counts must be labeled separately from observed diagnostics and measured CPU/allocation.
+
+For a paired runtime comparison, freeze the fixture, its Java primitive-handle helper, generated JMH classes/resources, collector, harness and all common runtime/control archives before either side runs.
+A fixture-only archive can combine the Kotlin and Java compiled fixture roots and generated JMH roots without embedding any target runtime classes; this binds the helper to the same preserved fixture code source.
+Use the existing packaged collector entry point and the same resolved execution classpath, replacing only the selected actual Minecraft runtime archive.
+Preserve actual parent/fork loaded archives and class trees, external inputs, source revisions, conditions, all 60 rows and three independent Standard receipts for each side.
+Keep small-line, signed fallback, clean-frame and initial-layout regressions visible, and compare through the shared `jmh-comparison` processor.
+The corpus makes no native latency, upload, FPS or GPU claim.
+
+Its optional `operationReport()` hook connects the same 60 method/parameter boundaries to the shared owner-thread meter.
+Input samples retain the complete original opportunity cycle; initial-layout samples retain fresh host creation, attach, first frame and terminal close.
+Scene setup, independent oracles, coordinate-read diagnostics and surviving-owner cleanup remain outside samples.
+The six clean-frame rows are unchanged controls; small-line, signed-fallback and initial-layout costs remain visible in the complete comparison.
+Supplemental reports preserve actual owner-thread CPU, owner/all-thread allocation and wall time with unavailable counters left unavailable.
+The isolated lookup reports retain one untimed coordinate diagnostic after sampling; a baseline without that diagnostic records unavailable reads rather than an inferred zero.
 
 For controlled historical runtime comparisons, `:quality:benchmarks:jmhHistorical` accepts an optional `-Pstrata.performance.historicalRuntime=<UTF-8-properties-file>`.
 The three keys are `\:api`, `\:runtime\:core` and `\:runtime\:headless`; values select distinct actual runtime JAR paths.
@@ -529,13 +560,21 @@ These native-free retained owners do not replace real Paper/Velocity scheduling,
 
 ## Opt-in paired JVM CI
 
-The `JVM checks` workflow runs a complete frozen CPU comparison in one Windows runner when a paired manifest is selected.
-Ordinary pull requests skip this job unless they deliberately provide `.github/performance/paired-jvm.json`; manual runs accept another repository-relative `paired_manifest` path.
-The checked-in [fixed pilot](../../.github/performance/pilot-issue145/manifest.json) is selected only by an explicit manual request.
-Dispatch `jvm.yml` on the intended driver branch with `paired_manifest=.github/performance/pilot-issue145/manifest.json` to exercise it.
+The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
+Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
+Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
+The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
+The reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
+This keeps experiment data reachable through Git history without including it in the merged product tree.
+
+Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
+The selector returns the manifest path, producer SHA and manifest SHA-256; the paired job passes all three with the expected driver head and preserves their binding in the attempt evidence.
+A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
+Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
+Manual dispatch uses the same declaration contract and needs no additional workflow input.
 A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
 
-Start another comparison from [the manifest template](../../.github/performance/paired-jvm.example.json).
+Start another comparison from [the manifest template](../../gradle/performance/paired-jvm.example.json).
 The schema requires these fields:
 
 | Field | Contract |
@@ -598,7 +637,6 @@ Private checkout attributes disable text conversion so working files preserve th
 Both those attributes and the complete working tree remain guarded between invocations.
 The common compiled fixture and collector remain unchanged while baseline and candidate runtime archives are rebound explicitly.
 No old workstation owner directory, private index or missing historical metadata file is a prerequisite.
-The first pilot preserves its derived source provenance and original handoff record, including the explicit inventory of unavailable historical metadata; these records do not claim recovery of missing bytes.
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
 All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
@@ -609,6 +647,11 @@ The report displays the processor's baseline/candidate medians, absolute deltas,
 Time is per declared fixture batch; it has no cross-machine improvement interpretation or wall-time pass threshold.
 JMH Thread CPU per operation is unavailable unless a separately declared profiler supplies it; Job CPU includes preparation and descendants.
 Supplemental owner-thread operation reports have their own explicit boundary and protocol described below.
+
+The optional `owner_reports[].paired_jmh` connection preserves an existing four-argument collector whose final arguments are its original JMH receipt and prepared source plan.
+It declares one complete suite and its compiled fixture class, binds both actual prepared source trees and ordinary runtime JARs after preparation, and creates that immutable source plan once before collection.
+Owner invocations reuse the original JMH input-property origin and complete selectors through the existing JavaExec template; the collector, sampler, comparison processor and all VM flags remain unchanged.
+Producer payload pins are read through the immutable input root, while execution-head source and live driver guards remain separate.
 
 ### Supplemental operation reports
 
@@ -694,17 +737,22 @@ Closed JVM diagnostics verify actual effective caps and Java origins; measured J
 Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.
 Separate per-VM files have no rotation and a 1 MiB limit per file; immutable copies retain each phase's newly created logs, including failed invocations.
 Previously captured staging files must remain byte-identical before the next invocation.
-The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics with the same JVM-start stamp in VM and class-load filenames; missing or changed fork attribution fails instead of borrowing console output.
+The driver checks filename and content PIDs, complete line endings, captured file hashes and matching JVM records; reused PIDs require distinct raw diagnostics bound to the VM filename stamp or its actual header start time; missing or changed fork attribution fails instead of borrowing console output.
 Start-stamp matching also applies when only one class-load file has that PID; a short version probe without its own class-load file cannot borrow a later fork generation.
-When logging expands the two filenames independently across a clock boundary, attribution may instead use exactly one phase VM record, one captured owned PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
-This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, owned generation or candidate file keeps attribution ambiguous.
+Unified class logging expands `%t` from VM initialization time, while LogVMOutput expands it when opening its file, so their filename seconds can differ.
+The actual HotSpot header start milliseconds, formatted to seconds in the same host's local clock, may select exactly one fresh pinned class file and captured PID/birth/lifetime generation even when that PID has other Java generations in the phase.
+This exact selection still verifies the actual file flag, source owner, executable, caps, affinity and complete loaded origins; multiple filename/header candidates remain ambiguous and no time tolerance is introduced.
+If neither exact filename nor header start selects a file, attribution may instead use exactly one phase VM record, one captured Java executable PID/birth/lifetime generation and one newly copied class file matching that VM's actual nonrotating file flag and immutable inventory pin.
+This path verifies executable, effective caps, affinity, complete PID-qualified origins and previous staging-file immutability; any additional VM, Java executable generation or candidate file keeps attribution ambiguous.
+Closed non-Java helper generations that reuse the PID remain separately recorded with their actual image, birth, exit, Job membership and affinity; the sole Java generation must match the VM's actual executable and lifetime.
+Both standard Java launcher names, `java.exe` and `javaw.exe`, count as Java generations; this distinction does not admit a different main executable.
 Relative file-flag correspondence is inferred from the verified bounded launcher's staging contract and is not an observed working directory or proof that the filename clocks match.
 Legacy unstamped VM diagnostics remain readable only when that VM PID is unique within the complete phase.
 Independent JDI observations retain their own pinned raw files and may corroborate one identical loaded origin; conflicting or duplicate origins fail.
 The driver records actual host/OS/power information and observed affinity rather than requiring a workstation mask or a physical-core qualification.
 An overflow of the retained 16 MiB invocation console bound, failed admission, nonzero exit, timeout, leaked descendant or incomplete receipt fails the whole attempt and stops the next invocation.
 
-The artifact retains source archives, frozen manifest, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
+The artifact retains source archives, frozen manifest and its producer/driver binding, the exact shared driver sources, compiled common fixture closure, raw receipts/results, comparison requests/results, JVM diagnostics, per-phase requests and terminal records, host/executable hashes, phase durations and a file hash inventory.
 Runtime JARs and immutable inputs are copied before the first work gate; a preflight suite additionally preserves every classpath archive/directory, including fixture, collector, harness and control tooling, before that gate's JVM starts.
 Copies are checked against original bytes before and after preservation, independently guarded across control and collection phases, and kept outside reusable workspaces even when the first control fails.
 Independent preflight requests, qualification records, actual observations, receipts and verified inventories remain in the failed or successful attempt archive.
@@ -717,3 +765,10 @@ It compiles an independent test controller into the existing generated remote fi
 Fresh missing-control, altered-archive and controller-failure attempts must retain their early archives and actual terminal evidence while producing no timed output.
 The same Job helper also proves actual RAM refusal, deadline and leaked-child cleanup.
 This tooling qualification does not accept a consuming project's benchmark-specific tracing or native evidence; those retain their own complete frozen acceptance contracts.
+
+An optional `owner_continuation` selects one complete independent `owner_reports` domain by its exact `name`; the outer manifest retains every original JMH suite, owner row and source/input binding.
+It pins `runtime_sha256` for every original baseline/candidate runtime project and `collector_sha256`, and the driver rejects changed compiled bytes before collection.
+The ordinary CI entry then prepares and collects all rows of that domain in three independent repetitions per side using the existing owner collector and processor.
+The attempt explicitly records `complete-owner-domain-continuation`, `whole_issue_acceptance=false` and `prior_rows_adopted=false`; it cannot certify the whole issue or turn a prior failed attempt into a completed one.
+Previously retained reports remain separately bound historical evidence and require their own source, archive, control and acceptance review.
+The optional `--owner-report` entry selects an entire declared independent domain under the same scope rules and cannot override a configured continuation or select individual rows.

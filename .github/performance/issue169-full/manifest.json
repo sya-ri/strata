@@ -1,33 +1,33 @@
 {
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
-    "fixture": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "34227ffdff4d7d700013889aa2341cc4ddf8db2a",
-      "patches": [
-        {
-          "path": ".github/performance/issue169-full/candidate.patch",
-          "sha256": "0fd54c88d6980056a3a90e324d19a0c6e305f272e84709b000ca70d78d395369"
-        }
-      ]
-    },
     "baseline": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "42df6dfacfdbae3587251ce9c82fd9662087f439",
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "d5c1c21d26b7d74013ad401e4e35567cc54d2d4d",
       "patches": [
         {
           "path": ".github/performance/issue169-full/baseline.patch",
-          "sha256": "c9c0616c62942fc5427c32758db819ad09fc06f8d6576c82453a1de212a54be3"
+          "sha256": "93852b62201631a95b4108576b9bf89e3f18494ab28bec5fcf5ae7b20be4e79d"
         }
       ]
     },
     "candidate": {
-      "ref": "f8d10e547d82846c2bf7dffe34ed68aca9bf7e9b",
-      "tree": "34227ffdff4d7d700013889aa2341cc4ddf8db2a",
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "16bf524d543b7c2a6b7b7fbaca310e836d776404",
       "patches": [
         {
           "path": ".github/performance/issue169-full/candidate.patch",
-          "sha256": "0fd54c88d6980056a3a90e324d19a0c6e305f272e84709b000ca70d78d395369"
+          "sha256": "69ff256da663653a079c4003496c2b00cbe8c0bf3b7561d3bdd4d23e84bd35c0"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "16bf524d543b7c2a6b7b7fbaca310e836d776404",
+      "patches": [
+        {
+          "path": ".github/performance/issue169-full/candidate.patch",
+          "sha256": "69ff256da663653a079c4003496c2b00cbe8c0bf3b7561d3bdd4d23e84bd35c0"
         }
       ]
     }
@@ -57,7 +57,16 @@
         "samples": 60,
         "expected_rows": 16,
         "expected_controls": 6
-      }
+      },
+      "test_gates": [
+        {
+          "task": ":runtime:minecraft:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasPresentationOwnershipTest#prepareDetachesMutableInputsForZeroOneAndManyCanvasesWithinSmallAndLargePortableLists",
+            "dev.s7a.strata.runtime.minecraft.canvas.NativeCanvasPresentationOwnershipTest#oldMembershipAndPixelsSurviveReusedTargetsReloadFailureAndTerminalRelease"
+          ]
+        }
+      ]
     }
   ],
   "inputs": [
@@ -65,21 +74,21 @@
       "label": "canvas-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue169-full/baseline.patch",
-        "sha256": "c9c0616c62942fc5427c32758db819ad09fc06f8d6576c82453a1de212a54be3"
+        "sha256": "93852b62201631a95b4108576b9bf89e3f18494ab28bec5fcf5ae7b20be4e79d"
       }
     },
     {
       "label": "canvas-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue169-full/candidate.patch",
-        "sha256": "0fd54c88d6980056a3a90e324d19a0c6e305f272e84709b000ca70d78d395369"
+        "sha256": "69ff256da663653a079c4003496c2b00cbe8c0bf3b7561d3bdd4d23e84bd35c0"
       }
     },
     {
       "label": "canvas-source-provenance",
       "pin": {
         "path": ".github/performance/issue169-full/source-provenance.json",
-        "sha256": "3b07346e1281ce38dd6a3851d0e20533c1423dfd075a617ee570712819079aa5"
+        "sha256": "3bf7a88977fd2d88c8d9d959f87be752c71c66a81726881e1af5e3a49535d4f1"
       }
     },
     {
