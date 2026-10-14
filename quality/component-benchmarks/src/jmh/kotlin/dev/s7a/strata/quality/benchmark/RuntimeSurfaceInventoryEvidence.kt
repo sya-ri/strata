@@ -1,6 +1,8 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonParser
+import dev.s7a.strata.performance.ArtifactIdentity
+import dev.s7a.strata.performance.JmhFixtureSelection
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmApiInventory
 import dev.s7a.strata.performance.PerformanceCoverage
@@ -9,6 +11,7 @@ import dev.s7a.strata.performance.PerformanceInventory
 import dev.s7a.strata.performance.PerformancePhase
 import dev.s7a.strata.performance.PerformanceScenario
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 
 /**
@@ -22,6 +25,7 @@ public object RuntimeSurfaceInventoryEvidence {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.size == 1)
+        verifyVariantControls()
         val destination = Path.of(args.single()).toAbsolutePath().normalize()
         Files.createDirectories(checkNotNull(destination.parent))
         val rows =
@@ -36,8 +40,22 @@ public object RuntimeSurfaceInventoryEvidence {
      * Rejects new, removed and unassigned members before either full or narrow component collection.
      */
     public fun verify() {
-        val resource = checkNotNull(javaClass.getResourceAsStream("/runtime-api.tsv")) { "The reviewed portable runtime API performance registration is missing" }
-        val rows = resource.bufferedReader(Charsets.UTF_8).use { it.readLines() }.map { line -> line.split('\t').also { require(it.size == 3) } }
+        val variants = JmhFixtureSelection.inputs().filterKeys { it.startsWith("runtime-api-variant") }
+        val rows =
+            if (variants.isEmpty()) {
+                val resource = checkNotNull(javaClass.getResourceAsStream("/runtime-api.tsv")) { "The reviewed portable runtime API performance registration is missing" }
+                resource.bufferedReader(Charsets.UTF_8).use { it.readLines() }.map { line -> line.split('\t').also { require(it.size == 3) } }
+            } else {
+                require(variants.size <= 2 * RuntimeSurfaceFeature.entries.size) { "Supply only the complete runtime pair inventories" }
+                val tables = variants.mapValues { (_, path) ->
+                    require(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && Files.size(path) <= 4L * 1024 * 1024) { "Missing or oversized runtime variant inventory" }
+                    Files.readAllLines(path, Charsets.UTF_8).map { it.split('\t') }
+                }
+                val archives = RuntimeSurfaceFeature.entries.associateWith { feature ->
+                    ArtifactIdentity.fullCodeSource(Class.forName(feature.representative, false, javaClass.classLoader))
+                }
+                variantRows(tables, archives)
+            }
         rows.forEach { row -> require(RuntimeSurfaceFeature.valueOf(row[1]).module.contentEquals(row[0])) { "Runtime API assignment names another module" } }
         val assignments = rows.groupBy { it[0] }.mapValues { (_, members) -> members.associate { row -> row[2] to RuntimeSurfaceFeature.valueOf(row[1]).name } }
         check(assignments.values.sumOf { it.size } == rows.size) { "Duplicate runtime API performance registration" }
@@ -47,6 +65,62 @@ public object RuntimeSurfaceInventoryEvidence {
         val coverage = PerformanceCoverage(features.associateWith { setOf(PerformanceHost.Jvm) }, scenarioFeatures, RuntimeSurfaceFeature.entries.associate { feature -> feature.name to if (feature == RuntimeSurfaceFeature.Fonts) setOf(PerformancePhase.Prepare, PerformancePhase.Idle, PerformancePhase.Update, PerformancePhase.Release) else setOf(PerformancePhase.Idle, PerformancePhase.Update, PerformancePhase.Input, PerformancePhase.Resize, PerformancePhase.Release) })
         coverage.selectChangedPaths(inventory)
         println("Verified ${rows.size} exact portable runtime API symbols in ${assignments.size} loaded modules")
+    }
+
+    private fun variantRows(
+        tables: Map<String, List<List<String>>>,
+        archives: Map<RuntimeSurfaceFeature, String>,
+    ): List<List<String>> {
+        require(archives.keys == RuntimeSurfaceFeature.entries.toSet())
+        require(tables.size <= 2 * RuntimeSurfaceFeature.entries.size)
+        val bindings = tables.mapValues { (label, rows) ->
+            val parts = label.split('.')
+            require(parts.size == 3 && parts[0].contentEquals("runtime-api-variant") && parts[2].matches(Regex("[0-9a-f]{64}"))) { "Invalid runtime variant binding" }
+            val feature = RuntimeSurfaceFeature.entries.single { it.module.contentEquals(parts[1]) }
+            require(rows.isNotEmpty() && rows.size <= 16_384)
+            rows.forEach { row ->
+                require(row.size == 3 && row[0].contentEquals(feature.module) && RuntimeSurfaceFeature.valueOf(row[1]) == feature && row[2].isNotBlank()) { "Runtime variant row names another module or feature" }
+            }
+            require(rows.map { it[2] }.toSet().size == rows.size) { "Duplicate runtime variant member" }
+            feature
+        }
+        require(bindings.values.toSet() == RuntimeSurfaceFeature.entries.toSet()) { "Supply every complete module inventory" }
+        require(bindings.values.groupingBy { it }.eachCount().values.all { it <= 2 }) { "Supply at most two archive variants per module" }
+        return RuntimeSurfaceFeature.entries.flatMap { feature ->
+            checkNotNull(tables["runtime-api-variant.${feature.module}.${archives.getValue(feature)}"]) { "No reviewed inventory for the actual loaded archive" }
+        }
+    }
+
+    /**
+     * Checks frozen variant selection and malformed-input rejection outside every measured operation.
+     */
+    internal fun verifyVariantControls() {
+        val first = "a".repeat(64)
+        val second = "b".repeat(64)
+        val archives = RuntimeSurfaceFeature.entries.associateWith { first }
+        val tables = RuntimeSurfaceFeature.entries.associate { feature ->
+            "runtime-api-variant.${feature.module}.$first" to listOf(listOf(feature.module, feature.name, "original"))
+        }
+        check(variantRows(tables, archives).size == RuntimeSurfaceFeature.entries.size)
+        val extra = "runtime-api-variant.${RuntimeSurfaceFeature.Core.module}.$second"
+        val pair = tables + (extra to listOf(listOf(RuntimeSurfaceFeature.Core.module, RuntimeSurfaceFeature.Core.name, "replacement")))
+        check(variantRows(pair, archives).single { RuntimeSurfaceFeature.valueOf(it[1]) == RuntimeSurfaceFeature.Core }[2].contentEquals("original"))
+        val selected = variantRows(pair, archives + (RuntimeSurfaceFeature.Core to second))
+        check(selected.single { RuntimeSurfaceFeature.valueOf(it[1]) == RuntimeSurfaceFeature.Core }[2].contentEquals("replacement"))
+        val core = "runtime-api-variant.${RuntimeSurfaceFeature.Core.module}.$first"
+        val invalid = listOf(
+            tables - core,
+            tables + (core to emptyList()),
+            tables + (core to listOf(listOf("core", "Core"))),
+            tables + (core to listOf(listOf("api", "Api", "wrong-module"))),
+            tables + (core to listOf(listOf("core", "Api", "wrong-feature"))),
+            tables + (core to (tables.getValue(core) + tables.getValue(core))),
+            tables + ("runtime-api-variant.core.invalid" to tables.getValue(core)),
+            tables + ("runtime-api-variant.unknown.$first" to tables.getValue(core)),
+        )
+        invalid.forEach { check(runCatching { variantRows(it, archives) }.isFailure) }
+        check(runCatching { variantRows(tables, archives + (RuntimeSurfaceFeature.Core to second)) }.isFailure)
+        check(runCatching { variantRows(tables, archives - RuntimeSurfaceFeature.Fonts) }.isFailure)
     }
 
     private fun surfaces(): Map<String, Set<String>> = JvmApiInventory.capture(javaClass.classLoader, RuntimeSurfaceFeature.entries.associate { it.module to it.representative })
