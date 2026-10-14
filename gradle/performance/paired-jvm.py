@@ -550,6 +550,54 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
             "relative_path_relationship": "inferred from the verified bounded launcher" if not flag.is_absolute() else None}
 
 
+def class_file_flags(text):
+    """Read complete non-rotating file targets from actual VM arguments, without inventing a working directory."""
+    arguments = re.findall(r"<args>\s*([^<]+?)\s*</args>", text)
+    require(len(arguments) <= 1, "Ambiguous VM argument block")
+    return re.findall(r"(?:^|\s)-Xlog:class\+load=info:file=(.+?):pid,level,tags:filecount=0(?=\s|$)",
+                      html.unescape(arguments[0]) if arguments else "")
+
+
+def independent_class_file(directory, phase_directory, result, vm):
+    """Bind an immutable controller artifact to its actual file flag; relative-path correspondence is inferred from executed code."""
+    flags = vm.get("class_load_file_flags", [])
+    if not flags:
+        return None
+    diagnostic = Path(vm["diagnostic_path"])
+    require(diagnostic.resolve().parent == (directory.parents[2] / "vms").resolve()
+            and diagnostic.is_file() and not diagnostic.is_symlink() and digest(diagnostic) == vm["diagnostic_sha256"],
+            "Changed independent VM argument diagnostic")
+    raw = diagnostic.read_text(encoding="utf-8")
+    headers = re.findall(r"<hotspot_log\b[^>]*\bprocess='([0-9]+)'\s+time_ms='([0-9]+)'", raw)
+    require(headers == [(str(vm["pid"]), str(vm["vm_start_ms"]))] and class_file_flags(raw) == flags,
+            "Changed independent VM file flag or generation")
+    matches = []
+    for flag in flags:
+        target = Path(flag)
+        relative = not target.is_absolute()
+        parts = list(target.parts)
+        while parts and parts[0] == "..":
+            parts.pop(0)
+        require(parts and not any(part in ("..", ".") for part in parts), "Ambiguous independent class-file target")
+        for artifact in result["artifacts"]:
+            path = pin(directory, artifact)
+            if relative:
+                require(1 < len(parts), "Independent relative file flag lacks a unique target path")
+                matched = [os.path.normcase(part) for part in path.parts[-len(parts):]] == [os.path.normcase(part) for part in parts]
+            else:
+                matched = target.resolve() == path.resolve()
+            if matched:
+                require(path.stat().st_size <= 1024 * 1024, "Independent class-load diagnostic exceeds its retained bound")
+                text = path.read_text(encoding="utf-8")
+                observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
+                require(observed == {vm["pid"]} and text.endswith("\n"), "Wrong-PID or truncated independent class-load diagnostic")
+                matches.append({"path": str(path), "sha256": artifact["sha256"], "pid": vm["pid"], "vm_start_ms": vm["vm_start_ms"],
+                                "actual_file_flag": flag, "working_directory_observation": None,
+                                "relative_path_relationship": "inferred from the verified executed controller's fresh absolute-file/relative-flag contract" if relative else "absolute observed file flag"})
+    require(len(matches) <= 1, "Ambiguous independent class-file artifact")
+    return matches[0] if matches else None
+
+
 def verify_vms(directory, files, terminal, allowed, expected_forks=None):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
@@ -603,6 +651,9 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None):
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
         evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path)}
+        flags = class_file_flags(value)
+        if flags:
+            evidence.update(diagnostic_path=str(path), class_load_file_flags=flags)
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
@@ -754,7 +805,7 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
                                  {"pid": vm["pid"], "path": vm["class_load_diagnostic"]["path"], "sha256": vm["class_load_diagnostic"]["sha256"]}
                                  for vm in vms if "class_load_diagnostic" in vm}
     require(class_identities == captured_class_identities, "Control changed its captured class-load diagnostic")
-    artifacts = set()
+    artifacts, independent_files = set(), {}
     for result in receipt["controls"]:
         require(set(result) == {"id", "status", "observations", "origins", "artifacts"} and result["status"] == "passed"
                 and isinstance(result["observations"], dict) and result["observations"], "Failed or unavailable preflight control observations")
@@ -764,6 +815,11 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
                     and not isinstance(origin["pid"], bool), "Invalid actual control JVM identity")
             pid = origin["pid"]
             matching = [vm for vm in vms if vm["pid"] == pid and vm["role"] == "java_exec"]
+            bound = [(vm, independent_class_file(directory, phase_directory, result, vm)) for vm in matching]
+            bound = [(vm, diagnostic) for vm, diagnostic in bound if diagnostic is not None]
+            require(len(bound) <= 1, "Ambiguous independent control file generation")
+            if bound:
+                matching = [bound[0][0]]
             require(len(matching) == 1, "Missing or ambiguous actual control JVM identity")
             vm = matching[0]
             member = owned_generation(terminal, pid, vm["vm_start_ms"])
@@ -775,13 +831,16 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
             pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"
-            diagnostic = vm.get("class_load_diagnostic")
+            diagnostic = bound[0][1] if bound else vm.get("class_load_diagnostic")
+            if bound:
+                independent_files[diagnostic["path"]] = diagnostic
             vm_classes = Path(diagnostic["path"]).read_text(encoding="utf-8") if diagnostic is not None else ""
             require(diagnostic is not None or len([item for item in vms if item["pid"] == pid]) == 1,
                     "Ambiguous independent control process generation")
             loaded = re.findall(pattern, vm_classes)
             observed = re.findall(pattern, console)
-            require((len(loaded) == 1 and (not observed or observed == loaded))
+            require((len(loaded) == 1 and (not observed or observed == loaded or
+                                        bound and all(line == loaded[0] for line in observed) and len(observed) == len([item for item in vms if item["pid"] == pid])))
                     or (not loaded and len(observed) == 1 and len([item for item in vms if item["pid"] == pid]) == 1),
                     "Missing or ambiguous PID-qualified control class load")
             loaded = loaded or observed
@@ -804,7 +863,8 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
     require(digest(Path(request["qualification"]["path"])) == request["qualification"]["sha256"], "Control qualification bytes changed")
     for entry in request["inputs"].values():
         require(digest(Path(entry["path"])) == entry["sha256"], "Control changed frozen input bytes")
-    write_new(directory / "verified.json", {"status": "passed", "request_sha256": digest(request_path), "receipt_sha256": digest(directory / "receipt.json"), "controls": expected})
+    write_new(directory / "verified.json", {"status": "passed", "request_sha256": digest(request_path), "receipt_sha256": digest(directory / "receipt.json"), "controls": expected,
+                                          "independent_class_load_files": list(independent_files.values())})
 
 
 def preserve_test_reports(workspace, directory, gate):
