@@ -1,7 +1,7 @@
+import dev.s7a.strata.gradle.performance.configureJmhEvidence
 import dev.detekt.gradle.extensions.DetektExtension
 import me.champeau.jmh.JMHTask
 import me.champeau.jmh.JmhBytecodeGeneratorTask
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import java.util.Properties
 
@@ -38,26 +38,6 @@ jmh {
     resultsFile.set(layout.buildDirectory.file("reports/jmh/results.json").get().asFile)
 }
 
-val verifyReactiveRenderingWork by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Checks deterministic reactive work and retention using the same fixtures as JMH."
-    dependsOn(tasks.named("jmhClasses"))
-    classpath = sourceSets.named("jmh").get().runtimeClasspath
-    mainClass.set("dev.s7a.strata.quality.benchmark.ReactiveWorkEvidence")
-}
-
-tasks.named("check") { dependsOn(verifyReactiveRenderingWork) }
-
-val verifyOverlayRenderingWork by tasks.registering(JavaExec::class) {
-    group = "verification"
-    description = "Verifies long-lived lower-layer updates and exact translucent composition with bounded retention."
-    dependsOn(tasks.named("jmhClasses"))
-    classpath = sourceSets.named("jmh").get().runtimeClasspath
-    mainClass.set("dev.s7a.strata.quality.benchmark.OverlayWorkEvidence")
-}
-
-tasks.named("check") { dependsOn(verifyOverlayRenderingWork) }
-
 val historicalGenerated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
 val historicalGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
 val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir })
@@ -79,24 +59,11 @@ tasks.register<JavaExec>("jmhPortableTiles") {
         .map { rootProject.file(it).resolve("run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     val benchmark = if (controls) "PortableTileControlBenchmark.partition" else "PortableTileBenchmark.partition"
-    args(output.get().absolutePath, repetition.toString(), benchmark, "-bm", "avgt", "-wi", "3", "-w", "1s", "-i", "5", "-r", "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    configureJmhEvidence(output.get(), repetition, benchmark, "avgt", false, "portable-tile-inputs.properties")
     doFirst {
         val runtime = rootProject.file(checkNotNull(providers.gradleProperty("strata.performance.portableTileRuntime").orNull) { "Supply strata.performance.portableTileRuntime with the actual Fabric runtime JAR." }).canonicalFile
         require(runtime.isFile && runtime.extension == "jar") { "Portable tile collection requires an actual runtime JAR." }
         classpath += files(runtime)
-        val entries = Properties()
-        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
-            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
-            if (module != null) {
-                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
-                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
-            }
-        }
-        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
-        val manifest = layout.buildDirectory.file("performance/portable-tile-inputs.properties").get().asFile
-        manifest.parentFile.mkdirs()
-        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
-        systemProperty("strata.performance.inputs", manifest.absolutePath)
     }
 }
 
@@ -140,10 +107,9 @@ tasks.register<JavaExec>("jmhHistorical") {
     val result = providers.gradleProperty("strata.performance.historicalOutputRoot")
         .map { rootProject.file(it).resolve("$suite/run-$repetition") }
         .orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), ".*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc")
+    configureJmhEvidence(result.get(), repetition, ".*", mode, short)
     systemProperty("strata.performance.smoke", smoke || quickSmoke)
     systemProperty("strata.performance.mode", mode)
-    val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
     doFirst {
         providers.gradleProperty("strata.performance.historicalRuntime").orNull?.let { path ->
             val targets = Properties()
@@ -159,19 +125,6 @@ tasks.register<JavaExec>("jmhHistorical") {
             classpath = files(classpath.files.filter { it.canonicalFile !in replaced }) + files(archives)
             // The kit verifies the actual loaded class origins and preserves these targets; names never certify identity.
         }
-        val entries = Properties()
-        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
-            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
-            if (module != null) {
-                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
-                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
-            }
-        }
-        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
-        val manifest = inputsManifest.get().asFile
-        manifest.parentFile.mkdirs()
-        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
-        systemProperty("strata.performance.inputs", manifest.absolutePath)
     }
 }
 

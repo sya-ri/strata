@@ -71,7 +71,9 @@ public object EmptyChildInputControl {
             check(session.dispatchTextInput(TextInputEvent.Character(65)) == InputResult.Consumed) { "Focused text character must be consumed" }
             check(probe.keys == 1 && probe.text == 1 && probe.cancellations == 0) { "Active input: keys=${probe.keys}, text=${probe.text}, cancellations=${probe.cancellations}" }
             session.close()
-            check(probe.cancellations == 1 && probe.focus == listOf(true, false) && probe.hover.last().not()) { "Terminal input: cancellations=${probe.cancellations}, focus=${probe.focus}, hover=${probe.hover}" }
+            check(runCatching { session.textInputFocus }.exceptionOrNull() is IllegalStateException) { "Terminal session state reads must be rejected" }
+            // Terminal release clears focus ownership without dispatching another focus callback.
+            check(probe.cancellations == 1 && probe.focus == listOf(true) && probe.hover.last().not()) { "Terminal input: cancellations=${probe.cancellations}, focus=${probe.focus}, hover=${probe.hover}" }
             session.close()
             check(probe.cancellations == 1) { "Repeated close cancellation count: ${probe.cancellations}" }
         }

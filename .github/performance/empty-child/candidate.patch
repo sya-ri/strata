@@ -1,8 +1,8 @@
 diff --git a/.github/workflows/jvm.yml b/.github/workflows/jvm.yml
-index 11f5c6383..f81e31058 100644
+index 1e1fbf1ef1a888f17e7aa41c6ba4ad1a0eeca00f..8a2a13b6ef6d397a3c89f5736a662c0dea994b9b 100644
 --- a/.github/workflows/jvm.yml
 +++ b/.github/workflows/jvm.yml
-@@ -129,6 +129,13 @@ jobs:
+@@ -188,6 +188,13 @@ jobs:
          bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
        env:
          DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
@@ -16,7 +16,7 @@ index 11f5c6383..f81e31058 100644
      - name: Upload fresh demo screenshots
        uses: actions/upload-artifact@v7
        with:
-@@ -225,6 +232,13 @@ jobs:
+@@ -284,6 +291,13 @@ jobs:
          :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
          :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
          -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
@@ -30,8 +30,111 @@ index 11f5c6383..f81e31058 100644
      - name: Verify scoped JVM collection without fixture registration
        run: python3 -B gradle/verify-jvm-fixture-collection.py
      - name: Upload scoped collection evidence
+diff --git a/build-logic/src/test/kotlin/dev/s7a/strata/gradle/QodanaJmhModelFunctionalTest.kt b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/QodanaJmhModelFunctionalTest.kt
+index 361676389d14b2efb677e91a2ed52c27dbd08fc9..c743b85cead1eee3561a1edbdf7570e29ef1ac04 100644
+--- a/build-logic/src/test/kotlin/dev/s7a/strata/gradle/QodanaJmhModelFunctionalTest.kt
++++ b/build-logic/src/test/kotlin/dev/s7a/strata/gradle/QodanaJmhModelFunctionalTest.kt
+@@ -27,7 +27,7 @@ internal class QodanaJmhModelFunctionalTest {
+         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
+         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
+         val owners = listOf("bench-one", "bench-two", temporaryOwner)
+-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", ${owners.joinToString { "\"$it\"" }})\n")
++        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"shared-kmp\", ${owners.joinToString { "\"$it\"" }})\n")
+         val production = Files.readString(repository.resolve("build.gradle.kts"))
+         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
+         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
+@@ -45,18 +45,24 @@ internal class QodanaJmhModelFunctionalTest {
+             import org.gradle.jvm.toolchain.JavaToolchainService
+             import org.gradle.plugins.ide.idea.model.IdeaModel
+             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
++            import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+             plugins {
+                 idea
+                 alias(libs.plugins.kotlin.jvm) apply false
++                alias(libs.plugins.kotlin.multiplatform) apply false
+                 alias(libs.plugins.jmh) apply false
+             }
+             val completeIdeaModelActive = true
+             $inventory
+             subprojects {
+-                apply(plugin = "org.jetbrains.kotlin.jvm")
++                if (name == "shared-kmp") {
++                    apply(plugin = "org.jetbrains.kotlin.multiplatform")
++                } else {
++                    apply(plugin = "org.jetbrains.kotlin.jvm")
++                    extensions.configure<JavaPluginExtension> { toolchain.languageVersion.set(JavaLanguageVersion.of(17)) }
++                }
+                 apply(plugin = "idea")
+                 repositories { mavenCentral() }
+-                extensions.configure<JavaPluginExtension> { toolchain.languageVersion.set(JavaLanguageVersion.of(17)) }
+                 plugins.withId("me.champeau.jmh") {
+             $callback
+                 }
+@@ -67,6 +73,21 @@ internal class QodanaJmhModelFunctionalTest {
+         write("support/src/main/java/fixture/Support.java", "package fixture; public class Support { public static int value() { return 7; } }")
+         write("shared-inputs/kotlin/fixture/SharedValue.kt", "package fixture\ninternal fun sharedValue(): Int = 11\n")
+         write("shared-inputs/resources/shared.txt", "shared compilation resource\n")
++        write(
++            "shared-kmp/build.gradle.kts",
++            """
++            plugins { alias(libs.plugins.kotlin.multiplatform) }
++            kotlin {
++                jvm()
++                jvmToolchain(17)
++                sourceSets.named("commonTest") {
++                    kotlin.srcDir(rootProject.file("shared-inputs/kotlin"))
++                    resources.srcDir(rootProject.file("shared-inputs/resources"))
++                }
++            }
++            """.trimIndent(),
++        )
++        write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
+         owners.forEach { owner ->
+             write(
+                 "$owner/build.gradle.kts",
+@@ -122,6 +143,14 @@ internal class QodanaJmhModelFunctionalTest {
+                 assertTrue(entries.any { (it["identity"] as String).startsWith("org.openjdk.jmh:jmh-core:") })
+             }
+         }
++        val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
++        val sharedRoots = projects.single { it["project"] == ":shared-kmp" }["roots"] as List<*>
++        val roots = sharedRoots.map { it as Map<*, *> }
++        assertTrue(roots.any { it["kind"] == "Source" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
++        assertTrue(roots.any { it["kind"] == "TestSource" && it["path"] == "shared-inputs/kotlin" })
++        assertTrue(roots.any { it["kind"] == "TestResource" && it["path"] == "shared-inputs/resources" })
++        assertTrue(roots.none { it["kind"] == "TestSource" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
++        assertEquals(TaskOutcome.SUCCESS, result.task(":shared-kmp:compileKotlinJvm")?.outcome)
+         val reused = runner().build()
+         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
+         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
+@@ -150,6 +179,7 @@ internal class QodanaJmhModelFunctionalTest {
+             "cleanIdea",
+             "idea",
+             "qodanaDeclarationInventory",
++            ":shared-kmp:compileKotlinJvm",
+             "--no-configure-on-demand",
+             "--max-workers=1",
+             "--no-parallel",
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 733f4edd35cb030e031275961138c33af2b193b2..9f2e0ff5fc626a686fb3153cc065b94c04e7f969 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1171,9 +1171,11 @@ if (completeIdeaModelActive) {
+                 val idea = owner.extensions.findByType<IdeaModel>()?.module
+                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
+                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
++                val platformCompilations = owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.flatMap { it.compilations }.orEmpty()
+                 val roots = sourceSets?.flatMap { sourceSet ->
+-                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty()
+-                    val test = sourceSet.name != "main"
++                    val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
++                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
++                    val test = sourceSet.name != "main" && matching.none { it.name == "main" }
+                     listOf(
+                         (if (test) "TestSource" else "Source") to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
+                         (if (test) "TestResource" else "Resource") to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
 diff --git a/config/detekt/detekt.yml b/config/detekt/detekt.yml
-index e929cd814..a2c948dfc 100644
+index e929cd8142082371d3ba9b9fabf5e54f98a84833..a2c948dfc9bc75e7cc5ab6ac9bbf3b83de0bc9f2 100644
 --- a/config/detekt/detekt.yml
 +++ b/config/detekt/detekt.yml
 @@ -7,6 +7,7 @@ style:
@@ -42,37 +145,8 @@ index e929cd814..a2c948dfc 100644
        - "**/integration/server-performance/**"
        - "**/integration/paper/src/main/**"
        - "**/integration/velocity/src/main/**"
-diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
-index ef9ec812d..37b0e9874 100644
---- a/docs/development/performance-testkit.md
-+++ b/docs/development/performance-testkit.md
-@@ -443,6 +443,24 @@ The original `jmh` task and its result path remain unchanged.
- `:quality:benchmarks:check` verifies the actual generated historical matrix before either task is used.
- Use the same repetition and mode properties and packaged summary/comparison commands as the component corpus.
- 
-+The separate `EmptyChildBenchmark` fixture is selected with `-Pstrata.performance.benchmarks=EmptyChildBenchmark -Pstrata.performance.suite=empty-child` on `jmhHistorical`.
-+Its typed inventory has 60 cases: 24 compatible fresh-leaf redeclarations, 12 same-description or clean-frame controls, and 24 transitions involving nonempty target children, each with diagnostics disabled and enabled.
-+The complete AverageTime and SampleTime inventory has 120 rows; three independent baseline and candidate repetitions require 720 matched score cells.
-+Use one compiled fixture and collector with the existing `strata.performance.historicalRuntime` manifest replacement for both sets of actual runtime archives.
-+The shared portable fixture and all 32 independent controls also run through the core's common JVM and JavaScript tests.
-+The fixture's `verifyWork` preflight verifies the generated inventory, callback and retained-diagnostic assertions, exact headless pixels, and terminal runtime-reference release before collection.
-+`EmptyChildWorkEvidence` additionally writes a fresh JSON qualification file from its one output-path argument, recording all controls, complete work counters, actual loaded archive hashes, and common fixture identities.
-+Run that same executable and source against both archive sets before formal collection, and preserve those files as external fixture inputs.
-+
-+Each invocation constructs, attaches and settles a private tree or session outside JMH timing, executes one complete update or publication-plus-frame operation inside timing, then closes outside timing.
-+Fresh description construction and source snapshot publication are included in the measured operation; same-description and clean-frame cases perform their declared unchanged operation.
-+Cold invocation setup prevents transition reset work from changing the runtime comparison, and both variants use identical declarations, owners, collectors and setup.
-+JMH's invocation timing boundary adds overhead visible in tiny and clean cases; the GC profiler's iteration-wide normalized allocation includes setup and cleanup.
-+Report that allocation scope explicitly, retain raw repeated scores and noise evidence, and do not label it isolated update allocation or extrapolate frame rates.
-+Eligible descendant update callbacks and nonempty parent update callbacks are counted separately.
-+An independently observed fresh empty dynamic list records validation traversal and child-matching traversal without a runtime branch counter.
-+Compare that observation alongside preserved validation, component/modifier work, structure, identity, cleanup and presentation evidence; it cannot establish behavioral parity on its own.
-+
- JMH evidence requires an independent fork and rejects JVM flags that redirect the classpath, replace its classloader, patch modules or inject instrumentation agents.
- Such flags could make parent-loaded artifact identities certify different child code; they fail before any output directory or success receipt is created.
- Ordinary heap, GC and native-access JVM options remain supported and are recorded by JMH.
 diff --git a/quality/benchmarks/build.gradle.kts b/quality/benchmarks/build.gradle.kts
-index e040e3ac9..3e22486af 100644
+index 4b535851ce8217bdd48b1975eb3736fc5e2dccab..857db9c51fe02b80861b27bda540f19bf2ea153b 100644
 --- a/quality/benchmarks/build.gradle.kts
 +++ b/quality/benchmarks/build.gradle.kts
 @@ -11,6 +11,9 @@ plugins {
@@ -87,7 +161,7 @@ index e040e3ac9..3e22486af 100644
      add("jmh", project(":performance-testkit"))
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControls.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControls.kt
 new file mode 100644
-index 000000000..96bcfeb52
+index 0000000000000000000000000000000000000000..96bcfeb5258f86f7e868b174f99b17bd141735c1
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControls.kt
 @@ -0,0 +1,796 @@
@@ -889,7 +963,7 @@ index 000000000..96bcfeb52
 +}
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildFixture.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildFixture.kt
 new file mode 100644
-index 000000000..e8b512a93
+index 0000000000000000000000000000000000000000..e8b512a9314c3956cbab455ef74253010b9cd4d6
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildFixture.kt
 @@ -0,0 +1,183 @@
@@ -1078,10 +1152,10 @@ index 000000000..e8b512a93
 +}
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildInputControl.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildInputControl.kt
 new file mode 100644
-index 000000000..3ddbfb675
+index 0000000000000000000000000000000000000000..9b75968c47c102abf1d16b3288a7e11cd5e48933
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildInputControl.kt
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,183 @@
 +@file:OptIn(InternalStrataRuntimeApi::class)
 +
 +package dev.s7a.strata.quality.fixture
@@ -1155,7 +1229,9 @@ index 000000000..3ddbfb675
 +            check(session.dispatchTextInput(TextInputEvent.Character(65)) == InputResult.Consumed) { "Focused text character must be consumed" }
 +            check(probe.keys == 1 && probe.text == 1 && probe.cancellations == 0) { "Active input: keys=${probe.keys}, text=${probe.text}, cancellations=${probe.cancellations}" }
 +            session.close()
-+            check(probe.cancellations == 1 && probe.focus == listOf(true, false) && probe.hover.last().not()) { "Terminal input: cancellations=${probe.cancellations}, focus=${probe.focus}, hover=${probe.hover}" }
++            check(runCatching { session.textInputFocus }.exceptionOrNull() is IllegalStateException) { "Terminal session state reads must be rejected" }
++            // Terminal release clears focus ownership without dispatching another focus callback.
++            check(probe.cancellations == 1 && probe.focus == listOf(true) && probe.hover.last().not()) { "Terminal input: cancellations=${probe.cancellations}, focus=${probe.focus}, hover=${probe.hover}" }
 +            session.close()
 +            check(probe.cancellations == 1) { "Repeated close cancellation count: ${probe.cancellations}" }
 +        }
@@ -1265,7 +1341,7 @@ index 000000000..3ddbfb675
 +}
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildPresentationControl.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildPresentationControl.kt
 new file mode 100644
-index 000000000..0d1db98d9
+index 0000000000000000000000000000000000000000..0d1db98d9e3f41d27ede49b0ef8fc9a1f5af502b
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildPresentationControl.kt
 @@ -0,0 +1,66 @@
@@ -1337,7 +1413,7 @@ index 000000000..0d1db98d9
 +}
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildProbe.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildProbe.kt
 new file mode 100644
-index 000000000..bafba287d
+index 0000000000000000000000000000000000000000..bafba287df374a11e27350967ba4bc5bad1de71a
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildProbe.kt
 @@ -0,0 +1,442 @@
@@ -1785,7 +1861,7 @@ index 000000000..bafba287d
 +}
 diff --git a/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildWorkload.kt b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildWorkload.kt
 new file mode 100644
-index 000000000..51640e551
+index 0000000000000000000000000000000000000000..51640e5518d1c34ff4d0ad3afb7eec4b59434117
 --- /dev/null
 +++ b/quality/benchmarks/src/fixture/kotlin/dev/s7a/strata/quality/fixture/EmptyChildWorkload.kt
 @@ -0,0 +1,73 @@
@@ -1864,7 +1940,7 @@ index 000000000..51640e551
 +}
 diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildBenchmark.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildBenchmark.kt
 new file mode 100644
-index 000000000..11380ff7d
+index 0000000000000000000000000000000000000000..11380ff7dae227967b796df81ab65b9454ebfb46
 --- /dev/null
 +++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildBenchmark.kt
 @@ -0,0 +1,81 @@
@@ -1951,7 +2027,7 @@ index 000000000..11380ff7d
 +}
 diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildWorkEvidence.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildWorkEvidence.kt
 new file mode 100644
-index 000000000..99c6b03a0
+index 0000000000000000000000000000000000000000..99c6b03a0e397c7717ccbca4fecc82510b6a781e
 --- /dev/null
 +++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/EmptyChildWorkEvidence.kt
 @@ -0,0 +1,167 @@
@@ -2123,7 +2199,7 @@ index 000000000..99c6b03a0
 +            .get(owner)
 +}
 diff --git a/runtime/core/build.gradle.kts b/runtime/core/build.gradle.kts
-index 9998925ac..5bf63d476 100644
+index 9998925ac7d1de943580b94e654ada907de55a60..5bf63d47646698826dde4bc66e8950609d0b5ec7 100644
 --- a/runtime/core/build.gradle.kts
 +++ b/runtime/core/build.gradle.kts
 @@ -1,5 +1,6 @@
@@ -2135,7 +2211,7 @@ index 9998925ac..5bf63d476 100644
              api(project(":api"))
 diff --git a/runtime/core/src/commonTest/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControlsTest.kt b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControlsTest.kt
 new file mode 100644
-index 000000000..6caf29562
+index 0000000000000000000000000000000000000000..6caf2956299fd71ee6a487a4e091ae1a7d84600b
 --- /dev/null
 +++ b/runtime/core/src/commonTest/kotlin/dev/s7a/strata/quality/fixture/EmptyChildControlsTest.kt
 @@ -0,0 +1,173 @@
@@ -2313,10 +2389,10 @@ index 000000000..6caf29562
 +    }
 +}
 diff --git a/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt b/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt
-index acfbe190c..d7bfffc94 100644
+index 51275dbc926f48c83800b4f496ecce8831cce778..5d489ebbbe002dca1a9474b0793cb59dc0f3bfa2 100644
 --- a/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt
 +++ b/runtime/core/src/main/kotlin/dev/s7a/strata/runtime/Reconciler.kt
-@@ -346,6 +346,7 @@ internal class Reconciler(
+@@ -354,6 +354,7 @@ internal class Reconciler(
          parent: RetainedNode,
          descriptions: List<Element>,
      ) {

@@ -2,27 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "c760a395f1015d5b4cac1c76a2ba7a9e80659236",
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "baf3963408bd7e3a79269d16f752e04cedf394c8",
       "patches": [
         {
-          "path": ".github/performance/empty-child/candidate.patch",
-          "sha256": "a1e6b1f57036128362e3ca05e2f3fae8afa89dc2623a7aa417e89d761365f55d"
+          "path": ".github/performance/empty-child/baseline.patch",
+          "sha256": "d9c31a232d8d43762f7df675115a778b04909ce8c4e70c673b0471098f942787"
         }
       ]
     },
     "baseline": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "37498631c2c7e7854a94286a73b9f97f794707df",
-      "patches": []
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "baf3963408bd7e3a79269d16f752e04cedf394c8",
+      "patches": [
+        {
+          "path": ".github/performance/empty-child/baseline.patch",
+          "sha256": "d9c31a232d8d43762f7df675115a778b04909ce8c4e70c673b0471098f942787"
+        }
+      ]
     },
     "candidate": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "c760a395f1015d5b4cac1c76a2ba7a9e80659236",
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "b0e53e0b7f98b02ec7efea01b1e2de124ef202b7",
       "patches": [
         {
           "path": ".github/performance/empty-child/candidate.patch",
-          "sha256": "a1e6b1f57036128362e3ca05e2f3fae8afa89dc2623a7aa417e89d761365f55d"
+          "sha256": "e63ae7286217bd3318e20768e482d556277764095a25fe10c8c71c37d86ab9b7"
         }
       ]
     }
