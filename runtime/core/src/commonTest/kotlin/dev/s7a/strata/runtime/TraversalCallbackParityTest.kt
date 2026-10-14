@@ -55,6 +55,37 @@ internal class TraversalCallbackParityTest {
     }
 
     @Test
+    fun settledDynamicBranchesPublishAddedAndRemovedParticipantsBeforeTheirConsumersRun() {
+        val fixture = TraversalTestFixture()
+        val tree = UiTree()
+        tree.update(fixture.element(0, children = listOf(fixture.element(1, children = listOf(fixture.element(2, Kind.Dynamic))), fixture.element(3))))
+        val dynamic = fixture.nodes.getValue(2) as TraversalTestFixture.DynamicProbe
+        try {
+            frame(tree)
+            assertTrue(tree.semantics().isEmpty())
+            dynamic.descriptions = listOf(fixture.element(4, Kind.Participant))
+            dynamic.dirty()
+            frame(tree)
+            assertEquals(listOf(UiText.Literal("4")), tree.semantics().map { it.semantics.label })
+            assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
+            assertEquals(Event(Phase.FocusGained, 4), fixture.events.last())
+            dynamic.descriptions = emptyList()
+            dynamic.dirty()
+            frame(tree)
+            assertTrue(tree.semantics().isEmpty())
+            assertEquals(1, fixture.events.count { it == Event(Phase.FocusLost, 4) })
+            dynamic.descriptions = listOf(fixture.element(5, Kind.Participant))
+            dynamic.dirty()
+            frame(tree)
+            assertEquals(listOf(UiText.Literal("5")), tree.semantics().map { it.semantics.label })
+            assertEquals(InputResult.Consumed, tree.dispatchKeyboard(KeyboardEvent.Press(KeyCode.Tab, 0)))
+            assertEquals(Event(Phase.FocusGained, 5), fixture.events.last())
+        } finally {
+            tree.close()
+        }
+    }
+
+    @Test
     fun modifierAncestryAndDeclaredOrderRemainVisibleToSemanticsAndTabTraversal() {
         val fixture = TraversalTestFixture()
         val tree = UiTree()

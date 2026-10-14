@@ -186,5 +186,6 @@ internal class RetainedTraversalTest {
         assertFalse(root.hasFocusTargets)
         assertFalse(root.hasSemantics)
         assertFalse(root.hasPendingAttachments)
+        assertFalse(root.traversalSummaryDirty)
     }
 }

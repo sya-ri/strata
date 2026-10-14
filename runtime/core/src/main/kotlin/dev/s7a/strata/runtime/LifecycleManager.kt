@@ -123,7 +123,8 @@ internal class LifecycleManager(
     fun prepareCleanup(retained: RetainedNode) {
         markCleanupStarted(retained)
         retained.clearTraversalSummary()
-        retained.logicalParent?.refreshTraversalSummary()
+        val parent = retained.logicalParent
+        if (parent != null && parent.cleanupStarted.not()) parent.refreshTraversalSummary()
         retained.modifiers.forEach(::markCleanupStarted)
         retained.children.forEach(::prepareCleanup)
     }

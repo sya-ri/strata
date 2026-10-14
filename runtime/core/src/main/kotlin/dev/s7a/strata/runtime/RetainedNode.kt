@@ -101,9 +101,15 @@ internal class RetainedNode(
         private set
 
     /**
+     * A visited child changed capability flags; the owning walker rebuilds this direct-child view on return.
+     */
+    var traversalSummaryDirty: Boolean = false
+        private set
+
+    /**
      * Replaces direct-child summaries after reconciliation or completed attachment.
      * Capability identity comes from current nodes and modifiers; acceptance, values and geometry remain live.
-     * Bottom-up attachment walkers pass false because their caller updates the enclosing parent once.
+     * Bottom-up walkers pass false and mark their enclosing parent for one rebuild on return.
      */
     fun refreshTraversalSummary(propagate: Boolean = true) {
         if (cleanupStarted) {
@@ -114,19 +120,27 @@ internal class RetainedNode(
         val oldFocus = hasFocusTargets
         val oldSemantics = hasSemantics
         val oldAttachments = hasPendingAttachments
+        traversalSummaryDirty = false
         refreshChildren = selectChildren(refreshChildren) { it.hasContentParticipants || it.hasPendingAttachments }
         focusChildren = selectChildren(focusChildren, RetainedNode::hasFocusTargets)
         semanticsChildren = selectChildren(semanticsChildren, RetainedNode::hasSemantics)
         attachmentChildren = selectChildren(attachmentChildren, RetainedNode::hasPendingAttachments)
         ownsFocusTargets = localFocusParticipant()
-        hasContentParticipants = localContentParticipant() || children.any { it.cleanupStarted.not() && it.hasContentParticipants }
+        hasContentParticipants = localContentParticipant() || (children.isNotEmpty() && children.any { it.cleanupStarted.not() && it.hasContentParticipants })
         hasFocusTargets = ownsFocusTargets || focusChildren.isNotEmpty()
         hasSemantics = localSemanticsParticipant() || semanticsChildren.isNotEmpty()
         hasPendingAttachments = localAttachmentPending() || attachmentChildren.isNotEmpty()
         val changed =
             oldContent != hasContentParticipants || oldFocus != hasFocusTargets ||
                 oldSemantics != hasSemantics || oldAttachments != hasPendingAttachments
-        if (propagate && changed) logicalParent?.refreshTraversalSummary()
+        val parent = logicalParent
+        if (changed && parent != null && parent.cleanupStarted.not()) {
+            if (propagate) {
+                parent.refreshTraversalSummary()
+            } else {
+                parent.traversalSummaryDirty = true
+            }
+        }
     }
 
     /**
@@ -142,17 +156,18 @@ internal class RetainedNode(
         hasFocusTargets = false
         hasSemantics = false
         hasPendingAttachments = false
+        traversalSummaryDirty = false
     }
 
     private fun localContentParticipant(): Boolean =
         node is DynamicChildrenNode || node is StateObserverNode || node is DeclarationProjectionNode ||
-            modifiers.any { it.node is StateObserverNode }
+            (modifiers.isNotEmpty() && modifiers.any { it.node is StateObserverNode })
 
-    private fun localFocusParticipant(): Boolean = node is FocusTargetNode || modifiers.any { it.node is FocusTargetNode }
+    private fun localFocusParticipant(): Boolean = node is FocusTargetNode || (modifiers.isNotEmpty() && modifiers.any { it.node is FocusTargetNode })
 
-    private fun localSemanticsParticipant(): Boolean = node is SemanticsNode || modifiers.any { it.node is SemanticsNode }
+    private fun localSemanticsParticipant(): Boolean = node is SemanticsNode || (modifiers.isNotEmpty() && modifiers.any { it.node is SemanticsNode })
 
-    private fun localAttachmentPending(): Boolean = attachAttempted.not() || modifiers.any { it.attachAttempted.not() }
+    private fun localAttachmentPending(): Boolean = attachAttempted.not() || (modifiers.isNotEmpty() && modifiers.any { it.attachAttempted.not() })
 
     private inline fun selectChildren(
         previous: List<RetainedNode>,

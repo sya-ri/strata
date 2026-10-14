@@ -810,6 +810,8 @@ This corpus measures neither native input latency, uploads nor GPU time.
 Each retained logical node keeps ordered direct-child subsets for content refresh, unfinished attachment, focus targets, and semantics capabilities.
 The complete key is the current node's immutable capability identity, current modifier identities, current ordered direct-child identities and their capability summaries, and attachment-attempt state.
 Creation, node replacement, modifier reconciliation, child insertion/removal/reordering, and completed attachment update the affected summaries and propagate changed membership to logical ancestors.
+During an owner-confined content or attachment walk, changed child capability flags mark the direct parent dirty; the caller rebuilds that parent's current memberships once on return before focus or semantics consume them.
+The pending flag contains no borrowed references, is flushed before a skipped branch is selected, and is cleared with the summaries during terminal cleanup.
 Phase invalidation preserves capability membership; acceptance properties, observed-source declarations, deferred reasons, semantics payloads and geometry remain live and are never stored in these summaries.
 
 The lists borrow only current direct children in declaration order, with at most four additional references per logical edge and fixed scalar flags per retained node.
