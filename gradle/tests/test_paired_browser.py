@@ -11,6 +11,48 @@ import test_paired_jvm as fixtures
 
 
 class PairedBrowserTest(unittest.TestCase):
+    def test_immediate_descendant_control_requires_complete_independent_physical_histories(self):
+        source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
+        spec = importlib.util.spec_from_file_location("boundary_immediate", source)
+        boundary = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(boundary)
+        members = {}
+        for index in range(32):
+            pid = index + 1
+            birth = 116444736000000000 + index * 1000000
+            members[str(pid)] = [{"pid": pid, "creationFileTime": birth, "exitFileTime": birth + 10000,
+                                  "image": str(self.root / "cmd.exe"), "inOwnedJob": True, "completed": True,
+                                  "handleClosed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}]
+        terminal = {"members": members, "naturalRelease": True, "handlesClosed": True, "nativeInvoked": True,
+                    "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                    "notificationReaderJoined": True, "totalProcesses": 32,
+                    "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                             "totalProcesses": 32, "capturedGenerations": 32, "closedGenerations": 32}}
+        actual = {"immediate": True, "concurrentChildren": 8, "generations": [copy.deepcopy(value[0]) for value in members.values()]}
+        receipt = boundary.validate_immediate_history(terminal, actual)
+        self.assertEqual(receipt["independentGenerations"], 32)
+        self.assertEqual(receipt["observedBelowFormerPollInterval"], 32)
+        for mode in ("missing", "duplicate", "image", "birth", "exit", "accounting", "unclosed", "no-short-lifetime"):
+            with self.subTest(mode=mode):
+                changed, oracle = copy.deepcopy(terminal), copy.deepcopy(actual)
+                if mode == "missing":
+                    changed["members"].pop("1")
+                elif mode == "duplicate":
+                    oracle["generations"][1] = copy.deepcopy(oracle["generations"][0])
+                elif mode in ("image", "birth", "exit"):
+                    field = {"image": "image", "birth": "creationFileTime", "exit": "exitFileTime"}[mode]
+                    oracle["generations"][0][field] = str(self.root / "other.exe") if mode == "image" else oracle["generations"][0][field] + 1
+                elif mode == "accounting":
+                    changed["generationAccounting"]["totalProcesses"] = 33
+                elif mode == "unclosed":
+                    changed["members"]["1"][0]["handleClosed"] = False
+                else:
+                    for row in oracle["generations"]:
+                        row["exitFileTime"] = row["creationFileTime"] + 100 * 10000
+                        changed["members"][str(row["pid"])][0]["exitFileTime"] = row["exitFileTime"]
+                with self.assertRaises(ValueError):
+                    boundary.validate_immediate_history(changed, oracle)
+
     def test_ready_leak_requires_actual_survival_in_the_owned_job(self):
         source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
         spec = importlib.util.spec_from_file_location("boundary", source)

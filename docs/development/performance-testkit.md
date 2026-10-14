@@ -809,6 +809,12 @@ A requested `test` or `jvmTest` task requires its matching full test gate; multi
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
 Gradle preparation retains complete VM XML diagnostics up to 16 MiB per file, with the actual byte count, bound and SHA recorded; other JVM verification keeps its 1 MiB default.
 Process-isolation worker arguments carry the existing diagnostic flags explicitly, and preparation requires complete XML with observed executable/caps and closed PID/birth identity for every captured Java generation.
+An owned Job completion listener opens physical descendant handles as notifications arrive, alongside the existing complete member snapshots.
+Notifications are advisory; preparation independently reconciles every unique closed PID/birth history, including non-Java processes, with actual Job `totalProcesses` before qualifying any Java diagnostic.
+The boundary controls run before collection and retain independently read no-sleep descendant birth, exit and image identities, observed lifetimes below the former polling interval, and repeated immediate pinned Node primaries.
+VM XML start timestamps retain their original values and signed differences from kernel birth.
+With complete fresh invocation accounting, exactly one XML and one captured generation for a PID may bind a negative reconstructed start through `unique_owned_pid_in_complete_invocation`; reused PIDs retain the existing unique timestamp/lifetime match and unsupported negative offsets fail.
+Coarse/precise clock observations and adjustment metadata are retained without treating the adjustment increment as a guaranteed clock resolution.
 The archive exports actual Java byte pins, complete declared compilation files and runtime archives, original JVM diagnostics, and the resolved JVM test classpath with its external dependency bytes when that gate is requested.
 Missing dependency archives fail; an absent owned output directory requires a separate receipt from its unique executed `NO-SOURCE` producer, checked against the original full classpath and task log.
 Job user/kernel CPU counters, outer invocation wall time and peak committed bytes retain their Source-task scope; allocation and resident memory remain unavailable.

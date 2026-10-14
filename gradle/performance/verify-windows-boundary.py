@@ -15,6 +15,29 @@ PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
 
 
+def validate_immediate_history(terminal, actual):
+    """Match every independently held short descendant to complete physical Job generations."""
+    PAIRED.verify_generation_accounting(terminal)
+    PAIRED.require(actual.get("immediate") is True and actual.get("concurrentChildren") == 8 and len(actual["generations"]) == 32,
+                   "Incomplete independent immediate-descendant inventory")
+    observed = {(member["pid"], member["creationFileTime"]): member
+                for histories in terminal["members"].values() for member in histories}
+    identities = set()
+    lifetimes = []
+    for child in actual["generations"]:
+        identity = (child["pid"], child["creationFileTime"])
+        PAIRED.require(identity not in identities and identity in observed, "Missing or duplicate independent short generation")
+        identities.add(identity)
+        member = observed[identity]
+        PAIRED.require(child["exitCode"] == member["exitCode"] == 0 and child["exitFileTime"] == member["exitFileTime"]
+                       and child["creationFileTime"] <= child["exitFileTime"]
+                       and os.path.normcase(child["image"]) == os.path.normcase(member["image"]), "Independent short generation changed image or lifetime")
+        lifetimes.append(child["exitFileTime"] - child["creationFileTime"])
+    PAIRED.require(any(lifetime < 100 * 10000 for lifetime in lifetimes), "Regression control did not observe a lifetime below the former 100ms poll interval")
+    return {"independentGenerations": len(identities), "observedBelowFormerPollInterval": sum(lifetime < 100 * 10000 for lifetime in lifetimes),
+            "minimumLifetime100ns": min(lifetimes), "formerPollInterval100ns": 100 * 10000}
+
+
 def validate_node_leak(terminal, program, console):
     """Bind the child-ready IPC identity to an owned generation that survives its successful primary."""
     lines = console.splitlines()
@@ -51,6 +74,7 @@ def main():
         for name, body, minimum, work in (
             ("normal", "@exit /b 0\n", 4 * 1024**3, 30),
             ("completed-history", f'@"{sys.executable}" -B "{history}" --output descendants\n', 4 * 1024**3, 120),
+            ("immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate\n', 4 * 1024**3, 120),
             ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 192\n', 4 * 1024**3, 120),
             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
@@ -68,14 +92,17 @@ def main():
                 process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
             terminal = PAIRED.read_json(directory / "terminal.json")
             records.append({"case": name, "exit": process.returncode, "terminal": terminal})
-            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history")), f"Unexpected actual boundary result: {name}")
+            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history", "immediate-history")), f"Unexpected actual boundary result: {name}")
             PAIRED.require(terminal["handlesClosed"] is True, f"Owned handles or cleanup leaked: {name}")
             PAIRED.require(terminal.get("activeProcessesAfterCleanup", 0) == 0, f"Owned descendants remain: {name}")
             PAIRED.require(all(member["completed"] is True and member["handleClosed"] is True
                                and member["creationFileTime"] <= member["exitFileTime"]
                                for generations in terminal["members"].values() for member in generations),
                            f"Observed generation lost actual terminal history: {name}")
-            if name == "completed-history":
+            if name == "immediate-history":
+                records[-1]["independentCapture"] = validate_immediate_history(terminal, PAIRED.read_json(workspace / "descendants/completed.json"))
+            elif name == "completed-history":
+                PAIRED.verify_generation_accounting(terminal)
                 actual = PAIRED.read_json(workspace / "descendants/completed.json")
                 observed = {(member["pid"], member["creationFileTime"]): member
                             for generations in terminal["members"].values() for member in generations}
@@ -114,8 +141,10 @@ def main():
         program = {"kind": "node", "path": str(executable), "sha256": PAIRED.digest(executable)}
         literal_arguments = ["path with spaces", 'quoted "value"', "C:\\trailing\\", "", 'backslash\\"quote', "$() & ; ` literal"]
         marker = "inherited environment with spaces"
+        node_normal = "process.stdout.write(JSON.stringify({args:process.argv.slice(1),environment:process.env.STRATA_BOUNDARY_CONTROL,execPath:process.execPath}));"
         for name, body, work in (
-            ("node-normal", "process.stdout.write(JSON.stringify({args:process.argv.slice(1),environment:process.env.STRATA_BOUNDARY_CONTROL,execPath:process.execPath}));", 30),
+            ("node-normal", node_normal, 30),
+            *((f"node-immediate-{index}", node_normal, 30) for index in range(8)),
             ("node-failure", "process.exit(7);", 30),
             ("node-timeout", "setTimeout(() => process.exit(0), 30000);", 2),
             # Non-detached Windows children enter libuv's kill-on-parent-close Job, so acknowledge a hidden detached child before primary exit.
@@ -139,9 +168,11 @@ def main():
                 process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
             terminal = PAIRED.read_json(directory / "terminal.json")
             records.append({"case": name, "exit": process.returncode, "terminal": terminal})
-            PAIRED.require((process.returncode == 0) == (name == "node-normal") and terminal["handlesClosed"] is True
+            normal = name == "node-normal" or name.startswith("node-immediate-")
+            PAIRED.require((process.returncode == 0) == normal and terminal["handlesClosed"] is True
                            and terminal.get("activeProcessesAfterCleanup", 0) == 0, "Wrong or unclosed actual Node owner control")
-            if name == "node-normal":
+            if normal:
+                PAIRED.verify_generation_accounting(terminal)
                 PAIRED.browser_controller().validate_node_generation(PAIRED, terminal, program)
                 observed = json.loads((directory / "console.log").read_text(encoding="utf-8-sig"))
                 PAIRED.require(observed["args"] == literal_arguments and observed["environment"] == marker
@@ -159,7 +190,10 @@ def main():
                 nodes = [member for generations in terminal["members"].values() for member in generations if Path(member["image"]).name.casefold() == "node.exe"]
                 PAIRED.require(not nodes and terminal["nativeInvoked"] is False and "differs from its actual pin" in terminal["error"]
                                and "NODE_PIN_REFUSAL_EXECUTED" not in (directory / "console.log").read_text(encoding="utf-8-sig"), "Changed Node pin reached execution")
-        PAIRED.write_new(output / "result.json", {"status": "passed", "java_invocations": 0, "node": {**program, "version": identity["version"]}, "cases": records})
+        PAIRED.write_new(output / "result.json", {"status": "passed", "java_invocations": 0,
+            "scope": "owned-process regression controls before Source or runtime collection", "source_task_metrics": None,
+            "build_cache": "no Gradle task execution", "helper_sha256": PAIRED.digest(helper),
+            "actual_case_names": [record["case"] for record in records], "node": {**program, "version": identity["version"]}, "cases": records})
     except BaseException as failure:
         PAIRED.write_new(output / "result.json", {"status": "failed", "error": str(failure), "cases": records})
         raise

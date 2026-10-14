@@ -1137,7 +1137,10 @@ class PairedJvmTest(unittest.TestCase):
                                      "</vm_arguments>\n-XX:MaxHeapSize=536870912 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done/></hotspot_log>\n").encode())
                     logs.append(log)
                 terminal = {"members": {"123": members}, "naturalRelease": True, "handlesClosed": True,
-                            "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                            "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                            "nativeInvoked": True, "notificationReaderJoined": True, "totalProcesses": 2,
+                            "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                                     "totalProcesses": 2, "capturedGenerations": 2, "closedGenerations": 2}}
                 if mode == "wrong-image":
                     members[1]["image"] = str(home / "different/java.exe")
                 elif mode == "unclosed":
@@ -1156,6 +1159,8 @@ class PairedJvmTest(unittest.TestCase):
                     members[1]["affinityMask"] = 1
                 elif mode == "unknown-javaw":
                     terminal["members"]["124"] = [{**members[1], "pid": 124, "image": str(home / "bin/javaw.exe")}]
+                    terminal["totalProcesses"] = 3
+                    terminal["generationAccounting"].update(totalProcesses=3, capturedGenerations=3, closedGenerations=3)
                 elif mode == "alias-pid":
                     terminal["members"]["0123"] = [members[1]]
                 allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
@@ -1168,6 +1173,70 @@ class PairedJvmTest(unittest.TestCase):
                 else:
                     with self.assertRaises(ValueError):
                         PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=True)
+                    self.assertFalse((directory / "vms.json").exists())
+
+    def test_complete_invocation_binds_unique_coarse_negative_pid_without_altering_birth_or_legacy_matching(self):
+        for mode in ("negative", "positive", "legacy-negative", "missing-accounting", "count-mismatch", "aliased-count",
+                     "reused-negative", "duplicate-xml", "wrong-image", "unclosed", "beyond-startup", "beyond-lifetime"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("unique-coarse-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"pinned synthetic java")
+                (directory / "console.log").write_bytes(b"")
+                birth = 116444736000000000 + 1000 * 10000
+                member = {"pid": 123, "creationFileTime": birth, "exitFileTime": birth + 500 * 10000,
+                          "image": str(executable), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                terminal = {"members": {"123": [member]}, "naturalRelease": True, "handlesClosed": True,
+                            "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                            "nativeInvoked": True, "notificationReaderJoined": True, "totalProcesses": 1,
+                            "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                                     "totalProcesses": 1, "capturedGenerations": 1, "closedGenerations": 1},
+                            "clockBeforeResume": {"adjustmentDisabled": True, "increment100ns": 156250}}
+                start = 1001 if mode == "positive" else 3001 if mode == "beyond-startup" else 1501 if mode == "beyond-lifetime" else 993
+                log = directory / "vm.log"
+                log.write_text(f"<hotspot_log process='123' time_ms='{start}'><vm_arguments>"
+                               f"<command>org.gradle.wrapper.GradleWrapperMain</command>\njava.home={home}\njava.class.path=wrapper.jar\n"
+                               "</vm_arguments>\n-XX:MaxHeapSize=67108864 -XX:MaxMetaspaceSize=268435456\n"
+                               "<hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+                logs = [log]
+                if mode == "missing-accounting":
+                    terminal.pop("generationAccounting")
+                elif mode == "count-mismatch":
+                    terminal["generationAccounting"]["totalProcesses"] = 2
+                elif mode == "aliased-count":
+                    terminal["members"]["0123"] = [copy.deepcopy(member)]
+                    terminal["totalProcesses"] = 2
+                    terminal["generationAccounting"].update(totalProcesses=2, capturedGenerations=2, closedGenerations=2)
+                elif mode == "reused-negative":
+                    terminal["members"]["123"].append({**member, "creationFileTime": birth + 3000 * 10000, "exitFileTime": birth + 3500 * 10000})
+                    terminal["totalProcesses"] = 2
+                    terminal["generationAccounting"].update(totalProcesses=2, capturedGenerations=2, closedGenerations=2)
+                elif mode == "duplicate-xml":
+                    duplicate = directory / "duplicate.log"
+                    duplicate.write_bytes(log.read_bytes())
+                    logs.append(duplicate)
+                elif mode == "wrong-image":
+                    member["image"] = str(home / "different/java.exe")
+                elif mode == "unclosed":
+                    member["handleClosed"] = False
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                if mode in ("negative", "positive"):
+                    PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=True)
+                    receipt = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual(receipt["os_generation"]["creationFileTime"], birth)
+                    self.assertEqual(receipt["os_generation"]["exitFileTime"], birth + 500 * 10000)
+                    self.assertEqual(receipt["vm_start_minus_creation_ms"], -7 if mode == "negative" else 1)
+                    self.assertEqual(receipt["binding_basis"], "unique_owned_pid_in_complete_invocation" if mode == "negative" else "timestamp_within_captured_lifetime")
+                else:
+                    with self.assertRaises(ValueError):
+                        if mode == "legacy-negative":
+                            PAIRED.owned_generation(terminal, 123, start)
+                        else:
+                            PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=True)
                     self.assertFalse((directory / "vms.json").exists())
 
     def test_source_sized_vm_diagnostic_retains_all_bytes_without_weakening_terminal_or_caps(self):

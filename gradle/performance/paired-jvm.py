@@ -431,7 +431,41 @@ def class_loads(directory):
     return "".join(texts), identities
 
 
-def owned_generation(terminal, pid, vm_start):
+def verify_generation_accounting(terminal):
+    """Reconcile every closed physical PID/birth history with actual terminal Job accounting."""
+    accounting = terminal.get("generationAccounting", {})
+    require(isinstance(accounting, dict) and accounting.get("schema") == "strata-owned-generation-accounting-v1"
+            and accounting.get("complete") is True and terminal.get("notificationReaderJoined") is True,
+            "Missing complete physical generation accounting")
+    require(terminal.get("nativeInvoked") is True and terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
+            and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
+            "Generation accounting lacks natural closed terminal proof")
+    identities = set()
+    for pid, histories in terminal["members"].items():
+        require(re.fullmatch(r"[1-9][0-9]*", pid) is not None and isinstance(histories, list) and histories,
+                "Invalid physical process histories")
+        previous_exit = None
+        for member in histories:
+            require(type(member.get("pid")) is int and member["pid"] == int(pid) and type(member.get("creationFileTime")) is int
+                    and type(member.get("exitFileTime")) is int and member["creationFileTime"] <= member["exitFileTime"]
+                    and 0 < member["creationFileTime"]
+                    and (previous_exit is None or previous_exit <= member["creationFileTime"])
+                    and member.get("inOwnedJob") is True and member.get("completed") is True and member.get("handleClosed") is True
+                    and type(member.get("exitCode")) is int and isinstance(member.get("image"), str) and bool(member["image"])
+                    and type(member.get("affinityMask")) is int and member["affinityMask"] == terminal["inheritedAffinityMask"]
+                    and type(member.get("systemAffinityMask")) is int and member["systemAffinityMask"] == terminal["systemAffinityMask"],
+                    "Unclosed or altered physical process generation")
+            identity = (int(pid), member["creationFileTime"])
+            require(identity not in identities, "Duplicate physical process generation")
+            identities.add(identity)
+            previous_exit = member["exitFileTime"]
+    require(0 < len(identities) and type(terminal.get("totalProcesses")) is int
+            and all(type(accounting.get(key)) is int and accounting[key] == len(identities)
+                    for key in ("totalProcesses", "capturedGenerations", "closedGenerations"))
+            and terminal["totalProcesses"] == len(identities), "Physical histories do not reconcile with actual Job totalProcesses")
+
+
+def owned_generation(terminal, pid, vm_start, unique_invocation_pid=False):
     """Select one captured PID/birth generation; legacy single-record receipts remain readable."""
     histories = terminal["members"].get(str(pid), [])
     legacy = isinstance(histories, dict)
@@ -456,6 +490,12 @@ def owned_generation(terminal, pid, vm_start):
         require(exit_ms is None or birth_ms <= exit_ms, "Altered owned process lifetime")
         if 0 <= vm_start - birth_ms <= 2000 and (exit_ms is None or vm_start <= exit_ms):
             matching.append(member)
+    if not matching and unique_invocation_pid and not legacy and len(histories) == 1:
+        # A fresh XML PID can bind a unique fully accounted generation without claiming its coarse reconstructed start is kernel birth.
+        birth_ms = (histories[0]["creationFileTime"] - 116444736000000000) // 10000
+        if vm_start < birth_ms:
+            verify_generation_accounting(terminal)
+            matching.append(histories[0])
     require(len(matching) == 1, "Missing or ambiguous owned process generation")
     member = matching[0]
     require(member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
@@ -463,7 +503,7 @@ def owned_generation(terminal, pid, vm_start):
     return member
 
 
-def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
+def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None, unique_invocation_pid=False):
     """Use exact start stamps or uniquely pinned owned generations when logging expands filenames independently."""
     candidates = [item for item in identities.values() if item["pid"] == pid]
     if not candidates:
@@ -484,10 +524,10 @@ def class_diagnostic(identities, pid, vm_diagnostic, vm_files, terminal=None):
     require(len(matching) <= 1, "Ambiguous reused-PID class-load diagnostic")
     if matching and Path(matching[0]["path"]).name == f"classes-{pid}-{name[1]}.log":
         return matching[0]
-    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal)
+    return unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, unique_invocation_pid)
 
 
-def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
+def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, unique_invocation_pid=False):
     """Bind an exact header-start file or unique independent expansion to its owned lifetime and fresh pin."""
     same_pid = sum(len(re.findall(r"<hotspot_log\b[^>]*\bprocess='" + str(pid) + r"'\s+time_ms='[0-9]+'",
                                  path.read_text(encoding="utf-8"))) for path in vm_files)
@@ -512,7 +552,7 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal):
         if not matching and len(java) != 1:
             return None
         helpers = [item for item in history if item not in java]
-    member = owned_generation(terminal, pid, int(starts[0]))
+    member = owned_generation(terminal, pid, int(starts[0]), unique_invocation_pid=unique_invocation_pid and same_pid == 1)
     if helpers:
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
         require(len(homes) == 1 and member in java
@@ -611,6 +651,14 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         require(terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
                 and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
                 "Java generation coverage requires natural closed terminal proof")
+        verify_generation_accounting(terminal)
+    pid_log_counts = {}
+    for path in files:
+        require(path.stat().st_size <= maximum_diagnostic_bytes, "VM diagnostic exceeds its retained bound")
+        headers = re.findall(r"<hotspot_log\b[^>]*\bprocess='([0-9]+)'\s+time_ms='([0-9]+)'", path.read_text(encoding="utf-8"))
+        require(len(headers) == 1, "VM diagnostic lacks a unique PID header")
+        pid = int(headers[0][0])
+        pid_log_counts[pid] = pid_log_counts.get(pid, 0) + 1
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
@@ -665,11 +713,14 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
         evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
         if require_all_java_generations:
-            member = owned_generation(terminal, pid, vm_start)
+            member = owned_generation(terminal, pid, vm_start, unique_invocation_pid=pid_log_counts[pid] == 1)
             require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
                     and member["affinityMask"] == terminal["inheritedAffinityMask"]
                     and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Java diagnostic generation changed image or affinity")
             evidence["os_generation"] = member
+            delta = vm_start - (member["creationFileTime"] - 116444736000000000) // 10000
+            evidence["vm_start_minus_creation_ms"] = delta
+            evidence["binding_basis"] = "unique_owned_pid_in_complete_invocation" if delta < 0 else "timestamp_within_captured_lifetime"
             observed_generations.append((pid, member["creationFileTime"]))
         flags = class_file_flags(value)
         if flags:
@@ -677,7 +728,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         if version_probe:
             evidence["version_probe_arguments"] = html.unescape(arguments[0].strip())
             version_probes.append(evidence)
-        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal)
+        diagnostic = class_diagnostic(class_identities, pid, path, files, terminal, unique_invocation_pid=require_all_java_generations)
         if diagnostic is not None:
             evidence["class_load_diagnostic"] = diagnostic
             if "unique_generation" in diagnostic:

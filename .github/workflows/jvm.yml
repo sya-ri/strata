@@ -109,6 +109,9 @@ jobs:
       with:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Verify owned invocation failure and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Collect and compare the complete frozen pair
       shell: pwsh
       env:
@@ -118,9 +121,6 @@ jobs:
         EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
       run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --data-ref "$env:DATA_REF" --manifest-sha256 "$env:MANIFEST_SHA256" --expected-head "$env:EXPECTED_HEAD" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
-    - name: Verify owned invocation failure and terminal cleanup
-      shell: pwsh
-      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Upload complete attempt evidence
       if: always()
       uses: actions/upload-artifact@v7
