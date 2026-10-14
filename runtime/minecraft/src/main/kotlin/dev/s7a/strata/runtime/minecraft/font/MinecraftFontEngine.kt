@@ -176,7 +176,7 @@ public class MinecraftFontEngine
             val rasterEntries = rasters.size
             cachedGlyph(first, codePoint)?.let { return it }
             if (firstIndex == providers.lastIndex) return missingGlyph
-            if (epoch !== rasterEpoch || rasterEntries != rasters.size) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
+            if (unchangedRasters(epoch, rasterEntries).not()) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
             val key = ResolutionKey(selected, codePoint)
             resolutions[key]?.let { resolution ->
                 val firstMiss = missingRasterKey(first, codePoint)
@@ -223,7 +223,7 @@ public class MinecraftFontEngine
                 if (applies(entry.filter, current.options).not()) continue
                 val rasterEntries = rasters.size
                 val glyph = cachedGlyph(entry, codePoint)
-                if (epoch !== rasterEpoch || rasterEntries != rasters.size) {
+                if (unchangedRasters(epoch, rasterEntries).not()) {
                     canAdmit = false
                     misses = null
                 }
@@ -241,6 +241,14 @@ public class MinecraftFontEngine
             if (canAdmit) putResolution(checkNotNull(key), null, misses.orEmpty(), epoch)
             return missingGlyph
         }
+
+        /**
+         * Checks the captured epoch before size, rejecting replacement, eviction and growth without changing provider work.
+         */
+        private fun unchangedRasters(
+            epoch: Any,
+            entries: Int,
+        ): Boolean = epoch === rasterEpoch && entries == rasters.size
 
         /**
          * Creates transient prefix storage only when needed; null cancels admission that cannot fit the existing bound.
