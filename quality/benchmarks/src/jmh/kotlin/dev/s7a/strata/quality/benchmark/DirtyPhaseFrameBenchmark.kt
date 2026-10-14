@@ -195,9 +195,7 @@ public open class DirtyPhaseFrameBenchmark {
          */
         public fun nextFrame(): RuntimeUiFrame {
             when (operation) {
-                Operation.Clean -> {
-                    Unit
-                }
+                Operation.Clean -> {}
 
                 Operation.None -> {
                     checkNotNull(nodes[0]).dirty(DirtyMask.None)
