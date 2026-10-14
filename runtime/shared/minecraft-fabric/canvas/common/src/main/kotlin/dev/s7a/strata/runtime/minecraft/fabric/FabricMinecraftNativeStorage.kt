@@ -52,6 +52,7 @@ internal class FabricMinecraftNativeStorage(
             }
         }
         failure?.let { throw it }
+        checkNotNull(destruction).completeRetirement()
         closeRequested = true
     }
 

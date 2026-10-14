@@ -2,32 +2,32 @@
   "schema": "strata-paired-jvm-ci-v1",
   "sources": {
     "fixture": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "26d3ae165bc92bb77e7773e2e61c1e2de27a6629",
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "26a6d78868784a158eb56b7e92144a3c0a7999cf",
       "patches": [
         {
           "path": ".github/performance/issue267/candidate.patch",
-          "sha256": "23717a592971e6178f06ca665f950e06e9b66b5e3a0dd8b71956f4ba756b0145"
+          "sha256": "9595495da016c803ea23dd887f4d198b043734fecccf3553f24a5dfcc603b5c1"
         }
       ]
     },
     "baseline": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "b3897c79928c5c610f185248355d9fbb0e7167b1",
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "ef201ab9b4de91ec8edd41dd886fb6f9cbc85bc1",
       "patches": [
         {
           "path": ".github/performance/issue267/baseline.patch",
-          "sha256": "db3729d2d275b779edabfe811e8e406f734c461d00cf06aacfc52426b125b16c"
+          "sha256": "1fb55b0bafd877d1dc7d9d3238fcd88df4ddd6364f6789c3261a74aa0966b622"
         }
       ]
     },
     "candidate": {
-      "ref": "7ebd9c94f3da521cadb76eadd4312289eaf88d7e",
-      "tree": "26d3ae165bc92bb77e7773e2e61c1e2de27a6629",
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "26a6d78868784a158eb56b7e92144a3c0a7999cf",
       "patches": [
         {
           "path": ".github/performance/issue267/candidate.patch",
-          "sha256": "23717a592971e6178f06ca665f950e06e9b66b5e3a0dd8b71956f4ba756b0145"
+          "sha256": "9595495da016c803ea23dd887f4d198b043734fecccf3553f24a5dfcc603b5c1"
         }
       ]
     }
@@ -55,21 +55,21 @@
       "label": "description-validation-source-provenance",
       "pin": {
         "path": ".github/performance/issue267/source-provenance.json",
-        "sha256": "c6333cb345dd7e670077fe8694d0a570f1a68da6087c7a226a6c960eaa863d7e"
+        "sha256": "e4e3b6cd1e6a5568f154c3271129db5244012f2d090bb6ab645ae1222352a781"
       }
     },
     {
       "label": "description-validation-baseline-source-patch",
       "pin": {
         "path": ".github/performance/issue267/baseline.patch",
-        "sha256": "db3729d2d275b779edabfe811e8e406f734c461d00cf06aacfc52426b125b16c"
+        "sha256": "1fb55b0bafd877d1dc7d9d3238fcd88df4ddd6364f6789c3261a74aa0966b622"
       }
     },
     {
       "label": "description-validation-candidate-source-patch",
       "pin": {
         "path": ".github/performance/issue267/candidate.patch",
-        "sha256": "23717a592971e6178f06ca665f950e06e9b66b5e3a0dd8b71956f4ba756b0145"
+        "sha256": "9595495da016c803ea23dd887f4d198b043734fecccf3553f24a5dfcc603b5c1"
       }
     },
     {

@@ -61,6 +61,24 @@ class PlanCiTest(unittest.TestCase):
         result = planner.plan(["runtime/web/src/Web.kt", "tools/web/package.json"])
         self.assertTrue(result["qodana"])
 
+    def test_compiled_preflight_qualification_selects_its_actual_boundary(self):
+        for path in ("gradle/performance/paired-jvm.py", "gradle/performance/fixtures/QualifiedFixtureController.java", "gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml"):
+            with self.subTest(path=path):
+                self.assertTrue(planner.plan([path])["preflight"])
+        self.assertFalse(planner.plan(["runtime/core/src/commonMain/Runtime.kt"])["preflight"])
+        self.assertTrue(planner.plan([], full=True)["preflight"])
+
+    def test_transient_input_removal_and_shared_example_validate_the_controller(self):
+        for path in (".github/performance/owned/baseline.patch", ".github/performance/owned/manifest.json",
+                     ".github/performance/owned/Observer.kt", "gradle/performance/paired-jvm.example.json"):
+            with self.subTest(path=path):
+                result = planner.plan([path])
+                self.assertTrue(result["workflow"] and result["preflight"])
+                self.assertFalse(result["common"] or result["web"] or result["all_minecraft"] or result["qodana"])
+        mixed = planner.plan([".github/performance/owned/manifest.json", "runtime/core/src/main/Changed.kt"])
+        self.assertTrue(mixed["preflight"] and mixed["workflow"] and mixed["common"] and mixed["all_minecraft"])
+        self.assertTrue(planner.plan([".github/performance-other/manifest.json"])["common"])
+
     def test_public_modules_keep_the_same_checks_after_moving_to_the_root(self):
         for module in ("detekt-rules", "performance-testkit"):
             with self.subTest(module=module):

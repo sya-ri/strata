@@ -22,6 +22,7 @@ internal class HeadlessDescriptionValidationTest {
     @Test
     fun rejectedRootPreservesExactPixelsGeometrySemanticsAndLifecycle() {
         val probe = HeadlessProbe()
+
         fun description(duplicate: Boolean) =
             evaluateComponentTree {
                 Row {

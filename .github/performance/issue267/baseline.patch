@@ -1676,10 +1676,10 @@ index 0000000000000000000000000000000000000000..11a9d1a272d743f0d7fc438779b36c40
 +}
 diff --git a/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt b/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt
 new file mode 100644
-index 0000000000000000000000000000000000000000..5a182ea9f85eda466da187507adb88795ccd1c69
+index 0000000000000000000000000000000000000000..d8ce4df849250bf843020fa27a96d5c5f39a84cf
 --- /dev/null
 +++ b/runtime/headless/src/test/kotlin/dev/s7a/strata/runtime/headless/HeadlessDescriptionValidationTest.kt
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,75 @@
 +@file:OptIn(InternalStrataRuntimeApi::class)
 +
 +package dev.s7a.strata.runtime.headless
@@ -1704,6 +1704,7 @@ index 0000000000000000000000000000000000000000..5a182ea9f85eda466da187507adb8879
 +    @Test
 +    fun rejectedRootPreservesExactPixelsGeometrySemanticsAndLifecycle() {
 +        val probe = HeadlessProbe()
++
 +        fun description(duplicate: Boolean) =
 +            evaluateComponentTree {
 +                Row {
