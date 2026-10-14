@@ -17,26 +17,39 @@ import kotlin.test.assertTrue
 internal class NativeComponentPerformanceEvidenceTest {
     @Test
     internal fun independentFixtureCannotCertifyCanonicalAcceptanceOrOmitASelectedScale() {
-        listOf(complete(), paced()).forEach { report ->
-            val phases =
-                report.getAsJsonArray("phases").filter {
-                    it.asJsonObject
-                        .get("case")
-                        .asString
-                        .contentEquals("TextField")
-                }
-            phases.forEach { it.asJsonObject.addProperty("case", "RequestsOne") }
-            report.add("phases", JsonArray().apply { phases.forEach(::add) })
-            report.add("selected_cases", JsonArray().apply { add("RequestsOne") })
-            val selection = PerformanceSelection(setOf("RequestsOne"))
-            val epoch = if (report.has("inactivity_mode")) NativePresentationEpoch.Paced else NativePresentationEpoch.Legacy
-            report.addProperty("workload_id", epoch.workloadId(selection, PerformanceProfile.Standard, false, "native-source-requests"))
-            NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests")
-            assertFails { NativeComponentPerformanceEvidence.verify(report, selection) }
-            assertFails { NativeComponentPerformanceEvidence.verify(report) }
-            report.getAsJsonArray("phases").remove(0)
-            assertFails { NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests") }
-        }
+        val report = complete()
+        val phases =
+            report.getAsJsonArray("phases").filter {
+                it.asJsonObject
+                    .get("case")
+                    .asString
+                    .contentEquals("TextField")
+            }
+        phases.forEach { it.asJsonObject.addProperty("case", "RequestsOne") }
+        report.add("phases", JsonArray().apply { phases.forEach(::add) })
+        report.add("selected_cases", JsonArray().apply { add("RequestsOne") })
+        report.addProperty("workload_id", "native-source-requests-presented-v1")
+        val selection = PerformanceSelection(setOf("RequestsOne"))
+        NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests")
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection) }
+        assertFails { NativeComponentPerformanceEvidence.verify(report) }
+        report.getAsJsonArray("phases").remove(0)
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests") }
+    }
+
+    @Test
+    internal fun independentPacedFixtureRetainsPacingAndFamilyAdmission() {
+        val report = paced()
+        val phases = report.getAsJsonArray("phases").filter { it.asJsonObject.get("case").asString.contentEquals("TextField") }
+        phases.forEach { it.asJsonObject.addProperty("case", "RequestsOne") }
+        report.add("phases", JsonArray().apply { phases.forEach(::add) })
+        report.add("selected_cases", JsonArray().apply { add("RequestsOne") })
+        report.addProperty("workload_id", "native-source-requests-paced-presented-v2")
+        val selection = PerformanceSelection(setOf("RequestsOne"))
+        NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests")
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection, family = "native-other-requests") }
+        report.remove("borrowed_options_restored")
+        assertFails { NativeComponentPerformanceEvidence.verify(report, selection, family = "native-source-requests") }
     }
 
     @Test

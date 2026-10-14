@@ -99,8 +99,7 @@ internal object NativeComponentPerformanceEvidence {
         require(command == NativeEvidenceCommand.Summary || backend != null) { "A comparison must declare its actual native backend" }
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
-        val independent = request.independentNativeFixture(sampledImages)
-        val family = independent?.get("family")?.asString
+        val family = request.independentNativeFixture(sampledImages)?.get("family")?.asString
         val selection = selection(request, profile, sampledImages)
         val collector = collectorArchive
         require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
@@ -303,7 +302,7 @@ internal object NativeComponentPerformanceEvidence {
         profile: PerformanceProfile,
         sampledImages: Boolean,
     ): PerformanceSelection {
-        val declared = request.getAsJsonObject("independent_fixture")?.getAsJsonArray("cases")
+        val declared = request.independentNativeFixture(sampledImages)?.getAsJsonArray("cases")
         val corpus = declared?.map { it.asString }?.toSet() ?: if (sampledImages) sampledCases else cases
         if (declared != null) require(corpus.isNotEmpty() && corpus.size == declared.size() && corpus.all(String::isNotBlank)) { "Empty or duplicate independent native cases" }
         return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)

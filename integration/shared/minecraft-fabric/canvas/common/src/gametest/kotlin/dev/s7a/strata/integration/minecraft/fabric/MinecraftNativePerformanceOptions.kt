@@ -166,7 +166,7 @@ internal class MinecraftNativePerformanceOptions : AutoCloseable {
             addProperty("vsync", client.options.enableVsync().get())
             addProperty("framerate_limit", client.options.framerateLimit().get())
             addProperty("inactivity_mode", inactivity.name)
-            addProperty("scope", "Settled canonical component/native Canvas presentation; frame CPU includes instrumentation and pacing, excluding GPU completion")
+            addProperty("scope", "Compiled UI/native Canvas presentation; frame CPU includes instrumentation and pacing, excluding GPU completion")
         }
     }
 
