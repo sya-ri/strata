@@ -42,7 +42,7 @@ internal class ComponentStateSnapshotTest {
         assertEquals(listOf(callback), snapshot(state))
         first.close()
         assertNull(snapshot(state))
-        assertEquals(emptySet(), observers(state))
+        assertTrue(observers(state).isEmpty())
         val releaseField = ComponentStateSubscription::class.java.getDeclaredField("release")
         releaseField.isAccessible = true
         for (handle in listOf(first, second)) {
@@ -54,7 +54,7 @@ internal class ComponentStateSnapshotTest {
         assertNull(snapshot(state))
         third.close()
         assertNull(snapshot(state))
-        assertEquals(emptySet(), observers(state))
+        assertTrue(observers(state).isEmpty())
     }
 
     @Test
@@ -82,7 +82,7 @@ internal class ComponentStateSnapshotTest {
         assertEquals(1, state.get())
         handle.close()
         assertNull(snapshot(state))
-        assertEquals(emptySet(), observers(state))
+        assertTrue(observers(state).isEmpty())
     }
 
     private fun snapshot(state: ObservableComponentState<*>): List<*>? {
