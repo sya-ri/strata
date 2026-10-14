@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.headless.HeadlessImage
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -129,11 +130,18 @@ public open class NativeCanvasLookupBenchmark {
      */
     public companion object {
         /**
+         * Connects every original operation to the shared supplemental owner-thread CPU and allocation meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = NativeCanvasLookupOperationReport
+
+        /**
          * Checks all fixture input combinations, exact ordered image association and terminal owner release untimed.
          */
         @JvmStatic
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(NativeCanvasLookupBenchmark::class.java), setOf("avgt")).size == 216)
+            NativeCanvasLookupOperationReport.verifyRows()
             for (placement in Placement.entries) {
                 for (portable in listOf(8, 10_000)) {
                     for (changed in listOf(false, true)) {

@@ -71,6 +71,8 @@ Quick collection retains explicitly selected classes, methods and parameters; or
 
 The independently selected `NativeCanvasLookupBenchmark` uses `:quality:component-benchmarks:jmhComponents` with the existing generic class selection and workload suite label.
 Its 216 rows remain separate from the ordinary component matrix and distinguish target resolution, complete protocol, detached capture and output rasterization.
+Its `operationReport()` adapter measures those same complete operations with the shared owner-thread CPU and allocation meter, preserving all zero/one-target and prepared-raster controls.
+The target and protocol reports use an escaped software Blackhole without JMH compiler hints; their supplemental wall intervals are separate from generated JMH scores.
 The same frozen compiled fixture and collector/harness/control inputs must execute against actual baseline and candidate runtime archives; optional `verifyWork()` checks identity association and terminal mock-owner release before collection.
 Native `CanvasLookup` cases use the existing sampled-image family, selected explicitly through its ordinary workload IDs, rather than a new timing or evidence engine.
 Collect all controls and report separate accepted results or rejection for native target lookup and detached capture lookup.
