@@ -24,6 +24,7 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.render.DrawCommand
+import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -217,44 +218,60 @@ internal class StatefulControlFixture(
         for (index in 0 until count) {
             val row = rowKind(index)
             if (row == StatefulControlBenchmark.Kind.NoControls) continue
-            val top = index * 20
-            val checkboxRow = row == StatefulControlBenchmark.Kind.Checkbox
-            val width = if (checkboxRow) 20 else 150
-            for (y in top until top + 20) {
-                for (x in 0 until width) expected[y * 150 + x] = 0xFF102030.toInt()
-            }
-            if (row == StatefulControlBenchmark.Kind.Slider) {
-                for (y in top until top + 20) {
-                    for (x in 0 until 8) expected[y * 150 + x] = 0xFF405060.toInt()
-                }
-            }
             val text = label(index, current) + if (row == StatefulControlBenchmark.Kind.Cycle) "!" else ""
-            val left = if (checkboxRow) 24 else (150 - text.length * 2) / 2
-            val textTop = top + if (checkboxRow) 5 else 6
-            for (glyph in text.indices) {
-                expected[(textTop + 1) * 150 + left + glyph * 2 + 1] = 0xFF3F3F3F.toInt()
-                expected[textTop * 150 + left + glyph * 2] = -1
-            }
-            val semantic = frame.semantics[index]
-            check(semantic.bounds == IntRect(0, top, 150, top + 20))
-            check(semantic.semantics.label == UiText.Literal(text))
-            check(semantic.semantics.disabled.not())
-            val role =
-                when (row) {
-                    StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
-                    StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
-                    StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
-                    else -> error("Missing primitive role")
-                }
-            check(semantic.semantics.role == role)
-            if (checkboxRow) check(semantic.semantics.checked == false)
-            if (row == StatefulControlBenchmark.Kind.Slider) check(semantic.semantics.value == UiText.Literal("0.0"))
-            if (row == StatefulControlBenchmark.Kind.Cycle) check(semantic.semantics.value == UiText.Literal(text))
+            expectedRow(expected, index * 20, row, text)
+            verifySemantics(frame.semantics[index], index * 20, row, text)
         }
         val statusColor = if (current % 2 == 0) 0xFF707080.toInt() else 0xFF808090.toInt()
         for (x in 0 until 150) expected[count * 20 * 150 + x] = statusColor
         val actual = rasterizeHeadless(frame.drawCommands, viewport).copyArgb()
         check(expected.contentEquals(actual)) { "$count/$kind/$labels/$change: independent original-asset pixels differ" }
+    }
+
+    private fun expectedRow(
+        expected: IntArray,
+        top: Int,
+        row: StatefulControlBenchmark.Kind,
+        text: String,
+    ) {
+        val checkboxRow = row == StatefulControlBenchmark.Kind.Checkbox
+        val width = if (checkboxRow) 20 else 150
+        for (y in top until top + 20) {
+            for (x in 0 until width) expected[y * 150 + x] = 0xFF102030.toInt()
+        }
+        if (row == StatefulControlBenchmark.Kind.Slider) {
+            for (y in top until top + 20) {
+                for (x in 0 until 8) expected[y * 150 + x] = 0xFF405060.toInt()
+            }
+        }
+        val left = if (checkboxRow) 24 else (150 - text.length * 2) / 2
+        val textTop = top + if (checkboxRow) 5 else 6
+        for (glyph in text.indices) {
+            expected[(textTop + 1) * 150 + left + glyph * 2 + 1] = 0xFF3F3F3F.toInt()
+            expected[textTop * 150 + left + glyph * 2] = -1
+        }
+    }
+
+    private fun verifySemantics(
+        semantic: SemanticsEntry,
+        top: Int,
+        row: StatefulControlBenchmark.Kind,
+        text: String,
+    ) {
+        check(semantic.bounds == IntRect(0, top, 150, top + 20))
+        check(semantic.semantics.label == UiText.Literal(text))
+        check(semantic.semantics.disabled.not())
+        val role =
+            when (row) {
+                StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
+                StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
+                StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
+                else -> error("Missing primitive role")
+            }
+        check(semantic.semantics.role == role)
+        if (row == StatefulControlBenchmark.Kind.Checkbox) check(semantic.semantics.checked == false)
+        if (row == StatefulControlBenchmark.Kind.Slider) check(semantic.semantics.value == UiText.Literal("0.0"))
+        if (row == StatefulControlBenchmark.Kind.Cycle) check(semantic.semantics.value == UiText.Literal(text))
     }
 
     override fun close() {
