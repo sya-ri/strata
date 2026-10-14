@@ -95,7 +95,7 @@ def load_manifest(root, path):
     if data.get("schema") in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
         return browser_controller().load_manifest(SimpleNamespace(**globals()), root, data)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(required <= set(data) <= required | {"owner_reports", "owner_continuation", "driver_source"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports", "owner_continuation", "driver_source", "input_properties"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
     if "driver_source" in data:
         driver = data["driver_source"]
         require(isinstance(driver, dict) and set(driver) == {"ref", "tree"}
@@ -238,6 +238,14 @@ def load_manifest(root, path):
                 and value["label"] not in labels, "Invalid or duplicate fixture input")
         labels.add(value["label"])
         pin(root, value["pin"])
+    bindings = data.get("input_properties", {})
+    require(isinstance(bindings, dict) and len(bindings) <= 32, "Invalid frozen inventory input properties")
+    for name, sides in bindings.items():
+        require(isinstance(name, str) and re.fullmatch(r"strata\.performance\.[a-z][A-Za-z0-9]*Inventory", name),
+                "Inventory inputs cannot override workload, sampling or JVM settings")
+        require(isinstance(sides, dict) and set(sides) == {"baseline", "candidate"}
+                and all(isinstance(label, str) and label in labels for label in sides.values()),
+                "Bind both inventory sides to the complete immutable input map")
     require(set(data["compiled_pins"]) == {"fixture", "baseline", "candidate"}, "Missing compiled pin inventory")
     for side, pins in data["compiled_pins"].items():
         require(isinstance(pins, list), f"Invalid compiled pin list: {side}")
@@ -811,6 +819,60 @@ def properties(path, values):
             target.write(f"{escape(key)}={escape(value)}\n")
 
 
+def input_property_files(output, data, archives):
+    """Bind only declared frozen inventory files; preserve both sides in the common input closure."""
+    bindings = data.get("input_properties", {})
+    if not bindings:
+        return {}
+    files = {}
+    for side in ("baseline", "candidate"):
+        entries = {name: archives[sides[side]] for name, sides in bindings.items()}
+        require(all(digest(Path(item["path"])) == item["sha256"] for item in entries.values()),
+                "Frozen inventory input bytes changed")
+        path = output / f"input-properties-{side}.json"
+        write_new(path, {"schema": "strata-paired-jvm-input-properties-v1", "entries": entries})
+        files[side] = {"path": path, "sha256": digest(path)}
+    return files
+
+
+def verify_input_property_files(files):
+    """Guard the complete immutable selector/input closure, including the currently unselected side."""
+    for item in files.values():
+        require(digest(item["path"]) == item["sha256"], "Frozen inventory selector changed")
+        for archive in read_json(item["path"])["entries"].values():
+            require(digest(Path(archive["path"])) == archive["sha256"], "Frozen inventory bytes changed")
+
+
+def verify_input_properties(directory, selected, vm_files):
+    """Require every actual JavaExec to apply every pinned declared property, with no ignored selector."""
+    entries = read_json(selected["path"])["entries"]
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    origins = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.origin (.+)$", console)]
+    records = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.inputProperty (.+)$", console)]
+    tasks = [origin["task"] for origin in origins]
+    require(tasks and len(tasks) == len(set(tasks)), "Inventory inputs have no unique executed JavaExec consumer")
+    expected = [{"task": task, "property": name, **item} for task in tasks for name, item in entries.items()]
+    require(len(records) == len(expected) and sorted(records, key=lambda item: (item.get("task", ""), item.get("property", "")))
+            == sorted(expected, key=lambda item: (item["task"], item["property"])),
+            "Inventory input was missing, unknown, altered or unconsumed by its launcher")
+    verified = [vm for vm in read_json(directory / "vms.json") if vm["role"] == "java_exec"]
+    require(len(verified) == len(tasks), "Inventory input lacks each actual JavaExec diagnostic")
+    diagnostics = {digest(path): path for path in vm_files}
+    for vm in verified:
+        require(vm["diagnostic_sha256"] in diagnostics, "Inventory JVM diagnostic bytes changed")
+        raw = diagnostics[vm["diagnostic_sha256"]].read_text(encoding="utf-8")
+        arguments = re.findall(r"<vm_arguments>([\s\S]*?)</vm_arguments>", raw)
+        properties = re.findall(r"<properties>([\s\S]*?)</properties>", arguments[0]) if len(arguments) == 1 else []
+        require(len(properties) == 1, "Inventory input lacks actual JVM properties")
+        raw = html.unescape(properties[0])
+        for name, item in entries.items():
+            values = re.findall(r"(?m)^" + re.escape(name) + r"=([^\r\n]+)", raw)
+            require(len(values) == 1 and os.path.normcase(os.path.normpath(values[0]))
+                    == os.path.normcase(os.path.normpath(item["path"])),
+                    "Inventory property was missing, changed or overwritten in the actual JVM")
+    write_new(directory / "input-properties-verified.json", {"selector_sha256": selected["sha256"], "applied": records})
+
+
 def path_identity(path):
     """Hash an entire bounded classpath directory or archive, including resources and control bytes."""
     if path.is_file():
@@ -1194,11 +1256,14 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                   "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false",
                   "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(homes), "-I", str(init)]
 
+        selected_input_files = {}
+
         def phase(name, workspace, arguments, expected_forks=None, test_gate=None):
             """Admit a full bounded call with upload reserve, then require natural Job release."""
             nonlocal captured_class_loads
             require(git(root, "rev-parse", "HEAD") == record["driver_head"], "Paired execution head changed before invocation")
             verify_driver_sources(record["driver_sources"])
+            verify_input_property_files(selected_input_files)
             if "driver_source" in record:
                 verify_driver_source(root, record["driver_head"], data, explicit_manual)
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
@@ -1214,7 +1279,13 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={logs}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
                            "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
-            args = arguments + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
+            matches = [side for side in selected_input_files if f"-Pstrata.paired.runtime={runtime_manifests[side]}" in arguments]
+            require(len(matches) <= 1, "Ambiguous runtime inventory input side")
+            input_flags = []
+            if matches:
+                selected = selected_input_files[matches[0]]
+                input_flags = [f"-Pstrata.paired.inputProperties={selected['path']}"]
+            args = arguments + input_flags + common + [f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
             request = {"workspace": str(workspace), "arguments": args, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3,
                        "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
             write_new(directory / "request.json", request)
@@ -1244,6 +1315,9 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 first = record["phases"][0]["terminal"]
                 require(terminal["inheritedAffinityMask"] == first["inheritedAffinityMask"] and terminal["systemAffinityMask"] == first["systemAffinityMask"], "Host affinity changed between paired phases")
             verify_vms(directory, sorted(set(vm_directory.glob("*.log"))-previous_vms), terminal, allowed_java, expected_forks)
+            if matches:
+                verify_input_properties(directory, selected, sorted(set(vm_directory.glob("*.log"))-previous_vms))
+            verify_input_property_files(selected_input_files)
             for release, expected in allowed_releases.items():
                 require(digest(release) == expected, "Pinned Java release bytes changed during invocation")
             return directory
@@ -1320,6 +1394,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 input_archives[label] = item
                 paired_owner_plans[specification["name"]] = item
         properties(inputs, {label: item["path"] for label, item in input_archives.items()})
+        selected_input_files = input_property_files(output, data, input_archives)
         collector = archive_file(fixture, ":performance-testkit")
         verify_continuation_archives(data, runtime_archives, collector)
         prepared = output / "compiled"
@@ -1503,7 +1578,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                                 "arguments": runs["baseline"] + runs["candidate"] + [processing_collector, str(comparison_path)], "inputs": str(library_manifest)})
             phase(f"compare-{specification['name']}-owner", fixture,
                   [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
-                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}"])
+                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}",
+                   f"-Pstrata.performance.fixtureInputs={inputs}"])
             comparison = read_json(comparison_path)
             require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
             owner_comparisons.append((specification, comparison))

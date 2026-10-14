@@ -229,6 +229,24 @@ gradle.projectsEvaluated {
                         systemProperty("strata.performance.$name", rootProject.file(it).absolutePath)
                     }
                 }
+                rootProject.providers.gradleProperty("strata.paired.inputProperties").orNull?.let { selected ->
+                    val inventory = JsonSlurper().parse(File(selected)) as Map<*, *>
+                    check(inventory.keys == setOf("schema", "entries") && inventory["schema"] == "strata-paired-jvm-input-properties-v1")
+                    val entries = inventory["entries"] as Map<*, *>
+                    check(entries.size in 1..32)
+                    val inputs = Properties()
+                    rootProject.file(rootProject.providers.gradleProperty("strata.performance.fixtureInputs").get()).bufferedReader(Charsets.UTF_8).use(inputs::load)
+                    val admitted = inputs.values.map { File(it.toString()).canonicalFile }.toSet()
+                    entries.forEach { (property, value) ->
+                        check(property is String && property.matches(Regex("strata\\.performance\\.[a-z][A-Za-z0-9]*Inventory")))
+                        val binding = value as Map<*, *>
+                        check(binding.keys == setOf("path", "sha256"))
+                        val path = File(binding["path"].toString()).canonicalFile
+                        check(path in admitted && path.isFile && preparedIdentity(path) == binding["sha256"])
+                        systemProperty(property, path.absolutePath)
+                        println("paired.jvm.inputProperty " + JsonOutput.toJson(mapOf("task" to this.path, "property" to property, "path" to path.invariantSeparatorsPath, "sha256" to binding["sha256"])))
+                    }
+                }
                 rootProject.providers.gradleProperty("strata.performance.profilers").orNull?.let { requested ->
                     val profilers = requested.split(',')
                     check(profilers.isNotEmpty() && profilers.toSet().size == profilers.size)

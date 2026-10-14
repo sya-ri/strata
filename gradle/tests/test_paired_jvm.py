@@ -65,6 +65,117 @@ class PairedJvmTest(unittest.TestCase):
         path.write_text(json.dumps(value), encoding="utf-8")
         return PAIRED.load_manifest(self.root, path)
 
+    def test_inventory_properties_keep_both_frozen_inputs_and_select_the_declared_side(self):
+        other = self.root / "candidate.tsv"
+        other.write_bytes(b"candidate inventory\n")
+        manifest = copy.deepcopy(self.manifest)
+        manifest["inputs"].append({"label": "candidate-inventory", "pin": {"path": other.name, "sha256": PAIRED.digest(other)}})
+        manifest["input_properties"] = {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "candidate-inventory"}}
+        loaded = self.load(manifest)
+        archives = {item["label"]: {"path": str(self.root / item["pin"]["path"]), "sha256": item["pin"]["sha256"]} for item in loaded["inputs"]}
+        files = PAIRED.input_property_files(self.root, loaded, archives)
+        for side, label in (("baseline", "external-input"), ("candidate", "candidate-inventory")):
+            record = PAIRED.read_json(files[side]["path"])
+            self.assertEqual(record["entries"]["strata.performance.compilerInventory"], archives[label])
+            self.assertEqual(PAIRED.digest(files[side]["path"]), files[side]["sha256"])
+        self.assertEqual(loaded["inputs"], manifest["inputs"])
+
+    def test_inventory_properties_reject_sampling_overrides_unknown_labels_and_missing_sides(self):
+        for binding in (
+            {"strata.performance.samples": {"baseline": "external-input", "candidate": "external-input"}},
+            {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "missing"}},
+            {"strata.performance.compilerInventory": {"baseline": "external-input"}},
+        ):
+            with self.subTest(binding=binding):
+                manifest = copy.deepcopy(self.manifest)
+                manifest["input_properties"] = binding
+                with self.assertRaises(ValueError):
+                    self.load(manifest)
+
+    def test_inventory_properties_reject_changed_prepared_bytes_without_repinning(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["input_properties"] = {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "external-input"}}
+        archives = {"external-input": {"path": str(self.input), "sha256": self.pin["sha256"]}}
+        self.input.write_bytes(b"altered inventory\n")
+        with self.assertRaisesRegex(ValueError, "bytes changed"):
+            PAIRED.input_property_files(self.root, manifest, archives)
+
+    def test_inventory_properties_require_complete_actual_launcher_consumption(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["input_properties"] = {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "external-input"}}
+        archives = {"external-input": {"path": self.input.as_posix(), "sha256": self.pin["sha256"]}}
+        selected = PAIRED.input_property_files(self.root, manifest, archives)["baseline"]
+        task = ":quality:benchmarks:verifyHistoricalWorkloads"
+        origin = "paired.jvm.origin " + json.dumps({"task": task}) + "\n"
+        applied = {"task": task, "property": "strata.performance.compilerInventory", **archives["external-input"]}
+        for name, records in (("missing", []), ("unknown", [{**applied, "property": "strata.performance.unknownInventory"}]), ("changed", [{**applied, "sha256": "0" * 64}]), ("duplicate", [applied, applied])):
+            directory = self.root / name
+            directory.mkdir()
+            (directory / "console.log").write_text(origin + "".join("paired.jvm.inputProperty " + json.dumps(item) + "\n" for item in records), encoding="utf-8")
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                PAIRED.verify_input_properties(directory, selected, [])
+        directory = self.root / "complete"
+        directory.mkdir()
+        (directory / "console.log").write_text(origin + "paired.jvm.inputProperty " + json.dumps(applied) + "\n", encoding="utf-8")
+        diagnostic = self.root / "vm.log"
+        diagnostic.write_text("<vm_arguments><properties>\nstrata.performance.compilerInventory=" + self.input.as_posix() + "\n</properties></vm_arguments>\n", encoding="utf-8")
+        PAIRED.write_new(directory / "vms.json", [{"role": "java_exec", "diagnostic_sha256": PAIRED.digest(diagnostic)}])
+        PAIRED.verify_input_properties(directory, selected, [diagnostic])
+        self.assertEqual(PAIRED.read_json(directory / "input-properties-verified.json")["applied"], [applied])
+
+    def test_inventory_properties_reject_actual_vm_overwrite_even_with_the_expected_launcher_receipt(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["input_properties"] = {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "external-input"}}
+        archives = {"external-input": {"path": self.input.as_posix(), "sha256": self.pin["sha256"]}}
+        selected = PAIRED.input_property_files(self.root, manifest, archives)["baseline"]
+        task = ":quality:benchmarks:verifyHistoricalWorkloads"
+        applied = {"task": task, "property": "strata.performance.compilerInventory", **archives["external-input"]}
+        for label, value in (("missing", ""), ("overwritten", "strata.performance.compilerInventory=other.tsv\n")):
+            directory = self.root / label
+            directory.mkdir()
+            (directory / "console.log").write_text("paired.jvm.origin " + json.dumps({"task": task}) + "\npaired.jvm.inputProperty " + json.dumps(applied) + "\n", encoding="utf-8")
+            diagnostic = directory / "vm.log"
+            diagnostic.write_text("<vm_arguments><properties>\n" + value + "</properties></vm_arguments>\n", encoding="utf-8")
+            PAIRED.write_new(directory / "vms.json", [{"role": "java_exec", "diagnostic_sha256": PAIRED.digest(diagnostic)}])
+            with self.subTest(label=label), self.assertRaisesRegex(ValueError, "actual JVM"):
+                PAIRED.verify_input_properties(directory, selected, [diagnostic])
+
+    def test_inventory_properties_bind_actual_vm_parser_output_and_reject_printed_or_changed_values(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["input_properties"] = {"strata.performance.compilerInventory": {"baseline": "external-input", "candidate": "external-input"}}
+        archives = {"external-input": {"path": self.input.as_posix(), "sha256": self.pin["sha256"]}}
+        selected = PAIRED.input_property_files(self.root, manifest, archives)["baseline"]
+        home = self.root / "synthetic-jdk"
+        executable = home / "bin/java.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_bytes(b"synthetic executable; never executed")
+        origin = {"task": ":quality:benchmarks:verifyHistoricalWorkloads", "main": "independent.InventoryOwner", "executable": str(executable), "classpath": "frozen.jar"}
+        applied = {"task": origin["task"], "property": "strata.performance.compilerInventory", **archives["external-input"]}
+        value = "strata.performance.compilerInventory=" + self.input.as_posix() + "\n"
+        for label, properties, printed in (("valid", value, ""), ("missing", "", ""),
+                                           ("overwritten", "strata.performance.compilerInventory=other.tsv\n", ""),
+                                           ("duplicate", value + value, ""), ("printed-only", "", value)):
+            with self.subTest(label=label):
+                directory = self.root / label
+                (directory / "class-loads").mkdir(parents=True)
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\npaired.jvm.inputProperty " + json.dumps(applied) + "\n", encoding="utf-8")
+                diagnostic = directory / "vm.log"
+                diagnostic.write_text("<hotspot_log process='123' time_ms='1001'><vm_arguments><args>-Xmx768m -XX:MaxMetaspaceSize=384m </args>"
+                                      "<command>independent.InventoryOwner input</command><properties>\n"
+                                      f"java.home={home}\njava.class.path=frozen.jar\n{properties}</properties></vm_arguments>\n"
+                                      f"-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<tty>\n{printed}</tty>\n"
+                                      "<hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+                PAIRED.verify_vms(directory, [diagnostic], {"members": {}}, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 0)
+                actual = PAIRED.read_json(directory / "vms.json")
+                self.assertEqual([vm["role"] for vm in actual], ["java_exec"])
+                self.assertEqual(actual[0]["diagnostic_sha256"], PAIRED.digest(diagnostic))
+                if label == "valid":
+                    PAIRED.verify_input_properties(directory, selected, [diagnostic])
+                else:
+                    with self.assertRaisesRegex(ValueError, "actual JVM"):
+                        PAIRED.verify_input_properties(directory, selected, [diagnostic])
+                    self.assertFalse((directory / "input-properties-verified.json").exists())
+
     def test_original_average_time_only_profile_keeps_all_cases_controls_and_repetitions(self):
         original = copy.deepcopy(self.manifest)
         explicit = copy.deepcopy(original)

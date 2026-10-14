@@ -614,6 +614,17 @@ The schema requires these fields:
 | `dependency_pins` | Optional frozen control JAR pins relative to the actual Gradle user home. |
 | `java_pins` | Optional fixed Windows `java.exe` and `release` pins for the `toolchain` and `launcher` roles. |
 
+Optional `input_properties` binds inventory-file properties to existing immutable input labels separately for `baseline` and `candidate`.
+Property names must follow `strata.performance.<name>Inventory`; workload selectors, sampling settings and JVM options are outside this file-only contract.
+Both files remain in the same complete input map on both sides, while each runtime's existing verifier receives its declared file.
+Every selected inventory delivery retains the same complete `fixtureInputs` map, including the independent owner comparison; no task, project or phase-name exception changes that contract.
+Both selector files and all referenced input bytes are verified before and after each invocation, including a phase selecting the other side's inventory.
+The driver and launcher reject missing sides, unknown labels, changed selector or input bytes, and an inventory property that is not applied by every actual JavaExec in the invocation.
+Each applied value must also match the pinned property in that JavaExec's existing verified VM diagnostic, so a later launcher override cannot certify the requested file.
+Only its actual VM-argument properties block supplies that value; application output in the same diagnostic cannot substitute for the JVM property.
+The retained launcher receipt proves delivery of the exact file property; the consumer's independent work and loaded-runtime gates must still prove that its verifier reads and validates that inventory.
+Actual differing input arguments remain raw evidence and require the consumer's existing comparison conditions to admit only their explicitly pinned difference.
+
 A suite may additionally declare `profilers` as unique compiled JMH profiler class names.
 The driver passes these through `strata.performance.profilers` to the standard JMH `-prof` option only during collection; the existing GC and provenance profilers remain enabled.
 No fixture class name is registered in the build script or driver.
