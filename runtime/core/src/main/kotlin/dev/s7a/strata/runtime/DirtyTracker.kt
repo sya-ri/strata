@@ -5,6 +5,9 @@ import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
+private val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
+private val layoutDownstreamMask = DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)
+
 /**
  * Expands downstream local phases and propagates measurement work to ancestors.
  */
@@ -55,11 +58,10 @@ internal class DirtyTracker(
             }
         }
         if (DirtyPhase.Measure in mask) {
-            val ancestorMask = DirtyMask.of(DirtyPhase.Measure, DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
             var ancestor = retained.parent
             while (ancestor != null) {
                 monitoring.record(UiRenderMetric.AncestorInvalidation, ancestor)
-                ancestor.dirty += ancestorMask
+                ancestor.dirty += DirtyMask.All
                 ancestor = ancestor.parent
             }
         }
@@ -86,9 +88,9 @@ internal class DirtyTracker(
     private fun expand(mask: DirtyMask): DirtyMask {
         var expanded = mask
         if (DirtyPhase.Measure in mask) {
-            expanded += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
+            expanded += measureDownstreamMask
         } else if (DirtyPhase.Layout in mask) {
-            expanded += DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)
+            expanded += layoutDownstreamMask
         }
         return expanded
     }

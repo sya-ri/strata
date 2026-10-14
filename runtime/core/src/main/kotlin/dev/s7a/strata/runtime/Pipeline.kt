@@ -24,6 +24,10 @@ import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeTextInputFocus
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
+private val measureMask = DirtyMask.of(DirtyPhase.Measure)
+private val layoutMask = DirtyMask.of(DirtyPhase.Layout)
+private val measureDownstreamMask = DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
+
 /**
  * Executes retained measure and layout work through virtual modifier ancestry.
  *
@@ -278,8 +282,8 @@ internal class Pipeline(
         constraints: Constraints,
     ): IntSize {
         if (DirtyPhase.Measure in retained.dirty || retained.measuredConstraints != constraints) {
-            retained.dirty -= DirtyMask.of(DirtyPhase.Measure)
-            retained.dirty += DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint, DirtyPhase.Semantics)
+            retained.dirty -= measureMask
+            retained.dirty += measureDownstreamMask
             val measurePass = if (0 < retained.effectiveChildCount) Any() else null
             val guard = ScopeGuard(ownerGuard)
             val scope =
@@ -343,7 +347,7 @@ internal class Pipeline(
     ) {
         val mustLayout = retained.laidOut.not() || DirtyPhase.Layout in retained.dirty
         if (mustLayout) {
-            retained.dirty -= DirtyMask.of(DirtyPhase.Layout)
+            retained.dirty -= layoutMask
             retained.childLayoutPass = if (0 < retained.effectiveChildCount) Any() else null
             val layoutCapability = retained.node as? LayoutNode
             if (layoutCapability != null) {

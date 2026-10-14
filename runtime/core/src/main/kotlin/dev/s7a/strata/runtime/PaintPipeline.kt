@@ -21,6 +21,8 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
+private val paintMask = DirtyMask.of(DirtyPhase.Paint)
+
 /**
  * Executes retained local paint and transforms commands into tree coordinates.
  */
@@ -97,7 +99,7 @@ internal class PaintPipeline(
         val localNeedsUpdate =
             DirtyPhase.Paint in retained.dirty || retained.localCommands == null || retained.localOverlayCommands == null
         if (localNeedsUpdate) {
-            retained.dirty -= DirtyMask.of(DirtyPhase.Paint)
+            retained.dirty -= paintMask
             retained.localCommands = collect(retained, UiRenderMetric.Paint, paintNode?.let { node -> node::paint })
             retained.localOverlayCommands = collect(retained, UiRenderMetric.OverlayPaint, overlayNode?.let { node -> node::paintOverlay })
         }
