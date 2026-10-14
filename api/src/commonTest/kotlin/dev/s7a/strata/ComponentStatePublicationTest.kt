@@ -222,6 +222,7 @@ internal class ComponentStatePublicationTest {
     ) {
         var failure: Throwable? = null
 
+        @Suppress("ExceptionRaisedInUnexpectedLocation") // Deliberately exercises the throwing-equality contract.
         override fun equals(other: Any?): Boolean {
             failure?.let { throw it }
             return other is Value && id == other.id
