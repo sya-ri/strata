@@ -3115,7 +3115,7 @@ core	Core	dev.s7a.strata.runtime.PaintPipeline#constructor:1:(Ldev/s7a/strata/ru
 core	Core	dev.s7a.strata.runtime.PaintPipeline#method:17:paint:(Ldev/s7a/strata/runtime/RetainedEntry;)Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.PaintPipeline#type:17:java.lang.Object:
 core	Core	dev.s7a.strata.runtime.PaintPipelineKt#type:17:java.lang.Object:
-core	Core	dev.s7a.strata.runtime.PendingBindingQueue#constructor:1:(Lkotlin/jvm/functions/Function1;)V
+core	Core	dev.s7a.strata.runtime.PendingBindingQueue#constructor:1:(Ljava/util/Comparator;)V
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:capture:(Lkotlin/jvm/functions/Function1;)V
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:clear:()V
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:enqueue:(Ljava/lang/Object;)V
@@ -3123,9 +3123,6 @@ core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:getMonitor:()Ljav
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:remove:(Ljava/lang/Object;)V
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#method:17:takeCaptured:()Ljava/util/List;
 core	Core	dev.s7a.strata.runtime.PendingBindingQueue#type:17:java.lang.Object:
-core	Core	dev.s7a.strata.runtime.PendingBindingQueue$capture$lambda$0$$inlined$sortedBy$1#constructor:1:(Lkotlin/jvm/functions/Function1;)V
-core	Core	dev.s7a.strata.runtime.PendingBindingQueue$capture$lambda$0$$inlined$sortedBy$1#method:17:compare:(Ljava/lang/Object;Ljava/lang/Object;)I
-core	Core	dev.s7a.strata.runtime.PendingBindingQueue$capture$lambda$0$$inlined$sortedBy$1#type:25:java.lang.Object:java.util.Comparator
 core	Core	dev.s7a.strata.runtime.Pipeline#constructor:1:(Ldev/s7a/strata/runtime/OwnerGuard;Ldev/s7a/strata/runtime/RenderMonitoring;Ldev/s7a/strata/runtime/DirtyTracker;)V
 core	Core	dev.s7a.strata.runtime.Pipeline#method:17:advanceFrame:(Ldev/s7a/strata/runtime/RetainedNode;Ldev/s7a/strata/runtime/FrameTime;)V
 core	Core	dev.s7a.strata.runtime.Pipeline#method:17:captureFrameState:(Ldev/s7a/strata/runtime/RetainedNode;)V
