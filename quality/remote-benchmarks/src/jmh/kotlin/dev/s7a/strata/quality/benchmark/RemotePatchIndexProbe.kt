@@ -21,6 +21,27 @@ public object RemotePatchIndexProbe {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.size == 1)
+        val executable =
+            Path.of(
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElseThrow(),
+            )
+        println(
+            "paired.jvm.origin " +
+                Gson().toJson(
+                    JsonObject().apply {
+                        addProperty("main", javaClass.name)
+                        addProperty("pid", ProcessHandle.current().pid())
+                        addProperty("executable", executable.toString())
+                        addProperty("executable_sha256", ArtifactIdentity.file(executable))
+                        addProperty("classpath", System.getProperty("java.class.path"))
+                        add("arguments", Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments))
+                    },
+                ),
+        )
         val targets = mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteTree")
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
@@ -29,17 +50,7 @@ public object RemotePatchIndexProbe {
         for (nodes in listOf(1, 128, 8192)) {
             for (shape in RemotePatchIndexBenchmark.Shape.entries) {
                 for (change in RemotePatchIndexBenchmark.Change.entries) {
-                    RemotePatchIndexBenchmark.Scene(60000).use { scene ->
-                        scene.nodes = nodes
-                        scene.shape = shape
-                        scene.change = change
-                        scene.setup()
-                        val identities = scene.componentIdentities()
-                        for (operation in RemotePatchIndexOperation.entries) {
-                            begin(nodes, shape.name, change.name, operation.name, identities)
-                            finish(operation.run(scene))
-                        }
-                    }
+                    observe(nodes, shape, change)
                 }
             }
         }
@@ -51,14 +62,7 @@ public object RemotePatchIndexProbe {
                 addProperty("workload_id", "remote-patch-index-observation-v1")
                 addProperty("status", "passed")
                 addProperty("reconstruction_millis", 60000)
-                val executable =
-                    Path.of(
-                        ProcessHandle
-                            .current()
-                            .info()
-                            .command()
-                            .orElseThrow(),
-                    )
+                addProperty("pid", ProcessHandle.current().pid())
                 addProperty("java_executable", executable.toString())
                 addProperty("java_executable_sha256", ArtifactIdentity.file(executable))
                 addProperty("java_version", System.getProperty("java.version"))
@@ -68,6 +72,24 @@ public object RemotePatchIndexProbe {
                 add("fixture_identity", Gson().toJsonTree(identity))
             },
         )
+    }
+
+    private fun observe(
+        nodes: Int,
+        shape: RemotePatchIndexBenchmark.Shape,
+        change: RemotePatchIndexBenchmark.Change,
+    ) {
+        RemotePatchIndexBenchmark.Scene(60000).use { scene ->
+            scene.nodes = nodes
+            scene.shape = shape
+            scene.change = change
+            scene.setup()
+            val identities = scene.componentIdentities()
+            for (operation in RemotePatchIndexOperation.entries) {
+                begin(nodes, shape.name, change.name, operation.name, identities)
+                finish(operation.run(scene))
+            }
+        }
     }
 
     /**

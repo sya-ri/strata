@@ -23,13 +23,14 @@ public object RemotePatchIndexEvidence {
      */
     @JvmStatic
     public fun main(args: Array<String>) {
-        RemoteUntimedObservation.run(args, RemotePatchIndexProbe::class.java, RemotePatchIndexBenchmark::class.java, listOf(RemoteDeclaration::class.java.name), "remote-patch-index-observation-v1", Observation())
+        RemoteUntimedObservation.run(args, RemotePatchIndexProbe::class.java, RemotePatchIndexBenchmark::class.java, "remote-patch-index-observation-v1", Observation())
     }
 
     /**
      * One current operation with no retained debugger frame or production tree; rows contain only primitive counts.
      */
     private class Observation : RemoteProbeObservation {
+        override val observedClasses = listOf(RemoteDeclaration::class.java.name)
         override val rows = JsonArray()
         override val active: Boolean get() = current != null
         private val seen = mutableSetOf<List<Any>>()
