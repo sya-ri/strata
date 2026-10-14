@@ -1,7 +1,12 @@
 name: JVM checks
 'on':
   pull_request: {}
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      paired_manifest:
+        description: Optional repository-relative frozen paired JVM manifest
+        type: string
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -19,15 +24,37 @@ jobs:
       qodana: ${{ steps.plan.outputs.qodana }}
       all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
       minecraft: ${{ steps.plan.outputs.minecraft }}
+      paired_manifest: ${{ steps.paired.outputs.paired_manifest }}
+      paired_data_ref: ${{ steps.paired.outputs.paired_data_ref }}
+      paired_manifest_sha256: ${{ steps.paired.outputs.paired_manifest_sha256 }}
+      preflight: ${{ steps.plan.outputs.preflight }}
     steps:
     - uses: actions/checkout@v7
       with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 0
         persist-credentials: false
     - uses: ./.github/actions/setup-strata-java
     - uses: gradle/actions/setup-gradle@v6
       with:
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Select opt-in paired JVM measurement
+      id: paired
+      shell: bash
+      env:
+        MANIFEST: ${{ inputs.paired_manifest }}
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |-
+        args=(--select)
+        if [[ -n "$MANIFEST" ]]; then
+          args+=(--manifest "$MANIFEST")
+        fi
+        if [[ "$EVENT" == pull_request ]]; then
+          args+=(--base "$BASE" --head "$HEAD")
+        fi
+        python3 -B gradle/performance/paired-jvm.py "${args[@]}"
     - name: Select changed inputs
       run: |-
         args=(--full)
@@ -47,6 +74,96 @@ jobs:
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}
+  paired-jvm:
+    name: Complete paired JVM measurement
+    needs: plan
+    if: needs.plan.outputs.paired_manifest != ''
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+    - name: Check out explicit driver revision
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Preserve attempt admission
+      shell: pwsh
+      env:
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
+      run: |
+        New-Item -ItemType Directory -Force -Path build/performance-ci > $null
+        $actualHead = (git rev-parse HEAD).Trim()
+        if ($LASTEXITCODE -ne 0 -or $actualHead -ne $env:EXPECTED_HEAD) { throw 'Paired checkout differs from the selected driver revision' }
+        @{run=$env:GITHUB_RUN_ID; attempt=$env:GITHUB_RUN_ATTEMPT; head=$actualHead; event_sha=$env:GITHUB_SHA; manifest=$env:MANIFEST; data_ref=$env:DATA_REF; manifest_sha256=$env:MANIFEST_SHA256; status='pending'; runner=$env:RUNNER_NAME} | ConvertTo-Json | Set-Content build/performance-ci/bootstrap.json
+    - name: Install the catalog-backed fixed Java profile
+      id: java
+      uses: ./.github/actions/setup-strata-java
+      with:
+        paired: 'true'
+    - name: Set up Gradle intermediates
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Collect and compare the complete frozen pair
+      shell: pwsh
+      env:
+        MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
+      run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --data-ref "$env:DATA_REF" --manifest-sha256 "$env:MANIFEST_SHA256" --expected-head "$env:EXPECTED_HEAD" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Verify owned invocation failure and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Upload complete attempt evidence
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: paired-jvm-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          build/performance-ci/*.zip
+          build/performance-ci/bootstrap.json
+        if-no-files-found: error
+  preflight-qualification:
+    name: Qualified compiled fixture controls
+    needs: plan
+    if: needs.plan.outputs.preflight == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-strata-java
+      id: java
+      with:
+        paired: 'true'
+    - uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: false
+        gradle-home-cache-excludes: caches/fabric-loom
+    - name: Qualify the real whole control and timing boundary
+      shell: pwsh
+      env:
+        STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
+      run: python -B gradle/performance/verify-qualified-preflight.py --output "build/performance-ci/qualified-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - name: Verify real resource refusal and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: qualified-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+        path: build/performance-ci/*.zip
+        if-no-files-found: error
   web-demos:
     name: Web runtime and demos
     runs-on: ubuntu-latest
@@ -163,7 +280,7 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Check JVM modules and generate coverage once
-      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
+      run: bash ./gradlew :check :quality:benchmarks:check :quality:component-benchmarks:check :quality:remote-benchmarks:check :performance-testkit:check :paper-api:check :velocity-api:check :api:check :examples:paper:check :examples:velocity:check
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
@@ -182,6 +299,14 @@ jobs:
         name: kover-reports
         path: build/reports/kover
         if-no-files-found: error
+    - name: Upload compiler ABI dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: compiler-abi-dumps
+        path: '**/build/kotlin/abi/'
+        if-no-files-found: ignore
+        retention-days: 7
     needs: plan
     if: needs.plan.outputs.common == 'true'
   minecraft-matrix:
@@ -272,11 +397,11 @@ jobs:
           integration/docs/build/component-showcase/check
         if-no-files-found: error
         retention-days: 7
-    - name: Upload loaded-client failure evidence
-      if: failure()
+    - name: Upload loaded-client evidence for ${{ matrix.id }}
+      if: success() || failure()
       uses: actions/upload-artifact@v7
       with:
-        name: minecraft-failure-evidence-${{ matrix.id }}
+        name: minecraft-loaded-client-evidence-${{ matrix.id }}
         path: |
           integration/*/build/minecraft-verification/
           integration/*/build/minecraft-production-verification/
@@ -367,6 +492,8 @@ jobs:
     name: CI result
     needs:
     - plan
+    - paired-jvm
+    - preflight-qualification
     - web-demos
     - workflow-checks
     - web
@@ -388,6 +515,8 @@ jobs:
         common, web, docs, full_docs, workflow = (p[key] == 'true' for key in ('common', 'web', 'docs', 'docs_full', 'workflow'))
         minecraft = p['all_minecraft'] == 'true' or json.loads(p['minecraft']) != [] or full_docs
         expected = {'checks': common, 'web-demos': web, 'web': web, 'workflow-checks': workflow or common, 'minecraft-matrix': minecraft, 'minecraft': minecraft, 'documentation': full_docs, 'docs': docs and not full_docs}
+        expected['paired-jvm'] = p.get('paired_manifest', '') != ''
+        expected['preflight-qualification'] = p.get('preflight', 'false') == 'true'
         for job, selected in expected.items():
             required = 'success' if selected else 'skipped'
             assert jobs[job]['result'] == required, f"{job}: expected {required}, got {jobs[job]['result']}"

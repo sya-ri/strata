@@ -13,6 +13,7 @@ import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.background
 import dev.s7a.strata.modifier.semantics
 import dev.s7a.strata.modifier.size
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.render.DrawCommand
@@ -163,6 +164,12 @@ public open class PendingSourceBenchmark {
         private var batches = 0L
 
         /**
+         * Borrows the current session for the shared runner's untimed render-work diagnostics.
+         */
+        public val diagnosticsOwner: Any
+            get() = session
+
+        /**
          * Builds sources and immutable visible descriptions, establishes subscriptions and settles one frame.
          */
         @Setup(Level.Trial)
@@ -297,21 +304,12 @@ public open class PendingSourceBenchmark {
                     verifyOutput(frame)
                 }
                 verifyInitialSnapshot()
-                val outputCount = if (workload.kind == Kind.FanOut) 128 else workload.roots
                 val changedPerBatch = changedRootsPerBatch()
-                val evaluationsPerBatch = evaluationsPerBatch()
                 val projectionPerBatch = projectionsPerBatch()
-                val initialProjections = initialProjections()
                 val evidence = monitor.snapshot()
                 check(evidence.counts[UiRenderMetric.RootValueChange] == changedPerBatch * batches)
-                check(evaluations == outputCount + evaluationsPerBatch * batches)
-                check(projections == initialProjections + projectionPerBatch * batches)
                 check(evidence.counts[UiRenderMetric.Projection] == projectionPerBatch * batches)
-                check(sources.sumOf { it.publications } == publicationsPerBatch() * batches)
-                check(acquisitions - releases == workload.roots.toLong())
-                check(acquisitions == workload.roots * (if (workload.kind == Kind.Churn) batches + 1 else 1))
-                check(releases == if (workload.kind == Kind.Churn) workload.roots * batches else 0L)
-                if (workload.kind == Kind.Idle) check(comparisons == 0L)
+                verifyCurrentWork()
                 println(
                     "${workload.name}: roots=${workload.roots}, batches=$batches, publications=${sources.sumOf { it.publications }}, " +
                         "rootChanges=${changedPerBatch * batches}, evaluations=$evaluations, projections=$projections, comparisons=$comparisons, " +
@@ -320,6 +318,25 @@ public open class PendingSourceBenchmark {
             } finally {
                 monitor.close()
             }
+        }
+
+        /**
+         * Checks the original frame oracle and complete current source-work counters outside sampling.
+         */
+        public fun verifySample(frame: RuntimeUiFrame) {
+            verifyOutput(frame)
+            verifyCurrentWork()
+        }
+
+        private fun verifyCurrentWork() {
+            val outputCount = if (workload.kind == Kind.FanOut) 128 else workload.roots
+            check(evaluations == outputCount + evaluationsPerBatch() * batches)
+            check(projections == initialProjections() + projectionsPerBatch() * batches)
+            check(sources.sumOf { it.publications } == publicationsPerBatch() * batches)
+            check(acquisitions - releases == workload.roots.toLong())
+            check(acquisitions == workload.roots * (if (workload.kind == Kind.Churn) batches + 1 else 1))
+            check(releases == if (workload.kind == Kind.Churn) workload.roots * batches else 0L)
+            if (workload.kind == Kind.Idle) check(comparisons == 0L)
         }
 
         private fun changedRootsPerBatch(): Int =
@@ -461,10 +478,17 @@ public open class PendingSourceBenchmark {
      */
     public companion object {
         /**
+         * Declares every original source-frame row for shared owner-thread CPU and allocation collection.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = PendingSourceOperationReport
+
+        /**
          * Exercises the complete declared corpus outside benchmark timing with independent output and lifecycle checks.
          */
         @JvmStatic
         public fun verifyWork() {
+            PendingSourceOperationReport.verifyRows()
             for (workload in Workload.entries) {
                 val scene = SourceScene()
                 scene.workload = workload

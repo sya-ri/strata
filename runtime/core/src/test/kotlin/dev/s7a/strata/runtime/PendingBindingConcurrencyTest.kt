@@ -18,9 +18,14 @@ internal class PendingBindingConcurrencyTest {
         val queue = PendingBindingQueue<UiSessionBinding<Value>> { it.captureOrder }
         val executor = Executors.newSingleThreadExecutor()
         val second = binding(queue, 1, Value(0))
-        val first = binding(queue, 0, Value(0) {
-            executor.submit { second.enqueue(StateSnapshot(StateRevision(2), Value(2))) }.get(5, TimeUnit.SECONDS)
-        })
+        val first =
+            binding(
+                queue,
+                0,
+                Value(0) {
+                    executor.submit { second.enqueue(StateSnapshot(StateRevision(2), Value(2))) }.get(5, TimeUnit.SECONDS)
+                },
+            )
         try {
             first.enqueue(StateSnapshot(StateRevision(1), Value(1)))
             second.enqueue(StateSnapshot(StateRevision(1), Value(1)))
@@ -48,11 +53,12 @@ internal class PendingBindingConcurrencyTest {
         val bindings = List(128) { index -> binding(queue, index.toLong(), 0) }
         val executor = Executors.newFixedThreadPool(4)
         try {
-            val publishing = bindings.map { current ->
-                executor.submit {
-                    repeat(100) { index -> current.enqueue(StateSnapshot(StateRevision(index.toLong() + 1), index + 1)) }
+            val publishing =
+                bindings.map { current ->
+                    executor.submit {
+                        repeat(100) { index -> current.enqueue(StateSnapshot(StateRevision(index.toLong() + 1), index + 1)) }
+                    }
                 }
-            }
             repeat(10) {
                 queue.capture(UiSessionBinding<*>::capturePending)
                 queue.takeCaptured().forEach { it.applyPending() }

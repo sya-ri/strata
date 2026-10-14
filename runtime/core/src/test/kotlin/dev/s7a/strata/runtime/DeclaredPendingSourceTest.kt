@@ -56,12 +56,15 @@ internal class DeclaredPendingSourceTest {
     fun declaredComparisonPublishesOnlyAfterEveryObservedRootHasBeenCaptured() {
         val observed = CutoffTestSource(Value(0))
         var publishDuringComparison = false
-        val declared = CutoffTestSource(Value(0) {
-            if (publishDuringComparison) {
-                publishDuringComparison = false
-                observed.publish(Value(2))
-            }
-        })
+        val declared =
+            CutoffTestSource(
+                Value(0) {
+                    if (publishDuringComparison) {
+                        publishDuringComparison = false
+                        observed.publish(Value(2))
+                    }
+                },
+            )
         val holder = Holder<Value>()
         val seen = ArrayList<List<Int>>()
         val session =
