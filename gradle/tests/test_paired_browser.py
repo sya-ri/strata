@@ -264,7 +264,7 @@ class PairedBrowserTest(unittest.TestCase):
             node_metadata = json.dumps({"path": str(node), "version": "synthetic"})
             selection = {"root": self.root, "path": self.root / "manifest.json", "producer": "", "execution_head": "a" * 40}
             selection["path"].write_text(json.dumps(data), encoding="utf-8")
-            with patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
+            with patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
                 if failure is None and copy_failure is False:
                     self.browser.run(api, self.root, selection, output)
                 else:
