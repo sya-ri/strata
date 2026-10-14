@@ -258,7 +258,7 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      run: .\gradlew.bat :integration:web:check '-Pstrata.webOnly=true'
+      run: .\gradlew.bat :integration:web:check
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
