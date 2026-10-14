@@ -305,15 +305,21 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
                     },
                 )
                 val observed = renderWork(context)
+                Files.writeString(output.resolve("${scene.slug}-scale-$scale-work.txt"), observed.toString())
                 requireSampledImageParityWork(observed, scene)
-                // The scale-to-fit visitor also converts the integer blit into one direct sampled image.
-                val expectedDirect =
-                    when (scene) {
-                        SampledParityScene.Effects -> 8L
-                        SampledParityScene.Ordered -> if (scale == 1) 26L else 24L
+                when (scene) {
+                    SampledParityScene.Effects -> {
+                        require(observed.sampledImageDraws == observed.renderExtractions * 8L + observed.sampledImageResamples) {
+                            "Every opaque-mask source must use its pinned GPU presentation at GUI$scale: $observed"
+                        }
                     }
-                require(observed.sampledImageDraws == observed.renderExtractions * expectedDirect + observed.sampledImageResamples) {
-                    "Every eligible source must use its pinned GPU presentation at GUI$scale: $observed"
+
+                    SampledParityScene.Ordered -> {
+                        // Every source in this unchanged scene has partial alpha; its original portable boundaries preserve exact rounding.
+                        require(observed.sampledImageDraws == 0L && observed.sampledImageResamples == 0L) {
+                            "Ordered partial-alpha sources must retain portable presentation at GUI$scale: $observed"
+                        }
+                    }
                 }
                 val fabricPath =
                     context.takeScreenshot(
@@ -973,16 +979,16 @@ public class StrataMinecraftClientGameTest : FabricClientGameTest {
         require(0L < observed.sampledImageDirectHits) { "Sampled-image parity must reuse a direct texture: $observed" }
         require(0L < observed.sampledImageDirectMisses) { "Sampled-image parity must create a direct texture: $observed" }
         require(0L < observed.sampledImageUploads) { "Sampled-image parity must upload a direct texture: $observed" }
-        require(0L < observed.sampledImageDraws) { "Sampled-image parity must execute the native direct path: $observed" }
         require(observed.sampledImageEvictions == 0L) { "Sampled-image parity must not evict its direct texture: $observed" }
         when (scene) {
             SampledParityScene.Ordered -> {
                 require(0L < observed.sampledImageIneligibleFallbacks) {
-                    "Fractional scale-to-fit parity must mix direct images with portable transformed fallbacks: $observed"
+                    "Fractional scale-to-fit parity must preserve portable fallbacks while reusing uploaded source identities: $observed"
                 }
             }
 
             SampledParityScene.Effects -> {
+                require(0L < observed.sampledImageDraws) { "Opaque-mask parity must execute the native direct path: $observed" }
                 require(observed.sampledImageIneligibleFallbacks == 0L) {
                     "Independent sampled effects must not fall back to CPU composition: $observed"
                 }
