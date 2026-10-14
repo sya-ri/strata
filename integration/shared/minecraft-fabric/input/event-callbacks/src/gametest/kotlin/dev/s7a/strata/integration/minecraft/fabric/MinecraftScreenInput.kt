@@ -3,6 +3,7 @@
 package dev.s7a.strata.integration.minecraft.fabric
 
 import dev.s7a.strata.geometry.IntOffset
+import dev.s7a.strata.input.KeyCode
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
@@ -56,6 +57,15 @@ internal fun releaseMinecraftScreen(
     screen: Screen,
     position: IntOffset,
 ): Boolean = screen.mouseReleased(position.mouseEvent())
+
+/**
+ * Delivers one typed physical key through this adapter family's native screen callback without modifiers.
+ * The client thread borrows [screen]; native consumption and callback failures are returned unchanged.
+ */
+internal fun pressMinecraftKey(
+    screen: Screen,
+    key: KeyCode,
+): Boolean = screen.keyPressed(KeyEvent(key.value, NO_SCAN_CODE, NO_MODIFIERS))
 
 /**
  * Delivers one native Tab press through the record-based screen callback.

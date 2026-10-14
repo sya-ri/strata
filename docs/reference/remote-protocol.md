@@ -113,6 +113,13 @@ Each client tile source replaces its complete current set; source replacement an
 Native Slot transactions additionally require the same captured client menu identity.
 Container lifecycle changes retire affected Slot HUDs and ordinary remote Screens; unrelated HUDs retain their state.
 
+Client presentation-state close is an irreversible admission cutoff.
+Creation and value-update callbacks cannot recursively prepare an entry; retirement callbacks have no admission window, and polling cannot start preparation.
+A fresh value returned after its factory closed the store is released instead of admitted, and terminal close is never restored to an idle phase.
+Close clears both authoritative entries and derived editable membership before ordered release callbacks; duplicate values under distinct keys preserve per-key release and polling behavior.
+If a retirement callback fails before terminal close, remaining entries stay owned and pollable in their original order, with the original primary failure preserved.
+See [remote editable membership](../development/performance.md#remote-editable-membership) for its current-state bound and release contract.
+
 ## Extensions and ownership
 
 An extension chooses a namespaced `ProjectionType` and positive schema version.

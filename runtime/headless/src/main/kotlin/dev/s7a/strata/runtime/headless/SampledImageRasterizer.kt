@@ -240,9 +240,11 @@ internal object SampledImageRasterizer {
         private var opaquePalette: IntArray? = null
         private var blendTablesAllowed = useChannelTables
         private var blendTables: Array<IntArray?>? = null
-        private var blendRowCount = 0
+
+        // Negative values count qualifying blends until admission; nonnegative values count owned alpha rows.
+        private var blendRowCount = -32
+
         private var paletteDestination = 0
-        private var paletteDestinationKnown = false
 
         // A whole one-texel image always clamps to (0, 0), including fractional sources and flips.
         // Pass the clipped scalar span without allocating a rectangle for each command.
@@ -306,18 +308,21 @@ internal object SampledImageRasterizer {
             val alphaByte = quantize(outputAlpha)
             if (alphaByte == 0) return remember(source, destination, 0)
             if (blendTablesAllowed) {
-                if (paletteDestinationKnown && destination != paletteDestination) {
+                if (blendRowCount == -32) {
+                    paletteDestination = destination
+                    blendRowCount += 1
+                } else if (destination != paletteDestination) {
                     blendTablesAllowed = false
                     blendTables = null
-                } else {
-                    paletteDestination = destination
-                    paletteDestinationKnown = true
+                } else if (blendRowCount < 0) {
+                    blendRowCount += 1
                 }
             }
             val sourceRow = weights?.row(source ushr 24)
-            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
-            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
-            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha, sourceRow)
+            val destinationRow = blendRow(source ushr 24)
+            val outputRed = channel(source, destination, 16, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
+            val outputGreen = channel(source, destination, 8, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
+            val outputBlue = channel(source, destination, 0, sourceAlpha, destinationWeight, outputAlpha, sourceRow, destinationRow)
             return remember(source, destination, (alphaByte shl 24) or (outputRed shl 16) or (outputGreen shl 8) or outputBlue)
         }
 
@@ -362,7 +367,22 @@ internal object SampledImageRasterizer {
             return result
         }
 
-        @Suppress("LongParameterList") // The borrowed source row is selected once for all three ordered channel calculations.
+        // A table belongs to this command and one complete destination ARGB. Any unequal destination
+        // permanently drops these rows. Admission and alpha-row selection occur once per blend, before RGB work.
+        private fun blendRow(sourceAlphaByte: Int): IntArray? {
+            if (blendTablesAllowed.not() || blendRowCount < 0) return null
+            val rows = blendTables ?: arrayOfNulls<IntArray>(256).also { blendTables = it }
+            return rows[sourceAlphaByte] ?: if (blendRowCount < 16) {
+                IntArray(768) { -1 }.also { table ->
+                    rows[sourceAlphaByte] = table
+                    blendRowCount += 1
+                }
+            } else {
+                null
+            }
+        }
+
+        @Suppress("LongParameterList") // Both borrowed rows are selected once for all three ordered channel calculations.
         private fun channel(
             source: Int,
             destination: Int,
@@ -371,31 +391,15 @@ internal object SampledImageRasterizer {
             destinationWeight: Float,
             outputAlpha: Float,
             sourceRow: FloatArray?,
+            row: IntArray?,
         ): Int {
-            // A table belongs to this command and one complete destination ARGB. Any unequal destination
-            // permanently drops these rows, so heterogeneous output never requires clearing a large table per pixel.
-            val rows =
-                if (blendTablesAllowed) {
-                    blendTables ?: arrayOfNulls<IntArray>(256).also { blendTables = it }
-                } else {
-                    null
-                }
-            val sourceAlphaByte = source ushr 24
-            val row =
-                rows?.let {
-                    it[sourceAlphaByte] ?: if (blendRowCount < 16) {
-                        IntArray(768) { -1 }.also { table ->
-                            it[sourceAlphaByte] = table
-                            blendRowCount += 1
-                        }
-                    } else {
-                        null
-                    }
-                }
             val index = (2 - shift / 8) * 256 + (source ushr shift and 255)
-            val cached = row?.get(index)
-            if (cached != null && 0 <= cached) return cached
-            val contribution = contribution(source, shift, sourceAlpha, sourceRow)
+            if (row != null) {
+                val cached = row[index]
+                if (0 <= cached) return cached
+            }
+            val contribution =
+                if (sourceRow != null) sourceRow[index] else contribution(source, shift, sourceAlpha)
             val result = quantize((contribution + normalized(destination ushr shift) * destinationWeight) / outputAlpha)
             if (row != null) row[index] = result
             return result
@@ -405,9 +409,7 @@ internal object SampledImageRasterizer {
             source: Int,
             shift: Int,
             sourceAlpha: Float,
-            sourceRow: FloatArray?,
         ): Float {
-            sourceRow?.let { return it[(2 - shift / 8) * 256 + (source ushr shift and 255)] }
             val channelTint =
                 when (shift) {
                     16 -> red
