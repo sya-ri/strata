@@ -6,9 +6,6 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from controlled_toolchains import bind, verify
-
-
 FIXTURE = """package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntRect
@@ -186,6 +183,8 @@ def verify_project_selection(closure_log, projects):
 
 def main():
     """Keep generated sources temporary and preserve all success and failure evidence in build outputs."""
+    from controlled_toolchains import bind, verify
+
     root = Path(__file__).resolve().parent.parent
     module = root / "quality/component-benchmarks"
     source = module / "src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ScopedModelFixtureBenchmark.kt"

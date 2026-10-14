@@ -16,7 +16,7 @@ class Model(Enum):
 
 INSTALLATIONS = "org.gradle.java.installations."
 JAVA_HOME_PROPERTY = "org.gradle.java.home"
-MODEL_PROPERTIES = {"strata.jvmOnly", "strata.webOnly", "strata.completeIdeaModel", "strata.minecraftVersions"}
+MODEL_PROPERTIES = {"strata.jvmOnly", "strata.webOnly", "strata.minecraftSourceOnly", "strata.completeIdeaModel", "strata.minecraftVersions"}
 
 
 def digest(path):
@@ -33,6 +33,22 @@ def absolute_home(value):
     if not path.is_absolute() or not path.is_dir():
         raise ValueError("JDK home must be an existing absolute directory")
     return path.resolve()
+
+
+def installation_tree_digest(home):
+    """Hash every bounded installation byte, including an unused legacy JRE; never launch Java."""
+    home = absolute_home(str(home))
+    entries = []
+    total = 0
+    for path in sorted(home.rglob("*")):
+        if path.is_symlink() and (path.is_dir() or not path.resolve().is_relative_to(home)):
+            raise ValueError("JDK links must target regular files within the bound installation")
+        if path.is_file():
+            total += path.stat().st_size
+            entries.append((path.relative_to(home).as_posix(), digest(path)))
+            if 50000 < len(entries) or 4 * 1024 ** 3 < total:
+                raise ValueError("JDK identity exceeds the finite inventory bound")
+    return hashlib.sha256(json.dumps(entries, separators=(",", ":")).encode()).hexdigest()
 
 
 def installation(home):
@@ -52,17 +68,7 @@ def installation(home):
     match = re.fullmatch(r"([1-9][0-9]*)(?:[.\-+][A-Za-z0-9.+\-]+)?", version)
     if not match or not release.get("IMPLEMENTOR"):
         raise ValueError("JDK release must declare a modern version and implementor")
-    entries = []
-    total = 0
-    for path in sorted(home.rglob("*")):
-        if path.is_symlink() and (path.is_dir() or not path.resolve().is_relative_to(home)):
-            raise ValueError("JDK links must target regular files within the bound installation")
-        if path.is_file():
-            total += path.stat().st_size
-            entries.append((path.relative_to(home).as_posix(), digest(path)))
-            if 50000 < len(entries) or 4 * 1024 ** 3 < total:
-                raise ValueError("JDK identity exceeds the finite inventory bound")
-    tree = hashlib.sha256(json.dumps(entries, separators=(",", ":")).encode()).hexdigest()
+    tree = installation_tree_digest(home)
     return {"home": home.as_posix(), "major": int(match[1]), "release_version": version,
             "implementor": release["IMPLEMENTOR"], "tree_sha256": tree,
             "java": (home / f"bin/java{suffix}").as_posix(),
@@ -204,6 +210,8 @@ def load_profile(path, root, environment, arguments):
     effective.update({key: environment["ORG_GRADLE_PROJECT_" + key] for key in MODEL_PROPERTIES if "ORG_GRADLE_PROJECT_" + key in environment})
     effective.update(request)
     if effective.get("strata.jvmOnly", "false") not in ("true", "false") or (effective.get("strata.jvmOnly", "false") == "true") != (model is Model.JVM):
+        raise ValueError("Inherited effective Gradle model differs from the binding")
+    if any(effective.get(key, "false") != "false" for key in ("strata.webOnly", "strata.minecraftSourceOnly")) or effective.get("strata.minecraftVersions", "").strip():
         raise ValueError("Inherited effective Gradle model differs from the binding")
     if from_environment != profile["inherited_environment"]:
         raise ValueError("Inherited fromEnv values changed")

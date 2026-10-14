@@ -247,15 +247,42 @@ class ControlledToolchainsTest(unittest.TestCase):
 
     def test_inherited_model_cannot_narrow_a_complete_binding(self):
         file = self.user / "gradle.properties"
-        file.write_text("strata.jvmOnly=true\n")
+        for key, value in (("strata.jvmOnly", "true"), ("strata.webOnly", "true"),
+                           ("strata.minecraftSourceOnly", "true"), ("strata.minecraftVersions", "26.3")):
+            file.write_text(f"{key}={value}\n")
+            self.profile["inherited_properties"]["user"] = TOOLS.properties(file)
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "effective Gradle model"):
+                self.bind()
+
+    def test_environment_cannot_select_another_scoped_model(self):
+        for key in ("strata.webOnly", "strata.minecraftSourceOnly"):
+            self.environment["ORG_GRADLE_PROJECT_" + key] = "true"
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "effective Gradle model"):
+                self.bind()
+            del self.environment["ORG_GRADLE_PROJECT_" + key]
+
+    def test_disabled_inherited_scopes_preserve_the_complete_request(self):
+        file = self.user / "gradle.properties"
+        file.write_text("strata.webOnly=false\nstrata.minecraftSourceOnly=false\nstrata.minecraftVersions=\n")
         self.profile["inherited_properties"]["user"] = TOOLS.properties(file)
-        with self.assertRaisesRegex(ValueError, "effective Gradle model"):
-            self.bind()
+        arguments, _, _ = self.bind()
+        self.assertEqual(self.arguments, arguments[:len(self.arguments)])
 
     def test_empty_java_executable_is_not_a_jdk_binding(self):
         Path(self.profile["jdks"][0]["java"]).write_bytes(b"")
         with self.assertRaisesRegex(ValueError, "missing"):
             self.bind()
+
+    def test_unused_legacy_jre_bytes_do_not_become_a_selected_jdk(self):
+        home = self.root / "unused-jre"
+        (home / "bin").mkdir(parents=True)
+        (home / "bin/java.exe").write_bytes(b"legacy-unused-java")
+        (home / "release").write_text('JAVA_VERSION="1.8.0_482"\nIMPLEMENTOR="Fixture Vendor"\n')
+        before = TOOLS.installation_tree_digest(home)
+        (home / "bin/java.exe").write_bytes(b"changed-unused-java")
+        self.assertNotEqual(before, TOOLS.installation_tree_digest(home))
+        with self.assertRaisesRegex(ValueError, "missing"):
+            TOOLS.installation(home)
 
     def included_receipts(self, manifest):
         """Build two independent captured graphs with the same local Kotlin task path."""

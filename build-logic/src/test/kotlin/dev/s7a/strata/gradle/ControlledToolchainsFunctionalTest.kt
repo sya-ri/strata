@@ -91,17 +91,18 @@ internal class ControlledToolchainsFunctionalTest {
     }
 
     @Test
-    fun `complete compiler and launcher execution records actual identities and graph`() {
-        val result = controlled("runFixture", extra = listOf("test")).build()
+    fun `complete compiler launcher and Javadoc execution records actual identities and graph`() {
+        val result = controlled("runFixture", extra = listOf("test", "javadoc")).build()
         assertEquals(TaskOutcome.SUCCESS, result.task(":compileJava")?.outcome)
         assertEquals(TaskOutcome.SUCCESS, result.task(":runFixture")?.outcome)
         assertEquals(TaskOutcome.NO_SOURCE, result.task(":test")?.outcome)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":javadoc")?.outcome)
         assertTrue(result.output.contains("Complete compiled fixture"), result.output)
         val receipt = receipts().single()
         assertEquals("passed", receipt["status"])
         val tools = receipt["tools"] as List<*>
         val roles = tools.map { (it as Map<*, *>)["role"] }.toSet()
-        assertEquals(setOf("compiler", "launcher"), roles)
+        assertEquals(setOf("compiler", "launcher", "javadoc"), roles)
         assertTrue(tools.all { (it as Map<*, *>)["vendor"] == jdk["vendor"] })
         assertTrue(tools.all { (it as Map<*, *>)["runtime_version"] == jdk["runtime_version"] })
         assertTrue(tools.any { (it as Map<*, *>)["task"] == ":test" && it["role"] == "launcher" })
@@ -127,6 +128,12 @@ internal class ControlledToolchainsFunctionalTest {
         val result = controlled("runFixture", extra = listOf("-Dorg.gradle.java.installations.auto-detect=true")).buildAndFail()
         assertTrue(result.output.contains("standard Java installation property differs"), result.output)
         assertFalse(result.output.contains("Complete compiled fixture"), result.output)
+        listOf("strata.webOnly=true", "strata.minecraftSourceOnly=true", "strata.minecraftVersions=26.3").forEach { property ->
+            val scoped = controlled("runFixture", extra = listOf("-P$property")).buildAndFail()
+            assertTrue(scoped.output.contains("actual Gradle model differs"), scoped.output)
+            assertFalse(scoped.output.contains("Complete compiled fixture"), scoped.output)
+            clearReceipts()
+        }
         jdk["home"] = directory.resolve("other-jdk").toString()
         val daemon = controlled("runFixture").buildAndFail()
         assertTrue(daemon.output.contains("actual Gradle daemon identity differs"), daemon.output)

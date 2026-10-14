@@ -80,7 +80,11 @@ def verifyTask = { task ->
 }
 gradle.settingsEvaluated { settings ->
     buildDirectory = settings.settingsDir.canonicalPath
-    if (settings.settingsDir.canonicalFile == canonical(binding.root) && settings.providers.gradleProperty('strata.jvmOnly').getOrElse('false').toBoolean() != binding.jvm_only) {
+    if (settings.settingsDir.canonicalFile == canonical(binding.root) && (
+            settings.providers.gradleProperty('strata.jvmOnly').getOrElse('false').toBoolean() != binding.jvm_only ||
+            settings.providers.gradleProperty('strata.webOnly').getOrElse('false').toBoolean() ||
+            settings.providers.gradleProperty('strata.minecraftSourceOnly').getOrElse('false').toBoolean() ||
+            settings.providers.gradleProperty('strata.minecraftVersions').getOrElse('').isBlank() == false)) {
         fail('actual Gradle model differs from its binding')
     }
 }
