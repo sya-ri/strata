@@ -123,9 +123,11 @@ public static class StrataPerformanceProcess {
         } finally { Require(CloseHandle(job)); }
     }
 
-    // Only signalled owned handles retire; history keeps every immutable PID/birth identity.
-    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records) {
-        foreach (var item in new List<KeyValuePair<uint, IntPtr>>(handles)) {
+    // The sampler alone retires handles; lifetime queries run outside the brief per-generation close/removal lock.
+    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, object gate) {
+        List<KeyValuePair<uint, IntPtr>> snapshot;
+        lock (gate) snapshot = new List<KeyValuePair<uint, IntPtr>>(handles);
+        foreach (var item in snapshot) {
             uint wait = WaitForSingleObject(item.Value, 0);
             if (wait == 0x102) continue;
             Require(wait == 0);
@@ -133,31 +135,43 @@ public static class StrataPerformanceProcess {
             uint code;
             Require(GetProcessTimes(item.Value, out created, out exited, out kernel, out user));
             Require(GetExitCodeProcess(item.Value, out code));
-            var history = records[item.Key];
-            var record = history[history.Count - 1];
-            if ((long)record["creationFileTime"] != created || exited == 0)
-                throw new InvalidOperationException("Completed owned process generation changed.");
-            record["exitCode"] = code;
-            record["exitFileTime"] = exited;
-            record["completed"] = true;
-            Require(CloseHandle(item.Value));
-            record["handleClosed"] = true;
-            handles.Remove(item.Key);
+            Dictionary<string, object> record;
+            lock (gate) {
+                var history = records[item.Key];
+                record = history[history.Count - 1];
+                if (handles[item.Key] != item.Value || (long)record["creationFileTime"] != created || exited == 0)
+                    throw new InvalidOperationException("Completed owned process generation changed.");
+                // A reused PID cannot publish between releasing its physical identity and removing the old map entry.
+                Require(CloseHandle(item.Value));
+                record["exitCode"] = code;
+                record["exitFileTime"] = exited;
+                record["completed"] = true;
+                record["handleClosed"] = true;
+                handles.Remove(item.Key);
+            }
         }
     }
 
-    // The caller owns an unretained handle; a successful capture transfers it to Retire.
-    static bool CaptureHandle(IntPtr job, uint pid, IntPtr handle, bool primary, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result) {
+    // Observe through the caller's physical handle before a shared record lock can delay a short-lived descendant.
+    static Dictionary<string, object> ObserveHandle(IntPtr job, uint pid, IntPtr handle, bool primary) {
         bool member;
         Require(IsProcessInJob(handle, job, out member));
-        if (member == false) return false;
+        if (member == false) return null;
         long created, exited, kernel, user;
-        if (GetProcessTimes(handle, out created, out exited, out kernel, out user) == false) return false;
+        if (GetProcessTimes(handle, out created, out exited, out kernel, out user) == false) return null;
         var executable = new StringBuilder(32768);
         uint size = (uint)executable.Capacity;
-        if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) return false;
+        if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) return null;
         UIntPtr affinity, system;
-        if (GetProcessAffinityMask(handle, out affinity, out system) == false) return false;
+        if (GetProcessAffinityMask(handle, out affinity, out system) == false) return null;
+        var record = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}};
+        if (primary) record["primaryBeforeResume"] = true;
+        return record;
+    }
+
+    // Called under the inventory lock; retained transfers ownership before any bound check can throw.
+    static void RetainHandle(uint pid, IntPtr handle, Dictionary<string, object> record, ref bool retained, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result) {
+        long created = (long)record["creationFileTime"];
         List<Dictionary<string, object>> history;
         if (records.TryGetValue(pid, out history) == false) {
             history = new List<Dictionary<string, object>>();
@@ -165,24 +179,22 @@ public static class StrataPerformanceProcess {
         }
         foreach (var previous in history) {
             if ((long)previous["creationFileTime"] != created) continue;
-            return false; // Notifications and complete member snapshots can identify the same held generation.
+            return; // Notifications and complete member snapshots can identify the same held generation.
         }
-        var record = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}};
-        if (primary) record["primaryBeforeResume"] = true;
+        if (handles.ContainsKey(pid)) throw new InvalidOperationException("A retained physical PID generation cannot be replaced.");
         history.Add(record);
         handles.Add(pid, handle);
+        retained = true;
         result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
         // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
-        long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * executable.Length;
+        long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * ((string)record["image"]).Length;
         result["memberHistorySerializedByteBound"] = historyBytes;
         if (3 * 1024 * 1024 < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
         if (256 < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
-        return true;
     }
 
     static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds, object gate) {
-        lock (gate) {
-        Retire(handles, records);
+        Retire(handles, records, gate);
         const int maximumMembers = 256;
         int bytes = 8 + maximumMembers * IntPtr.Size;
         IntPtr buffer = Marshal.AllocHGlobal(bytes);
@@ -196,44 +208,47 @@ public static class StrataPerformanceProcess {
                 assigned = Marshal.ReadInt32(buffer);
                 count = Marshal.ReadInt32(buffer, 4);
                 var query = new Dictionary<string, object> {{"complete", complete}, {"assigned", assigned}, {"returned", count}, {"capacity", maximumMembers}, {"error", error}};
-                result["lastMemberQuery"] = query;
+                lock (gate) result["lastMemberQuery"] = query;
                 if (complete == false) throw new Win32Exception(error);
                 if (count < 0 || assigned < count || maximumMembers < assigned) throw new InvalidOperationException("Owned member inventory exceeds its bound.");
                 if (assigned == count) break;
                 // Exits can change the list while it is queried; only a complete snapshot is admitted.
-                if (result.ContainsKey("firstIncompleteMemberQuery") == false) result["firstIncompleteMemberQuery"] = query;
-                result["lastIncompleteMemberQuery"] = query;
-                result["incompleteMemberQueries"] = (int)result["incompleteMemberQueries"] + 1;
+                lock (gate) {
+                    if (result.ContainsKey("firstIncompleteMemberQuery") == false) result["firstIncompleteMemberQuery"] = query;
+                    result["lastIncompleteMemberQuery"] = query;
+                    result["incompleteMemberQueries"] = (int)result["incompleteMemberQueries"] + 1;
+                }
                 if (seconds <= clock.Elapsed.TotalSeconds) throw new InvalidOperationException("Owned member inventory remained incomplete at the phase deadline.");
-                Retire(handles, records);
-                // A changing snapshot must not hold the inventory lock while the notification reader opens short-lived descendants.
-                Monitor.Exit(gate);
-                try { Thread.Sleep((int)Math.Min(100, Math.Max(0, (seconds - clock.Elapsed.TotalSeconds) * 1000))); }
-                finally { Monitor.Enter(gate); }
+                Retire(handles, records, gate);
+                Thread.Sleep((int)Math.Min(100, Math.Max(0, (seconds - clock.Elapsed.TotalSeconds) * 1000)));
             }
-            result["maximumListedMembers"] = Math.Max((int)result["maximumListedMembers"], count);
+            lock (gate) result["maximumListedMembers"] = Math.Max((int)result["maximumListedMembers"], count);
             for (int index = 0; index < count; index++) {
                 uint pid = (uint)Marshal.ReadIntPtr(buffer, 8 + index * IntPtr.Size).ToInt64();
-                if (handles.ContainsKey(pid)) continue;
+                lock (gate) { if (handles.ContainsKey(pid)) continue; }
                 IntPtr handle = OpenProcess(0x1000 | 0x100000, false, pid);
                 if (handle == IntPtr.Zero) continue; // Final Job accounting rejects any generation missed by both capture paths.
                 bool retained = false;
                 try {
-                    retained = CaptureHandle(job, pid, handle, false, handles, records, result);
-                } finally { if (retained == false && (handles.ContainsKey(pid) == false || handles[pid] != handle)) Require(CloseHandle(handle)); }
+                    var observed = ObserveHandle(job, pid, handle, false);
+                    if (observed != null) lock (gate) RetainHandle(pid, handle, observed, ref retained, handles, records, result);
+                } finally { if (retained == false) Require(CloseHandle(handle)); }
             }
         } finally { Marshal.FreeHGlobal(buffer); }
-        foreach (var item in handles) {
+        List<KeyValuePair<uint, IntPtr>> snapshot;
+        lock (gate) snapshot = new List<KeyValuePair<uint, IntPtr>>(handles);
+        foreach (var item in snapshot) {
             if (WaitForSingleObject(item.Value, 0) != 0x102) continue;
             bool member;
             UIntPtr affinity, system;
             Require(IsProcessInJob(item.Value, job, out member));
             Require(GetProcessAffinityMask(item.Value, out affinity, out system));
-            var history = records[item.Key];
-            var record = history[history.Count - 1];
-            if (member == false || (ulong)record["affinityMask"] != affinity.ToUInt64() || (ulong)record["systemAffinityMask"] != system.ToUInt64())
-                throw new InvalidOperationException("Owned process membership or unchanged affinity changed.");
-        }
+            lock (gate) {
+                var history = records[item.Key];
+                var record = history[history.Count - 1];
+                if (member == false || (ulong)record["affinityMask"] != affinity.ToUInt64() || (ulong)record["systemAffinityMask"] != system.ToUInt64())
+                    throw new InvalidOperationException("Owned process membership or unchanged affinity changed.");
+            }
         }
     }
 
@@ -280,6 +295,7 @@ public static class StrataPerformanceProcess {
         ProcessInfo process = new ProcessInfo();
         bool assigned = false;
         Thread reader = null;
+        bool readerStarted = false;
         var readerReady = new ManualResetEventSlim(false);
         var gate = new object();
         var memberHandles = new Dictionary<uint, IntPtr>();
@@ -290,7 +306,7 @@ public static class StrataPerformanceProcess {
         var capture = new Dictionary<string, object> {
             {"maximumRetainedHandles", 0}, {"maximumListedMembers", 0}, {"incompleteMemberQueries", 0},
             {"memberHistorySerializedByteBound", 0L}, {"memberHistorySerializedByteLimit", 3 * 1024 * 1024},
-            {"newProcessNotifications", 0L}, {"exitProcessNotifications", 0L}, {"notificationOpenFailures", 0L}
+            {"newProcessNotifications", 0L}, {"exitProcessNotifications", 0L}, {"notificationOpenFailures", 0L}, {"notificationMetadataFailures", 0L}
         };
         try {
             if (program && FileHash(executable) != expectedSha) throw new InvalidOperationException("The owned Node executable differs from its actual pin.");
@@ -319,48 +335,54 @@ public static class StrataPerformanceProcess {
                         Require(GetQueuedCompletionStatus(port, out message, out key, out notifiedPid, uint.MaxValue));
                         if (message == uint.MaxValue && key == UIntPtr.Zero && notifiedPid == IntPtr.Zero) return;
                         if (key.ToUInt64() != unchecked((ulong)job.ToInt64())) throw new InvalidOperationException("Foreign Job completion notification.");
-                        lock (gate) {
-                            if (message == 7 || message == 8) {
-                                capture["exitProcessNotifications"] = (long)capture["exitProcessNotifications"] + 1;
-                                Retire(memberHandles, members);
-                            }
-                            if (message != 6) continue;
-                            capture["newProcessNotifications"] = (long)capture["newProcessNotifications"] + 1;
-                            long rawPid = notifiedPid.ToInt64();
-                            if (rawPid <= 0 || uint.MaxValue < rawPid) throw new InvalidOperationException("Invalid Job notification PID.");
-                            uint pid = (uint)rawPid;
-                            Retire(memberHandles, members);
-                            IntPtr handle = OpenProcess(0x1000 | 0x100000, false, pid);
-                            if (handle == IntPtr.Zero) {
-                                capture["notificationOpenFailures"] = (long)capture["notificationOpenFailures"] + 1;
-                                capture["lastNotificationOpenError"] = Marshal.GetLastWin32Error();
-                                continue;
-                            }
-                            bool retained = false;
-                            try { retained = CaptureHandle(job, pid, handle, false, memberHandles, members, capture); }
-                            finally { if (retained == false && (memberHandles.ContainsKey(pid) == false || memberHandles[pid] != handle)) Require(CloseHandle(handle)); }
+                        if (message == 7 || message == 8) {
+                            lock (gate) capture["exitProcessNotifications"] = (long)capture["exitProcessNotifications"] + 1;
                         }
+                        if (message != 6) continue;
+                        long rawPid = notifiedPid.ToInt64();
+                        if (rawPid <= 0 || uint.MaxValue < rawPid) throw new InvalidOperationException("Invalid Job notification PID.");
+                        uint pid = (uint)rawPid;
+                        IntPtr handle = OpenProcess(0x1000 | 0x100000, false, pid);
+                        int openError = handle == IntPtr.Zero ? Marshal.GetLastWin32Error() : 0;
+                        bool retained = false;
+                        try {
+                            var observed = handle == IntPtr.Zero ? null : ObserveHandle(job, pid, handle, false);
+                            lock (gate) {
+                                capture["newProcessNotifications"] = (long)capture["newProcessNotifications"] + 1;
+                                if (handle == IntPtr.Zero) {
+                                    capture["notificationOpenFailures"] = (long)capture["notificationOpenFailures"] + 1;
+                                    capture["lastNotificationOpenError"] = openError;
+                                    continue;
+                                }
+                                if (observed == null) {
+                                    capture["notificationMetadataFailures"] = (long)capture["notificationMetadataFailures"] + 1;
+                                    continue;
+                                }
+                                RetainHandle(pid, handle, observed, ref retained, memberHandles, members, capture);
+                            }
+                        } finally { if (handle != IntPtr.Zero && retained == false) Require(CloseHandle(handle)); }
                     }
                 } catch (Exception failure) { lock (gate) capture["notificationError"] = failure.Message; }
             });
             reader.IsBackground = true;
-            reader.Start();
-            if (readerReady.Wait(TimeSpan.FromSeconds(cleanupSeconds)) == false) throw new InvalidOperationException("Job notification reader did not start within the owned startup bound.");
             result["clockBeforeResume"] = ObserveClock();
             var startup = new Startup {size=(uint)Marshal.SizeOf<Startup>(), flags=0x100, input=GetStdHandle(-10), output=GetStdHandle(-11), error=GetStdHandle(-12)};
             if (program == false) command += " -JobName \"" + name + "\"";
             Require(CreateProcessW(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x4 | 0x08000000, IntPtr.Zero, directory, ref startup, out process));
-            lock (gate) {
-                Require(AssignProcessToJobObject(job, process.process));
-                assigned = true;
-                IntPtr primary;
-                Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
-                bool retained = false;
-                try {
-                    retained = CaptureHandle(job, process.processId, primary, true, memberHandles, members, capture);
-                    if (retained == false) throw new InvalidOperationException("Suspended primary process could not be captured.");
-                } finally { if (retained == false && (memberHandles.ContainsKey(process.processId) == false || memberHandles[process.processId] != primary)) Require(CloseHandle(primary)); }
-            }
+            Require(AssignProcessToJobObject(job, process.process));
+            assigned = true;
+            IntPtr primary;
+            Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
+            bool primaryRetained = false;
+            try {
+                var observedPrimary = ObserveHandle(job, process.processId, primary, true);
+                if (observedPrimary != null) lock (gate) RetainHandle(process.processId, primary, observedPrimary, ref primaryRetained, memberHandles, members, capture);
+                if (primaryRetained == false) throw new InvalidOperationException("Suspended primary process could not be captured.");
+            } finally { if (primaryRetained == false) Require(CloseHandle(primary)); }
+            // The known primary is already held; no descendant can start before the reader is ready and ResumeThread runs.
+            reader.Start();
+            readerStarted = true;
+            if (readerReady.Wait(TimeSpan.FromSeconds(cleanupSeconds)) == false) throw new InvalidOperationException("Job notification reader did not start within the owned startup bound.");
             UIntPtr affinity, systemAffinity;
             Require(GetProcessAffinityMask(process.process, out affinity, out systemAffinity));
             result["inheritedAffinityMask"] = affinity.ToUInt64();
@@ -413,7 +435,7 @@ public static class StrataPerformanceProcess {
             Require(GetExitCodeProcess(process.process, out exitCode));
             result["exitCode"] = exitCode;
             if (0 < accounting.activeProcesses) Require(TerminateJobObject(job, 125));
-            lock (gate) Retire(memberHandles, members);
+            Retire(memberHandles, members, gate);
         } catch (Exception failure) {
             result["error"] = failure.Message;
         } finally {
@@ -425,19 +447,20 @@ public static class StrataPerformanceProcess {
                     if ((bool)result["naturalRelease"] == false) closed &= TerminateJobObject(job, 126);
                     while (cleanup.Elapsed.TotalSeconds < cleanupSeconds) {
                         int retained;
-                        lock (gate) { Retire(memberHandles, members); retained = memberHandles.Count; }
+                        Retire(memberHandles, members, gate);
+                        lock (gate) retained = memberHandles.Count;
                         if (Account(job).activeProcesses == 0 && retained == 0) break;
                         Thread.Sleep(10);
                     }
                     result["activeProcessesAfterCleanup"] = Account(job).activeProcesses;
-                    lock (gate) Retire(memberHandles, members);
+                    Retire(memberHandles, members, gate);
                     closed &= (uint)result["activeProcessesAfterCleanup"] == 0;
                 } catch (Exception failure) {
                     result["cleanupError"] = failure.Message;
                     closed = false;
                 }
                 try {
-                if (reader != null) {
+                if (readerStarted) {
                     // Wake after the Job has closed its process tree; queued notifications preceding this sentinel are drained first.
                     closed &= PostQueuedCompletionStatus(port, uint.MaxValue, UIntPtr.Zero, IntPtr.Zero);
                     int remaining = (int)Math.Max(0, (cleanupSeconds - cleanup.Elapsed.TotalSeconds) * 1000);
@@ -445,9 +468,9 @@ public static class StrataPerformanceProcess {
                     result["notificationReaderJoined"] = joined;
                     closed &= joined;
                 }
+                Retire(memberHandles, members, gate);
+                var finalAccounting = Account(job);
                 lock (gate) {
-                    Retire(memberHandles, members);
-                    var finalAccounting = Account(job);
                     int captured = 0, completed = 0;
                     foreach (var generations in members.Values) foreach (var member in generations) {
                         captured++;
@@ -469,8 +492,9 @@ public static class StrataPerformanceProcess {
                 if (port != IntPtr.Zero) { closed &= CloseHandle(port); port = IntPtr.Zero; }
                 closed &= CloseHandle(job);
             }
+            List<IntPtr> remainingHandles;
             lock (gate) {
-                foreach (var handle in memberHandles.Values) closed &= CloseHandle(handle);
+                remainingHandles = new List<IntPtr>(memberHandles.Values);
                 memberHandles.Clear();
                 foreach (var item in members) {
                     var snapshot = new List<Dictionary<string, object>>();
@@ -479,6 +503,7 @@ public static class StrataPerformanceProcess {
                 }
                 foreach (var item in capture) result[item.Key] = item.Value;
             }
+            foreach (var handle in remainingHandles) closed &= CloseHandle(handle);
             readerReady.Dispose();
             if (process.thread != IntPtr.Zero) closed &= CloseHandle(process.thread);
             if (process.process != IntPtr.Zero) closed &= CloseHandle(process.process);

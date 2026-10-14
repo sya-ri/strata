@@ -82,6 +82,7 @@ def main():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--batches", type=int, default=36)
     parser.add_argument("--immediate", action="store_true")
+    parser.add_argument("--held", type=int, choices=(0, 64), default=0)
     arguments = parser.parse_args()
     if arguments.child is not None:
         kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -100,34 +101,45 @@ def main():
     records = []
     if arguments.batches < 1:
         parser.error("Supply a positive batch count")
-    for batch in range(arguments.batches):
-        children = []
-        with ExitStack() as release:
-            for index in range(8):
-                receipt = arguments.output / f"child-{batch * 8 + index}.json"
+    if arguments.held and not arguments.immediate:
+        parser.error("Held metadata controls require the immediate descendant mode")
+    with ExitStack() as held_release:
+        held = []
+        for _ in range(arguments.held):
+            child = immediate_child()
+            held_release.callback(close_immediate, child)
+            held.append(child)
+        for batch in range(arguments.batches):
+            children = []
+            with ExitStack() as release:
+                for index in range(8):
+                    receipt = arguments.output / f"child-{batch * 8 + index}.json"
+                    if arguments.immediate:
+                        child = immediate_child()
+                        release.callback(close_immediate, child)
+                        children.append((child, receipt))
+                    else:
+                        process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).resolve()), "--child", str(receipt)], creationflags=subprocess.CREATE_NO_WINDOW)
+                        children.append((process, receipt))
                 if arguments.immediate:
-                    child = immediate_child()
-                    release.callback(close_immediate, child)
-                    children.append((child, receipt))
-                else:
-                    process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).resolve()), "--child", str(receipt)], creationflags=subprocess.CREATE_NO_WINDOW)
-                    children.append((process, receipt))
-            if arguments.immediate:
-                for child, _ in children:
-                    resume_immediate(child)
-            for process, receipt in children:
-                if arguments.immediate:
-                    records.append(completed_identity(process))
-                else:
-                    code = process.wait()
-                    if code != 0:
-                        raise ValueError("Owned history child failed")
-                    record = json.loads(receipt.read_text(encoding="utf-8"))
-                    if record["pid"] != process.pid:
-                        raise ValueError("Owned child receipt identity changed")
-                    records.append({**record, "exitCode": code})
+                    for child, _ in children:
+                        resume_immediate(child)
+                for process, receipt in children:
+                    if arguments.immediate:
+                        records.append(completed_identity(process))
+                    else:
+                        code = process.wait()
+                        if code != 0:
+                            raise ValueError("Owned history child failed")
+                        record = json.loads(receipt.read_text(encoding="utf-8"))
+                        if record["pid"] != process.pid:
+                            raise ValueError("Owned child receipt identity changed")
+                        records.append({**record, "exitCode": code})
+        for child in held:
+            resume_immediate(child)
+        held_records = [completed_identity(child) for child in held]
     with (arguments.output / "completed.json").open("x", encoding="utf-8") as target:
-        json.dump({"concurrentChildren": 8, "immediate": arguments.immediate, "generations": records}, target, indent=2)
+        json.dump({"concurrentChildren": 8, "immediate": arguments.immediate, "generations": records, "held_generations": held_records}, target, indent=2)
 
 
 if __name__ == "__main__":

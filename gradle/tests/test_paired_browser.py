@@ -121,6 +121,37 @@ class PairedBrowserTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     boundary.validate_immediate_history(changed, oracle)
 
+        held = []
+        for index in range(64):
+            pid = 1000 + index
+            birth = 116444736000000000 + index * 1000000
+            member = {"pid": pid, "creationFileTime": birth, "exitFileTime": birth + 10000000,
+                      "image": str(self.root / "cmd.exe"), "inOwnedJob": True, "completed": True,
+                      "handleClosed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+            terminal["members"][str(pid)] = [member]
+            held.append(copy.deepcopy(member))
+        terminal["totalProcesses"] = 96
+        terminal["maximumRetainedHandles"] = 64
+        terminal["generationAccounting"].update(totalProcesses=96, capturedGenerations=96, closedGenerations=96)
+        actual["held_generations"] = held
+        receipt = boundary.validate_immediate_history(terminal, actual, 64)
+        self.assertEqual((receipt["independentGenerations"], receipt["heldMetadataGenerations"], receipt["totalIndependentGenerations"]), (32, 64, 96))
+        for mode in ("missing-held", "duplicate-held", "aliased-short", "held-image", "held-birth", "held-exit", "insufficient-live-inventory"):
+            changed, oracle = copy.deepcopy(terminal), copy.deepcopy(actual)
+            if mode == "missing-held":
+                oracle["held_generations"].pop()
+            elif mode == "duplicate-held":
+                oracle["held_generations"][1] = copy.deepcopy(oracle["held_generations"][0])
+            elif mode == "aliased-short":
+                oracle["held_generations"][0] = copy.deepcopy(oracle["generations"][0])
+            elif mode == "insufficient-live-inventory":
+                changed["maximumRetainedHandles"] = 63
+            else:
+                field = {"held-image": "image", "held-birth": "creationFileTime", "held-exit": "exitFileTime"}[mode]
+                oracle["held_generations"][0][field] = str(self.root / "other.exe") if field == "image" else oracle["held_generations"][0][field] + 1
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                boundary.validate_immediate_history(changed, oracle, 64)
+
     def test_ready_leak_requires_actual_survival_in_the_owned_job(self):
         source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
         spec = importlib.util.spec_from_file_location("boundary", source)

@@ -15,16 +15,20 @@ PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
 
 
-def validate_immediate_history(terminal, actual):
+def validate_immediate_history(terminal, actual, held_count=0):
     """Match every independently held short descendant to complete physical Job generations."""
     PAIRED.verify_generation_accounting(terminal)
     PAIRED.require(actual.get("immediate") is True and actual.get("concurrentChildren") == 8 and len(actual["generations"]) == 32,
                    "Incomplete independent immediate-descendant inventory")
+    held = actual.get("held_generations", [])
+    PAIRED.require(isinstance(held, list) and len(held) == held_count, "Incomplete independently held metadata inventory")
+    if held_count:
+        PAIRED.require(held_count <= terminal["maximumRetainedHandles"] <= 256, "Concurrent metadata control did not retain its live inventory")
     observed = {(member["pid"], member["creationFileTime"]): member
                 for histories in terminal["members"].values() for member in histories}
     identities = set()
     lifetimes = []
-    for child in actual["generations"]:
+    for index, child in enumerate(actual["generations"] + held):
         identity = (child["pid"], child["creationFileTime"])
         PAIRED.require(identity not in identities and identity in observed, "Missing or duplicate independent short generation")
         identities.add(identity)
@@ -32,9 +36,10 @@ def validate_immediate_history(terminal, actual):
         PAIRED.require(child["exitCode"] == member["exitCode"] == 0 and child["exitFileTime"] == member["exitFileTime"]
                        and child["creationFileTime"] <= child["exitFileTime"]
                        and os.path.normcase(child["image"]) == os.path.normcase(member["image"]), "Independent short generation changed image or lifetime")
-        lifetimes.append(child["exitFileTime"] - child["creationFileTime"])
+        if index < len(actual["generations"]):
+            lifetimes.append(child["exitFileTime"] - child["creationFileTime"])
     PAIRED.require(any(lifetime < 100 * 10000 for lifetime in lifetimes), "Regression control did not observe a lifetime below the former 100ms poll interval")
-    return {"independentGenerations": len(identities), "observedBelowFormerPollInterval": sum(lifetime < 100 * 10000 for lifetime in lifetimes),
+    return {"independentGenerations": len(actual["generations"]), "heldMetadataGenerations": len(held), "totalIndependentGenerations": len(identities), "observedBelowFormerPollInterval": sum(lifetime < 100 * 10000 for lifetime in lifetimes),
             "minimumLifetime100ns": min(lifetimes), "formerPollInterval100ns": 100 * 10000}
 
 
@@ -75,6 +80,7 @@ def main():
             ("normal", "@exit /b 0\n", 4 * 1024**3, 30),
             ("completed-history", f'@"{sys.executable}" -B "{history}" --output descendants\n', 4 * 1024**3, 120),
             ("immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate\n', 4 * 1024**3, 120),
+            ("contended-immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate --held 64\n', 4 * 1024**3, 120),
             ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 512 --immediate\n', 4 * 1024**3, 120),
             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
@@ -92,15 +98,15 @@ def main():
                 process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
             terminal = PAIRED.read_json(directory / "terminal.json")
             records.append({"case": name, "exit": process.returncode, "terminal": terminal})
-            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history", "immediate-history")), f"Unexpected actual boundary result: {name}")
+            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history", "immediate-history", "contended-immediate-history")), f"Unexpected actual boundary result: {name}")
             PAIRED.require(terminal["handlesClosed"] is True, f"Owned handles or cleanup leaked: {name}")
             PAIRED.require(terminal.get("activeProcessesAfterCleanup", 0) == 0, f"Owned descendants remain: {name}")
             PAIRED.require(all(member["completed"] is True and member["handleClosed"] is True
                                and member["creationFileTime"] <= member["exitFileTime"]
                                for generations in terminal["members"].values() for member in generations),
                            f"Observed generation lost actual terminal history: {name}")
-            if name == "immediate-history":
-                records[-1]["independentCapture"] = validate_immediate_history(terminal, PAIRED.read_json(workspace / "descendants/completed.json"))
+            if name in ("immediate-history", "contended-immediate-history"):
+                records[-1]["independentCapture"] = validate_immediate_history(terminal, PAIRED.read_json(workspace / "descendants/completed.json"), 64 if name == "contended-immediate-history" else 0)
             elif name == "completed-history":
                 PAIRED.verify_generation_accounting(terminal)
                 actual = PAIRED.read_json(workspace / "descendants/completed.json")

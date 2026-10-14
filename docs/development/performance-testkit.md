@@ -825,8 +825,13 @@ Audit the retained setup and task logs for the requested cache context before ac
 Gradle preparation retains complete VM XML diagnostics up to 16 MiB per file, with the actual byte count, bound and SHA recorded; other JVM verification keeps its 1 MiB default.
 Process-isolation worker arguments carry the existing diagnostic flags explicitly, and preparation requires complete XML with observed executable/caps and closed PID/birth identity for every captured Java generation.
 An owned Job completion listener opens physical descendant handles as notifications arrive, alongside the existing complete member snapshots.
+The listener reads physical birth, image, Job membership and affinity through its own handle before waiting for the shared history lock; publishing transfers handle ownership before bound checks, and duplicate or failed observations close their temporary handles.
+Only the sampler retires transferred handles, and its member, lifetime and affinity queries run outside the brief map/history locks.
+Each retired handle's close and map removal are atomic under one per-generation lock so a reused PID cannot publish against a released handle's stale entry.
 Notifications are advisory; preparation independently reconciles every unique closed PID/birth history, including non-Java processes, with actual Job `totalProcesses` before qualifying any Java diagnostic.
-The boundary controls run before collection and retain independently read no-sleep descendant birth, exit and image identities, observed lifetimes below the former polling interval, and repeated immediate pinned Node primaries.
+The boundary controls run before collection and retain independently read no-sleep descendant birth, exit and image identities, at least one observed lifetime below the former polling interval, the actual count of such lifetimes, and repeated immediate pinned Node primaries.
+The longer history control independently records PID, birth and exit code; its owning helper retains the captured images and exact exit times.
+The concurrent descendant control holds 64 independently captured suspended processes while 32 immediate children run, then verifies all original physical lifetimes and the unchanged live-handle bound before collection.
 VM XML start timestamps retain their original values and signed differences from kernel birth.
 With complete fresh invocation accounting, exactly one XML and one captured generation for a PID may bind a negative reconstructed start through `unique_owned_pid_in_complete_invocation`; reused PIDs retain the existing unique timestamp/lifetime match and unsupported negative offsets fail.
 Coarse/precise clock observations and adjustment metadata are retained without treating the adjustment increment as a guaranteed clock resolution.
