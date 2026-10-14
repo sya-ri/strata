@@ -76,6 +76,16 @@ gradle.projectsEvaluated {
     check(rootProject.providers.gradleProperty("detekt.use.worker.api").get() == "false")
     check(Runtime.getRuntime().maxMemory() <= 768L * 1024L * 1024L)
     check(ManagementFactory.getRuntimeMXBean().inputArguments.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=1g")
+    val vmLogs = File(checkNotNull(System.getenv("STRATA_PAIRED_LOGS"))).canonicalFile
+    check(vmLogs.isDirectory && Files.isSymbolicLink(vmLogs.toPath()).not())
+    // Gradle process-isolation workers discard the inherited environment on Windows.
+    val workerDiagnostics = listOf(
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCommandLineFlags",
+        "-XX:-DisplayVMOutput",
+        "-XX:+LogVMOutput",
+        "-XX:LogFile=${vmLogs.invariantSeparatorsPath}/vm-%p-%t.log",
+    )
     rootProject.allprojects.forEach { project ->
         val preflight = rootProject.providers.gradleProperty("strata.paired.preflight").orNull
         val preflightRequest = preflight?.let { JsonSlurper().parse(File(it)) as Map<*, *> }
@@ -140,11 +150,12 @@ gradle.projectsEvaluated {
             }.forEach { getter ->
                 val arguments = getter.invoke(this) as ListProperty<*>
                 ListProperty::class.java.getMethod("addAll", Iterable::class.java)
-                    .invoke(arguments, listOf("-Xmx512m", "-XX:MaxMetaspaceSize=256m"))
+                    .invoke(arguments, listOf("-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)
                 doFirst {
                     val actual = arguments.get().map { it.toString() }
                     check(actual.lastOrNull { it.startsWith("-Xmx") } == "-Xmx512m")
                     check(actual.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=256m")
+                    check(actual.takeLast(workerDiagnostics.size) == workerDiagnostics)
                 }
             }
         }

@@ -602,15 +602,21 @@ def independent_class_file(directory, phase_directory, result, vm):
     return matches[0] if matches else None
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024):
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
             "Invalid finite VM diagnostic byte bound")
+    require(type(require_all_java_generations) is bool, "Invalid Java generation coverage mode")
+    if require_all_java_generations:
+        require(terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
+                and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
+                "Java generation coverage requires natural closed terminal proof")
     profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
     records, forks, version_probes = [], [], []
+    observed_generations = []
     for path in files:
         diagnostic_bytes = path.stat().st_size
         require(diagnostic_bytes <= maximum_diagnostic_bytes, "VM diagnostic exceeds its retained bound")
@@ -658,6 +664,13 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
         evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
+        if require_all_java_generations:
+            member = owned_generation(terminal, pid, vm_start)
+            require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
+                    and member["affinityMask"] == terminal["inheritedAffinityMask"]
+                    and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Java diagnostic generation changed image or affinity")
+            evidence["os_generation"] = member
+            observed_generations.append((pid, member["creationFileTime"]))
         flags = class_file_flags(value)
         if flags:
             evidence.update(diagnostic_path=str(path), class_load_file_flags=flags)
@@ -690,6 +703,19 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
                               Path(record["class_load_diagnostic"]["path"]).read_text(encoding="utf-8"))
                     for record in authorities), "JMH version probe lacks a bound JavaExec compiler-hints origin")
     require(files and len(forks) == len(set(forks)), "Missing JVM diagnostics or duplicate JMH fork generation")
+    if require_all_java_generations:
+        captured_generations = set()
+        for pid, histories in terminal["members"].items():
+            require(re.fullmatch(r"[1-9][0-9]*", pid) is not None and isinstance(histories, list),
+                    "Complete Java coverage requires explicit process histories")
+            for member in histories:
+                if Path(member["image"]).name.lower() in ("java.exe", "javaw.exe"):
+                    require(os.path.normcase(member["image"]) in allowed, "Unknown owned Java executable")
+                    identity = (int(pid), member["creationFileTime"])
+                    require(identity not in captured_generations, "Duplicate captured Java generation")
+                    captured_generations.add(identity)
+        require(len(observed_generations) == len(set(observed_generations))
+                and set(observed_generations) == captured_generations, "Missing or duplicate owned Java generation diagnostic")
     if expected_forks is not None:
         require(len(forks) == expected_forks, "Incomplete actual JMH fork ownership/caps/affinity matrix")
     captured = [record["class_load_diagnostic"]["path"] for record in records if "class_load_diagnostic" in record]

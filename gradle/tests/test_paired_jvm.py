@@ -1100,6 +1100,76 @@ class PairedJvmTest(unittest.TestCase):
         self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
         self.assertNotIn("working_directory", actual)
 
+    def test_process_isolation_worker_diagnostics_survive_empty_environment_and_cover_generations(self):
+        source = (Path(__file__).resolve().parents[1] / "performance/bounded-jvm.init.gradle.kts").read_text(encoding="utf-8")
+        block = re.search(r"val workerDiagnostics = listOf\(([\s\S]*?)\n    \)", source).group(1)
+        diagnostics = re.findall(r'"([^"]+)"', block)
+        self.assertEqual(diagnostics[:4], ["-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCommandLineFlags", "-XX:-DisplayVMOutput", "-XX:+LogVMOutput"])
+        self.assertEqual(diagnostics[4:], ["-XX:LogFile=${vmLogs.invariantSeparatorsPath}/vm-%p-%t.log"])
+        self.assertIn('.invoke(arguments, listOf("-Xmx512m", "-XX:MaxMetaspaceSize=256m") + workerDiagnostics)', source)
+        for mode in ("complete-reuse", "legacy-default", "missing-generation", "wrong-reused-birth", "wrong-image", "unclosed",
+                     "active", "nonnatural", "open-terminal", "duplicate-diagnostic", "wrong-affinity", "unknown-javaw", "alias-pid"):
+            with self.subTest(mode=mode):
+                directory = self.root / ("isolated-worker-" + mode)
+                (directory / "class-loads").mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"synthetic worker executable")
+                (directory / "console.log").write_bytes(b"")
+                parent_environment = {"JAVA_TOOL_OPTIONS": "-XX:LogFile=wrong-inherited-path"}
+                worker_environment = {}
+                arguments = ["-Xmx512m", "-XX:MaxMetaspaceSize=256m", *[flag.replace("${vmLogs.invariantSeparatorsPath}", directory.as_posix()) for flag in diagnostics]]
+                self.assertNotIn("JAVA_TOOL_OPTIONS", worker_environment)
+                self.assertNotIn(parent_environment["JAVA_TOOL_OPTIONS"], arguments)
+                members, logs = [], []
+                for index, birth in enumerate((1000, 5000)):
+                    members.append({"pid": 123, "creationFileTime": 116444736000000000 + birth * 10000,
+                                    "exitFileTime": 116444736000000000 + (birth + 500) * 10000, "image": str(executable),
+                                    "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
+                                    "affinityMask": 15, "systemAffinityMask": 15})
+                    if index == 1 and mode in ("missing-generation", "legacy-default"):
+                        continue
+                    log = directory / ("vm-" + str(index) + ".log")
+                    start = 1001 if index == 1 and mode == "wrong-reused-birth" else birth + 1
+                    log.write_bytes((f"<hotspot_log process='123' time_ms='{start}'><vm_arguments><args>{' '.join(arguments)}</args>"
+                                     f"<command>worker.org.gradle.process.internal.worker.GradleWorkerMain 1</command>\njava.home={home}\njava.class.path=worker.jar\n"
+                                     "</vm_arguments>\n-XX:MaxHeapSize=536870912 -XX:MaxMetaspaceSize=268435456\n<hotspot_log_done/></hotspot_log>\n").encode())
+                    logs.append(log)
+                terminal = {"members": {"123": members}, "naturalRelease": True, "handlesClosed": True,
+                            "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15}
+                if mode == "wrong-image":
+                    members[1]["image"] = str(home / "different/java.exe")
+                elif mode == "unclosed":
+                    members[1]["handleClosed"] = False
+                elif mode == "active":
+                    terminal["activeProcessesAfterCleanup"] = 1
+                elif mode == "nonnatural":
+                    terminal["naturalRelease"] = False
+                elif mode == "open-terminal":
+                    terminal["handlesClosed"] = False
+                elif mode == "duplicate-diagnostic":
+                    duplicate = directory / "duplicate.log"
+                    duplicate.write_bytes(logs[0].read_bytes())
+                    logs.append(duplicate)
+                elif mode == "wrong-affinity":
+                    members[1]["affinityMask"] = 1
+                elif mode == "unknown-javaw":
+                    terminal["members"]["124"] = [{**members[1], "pid": 124, "image": str(home / "bin/javaw.exe")}]
+                elif mode == "alias-pid":
+                    terminal["members"]["0123"] = [members[1]]
+                allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                if mode in ("complete-reuse", "legacy-default"):
+                    PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=mode != "legacy-default")
+                    records = PAIRED.read_json(directory / "vms.json")
+                    self.assertTrue(all(row["role"] == "worker" and row["caps"] == {"MaxHeapSize": 536870912, "MaxMetaspaceSize": 268435456} for row in records))
+                    if mode == "complete-reuse":
+                        self.assertEqual([row["os_generation"] for row in records], members)
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=True)
+                    self.assertFalse((directory / "vms.json").exists())
+
     def test_source_sized_vm_diagnostic_retains_all_bytes_without_weakening_terminal_or_caps(self):
         for mode in ("complete", "default-bound", "explicit-overflow", "truncated", "duplicate-header", "changed-cap"):
             with self.subTest(mode=mode):
