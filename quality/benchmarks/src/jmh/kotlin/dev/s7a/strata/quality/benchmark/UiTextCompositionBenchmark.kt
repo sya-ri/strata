@@ -30,6 +30,7 @@ import org.openjdk.jmh.annotations.State
  * Prepared immutable parts and untimed membership/frame oracles stay outside every invocation.
  */
 @OptIn(InternalStrataRuntimeApi::class)
+@State(Scope.Thread)
 public open class UiTextCompositionBenchmark {
     private val single: UiText = UiText.Literal("single")
 
