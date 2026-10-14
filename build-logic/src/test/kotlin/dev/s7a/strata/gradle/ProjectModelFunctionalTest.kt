@@ -208,11 +208,18 @@ internal class ProjectModelFunctionalTest {
     }
 
     @Test
-    fun `Web model retains its original project set and acceptance boundary`() {
+    fun `Web model retains source checks and refuses implicit coverage acceptance`() {
         assertEquals(sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"), included("-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents"))
         assertEquals(
             sharedJvmProjects + setOf(":runtime:web", ":integration:web", ":examples:web"),
-            included("-Pstrata.webOnly=true", ":runtime:web:check", ":integration:web:check", ":performance-testkit:publishToMavenLocal"),
+            included("-Pstrata.webOnly=true", ":runtime:web:check", ":performance-testkit:publishToMavenLocal"),
+        )
+        rejected("complete build", false, "-Pstrata.webOnly=true", ":integration:web:check")
+        assertEquals(69, included(":integration:web:check").size)
+        assertTrue(
+            Files.readAllLines(directory.resolve("executed-tasks.txt")).containsAll(
+                listOf(":integration:web:check", ":integration:web:koverVerify", ":integration:web:koverCachedVerify"),
+            ),
         )
         rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:check")
         rejected("complete build", false, "-Pstrata.webOnly=true", ":quality:component-benchmarks:jmhComponents", ":quality:component-benchmarks:check")
@@ -475,8 +482,12 @@ internal class ProjectModelFunctionalTest {
                 "verifyPublishedPerformanceInventory", "verifyPublishedHostInventory", "capturePublishedHostInventory",
                 "verifyOfflineFontParity", "ciMinecraftCheck", "idea", "benchmarkMinecraftQuick", "gametestClasses")
             available.filter { tasks.names.contains(it).not() }.forEach { name -> tasks.register(name) }
-            listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
+            listOf("koverHtmlReport", "koverXmlReport", "koverBinaryReport", "koverVerify", "koverCachedVerify", "koverLog", "koverJvmTests", "koverHtmlReportJvm").forEach { name ->
                 tasks.register(name) { group = LifecycleBasePlugin.VERIFICATION_GROUP }
+            }
+            if (path == ":integration:web") {
+                tasks.named("koverVerify") { dependsOn("koverCachedVerify") }
+                tasks.named("check") { dependsOn("koverVerify") }
             }
             if (tasks.names.contains("jvmTest").not()) tasks.register("jvmTest")
             if (path.startsWith(":integration:minecraft-fabric-")) {
