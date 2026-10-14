@@ -2,6 +2,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.JavaExec
@@ -65,6 +66,23 @@ fun preservePreparedClasspath(files: Iterable<File>, retained: File): List<Map<S
     }
     File(retained, "classpath.json").writeText(JsonOutput.toJson(mapOf("schema" to "strata-paired-jvm-classpath-v1", "entries" to entries)), Charsets.UTF_8)
     return entries
+}
+
+/** Preserves all origins, retaining explicit executed NO-SOURCE receipts for absent owned outputs. */
+fun preserveOwnedClasspath(files: Iterable<File>, retained: File, tasks: List<Task>) {
+    val original = files.map { it.canonicalFile }
+    val absent = original.filter { it.exists().not() }.map { origin ->
+        check(origin.extension.contentEquals("jar").not()) { "Missing resolved dependency archive: $origin" }
+        val producers = tasks.filter { producer ->
+            producer.state.executed && producer.state.noSource &&
+                origin.toPath().startsWith(producer.project.layout.buildDirectory.get().asFile.canonicalFile.toPath()) &&
+                origin in producer.outputs.files.files.map { it.canonicalFile }
+        }
+        check(producers.size == 1) { "Missing output without one executed NO-SOURCE producer: $origin" }
+        mapOf("source" to origin.absolutePath, "task" to producers.single().path, "reason" to "NO-SOURCE")
+    }
+    preservePreparedClasspath(original.filter { it.exists() }, retained)
+    File(retained, "original-classpath.json").writeText(JsonOutput.toJson(mapOf("sources" to original.map { it.absolutePath }, "absent_outputs" to absent)), Charsets.UTF_8)
 }
 
 // Apply the retained finite JVM profile to main and included builds; no benchmark registration is added.
@@ -186,19 +204,7 @@ gradle.projectsEvaluated {
                 check(maxParallelForks == 1)
                 if (rootProject.providers.gradleProperty("strata.paired.testClasspathTask").orNull == path) {
                     val retained = File(rootProject.providers.gradleProperty("strata.paired.preserveTestClasspath").get())
-                    val original = classpath.files.map { it.canonicalFile }
-                    val absent = original.filter { it.exists().not() }.map { origin ->
-                        check(origin.extension.contentEquals("jar").not()) { "Missing resolved dependency archive: $origin" }
-                        val producers = gradle.taskGraph.allTasks.filter { producer ->
-                            producer.state.executed && producer.state.noSource &&
-                                origin.toPath().startsWith(producer.project.layout.buildDirectory.get().asFile.canonicalFile.toPath()) &&
-                                origin in producer.outputs.files.files.map { it.canonicalFile }
-                        }
-                        check(producers.size == 1) { "Missing output without one executed NO-SOURCE producer: $origin" }
-                        mapOf("source" to origin.absolutePath, "task" to producers.single().path, "reason" to "NO-SOURCE")
-                    }
-                    preservePreparedClasspath(original.filter { it.exists() }, retained)
-                    File(retained, "original-classpath.json").writeText(JsonOutput.toJson(mapOf("sources" to original.map { it.absolutePath }, "absent_outputs" to absent)), Charsets.UTF_8)
+                    preserveOwnedClasspath(classpath.files, retained, gradle.taskGraph.allTasks)
                 }
             }
         }
@@ -289,6 +295,13 @@ gradle.projectsEvaluated {
                     inputs.parentFile.mkdirs()
                     inputs.bufferedWriter(Charsets.UTF_8).use { libraries.store(it, "Resolved non-Strata owner report libraries") }
                     systemProperty("strata.performance.inputs", inputs.absolutePath)
+                }
+                rootProject.providers.gradleProperty("strata.paired.sourceClasspaths").orNull?.let { output ->
+                    val build = rootProject.projectDir.canonicalFile.relativeTo(workspace).invariantSeparatorsPath.ifEmpty { "root" }
+                    val relative = "$build/${path.removePrefix(":").replace(':', '-')}/classpath.json"
+                    val inventory = File(output, relative)
+                    preserveOwnedClasspath(classpath.files, inventory.parentFile, gradle.taskGraph.allTasks)
+                    logger.lifecycle("paired.jvm.sourceClasspath {}", JsonOutput.toJson(mapOf("task" to path, "inventory" to relative)))
                 }
                 logger.lifecycle("paired.jvm.origin {}", JsonOutput.toJson(mapOf("task" to path, "main" to mainClass.get(), "executable" to javaLauncher.get().executablePath.asFile.absolutePath, "classpath" to classpath.asPath)))
                 if (name == "strataPairedEvidence" && rootProject.providers.gradleProperty("strata.paired.prepareClasspath").orNull?.toBooleanStrict() == true) {

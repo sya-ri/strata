@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import sys
@@ -319,6 +320,90 @@ class PairedBrowserTest(unittest.TestCase):
         source.write_bytes(b"changed resolved dependency")
         with self.assertRaisesRegex(ValueError, "Prepared classpath bytes changed"):
             self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+
+    def source_javaexec_classpath(self):
+        workspace = self.root / "source-workspace"
+        directory = self.root / "source-evidence"
+        retained = directory / "source-classpaths/root/fixture-capture"
+        retained.mkdir(parents=True)
+        sources, entries = [], []
+        for index in range(2):
+            source = workspace / f"fixture/build/libs/library-{index}.jar"
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(f"actual control bytes {index}".encode())
+            copied = retained / f"classpath-{index}.jar"
+            copied.write_bytes(source.read_bytes())
+            sources.append(str(source))
+            entries.append({"source": str(source), "path": str(copied), "sha256": self.shared.digest(source)})
+        self.shared.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": entries})
+        self.shared.write_new(retained / "original-classpath.json", {"sources": sources, "absent_outputs": []})
+        origin = {"task": ":fixture:capture", "main": "example.Main", "executable": str(self.root / "java.exe"), "classpath": os.pathsep.join(sources)}
+        capture = {"task": origin["task"], "inventory": "root/fixture-capture/classpath.json"}
+        self.source_javaexec_log(directory, [origin], [capture])
+        return workspace, directory, retained, origin, capture
+
+    def source_javaexec_log(self, directory, origins, captures, prefix=""):
+        lines = ["paired.jvm.sourceClasspath " + json.dumps(row) for row in captures]
+        lines += ["paired.jvm.origin " + json.dumps(row) for row in origins]
+        (directory / "console.log").write_text(prefix + "\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_source_javaexec_retains_complete_ordered_control_bytes_and_rejects_omissions(self):
+        workspace, directory, retained, origin, capture = self.source_javaexec_classpath()
+        verified = self.browser.verify_source_classpaths(self.shared, workspace, directory)
+        self.assertEqual(verified[0]["present_entries"], 2)
+        self.assertEqual(verified[0]["absent_outputs"], [])
+        (directory / "source-classpaths-verified.json").unlink()
+        for origins, captures in (([origin], []), ([], [capture]), ([origin], [capture, capture]),
+                                  ([origin], [{**capture, "task": ":other:capture"}]),
+                                  ([{**origin, "classpath": os.pathsep.join(reversed(origin["classpath"].split(os.pathsep)))}], [capture]),
+                                  ([origin], [{**capture, "inventory": "../outside/classpath.json"}])):
+            with self.subTest(origins=origins, captures=captures):
+                (directory / "source-classpaths-verified.json").unlink(missing_ok=True)
+                self.source_javaexec_log(directory, origins, captures)
+                with self.assertRaises(ValueError):
+                    self.browser.verify_source_classpaths(self.shared, workspace, directory)
+
+    def test_source_javaexec_rejects_changed_original_copy_and_unconsumed_inventory(self):
+        workspace, directory, retained, origin, capture = self.source_javaexec_classpath()
+        for changed in (Path(origin["classpath"].split(os.pathsep)[0]), retained / "classpath-0.jar"):
+            original = changed.read_bytes()
+            changed.write_bytes(b"different actual bytes")
+            with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, "Prepared classpath bytes changed"):
+                self.browser.verify_source_classpaths(self.shared, workspace, directory)
+            changed.write_bytes(original)
+        extra = directory / "source-classpaths/root/unconsumed/classpath.json"
+        extra.parent.mkdir(parents=True)
+        extra.write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "actual JavaExec origin"):
+            self.browser.verify_source_classpaths(self.shared, workspace, directory)
+
+    def test_source_javaexec_preserves_empty_owned_output_receipts_without_dropping_original_entry(self):
+        workspace, directory, retained, origin, capture = self.source_javaexec_classpath()
+        original = self.shared.read_json(retained / "original-classpath.json")
+        empty = workspace / "fixture/build/classes/java/main"
+        absent = {"source": str(empty), "task": ":fixture:compileJava", "reason": "NO-SOURCE"}
+        original["sources"].append(str(empty))
+        original["absent_outputs"] = [absent]
+        (retained / "original-classpath.json").write_text(json.dumps(original), encoding="utf-8")
+        origin["classpath"] = os.pathsep.join(original["sources"])
+        self.source_javaexec_log(directory, [origin], [capture], "> Task :fixture:compileJava NO-SOURCE\n")
+        verified = self.browser.verify_source_classpaths(self.shared, workspace, directory)
+        self.assertEqual(verified[0]["present_entries"], 2)
+        self.assertEqual(verified[0]["absent_outputs"], [absent])
+        (directory / "source-classpaths-verified.json").unlink()
+        self.source_javaexec_log(directory, [origin], [capture])
+        with self.assertRaisesRegex(ValueError, "actual NO-SOURCE"):
+            self.browser.verify_source_classpaths(self.shared, workspace, directory)
+
+    def test_source_javaexec_zero_executions_are_explicit_and_capture_count_is_bounded(self):
+        workspace, directory = self.root / "workspace", self.root / "evidence"
+        directory.mkdir()
+        self.source_javaexec_log(directory, [], [])
+        self.assertEqual(self.browser.verify_source_classpaths(self.shared, workspace, directory), [])
+        (directory / "source-classpaths-verified.json").unlink()
+        self.source_javaexec_log(directory, [{}] * 33, [{}] * 33)
+        with self.assertRaisesRegex(ValueError, "missing or oversized"):
+            self.browser.verify_source_classpaths(self.shared, workspace, directory)
 
     def test_whole_standard_and_supplemental_unions_keep_original_profiles(self):
         self.assertEqual(self.load(self.manifest), self.manifest)

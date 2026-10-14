@@ -671,7 +671,10 @@ No old workstation owner directory, private index or missing historical metadata
 Fixed byte pins cannot be replaced by newly generated hashes after a mismatch.
 
 All selected suites' full work gates, optional independent runtime tests and optional independent preflight controls run before sampling.
-For each suite, the driver collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
+By default, each suite collects AverageTime and SampleTime separately in `B0/C0/B1/C1/B2/C2` order, with three warm-up iterations of one second, five measured iterations of one second, one fork, one thread and the existing GC profiler.
+For a corpus whose original acceptance profile requires only AverageTime, an explicit suite `"modes": ["avgt"]` preserves that profile without adding SampleTime.
+This choice retains every declared method, parameter, untimed control, runtime binding and all three independent repetitions per side; omitted `modes` or explicit `["avgt", "sample"]` preserves the existing two-mode collection.
+Final attempt audits require six independent receipts and one comparison per declared mode, with the exact declared suite/mode and `B0/C0/B1/C1/B2/C2` sequence, including mixed-profile manifests.
 Quick, smoke, repetition and timing overrides are not manifest fields.
 The existing test kit validates per-fork and per-iteration provenance and owns collection, percentile processing, median aggregation and comparisons.
 The report displays the processor's baseline/candidate medians, absolute deltas, allocation and GC metrics, and SampleTime percentile medians.
@@ -822,6 +825,8 @@ VM XML start timestamps retain their original values and signed differences from
 With complete fresh invocation accounting, exactly one XML and one captured generation for a PID may bind a negative reconstructed start through `unique_owned_pid_in_complete_invocation`; reused PIDs retain the existing unique timestamp/lifetime match and unsupported negative offsets fail.
 Coarse/precise clock observations and adjustment metadata are retained without treating the adjustment increment as a guaranteed clock resolution.
 The archive exports actual Java byte pins, complete declared compilation files and runtime archives, original JVM diagnostics, and the resolved JVM test classpath with its external dependency bytes when that gate is requested.
+Source preparation also preserves every executed JavaExec task's complete ordered classpath through the existing bounded classpath copier, including original and copied external-library byte pins.
+The controller matches these snapshots to each actual JavaExec origin in the invocation log, rejects missing, extra, reordered or changed entries, and retains the snapshots before certifying preparation.
 Missing dependency archives fail; an absent owned output directory requires a separate receipt from its unique executed `NO-SOURCE` producer, checked against the original full classpath and task log.
 Job user/kernel CPU counters, outer invocation wall time and peak committed bytes retain their Source-task scope; allocation and resident memory remain unavailable.
 A completed preparation is recorded as `prepared` and establishes no runtime timing or browser acceptance.

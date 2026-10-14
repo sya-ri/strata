@@ -26,7 +26,7 @@ QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 
 
 class PairedJvmTest(unittest.TestCase):
-    """Invalid manifests cannot weaken the fixed three-by-two-mode collection contract."""
+    """Invalid manifests cannot weaken the declared complete three-repetition collection contract."""
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
@@ -50,6 +50,86 @@ class PairedJvmTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return PAIRED.load_manifest(self.root, path)
+
+    def test_original_average_time_only_profile_keeps_all_cases_controls_and_repetitions(self):
+        original = copy.deepcopy(self.manifest)
+        explicit = copy.deepcopy(original)
+        explicit["suites"][0]["modes"] = ["avgt"]
+        loaded = self.load(explicit)
+        self.assertEqual(loaded, explicit)
+        retained = copy.deepcopy(loaded)
+        retained["suites"][0].pop("modes")
+        self.assertEqual(retained, original)
+
+    def test_omitted_or_explicit_two_mode_profile_preserves_the_existing_default(self):
+        self.assertEqual(self.load(self.manifest), self.manifest)
+        explicit = copy.deepcopy(self.manifest)
+        explicit["suites"][0]["modes"] = ["avgt", "sample"]
+        self.assertEqual(self.load(explicit), explicit)
+
+    def test_modes_cannot_drop_average_time_duplicate_change_order_or_select_quick(self):
+        for modes in (None, True, "avgt", [], ["sample"], ["sample", "avgt"], ["avgt", "avgt"],
+                      ["avgt", "quick"], ["avgt", "sample", "avgt"], [1], {}):
+            with self.subTest(modes=modes):
+                invalid = copy.deepcopy(self.manifest)
+                invalid["suites"][0]["modes"] = modes
+                with self.assertRaises(ValueError):
+                    self.load(invalid)
+
+    def completed_jmh_fixture(self, modes):
+        """Create independent synthetic audit events without invoking a collector or producing scores."""
+        completed = [(name, mode, side, repetition, f"receipt-{name}-{mode}-{side}-{repetition}")
+                     for name, mode in modes for repetition in range(3) for side in ("baseline", "candidate")]
+        return {item[4] for item in completed}, [(name, mode, {}) for name, mode in modes], completed
+
+    def test_final_jmh_audit_accepts_original_42_average_time_default_and_mixed_complete_suites(self):
+        original = {**self.manifest["suites"][0], "name": "original-42", "modes": ["avgt"], "expected_cases": 42}
+        default = {**self.manifest["suites"][0], "name": "default"}
+        for suites, modes, expected_invocations, expected_comparisons in (
+            ([original], [("original-42", "avgt")], 6, 1),
+            ([default], [("default", "avgt"), ("default", "sample")], 12, 2),
+            ([original, default], [("original-42", "avgt"), ("default", "avgt"), ("default", "sample")], 18, 3),
+        ):
+            with self.subTest(suites=suites):
+                ids, comparisons, completed = self.completed_jmh_fixture(modes)
+                self.assertEqual(len(ids), expected_invocations)
+                self.assertEqual(len(comparisons), expected_comparisons)
+                PAIRED.verify_jmh_completion({"suites": suites}, ids, comparisons, completed)
+        PAIRED.verify_jmh_completion({"suites": []}, set(), [], [])
+
+    def test_final_jmh_audit_rejects_old_two_mode_counts_for_the_original_average_time_profile(self):
+        data = {"suites": [{"name": "original-42", "modes": ["avgt"], "expected_cases": 42}]}
+        ids, comparisons, completed = self.completed_jmh_fixture([("original-42", "avgt"), ("original-42", "sample")])
+        with self.assertRaisesRegex(ValueError, "invocation count"):
+            PAIRED.verify_jmh_completion(data, ids, comparisons, completed)
+        ids, comparisons, completed = self.completed_jmh_fixture([("original-42", "avgt")])
+        with self.assertRaisesRegex(ValueError, "comparison count"):
+            PAIRED.verify_jmh_completion(data, ids, comparisons + [("original-42", "sample", {})], completed)
+
+    def test_final_mixed_mode_audit_rejects_missing_repeated_reordered_or_orphan_invocations(self):
+        data = {"suites": [{"name": "original-42", "modes": ["avgt"], "expected_cases": 42}, {"name": "default", "expected_cases": 2}]}
+        ids, comparisons, completed = self.completed_jmh_fixture([("original-42", "avgt"), ("default", "avgt"), ("default", "sample")])
+        altered = [
+            (ids - {completed[-1][4]}, completed[:-1]),
+            (ids | {"extra-undeclared-receipt"}, completed + [("default", "sample", "candidate", 3, "extra-undeclared-receipt")]),
+            (ids, [completed[1], completed[0], *completed[2:]]),
+            (ids, [completed[0], completed[0], *completed[2:]]),
+            (ids, [(*completed[0][:4], "different-physical-receipt"), *completed[1:]]),
+            ((ids - {completed[0][4]}) | {"orphan-receipt"}, completed),
+        ]
+        for actual_ids, sequence in altered:
+            with self.subTest(ids=actual_ids, sequence=sequence), self.assertRaises(ValueError):
+                PAIRED.verify_jmh_completion(data, actual_ids, comparisons, sequence)
+
+    def test_final_mixed_mode_audit_rejects_missing_extra_repeated_and_reordered_comparisons(self):
+        data = {"suites": [{"name": "original-42", "modes": ["avgt"], "expected_cases": 42}, {"name": "default", "expected_cases": 2}]}
+        ids, comparisons, completed = self.completed_jmh_fixture([("original-42", "avgt"), ("default", "avgt"), ("default", "sample")])
+        for actual in (comparisons[:-1], comparisons + [("extra", "avgt", {})],
+                       [comparisons[0], comparisons[0], comparisons[2]],
+                       [comparisons[1], comparisons[0], comparisons[2]],
+                       [comparisons[0], comparisons[1], ("default", "avgt", {})]):
+            with self.subTest(comparisons=actual), self.assertRaises(ValueError):
+                PAIRED.verify_jmh_completion(data, ids, actual, completed)
 
     def selector_git(self, *arguments):
         """Build real isolated fixture histories without invoking commit signing."""

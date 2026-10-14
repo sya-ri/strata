@@ -116,7 +116,9 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates"}, "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates", "modes"}, "Invalid suite fields")
+        require(suite.get("modes", ["avgt", "sample"]) in (["avgt"], ["avgt", "sample"]),
+                "Preserve the declared Standard average-time profile, optionally with SampleTime")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
         require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", suite["name"]) and suite["name"] not in names, "Invalid or duplicate suite name")
         names.add(suite["name"])
@@ -994,6 +996,19 @@ def verify_test_gate(directory, gate):
                                                 "counts": counts, "reports": inventory["reports"]})
 
 
+def verify_jmh_completion(data, invocation_ids, comparisons, completed):
+    """Require every declared mode's complete ordered B0/C0/B1/C1/B2/C2 sequence and comparison."""
+    modes = [(suite["name"], mode) for suite in data["suites"] for mode in suite.get("modes", ["avgt", "sample"])]
+    expected = [(name, mode, side, repetition) for name, mode in modes
+                for repetition in range(3) for side in ("baseline", "candidate")]
+    require(len(invocation_ids) == len(modes) * 6, "Whole attempt invocation count is incomplete")
+    require(len(comparisons) == len(modes), "Whole attempt comparison count is incomplete")
+    require([tuple(item[:4]) for item in completed] == expected, "Whole attempt collection sequence is missing, repeated or reordered")
+    require(len(completed) == len(invocation_ids) and {item[4] for item in completed} == invocation_ids,
+            "Whole attempt receipt identities are missing, repeated or changed")
+    require([(name, mode) for name, mode, _ in comparisons] == modes, "Whole attempt comparisons are missing, repeated or reordered")
+
+
 def table(output, comparisons, phases, operations=(), owners=()):
     """Render the existing processor's medians and deltas without new aggregation or timing gates."""
     rows = []
@@ -1289,6 +1304,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 require(original.is_dir(), "Missing common compiled fixture closure")
                 shutil.copytree(original, prepared / owner.strip(":").replace(":", "-") / relative)
         comparisons, invocation_ids, operation_comparisons, operation_ids, admitted_suites = [], set(), [], set(), []
+        completed_jmh = []
         java_identity = read_json(output / "java-installations.json")
         # Every independent suite/side control completes before the first timed invocation in the attempt.
         for suite in data["suites"]:
@@ -1326,7 +1342,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         paired_jmh_bindings = {}
         for suite, project, task, selectors, classpaths in admitted_suites:
             bindings = {"baseline": [], "candidate": []}
-            for mode in ("avgt", "sample"):
+            for mode in suite.get("modes", ["avgt", "sample"]):
                 runs = {"baseline": [], "candidate": []}
                 for repetition in range(3):
                     for side in ("baseline", "candidate"):
@@ -1359,6 +1375,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                                 and len(receipt["registered_workloads"]) == suite["expected_cases"] and receipt["run_id"] not in invocation_ids,
                                 "Missing cases, fork proof or independent invocation")
                         invocation_ids.add(receipt["run_id"])
+                        completed_jmh.append((suite["name"], mode, side, repetition, receipt["run_id"]))
                         runs[side].append(str(destination))
                         if mode == "avgt":
                             bindings[side].append(str(destination))
@@ -1475,9 +1492,9 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             for item in classpaths.values():
                 require(digest(item["path"]) == item["sha256"], "Prepared classpath inventory changed during collection")
                 prepared_classpath(item["path"])
-        require(len(invocation_ids) == len(data["suites"]) * 12 and len(comparisons) == len(data["suites"]) * 2, "Whole attempt incomplete")
+        verify_jmh_completion(data, invocation_ids, comparisons, completed_jmh)
         require(len(operation_ids) == sum("operation_reports" in suite for suite in data["suites"]) * 6, "Supplemental operation attempt incomplete")
-        record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
+        record["score_cells"] = sum(suite["expected_cases"] * len(suite.get("modes", ["avgt", "sample"])) * 6 for suite in data["suites"])
         record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
         table(output, comparisons, record["phases"], operation_comparisons, owner_comparisons)
         if driver is not None:

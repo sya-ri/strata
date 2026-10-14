@@ -195,9 +195,8 @@ def verify_source_tasks(shared, directory, tasks):
     return observed
 
 
-def verify_source_test_classpath(shared, workspace, directory):
+def verify_source_classpath(shared, workspace, directory, retained):
     """Distinguish recorded empty task outputs from missing resolved dependencies without dropping either silently."""
-    retained = directory / "test-classpath"
     present = shared.prepared_classpath(retained / "classpath.json")
     original = shared.read_json(retained / "original-classpath.json")
     shared.require(set(original) == {"sources", "absent_outputs"} and isinstance(original["sources"], list)
@@ -215,12 +214,42 @@ def verify_source_test_classpath(shared, workspace, directory):
     sources = [item["source"] for item in present["entries"]]
     shared.require(set(original["sources"]) == set(sources) | set(absent)
                    and [source for source in original["sources"] if source not in absent] == sources, "Original Test classpath entries were dropped or reordered")
-    shared.write_new(directory / "test-classpath-verified.json", {"present_entries": len(sources), "absent_outputs": list(absent.values())})
+    return original["sources"], {"present_entries": len(sources), "absent_outputs": list(absent.values())}
+
+
+def verify_source_test_classpath(shared, workspace, directory):
+    """Retain the existing full JVM test classpath verification receipt."""
+    _, record = verify_source_classpath(shared, workspace, directory, directory / "test-classpath")
+    shared.write_new(directory / "test-classpath-verified.json", record)
 
 
 def expand_arguments(collection, roles):
     """Resolve structured file roles without a shell or a private workload registry."""
     return [value.format_map(roles) for value in collection["arguments"]]
+
+
+def verify_source_classpaths(shared, workspace, directory):
+    """Match every actual JavaExec origin to its unchanged complete preserved classpath, in order."""
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    origins = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.origin (.+)$", console)]
+    captures = [json.loads(row) for row in re.findall(r"(?m)^paired\.jvm\.sourceClasspath (.+)$", console)]
+    shared.require(len(origins) == len(captures) <= 32, "Source JavaExec classpath capture is missing or oversized")
+    root = directory / "source-classpaths"
+    inventories, verified = set(), []
+    for origin, capture in zip(origins, captures):
+        shared.require(set(origin) == {"task", "main", "executable", "classpath"} and set(capture) == {"task", "inventory"}
+                       and origin["task"] == capture["task"], "Source classpath task identity changed")
+        path = shared.relative_path(root, capture["inventory"])
+        shared.require(path.name == "classpath.json" and path not in inventories, "Duplicate or wrong Source classpath inventory")
+        inventories.add(path)
+        original, record = verify_source_classpath(shared, workspace, directory, path.parent)
+        sources = [os.path.normcase(str(Path(source).resolve())) for source in original]
+        actual = [os.path.normcase(str(Path(value).resolve())) for value in origin["classpath"].split(os.pathsep)]
+        shared.require(sources == actual, "Original Source JavaExec classpath entries were dropped or reordered")
+        verified.append({"task": capture["task"], "inventory": capture["inventory"], "sha256": shared.digest(path), **record})
+    shared.require(set(root.glob("**/classpath.json")) == inventories, "Source classpath inventory lacks an actual JavaExec origin")
+    shared.write_new(directory / "source-classpaths-verified.json", {"tasks": verified})
+    return verified
 
 
 def validate_terminal(shared, exit_code, terminal, admission):
@@ -354,6 +383,7 @@ def run(shared, root, selection, output):
                 arguments = arguments + ["--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain", "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false", "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(str(home) for home in homes.values()), "-I", str(root / "gradle/performance/bounded-jvm.init.gradle.kts"), f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
                 if source_mode:
                     arguments += ["--rerun-tasks"]
+                    arguments += ["-Pstrata.paired.sourceClasspaths=" + str(directory / "source-classpaths")]
                     if test_gate is not None:
                         arguments += ["-Pstrata.paired.testClasspathTask=" + test_gate["task"], "-Pstrata.paired.preserveTestClasspath=" + str(directory / "test-classpath")]
             request = {"workspace": str(workspace), "arguments": arguments, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3, "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
@@ -389,6 +419,7 @@ def run(shared, root, selection, output):
                 if source_mode:
                     verify_source_test_classpath(shared, workspace, directory)
             if source_mode:
+                verify_source_classpaths(shared, workspace, directory)
                 counters = {key: terminal.get(key) for key in ("jobUserCpu100ns", "jobKernelCpu100ns", "peakJobCommittedBytes")}
                 shared.require(all(type(value) is int and 0 <= value for value in counters.values()), "Actual Source Job counters are unavailable")
                 record["phases"][-1].update(owned_wall_seconds=owned_wall_seconds, **counters, allocation_bytes=None, rss_bytes=None)
