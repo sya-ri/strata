@@ -554,6 +554,8 @@ Text reference bytes come from an independent JDK writer; generated metadata and
 Negotiated receive refreshes only pre-created fragment identity headers in the invocation setup; lifecycle includes construction, local greeting drain, peer negotiation, complete receive, and close.
 Logical Text field/byte totals describe the reference schema and do not establish actual temporary arrays, physical allocation, CPU, or elapsed benefit.
 Freeze the same compiled fixture and collector on both runtime sides, retain every public and Text-free control, and collect three independent standard repetitions in each mode before evaluating a change.
+Both fixtures expose optional operation-report adapters covering all 94 complete operations through the shared owner-thread collector, with 100 warm-up operations and 200 samples per row for the Text comparison.
+Public Text encoding/decoding, Text-free receives and all thirty protocol operations remain explicit controls; invocation preparation, assertions and surviving connection teardown stay outside sampling, while lifecycle close remains inside its original operation.
 Source-site work observation, caller/private ownership, strict failure parity, real installed output, and terminal retention remain separate untimed acceptance gates.
 
 The stress work gate explicitly requests 16,384 diagnostic records for the 4096-observer case, whose retained tree contains more nodes than observers.

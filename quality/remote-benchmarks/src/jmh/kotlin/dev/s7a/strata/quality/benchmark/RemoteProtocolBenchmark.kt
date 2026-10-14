@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.projection.ProjectionValue
 import dev.s7a.strata.resource.ResourceId
@@ -150,5 +151,16 @@ public open class RemoteProtocolBenchmark {
                     RemoteNode(RemoteDeclaration(index.toLong(), type, ProjectionValue.Integer(if (changed) 1 else 0)), children = if (index == 1) (2..nodes).map(Int::toLong) else emptyList())
                 },
             )
+    }
+
+    /**
+     * Supplemental collection retains every unchanged protocol control.
+     */
+    public companion object {
+        /**
+         * Binds the original thirty operations without changing their JMH boundaries.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = RemoteProtocolOperationReport
     }
 }

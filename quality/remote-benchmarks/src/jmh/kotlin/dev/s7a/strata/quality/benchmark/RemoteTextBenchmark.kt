@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.projection.ProjectionType
 import dev.s7a.strata.runtime.remote.RemoteConnection
 import dev.s7a.strata.runtime.remote.RemoteFraming
@@ -216,6 +217,12 @@ public open class RemoteTextBenchmark {
      * Shared collector admission checks run outside every timing interval.
      */
     public companion object {
+        /**
+         * Binds all original Text operations to the shared supplemental owner-thread collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = RemoteTextOperationReport
+
         /**
          * Admits every generated case in both modes and compares all four operations with independent wire bytes.
          */
