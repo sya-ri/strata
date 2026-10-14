@@ -129,6 +129,9 @@ tasks.register<JavaExec>("jmhComponents") {
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
     configureJmhEvidence(result.get(), repetition, if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", mode, short)
     args("-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    val profilers = providers.gradleProperty("strata.performance.profilers").orNull?.split(',')?.map(String::trim).orEmpty()
+    require(profilers.all(String::isNotBlank) && profilers.distinct().size == profilers.size) { "Additional JMH profiler identifiers must be nonblank and unique" }
+    profilers.forEach { args("-prof", it) }
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
@@ -225,6 +228,7 @@ tasks.register<JavaExec>("processNativeComponentEvidence") {
     description = "Validates the profile's native component invocations and delegates all aggregation to the testkit."
     dependsOn("classes")
     classpath = sourceSets.named("main").get().runtimeClasspath
+    workingDir(rootProject.projectDir)
     javaLauncher.set(componentLauncher)
     mainClass.set("dev.s7a.strata.quality.benchmark.NativeComponentPerformanceEvidence")
     providers.gradleProperty("strata.performance.request").orNull?.let { args(rootProject.file(it).absolutePath) }

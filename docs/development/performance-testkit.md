@@ -77,6 +77,11 @@ Additional external files use `-Pstrata.performance.fixtureInputs=<UTF-8-propert
 The collector archives these files alongside resolved control libraries and rejects overlapping labels; no new fixture-specific Gradle property is needed.
 For parameter subsets, `strata.performance.parameters` uses parameter names as keys and comma-separated compiled values as values.
 
+The component task accepts `-Pstrata.performance.profilers=<comma-separated-JMH-profiler-identifiers>` for additional metrics from standard JMH profilers.
+It appends the requested profilers to the unchanged GC and loaded-fork provenance profilers; omission preserves the existing collection.
+Use the same selection on both runtime sides and retain it in the raw receipt's arguments.
+JMH resolves each identifier and rejects unavailable profilers before a successful collection receipt.
+
 Use `-Pstrata.jvmOnly=true` for JVM tests, fixture verification, preparation and collection.
 This model includes the runtime, testkit and quality dependency closure of the three JVM benchmark modules, the API-only JVM integration consumer, and the Velocity API/runtime owners, without versioned Fabric projects or Web applications.
 Gradle resolves the registered tasks, selectors, abbreviations and task options normally, including `--tests` on typed JVM Test tasks and complete fixture verification such as `verifyHistoricalWorkloads` and `verifyComponentRenderingWork`.
@@ -141,6 +146,22 @@ The separate `-Pstrata.performance.benchmarks=NonuniformOverlayBenchmark -Pstrat
 It uses the same JMH defaults, controlled-runtime selection and shared evidence processing, with its own six-case fixture registration and `nonuniform-overlay` output directory.
 Source preparation is outside measurement; each operation allocates a fresh output and preserves every ordered blend.
 This family does not change the historical 54-case matrix or satisfy its acceptance.
+
+The independent `-Pstrata.performance.benchmarks=NonpaintingRasterBenchmark -Pstrata.performance.suite=nonpainting-raster` corpus fixes 36 scenarios and two output-ownership methods, for 72 AverageTime cases.
+It covers all four portable primitives, offscreen destinations, empty integer clips, nested fractional clips containing no physical centers, subpixel sampled destinations and exact zero-alpha sampled tint.
+Empty and mixed lists, subsequent opaque or ordered translucent fills, densities one through four, original-coordinate regions, preexisting patterned destinations and visible/one-pixel controls remain separate cases.
+Nine skinny physical extents test immediately below, at and above the 4,096, 262,144 and 1,048,576-pixel palette/full-fill admissions.
+`verifyWork()` and trial setup compare complete pixels with an independent ordered scalar reference and verify immutable source ownership and the borrowed sentinel tail before collection.
+
+`immutable` includes fresh result storage and image ownership without a returned-pixel copy; `borrowed` reuses one caller-owned array and includes required prefix initialization.
+Invocation setup restores dirty borrowed storage without allocation outside the declared raster operation, warming that prefix; disclose this condition rather than interpreting ownership differences as one end-to-end presentation result.
+Prepare and freeze one compiled fixture and collector for both runtime sides, preserve actual loaded archive receipts, collect three Standard repetitions per side and report every case and visible control with operation time and normalized allocation.
+
+For a uniform output of N pixels, an invisible primitive before a full opaque fill conditionally removes one N-pixel intermediate materialization; final N-pixel initialization is still required.
+At the 1,048,576-pixel single-translucent-fill admission, that invisible primitive also prevents entry to the 196,864-byte full-fill table path and its 65,536 initial alpha/channel combinations, leaving one scalar blend and final materialization.
+The bounded palette path can restore uniform state and cause a later final materialization, so work accounting must include that pass rather than applying the large-table model to every extent.
+Report these exact source-derived materialization, table and covered-pixel operations separately from measured JVM allocation and elapsed operation time; they are not measurements of compiler optimization or memory traffic.
+Native upload, GPU completion and FPS are inapplicable to these isolated headless operations; any native fallback evidence requires its own actual collection.
 
 The separate `-Pstrata.performance.benchmarks=SampledRasterBenchmark -Pstrata.performance.suite=sampled-raster` family measures fractional portable image generation with solid opaque, solid translucent and 64×64 patterned sources, each with an opaque non-identity RGB tint.
 Its 12 cases keep physical output at 320×180 or 1920×1080 while varying final density between one and four.
@@ -641,6 +662,10 @@ Missing, repeated, reordered, failed or unavailable controls, changed request/qu
 The shared init script creates the generic controller JavaExec from the existing suite work gate's dependency graph, launcher, native-access options and classpath.
 Its measured-fork count must be zero.
 An external controller launching its own untimed JVM must keep the inherited diagnostic/resource profile, emit its actual `paired.jvm.origin` record, and provide naturally released owning Job generations and PID-qualified class-load origins for those observations.
+An independent controller may retain a complete class-load file as a pinned control artifact.
+The reader binds that artifact to the exact file flag in its immutable VM diagnostic and selects the corresponding captured PID/birth generation, including legitimate PID reuse.
+For relative flags, the correspondence to a fresh absolute artifact follows the verified executed controller's path construction; the reader records that relationship as an inference and leaves the working-directory observation unavailable.
+Missing, changed, duplicate, wrong-PID or ambiguous file/generation attribution fails, and console output cannot supply another generation's origin.
 Tracing belongs to this separate untimed route; the driver supplies no instrumentation option to timed JVMs and retains the same immutable fixture/runtime/collector/harness closure for collection.
 Every selected suite's full work gates and both sides' independent controls complete before the first timed collection in the attempt.
 

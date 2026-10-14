@@ -211,7 +211,13 @@ An exact equality check on every covered palette result can restore the invocati
 Partial coverage never establishes this state; subsequent ordered fills retain each intermediate rounding and materialize before reading primitives.
 This removes repeated arithmetic over uniform surfaces without combining layers or changing intermediate rounding, including transparent colors and fractional clips.
 When the entire output remains uniform, full-viewport fills apply each ordered blend to one scalar and materialize the pixel array once.
-Every partial fill or image materializes the pending color before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Before a partial fill or image materializes the pending color, the dispatcher tests whether it can touch any physical pixel.
+Integer fill and both integer-image commands intersect their destination with the output region and current physical clip without allocating coverage storage or inspecting source pixels.
+Fractional sampled commands use their painter's original final-density pixel-center edges and exact zero-alpha-tint rejection.
+Positive fractional clips or destinations containing no physical centers preserve the pending uniform color; an outward logical rectangle is insufficient for this decision.
+Visible partial fills and images materialize before reading or modifying pixels; a full opaque fill can restore the uniform state.
+Zero-alpha integer fills and transparent images retain source-over normalization and are not admitted by the sampled zero-tint proof.
+Every required output pixel is initialized before return, including all-nonpainting lists and reused dirty borrowed storage, while excess borrowed capacity remains untouched.
 Clip changes alone do not read pixels, and only a clip covering the complete physical viewport permits a deferred fill.
 This state belongs to one rasterization invocation, introduces no retained cache, and preserves intermediate per-layer rounding.
 For a nonuniform output of at least 262,144 physical pixels, two or more consecutive full-viewport translucent fills use an exact channel lookup table keyed by the initial alpha and channel value.
@@ -246,6 +252,8 @@ The pixel traversal reuses an exactly matching source/destination pair before ca
 This reuses repeated magnified texels without retaining any image reference.
 For the same large-span admission, an opaque nonwhite RGB tint may use 768 exact normalized channel products, bounded to three 256-entry primitive tables.
 Translucent composition lazily records rounded channel results by source alpha and source channel only while every admitted destination has the same complete ARGB value.
+Destination-result tables are admitted only after 32 qualifying blends have observed that same destination; earlier pixels keep the original scalar composition and early destination changes allocate no tables.
+Adjacent identical source/destination pairs and discarded or zero-byte-alpha results do not advance admission, since they already avoid channel work.
 The first unequal destination permanently disables and releases these blend tables for the command; subsequent pixels use the original Float equations, so a heterogeneous destination never triggers repeated table clearing or assumes uniformity.
 Each lazy alpha row contains 768 entries, with at most 16 rows (48 KiB of primitive values plus the 256 row references); other source alpha values use the original Float equations without allocating or replacing a row.
 The common fixed-alpha image requires only one row, and alternating uncommon alpha values cannot churn table allocations.
@@ -270,6 +278,11 @@ Compiled JMH include filters must select exactly the registered method names bef
 Run it through `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DenseSampledRasterBenchmark -Pstrata.performance.suite=dense-sampled-raster` with the shared default execution settings; it does not change the historical or existing sampled-raster matrices.
 Source construction is outside measurement, while fresh raster ownership and complete ordered composition are inside each operation.
 This corpus exposes sampling and tint/blending costs when adjacent source colors change frequently; it does not establish native GPU completion time.
+
+`DestinationPaletteBenchmark` is a separate 15-case corpus of transparent, translucent and opaque uniform backgrounds, per-pixel heterogeneity and an ARGB change after the first 16 destinations, each with 1, 16 or 256 source alpha bytes.
+Run `:quality:benchmarks:jmhHistorical -Pstrata.performance.benchmarks=DestinationPaletteBenchmark -Pstrata.performance.suite=destination-palette`; source and background construction stay outside measurement, and each operation owns a fresh 128 by 64 raster and its scratch.
+Its one-to-one sampling prevents magnified spans and repeated source rows from hiding destination-table allocation; it leaves the historical and other independent matrices unchanged.
+Its fixture-owned untimed verifier requires all 15 compiled cases, fixed command and input work, independent scalar Float pixels, fresh output and unchanged inputs.
 
 The following gates encode the intended ownership and reuse behavior without depending on machine speed.
 Existing exact headless-to-Fabric rendering parity tests remain required so caching cannot change pixels, command order, or native presentation.
@@ -532,6 +545,11 @@ Its attachment index is keyed by immutable device and attachment identities, whi
 Native Canvas requests in core commands and retained RuntimeUiFrame instances contain only scalar device and attachment identifiers; separate prepared tokens also identify the committed generation.
 Portable commands and explicit capture snapshots may retain immutable CPU images, but no command retains a target, renderer, source callback, or host.
 The current batch is bounded to one outstanding native presentation; the next presentation cannot overtake an unconsumed or uncancelled batch.
+Preparation transfers its freshly completed resolved-command and receipt lists to the detached presentation without taking a second membership snapshot.
+Only preparation owns their construction, and no mutable construction alias escapes or remains available for later mutation.
+The mapping buffers retain only current payload membership and their standard geometrically bounded spare capacity; empty mappings allocate no element backing array.
+Later preparation, cancellation, consumption, reload and device shutdown cannot mutate an older presentation.
+Ordinary Canvas-free Fabric presentation bypasses this preparation boundary entirely.
 Resource reload discards committed generations and retires old producers; new instances open lazily when a target permit is available.
 
 At most three target sets may exist for one stable CanvasId across source replacement and detach/reattach, and at most 64 active, retired, partially allocated, or quarantined sets may exist on one device.
@@ -661,8 +679,22 @@ Primitive-array bytes exclude object headers, temporary decoding allocations, an
 ### Virtual-list retention
 
 A virtual list materializes only the visible rows plus its bounded overscan rows, caches only the current materialized range, and reuses that range while its inputs and viewport remain clean.
+When the range moves, overlapping declarations are keyed by the same absolute index, immutable item reference identity, stable-key equality and current list definition epoch.
+Every current-window item and key is accessed again before reuse; this cache does not replace authoritative source lookup.
+Definition replacement and explicit refresh invalidate the whole window, including equal-count model changes, callback captures, profile context and viewport policy.
+Callbacks that directly read MutableState are not admitted to cross-window reuse; synchronous read capture preserves existing dependency ownership and restores nested contexts on return or failure.
+Observe regions keep their independent source subscriptions, frame cutoff and callback state tracking even when their enclosing row declaration is reused.
+Other caller-owned presentation captures require refresh, as specified by VirtualListState; row content must not rely on a callback for each scroll step.
+The owner-thread cache retains at most the current visible rows plus overscan, including one row record, input identity, key and immutable wrapper per materialized index.
+Moving to a disjoint range drops all previous records; there is no visited-row history or global pool.
+Row construction failure, node removal, session detachment and terminal disposal clear the cache, while reattachment invalidates measurement to reconstruct the current window.
+Existing retained nodes, navigation ownership and stable-key anchors remain separate from declaration reuse.
 Jumping across a large indexed source replaces the current range instead of retaining visited ranges.
 Prepending data preserves the visible stable key without materializing the intervening items.
+`VirtualWindowBenchmark` separates clean frames, one-row moves, fractional moves, disjoint jumps, refresh and definition replacement across 8, 40 and 128 materialized rows with simple, deep, directly stateful and independently observed factories.
+The shared historical collector substitutes actual runtime archives while holding this fixture and its independent callback, full-pixel, geometry, input, semantics and release references identical.
+`MutableStateReadBenchmark` separately measures unobserved and dependency-tracked reads so the admission check's state-getter cost remains visible outside virtualization.
+These are diagnostic timings with standard collector settings; the complete generated work hooks remain ordinary check acceptance without a fixed time threshold.
 
 ### Observed-region retention
 
