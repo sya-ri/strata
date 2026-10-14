@@ -15,9 +15,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal fun matchFabricMinecraftPortableImages(
     previous: List<FabricMinecraftPortableImage>,
     next: List<FabricMinecraftPortableImage>,
-): IntArray {
-    return matchPortableImages(previous, next, FabricMinecraftPortableImage::equivalent)
-}
+): IntArray = matchPortableImages(previous, next, FabricMinecraftPortableImage::equivalent)
 
 /**
  * Matches exact current CPU inputs before metadata allocation, with one shared 8,192-command/key comparison allowance.
@@ -177,7 +175,10 @@ private fun sameAxisCommand(
     b: DrawCommand,
 ): Boolean =
     when (a) {
-        is DrawCommand.FillRectangle -> b is DrawCommand.FillRectangle && a.bounds == b.bounds
+        is DrawCommand.FillRectangle -> {
+            b is DrawCommand.FillRectangle && a.bounds == b.bounds
+        }
+
         is DrawCommand.BlitImage -> {
             if (b is DrawCommand.BlitImage) {
                 val source = a.image.size == b.image.size && a.source == b.source
@@ -205,8 +206,19 @@ private fun sameAxisCommand(
             }
         }
 
-        is DrawCommand.PushClip -> b is DrawCommand.PushClip && a.bounds == b.bounds
-        is DrawCommand.PushFractionalClip -> b is DrawCommand.PushFractionalClip && a.bounds == b.bounds
-        DrawCommand.PopClip -> b === DrawCommand.PopClip
-        is DrawCommand.Platform -> false
+        is DrawCommand.PushClip -> {
+            b is DrawCommand.PushClip && a.bounds == b.bounds
+        }
+
+        is DrawCommand.PushFractionalClip -> {
+            b is DrawCommand.PushFractionalClip && a.bounds == b.bounds
+        }
+
+        DrawCommand.PopClip -> {
+            b === DrawCommand.PopClip
+        }
+
+        is DrawCommand.Platform -> {
+            false
+        }
     }
