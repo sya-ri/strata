@@ -17,9 +17,14 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
 internal object ComponentProfile {
     /**
      * Creates the complete profile outside timed operations; no native or application resource is acquired.
-     * The unchanged default is the component bitmap snapshot; supplemental metric fixtures may supply their own snapshot, or null for detached compatibility glyphs.
+     * The unchanged default is the component bitmap snapshot; supplemental metric fixtures may supply their own snapshot.
+     * A null snapshot selects deterministic compatibility ASCII glyphs instead of resource fonts.
+     * An optional compatibility glyph freezes equal-pixel inputs for supplemental replacement workloads.
      */
-    internal fun create(snapshot: MinecraftFontSnapshot? = ComponentFontAssets.snapshot()): MinecraftUiProfile =
+    internal fun create(
+        snapshot: MinecraftFontSnapshot? = ComponentFontAssets.snapshot(),
+        compatibilityGlyph: DrawImage? = null,
+    ): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(image(16, 16))
             containerBackground(image(256, 256))
@@ -47,8 +52,12 @@ internal object ComponentProfile {
             textFieldNormal(image(200, 20))
             textFieldHighlighted(image(200, 20))
             if (snapshot == null) {
-                val mask = createDrawImage(IntSize(8, 8), IntArray(64) { if (it % 8 < 2) -1 else 0x00FFFFFF })
-                for (codePoint in 0x21..0x7E) printableAsciiGlyph(codePoint, mask)
+                for (codePoint in 0x21..0x7E) {
+                    val pixels = IntArray(64) { 0x00FFFFFF }
+                    pixels[(codePoint - 0x21) % 6] = -1
+                    pixels[14] = -1
+                    printableAsciiGlyph(codePoint, compatibilityGlyph ?: createDrawImage(IntSize(8, 8), pixels))
+                }
             } else {
                 fonts(snapshot)
             }

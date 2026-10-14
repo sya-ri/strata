@@ -108,7 +108,8 @@ public open class TextInkAggregationBenchmark {
             source = StressStateSource(first)
             editor = TextAreaState(first, maxLength = scalars)
             phase = 0
-            val profile = ComponentProfile.create(if (provider == Provider.Legacy) null else snapshot())
+            val compatibilityGlyph = createDrawImage(IntSize(8, 8), IntArray(64) { if (it % 8 < 2) -1 else 0x00FFFFFF })
+            val profile = ComponentProfile.create(if (provider == Provider.Legacy) null else snapshot(), compatibilityGlyph)
             val definition =
                 UiDefinition("Text ink aggregation") {
                     Stack {

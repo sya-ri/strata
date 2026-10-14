@@ -12,6 +12,9 @@ def plan(paths, model=None, full=False):
     result = {name: False for name in ("common", "web", "docs", "docs_full", "workflow", "qodana", "all_minecraft", "preflight")}
     versions = set()
     for path in paths:
+        if path.startswith(".github/performance/") or path == ".github/performance" or path == "gradle/performance/paired-jvm.example.json":
+            result.update(workflow=True, preflight=True)
+            continue
         result["preflight"] |= path.startswith("gradle/performance/") or path in ("gradle/tests/test_paired_jvm.py", ".github/workflows/jvm.yml")
         if path.startswith("gradle/tests/") or (path.startswith("gradle/") and path.endswith("-fixtures.sh")):
             result["workflow"] = True
