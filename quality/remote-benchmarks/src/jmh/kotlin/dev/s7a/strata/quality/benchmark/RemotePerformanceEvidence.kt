@@ -20,18 +20,23 @@ public object RemotePerformanceEvidence {
         require(2 < args.size)
         RemoteWorkEvidence.verifySurface()
         val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
+        val selected = System.getProperty("strata.performance.benchmarks") != null || System.getProperty("strata.performance.parameters") != null
+        require(sessions.not() || selected.not()) { "Retained-session IDs and generated fixture selection are separate scopes" }
         val smoke = System.getProperty("strata.performance.smoke", "false").toBooleanStrict()
+        require(smoke.not() || selected.not()) { "Smoke and generated fixture selection are separate scopes" }
         val requested = System.getProperty("strata.performance.workloads")
-        val methods = if (sessions.not() && requested != null) JmhFixtureSelection.methods(JmhFixtureSelection.all(), requested) else null
+        val methods = if (sessions.not() && selected.not() && requested != null) JmhFixtureSelection.methods(JmhFixtureSelection.all(), requested) else null
         val fixtures =
             when {
+                selected -> JmhFixtureSelection.select(listOf(RemoteProtocolBenchmark::class.java))
                 sessions -> listOf(RemoteSessionBenchmark::class.java)
                 methods != null -> JmhFixtureSelection.all().filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
                 else -> listOf(RemoteProtocolBenchmark::class.java)
             }
-        JmhFixtureSelection.verifyWork(fixtures)
         val parameters =
-            if (sessions) {
+            if (selected) {
+                JmhFixtureSelection.parameters()
+            } else if (sessions) {
                 val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
                 mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
             } else if (smoke) {
@@ -41,14 +46,18 @@ public object RemotePerformanceEvidence {
             }
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val includes =
-            if (methods == null) {
+            if (selected) {
+                if (requested == null) JmhFixtureSelection.includes(fixtures) else JmhFixtureSelection.methods(fixtures, requested).map { "^${Regex.escape(it)}$" }
+            } else if (methods == null) {
                 listOf(args[2])
             } else {
                 methods.map { "^${Regex.escape(it)}$" }
             }
+        val options = includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
+        JmhFixtureSelection.verifyWork(fixtures)
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()), parameters, includes)
         JmhFixtureSelection.verifyIncludes(expected, includes)
-        val options = includes + args.drop(3) + parameters.flatMap { (name, values) -> listOf("-p", "$name=${values.sorted().joinToString(",")}") }
+        val inputs = inputs()
         JmhPerformanceRunner.run(
             options.toTypedArray(),
             fixtures,
@@ -56,7 +65,14 @@ public object RemotePerformanceEvidence {
             Path.of(args[0]),
             args[1].toInt(),
             expected,
-            JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI())),
+            inputs,
         )
+    }
+
+    private fun inputs(): Map<String, Path> {
+        val required = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI()))
+        val fixtures = JmhFixtureSelection.inputs()
+        require(required.keys.intersect(fixtures.keys).isEmpty()) { "Duplicate external fixture input labels" }
+        return required + fixtures
     }
 }
