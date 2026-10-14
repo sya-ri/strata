@@ -1,19 +1,14 @@
 package dev.s7a.strata.quality.benchmark
 
-import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.sun.jdi.ArrayReference
-import com.sun.jdi.Bootstrap
 import com.sun.jdi.Method
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
-import com.sun.jdi.VirtualMachine
 import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
-import com.sun.jdi.event.VMDisconnectEvent
-import com.sun.jdi.request.EventRequest
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.PerformanceJson
 import java.nio.file.Files
@@ -27,115 +22,84 @@ import java.nio.file.Path
  */
 public object RemoteBytesCopyEvidence {
     /**
-     * Accepts fresh count and child-provenance paths plus the same frozen source/archive plan used by JMH.
+     * Accepts one shared preflight request, or fresh count and child-provenance paths plus the source/archive plan.
      * Run once per measured source on the frozen fixture classpath, outside all timing invocations.
      * The child deadline is extended solely for debug suspension; all observed rows are explicitly untimed.
      */
     @JvmStatic
     public fun main(args: Array<String>) {
-        require(args.size == 3)
-        val output = Path.of(args[0]).toAbsolutePath().normalize()
-        val child = Path.of(args[1]).toAbsolutePath().normalize()
-        val planFile = Path.of(args[2]).toAbsolutePath().normalize()
-        require(Files.exists(output).not() && Files.exists(child).not() && output != child)
-        val planHash = ArtifactIdentity.file(planFile)
-        val observer = ArtifactIdentity.applicationTrees(listOf(javaClass))
-        val connector = Bootstrap.virtualMachineManager().defaultConnector()
-        val arguments = connector.defaultArguments()
-        val classpath = System.getProperty("java.class.path")
-        require(classpath.contains('"').not() && child.toString().contains('"').not())
-        arguments.getValue("home").setValue(System.getProperty("java.home"))
-        arguments.getValue("options").setValue("-cp \"$classpath\"")
-        arguments.getValue("main").setValue("${RemoteBytesCopyProbe::class.java.name} \"$child\"")
-        val vm = connector.launch(arguments)
-        val process = vm.process()
-        val observation = Observation()
-        try {
-            observe(vm, observation)
-            val provenance = read(child)
-            val source = verifySource(planFile, planHash, provenance, observer)
-            PerformanceJson.writeNew(
-                output,
+        if (args.size == 1) {
+            preflight(Path.of(args.single()))
+            return
+        }
+        RemoteUntimedObservation.run(args, RemoteBytesCopyProbe::class.java, RemoteBytesBenchmark::class.java, listOf("dev.s7a.strata.projection.ProjectionValue\$Bytes"), "remote-bytes-copy-observation-v1", Observation())
+    }
+
+    private fun preflight(requestPath: Path) {
+        val requestHash = ArtifactIdentity.file(requestPath)
+        val request = read(requestPath)
+        require(request.get("schema").asString.contentEquals("strata-paired-jvm-preflight-request-v1"))
+        val output = Path.of(request.get("output").asString).toAbsolutePath().normalize()
+        val results = JsonArray()
+        RemoteBytesBenchmark.verifyWork()
+        for (entry in request.getAsJsonArray("controls")) {
+            val control = entry.asJsonObject
+            val id = control.get("id").asString
+            val arguments = control.getAsJsonArray("arguments").map { it.asString }
+            require(arguments.size == 1 && id.matches(Regex("[A-Za-z0-9][A-Za-z0-9_-]*")))
+            val input = request.getAsJsonObject("inputs").getAsJsonObject(arguments.single())
+            val plan = Path.of(input.get("path").asString)
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
+            val directory = output.resolve(id)
+            Files.createDirectory(directory)
+            val counts = directory.resolve("counts.json")
+            val child = directory.resolve("child.json")
+            main(arrayOf(counts.toString(), child.toString(), plan.toString()))
+            val observed = read(counts)
+            val rows = observed.getAsJsonArray("phases").map { it.asJsonObject }
+            val typed = rows.map { Triple(RemoteBytesBenchmark.Corpus.valueOf(it.get("corpus").asString), RemoteBytesOperation.valueOf(it.get("operation").asString), it) }
+            require(typed.map { it.first to it.second }.toSet().size == 64 && typed.size == 64)
+            val construction = typed.single { it.first == RemoteBytesBenchmark.Corpus.Small32 && it.second == RemoteBytesOperation.ProjectionConstruction }.third
+            require(construction.get("constructor_snapshot_arrays").asLong == 1L && construction.get("constructor_snapshot_bytes").asLong == 32L)
+            require(typed.filter { it.first == RemoteBytesBenchmark.Corpus.ByteFree || it.second == RemoteBytesOperation.ActionFraming }.all { row ->
+                listOf("constructor_snapshot_arrays", "constructor_snapshot_bytes", "extraction_snapshot_arrays", "extraction_snapshot_bytes").all { row.third.get(it).asLong == 0L }
+            })
+            val origins = JsonObject()
+            request.getAsJsonObject("required_classes").keySet().forEach { name ->
+                Class.forName(name, false, javaClass.classLoader)
+                origins.add(name, JsonObject().apply { addProperty("pid", ProcessHandle.current().pid()) })
+            }
+            results.add(
                 JsonObject().apply {
-                    addProperty("workload_id", "remote-bytes-copy-observation-v1")
+                    addProperty("id", id)
                     addProperty("status", "passed")
-                    addProperty("untimed", true)
-                    add("observer_identity", Gson().toJsonTree(observer))
-                    addProperty("source_revision", source.get("revision").asString)
-                    addProperty("source_plan_sha256", planHash)
-                    addProperty("child_provenance", child.toString())
-                    addProperty("child_provenance_sha256", ArtifactIdentity.file(child))
-                    add("child", provenance)
-                    add("phases", observation.rows)
+                    add("observations", observed)
+                    add("origins", origins)
+                    add(
+                        "artifacts",
+                        JsonArray().apply {
+                            listOf(counts, child).forEach { file ->
+                                add(JsonObject().apply {
+                                    addProperty("path", output.relativize(file).toString().replace('\\', '/'))
+                                    addProperty("sha256", ArtifactIdentity.file(file))
+                                })
+                            }
+                        },
+                    )
                 },
             )
-        } finally {
-            if (process.isAlive) process.destroyForcibly()
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
         }
-    }
-
-    private fun observe(
-        vm: VirtualMachine,
-        observation: Observation,
-    ) {
-        val process = vm.process()
-        require(vm.canGetMethodReturnValues()) { "The probe requires JDI array return identities" }
-        for (name in listOf("dev.s7a.strata.projection.ProjectionValue\$Bytes", RemoteBytesCopyProbe::class.java.name)) {
-            vm.eventRequestManager().createMethodEntryRequest().apply {
-                addClassFilter(name)
-                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                enable()
-            }
-            vm.eventRequestManager().createMethodExitRequest().apply {
-                addClassFilter(name)
-                setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                enable()
-            }
-        }
-        var connected = true
-        while (connected) {
-            val events = vm.eventQueue().remove(60000)
-            checkNotNull(events) { "The copy probe stopped producing events" }
-            for (event in events) {
-                when (event) {
-                    is MethodEntryEvent -> observation.enter(event)
-                    is MethodExitEvent -> observation.exit(event)
-                    is VMDisconnectEvent -> connected = false
-                }
-            }
-            events.resume()
-        }
-        check(process.waitFor() == 0) { "Copy probe failed: ${process.errorStream.bufferedReader().readText()}" }
-        check(observation.complete())
-    }
-
-    private fun verifySource(
-        planFile: Path,
-        planHash: String,
-        provenance: JsonObject,
-        observer: Map<String, String>,
-    ): JsonObject {
-        val plan = read(planFile)
-        val archives = JsonObject()
-        provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").forEach { entry ->
-            val module = entry.asJsonObject
-            archives.addProperty(module.get("module").asString, module.getAsJsonObject("codeSource").get("sha256").asString)
-        }
-        val sources = plan.getAsJsonArray("sources").map { it.asJsonObject }
-        require(sources.size == 2 && sources.map { it.get("revision").asString }.distinct().size == 2)
-        val revision = Regex("[0-9a-f]{40}")
-        val hash = Regex("[0-9a-f]{64}")
-        require(plan.get("fixture_revision").asString.matches(revision))
-        sources.forEach { source ->
-            require(source.get("revision").asString.matches(revision))
-            val recorded = source.getAsJsonObject("archives")
-            require(recorded.keySet() == setOf("api", "core", "remote") && recorded.entrySet().all { it.value.asString.matches(hash) })
-        }
-        require(plan.get("fixture_tree_sha256") == provenance.getAsJsonObject("fixture_identity").get(RemoteBytesBenchmark::class.java.name))
-        val source = sources.single { it.getAsJsonObject("archives") == archives }
-        require(ArtifactIdentity.file(planFile) == planHash)
-        require(ArtifactIdentity.applicationTrees(listOf(javaClass)) == observer)
-        return source
+        require(ArtifactIdentity.file(requestPath) == requestHash)
+        PerformanceJson.writeNew(
+            output.resolve("receipt.json"),
+            JsonObject().apply {
+                addProperty("schema", "strata-paired-jvm-preflight-receipt-v1")
+                addProperty("status", "passed")
+                addProperty("request_sha256", requestHash)
+                add("controls", results)
+            },
+        )
     }
 
     private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
@@ -143,8 +107,9 @@ public object RemoteBytesCopyEvidence {
     /**
      * Fixed complete corpus counts with only currently executing constructors retained until their matching return.
      */
-    private class Observation {
-        val rows = JsonArray()
+    private class Observation : RemoteProbeObservation {
+        override val rows = JsonArray()
+        override val active: Boolean get() = current != null
         private val seen = mutableSetOf<Pair<RemoteBytesBenchmark.Corpus, RemoteBytesOperation>>()
         private val calls = ArrayDeque<Call>()
         private var current: JsonObject? = null
@@ -153,7 +118,7 @@ public object RemoteBytesCopyEvidence {
         /**
          * Reads arguments while suspended, then keeps only object mirrors required by the current invocation.
          */
-        fun enter(event: MethodEntryEvent) {
+        override fun enter(event: MethodEntryEvent) {
             val method = event.method()
             if (method.declaringType().name() == RemoteBytesCopyProbe::class.java.name) {
                 when (RemoteProbeMarker.decode(method.name())) {
@@ -198,7 +163,7 @@ public object RemoteBytesCopyEvidence {
         /**
          * Counts only actual distinct output arrays after successful constructors or defensive extraction return.
          */
-        fun exit(event: MethodExitEvent) {
+        override fun exit(event: MethodExitEvent) {
             if (current == null || calls.lastOrNull()?.method != event.method()) return
             check(owner == event.thread().uniqueID())
             val call = calls.removeLast()
@@ -216,7 +181,7 @@ public object RemoteBytesCopyEvidence {
         /**
          * Rejects missing cases, unfinished operations, and outstanding snapshot calls.
          */
-        fun complete(): Boolean = current == null && calls.isEmpty() && seen.size == RemoteBytesBenchmark.Corpus.entries.size * RemoteBytesOperation.entries.size
+        override fun complete(): Boolean = current == null && calls.isEmpty() && seen.size == RemoteBytesBenchmark.Corpus.entries.size * RemoteBytesOperation.entries.size
 
         private fun content(instance: ObjectReference): ArrayReference = instance.getValue(checkNotNull(instance.referenceType().fieldByName("content"))) as ArrayReference
     }
