@@ -71,7 +71,18 @@ public class NativeGuiResources internal constructor(
                 Math.multiplyExact(size.width, size.height)
             }
             pollInternal()
-            check(sets.size < 64 && sets.values.count { it.owner == ownerId.value } < 3) { "Portable GUI resource-set capacity is exhausted before presentation." }
+            val ownerSetCount = sets.values.count { it.owner == ownerId.value }
+            check(sets.size < 64 && ownerSetCount < 3) {
+                val retained = sets.values.filter { it.owner == ownerId.value }
+                val states =
+                    retained.joinToString { record ->
+                        "set=${record.token.value}, retired=${record.retired}, pins=${record.pins}, pending=${record.pendingGui}, " +
+                            "initializing=${record.initializationFence != null}, consuming=${record.guiCompletion != null}, " +
+                            "referencesReleased=${record.referencesReleased}, resources=${record.resources.map { it.release }}"
+                    }
+                "Portable GUI resource-set capacity is exhausted before presentation. " +
+                    "Presenter=${ownerId.value}, owner=$ownerSetCount/3, device=${sets.size}/64; $states"
+            }
             nextSet = Math.incrementExact(nextSet)
             NativeGuiResourceSet(deviceId, nextSet).also { token ->
                 sets[token.value] = ResourceSet(token, ownerId.value, copied)
