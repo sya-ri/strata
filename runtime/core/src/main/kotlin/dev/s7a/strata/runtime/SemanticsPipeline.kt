@@ -31,21 +31,7 @@ internal class SemanticsPipeline(
     ) {
         if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
-            val semanticsCapability = retained.node as? SemanticsNode
-            retained.localSemantics =
-                if (semanticsCapability == null) {
-                    ownerGuard.check()
-                    emptyList()
-                } else {
-                    val collector = SemanticsCollector(ownerGuard)
-                    try {
-                        monitoring.record(UiRenderMetric.Semantics, retained)
-                        semanticsCapability.semantics(collector)
-                        collector.snapshot()
-                    } finally {
-                        collector.close()
-                    }
-                }
+            retained.localSemantics = collectLocalSemantics(retained)
         }
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
@@ -55,6 +41,25 @@ internal class SemanticsPipeline(
             if (child.placed) {
                 semanticsNode(child, output)
             }
+        }
+    }
+
+    /**
+     * Refreshes one node's detached payload and closes every actual callback scope before returning or throwing.
+     */
+    private fun collectLocalSemantics(retained: RetainedEntry): List<Semantics> {
+        val semanticsCapability = retained.node as? SemanticsNode
+        if (semanticsCapability == null) {
+            ownerGuard.check()
+            return emptyList()
+        }
+        val collector = SemanticsCollector(ownerGuard)
+        try {
+            monitoring.record(UiRenderMetric.Semantics, retained)
+            semanticsCapability.semantics(collector)
+            return collector.snapshot()
+        } finally {
+            collector.close()
         }
     }
 

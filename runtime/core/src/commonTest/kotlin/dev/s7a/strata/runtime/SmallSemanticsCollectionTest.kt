@@ -179,6 +179,30 @@ internal class SmallSemanticsCollectionTest {
     }
 
     @Test
+    fun caughtSemanticsReentryKeepsTheCurrentScopeActiveUntilTheCallbackReturns() {
+        for (count in listOf(0, 1, 8)) {
+            val fixture = SemanticsCollectionFixture()
+            val values = List(count) { payload("$count-$it") }
+            val node = fixture.node(0, values)
+            val tree = UiTree()
+            node.emit = { scope ->
+                assertFailsWith<IllegalStateException> { tree.semantics() }
+                values.forEach(scope::emit)
+            }
+            try {
+                tree.update(fixture.element(node))
+                tree.measure(Constraints.fixed(2, 1))
+                tree.layout()
+                assertEquals(values.map { SemanticsEntry(IntRect(0, 0, 2, 1), it) }, tree.semantics())
+                assertEquals(1, node.callbacks)
+                assertFailsWith<IllegalStateException> { checkNotNull(node.scope).emit(payload("late")) }
+            } finally {
+                tree.close()
+            }
+        }
+    }
+
+    @Test
     fun refreshedNonparticipantStillChecksTheExecutionOwner() {
         val owner = RuntimeExecutionOwner()
         val other = RuntimeExecutionOwner()
