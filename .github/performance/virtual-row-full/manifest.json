@@ -1,0 +1,74 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "6605f257ea687ed556af00d0ef03cd96ba7c90dc",
+      "patches": [
+        {
+          "path": ".github/performance/virtual-row-full/baseline.patch",
+          "sha256": "159955e0e3fddd50efc0ed73d1db486aa28df070b607c5b835fdf72415d8f88a"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "1981e8085a012c8dcdc54d47e39ad69bfd73821c",
+      "patches": [
+        {
+          "path": ".github/performance/virtual-row-full/candidate.patch",
+          "sha256": "bb925baf59523c8271ce19e18d051f8755ca76c854c6326f5bde09b4348fe9e7"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "6605f257ea687ed556af00d0ef03cd96ba7c90dc",
+      "patches": [
+        {
+          "path": ".github/performance/virtual-row-full/baseline.patch",
+          "sha256": "159955e0e3fddd50efc0ed73d1db486aa28df070b607c5b835fdf72415d8f88a"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "virtual-row-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.VirtualWindowBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {
+        "window": [
+          "Forty"
+        ]
+      },
+      "expected_cases": 24
+    },
+    {
+      "project": ":quality:benchmarks",
+      "name": "mutable-state-read-controls",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.MutableStateReadBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 6
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "baseline": [],
+    "candidate": [],
+    "fixture": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

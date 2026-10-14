@@ -1242,9 +1242,12 @@ api	Api	dev.s7a.strata.layout.GridElement$Companion#method:17:getTYPE$dev_s7a_st
 api	Api	dev.s7a.strata.layout.GridElement$Companion#type:25:java.lang.Object:
 api	Api	dev.s7a.strata.layout.GridElement$Node#constructor:1:(IIILdev/s7a/strata/layout/Alignment;)V
 api	Api	dev.s7a.strata.layout.GridElement$Node#method:17:update-2Z4kens$dev_s7a_strata_api:(Ldev/s7a/strata/layout/GridElement;Ldev/s7a/strata/layout/GridElement;)I
+api	Api	dev.s7a.strata.layout.GridElement$Node#method:1:attach:()V
+api	Api	dev.s7a.strata.layout.GridElement$Node#method:1:detach:()V
+api	Api	dev.s7a.strata.layout.GridElement$Node#method:1:dispose:()V
 api	Api	dev.s7a.strata.layout.GridElement$Node#method:1:layout:(Ldev/s7a/strata/layout/LayoutScope;)V
 api	Api	dev.s7a.strata.layout.GridElement$Node#method:1:measure:(Ldev/s7a/strata/layout/MeasureScope;Ldev/s7a/strata/geometry/Constraints;)Ldev/s7a/strata/geometry/IntSize;
-api	Api	dev.s7a.strata.layout.GridElement$Node#type:25:dev.s7a.strata.node.Node:dev.s7a.strata.node.LayoutNode,dev.s7a.strata.node.MeasureNode
+api	Api	dev.s7a.strata.layout.GridElement$Node#type:25:dev.s7a.strata.node.Node:dev.s7a.strata.node.LayoutNode,dev.s7a.strata.node.LifecycleNode,dev.s7a.strata.node.MeasureNode
 api	Api	dev.s7a.strata.layout.GridElement$Node$WhenMappings#type:4121:java.lang.Object:
 api	Api	dev.s7a.strata.layout.HorizontalAlignment#field:16409:Center:Ldev/s7a/strata/layout/HorizontalAlignment;
 api	Api	dev.s7a.strata.layout.HorizontalAlignment#field:16409:End:Ldev/s7a/strata/layout/HorizontalAlignment;

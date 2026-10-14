@@ -74,7 +74,12 @@ internal class PortableVirtualRowReuseTest {
                 assertEquals(InputResult.Consumed, fixture.session.dispatchPointer(PointerEvent.Move(IntOffset(0, hitY))))
                 val hitIndex = (actual.toInt() + hitY) / 10
                 assertEquals(fixture.items[hitIndex], fixture.probe.inputEvents.last())
-                assertEquals(IntOffset.Zero, fixture.probe.inputObservations.last().localPosition)
+                assertEquals(
+                    IntOffset.Zero,
+                    fixture.probe.inputObservations
+                        .last()
+                        .localPosition,
+                )
                 assertTrue(frame.semantics.size <= 41)
             }
         }

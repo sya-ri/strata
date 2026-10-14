@@ -25,10 +25,11 @@ internal class StateObservationThreadIsolationTest {
         try {
             val captured =
                 executor.submit<Boolean> {
-                    StateObservation.captureReads {
-                        entered.countDown()
-                        assertTrue(read.await(5, TimeUnit.SECONDS))
-                    }.second
+                    StateObservation
+                        .captureReads {
+                            entered.countDown()
+                            assertTrue(read.await(5, TimeUnit.SECONDS))
+                        }.second
                 }
             val other =
                 executor.submit<Int> {

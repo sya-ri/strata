@@ -212,24 +212,7 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         peer: Peer<Owner>,
         now: Long,
     ) {
-        if (peer.inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
-        repeat(64) {
-            val bytes = peer.inbox.poll() ?: return@repeat
-            when (val packet = RemotePacket.decode(bytes)) {
-                RemotePacket.Discovery -> {
-                    if (peer.discovered.not()) {
-                        peer.discovered = true
-                        peer.connection.start()
-                    }
-                }
-
-                is RemotePacket.Frame -> {
-                    if (packet.address == peer.address && peer.discovered) {
-                        peer.stream.offer(packet, now)
-                    }
-                }
-            }
-        }
+        receivePackets(peer, now)
         if (peer.discovered) {
             peer.stream.drain(now) { bytes ->
                 peer.connection.receive(bytes, now)?.let { receive(peer, it) }
@@ -245,6 +228,34 @@ public class RemoteScreenService<Player : Any, Owner : Any>(
         if (peer.discovered) {
             peer.connection.tick(now)
             peer.connection.flush()
+        }
+    }
+
+    /**
+     * Drains bounded authenticated ingress on the service owner before ordered delivery and session work.
+     * All accepted packets use the tick's captured [now]; protocol failures propagate to peer cleanup.
+     */
+    private fun receivePackets(
+        peer: Peer<Owner>,
+        now: Long,
+    ) {
+        if (peer.inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
+        for (index in 0 until 64) {
+            val bytes = peer.inbox.poll() ?: break
+            when (val packet = RemotePacket.decode(bytes)) {
+                RemotePacket.Discovery -> {
+                    if (peer.discovered.not()) {
+                        peer.discovered = true
+                        peer.connection.start()
+                    }
+                }
+
+                is RemotePacket.Frame -> {
+                    if (packet.address == peer.address && peer.discovered) {
+                        peer.stream.offer(packet, now)
+                    }
+                }
+            }
         }
     }
 
