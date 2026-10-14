@@ -1,0 +1,448 @@
+package dev.s7a.strata.quality.benchmark;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.sun.jdi.Bootstrap;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StringReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.LaunchingConnector;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.event.Event;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.event.MethodExitEvent;
+import com.sun.jdi.event.VMDisconnectEvent;
+import com.sun.jdi.event.VMStartEvent;
+import com.sun.jdi.request.BreakpointRequest;
+import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.EventRequest;
+import com.sun.jdi.request.ExceptionRequest;
+import com.sun.jdi.request.MethodExitRequest;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+/** External untimed JDI observer; it never instruments or rewrites a runtime archive. */
+public final class UnihexBoundsMethodTrace {
+    private static final String FONT = "dev.s7a.strata.runtime.minecraft.font.";
+    private static final String WORKER = "dev.s7a.strata.quality.benchmark.UnihexBoundsTraceWorker";
+    private static final Map<String, List<String>> METHODS = Map.of(
+        FONT + "MinecraftFontEngine", List.of("glyph", "cachedGlyph", "resolveGlyph", "unihexGlyph", "readBitmapCell", "decodeBitmap"),
+        FONT + "lwjgl.StbMinecraftFontFace", List.of("glyph"),
+        FONT + "lwjgl.FreeTypeMinecraftFontFace", List.of("glyph"),
+        "dev.s7a.strata.render.DrawImages", List.of("createOwnedDrawImage")
+    );
+
+    private UnihexBoundsMethodTrace() {}
+
+    /** Runs exactly the pinned control inventory and writes a receipt only after every real worker succeeds. */
+    public static void main(String[] arguments) throws Exception {
+        if (arguments.length != 1) throw new IllegalArgumentException("Supply one pinned preflight request");
+        Path requestPath = Path.of(arguments[0]).toAbsolutePath();
+        JsonObject request = JsonParser.parseString(Files.readString(requestPath)).getAsJsonObject();
+        Path output = Path.of(request.get("output").getAsString());
+        JsonArray controls = request.getAsJsonArray("controls");
+        boolean qualification = controls.size() == 7 && controls.get(0).getAsJsonObject().get("id").getAsString().equals("QSingle");
+        if (qualification) {
+            List<String> actual = new ArrayList<>();
+            for (JsonElement entry : controls) actual.add(entry.getAsJsonObject().get("id").getAsString());
+            if (actual.equals(List.of("QSingle", "QMultiple", "QZero", "QFailure", "R127", "R128", "R129")) == false)
+                throw new IllegalArgumentException("Retain all known controls and original TrueType, Bitmap and SnapshotLoad rows");
+        }
+        if (qualification == false) {
+            JsonObject qualified = JsonParser.parseString(Files.readString(Path.of(request.getAsJsonObject("qualification").get("path").getAsString()))).getAsJsonObject();
+            if (qualified.get("schema").getAsString().equals("strata-unihex-method-trace-qualification-v1") == false
+                || qualified.get("status").getAsString().equals("passed") == false
+                || qualified.get("controller_class_sha256").getAsString().equals(classHash(UnihexBoundsMethodTrace.class)) == false
+                || qualified.get("worker_class_sha256").getAsString().equals(classHash(UnihexBoundsTraceWorker.class)) == false)
+                throw new IllegalArgumentException("A current actual controller qualification is required before the whole trace");
+            if (controls.size() != 132) throw new IllegalArgumentException("Retain the complete 132-row trace inventory");
+        }
+        JsonArray results = new JsonArray();
+        for (JsonElement entry : controls) {
+            JsonObject control = entry.getAsJsonObject();
+            String id = control.get("id").getAsString();
+            JsonArray options = control.getAsJsonArray("arguments");
+            if (options.size() != 1) throw new IllegalArgumentException("Supply one row or independently defined qualification identity");
+            Trace trace = observe(requestPath, request, output, id, options.get(0).getAsString());
+            if (qualification) verifyQualification(id, trace.observations);
+            JsonObject result = new JsonObject();
+            result.addProperty("id", id);
+            result.addProperty("status", "passed");
+            result.add("observations", trace.observations);
+            result.add("origins", trace.origins);
+            result.add("artifacts", trace.artifacts);
+            results.add(result);
+            System.out.println("Unihex external trace completed " + id + " " + trace.observations);
+        }
+        JsonObject receipt = new JsonObject();
+        receipt.addProperty("schema", "strata-paired-jvm-preflight-receipt-v1");
+        receipt.addProperty("status", "passed");
+        receipt.addProperty("request_sha256", hash(requestPath));
+        receipt.add("controls", results);
+        writeNew(output.resolve("receipt.json"), receipt);
+    }
+
+    /** Observes exact bytecode-entry breakpoints and actual method returns between operation-thread String-reference println arguments. */
+    private static Trace observe(Path requestPath, JsonObject request, Path output, String id, String argument) throws Exception {
+        if (id.matches("[A-Za-z0-9][A-Za-z0-9_.-]*") == false) throw new IllegalArgumentException("Unsafe trace identity");
+        Path directory = output.resolve(id);
+        Files.createDirectory(directory);
+        List<String> paths = new ArrayList<>();
+        for (JsonElement entry : request.getAsJsonObject("classpath").getAsJsonArray("entries")) paths.add(entry.getAsJsonObject().get("path").getAsString());
+        String classpath = String.join(System.getProperty("path.separator"), paths);
+        String font = System.getProperty("strata.performance.fontFixture");
+        if (font == null) throw new IllegalArgumentException("Preserve the original TrueType control input");
+        LaunchingConnector connector = Bootstrap.virtualMachineManager().defaultConnector();
+        Map<String, Connector.Argument> options = connector.defaultArguments();
+        options.get("home").setValue(System.getProperty("java.home"));
+        options.get("main").setValue(WORKER + " " + quote(requestPath.toString()) + " " + quote(argument));
+        Path classLog = directory.resolve("class-load.log");
+        String relativeLog = Path.of(System.getProperty("user.dir")).toAbsolutePath().relativize(classLog).toString().replace(File.separatorChar, '/');
+        options.get("options").setValue("-Xmx768m -XX:MaxMetaspaceSize=384m --enable-native-access=ALL-UNNAMED " + quote("-Xlog:class+load=info:file=" + relativeLog + ":pid,level,tags:filecount=0") + " -Dstrata.performance.fontFixture=" + quote(font) + " -classpath " + quote(classpath));
+        options.get("suspend").setValue("true");
+        VirtualMachine vm = connector.launch(options);
+        Process process = vm.process();
+        JsonObject origin = new JsonObject();
+        origin.addProperty("task", "external-unihex-trace:" + id);
+        origin.addProperty("main", WORKER);
+        origin.addProperty("executable", Path.of(System.getProperty("java.home"), "bin", "java.exe").toString());
+        origin.addProperty("classpath", classpath);
+        System.out.println("paired.jvm.origin " + origin);
+        CompletableFuture<Void> stdout = drain(process.getInputStream(), directory.resolve("stdout.log"), System.out);
+        CompletableFuture<Void> stderr = drain(process.getErrorStream(), directory.resolve("stderr.log"), System.err);
+        Trace trace = new Trace(process.pid());
+        try {
+            EventSet started = vm.eventQueue().remove(10000);
+            if (started == null || started.stream().noneMatch(event -> event instanceof VMStartEvent)) throw new IllegalStateException("Missing actual JDI VM start" );
+            if (vm.canGetMethodReturnValues() == false) throw new IllegalStateException("JDI actual method return values are unavailable");
+            trace.observations.addProperty("can_get_method_return_values", vm.canGetMethodReturnValues());
+            List<String> filters = new ArrayList<>(METHODS.keySet());
+            filters.add(FONT + "FontHexGlyph");
+            filters.add("java.io.PrintStream");
+            for (String filter : filters) {
+                ClassPrepareRequest prepared = vm.eventRequestManager().createClassPrepareRequest();
+                prepared.addClassFilter(filter);
+                prepared.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+                prepared.enable();
+                for (ReferenceType type : vm.classesByName(filter)) {
+                    if (type.isPrepared()) trace.prepareType(vm, type);
+                }
+                if (METHODS.containsKey(filter)) {
+                    MethodExitRequest returned = vm.eventRequestManager().createMethodExitRequest();
+                    returned.addClassFilter(filter);
+                    returned.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+                    trace.operationRequests.add(returned);
+                }
+            }
+            ExceptionRequest failureRequest = vm.eventRequestManager().createExceptionRequest(null, true, true);
+            failureRequest.addClassFilter(FONT + "MinecraftFontEngine");
+            failureRequest.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+            trace.operationRequests.add(failureRequest);
+            started.resume();
+            boolean disconnected = false;
+            while (disconnected == false) {
+                EventSet events = vm.eventQueue().remove(1000);
+                if (events == null) continue;
+                for (Event event : events) {
+                    if (event instanceof VMDisconnectEvent) disconnected = true;
+                    else if (event instanceof ClassPrepareEvent preparedType) trace.prepareType(vm, preparedType.referenceType());
+                    else if (event instanceof BreakpointEvent entered) trace.enter(entered, id);
+                    else if (event instanceof MethodExitEvent returned) trace.exit(returned);
+                    else if (event instanceof ExceptionEvent failure) trace.failure(failure);
+                }
+                if (disconnected == false) events.resume();
+            }
+            if (process.waitFor(10, TimeUnit.SECONDS) == false) throw new IllegalStateException("Trace worker did not release naturally");
+            stdout.get(10, TimeUnit.SECONDS);
+            stderr.get(10, TimeUnit.SECONDS);
+            // Startup class logs use a file because the launching connector exposes pipes only after the JDWP handshake.
+            // Keep the full original file as an artifact; the bounded console needs only actual required origins.
+            mirrorOrigins(classLog, process.pid(), request.getAsJsonObject("required_classes"));
+            trace.observations.addProperty("exit_code", process.exitValue());
+            trace.observations.addProperty("complete_boundary", trace.begins == 1 && trace.ends == 1 && trace.active == false);
+            if (process.exitValue() != 0 || trace.begins != 1 || trace.ends != 1 || trace.active) throw new IllegalStateException("Failed worker or incomplete external operation boundary");
+            for (String name : request.getAsJsonObject("required_classes").keySet()) {
+                JsonObject actual = new JsonObject();
+                actual.addProperty("pid", process.pid());
+                trace.origins.add(name, actual);
+            }
+            return trace;
+        } finally {
+            if (process.isAlive()) {
+                process.destroy();
+                if (process.waitFor(10, TimeUnit.SECONDS) == false) process.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
+            }
+            JsonObject raw = new JsonObject();
+            raw.addProperty("pid", process.pid());
+            raw.add("observations", trace.observations);
+            raw.add("events", trace.events);
+            writeNew(directory.resolve("events.json"), raw);
+            for (String name : List.of("stdout.log", "stderr.log", "class-load.log", "events.json")) {
+                Path path = directory.resolve(name);
+                JsonObject artifact = new JsonObject();
+                artifact.addProperty("path", output.relativize(path).toString().replace('\\', '/'));
+                artifact.addProperty("sha256", hash(path));
+                trace.artifacts.add(artifact);
+            }
+        }
+    }
+
+    /** Mirrors each unique actual PID-qualified required origin without expanding the shared console bound. */
+    private static void mirrorOrigins(Path classLog, long pid, JsonObject required) throws Exception {
+        if (64L * 1024 * 1024 < Files.size(classLog)) throw new IllegalStateException("Trace class-load output overflow");
+        for (String name : required.keySet()) {
+            Pattern loaded = Pattern.compile("^\\[" + pid + "\\]\\[info *\\]\\[class,load *\\] " + Pattern.quote(name) + " source: [^\\r\\n]+");
+            List<String> matches;
+            try (var lines = Files.lines(classLog, StandardCharsets.UTF_8)) {
+                matches = lines.filter(line -> loaded.matcher(line).matches()).toList();
+            }
+            if (matches.size() != 1) throw new IllegalStateException("Missing or ambiguous actual worker class origin: " + name);
+            System.out.println(matches.get(0));
+        }
+    }
+
+    /** Captures every selected real method event and separates absence from successful construction. */
+    private static final class Trace {
+        private final JsonObject observations = new JsonObject();
+        private final JsonObject origins = new JsonObject();
+        private final JsonArray artifacts = new JsonArray();
+        private final JsonArray events = new JsonArray();
+        private final Set<String> preparedTypes = new HashSet<>();
+        private final List<EventRequest> operationRequests = new ArrayList<>();
+        private boolean active;
+        private boolean boundsPrepared;
+        private long thread;
+        private int begins;
+        private int ends;
+
+        private Trace(long pid) {
+            observations.addProperty("pid", pid);
+            observations.add("method_entry_breakpoints", new JsonArray());
+            for (String name : List.of("natural_bounds", "public_glyph_requests", "cached_glyph_requests", "provider_cache_misses", "unihex_raster_attempts", "unihex_absent_results", "unihex_constructed_rasters", "bitmap_cell_misses", "bitmap_decodes", "native_raster_requests", "owned_image_factory_entries", "expected_failures", "engine_exception_events")) observations.addProperty(name, 0);
+        }
+
+        /** Installs every selected concrete overload at its actual first bytecode while class preparation is suspended. */
+        private void prepareType(VirtualMachine vm, ReferenceType type) {
+            String name = type.name();
+            if (preparedTypes.add(name) == false) throw new IllegalStateException("Repeated actual trace type: " + name);
+            List<Method> methods = new ArrayList<>();
+            if (name.equals(FONT + "FontHexGlyph")) {
+                methods.addAll(type.methodsByName("bounds", "()Lkotlin/ranges/IntRange;"));
+                if (methods.size() != 1) throw new IllegalStateException("Missing or ambiguous actual bounds method");
+            } else if (name.equals("java.io.PrintStream")) {
+                for (String signature : List.of("(Ljava/lang/String;)V", "(Ljava/lang/Object;)V")) {
+                    List<Method> markers = type.methodsByName("println", signature);
+                    if (markers.size() != 1) throw new IllegalStateException("Missing or ambiguous actual marker method: " + signature);
+                    methods.add(markers.get(0));
+                }
+            } else {
+                if (METHODS.containsKey(name) == false) throw new IllegalStateException("Unexpected actual trace type: " + name);
+                for (String selected : METHODS.get(name)) {
+                    List<Method> overloads = type.methodsByName(selected);
+                    if (overloads.isEmpty()) throw new IllegalStateException("Missing actual traced method: " + selected);
+                    methods.addAll(overloads);
+                }
+            }
+            Set<String> signatures = new HashSet<>();
+            for (Method method : methods) {
+                Location entry = method.locationOfCodeIndex(0);
+                if (method.declaringType().equals(type) == false || method.isNative() || method.isAbstract() || entry == null
+                    || entry.codeIndex() != 0 || entry.method().equals(method) == false || signatures.add(method.name() + method.signature()) == false)
+                    throw new IllegalStateException("Actual traced method has no unique executable entry at code index zero");
+                BreakpointRequest breakpoint = vm.eventRequestManager().createBreakpointRequest(entry);
+                breakpoint.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+                breakpoint.enable();
+                JsonObject definition = new JsonObject();
+                definition.addProperty("class", name);
+                definition.addProperty("method", method.name());
+                definition.addProperty("signature", method.signature());
+                definition.addProperty("code_index", entry.codeIndex());
+                observations.getAsJsonArray("method_entry_breakpoints").add(definition);
+                if (name.equals(FONT + "FontHexGlyph")) {
+                    boundsPrepared = true;
+                    observations.add("bounds_entry_breakpoint", definition);
+                }
+            }
+        }
+
+        /** Counts only actual hits at the loaded bounds method's first executable bytecode on the operation thread. */
+        private void boundsEntry(BreakpointEvent event) {
+            Location location = event.location();
+            Method method = location.method();
+            if (boundsPrepared == false || location.codeIndex() != 0 || method.declaringType().name().equals(FONT + "FontHexGlyph") == false
+                || method.name().equals("bounds") == false || method.signature().equals("()Lkotlin/ranges/IntRange;") == false)
+                throw new IllegalStateException("Unexpected actual bounds breakpoint location");
+            if (active == false || thread != event.thread().uniqueID()) return;
+            increment("natural_bounds");
+            record("entry_breakpoint", method, null);
+            events.get(events.size() - 1).getAsJsonObject().addProperty("code_index", location.codeIndex());
+        }
+
+        private void enter(BreakpointEvent event, String id) throws Exception {
+            Location location = event.location();
+            Method method = location.method();
+            String type = method.declaringType().name();
+            if (location.codeIndex() != 0 || preparedTypes.contains(type) == false
+                || (event.request() instanceof BreakpointRequest) == false
+                || ((BreakpointRequest) event.request()).location().equals(location) == false)
+                throw new IllegalStateException("Unexpected actual entry breakpoint");
+            if (type.equals(FONT + "FontHexGlyph")) {
+                boundsEntry(event);
+                return;
+            }
+            if (type.equals("java.io.PrintStream")) {
+                if (method.name().equals("println") && (method.signature().equals("(Ljava/lang/String;)V") || method.signature().equals("(Ljava/lang/Object;)V"))) {
+                    if (1 < event.thread().frameCount()) {
+                        Method caller = event.thread().frame(1).location().method();
+                        if (caller.declaringType().name().equals("java.io.PrintStream") && caller.name().equals("println")) return;
+                    }
+                    Object value = event.thread().frame(0).getArgumentValues().get(0);
+                    if ((value instanceof StringReference) == false) return;
+                    String marker = ((StringReference) value).value();
+                    if (marker.startsWith("Unihex operation begin " + id + " ")) {
+                        if (boundsPrepared == false) throw new IllegalStateException("Actual bounds entry was not observed before the operation boundary");
+                        if (begins != 0 || ends != 0) throw new IllegalStateException("Repeated operation begin");
+                        begins++;
+                        active = true;
+                        thread = event.thread().uniqueID();
+                        // Broad return and exception notifications stay disabled throughout uncounted setup and teardown.
+                        for (EventRequest request : operationRequests) request.enable();
+                        observations.addProperty("begin_marker_code_index", location.codeIndex());
+                        observations.addProperty("begin_marker", marker);
+                        observations.addProperty("begin_marker_signature", method.signature());
+                        record("begin", method, marker);
+                    } else if (marker.startsWith("Unihex operation end " + id + " ")) {
+                        if (active == false || thread != event.thread().uniqueID()) throw new IllegalStateException("Unowned operation end");
+                        active = false;
+                        for (EventRequest request : operationRequests) request.disable();
+                        ends++;
+                        observations.addProperty("end_marker_code_index", location.codeIndex());
+                        observations.addProperty("end_marker", marker);
+                        observations.addProperty("end_marker_signature", method.signature());
+                        record("end", method, marker);
+                    } else if (active && marker.startsWith("Unihex operation failure " + id + " ")) {
+                        increment("expected_failures");
+                        observations.addProperty("failure_marker", marker);
+                    } else if (marker.startsWith("Unihex frame work " + id + " ")) {
+                        if (begins != 1 || ends != 1 || active) throw new IllegalStateException("Frame work escaped the complete operation boundary");
+                        observations.add("frame_work", JsonParser.parseString(marker.substring(("Unihex frame work " + id + " ").length())).getAsJsonObject());
+                    }
+                }
+                return;
+            }
+            if (active == false || thread != event.thread().uniqueID() || METHODS.get(type).contains(method.name()) == false) return;
+            record("entry_breakpoint", method, null);
+            events.get(events.size() - 1).getAsJsonObject().addProperty("code_index", location.codeIndex());
+            if (type.equals(FONT + "MinecraftFontEngine")) {
+                switch (method.name()) {
+                    case "glyph" -> increment("public_glyph_requests");
+                    case "cachedGlyph" -> increment("cached_glyph_requests");
+                    case "resolveGlyph" -> increment("provider_cache_misses");
+                    case "unihexGlyph" -> increment("unihex_raster_attempts");
+                    case "readBitmapCell" -> increment("bitmap_cell_misses");
+                    case "decodeBitmap" -> increment("bitmap_decodes");
+                    default -> throw new IllegalStateException("Unclassified external engine method");
+                }
+            } else if (type.equals("dev.s7a.strata.render.DrawImages")) increment("owned_image_factory_entries");
+            else increment("native_raster_requests");
+        }
+
+        private void exit(MethodExitEvent event) {
+            Method method = event.method();
+            String type = method.declaringType().name();
+            if (active == false || thread != event.thread().uniqueID() || METHODS.get(type).contains(method.name()) == false) return;
+            String result = event.returnValue() == null ? "null" : event.returnValue().type().name();
+            record("return", method, result);
+            if (type.equals(FONT + "MinecraftFontEngine") && method.name().equals("unihexGlyph")) increment(event.returnValue() == null ? "unihex_absent_results" : "unihex_constructed_rasters");
+        }
+
+        /** Records a real thrown engine exception independently of the worker's caught-failure marker. */
+        private void failure(ExceptionEvent failure) {
+            if (active == false || thread != failure.thread().uniqueID()) return;
+            increment("engine_exception_events");
+            record("exception", failure.location().method(), failure.exception().referenceType().name());
+            observations.addProperty("exception_catch_location", failure.catchLocation() == null ? null : failure.catchLocation().toString());
+        }
+
+        private void increment(String name) { observations.addProperty(name, observations.get(name).getAsLong() + 1); }
+
+        private void record(String kind, Method method, String returned) {
+            if (16_384 <= events.size()) throw new IllegalStateException("External method trace overflow");
+            JsonObject event = new JsonObject();
+            event.addProperty("kind", kind);
+            event.addProperty("class", method.declaringType().name());
+            event.addProperty("method", method.name());
+            event.addProperty("signature", method.signature());
+            event.addProperty("thread", thread);
+            if (returned != null) event.addProperty("returned", returned);
+            events.add(event);
+        }
+    }
+
+    /** Checks known actual bounds-entry multiplicities and a terminal engine failure before qualification is admitted. */
+    private static void verifyQualification(String id, JsonObject observed) {
+        long expected = switch (id) { case "QSingle" -> 1; case "QMultiple" -> 3; case "QZero", "QFailure", "R127", "R128", "R129" -> 0; default -> throw new IllegalArgumentException("Unknown qualification control"); };
+        if (observed.get("natural_bounds").getAsLong() != expected
+            || observed.get("expected_failures").getAsLong() != (id.equals("QFailure") ? 1 : 0)
+            || observed.get("engine_exception_events").getAsLong() != (id.equals("QFailure") ? 1 : 0)) throw new IllegalStateException("Independent trace qualification failed: " + id);
+    }
+
+    /** Drains child streams concurrently and retains their complete bytes; an I/O failure fails the controller. */
+    private static CompletableFuture<Void> drain(InputStream source, Path path, OutputStream console) {
+        return CompletableFuture.runAsync(() -> {
+            try (source; OutputStream retained = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)) {
+                byte[] buffer = new byte[8192];
+                long bytes = 0;
+                int count;
+                while ((count = source.read(buffer)) != -1) {
+                    bytes += count;
+                    if (64L * 1024 * 1024 < bytes) throw new IllegalStateException("Trace worker output overflow");
+                    retained.write(buffer, 0, count);
+                    console.write(buffer, 0, count);
+                    console.flush();
+                }
+            } catch (Exception failure) { throw new IllegalStateException("Could not retain trace worker stream", failure); }
+        });
+    }
+
+    /** Quotes the documented launching connector argument syntax, rejecting ambiguous embedded quotes. */
+    private static String quote(String value) {
+        if (value.contains("\"") || value.contains("\n") || value.contains("\r")) throw new IllegalArgumentException("Unrepresentable connector argument");
+        return "\"" + value + "\"";
+    }
+    /** Hashes actual loaded controller bytes for qualification rather than trusting source declarations. */
+    private static String classHash(Class<?> type) throws Exception {
+        try (InputStream bytes = type.getResourceAsStream("/" + type.getName().replace('.', '/') + ".class")) {
+            if (bytes == null) throw new IllegalStateException("Missing actual compiled trace class");
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.readAllBytes()));
+        }
+    }
+
+    /** Hashes retained artifacts independently from the shared Python verifier. */
+    private static String hash(Path path) throws Exception { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))); }
+
+    /** Preserves fresh immutable evidence without replacing a prior attempt. */
+    private static void writeNew(Path path, JsonObject value) throws Exception { Files.writeString(path, value.toString(), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW); }
+}

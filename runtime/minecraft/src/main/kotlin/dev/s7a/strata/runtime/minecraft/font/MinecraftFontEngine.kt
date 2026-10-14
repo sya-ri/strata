@@ -25,6 +25,7 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Fallback hits replay only later prefix touches, and empty prefixes are not admitted.
  * Provider sequences with at most one entry use the original walk without resolution metadata.
  * Miss-prefix storage is lazy and stops when the captured raster epoch changes or its existing admission bound cannot fit.
+ * Cold misses that grow the raster cache continue without selection metadata; a later fully cached walk may admit reuse.
  * Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled.
  * Native faces have an independent entry bound of at most 16 and a combined encoded-input ceiling equal to the snapshot's maxAssetBytes.
  * Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state.
@@ -172,9 +173,10 @@ public class MinecraftFontEngine
             while (firstIndex < providers.size && applies(providers[firstIndex].filter, current.options).not()) firstIndex++
             if (firstIndex == providers.size) return missingGlyph
             val first = providers[firstIndex]
+            val rasterEntries = rasters.size
             cachedGlyph(first, codePoint)?.let { return it }
             if (firstIndex == providers.lastIndex) return missingGlyph
-            if (epoch !== rasterEpoch) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
+            if (epoch !== rasterEpoch || rasterEntries != rasters.size) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
             val key = ResolutionKey(selected, codePoint)
             resolutions[key]?.let { resolution ->
                 val firstMiss = missingRasterKey(first, codePoint)
@@ -219,8 +221,9 @@ public class MinecraftFontEngine
             for (index in startIndex until providers.size) {
                 val entry = providers[index]
                 if (applies(entry.filter, current.options).not()) continue
+                val rasterEntries = rasters.size
                 val glyph = cachedGlyph(entry, codePoint)
-                if (epoch !== rasterEpoch) {
+                if (epoch !== rasterEpoch || rasterEntries != rasters.size) {
                     canAdmit = false
                     misses = null
                 }

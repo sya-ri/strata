@@ -15,6 +15,32 @@ import org.junit.jupiter.api.Test
  */
 internal class MinecraftFontResolutionAdmissionTest {
     @Test
+    fun coldMissesAndLongChainChurnDeferSelectionUntilTheRasterWorkingSetFits() {
+        val prefixes = List(9) { """{"type":"space","advances":{"Z":3}}""" }.joinToString(",")
+        val snapshot = FontTestResources.snapshot(FontTestResources.font("default", prefixes + """,{"type":"space","advances":{"A":7}}"""))
+        for (budget in listOf(2, 64, 8192)) {
+            val candidateBackend = FontTestBackend()
+            val referenceBackend = FontTestBackend()
+            MinecraftFontEngine(snapshot, { candidateBackend }, cacheEntries = budget).use { candidate ->
+                MinecraftFontEngine(snapshot, { referenceBackend }, cacheEntries = budget).use { reference ->
+                    for (scalar in 65..128) {
+                        assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, scalar)
+                        assertEquals(0, resolutionEntries(candidate))
+                        assertEquals(0, resolutionUnits(candidate))
+                    }
+                    repeat(3) {
+                        assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code)
+                    }
+                    assertEquals(if (budget == 2) 0 else 1, resolutionEntries(candidate))
+                    assertEquals(if (budget == 2) 0 else 10, resolutionUnits(candidate))
+                    assertEquals(referenceBackend.openCalls, candidateBackend.openCalls)
+                }
+            }
+            assertEquals(referenceBackend.closeCalls, candidateBackend.closeCalls)
+        }
+    }
+
+    @Test
     fun singleTrueTypeProviderKeepsOriginalPressureAndAtlasRejectionWithoutSelectionMetadata() {
         val snapshot =
             FontTestResources.snapshot(

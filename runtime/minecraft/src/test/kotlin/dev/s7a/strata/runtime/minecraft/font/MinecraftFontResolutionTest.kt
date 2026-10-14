@@ -251,6 +251,7 @@ internal class MinecraftFontResolutionTest {
             }
             assertEquals(0, resolutionUnits(candidate))
             assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code)
+            assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code)
             assertOtherThreadRejects(snapshot, reference, candidate)
             assertEquals(2, resolutionUnits(candidate))
             assertEquals(1, resolutionEntries(candidate))
@@ -351,6 +352,7 @@ internal class MinecraftFontResolutionTest {
         val engine = MinecraftFontEngine(snapshot, { FontTestBackend() }, cacheEntries = 8192)
         try {
             repeat(5000) { offset ->
+                engine.glyph(FontTestResources.defaultFont, 0x4E00 + offset)
                 engine.glyph(FontTestResources.defaultFont, 0x4E00 + offset)
                 assertTrue(resolutionUnits(engine) <= 4096)
                 assertTrue(resolutionEntries(engine) <= 4096 / 11)
