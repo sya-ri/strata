@@ -37,7 +37,7 @@ def load_manifest(shared, root, data):
         shared.relative_path(root, path)
         require(path.startswith("runtime/web/src/jsMain/") and path.endswith(".kt"), "Only declared Web production files may differ")
     shared.relative_path(root, data["collector_path"])
-    require(data["collector_path"].startswith("performance-testkit/build/libs/") and data["collector_path"].endswith(".jar"), "Use the linked testkit JS artifact")
+    require(data["collector_path"].startswith("performance-testkit/build/libs/") and data["collector_path"].endswith((".jar", ".klib")), "Use the linked testkit JS artifact")
     labels = set()
     require(isinstance(data["inputs"], list) and data["inputs"], "Declare immutable browser inputs")
     for item in data["inputs"]:

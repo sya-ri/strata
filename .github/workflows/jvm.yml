@@ -67,10 +67,13 @@ jobs:
               args+=(--model build/github-actions/source-model.json)
             fi
           fi
+        elif [[ "$EVENT" == workflow_dispatch && -n "$MANIFEST" ]]; then
+          args=(--paired-manifest "$MANIFEST")
         fi
         python3 gradle/plan-ci.py "${args[@]}"
       id: plan
       env:
+        MANIFEST: ${{ inputs.paired_manifest }}
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}

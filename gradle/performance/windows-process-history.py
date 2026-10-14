@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Create bounded real owned descendants and retain their independently read PID/birth identities."""
 import argparse
+from contextlib import ExitStack
 import ctypes
 import json
 import os
@@ -10,22 +11,68 @@ import sys
 import time
 
 
-def completed_identity(process):
-    """Read an immediately exited child's immutable birth, exit and image from its independently held native handle."""
+def immediate_child():
+    """Hold the stdlib-created suspended child's actual process/thread handles and capture image/birth before resume."""
+    import _winapi
+
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.GetProcessTimes.argtypes = [ctypes.c_void_p] + [ctypes.POINTER(ctypes.c_ulonglong)] * 4
     kernel.QueryFullProcessImageNameW.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_wchar_p, ctypes.POINTER(ctypes.c_ulong)]
+    kernel.ResumeThread.argtypes = [ctypes.c_void_p]
+    kernel.ResumeThread.restype = ctypes.c_ulong
+    command = subprocess.list2cmdline([os.environ["COMSPEC"], "/d", "/c", "exit /b 0"])
+    process, thread, pid, _ = _winapi.CreateProcess(None, command, None, None, False, subprocess.CREATE_NO_WINDOW | 0x4, None, None, subprocess.STARTUPINFO())
+    child = {"process": process, "thread": thread, "pid": pid, "kernel": kernel, "api": _winapi}
+    try:
+        created, exited, system, user = (ctypes.c_ulonglong() for _ in range(4))
+        if not kernel.GetProcessTimes(ctypes.c_void_p(process), ctypes.byref(created), ctypes.byref(exited), ctypes.byref(system), ctypes.byref(user)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        image = ctypes.create_unicode_buffer(32768)
+        size = ctypes.c_ulong(len(image))
+        if not kernel.QueryFullProcessImageNameW(ctypes.c_void_p(process), 0, image, ctypes.byref(size)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        if created.value == 0 or exited.value != 0 or not image.value:
+            raise ValueError("Independent suspended descendant lacks an actual live image/birth")
+        child.update(creationFileTime=created.value, image=image.value)
+        return child
+    except BaseException:
+        close_immediate(child)
+        raise
+
+
+def close_immediate(child):
+    """Release only this created child's two held handles; unfinished fixture children are terminated before release."""
+    api = child["api"]
+    try:
+        if api.GetExitCodeProcess(child["process"]) == 259:
+            api.TerminateProcess(child["process"], 126)
+            if api.WaitForSingleObject(child["process"], api.INFINITE) != 0:
+                raise ValueError("Independent child cleanup did not reach a signalled process")
+    finally:
+        try:
+            api.CloseHandle(child["thread"])
+        finally:
+            api.CloseHandle(child["process"])
+
+
+def resume_immediate(child):
+    """Resume exactly the independently captured initial suspended thread, without delaying the child's work."""
+    if child["kernel"].ResumeThread(ctypes.c_void_p(child["thread"])) != 1:
+        raise ValueError("Independent suspended child did not resume its initial thread")
+
+
+def completed_identity(child):
+    """Read exit/time from the same held process handle and preserve its independently observed pre-resume image/birth."""
+    api = child["api"]
+    if api.WaitForSingleObject(child["process"], api.INFINITE) != 0:
+        raise ValueError("Independent child did not reach a signalled process")
     created, exited, system, user = (ctypes.c_ulonglong() for _ in range(4))
-    handle = ctypes.c_void_p(int(process._handle))
-    if not kernel.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(exited), ctypes.byref(system), ctypes.byref(user)):
+    if not child["kernel"].GetProcessTimes(ctypes.c_void_p(child["process"]), ctypes.byref(created), ctypes.byref(exited), ctypes.byref(system), ctypes.byref(user)):
         raise ctypes.WinError(ctypes.get_last_error())
-    image = ctypes.create_unicode_buffer(32768)
-    size = ctypes.c_ulong(len(image))
-    if not kernel.QueryFullProcessImageNameW(handle, 0, image, ctypes.byref(size)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    if exited.value == 0 or exited.value < created.value:
+    code = api.GetExitCodeProcess(child["process"])
+    if created.value != child["creationFileTime"] or exited.value == 0 or exited.value < created.value or code != 0:
         raise ValueError("Independent immediate descendant lacks an actual closed lifetime")
-    return {"pid": process.pid, "creationFileTime": created.value, "exitFileTime": exited.value, "image": image.value, "exitCode": process.returncode}
+    return {"pid": child["pid"], "creationFileTime": created.value, "exitFileTime": exited.value, "image": child["image"], "exitCode": code}
 
 
 def main():
@@ -55,19 +102,30 @@ def main():
         parser.error("Supply a positive batch count")
     for batch in range(arguments.batches):
         children = []
-        for index in range(8):
-            receipt = arguments.output / f"child-{batch * 8 + index}.json"
-            command = [os.environ["COMSPEC"], "/d", "/c", "exit /b 0"] if arguments.immediate else [sys.executable, "-B", str(Path(__file__).resolve()), "--child", str(receipt)]
-            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW)
-            children.append((process, receipt))
-        for process, receipt in children:
-            code = process.wait()
-            if code != 0:
-                raise ValueError("Owned history child failed")
-            record = completed_identity(process) if arguments.immediate else json.loads(receipt.read_text(encoding="utf-8"))
-            if record["pid"] != process.pid:
-                raise ValueError("Owned child receipt identity changed")
-            records.append({**record, "exitCode": code})
+        with ExitStack() as release:
+            for index in range(8):
+                receipt = arguments.output / f"child-{batch * 8 + index}.json"
+                if arguments.immediate:
+                    child = immediate_child()
+                    release.callback(close_immediate, child)
+                    children.append((child, receipt))
+                else:
+                    process = subprocess.Popen([sys.executable, "-B", str(Path(__file__).resolve()), "--child", str(receipt)], creationflags=subprocess.CREATE_NO_WINDOW)
+                    children.append((process, receipt))
+            if arguments.immediate:
+                for child, _ in children:
+                    resume_immediate(child)
+            for process, receipt in children:
+                if arguments.immediate:
+                    records.append(completed_identity(process))
+                else:
+                    code = process.wait()
+                    if code != 0:
+                        raise ValueError("Owned history child failed")
+                    record = json.loads(receipt.read_text(encoding="utf-8"))
+                    if record["pid"] != process.pid:
+                        raise ValueError("Owned child receipt identity changed")
+                    records.append({**record, "exitCode": code})
     with (arguments.output / "completed.json").open("x", encoding="utf-8") as target:
         json.dump({"concurrentChildren": 8, "immediate": arguments.immediate, "generations": records}, target, indent=2)
 

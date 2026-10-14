@@ -75,7 +75,7 @@ def main():
             ("normal", "@exit /b 0\n", 4 * 1024**3, 30),
             ("completed-history", f'@"{sys.executable}" -B "{history}" --output descendants\n', 4 * 1024**3, 120),
             ("immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate\n', 4 * 1024**3, 120),
-            ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 192\n', 4 * 1024**3, 120),
+            ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 512 --immediate\n', 4 * 1024**3, 120),
             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
             ("timeout", '@python -c "import time; time.sleep(30)"\n', 4 * 1024**3, 2),

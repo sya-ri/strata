@@ -95,7 +95,12 @@ def load_manifest(root, path):
     if data.get("schema") in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
         return browser_controller().load_manifest(SimpleNamespace(**globals()), root, data)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
-    require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    require(required <= set(data) <= required | {"owner_reports", "owner_continuation", "driver_source"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
+    if "driver_source" in data:
+        driver = data["driver_source"]
+        require(isinstance(driver, dict) and set(driver) == {"ref", "tree"}
+                and all(isinstance(driver[key], str) and re.fullmatch(r"[0-9a-f]{40}", driver[key]) for key in ("ref", "tree")),
+                "Pin the exact unpatched driver commit and tree")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}, "Invalid source binding")
@@ -1116,7 +1121,7 @@ def verify_continuation_archives(data, runtime, collector):
     require(digest(collector) == continuation["collector_sha256"], "Continuation collector differs from original measured bytes")
 
 
-def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None):
+def run(root, manifest_path, output, input_root=None, input_producer="", execution_head=None, owner_report=None, explicit_manual=False):
     """Own a fresh whole attempt; an exception preserves failure and never adopts completed rows."""
     input_root = root if input_root is None else input_root
     require(os.name == "nt", "Paired CI requires the Windows owned-process boundary")
@@ -1152,6 +1157,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             nonlocal captured_class_loads
             require(git(root, "rev-parse", "HEAD") == record["driver_head"], "Paired execution head changed before invocation")
             verify_driver_sources(record["driver_sources"])
+            if "driver_source" in record:
+                verify_driver_source(root, record["driver_head"], data, explicit_manual)
             require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient job time for the full next invocation and upload reserve")
             for executable, expected in allowed_java.items():
                 require(digest(Path(executable)) == expected, "Pinned Java executable bytes changed before invocation")
@@ -1182,6 +1189,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                         preserve_test_reports(workspace, directory, test_gate)
             verify_driver_sources(record["driver_sources"])
             terminal = read_json(directory / "terminal.json")
+            if "driver_source" in record:
+                verify_driver_source(root, record["driver_head"], data, explicit_manual)
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
             require(exit_code == 0 and terminal["exitCode"] == 0 and terminal["naturalRelease"] is True and terminal["handlesClosed"] is True,
@@ -1199,6 +1208,13 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
 
         data = load_manifest(input_root, manifest_path)
         data, record["scope"] = continuation_scope(data, owner_report)
+        driver = verify_driver_source(root, record["driver_head"], data, explicit_manual)
+        if driver is not None:
+            declaration = declared_inputs(root, record["driver_head"])
+            require(input_producer and declaration is not None and declaration[0] == input_producer,
+                    "Separate driver collection requires immutable declared producer inputs")
+            record["driver_source"] = driver
+            record["scope"].update(consumer_ci_establishes_subject_acceptance=False, prior_rows_adopted=False)
         java_roles = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8"),
                                                              "release_sha256": digest(home / "release"), "executable_sha256": digest(home / "bin/java.exe")}
@@ -1220,7 +1236,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 workspaces[side], record["sources"][side] = materialize(root, output, side, source, input_root)
             else:
                 workspaces[side], record["sources"][side] = workspaces[identical], record["sources"][identical]
-        if input_producer:
+        if input_producer and driver is None:
             require(source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == source_files(root, record["driver_head"]), "Candidate source differs from execution head")
         fixture = workspaces["fixture"]
         owners = sorted({suite["project"] for suite in data["suites"]})
@@ -1464,6 +1480,14 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         record["score_cells"] = sum(suite["expected_cases"] * 12 for suite in data["suites"])
         record["operation_cells"] = sum(suite["operation_reports"]["expected_rows"] * 6 for suite in data["suites"] if "operation_reports" in suite)
         table(output, comparisons, record["phases"], operation_comparisons, owner_comparisons)
+        if driver is not None:
+            verify_driver_source(root, record["driver_head"], data, explicit_manual)
+            with (output / "report.md").open("a", encoding="utf-8") as target:
+                target.write(f"\nFrozen shared driver `{driver['ref']}` / tree `{driver['tree']}` executed as `{driver['execution_head']}` / tree `{driver['execution_tree']}`.\n")
+                for side in ("fixture", "baseline", "candidate"):
+                    subject = record["sources"][side]
+                    target.write(f"\n{side.title()} subject `{subject['ref']}` / tree `{subject['tree']}` / source archive SHA-256 `{subject['archive_sha256']}`.\n")
+                target.write("\nConsumer CI does not certify these subject sources. Whole-Issue acceptance remains separate; no prior rows were adopted.\n")
         if owner_controls:
             with (output / "report.md").open("a", encoding="utf-8") as target:
                 target.write("\nUntimed original owner controls are raw counts/transitions, not wall-time or percentile measurements. Every independent invocation is retained.\n\n| Suite | Side | Repetition | Original row/control fields |\n| --- | --- | ---: | --- |\n")
@@ -1492,6 +1516,26 @@ def source_files(root, tree):
             if path != ".github/performance" and not path.startswith(".github/performance/"):
                 rows[path] = identity
     return rows
+
+
+def verify_driver_source(root, execution_head, data, explicit_manual):
+    """Admit a separate frozen driver only for explicit manual inputs; guard every actual tracked driver byte and mode."""
+    driver = data.get("driver_source")
+    if driver is None:
+        return None
+    require(explicit_manual and os.environ.get("GITHUB_EVENT_NAME") in (None, "workflow_dispatch"),
+            "Separate driver source requires explicit manual immutable inputs")
+    require(git(root, "cat-file", "-t", driver["ref"]) == "commit"
+            and git(root, "rev-parse", driver["ref"] + "^{tree}") == driver["tree"], "Frozen driver commit or tree changed")
+    require(subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", driver["ref"], execution_head],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0, "Frozen driver is not an execution ancestor")
+    execution_tree = git(root, "rev-parse", execution_head + "^{tree}")
+    require(source_files(root, driver["tree"]) == source_files(root, execution_tree), "Frozen driver source differs from execution head")
+    require(git(root, "write-tree") == execution_tree
+            and subprocess.run(["git", "-C", str(root), "diff", "--quiet", "--no-ext-diff", "HEAD"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0,
+            "Actual driver source index or working bytes changed")
+    return {**driver, "execution_head": execution_head, "execution_tree": execution_tree}
 
 
 def declared_inputs(root, head):
@@ -1541,13 +1585,16 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
             input_root, _ = materialize(root, output, "input-producer", {"ref": producer, "tree": git(root, "rev-parse", producer + "^{tree}"), "patches": []})
             path = relative_path(input_root, manifest)
             data = load_manifest(input_root, path)
+            explicit_manual = explicit is not None and base is None and head is None
+            driver = verify_driver_source(root, execution_head, data, explicit_manual)
             candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
-            if data["schema"] != "strata-source-preparation-ci-v1":
+            if data["schema"] != "strata-source-preparation-ci-v1" and driver is None:
                 require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
             actual_sha = digest(path)
             require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
             require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during materialization")
-            yield {"root": input_root, "path": path, "manifest": manifest, "producer": producer, "sha256": actual_sha, "execution_head": execution_head}
+            yield {"root": input_root, "path": path, "manifest": manifest, "producer": producer, "sha256": actual_sha, "execution_head": execution_head,
+                   "explicit_manual": driver is not None}
     else:
         require(explicit is None and data_ref is None and manifest_sha256 is None, "Missing Performance-Inputs trailer for explicit input")
         require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during selection")
@@ -1628,7 +1675,8 @@ def main():
                 require(args.owner_report is None, "Browser collection retains the whole declared manifest")
                 browser_controller().run(SimpleNamespace(**globals()), root, selection, args.output.resolve())
             else:
-                run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report)
+                run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report,
+                    selection["explicit_manual"])
 
 
 if __name__ == "__main__":

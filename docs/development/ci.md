@@ -57,7 +57,7 @@ Ordinary client launches and personal settings are unaffected; frame fences and 
 
 ## Changes and job selection
 
-Heavy checks run on pull requests, with a manual full run available through `workflow_dispatch`.
+Heavy checks run on pull requests, with a manual full run available through `workflow_dispatch` with an empty `paired_manifest` input.
 Merging a PR does not repeat JVM or Qodana verification.
 The always-running planner and `CI result` job distinguish planned skips from failures, cancellation, and unexpected skipped checks.
 
@@ -144,5 +144,10 @@ Documentation inputs trigger Pages separately after merge; the checked site is g
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
 Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.
 
-The JVM workflow also supports an explicit paired measurement manifest; ordinary PRs without the default opt-in file skip its Windows job.
+The JVM workflow also supports an explicit paired measurement manifest; ordinary PRs without a `Performance-Inputs` declaration skip its Windows job.
 See [paired JVM CI](performance-testkit.md#opt-in-paired-jvm-ci) for frozen inputs, supported collectors, process bounds and complete-attempt acceptance.
+A nonempty manual `paired_manifest` must pass the existing immutable producer/consumer selection and exactly match the `Performance-Inputs` trailer before the planner emits any outputs.
+This explicit dispatch selects the complete paired job and independent compiled fixture qualification without repeating ordinary JVM, Web, documentation or Minecraft verification.
+The paired job retains its native boundary controls, full frozen collection and attempt archives.
+Empty-input manual runs and ordinary PR planning keep their existing verification scope, including when the head declares performance inputs.
+Measurement and Source preparation do not supply final-revision ordinary quality evidence for either the prepared subject or the shared driver; those revisions retain their independent required checks.

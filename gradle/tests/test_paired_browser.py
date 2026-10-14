@@ -4,13 +4,80 @@ import importlib.util
 import json
 from pathlib import Path
 from types import SimpleNamespace
+import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import test_paired_jvm as fixtures
 
 
 class PairedBrowserTest(unittest.TestCase):
+    def test_independent_immediate_oracle_observes_image_before_resume_and_preserves_same_handle_birth(self):
+        source = Path(__file__).resolve().parent.parent / "performance/windows-process-history.py"
+        spec = importlib.util.spec_from_file_location("immediate_oracle", source)
+        oracle = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(oracle)
+        for mode in ("complete", "changed-birth", "missing-image", "zero-birth", "early-exit", "zero-exit", "reverse-lifetime", "nonzero", "resume-failed", "image-query-failed"):
+            with self.subTest(mode=mode):
+                state = {"finished": False}
+                events = []
+                birth = 116444736000000000 + 1000 * 10000
+                image = str(self.root / "independently-observed-cmd.exe")
+
+                def times(handle, created, exited, system, user):
+                    self.assertEqual(handle.value, 101)
+                    events.append("exit-times" if state["finished"] else "birth-times")
+                    created._obj.value = birth + (1 if state["finished"] and mode == "changed-birth" else 0)
+                    if not state["finished"] and mode == "zero-birth":
+                        created._obj.value = 0
+                    exited._obj.value = (0 if mode == "zero-exit" else birth - 1 if mode == "reverse-lifetime" else birth + 10000) if state["finished"] else birth + 10000 if mode == "early-exit" else 0
+                    return True
+
+                def observed_image(handle, flags, target, size):
+                    self.assertEqual(handle.value, 101)
+                    self.assertFalse(state["finished"], "Image query raced an exited process")
+                    events.append("image-before-resume")
+                    target.value = "" if mode == "missing-image" else image
+                    return mode != "image-query-failed"
+
+                def resume(handle):
+                    self.assertEqual(handle.value, 102)
+                    events.append("resume")
+                    return 0xFFFFFFFF if mode == "resume-failed" else 1
+
+                def wait(handle, timeout):
+                    self.assertEqual(handle, 101)
+                    events.append("wait")
+                    state["finished"] = True
+                    return 0
+
+                api = SimpleNamespace(CreateProcess=Mock(return_value=(101, 102, 123, 456)), INFINITE=0xFFFFFFFF,
+                    WaitForSingleObject=Mock(side_effect=wait), GetExitCodeProcess=Mock(side_effect=lambda handle: (7 if mode == "nonzero" else 0) if state["finished"] else 259),
+                    TerminateProcess=Mock(side_effect=lambda handle, code: state.update(finished=True)), CloseHandle=Mock())
+                kernel = SimpleNamespace(GetProcessTimes=Mock(side_effect=times), QueryFullProcessImageNameW=Mock(side_effect=observed_image), ResumeThread=Mock(side_effect=resume))
+                with patch.dict(sys.modules, {"_winapi": api}), patch.object(oracle.ctypes, "WinDLL", return_value=kernel, create=True), \
+                     patch.object(oracle.ctypes, "WinError", side_effect=lambda code=0: OSError("Synthetic Windows failure"), create=True), \
+                     patch.object(oracle.ctypes, "get_last_error", return_value=31, create=True), \
+                     patch.object(oracle.subprocess, "STARTUPINFO", return_value=SimpleNamespace(), create=True), \
+                     patch.object(oracle.subprocess, "CREATE_NO_WINDOW", 0x08000000, create=True), patch.dict(oracle.os.environ, {"COMSPEC": "requested-path-is-not-observed.exe"}):
+                    child = None
+                    try:
+                        if mode == "complete":
+                            child = oracle.immediate_child()
+                            oracle.resume_immediate(child)
+                            record = oracle.completed_identity(child)
+                            self.assertEqual(record, {"pid": 123, "creationFileTime": birth, "exitFileTime": birth + 10000, "image": image, "exitCode": 0})
+                            self.assertEqual(events, ["birth-times", "image-before-resume", "resume", "wait", "exit-times"])
+                        else:
+                            with self.assertRaises((ValueError, OSError)):
+                                child = oracle.immediate_child()
+                                oracle.resume_immediate(child)
+                                oracle.completed_identity(child)
+                    finally:
+                        if child is not None:
+                            oracle.close_immediate(child)
+                    self.assertEqual([call.args[0] for call in api.CloseHandle.call_args_list], [102, 101])
+
     def test_immediate_descendant_control_requires_complete_independent_physical_histories(self):
         source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
         spec = importlib.util.spec_from_file_location("boundary_immediate", source)
@@ -114,6 +181,26 @@ class PairedBrowserTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return self.shared.load_manifest(self.root, path)
+
+    def test_linked_js_archive_uses_actual_klib_path_and_retains_both_compiled_pins(self):
+        value = copy.deepcopy(self.manifest)
+        previous = value["collector_path"]
+        actual = "performance-testkit/build/libs/performance-testkit-js-0.2.2.klib"
+        value["collector_path"] = actual
+        for pins in value["compiled_pins"].values():
+            for pin in pins:
+                if pin["path"] == previous:
+                    pin["path"] = actual
+        self.assertEqual(self.load(value), value)
+        for suffix in (".zip", ".js", ".exe", ".klib.bak"):
+            changed = copy.deepcopy(value)
+            changed["collector_path"] = actual.removesuffix(".klib") + suffix
+            with self.subTest(suffix=suffix), self.assertRaises(ValueError):
+                self.load(changed)
+        missing = copy.deepcopy(value)
+        missing["compiled_pins"]["baseline"][0]["path"] = previous
+        with self.assertRaisesRegex(ValueError, "actual linked collector"):
+            self.load(missing)
 
     def supplemental(self):
         result = copy.deepcopy(self.manifest["collections"][0])

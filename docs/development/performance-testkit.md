@@ -585,7 +585,7 @@ The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows r
 Prepare the manifest and its frozen input files under `.github/performance/` in a producer commit.
 Its single-parent successor removes that entire subtree, preserves every other path, mode and blob, and declares exactly one Git commit trailer: `Performance-Inputs: <producer-sha>:<manifest-path>`.
 The producer is the full 40-character lowercase commit SHA of that sole parent; the manifest is a canonical repository-relative JSON path under `.github/performance/`.
-The reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
+By default, the reconstructed candidate must also match every non-data path, mode and blob of the final driver revision.
 This keeps experiment data reachable through Git history without including it in the merged product tree.
 
 Pull request planning and execution check out the same exact head and independently validate the trailer, producer, manifest digest, source trees and file pins before Java starts.
@@ -593,6 +593,12 @@ The selector returns the manifest path, producer SHA and manifest SHA-256; the p
 A nonempty manual `paired_manifest` input must match the declared trailer path; a different path, missing producer, malformed or duplicate trailer, retained data subtree or changed non-data source fails without fallback.
 Without a declaration and without an explicit input, all three selector outputs are empty and the paired job is skipped.
 Manual dispatch uses the same declaration contract and needs no additional workflow input.
+A normal JVM manifest may additionally declare `driver_source` as an exact unpatched `{ "ref": "<commit>", "tree": "<tree>" }` binding for an explicit manual dispatch with its declared immutable inputs.
+That commit must be an ancestor of the actual execution consumer, and its entire non-data source inventory must match the execution tree and unchanged working bytes.
+The existing producer trailer, manifest digest and independently reconstructed fixture/baseline/candidate source guards remain required; subject source is not copied into the shared driver consumer.
+Automatic PR selection rejects this separate binding and retains its exact candidate-to-consumer identity requirement.
+The attempt records the frozen driver commit/tree, actual execution commit/tree, preserved live driver bytes, complete subject source archives, actual runtime/collector/classpath/loaded-code identities and original complete comparison inventory independently.
+Consumer CI does not certify subject-source acceptance, and the route adopts no earlier rows or whole-Issue credit; final subject correctness, quality and platform gates remain separately required.
 A failed attempt is retained in full and cannot be resumed by adopting successful rows from a previous attempt.
 
 Start another comparison from [the manifest template](../../gradle/performance/paired-jvm.example.json).
@@ -824,6 +830,7 @@ Freeze its actual `prepared-pins.json` values in a subsequent immutable producer
 The same opt-in hosted job and `Performance-Inputs` producer/consumer scheme accept `strata-paired-browser-ci-v1` inputs through the [shared browser controller](../../gradle/performance/paired-browser.py).
 The final consumer contains no performance data files; its candidate source still must match the exact execution head.
 The manifest binds all three source trees, permits differences only in explicitly declared Web production files, and pins immutable inputs, both Java roles, the linked testkit JS artifact and each actual application bundle.
+Use the actual `jsJar.archiveFile` path for the collector, including its `.klib` extension when emitted; both variants must pin that same linked archive path.
 Existing `tools/web` adapters receive structured path arguments and retain their full compiled scenario inventories.
 No permanent workload registry or per-change workflow is required.
 

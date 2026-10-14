@@ -76,9 +76,15 @@ class PairedJvmTest(unittest.TestCase):
         (self.root / "source.txt").write_text("base source\n", encoding="utf-8")
         return self.selector_commit()
 
-    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None):
+    def input_consumer(self, malformed=None, candidate_patch=False, mismatch=None, value=None, payload=None, separate_driver=False):
         """Construct real producer/consumer commits and an independently reconstructed candidate tree."""
         base = self.selector_repository()
+        if separate_driver:
+            for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+                driver_file = self.root / "gradle/performance" / name
+                driver_file.parent.mkdir(parents=True, exist_ok=True)
+                driver_file.write_bytes(b"frozen generic driver\n")
+            base = self.selector_commit("Freeze shared driver fixture")
         source = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}"), "patches": []}
         for relative, contents in (payload or {}).items():
             target = self.root / relative
@@ -95,6 +101,11 @@ class PairedJvmTest(unittest.TestCase):
             source["patches"] = [{"path": path.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(path)}]
         manifest = copy.deepcopy(self.manifest if value is None else value)
         manifest["sources"] = {side: copy.deepcopy(source) for side in ("fixture", "baseline", "candidate")}
+        if separate_driver:
+            driver = {"ref": base, "tree": self.selector_git("rev-parse", base + "^{tree}")}
+            manifest["driver_source"] = driver
+            manifest["sources"]["baseline"] = {**driver, "patches": []}
+            self.selector_git("restore", "--source=" + base, "--staged", "--worktree", "source.txt")
         path = self.selector_manifest(".github/performance/owned/manifest.json", manifest)
         if mismatch == "blob":
             (self.root / "source.txt").write_text("a different final source\n", encoding="utf-8")
@@ -122,6 +133,91 @@ class PairedJvmTest(unittest.TestCase):
             self.assertEqual(selection["sha256"], PAIRED.digest(selection["path"]))
         self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
         self.assertEqual(self.selector_git("status", "--porcelain=v1"), "")
+
+    def test_explicit_manual_driver_keeps_full_subject_sources_without_copying_them_into_consumer(self):
+        base, producer, head, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
+        self.assertEqual((self.root / "source.txt").read_text(), "base source\n")
+        self.assertEqual(PAIRED.select_manifest(self.root, path), path)
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selection:
+            self.assertTrue(selection["explicit_manual"])
+            actual = PAIRED.verify_driver_source(self.root, head, manifest, True)
+            self.assertEqual(actual["ref"], base)
+            self.assertEqual(actual["tree"], self.selector_git("rev-parse", base + "^{tree}"))
+            self.assertEqual(actual["execution_head"], head)
+            self.assertEqual(actual["execution_tree"], self.selector_git("rev-parse", head + "^{tree}"))
+            output = self.root / "subject-verification"
+            output.mkdir()
+            for side, text in (("baseline", "base source\n"), ("candidate", "candidate source\n")):
+                workspace, recorded = PAIRED.materialize(self.root, output, side, manifest["sources"][side], selection["root"])
+                self.assertEqual((workspace / "source.txt").read_text(), text)
+                self.assertEqual(recorded["tree"], manifest["sources"][side]["tree"])
+                PAIRED.source_guard(workspace, recorded["tree"])
+                (workspace / "source.txt").write_text("changed subject source\n")
+                with self.assertRaises(subprocess.CalledProcessError):
+                    PAIRED.source_guard(workspace, recorded["tree"])
+        self.assertEqual((self.root / "source.txt").read_text(), "base source\n")
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+
+    def test_driver_binding_cannot_replace_automatic_pr_candidate_identity(self):
+        base, _, head, path, _ = self.input_consumer(candidate_patch=True, separate_driver=True)
+        for arguments in ({}, {"base": base, "head": head}, {"explicit": path, "base": base, "head": head}):
+            with self.subTest(arguments=arguments), self.assertRaisesRegex(ValueError, "explicit manual"):
+                PAIRED.select_manifest(self.root, **arguments)
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}), self.assertRaisesRegex(ValueError, "explicit manual"):
+            PAIRED.select_manifest(self.root, path)
+
+    def test_driver_binding_schema_refuses_patches_extra_fields_and_nonexact_identities(self):
+        valid = copy.deepcopy(self.manifest)
+        valid["driver_source"] = {"ref": "a" * 40, "tree": "b" * 40}
+        self.assertEqual(self.load(valid), valid)
+        for driver in (None, [], {}, {"ref": "a" * 40}, {"ref": "a" * 40, "tree": "b" * 40, "patches": []},
+                       {"ref": "master", "tree": "b" * 40}, {"ref": "a" * 40, "tree": "B" * 40},
+                       {"ref": "a" * 40, "tree": None}):
+            value = copy.deepcopy(valid)
+            value["driver_source"] = driver
+            with self.subTest(driver=driver), self.assertRaisesRegex(ValueError, "driver commit and tree"):
+                self.load(value)
+
+    def test_separate_driver_rejects_wrong_tree_nonancestor_and_actual_working_script_changes(self):
+        _, _, head, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
+        wrong_tree = copy.deepcopy(manifest)
+        wrong_tree["driver_source"]["tree"] = manifest["sources"]["candidate"]["tree"]
+        with self.assertRaisesRegex(ValueError, "driver commit or tree changed"):
+            PAIRED.verify_driver_source(self.root, head, wrong_tree, True)
+        unrelated = self.selector_git("commit-tree", manifest["driver_source"]["tree"], "-m", "Independent same-tree driver")
+        unrelated_data = copy.deepcopy(manifest)
+        unrelated_data["driver_source"]["ref"] = unrelated
+        with self.assertRaisesRegex(ValueError, "not an execution ancestor"):
+            PAIRED.verify_driver_source(self.root, head, unrelated_data, True)
+        unknown = copy.deepcopy(manifest)
+        unknown["driver_source"]["ref"] = "0" * 40
+        with self.assertRaises(subprocess.CalledProcessError):
+            PAIRED.verify_driver_source(self.root, head, unknown, True)
+        self.selector_git("update-index", "--chmod=+x", "gradle/performance/paired-jvm.py")
+        with self.assertRaisesRegex(ValueError, "source index or working bytes changed"):
+            PAIRED.verify_driver_source(self.root, head, manifest, True)
+        self.selector_git("restore", "--staged", "gradle/performance/paired-jvm.py")
+        (self.root / "gradle/performance/paired-jvm.py").write_bytes(b"altered live driver source\n")
+        with self.assertRaisesRegex(ValueError, "working bytes changed"):
+            PAIRED.select_manifest(self.root, path)
+
+    def test_separate_driver_retains_existing_subject_tree_pin_and_producer_hash_rejections(self):
+        _, producer, _, path, manifest = self.input_consumer(candidate_patch=True, separate_driver=True)
+        for arguments in ({"manifest_sha256": "0" * 64}, {"data_ref": "0" * 40}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                with PAIRED.selected_inputs(self.root, path, **arguments):
+                    self.fail("Changed immutable input binding accepted")
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer) as selection:
+            wrong = copy.deepcopy(manifest["sources"]["candidate"])
+            wrong["tree"] = manifest["sources"]["baseline"]["tree"]
+            output = self.root / "changed-subject-tree"
+            output.mkdir()
+            with self.assertRaisesRegex(ValueError, "Frozen patched index changed"):
+                PAIRED.materialize(self.root, output, "candidate", wrong, selection["root"])
+            patch_pin = manifest["sources"]["candidate"]["patches"][0]
+            PAIRED.pin(selection["root"], patch_pin).write_bytes(b"altered subject patch\n")
+            with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+                PAIRED.load_manifest(selection["root"], selection["path"])
 
     def test_complete_owner_reports_read_only_the_deleted_producer_input_bytes(self):
         relative = ".github/performance/owned/owner-input.json"
