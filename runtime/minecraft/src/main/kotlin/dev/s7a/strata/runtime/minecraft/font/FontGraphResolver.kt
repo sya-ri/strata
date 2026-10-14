@@ -84,7 +84,7 @@ internal class FontGraphResolver(
                             graphDepth = maxOf(graphDepth, target.depth + 1)
                             budget.claim(FontLoadBudget.Kind.ResolvedProviders, target.providers.size.toLong())
                             for (nested in target.providers) {
-                                resolved += nested.copy(filter = nested.filter + entry.filter)
+                                resolved += if (entry.filter.isEmpty()) nested else nested.copy(filter = nested.filter + entry.filter)
                             }
                         }
 

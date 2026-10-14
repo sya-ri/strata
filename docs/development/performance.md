@@ -600,6 +600,17 @@ The untimed `verifyWork()` hook checks the generated matrix, complete input-deri
 Frozen external PNG inputs can be prepared once by `FontRasterWorkEvidence` and reused through the generic `strata.performance.fixtureInputs` manifest with labels `font-raster-png-32`, `font-raster-png-256` and `font-raster-png-1024`; each accepted paired run must retain those exact bytes and the registered CC0 font alongside actual fixture and runtime provenance.
 A removed image copy is a construction/allocation opportunity, while warm hits and atlas-rejected cells remain controls; it is not a native upload or frame-rate claim.
 
+### Resource-font graph loading
+
+Unfiltered font references append the existing immutable provider entry while retaining independent ordered result memberships.
+Nonempty outer filters still copy the entry and merge their requirements over inner filters; declaration identity and source provenance remain unchanged.
+Every expanded membership is charged before admission, including reused entries, and depth, cycle and whole-bundle failures retain their original boundaries.
+
+`FontReferenceLoadBenchmark` supplies eight complete public snapshot loads over prepared space-provider bytes: direct and empty-target controls, unfiltered aliases with empty or nonempty inner filters, a seven-reference chain, a shared diamond, a fully filtered alias control and a mixed chain.
+Input encoding and source construction are outside sampling; source reads, JSON parsing, graph resolution and final snapshot memberships remain inside.
+Its supplemental operation adapter uses the same eight rows and shared owner-thread meters, with one complete snapshot load per sample.
+These are load-time measurements; they do not establish glyph-rendering, native-upload or frame-rate gains.
+
 ### Resource-font caches
 
 Each common host owns one font engine for its immutable profile snapshot and captured font options.
