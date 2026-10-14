@@ -128,6 +128,7 @@ public final class dev/s7a/strata/runtime/minecraft/fabric/FabricUiSessions {
 
 public abstract interface class dev/s7a/strata/runtime/minecraft/fabric/FabricVulkanDestroyedResource {
 	public abstract fun strataCanvasResourceDestroyed ()Z
+	public abstract fun strataDestroyCompletedResource ()V
 }
 
 public final class dev/s7a/strata/runtime/minecraft/fabric/MinecraftCanvasContext {
