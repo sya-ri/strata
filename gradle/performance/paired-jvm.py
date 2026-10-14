@@ -92,7 +92,7 @@ def pin(root, value):
 def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
-    if data.get("schema") == "strata-paired-browser-ci-v1":
+    if data.get("schema") in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
         return browser_controller().load_manifest(SimpleNamespace(**globals()), root, data)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
     require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
@@ -1462,7 +1462,8 @@ def selected_inputs(root, explicit=None, base=None, head=None, data_ref=None, ma
             path = relative_path(input_root, manifest)
             data = load_manifest(input_root, path)
             candidate, _ = materialize(root, output, "candidate-check", data["sources"]["candidate"], input_root)
-            require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
+            if data["schema"] != "strata-source-preparation-ci-v1":
+                require(source_files(candidate, data["sources"]["candidate"]["tree"]) == source_files(root, execution_head), "Candidate source differs from execution head")
             actual_sha = digest(path)
             require(manifest_sha256 is None or manifest_sha256 == actual_sha, "Manifest differs from planned bytes")
             require(git(root, "rev-parse", "HEAD") == execution_head, "Paired execution head changed during materialization")
@@ -1543,7 +1544,7 @@ def main():
             require(args.output is not None, "Supply a fresh attempt output directory")
             require(selection["path"] is not None, "Supply explicit paired inputs")
             data = load_manifest(selection["root"], selection["path"])
-            if data["schema"] == "strata-paired-browser-ci-v1":
+            if data["schema"] in ("strata-paired-browser-ci-v1", "strata-source-preparation-ci-v1"):
                 require(args.owner_report is None, "Browser collection retains the whole declared manifest")
                 browser_controller().run(SimpleNamespace(**globals()), root, selection, args.output.resolve())
             else:

@@ -19,6 +19,8 @@ TOKENS = {"build", "site", "collector", "output", "inputs", "workspace", "side"}
 
 def load_manifest(shared, root, data):
     """Decode immutable existing adapters, complete matrices and fixed profiles; no timing thresholds."""
+    if data["schema"] == "strata-source-preparation-ci-v1":
+        return load_source_manifest(shared, root, data)
     require = shared.require
     fields = {"schema", "sources", "runtime_files", "inputs", "collections", "compiled_pins", "java_pins", "collector_path", "correctness"}
     require(set(data) == fields, "Invalid browser manifest fields")
@@ -112,6 +114,110 @@ def load_manifest(shared, root, data):
     return data
 
 
+def load_source_manifest(shared, root, data):
+    """Admit complete finite Source invocations; actual output pins are captured only after ownership closes."""
+    require = shared.require
+    require(set(data) == {"schema", "sources", "source_files", "inputs", "tasks", "arguments", "repetitions", "artifacts", "test_gate"}, "Invalid Source preparation fields")
+    require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three Source bindings")
+    for source in data["sources"].values():
+        require(set(source) == {"ref", "tree", "patches"} and all(re.fullmatch(r"[0-9a-f]{40}", source[key]) for key in ("ref", "tree"))
+                and isinstance(source["patches"], list), "Invalid Source binding")
+        for patch in source["patches"]:
+            shared.pin(root, patch)
+    files = data["source_files"]
+    require(isinstance(files, list) and len(files) == len(set(files)), "Duplicate differing Source file")
+    for path in files:
+        shared.relative_path(root, path)
+        require(path.endswith((".kt", ".kts", ".java")) and "/build/" not in path, "Declare only differing source files")
+    labels = set()
+    require(isinstance(data["inputs"], list), "Invalid Source input inventory")
+    for item in data["inputs"]:
+        require(set(item) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", item["label"]) and item["label"] not in labels, "Invalid Source input label")
+        labels.add(item["label"])
+        shared.pin(root, item["pin"])
+    tasks = data["tasks"]
+    require(isinstance(tasks, list) and tasks and len(tasks) == len(set(tasks)) and len(tasks) <= 32, "Declare the complete unique Source task list")
+    endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory"}
+    for task in tasks:
+        require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:[A-Za-z0-9]+", task)
+                and task.rsplit(":", 1)[1] in endings, "Use existing Source preparation tasks")
+    require(set(data["arguments"]) == {"baseline", "candidate"}, "Supply both Source argument lists")
+    for arguments in data["arguments"].values():
+        require(arguments in ([], ["-Pstrata.webOnly=true"]), "Source arguments cannot change ownership, task or sampling bounds")
+    require(type(data["repetitions"]) is int and data["repetitions"] in (1, 3), "Source preparation keeps one or three complete paired invocations")
+    require(isinstance(data["artifacts"], list) and data["artifacts"] and len(data["artifacts"]) <= 32, "Declare actual Source outputs")
+    patterns = set()
+    for item in data["artifacts"]:
+        require(set(item) == {"glob", "minimum"} and isinstance(item["glob"], str) and re.fullmatch(r"[A-Za-z0-9_$+./*-]+", item["glob"])
+                and "/build/" in "/" + item["glob"] and ".." not in item["glob"] and not item["glob"].startswith("/")
+                and item["glob"] not in patterns and type(item["minimum"]) is int and 0 < item["minimum"] <= 16_384, "Invalid bounded Source artifact pattern")
+        patterns.add(item["glob"])
+    gate = data["test_gate"]
+    if gate is not None:
+        require(set(gate) == {"task", "required_tests"} and gate["task"] in tasks and gate["task"].endswith(":jvmTest"), "Bind the existing full JVM test task")
+        tests = gate["required_tests"]
+        require(isinstance(tests, list) and tests and len(tests) == len(set(tests))
+                and all(re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_.$]*#[^#\r\n\x00]+", item) for item in tests), "Declare exact Source JVM parity tests")
+    require((any(task.endswith(":jvmTest") for task in tasks)) == (gate is not None), "Every Source JVM test invocation requires its full gate")
+    return data
+
+
+def preserve_source_outputs(shared, workspace, directory, patterns):
+    """Keep every declared actual output byte and reject missing, escaping or oversized compilation artifacts."""
+    pins = {}
+    for item in patterns:
+        paths = sorted(path for path in workspace.glob(item["glob"]) if path.is_file())
+        shared.require(item["minimum"] <= len(paths), "Incomplete actual Source artifact inventory: " + item["glob"])
+        for path in paths:
+            relative = path.relative_to(workspace).as_posix()
+            shared.relative_path(workspace, relative)
+            shared.require(not path.is_symlink() and path.stat().st_size <= 64 * 1024**2, "Unsafe Source artifact")
+            pins[relative] = {"path": relative, "sha256": shared.digest(path)}
+    shared.require(len(pins) <= 16_384 and sum((workspace / path).stat().st_size for path in pins) <= 512 * 1024**2, "Oversized Source artifact inventory")
+    for path, pin in sorted(pins.items()):
+        shared.require(shared.preserve_file(workspace / path, directory / "artifacts" / path)["sha256"] == pin["sha256"], "Source artifact changed while preserving")
+        shared.pin(workspace, pin)
+    result = list(pins.values())
+    shared.write_new(directory / "compiled-pins.json", result)
+    return result
+
+
+def verify_source_tasks(shared, directory, tasks):
+    """Require each original requested task to execute successfully, without cached or skipped substitutes."""
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    observed = {}
+    for task, status in re.findall(r"(?m)^> Task (:[A-Za-z0-9_:-]+)(?: ([A-Z-]+))?\s*$", console):
+        if task in tasks:
+            shared.require(task not in observed, "Duplicate Source task execution")
+            observed[task] = status or "executed"
+    shared.require(set(observed) == set(tasks) and all(value == "executed" for value in observed.values()), "Requested Source task was missing, cached, skipped or failed")
+    shared.write_new(directory / "source-tasks-verified.json", observed)
+    return observed
+
+
+def verify_source_test_classpath(shared, workspace, directory):
+    """Distinguish recorded empty task outputs from missing resolved dependencies without dropping either silently."""
+    retained = directory / "test-classpath"
+    present = shared.prepared_classpath(retained / "classpath.json")
+    original = shared.read_json(retained / "original-classpath.json")
+    shared.require(set(original) == {"sources", "absent_outputs"} and isinstance(original["sources"], list)
+                   and len(original["sources"]) == len(set(original["sources"])) <= 256 and isinstance(original["absent_outputs"], list), "Invalid original Test classpath")
+    absent = {}
+    console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
+    for item in original["absent_outputs"]:
+        shared.require(set(item) == {"source", "task", "reason"} and item["reason"] == "NO-SOURCE" and item["source"] not in absent, "Invalid absent Test output")
+        path = Path(item["source"])
+        shared.require(path.is_absolute() and path.resolve().is_relative_to(workspace.resolve()) and "build" in path.relative_to(workspace).parts
+                       and path.suffix != ".jar" and not path.exists() and not path.is_symlink(), "Missing Test dependency is not an empty owned output")
+        shared.require(isinstance(item["task"], str) and re.fullmatch(r":[A-Za-z0-9_:-]+", item["task"])
+                       and re.search(r"(?m)^> Task " + re.escape(item["task"]) + r" NO-SOURCE\s*$", console), "Missing output lacks actual NO-SOURCE task evidence")
+        absent[item["source"]] = item
+    sources = [item["source"] for item in present["entries"]]
+    shared.require(set(original["sources"]) == set(sources) | set(absent)
+                   and [source for source in original["sources"] if source not in absent] == sources, "Original Test classpath entries were dropped or reordered")
+    shared.write_new(directory / "test-classpath-verified.json", {"present_entries": len(sources), "absent_outputs": list(absent.values())})
+
+
 def expand_arguments(collection, roles):
     """Resolve structured file roles without a shell or a private workload registry."""
     return [value.format_map(roles) for value in collection["arguments"]]
@@ -131,7 +237,7 @@ def common_sources(shared, workspaces, data):
     inventories = []
     for side in ("fixture", "baseline", "candidate"):
         files = shared.source_files(workspaces[side], data["sources"][side]["tree"])
-        inventories.append({path: value for path, value in files.items() if path not in data["runtime_files"]})
+        inventories.append({path: value for path, value in files.items() if path not in data.get("runtime_files", data.get("source_files", []))})
     shared.require(inventories[0] == inventories[1] == inventories[2], "Common browser fixture or tooling source changed")
 
 
@@ -166,13 +272,19 @@ def run(shared, root, selection, output):
     try:
         shared.require(shared.git(root, "rev-parse", "HEAD") == selection["execution_head"], "Browser driver head changed")
         data = shared.load_manifest(selection["root"], selection["path"])
+        source_mode = data["schema"] == "strata-source-preparation-ci-v1"
+        if source_mode:
+            record["schema"] = "strata-source-preparation-attempt-v1"
+        compiled_pins = data.get("compiled_pins", {side: [] for side in ("baseline", "candidate")})
         record.update(driver_head=selection["execution_head"], input_producer=selection["producer"], manifest_sha256=shared.digest(selection["path"]))
         record["driver_sources"] = shared.preserve_driver_sources(root, output, ("paired-browser.py",))
         shutil.copyfile(selection["path"], output / "manifest.json")
         homes = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
         versions = tomllib.loads((root / "gradle/libs.versions.toml").read_text(encoding="utf-8"))["versions"]
         allowed_java = {}
-        for item in data["java_pins"]:
+        java_pins = ([{"role": role, "executable_sha256": shared.digest(home / "bin/java.exe"), "release_sha256": shared.digest(home / "release")} for role, home in homes.items()]
+                     if source_mode else data["java_pins"])
+        for item in java_pins:
             home = homes[item["role"]]
             release = dict(line.split("=", 1) for line in (home / "release").read_text(encoding="utf-8").splitlines() if "=" in line)
             provider, version = (("Eclipse Adoptium", versions["performance-toolchain"].split("+", 1)[0]) if item["role"] == "toolchain"
@@ -191,6 +303,7 @@ def run(shared, root, selection, output):
         record["executables"] = [{"path": str(path), "sha256": shared.digest(path)}
                                  for path in (Path(sys.executable), Path(shutil.which("pwsh")), node, *[home / "bin/java.exe" for home in homes.values()])]
         shared.write_new(output / "java-installations.json", {role: {"home": str(home), "release": (home / "release").read_text(encoding="utf-8")} for role, home in homes.items()})
+        shared.write_new(output / "java-pins.json", java_pins)
         hardware = subprocess.check_output(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "@{processors=@(Get-CimInstance Win32_Processor | Select-Object Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors); os=(Get-CimInstance Win32_OperatingSystem | Select-Object Caption,Version,BuildNumber,TotalVisibleMemorySize); power=(powercfg /getactivescheme)} | ConvertTo-Json -Depth 4"], text=True, encoding="utf-8-sig")
         shared.write_new(output / "host.json", json.loads(hardware))
         for side in ("baseline", "candidate"):
@@ -200,7 +313,7 @@ def run(shared, root, selection, output):
         else:
             workspaces["fixture"], record["sources"]["fixture"] = shared.materialize(root, output, "fixture", data["sources"]["fixture"], selection["root"])
         common_sources(shared, workspaces, data)
-        if selection["producer"]:
+        if selection["producer"] and source_mode is False:
             shared.require(shared.source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == shared.source_files(root, record["driver_head"]), "Browser candidate differs from execution head")
         inputs = {}
         for index, item in enumerate(data["inputs"]):
@@ -222,9 +335,9 @@ def run(shared, root, selection, output):
             for side in workspaces:
                 shared.source_guard(workspaces[side], data["sources"][side]["tree"])
             for side in prepared:
-                for item in data["compiled_pins"][side]:
+                for item in compiled_pins[side]:
                     shared.pin(workspaces[side], item)
-            for item in data["java_pins"]:
+            for item in java_pins:
                 home = homes[item["role"]]
                 shared.require(shared.digest(home / "bin/java.exe") == item["executable_sha256"] and shared.digest(home / "release") == item["release_sha256"], "Java bytes changed")
             shared.require(shared.digest(node) == program["sha256"], "Node bytes changed")
@@ -233,8 +346,16 @@ def run(shared, root, selection, output):
             (directory / "class-loads").mkdir()
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={vms.as_posix()}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "", "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": vms.as_posix(), "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
+            if source_mode:
+                environment.update({"JAVA_HOME": str(homes["launcher"]), "ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-detect": "false",
+                                    "ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-download": "false", "ORG_GRADLE_PROJECT_org.gradle.java.installations.fromEnv": "",
+                                    "ORG_GRADLE_PROJECT_org.gradle.java.installations.paths": ",".join(str(home) for home in homes.values()), "ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy": "in-process"})
             if node_program is None:
                 arguments = arguments + ["--no-daemon", "--no-parallel", "--max-workers=1", "--no-build-cache", "--no-configuration-cache", "--console=plain", "-Pkotlin.compiler.execution.strategy=in-process", "-Pdetekt.use.worker.api=false", "-Dorg.gradle.java.installations.auto-detect=false", "-Dorg.gradle.java.installations.auto-download=false", "-Dorg.gradle.java.installations.fromEnv=", "-Dorg.gradle.java.installations.paths=" + ",".join(str(home) for home in homes.values()), "-I", str(root / "gradle/performance/bounded-jvm.init.gradle.kts"), f"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8 {flags}"]
+                if source_mode:
+                    arguments += ["--rerun-tasks"]
+                    if test_gate is not None:
+                        arguments += ["-Pstrata.paired.testClasspathTask=" + test_gate["task"], "-Pstrata.paired.preserveTestClasspath=" + str(directory / "test-classpath")]
             request = {"workspace": str(workspace), "arguments": arguments, "environment": environment, "minimumFreePhysicalBytes": 4 * 1024**3, "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
             if node_program is not None:
                 request["program"] = node_program
@@ -245,6 +366,7 @@ def run(shared, root, selection, output):
             try:
                 exit_code = shared.invoke(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(root / "gradle/performance/invoke-windows.ps1"), "-Request", str(directory / "request.json"), "-Report", str(directory / "terminal.json")], root, directory / "console.log")
             finally:
+                owned_wall_seconds = time.monotonic() - phase_started
                 try:
                     captured_class_loads = shared.preserve_class_loads(class_staging, directory, previous_classes)
                 finally:
@@ -264,13 +386,30 @@ def run(shared, root, selection, output):
             if test_gate is not None:
                 shared.verify_test_gate(directory, test_gate)
                 shared.require(shared.read_json(directory / "junit-verified.json")["counts"]["skipped"] == 0, "JVM parity tests were skipped")
+                if source_mode:
+                    verify_source_test_classpath(shared, workspace, directory)
+            if source_mode:
+                counters = {key: terminal.get(key) for key in ("jobUserCpu100ns", "jobKernelCpu100ns", "peakJobCommittedBytes")}
+                shared.require(all(type(value) is int and 0 <= value for value in counters.values()), "Actual Source Job counters are unavailable")
+                record["phases"][-1].update(owned_wall_seconds=owned_wall_seconds, **counters, allocation_bytes=None, rss_bytes=None)
             shared.verify_driver_sources(record["driver_sources"])
             for side in workspaces:
                 shared.source_guard(workspaces[side], data["sources"][side]["tree"])
             for side in prepared:
-                for item in data["compiled_pins"][side]:
+                for item in compiled_pins[side]:
                     shared.pin(workspaces[side], item)
             return directory
+
+        if source_mode:
+            latest = {}
+            for repetition in range(data["repetitions"]):
+                for side in ("baseline", "candidate"):
+                    directory = phase(f"source-{side}-{repetition}", workspaces[side], data["tasks"] + data["arguments"][side], test_gate=data["test_gate"])
+                    verify_source_tasks(shared, directory, data["tasks"])
+                    latest[side] = preserve_source_outputs(shared, workspaces[side], directory, data["artifacts"])
+            shared.write_new(output / "prepared-pins.json", {"schema": "strata-prepared-source-pins-v1", "driver_head": selection["execution_head"], "sources": data["sources"], "java_pins": java_pins, "compiled_pins": latest})
+            record.update(status="prepared", completed_source_invocations=data["repetitions"] * 2, tasks_per_invocation=len(data["tasks"]), runtime_collection="UNRUN")
+            return
 
         collectors = {}
         for side in ("baseline", "candidate"):

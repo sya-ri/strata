@@ -800,6 +800,17 @@ The optional `--owner-report` entry selects an entire declared independent domai
 
 ### Complete paired Web collection
 
+The same hosted job accepts `strata-source-preparation-ci-v1` for explicit Source preparation before compiled pins are available.
+It binds all three source trees, the exact differing source-file list, immutable inputs, a complete existing Gradle task list and both argument lists, one or three alternating baseline/candidate invocations, required output patterns and an optional full JVM test gate.
+The common driver and prepared Source subjects have separate frozen identities; preparing another change does not require that change to contain the common driver.
+The only per-side model argument is `-Pstrata.webOnly=true`; worker, memory, deadline, cache, task and sampling overrides are rejected.
+Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
+The archive exports actual Java byte pins, complete declared compilation files and runtime archives, original JVM diagnostics, and the resolved JVM test classpath with its external dependency bytes when that gate is requested.
+Missing dependency archives fail; an absent owned output directory requires a separate receipt from its unique executed `NO-SOURCE` producer, checked against the original full classpath and task log.
+Job user/kernel CPU counters, outer invocation wall time and peak committed bytes retain their Source-task scope; allocation and resident memory remain unavailable.
+A completed preparation is recorded as `prepared` and establishes no runtime timing or browser acceptance.
+Freeze its actual `prepared-pins.json` values in a subsequent immutable producer/consumer manifest before running complete browser collection.
+
 The same opt-in hosted job and `Performance-Inputs` producer/consumer scheme accept `strata-paired-browser-ci-v1` inputs through the [shared browser controller](../../gradle/performance/paired-browser.py).
 The final consumer contains no performance data files; its candidate source still must match the exact execution head.
 The manifest binds all three source trees, permits differences only in explicitly declared Web production files, and pins immutable inputs, both Java roles, the linked testkit JS artifact and each actual application bundle.

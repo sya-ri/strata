@@ -78,6 +78,98 @@ class PairedBrowserTest(unittest.TestCase):
         result.update(name="supplemental", scenarios=[{"id": f"independent-{index}-{theme}", "phases": ["Update"]} for index in range(12) for theme in ("native", "minecraft")], expected_cases=72)
         return result
 
+    def source_manifest(self, repetitions=3):
+        return {"schema": "strata-source-preparation-ci-v1", "sources": self.manifest["sources"], "source_files": ["settings.gradle.kts"],
+                "inputs": self.manifest["inputs"], "tasks": [":runtime:web:" + task for task in ("compileKotlinJs", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt")]
+                + [":integration:web:" + task for task in ("compileKotlinJs", "lintKotlin", "detekt")],
+                "arguments": {"baseline": [], "candidate": ["-Pstrata.webOnly=true"]}, "repetitions": repetitions,
+                "artifacts": [{"glob": item["path"], "minimum": 1} for item in self.manifest["compiled_pins"]["candidate"]], "test_gate": None}
+
+    def test_source_manifest_retains_full_tasks_order_and_existing_model_argument(self):
+        value = self.source_manifest()
+        self.assertEqual(self.load(value), value)
+        self.assertEqual((len(value["tasks"]), value["repetitions"] * 2), (8, 6))
+        value["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
+        value["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
+        value["repetitions"] = 1
+        self.assertEqual(self.load(value), value)
+        for mutation in (
+            lambda item: item.update(repetitions=2),
+            lambda item: item.update(repetitions=True),
+            lambda item: item.update(compiled_pins={}),
+            lambda item: item.update(tasks=[":runtime:web:clean"]),
+            lambda item: item["tasks"].append(item["tasks"][0]),
+            lambda item: item["arguments"].update(candidate=["--max-workers=8"]),
+            lambda item: item["arguments"].update(candidate=["-Pstrata.webOnly=false"]),
+            lambda item: item["source_files"].append("README.md"),
+            lambda item: item["artifacts"][0].update(glob="../build/private.jar"),
+            lambda item: item["artifacts"][0].update(minimum=0),
+            lambda item: item.update(test_gate=None),
+        ):
+            invalid = copy.deepcopy(value)
+            mutation(invalid)
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(invalid)
+
+    def test_source_outputs_and_requested_tasks_require_actual_complete_bytes_and_execution(self):
+        workspace = self.root / "source"
+        directory = self.root / "source-evidence"
+        workspace.joinpath("runtime/web/build/libs").mkdir(parents=True)
+        directory.mkdir()
+        artifact = workspace / "runtime/web/build/libs/actual.jar"
+        artifact.write_bytes(b"actual synthetic compiled bytes")
+        patterns = [{"glob": "runtime/web/build/libs/*.jar", "minimum": 1}]
+        pins = self.browser.preserve_source_outputs(self.shared, workspace, directory, patterns)
+        self.assertEqual(pins, [{"path": artifact.relative_to(workspace).as_posix(), "sha256": self.shared.digest(artifact)}])
+        self.assertEqual((directory / "artifacts" / pins[0]["path"]).read_bytes(), artifact.read_bytes())
+        with self.assertRaisesRegex(ValueError, "Incomplete actual Source"):
+            self.browser.preserve_source_outputs(self.shared, workspace, directory, [{"glob": "runtime/web/build/libs/missing.jar", "minimum": 1}])
+        tasks = self.source_manifest()["tasks"]
+        for suffix in (" UP-TO-DATE", " FROM-CACHE", " NO-SOURCE", " SKIPPED", " FAILED"):
+            (directory / "console.log").write_text("\n".join("> Task " + task + (suffix if index == 0 else "") for index, task in enumerate(tasks)) + "\n", encoding="utf-8")
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(ValueError, "Requested Source task"):
+                self.browser.verify_source_tasks(self.shared, directory, tasks)
+        (directory / "console.log").write_text("\n".join("> Task " + task for task in tasks) + "\n", encoding="utf-8")
+        self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, tasks), dict.fromkeys(tasks, "executed"))
+
+    def test_source_preparation_can_freeze_an_independent_subject_without_relaxing_consumer_identity(self):
+        value = self.source_manifest()
+        _, producer, head, path, expected = self.fixture.input_consumer(value=value, candidate_patch=True, mismatch="blob")
+        with self.shared.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selection:
+            self.assertEqual(self.shared.load_manifest(selection["root"], selection["path"]), expected)
+            self.assertNotEqual(expected["sources"]["candidate"]["tree"], self.fixture.selector_git("rev-parse", head + "^{tree}"))
+        with self.assertRaisesRegex(ValueError, "expected head"):
+            with self.shared.selected_inputs(self.root, path, data_ref=producer, expected_head="0" * 40):
+                pass
+
+    def test_source_test_classpath_keeps_empty_output_receipts_but_rejects_missing_dependencies(self):
+        workspace = self.root / "test-workspace"
+        directory = self.root / "test-evidence"
+        retained = directory / "test-classpath"
+        workspace.joinpath("runtime/core/build/libs").mkdir(parents=True)
+        retained.mkdir(parents=True)
+        source = workspace / "runtime/core/build/libs/dependency.jar"
+        source.write_bytes(b"synthetic actual dependency")
+        copy = retained / "classpath-0.jar"
+        copy.write_bytes(source.read_bytes())
+        self.shared.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [{"source": str(source), "path": str(copy), "sha256": self.shared.path_identity(source)}]})
+        empty = workspace / "integration/web/build/classes/java/jvmMain"
+        absent = {"source": str(empty), "task": ":integration:web:compileJvmMainJava", "reason": "NO-SOURCE"}
+        original = {"sources": [str(empty), str(source)], "absent_outputs": [absent]}
+        (retained / "original-classpath.json").write_text(json.dumps(original), encoding="utf-8")
+        (directory / "console.log").write_text("> Task " + absent["task"] + " NO-SOURCE\n", encoding="utf-8")
+        self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+        self.assertEqual(self.shared.read_json(directory / "test-classpath-verified.json"), {"present_entries": 1, "absent_outputs": [absent]})
+        for change in ({"source": str(workspace / "runtime/core/build/libs/missing.jar")}, {"source": str(self.root / "outside/build/classes")}, {"reason": "SKIPPED"}, {"task": ":integration:web:unexecuted"}):
+            altered = {**absent, **change}
+            (retained / "original-classpath.json").write_text(json.dumps({"sources": [altered["source"], str(source)], "absent_outputs": [altered]}), encoding="utf-8")
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+        (retained / "original-classpath.json").write_text(json.dumps(original), encoding="utf-8")
+        source.write_bytes(b"changed resolved dependency")
+        with self.assertRaisesRegex(ValueError, "Prepared classpath bytes changed"):
+            self.browser.verify_source_test_classpath(self.shared, workspace, directory)
+
     def test_whole_standard_and_supplemental_unions_keep_original_profiles(self):
         self.assertEqual(self.load(self.manifest), self.manifest)
         value = copy.deepcopy(self.manifest)
@@ -191,8 +283,13 @@ class PairedBrowserTest(unittest.TestCase):
             for item in pins:
                 item["sha256"] = self.shared.hashlib.sha256(b"synthetic compiled bytes").hexdigest()
 
-        for failure, copy_failure in ((None, False), ("collect-standard-baseline", False), (None, True), ("collect-standard-baseline", True)):
-            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else ""))
+        browser_data = data
+        for repetitions, failure, copy_failure in ((None, None, False), (None, "collect-standard-baseline", False), (None, None, True), (None, "collect-standard-baseline", True), (1, None, False), (3, None, False), (3, "source-candidate-1", False)):
+            data = self.source_manifest(repetitions) if repetitions is not None else browser_data
+            if repetitions == 1:
+                data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
+                data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
+            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else ""))
             calls, side_paths = [], {}
             api = SimpleNamespace(**vars(self.shared))
             api.git = lambda *args: "a" * 40
@@ -217,11 +314,11 @@ class PairedBrowserTest(unittest.TestCase):
                 workspace = attempt / "workspaces" / side
                 workspace.mkdir(parents=True)
                 side_paths[side] = workspace
-                for item in data["compiled_pins"][side]:
+                for item in browser_data["compiled_pins"][side]:
                     path = workspace / item["path"]
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(b"synthetic compiled bytes")
-                path = workspace / data["collections"][0]["adapter"]["path"]
+                path = workspace / browser_data["collections"][0]["adapter"]["path"]
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes((self.root / path.relative_to(workspace)).read_bytes())
                 return workspace, source
@@ -233,12 +330,37 @@ class PairedBrowserTest(unittest.TestCase):
                 name = directory.name
                 calls.append(name)
                 console.write_bytes(b"synthetic command transcript\n")
+                if repetitions is not None:
+                    self.assertEqual(request["arguments"][:len(data["tasks"])], data["tasks"])
+                    self.assertIn("--rerun-tasks", request["arguments"])
+                    self.assertEqual("-Pstrata.webOnly=true" in request["arguments"], "candidate" in name)
+                    self.assertEqual(request["environment"]["JAVA_HOME"], str(homes["launcher"]))
+                    self.assertEqual(request["environment"]["ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-detect"], "false")
+                    self.assertEqual(request["environment"]["ORG_GRADLE_PROJECT_org.gradle.java.installations.auto-download"], "false")
+                    self.assertEqual(request["environment"]["ORG_GRADLE_PROJECT_org.gradle.java.installations.fromEnv"], "")
+                    self.assertEqual(request["environment"]["ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy"], "in-process")
+                    console.write_text("\n".join("> Task " + task for task in data["tasks"]) + "\n", encoding="utf-8")
+                    if data["test_gate"] is not None:
+                        self.assertIn("-Pstrata.paired.testClasspathTask=:integration:web:jvmTest", request["arguments"])
+                        retained = directory / "test-classpath"
+                        retained.mkdir()
+                        dependency = Path(request["workspace"]) / "runtime/core/build/libs/dependency.jar"
+                        dependency.parent.mkdir(parents=True)
+                        dependency.write_bytes(b"synthetic resolved dependency")
+                        copy = retained / "classpath-0.jar"
+                        copy.write_bytes(dependency.read_bytes())
+                        self.shared.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": [{"source": str(dependency), "path": str(copy), "sha256": self.shared.path_identity(dependency)}]})
+                        empty = Path(request["workspace"]) / "integration/web/build/classes/java/jvmMain"
+                        self.shared.write_new(retained / "original-classpath.json", {"sources": [str(empty), str(dependency)], "absent_outputs": [{"source": str(empty), "task": ":integration:web:compileJvmMainJava", "reason": "NO-SOURCE"}]})
+                        with console.open("a", encoding="utf-8") as transcript:
+                            transcript.write("> Task :integration:web:compileJvmMainJava NO-SOURCE\n")
                 self.assertEqual((request["minimumFreePhysicalBytes"], request["jobCommittedBytes"], request["workSeconds"], request["cleanupSeconds"]), (4 * 1024**3, 3 * 1024**3, 1800, 30))
                 member = {"pid": 1, "image": str(node), "primaryBeforeResume": True, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
                           "creationFileTime": 1, "exitFileTime": 2, "affinityMask": 15, "systemAffinityMask": 15}
                 exit_code = 7 if name == failure else 0
                 self.shared.write_new(terminal_path, {"exitCode": exit_code, "naturalRelease": True, "handlesClosed": True, "activeProcessesAfterCleanup": 0,
                                                     "jobName": name, "callerPid": 1, "members": {"1": [member]}, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                                                    "jobUserCpu100ns": 10, "jobKernelCpu100ns": 20, "peakJobCommittedBytes": 30,
                                                     "primaryAdmission": {"beforeResume": True, "pid": 1, "creationFileTime": 1, "image": str(node), "jobName": name, "inOwnedJob": True, "availablePhysicalBytes": 4 * 1024**3}})
                 self.shared.write_new(directory / "child-admission.json", {"beforeResume": True, "pid": 1, "creationFileTime": 1, "image": str(node), "inOwnedJob": True, "jobName": name, "availablePhysicalBytes": 4 * 1024**3})
                 workspace = Path(request["workspace"])
@@ -264,7 +386,7 @@ class PairedBrowserTest(unittest.TestCase):
             node_metadata = json.dumps({"path": str(node), "version": "synthetic"})
             selection = {"root": self.root, "path": self.root / "manifest.json", "producer": "", "execution_head": "a" * 40}
             selection["path"].write_text(json.dumps(data), encoding="utf-8")
-            with patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
+            with patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.object(self.browser, "sys", SimpleNamespace(executable=str(node))), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
                 if failure is None and copy_failure is False:
                     self.browser.run(api, self.root, selection, output)
                 else:
@@ -274,8 +396,19 @@ class PairedBrowserTest(unittest.TestCase):
             self.assertNotEqual(side_paths["baseline"], side_paths["candidate"])
             self.assertTrue(output.with_suffix(".zip").is_file())
             if failure is None and copy_failure is False:
-                self.assertEqual((record["status"], record["expected_cases"], record["measured_browser_invocations"]), ("passed", 372, 36))
-                self.assertEqual(len(calls), 12)
+                if repetitions is None:
+                    self.assertEqual((record["status"], record["expected_cases"], record["measured_browser_invocations"]), ("passed", 372, 36))
+                    self.assertEqual(len(calls), 12)
+                else:
+                    self.assertEqual((record["status"], record["completed_source_invocations"], record["tasks_per_invocation"], record["runtime_collection"]), ("prepared", repetitions * 2, len(data["tasks"]), "UNRUN"))
+                    self.assertEqual(calls, [f"source-{side}-{index}" for index in range(repetitions) for side in ("baseline", "candidate")])
+                    self.assertTrue(all(phase["jobUserCpu100ns"] == 10 and phase["jobKernelCpu100ns"] == 20 and phase["peakJobCommittedBytes"] == 30 and phase["allocation_bytes"] is None and phase["rss_bytes"] is None for phase in record["phases"]))
+                    pins = self.shared.read_json(output / "prepared-pins.json")
+                    self.assertEqual(set(pins["compiled_pins"]), {"baseline", "candidate"})
+                    self.assertTrue(all(len(values) == 2 and all(value["sha256"] == self.shared.hashlib.sha256(b"synthetic compiled bytes").hexdigest() for value in values) for values in pins["compiled_pins"].values()))
+                    self.assertFalse((output / "report.md").exists())
+                    if data["test_gate"] is not None:
+                        self.assertTrue(all(self.shared.read_json(output / "phases" / name / "test-classpath-verified.json")["present_entries"] == 1 for name in calls))
             elif failure is not None:
                 self.assertEqual(record["status"], "failed")
                 self.assertEqual(calls[-1], failure)

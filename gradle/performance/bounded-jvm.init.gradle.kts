@@ -50,6 +50,23 @@ fun preparedIdentity(path: File): String {
     return hash.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
 }
 
+/** Preserves a complete resolved classpath and verifies both origins and copies before publishing its pins. */
+fun preservePreparedClasspath(files: Iterable<File>, retained: File): List<Map<String, String>> {
+    check(retained.exists().not() && retained.mkdirs())
+    val origins = files.toList()
+    check(origins.size in 1..256)
+    val entries = origins.mapIndexed { index, source ->
+        val origin = source.canonicalFile
+        val identity = preparedIdentity(origin)
+        val archive = File(retained, if (origin.isDirectory) "classpath-$index" else "classpath-$index.jar")
+        check(origin.copyRecursively(archive, overwrite = false))
+        check(preparedIdentity(origin) == identity && preparedIdentity(archive) == identity)
+        mapOf("source" to origin.absolutePath, "path" to archive.absolutePath, "sha256" to identity)
+    }
+    File(retained, "classpath.json").writeText(JsonOutput.toJson(mapOf("schema" to "strata-paired-jvm-classpath-v1", "entries" to entries)), Charsets.UTF_8)
+    return entries
+}
+
 // Apply the retained finite JVM profile to main and included builds; no benchmark registration is added.
 gradle.projectsEvaluated {
     val workspace = File(checkNotNull(System.getenv("STRATA_PAIRED_WORKSPACE"))).canonicalFile
@@ -156,6 +173,22 @@ gradle.projectsEvaluated {
                 check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx512m")
                 check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=256m")
                 check(maxParallelForks == 1)
+                if (rootProject.providers.gradleProperty("strata.paired.testClasspathTask").orNull == path) {
+                    val retained = File(rootProject.providers.gradleProperty("strata.paired.preserveTestClasspath").get())
+                    val original = classpath.files.map { it.canonicalFile }
+                    val absent = original.filter { it.exists().not() }.map { origin ->
+                        check(origin.extension.contentEquals("jar").not()) { "Missing resolved dependency archive: $origin" }
+                        val producers = gradle.taskGraph.allTasks.filter { producer ->
+                            producer.state.executed && producer.state.noSource &&
+                                origin.toPath().startsWith(producer.project.layout.buildDirectory.get().asFile.canonicalFile.toPath()) &&
+                                origin in producer.outputs.files.files.map { it.canonicalFile }
+                        }
+                        check(producers.size == 1) { "Missing output without one executed NO-SOURCE producer: $origin" }
+                        mapOf("source" to origin.absolutePath, "task" to producers.single().path, "reason" to "NO-SOURCE")
+                    }
+                    preservePreparedClasspath(original.filter { it.exists() }, retained)
+                    File(retained, "original-classpath.json").writeText(JsonOutput.toJson(mapOf("sources" to original.map { it.absolutePath }, "absent_outputs" to absent)), Charsets.UTF_8)
+                }
             }
         }
         project.tasks.withType<JavaExec>().configureEach {
@@ -226,18 +259,7 @@ gradle.projectsEvaluated {
                     classpath = project.files(records.map { File(it["path"].toString()) })
                 }
                 rootProject.providers.gradleProperty("strata.paired.preserveClasspath").orNull?.let { retainedPath ->
-                    val retained = File(retainedPath)
-                    check(retained.exists().not() && retained.mkdirs())
-                    check(classpath.files.size in 1..256)
-                    val entries = classpath.files.mapIndexed { index, source ->
-                        val origin = source.canonicalFile
-                        val identity = preparedIdentity(origin)
-                        val archive = File(retained, if (origin.isDirectory) "classpath-$index" else "classpath-$index.jar")
-                        check(origin.copyRecursively(archive, overwrite = false))
-                        check(preparedIdentity(origin) == identity && preparedIdentity(archive) == identity)
-                        mapOf("source" to origin.absolutePath, "path" to archive.absolutePath, "sha256" to identity)
-                    }
-                    File(retained, "classpath.json").writeText(JsonOutput.toJson(mapOf("schema" to "strata-paired-jvm-classpath-v1", "entries" to entries)), Charsets.UTF_8)
+                    val entries = preservePreparedClasspath(classpath.files, File(retainedPath))
                     classpath = project.files(entries.map { File(it.getValue("path")) })
                 }
                 if (name == "strataPairedEvidence") {
