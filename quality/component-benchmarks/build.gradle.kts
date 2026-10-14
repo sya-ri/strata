@@ -1,10 +1,10 @@
+import dev.s7a.strata.gradle.performance.configureJmhEvidence
 import me.champeau.jmh.JmhBytecodeGeneratorTask
+import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.jmh)
@@ -67,25 +67,26 @@ extensions.configure<KotlinJvmProjectExtension> {
     sourceSets.named("jmh") { kotlin.source(showcaseSources) }
 }
 
+// Preserve the compiler's filtered shared sources instead of analysing their unfiltered parent directories.
+tasks.named<Detekt>("detektJmh") {
+    setSource(project.extensions.getByType<KotlinJvmProjectExtension>().sourceSets.named("jmh").map { it.kotlin.asFileTree })
+}
+
 jmh {
     jmhVersion.set(libs.versions.benchmark.harness)
     includes.set(listOf("dev\\.s7a\\.strata\\.quality\\.benchmark\\.ComponentRenderingBenchmark.*"))
 }
 
+val componentGenerated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
+val componentGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
+val componentClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(componentGenerated.flatMap { it.destinationDirectory }, componentGenerator.flatMap { it.generatedResourcesDir })
+
 val verifyComponentRenderingWork = tasks.register<JavaExec>("verifyComponentRenderingWork") {
     group = "verification"
     description = "Exercises every shipped public component through a real Minecraft-profile host and the shared work assertions."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.ComponentWorkEvidence")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
-
-tasks.named("check") { dependsOn(verifyComponentRenderingWork) }
 
 tasks.register<JavaExec>("captureComponentInventory") {
     group = "verification"
@@ -99,10 +100,8 @@ tasks.register<JavaExec>("captureComponentInventory") {
 tasks.register<JavaExec>("jmhComponents") {
     group = "verification"
     description = "Runs the independent component corpus with JMH; the historical suite has a separate dependency graph."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    dependsOn(componentGenerated, componentGenerator)
+    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.ComponentPerformanceEvidence")
     javaLauncher.set(componentLauncher)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
@@ -128,26 +127,14 @@ tasks.register<JavaExec>("jmhComponents") {
     parameters?.let { systemProperty("strata.performance.parameters", rootProject.file(it).absolutePath) }
     fixtureInputs?.let { systemProperty("strata.performance.fixtureInputs", rootProject.file(it).absolutePath) }
     val result = providers.gradleProperty("strata.performance.output").map { rootProject.file(it) }.orElse(layout.buildDirectory.dir("reports/jmh/$suite/run-$repetition").map { it.asFile })
-    args(result.get().absolutePath, repetition.toString(), if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", "-bm", mode, "-wi", if (short) "0" else "3", "-w", "1s", "-i", if (short) "1" else "5", "-r", if (short) "100ms" else "1s", "-f", "1", "-t", "1", "-tu", "us", "-foe", "true", "-prof", "gc", "-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    configureJmhEvidence(result.get(), repetition, if (benchmarks != null) ".*" else "ComponentRenderingBenchmark.*", mode, short)
+    args("-jvmArgsAppend", "--enable-native-access=ALL-UNNAMED")
+    val profilers = providers.gradleProperty("strata.performance.profilers").orNull?.split(',')?.map(String::trim).orEmpty()
+    require(profilers.all(String::isNotBlank) && profilers.distinct().size == profilers.size) { "Additional JMH profiler identifiers must be nonblank and unique" }
+    profilers.forEach { args("-prof", it) }
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
     systemProperty("strata.performance.smoke", smoke || (quick && workloads == null && benchmarks == null))
     systemProperty("strata.performance.mode", mode)
-    val inputsManifest = layout.buildDirectory.file("performance/control-inputs.properties")
-    doFirst {
-        val entries = Properties()
-        configurations.getByName("jmhRuntimeClasspath").incoming.artifacts.artifacts.forEach { artifact ->
-            val module = artifact.id.componentIdentifier as? ModuleComponentIdentifier
-            if (module != null) {
-                val label = "${module.group}:${module.module}:${module.version}:${artifact.file.name}"
-                require(entries.setProperty(label, artifact.file.absolutePath) == null) { "Duplicate resolved control library: $label" }
-            }
-        }
-        require(entries.isNotEmpty()) { "The JMH control library inventory is missing" }
-        val manifest = inputsManifest.get().asFile
-        manifest.parentFile.mkdirs()
-        manifest.bufferedWriter(Charsets.UTF_8).use { entries.store(it, "Resolved non-Strata control libraries") }
-        systemProperty("strata.performance.inputs", manifest.absolutePath)
-    }
 }
 
 val changedPathFile = providers.gradleProperty("strata.performance.changedPaths").map { rootProject.file(it).absolutePath }
@@ -158,72 +145,54 @@ tasks.withType<JavaExec>().matching { it.name in setOf("verifyComponentRendering
 val verifyStressRenderingWork = tasks.register<JavaExec>("verifyStressRenderingWork") {
     group = "verification"
     description = "Checks real stress edits, navigation, animation, multipixel tiling and terminal lifetimes without time thresholds."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.StressWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 providers.gradleProperty("strata.performance.workloads").orNull?.let { selected ->
     verifyStressRenderingWork.configure { systemProperty("strata.performance.workloads", selected) }
 }
 
-tasks.named("check") { dependsOn(verifyStressRenderingWork) }
-
 val verifyExceptionalTextWork = tasks.register<JavaExec>("verifyExceptionalTextWork") {
     group = "verification"
     description = "Checks supplemental exceptional TextField metrics, clean frames, real updates and terminal font release."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.ExceptionalTextWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
-
-tasks.named("check") { dependsOn(verifyExceptionalTextWork) }
 
 val verifyFontWork = tasks.register<JavaExec>("verifyFontWork") {
     group = "verification"
     description = "Checks actual font providers, visual ordering, reference limits and bounded native/cache release."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.FontWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
 }
-
-tasks.named("check") { dependsOn(verifyFontWork) }
 
 val verifyPortableTextWork = tasks.register<JavaExec>("verifyPortableTextWork") {
     group = "verification"
     description = "Checks detached Unicode and large custom-font glyph composition with changing destinations."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
     mainClass.set("dev.s7a.strata.quality.benchmark.PortableTextWorkEvidence")
-    javaLauncher.set(componentLauncher)
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
     systemProperty("strata.performance.fontFixture", rootProject.file("runtime/minecraft-fonts-lwjgl/src/test/resources/fonts/strata-test.ttf").absolutePath)
 }
 
-tasks.named("check") { dependsOn(verifyPortableTextWork) }
+listOf(
+    verifyComponentRenderingWork,
+    verifyStressRenderingWork,
+    verifyExceptionalTextWork,
+    verifyFontWork,
+    verifyPortableTextWork,
+).forEach { work ->
+    work.configure {
+        dependsOn(componentGenerated, componentGenerator)
+        classpath = componentClasspath
+        javaLauncher.set(componentLauncher)
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
+    }
+    tasks.named("check") { dependsOn(work) }
+}
 
 tasks.register<JavaExec>("captureRuntimeSurfaceInventory") {
     group = "verification"
     description = "Stages exact loaded portable runtime API assignments for review; verification never updates the baseline."
-    val generated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
-    val generator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-    dependsOn(generated, generator)
-    classpath = sourceSets.named("jmh").get().runtimeClasspath + files(generated.flatMap { it.destinationDirectory }, generator.flatMap { it.generatedResourcesDir })
+    dependsOn(componentGenerated, componentGenerator)
+    classpath = componentClasspath
     mainClass.set("dev.s7a.strata.quality.benchmark.RuntimeSurfaceInventoryEvidence")
     javaLauncher.set(componentLauncher)
     args(layout.buildDirectory.file("performance/runtime-api.tsv").get().asFile.absolutePath)
@@ -259,6 +228,7 @@ tasks.register<JavaExec>("processNativeComponentEvidence") {
     description = "Validates the profile's native component invocations and delegates all aggregation to the testkit."
     dependsOn("classes")
     classpath = sourceSets.named("main").get().runtimeClasspath
+    workingDir(rootProject.projectDir)
     javaLauncher.set(componentLauncher)
     mainClass.set("dev.s7a.strata.quality.benchmark.NativeComponentPerformanceEvidence")
     providers.gradleProperty("strata.performance.request").orNull?.let { args(rootProject.file(it).absolutePath) }
