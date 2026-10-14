@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from enum import Enum
 import hashlib
 import html
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -17,6 +18,7 @@ import tempfile
 import threading
 import time
 import tomllib
+from types import SimpleNamespace
 from urllib.parse import unquote, urlparse
 import zipfile
 import xml.etree.ElementTree as ElementTree
@@ -90,6 +92,8 @@ def pin(root, value):
 def load_manifest(root, path):
     """Validate explicit frozen refs and selectors; sampling and repetition settings stay fixed."""
     data = read_json(path)
+    if data.get("schema") == "strata-paired-browser-ci-v1":
+        return browser_controller().load_manifest(SimpleNamespace(**globals()), root, data)
     required = {"schema", "sources", "runtime_projects", "suites", "inputs", "compiled_pins", "dependency_pins", "java_pins"}
     require(required <= set(data) <= required | {"owner_reports", "owner_continuation"} and data["schema"] == "strata-paired-jvm-ci-v1", "Unsupported paired JVM manifest")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three source bindings")
@@ -1475,10 +1479,10 @@ def select_manifest(root, explicit=None, base=None, head=None):
         return selection["manifest"]
 
 
-def preserve_driver_sources(root, output):
+def preserve_driver_sources(root, output, extra=()):
     """Retain the three actual live controller sources separately from prepared source archives."""
     records = {}
-    for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts"):
+    for name in ("paired-jvm.py", "invoke-windows.ps1", "bounded-jvm.init.gradle.kts", *extra):
         path = root / "gradle/performance" / name
         relative = path.relative_to(root).as_posix()
         mode, kind, blob = git(root, "ls-tree", "HEAD", "--", relative).split("\t", 1)[0].split()
@@ -1497,6 +1501,14 @@ def verify_driver_sources(records):
         require(git(root, "hash-object", "--path=" + item["git_path"], item["source"]) == item["git_blob"], "Driver bytes differ from execution head")
         require(git(root, "ls-files", "--stage", "--", item["git_path"]).split("\t", 1)[0] == f"{item['git_mode']} {item['git_blob']} 0", "Driver tracked mode or identity changed")
         require(digest(Path(item["source"])) == digest(Path(item["path"])) == item["sha256"], "Actual driver source changed")
+
+
+def browser_controller():
+    """Load the shared Web adapter route without changing the existing CPU collector contract."""
+    specification = importlib.util.spec_from_file_location("paired_browser", Path(__file__).with_name("paired-browser.py"))
+    controller = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(controller)
+    return controller
 
 
 
@@ -1530,7 +1542,12 @@ def main():
         else:
             require(args.output is not None, "Supply a fresh attempt output directory")
             require(selection["path"] is not None, "Supply explicit paired inputs")
-            run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report)
+            data = load_manifest(selection["root"], selection["path"])
+            if data["schema"] == "strata-paired-browser-ci-v1":
+                require(args.owner_report is None, "Browser collection retains the whole declared manifest")
+                browser_controller().run(SimpleNamespace(**globals()), root, selection, args.output.resolve())
+            else:
+                run(root, selection["path"], args.output.resolve(), selection["root"], selection["producer"], selection["execution_head"], args.owner_report)
 
 
 if __name__ == "__main__":

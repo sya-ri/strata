@@ -13,7 +13,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
 /// <summary>Bounds one Gradle process tree without changing affinity or measuring application work.</summary>
@@ -55,6 +58,7 @@ public static class StrataPerformanceProcess {
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr OpenJobObjectW(uint access, bool inherit, string name);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool IsProcessInJob(IntPtr process, IntPtr job, out bool member);
     [DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
+    [DllImport("kernel32.dll", SetLastError=true)] static extern bool DuplicateHandle(IntPtr sourceProcess, IntPtr source, IntPtr targetProcess, out IntPtr duplicate, uint access, bool inherit, uint options);
     [DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern bool QueryFullProcessImageNameW(IntPtr process, uint flags, System.Text.StringBuilder name, ref uint size);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool GetProcessTimes(IntPtr process, out long created, out long exited, out long kernel, out long user);
@@ -120,10 +124,44 @@ public static class StrataPerformanceProcess {
         }
     }
 
+    // The caller owns an unretained handle; a successful capture transfers it to Retire.
+    static bool CaptureHandle(IntPtr job, uint pid, IntPtr handle, bool primary, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result) {
+        bool member;
+        Require(IsProcessInJob(handle, job, out member));
+        if (member == false) return false;
+        long created, exited, kernel, user;
+        if (GetProcessTimes(handle, out created, out exited, out kernel, out user) == false) return false;
+        var executable = new StringBuilder(32768);
+        uint size = (uint)executable.Capacity;
+        if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) return false;
+        UIntPtr affinity, system;
+        if (GetProcessAffinityMask(handle, out affinity, out system) == false) return false;
+        List<Dictionary<string, object>> history;
+        if (records.TryGetValue(pid, out history) == false) {
+            history = new List<Dictionary<string, object>>();
+            records.Add(pid, history);
+        }
+        foreach (var previous in history) {
+            if ((long)previous["creationFileTime"] != created) continue;
+            if (previous.ContainsKey("primaryBeforeResume") && (bool)previous["completed"]) return false;
+            throw new InvalidOperationException("Owned process generation was captured twice.");
+        }
+        var record = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}};
+        if (primary) record["primaryBeforeResume"] = true;
+        history.Add(record);
+        handles.Add(pid, handle);
+        result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
+        // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
+        long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * executable.Length;
+        result["memberHistorySerializedByteBound"] = historyBytes;
+        if (3 * 1024 * 1024 < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
+        if (256 < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
+        return true;
+    }
+
     static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds) {
         Retire(handles, records);
         const int maximumMembers = 256;
-        const long maximumHistoryBytes = 3 * 1024 * 1024;
         int bytes = 8 + maximumMembers * IntPtr.Size;
         IntPtr buffer = Marshal.AllocHGlobal(bytes);
         try {
@@ -156,33 +194,8 @@ public static class StrataPerformanceProcess {
                 if (handle == IntPtr.Zero) continue; // Short non-measured helpers may already have exited; forks require a captured generation.
                 bool retained = false;
                 try {
-                    bool member;
-                    Require(IsProcessInJob(handle, job, out member));
-                    if (member == false) continue;
-                    long created, exited, kernel, user;
-                    if (GetProcessTimes(handle, out created, out exited, out kernel, out user) == false) continue;
-                    var executable = new System.Text.StringBuilder(32768);
-                    uint size = (uint)executable.Capacity;
-                    if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) continue;
-                    UIntPtr affinity, system;
-                    if (GetProcessAffinityMask(handle, out affinity, out system) == false) continue;
-                    List<Dictionary<string, object>> history;
-                    if (records.TryGetValue(pid, out history) == false) {
-                        history = new List<Dictionary<string, object>>();
-                        records.Add(pid, history);
-                    }
-                    foreach (var previous in history)
-                        if ((long)previous["creationFileTime"] == created) throw new InvalidOperationException("Owned process generation was captured twice.");
-                    history.Add(new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}});
-                    handles.Add(pid, handle);
-                    retained = true;
-                    result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
-                    // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
-                    long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * executable.Length;
-                    result["memberHistorySerializedByteBound"] = historyBytes;
-                    if (maximumHistoryBytes < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
-                    if (maximumMembers < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
-                } finally { if (retained == false) Require(CloseHandle(handle)); }
+                    retained = CaptureHandle(job, pid, handle, false, handles, records, result);
+                } finally { if (retained == false && handles.ContainsKey(pid) == false) Require(CloseHandle(handle)); }
             }
         } finally { Marshal.FreeHGlobal(buffer); }
         foreach (var item in handles) {
@@ -198,8 +211,39 @@ public static class StrataPerformanceProcess {
         }
     }
 
+    /// <summary>Quotes one literal Windows argument without shell expansion, including empty values and trailing backslashes.</summary>
+    public static string QuoteArgument(string value) {
+        if (value == null || 0 <= value.IndexOf('\0')) throw new ArgumentException("Invalid native argument.");
+        var quoted = new StringBuilder("\"");
+        int slashes = 0;
+        foreach (char character in value) {
+            if (character == '\\') { slashes++; continue; }
+            quoted.Append('\\', character == '"' ? 2 * slashes + 1 : slashes);
+            quoted.Append(character);
+            slashes = 0;
+        }
+        return quoted.Append('\\', 2 * slashes).Append('"').ToString();
+    }
+
+    static string FileHash(string path) {
+        using (var input = File.OpenRead(path))
+        using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(input)).Replace("-", "").ToLowerInvariant();
+    }
+
+    /// <summary>Launches a pinned program directly, with its primary generation recorded while its thread remains suspended.</summary>
+    public static Dictionary<string, object> RunProgram(string executable, string[] arguments, string expectedSha, string directory, ulong minimumFree, ulong memoryLimit, int workSeconds, int cleanupSeconds) {
+        string command = QuoteArgument(executable);
+        foreach (string argument in arguments) command += " " + QuoteArgument(argument);
+        if (32767 <= command.Length) throw new ArgumentException("Native command exceeds the Windows command-line bound.");
+        return Run(executable, command, directory, minimumFree, memoryLimit, workSeconds, cleanupSeconds, true, expectedSha);
+    }
+
     /// <summary>Returns the actual exit, admission, job accounting and release; failure never admits a next call.</summary>
     public static Dictionary<string, object> Run(string executable, string command, string directory, ulong minimumFree, ulong memoryLimit, int workSeconds, int cleanupSeconds) {
+        return Run(executable, command, directory, minimumFree, memoryLimit, workSeconds, cleanupSeconds, false, null);
+    }
+
+    static Dictionary<string, object> Run(string executable, string command, string directory, ulong minimumFree, ulong memoryLimit, int workSeconds, int cleanupSeconds, bool program, string expectedSha) {
         var result = new Dictionary<string, object> {
             {"startedUtc", DateTime.UtcNow.ToString("O")}, {"nativeInvoked", false}, {"exitCode", null},
             {"timedOut", false}, {"naturalRelease", false}, {"handlesClosed", false}, {"minimumFreePhysicalBytes", minimumFree},
@@ -219,6 +263,7 @@ public static class StrataPerformanceProcess {
         result["memberHistorySerializedByteBound"] = 0L;
         result["memberHistorySerializedByteLimit"] = 3 * 1024 * 1024;
         try {
+            if (program && FileHash(executable) != expectedSha) throw new InvalidOperationException("The owned Node executable differs from its actual pin.");
             var memory = new Memory {length=(uint)Marshal.SizeOf<Memory>()};
             Require(GlobalMemoryStatusEx(ref memory));
             result["availablePhysicalBytes"] = memory.availablePhysical;
@@ -230,7 +275,7 @@ public static class StrataPerformanceProcess {
             var limits = new ExtendedLimits {basic=new Limits {flags=0x200 | 0x2000}, jobMemory=(UIntPtr)memoryLimit};
             Require(SetInformationJobObject(job, 9, ref limits, (uint)Marshal.SizeOf<ExtendedLimits>()));
             var startup = new Startup {size=(uint)Marshal.SizeOf<Startup>(), flags=0x100, input=GetStdHandle(-10), output=GetStdHandle(-11), error=GetStdHandle(-12)};
-            command += " -JobName \"" + name + "\"";
+            if (program == false) command += " -JobName \"" + name + "\"";
             Require(CreateProcessW(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x4 | 0x08000000, IntPtr.Zero, directory, ref startup, out process));
             Require(AssignProcessToJobObject(job, process.process));
             assigned = true;
@@ -239,6 +284,21 @@ public static class StrataPerformanceProcess {
             result["inheritedAffinityMask"] = affinity.ToUInt64();
             result["systemAffinityMask"] = systemAffinity.ToUInt64();
             result["affinityConfigured"] = false;
+            if (program) {
+                IntPtr primary;
+                Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
+                bool retained = false;
+                try {
+                    retained = CaptureHandle(job, process.processId, primary, true, memberHandles, members, result);
+                    if (retained == false) throw new InvalidOperationException("Suspended primary process could not be captured.");
+                } finally { if (retained == false && memberHandles.ContainsKey(process.processId) == false) Require(CloseHandle(primary)); }
+                var actual = members[process.processId][0];
+                if (String.Equals(Path.GetFullPath((string)actual["image"]), Path.GetFullPath(executable), StringComparison.OrdinalIgnoreCase) == false || FileHash((string)actual["image"]) != expectedSha)
+                    throw new InvalidOperationException("Suspended primary image differs from its actual pin.");
+                Require(GlobalMemoryStatusEx(ref memory));
+                if (memory.availablePhysical < minimumFree) throw new InvalidOperationException("Insufficient free physical RAM inside the owning Job; no program resumed.");
+                result["primaryAdmission"] = new Dictionary<string, object> {{"jobName", name}, {"pid", process.processId}, {"creationFileTime", actual["creationFileTime"]}, {"image", actual["image"]}, {"inOwnedJob", true}, {"availablePhysicalBytes", memory.availablePhysical}, {"beforeResume", true}};
+            }
             var clock = Stopwatch.StartNew();
             Require(ResumeThread(process.thread) != uint.MaxValue);
             result["nativeInvoked"] = true;
@@ -312,6 +372,7 @@ public static class StrataPerformanceProcess {
 }
 '@
 if ($Child) {
+    if ($null -ne $invocation.program) { throw 'A pinned program requires direct primary ownership.' }
     foreach ($entry in $invocation.environment.PSObject.Properties) {
         [Environment]::SetEnvironmentVariable($entry.Name, [string]$entry.Value, 'Process')
     }
@@ -324,10 +385,27 @@ if ($Child) {
     exit $LASTEXITCODE
 }
 if ([string]::IsNullOrWhiteSpace($Report) -or (Test-Path -LiteralPath $Report)) { throw 'Supply a fresh terminal report path.' }
-$pwsh = (Get-Process -Id $PID).Path
-$command = '"{0}" -NoLogo -NoProfile -NonInteractive -File "{1}" -Child -Request "{2}"' -f $pwsh, $PSCommandPath, (Resolve-Path -LiteralPath $Request).Path
-$result = [StrataPerformanceProcess]::Run($pwsh, $command, $invocation.workspace, $invocation.minimumFreePhysicalBytes, $invocation.jobCommittedBytes, $invocation.workSeconds, $invocation.cleanupSeconds)
+if ($null -ne $invocation.program) {
+    $program = $invocation.program
+    if ($program.kind -ne 'node' -or -not [System.IO.Path]::IsPathFullyQualified($program.path) -or
+        [System.IO.Path]::GetFileName($program.path) -ne 'node.exe' -or $program.sha256 -cnotmatch '^[0-9a-f]{64}$') {
+        throw 'Supply one full-path pinned Node executable.'
+    }
+    $admissionPath = Join-Path (Split-Path -Parent $Request) 'child-admission.json'
+    if (Test-Path -LiteralPath $admissionPath) { throw 'Primary admission output already exists.' }
+    foreach ($entry in $invocation.environment.PSObject.Properties) {
+        [Environment]::SetEnvironmentVariable($entry.Name, [string]$entry.Value, 'Process')
+    }
+    $result = [StrataPerformanceProcess]::RunProgram($program.path, [string[]]@($invocation.arguments), $program.sha256, $invocation.workspace, $invocation.minimumFreePhysicalBytes, $invocation.jobCommittedBytes, $invocation.workSeconds, $invocation.cleanupSeconds)
+    if ($result.ContainsKey('primaryAdmission')) {
+        $result.primaryAdmission | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $admissionPath -Encoding utf8
+    }
+} else {
+    $pwsh = (Get-Process -Id $PID).Path
+    $command = '"{0}" -NoLogo -NoProfile -NonInteractive -File "{1}" -Child -Request "{2}"' -f $pwsh, $PSCommandPath, (Resolve-Path -LiteralPath $Request).Path
+    $result = [StrataPerformanceProcess]::Run($pwsh, $command, $invocation.workspace, $invocation.minimumFreePhysicalBytes, $invocation.jobCommittedBytes, $invocation.workSeconds, $invocation.cleanupSeconds)
+}
 $result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Report -Encoding utf8
 if ($result.exitCode -ne 0 -or $result.naturalRelease -ne $true -or $result.handlesClosed -ne $true -or $result.ContainsKey('error')) {
-    throw "Bounded Gradle invocation failed; inspect $Report"
+    throw "Bounded invocation failed; inspect $Report"
 }

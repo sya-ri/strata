@@ -75,7 +75,7 @@ jobs:
         BASE: ${{ github.event.pull_request.base.sha }}
         HEAD: ${{ github.event.pull_request.head.sha }}
   paired-jvm:
-    name: Complete paired JVM measurement
+    name: Complete paired runtime measurement
     needs: plan
     if: needs.plan.outputs.paired_manifest != ''
     runs-on: windows-2022

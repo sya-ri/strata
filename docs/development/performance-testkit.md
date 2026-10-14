@@ -797,3 +797,28 @@ The ordinary CI entry then prepares and collects all rows of that domain in thre
 The attempt explicitly records `complete-owner-domain-continuation`, `whole_issue_acceptance=false` and `prior_rows_adopted=false`; it cannot certify the whole issue or turn a prior failed attempt into a completed one.
 Previously retained reports remain separately bound historical evidence and require their own source, archive, control and acceptance review.
 The optional `--owner-report` entry selects an entire declared independent domain under the same scope rules and cannot override a configured continuation or select individual rows.
+
+### Complete paired Web collection
+
+The same opt-in hosted job and `Performance-Inputs` producer/consumer scheme accept `strata-paired-browser-ci-v1` inputs through the [shared browser controller](../../gradle/performance/paired-browser.py).
+The final consumer contains no performance data files; its candidate source still must match the exact execution head.
+The manifest binds all three source trees, permits differences only in explicitly declared Web production files, and pins immutable inputs, both Java roles, the linked testkit JS artifact and each actual application bundle.
+Existing `tools/web` adapters receive structured path arguments and retain their full compiled scenario inventories.
+No permanent workload registry or per-change workflow is required.
+
+Each side completes the existing JS distribution, JVM parity test, browser installation and shared driver checks before running the existing build and verification adapters.
+Both runtime variants require complete fresh correctness files and the same fixture/tooling bytes.
+Every invocation uses the existing owned Windows Job, 4096 MiB admission, 3 GiB committed-memory limit, 1800-second work limit and 30-second cleanup limit.
+The pinned Node program is the directly suspended primary process; its known handle binds birth, image, byte pin, Job membership, unchanged affinity and fresh RAM admission before its thread resumes.
+An independently owned duplicate of that handle records its actual exit and release even when the program finishes before the first member poll.
+Literal arguments use Windows argument quoting without a shell, and the inherited environment and standard streams retain the original helper contract.
+Browser collection starts after its Gradle preparation has closed.
+
+Each declared collection retains Chromium, Firefox and WebKit, both compiled themes, 30 warmups, 60 samples and three independent browser invocations per engine and side.
+The standard matrix has 300 rows and 18 total measured browser invocations; an additional complete fixture collection adds its full rows and another 18 invocations.
+The shipped collector verifies actual loaded application bytes and compiled inventories; the [shared comparison processor](../../performance-testkit/src/jsMain/resources/browser-performance-reports.mjs) independently revalidates complete B3/C3 rows, invocation identities, browser versions, collector/driver/bundle/input bytes and operation scopes.
+All ten operation-wall and action-to-animation-frame distribution metrics retain their independent per-run values, medians, absolute deltas and nullable zero-baseline ratios.
+Adverse rows remain visible, and native work counts retain their separate untimed scope.
+Browser CPU, allocation, GPU, FPS and loaded-game gains remain unavailable.
+The attempt archive preserves both complete parity/site trees, original raw results, comparison requests/results, all process terminals, source archives, actual driver files and the file hash inventory, including after failure.
+An incomplete, copied, changed or failed collection stops the whole attempt; no subset or prior-attempt row can certify success.

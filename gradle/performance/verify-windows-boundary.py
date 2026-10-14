@@ -2,9 +2,11 @@
 """Verify the owned Windows boundary's real refusal, failure, timeout and terminal release without Java."""
 import argparse
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 import sys
 
 
@@ -13,8 +15,30 @@ PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
 
 
+def validate_node_leak(terminal, program, console):
+    """Bind the child-ready IPC identity to an owned generation that survives its successful primary."""
+    lines = console.splitlines()
+    PAIRED.require(bool(lines), "Missing child-ready IPC acknowledgement")
+    observed = json.loads(lines[0])
+    PAIRED.require(isinstance(observed, dict) and set(observed) == {"readyChildPid"} and type(observed["readyChildPid"]) is int,
+                   "Malformed child-ready IPC acknowledgement")
+    members = [member for generations in terminal["members"].values() for member in generations]
+    primaries = [member for member in members if member["pid"] == terminal["callerPid"] and member.get("primaryBeforeResume") is True]
+    children = [member for member in members if member["pid"] == observed.get("readyChildPid") and member["pid"] != terminal["callerPid"]]
+    PAIRED.require(len(primaries) == 1 and len(children) == 1, "Child-ready IPC identity lost its actual owned generation")
+    primary, child = primaries[0], children[0]
+    PAIRED.require(terminal["naturalRelease"] is False and terminal["timedOut"] is False and 0 < terminal["activeProcessesAtRelease"]
+                   and terminal["handlesClosed"] is True and terminal["activeProcessesAfterCleanup"] == 0 and terminal["exitCode"] == 0
+                   and primary["exitCode"] == 0 and child["inOwnedJob"] is True and child["completed"] is True and child["handleClosed"] is True
+                   and child["creationFileTime"] <= primary["exitFileTime"] < child["exitFileTime"]
+                   and os.path.normcase(child["image"]) == os.path.normcase(program["path"])
+                   and child["affinityMask"] == terminal["inheritedAffinityMask"] and child["systemAffinityMask"] == terminal["systemAffinityMask"]
+                   and terminal["observedJobLimitBytes"] == 3 * 1024**3 and terminal["observedJobFlags"] & 0x2000
+                   and terminal["observedJobFlags"] & (0x800 | 0x1000) == 0, "Ready Node child did not survive its primary inside the unchanged owned Job")
+
+
 def main():
-    """Launch only temporary owned PowerShell/cmd/Python descendants and retain every negative record."""
+    """Launch only temporary owned boundary controls and retain every negative record."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     output = parser.parse_args().output.resolve()
@@ -83,7 +107,59 @@ def main():
                 PAIRED.require(terminal["naturalRelease"] is False and 0 < terminal["activeProcessesAtRelease"], "Leaked child was silently accepted")
             elif name == "failure":
                 PAIRED.require(terminal["exitCode"] == 7, "Native failure exit was lost")
-        PAIRED.write_new(output / "result.json", {"status": "passed", "java_invocations": 0, "cases": records})
+        launcher = shutil.which("node")
+        PAIRED.require(launcher is not None, "Node owner controls require the installed launcher")
+        identity = json.loads(subprocess.check_output([launcher, "-p", "JSON.stringify({path:process.execPath,version:process.version})"], text=True))
+        executable = Path(identity["path"])
+        program = {"kind": "node", "path": str(executable), "sha256": PAIRED.digest(executable)}
+        literal_arguments = ["path with spaces", 'quoted "value"', "C:\\trailing\\", "", 'backslash\\"quote', "$() & ; ` literal"]
+        marker = "inherited environment with spaces"
+        for name, body, work in (
+            ("node-normal", "process.stdout.write(JSON.stringify({args:process.argv.slice(1),environment:process.env.STRATA_BOUNDARY_CONTROL,execPath:process.execPath}));", 30),
+            ("node-failure", "process.exit(7);", 30),
+            ("node-timeout", "setTimeout(() => process.exit(0), 30000);", 2),
+            # Non-detached Windows children enter libuv's kill-on-parent-close Job, so acknowledge a hidden detached child before primary exit.
+            ("node-leaked-child", "const {spawn} = require('node:child_process'); "
+             "const child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 30000); process.send({readyChildPid:process.pid});'], "
+             "{detached:true,windowsHide:true,stdio:['ignore','ignore','ignore','ipc']}); "
+             "child.once('error', error => {throw error;}); "
+             "child.once('exit', () => {throw new Error('Child exited before leak acknowledgement');}); "
+             "child.once('message', ready => {if (ready.readyChildPid !== child.pid) throw new Error('Wrong child-ready identity'); "
+             "child.disconnect(); child.unref(); process.stdout.write(JSON.stringify(ready) + '\\n', () => process.exit(0));});", 30),
+            ("node-pin-refusal", "process.stdout.write('NODE_PIN_REFUSAL_EXECUTED');", 30),
+        ):
+            directory = output / name
+            workspace = directory / "workspace"
+            workspace.mkdir(parents=True)
+            request = directory / "request.json"
+            selected = {**program, "sha256": "0" * 64} if name == "node-pin-refusal" else program
+            PAIRED.write_new(request, {"workspace": str(workspace), "arguments": ["-e", body, "--", *literal_arguments], "program": selected, "environment": {"STRATA_BOUNDARY_CONTROL": marker},
+                                      "minimumFreePhysicalBytes": 4 * 1024**3, "jobCommittedBytes": 3 * 1024**3, "workSeconds": work, "cleanupSeconds": 2})
+            with (directory / "console.log").open("xb") as log:
+                process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
+            terminal = PAIRED.read_json(directory / "terminal.json")
+            records.append({"case": name, "exit": process.returncode, "terminal": terminal})
+            PAIRED.require((process.returncode == 0) == (name == "node-normal") and terminal["handlesClosed"] is True
+                           and terminal.get("activeProcessesAfterCleanup", 0) == 0, "Wrong or unclosed actual Node owner control")
+            if name == "node-normal":
+                PAIRED.browser_controller().validate_node_generation(PAIRED, terminal, program)
+                observed = json.loads((directory / "console.log").read_text(encoding="utf-8-sig"))
+                PAIRED.require(observed["args"] == literal_arguments and observed["environment"] == marker
+                               and os.path.normcase(observed["execPath"]) == os.path.normcase(str(executable)), "Literal native arguments, inherited environment or stdout changed")
+                admission = PAIRED.read_json(directory / "child-admission.json")
+                PAIRED.require(admission == terminal["primaryAdmission"], "Suspended primary admission bytes changed")
+            elif name == "node-failure":
+                PAIRED.require(terminal["exitCode"] == 7 and terminal["naturalRelease"] is True, "Actual Node failure exit was lost")
+            elif name == "node-timeout":
+                PAIRED.require(terminal["timedOut"] is True and terminal["naturalRelease"] is False, "Actual Node deadline did not reject")
+            elif name == "node-leaked-child":
+                console = (directory / "console.log").read_text(encoding="utf-8-sig")
+                validate_node_leak(terminal, program, console)
+            else:
+                nodes = [member for generations in terminal["members"].values() for member in generations if Path(member["image"]).name.casefold() == "node.exe"]
+                PAIRED.require(not nodes and terminal["nativeInvoked"] is False and "differs from its actual pin" in terminal["error"]
+                               and "NODE_PIN_REFUSAL_EXECUTED" not in (directory / "console.log").read_text(encoding="utf-8-sig"), "Changed Node pin reached execution")
+        PAIRED.write_new(output / "result.json", {"status": "passed", "java_invocations": 0, "node": {**program, "version": identity["version"]}, "cases": records})
     except BaseException as failure:
         PAIRED.write_new(output / "result.json", {"status": "failed", "error": str(failure), "cases": records})
         raise
