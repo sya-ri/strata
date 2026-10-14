@@ -1,5 +1,5 @@
 """Exercise generic manifest selection and immutable evidence boundaries without Java or timing."""
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 import copy
 import csv
 import hashlib
@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import textwrap
@@ -175,6 +176,193 @@ class PairedJvmTest(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "actual JVM"):
                         PAIRED.verify_input_properties(directory, selected, [diagnostic])
                     self.assertFalse((directory / "input-properties-verified.json").exists())
+
+    def compiled_launch_manifest(self):
+        """Register two immutable external archive inputs without changing the ordinary runtime projects."""
+        value = copy.deepcopy(self.manifest)
+        suite = value["suites"][0]
+        suite.update(compiled_main="independent.CompleteBenchmark", external_runtime_inputs={"baseline": "external-b", "candidate": "external-c"})
+        for side in ("b", "c"):
+            path = self.root / ("external-" + side + ".jar")
+            with zipfile.ZipFile(path, "x") as archive:
+                archive.writestr("independent/External.class", side.encode())
+            value["inputs"].append({"label": "external-" + side, "pin": {"path": path.name, "sha256": PAIRED.digest(path)}})
+        return value
+
+    def test_compiled_launch_keeps_registered_side_inputs_and_rejects_unbound_main_or_archive(self):
+        value = self.compiled_launch_manifest()
+        self.assertEqual(self.load(value), value)
+        self.assertEqual(value["runtime_projects"], self.manifest["runtime_projects"])
+        suite = value["suites"][0]
+        inputs = {item["label"]: {"path": str(self.root / item["pin"]["path"]), "sha256": item["pin"]["sha256"]} for item in value["inputs"]}
+        for side, label in suite["external_runtime_inputs"].items():
+            self.assertEqual(PAIRED.suite_launch_flags(suite, side, inputs), ["-Pstrata.performance.compiledMain=independent.CompleteBenchmark", "-Pstrata.performance.externalRuntime=" + inputs[label]["path"]])
+        self.assertEqual(PAIRED.suite_launch_flags(self.manifest["suites"][0], "baseline", inputs), [])
+        for main in (None, True, "", "unsafe main", "a;command", "../Main", "Single"):
+            invalid = copy.deepcopy(value)
+            invalid["suites"][0]["compiled_main"] = main
+            with self.subTest(main=main), self.assertRaises(ValueError):
+                self.load(invalid)
+        for selected in ({"baseline": "external-b"}, {"baseline": "unknown", "candidate": "external-c"}, {"baseline": [], "candidate": "external-c"}):
+            invalid = copy.deepcopy(value)
+            invalid["suites"][0]["external_runtime_inputs"] = selected
+            with self.subTest(selected=selected), self.assertRaises(ValueError):
+                self.load(invalid)
+        with self.assertRaisesRegex(ValueError, "not registered"):
+            PAIRED.suite_launch_flags(suite, "baseline", {})
+        archive = Path(inputs["external-b"]["path"])
+        archive.write_bytes(b"mutated archive")
+        with self.assertRaisesRegex(ValueError, "changed"):
+            PAIRED.suite_launch_flags(suite, "baseline", inputs)
+        archive.unlink()
+        with self.assertRaisesRegex(ValueError, "Missing"):
+            PAIRED.suite_launch_flags(suite, "baseline", inputs)
+
+    def test_compiled_launch_full_fake_owned_route_keeps_verifier_preflight_collection_and_operation_classpaths(self):
+        """Exercise the actual controller phases with fake helper bytes and real closed diagnostic/pin readers, never Java."""
+        for optional, preflight, mutate in ((False, False, False), (True, False, False), (True, True, False), (True, True, True)):
+            with self.subTest(optional=optional, preflight=preflight, mutate=mutate), tempfile.TemporaryDirectory() as temporary:
+                original_root, original_input = self.root, self.input
+                self.root = Path(temporary)
+                self.input = self.root / "fixture.txt"
+                self.input.write_bytes(original_input.read_bytes())
+                try:
+                    value = self.compiled_launch_manifest() if optional else copy.deepcopy(self.manifest)
+                    value["suites"][0]["modes"] = ["avgt"]
+                    suite = value["suites"][0]
+                    suite["operation_reports"] = {"adapters": {"IndependentFixtureBenchmark": "independent.OperationAdapter"}, "warmup": 30, "samples": 60, "expected_rows": 2, "expected_controls": 1}
+                    runtime_names = {project: "independent.Runtime" + str(index) for index, project in enumerate(value["runtime_projects"])}
+                    if preflight:
+                        suite["preflight"] = {"main": "independent.Control", "qualification": self.pin, "runtime_classes": runtime_names, "controls": [{"id": "complete", "arguments": []}]}
+                    manifest = self.root / "manifest.json"
+                    manifest.write_text(json.dumps(value), encoding="utf-8")
+                    self.assertEqual(PAIRED.load_manifest(self.root, manifest), value)
+                    source_root = self.root / "driver"
+                    (source_root / "gradle").mkdir(parents=True)
+                    catalog = Path(PAIRED.__file__).resolve().parents[2] / "gradle/libs.versions.toml"
+                    shutil.copyfile(catalog, source_root / "gradle/libs.versions.toml")
+                    versions = PAIRED.tomllib.loads(catalog.read_text(encoding="utf-8"))["versions"]
+                    homes = {}
+                    for role, provider, version in (("STRATA_PAIRED_TOOLCHAIN", "Eclipse Adoptium", versions["performance-toolchain"].split("+", 1)[0]), ("JAVA_HOME", "Oracle Corporation", versions["performance-launcher"])):
+                        home = self.root / role
+                        (home / "bin").mkdir(parents=True)
+                        (home / "bin/java.exe").write_bytes(role.encode())
+                        (home / "release").write_text(f'IMPLEMENTOR="{provider}"\nJAVA_VERSION="{version}"\n', encoding="utf-8")
+                        homes[role] = str(home)
+                    workspace = self.root / "fixture-workspace"
+                    workspace.mkdir()
+                    archives = {}
+                    owners = value["runtime_projects"] + [":performance-testkit"]
+                    for index, project in enumerate(owners):
+                        archive = self.root / ("runtime-" + str(index) + ".jar")
+                        with zipfile.ZipFile(archive, "x") as jar:
+                            name = runtime_names.get(project, "independent.Control")
+                            jar.writestr(name.replace(".", "/") + ".class", project.encode())
+                            if project == ":performance-testkit":
+                                jar.writestr("dev/s7a/strata/performance/JvmPerformanceMeter.class", b"meter")
+                                jar.writestr("org/openjdk/jmh/runner/Runner.class", b"runner")
+                        archives[project] = archive
+                    for relative in ("classes/kotlin/jmh", "jmh-generated-classes", "jmh-generated-resources"):
+                        directory = workspace / "quality/benchmarks/build" / relative
+                        directory.mkdir(parents=True)
+                        (directory / "fixture.bin").write_bytes(b"common compiled fixture")
+                    output = self.root / "output"
+                    calls = []
+
+                    def fake_invoke(command, cwd, console):
+                        request_path = Path(command[command.index("-Request") + 1])
+                        directory = request_path.parent
+                        request = PAIRED.read_json(request_path)
+                        arguments = request["arguments"]
+                        phase = directory.name
+                        calls.append((phase, arguments))
+                        properties = {argument.split("=", 1)[0]: argument.split("=", 1)[1] for argument in arguments if argument.startswith("-P") and "=" in argument}
+                        external = properties.get("-Pstrata.performance.externalRuntime")
+                        entries = [str(path) for path in archives.values()] + ([external] if external else [])
+                        if "-Pstrata.paired.preserveClasspath" in properties:
+                            retained = Path(properties["-Pstrata.paired.preserveClasspath"])
+                            records = [{"source": path, **PAIRED.preserve_file(Path(path), retained / (str(index) + ".jar"))} for index, path in enumerate(entries)]
+                            PAIRED.write_new(retained / "classpath.json", {"schema": "strata-paired-jvm-classpath-v1", "entries": records})
+                        if "-Pstrata.paired.classpath" in properties:
+                            captured = PAIRED.prepared_classpath(Path(properties["-Pstrata.paired.classpath"]))
+                            self.assertEqual([item["source"] for item in captured["entries"]], entries)
+                        pid = len(calls) + 100
+                        main = properties.get("-Pstrata.performance.compiledMain", "independent.DefaultCollector")
+                        if "-Pstrata.performance.operationRequest" in properties:
+                            main = "dev.s7a.strata.performance.JvmOperationReports"
+                        if "-Pstrata.paired.preflight" in properties:
+                            control = PAIRED.read_json(Path(properties["-Pstrata.paired.preflight"]))
+                            main = control["main"]
+                        home = Path(homes["JAVA_HOME"])
+                        classpath = ";".join(entries)
+                        origins = {"main": main, "executable": str(home / "bin/java.exe"), "classpath": classpath}
+                        console.write_text("paired.jvm.origin " + json.dumps(origins) + "\n", encoding="utf-8")
+                        logs = Path(request["environment"]["STRATA_PAIRED_LOGS"])
+                        (logs / f"vm-{pid}-2026-10-12_00-00-00.log").write_text(f"<hotspot_log process='{pid}' time_ms='1001'>\n<vm_arguments><command>{main}</command>\njava.home={home}\njava.class.path={classpath}\n</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                        member = {"inOwnedJob": True, "completed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15, "image": str(home / "bin/java.exe"), "creationFileTime": 116444736010000000}
+                        PAIRED.write_new(directory / "terminal.json", {"exitCode": 0, "naturalRelease": True, "handlesClosed": True, "jobName": phase, "inheritedAffinityMask": 15, "systemAffinityMask": 15, "members": {str(pid): member}})
+                        PAIRED.write_new(directory / "child-admission.json", {"inOwnedJob": True, "jobName": phase, "availablePhysicalBytes": 4 * 1024**3})
+                        if "-Pstrata.paired.preflight" in properties:
+                            staging = Path(request["environment"]["STRATA_PAIRED_CLASS_LOGS"])
+                            diagnostic = "".join(f"[{pid}][info][class,load] {name} source: {Path(identity['path']).as_uri()}\n" for name, identity in control["required_classes"].items())
+                            (staging / f"classes-{pid}-2026-10-12_00-00-00.log").write_text(diagnostic, encoding="utf-8")
+                            retained = Path(properties["-Pstrata.paired.preflight"]).parent
+                            artifact = retained / "complete.txt"
+                            artifact.write_bytes(b"independent complete observation")
+                            PAIRED.write_new(retained / "receipt.json", {"schema": "strata-paired-jvm-preflight-receipt-v1", "status": "passed", "request_sha256": PAIRED.digest(retained / "request.json"), "controls": [{"id": "complete", "status": "passed", "observations": {"rows": 2}, "origins": {name: {"pid": pid} for name in control["required_classes"]}, "artifacts": [{"path": artifact.name, "sha256": PAIRED.digest(artifact)}]}]})
+                            if mutate:
+                                Path(external).write_bytes(b"mutated after complete admission")
+                        elif "-Pstrata.performance.operationRequest" in properties:
+                            operation = PAIRED.read_json(Path(properties["-Pstrata.performance.operationRequest"]))
+                            Path(operation["output"]).mkdir(parents=True)
+                            PAIRED.write_new(Path(operation["output"]) / "report.json", {"status": "passed", "run_id": phase, "phases": [{"control": True}, {"control": False}]})
+                        elif "-Pstrata.performance.request" in properties:
+                            comparison = PAIRED.read_json(Path(properties["-Pstrata.performance.request"]))
+                            field = "phases" if comparison["command"] == "operation-comparison" else "cases"
+                            PAIRED.write_new(Path(comparison["output"]), {"status": "passed", field: [{}, {}]})
+                        elif phase.startswith("collect-"):
+                            repetition = int(properties["-Pstrata.performance.repetition"])
+                            destination = Path(properties["-Pstrata.performance.historicalOutputRoot"]) / suite["name"] / ("run-" + str(repetition))
+                            destination.mkdir(parents=True)
+                            PAIRED.write_new(destination / "receipt.json", {"status": "passed", "run_id": phase, "fork_verification": "loaded-artifacts-per-iteration-v1", "registered_workloads": ["first", "second"]})
+                            terminal = PAIRED.read_json(directory / "terminal.json")
+                            staging = Path(request["environment"]["STRATA_PAIRED_CLASS_LOGS"])
+                            for index in range(suite["expected_cases"]):
+                                fork_pid = pid * 10 + index
+                                (logs / f"vm-{fork_pid}-2026-10-12_00-00-00.log").write_text(f"<hotspot_log process='{fork_pid}' time_ms='1001'>\n<vm_arguments><command>org.openjdk.jmh.runner.ForkedMain 1</command>\njava.home={home}\njava.class.path={classpath}\n</vm_arguments>\n-XX:MaxHeapSize=805306368 -XX:MaxMetaspaceSize=402653184\n<hotspot_log_done stamp='1'/>\n</hotspot_log>\n", encoding="utf-8")
+                                (staging / f"classes-{fork_pid}-2026-10-12_00-00-00.log").write_text(f"[{fork_pid}][info][class,load] org.openjdk.jmh.runner.ForkedMain source: {archives[':performance-testkit'].as_uri()}\n", encoding="utf-8")
+                                terminal["members"][str(fork_pid)] = dict(member)
+                            (directory / "terminal.json").write_text(json.dumps(terminal), encoding="utf-8")
+                        return 0
+
+                    patches = (patch.dict(os.environ, homes), patch.object(PAIRED, "git", return_value="a" * 40), patch.object(PAIRED, "verify_driver_source", return_value=None), patch.object(PAIRED, "preserve_driver_sources", return_value={}), patch.object(PAIRED, "verify_driver_sources"), patch.object(PAIRED, "source_guard"), patch.object(PAIRED, "materialize", side_effect=lambda root, output, side, source, inputs: (workspace, source)), patch.object(PAIRED, "archive_file", side_effect=lambda workspace, project: archives[project]), patch.object(PAIRED.subprocess, "check_output", return_value='{"source_only_fake":true}'), patch.object(PAIRED, "invoke", side_effect=fake_invoke), patch.object(PAIRED, "table"))
+                    with ExitStack() as stack:
+                        for context in patches:
+                            stack.enter_context(context)
+                        if mutate:
+                            with self.assertRaisesRegex(ValueError, "changed"):
+                                PAIRED.run(source_root, manifest, output, input_root=self.root)
+                        else:
+                            PAIRED.run(source_root, manifest, output, input_root=self.root)
+                    attempt = PAIRED.read_json(output / "attempt.json")
+                    if mutate:
+                        self.assertEqual(attempt["status"], "failed")
+                        self.assertFalse(any(name.startswith("collect-") for name, _ in calls))
+                    else:
+                        self.assertEqual(attempt["score_cells"], 12)
+                        self.assertEqual(attempt["operation_cells"], 12)
+                        self.assertEqual(attempt["status"], "passed")
+                    applicable = [(name, arguments) for name, arguments in calls if name.startswith(("admit-", "preflight-", "collect-"))]
+                    for name, arguments in applicable:
+                        flags = [argument for argument in arguments if argument.startswith(("-Pstrata.performance.compiledMain=", "-Pstrata.performance.externalRuntime="))]
+                        self.assertEqual(len(flags), 2 if optional else 0)
+                        if optional:
+                            label = "external-b" if "-baseline" in name else "external-c"
+                            index = next(index for index, item in enumerate(value["inputs"]) if item["label"] == label)
+                            self.assertTrue(flags[1].endswith(f"input-{index}.jar"))
+                    self.assertTrue(all((output / "phases" / name / "vms.json").is_file() for name, _ in calls))
+                finally:
+                    self.root, self.input = original_root, original_input
 
     def test_original_average_time_only_profile_keeps_all_cases_controls_and_repetitions(self):
         original = copy.deepcopy(self.manifest)

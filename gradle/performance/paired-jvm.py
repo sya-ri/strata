@@ -116,7 +116,15 @@ def load_manifest(root, path):
     names = set()
     for suite in data["suites"]:
         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
-        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates", "modes"}, "Invalid suite fields")
+        require(fields <= set(suite) <= fields | {"profilers", "operation_reports", "preflight", "test_gates", "modes", "compiled_main", "external_runtime_inputs"}, "Invalid suite fields")
+        if "compiled_main" in suite or "external_runtime_inputs" in suite:
+            require(FixtureProject.decode(suite["project"]) == FixtureProject.HISTORICAL, "Compiled launch selectors require the existing historical template")
+        if "compiled_main" in suite:
+            require(isinstance(suite["compiled_main"], str) and re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", suite["compiled_main"]), "Use one compiled JVM main class")
+        if "external_runtime_inputs" in suite:
+            selected = suite["external_runtime_inputs"]
+            require(isinstance(selected, dict) and set(selected) == {"baseline", "candidate"}
+                    and all(isinstance(label, str) for label in selected.values()), "Bind both external runtime input labels")
         require(suite.get("modes", ["avgt", "sample"]) in (["avgt"], ["avgt", "sample"]),
                 "Preserve the declared Standard average-time profile, optionally with SampleTime")
         require(FixtureProject.decode(suite["project"]) is not None, "Unsupported fixture project")
@@ -246,6 +254,12 @@ def load_manifest(root, path):
         require(isinstance(sides, dict) and set(sides) == {"baseline", "candidate"}
                 and all(isinstance(label, str) and label in labels for label in sides.values()),
                 "Bind both inventory sides to the complete immutable input map")
+
+    for suite in data["suites"]:
+        require(set(suite.get("external_runtime_inputs", {}).values()) <= labels, "External runtime input is not registered")
+        for label in suite.get("external_runtime_inputs", {}).values():
+            registered = next(item for item in data["inputs"] if item["label"] == label)
+            require(Path(registered["pin"]["path"]).suffix == ".jar", "External runtime input must be a JAR")
     require(set(data["compiled_pins"]) == {"fixture", "baseline", "candidate"}, "Missing compiled pin inventory")
     for side, pins in data["compiled_pins"].items():
         require(isinstance(pins, list), f"Invalid compiled pin list: {side}")
@@ -267,6 +281,21 @@ def load_manifest(root, path):
         roles.add(item["role"])
         require(all(re.fullmatch(r"[0-9a-f]{64}", item[key]) for key in ("executable_sha256", "release_sha256")), "Invalid Java byte pin")
     return data
+
+
+def suite_launch_flags(suite, side, inputs):
+    """Select the existing compiled entry and byte-fenced archive from immutable registered inputs."""
+    flags = []
+    if "compiled_main" in suite:
+        flags.append("-Pstrata.performance.compiledMain=" + suite["compiled_main"])
+    if "external_runtime_inputs" in suite:
+        label = suite["external_runtime_inputs"][side]
+        require(label in inputs, "External runtime input is not registered")
+        item = inputs[label]
+        archive = Path(item["path"])
+        require(archive.suffix == ".jar" and digest(archive) == item["sha256"], "External runtime archive changed or is not a JAR")
+        flags.append("-Pstrata.performance.externalRuntime=" + str(archive))
+    return flags
 
 
 def git(root, *arguments):
@@ -1381,7 +1410,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             properties(runtime_manifests[side], mapping)
             record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
         inputs = output / "fixture-inputs.properties"
-        input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
+        external_inputs = {label for suite in data["suites"] for label in suite.get("external_runtime_inputs", {}).values()}
+        input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / (f"input-{index}.jar" if item["label"] in external_inputs else f"input-{index}.bin"))
                           for index, item in enumerate(data["inputs"])}
         paired_owner_plans = {}
         for specification in data.get("owner_reports", []):
@@ -1425,7 +1455,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     checked = phase(f"tests-{suite['name']}-{side}-{index}", workspaces[side], [gate["task"]], 0, gate)
                     verify_test_gate(checked, gate)
                     source_guard(workspaces[side], data["sources"][side]["tree"])
-                flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                flags = [f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                 if "preflight" in suite:
                     retained = output / "prepared-classpaths" / suite["name"] / side
                     flags += [f"-Pstrata.paired.preserveClasspath={retained}"]
@@ -1438,7 +1468,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                     actual = phase(f"preflight-{suite['name']}-{side}", fixture,
                                    [project + ":strataPairedPreflight", f"-Pstrata.paired.template={verifier}",
                                     f"-Pstrata.paired.preflight={control / 'request.json'}", f"-Pstrata.paired.classpath={classpaths[side]['path']}",
-                                    f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + selectors, 0)
+                                    f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives) + selectors, 0)
                     verify_preflight(control, actual, record["phases"][-1]["terminal"], request_hash)
                     require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Control changed its prepared classpath inventory")
             admitted_suites.append((suite, project, task, selectors, classpaths))
@@ -1460,7 +1490,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                             pin(input_root, suite["preflight"]["qualification"])
                         destination = output / "raw" / suite["name"] / mode / side / f"run-{repetition}"
                         flags = [f"-Pstrata.performance.mode={mode}", f"-Pstrata.performance.repetition={repetition}",
-                                 f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                                 f"-Pstrata.performance.suite={suite['name']}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                         if side in classpaths:
                             require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before collection")
                             prepared_classpath(classpaths[side]["path"])
@@ -1502,7 +1532,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                         request_path = output / f"{suite['name']}-operations-{side}-{repetition}-request.json"
                         write_new(request_path, {**operation, "collector": str(collector), "jmh_directory": bindings[side][repetition],
                                                  "output": str(destination), "repetition": repetition, "source_bindings": record["sources"]})
-                        flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"]
+                        flags = [f"-Pstrata.performance.operationRequest={request_path}", f"-Pstrata.paired.runtime={runtime_manifests[side]}"] + suite_launch_flags(suite, side, input_archives)
                         if side in classpaths:
                             require(digest(classpaths[side]["path"]) == classpaths[side]["sha256"], "Prepared classpath inventory changed before operation collection")
                             prepared_classpath(classpaths[side]["path"])

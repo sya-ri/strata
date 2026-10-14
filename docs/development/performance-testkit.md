@@ -666,13 +666,14 @@ Every selected suite's full work gates and both sides' independent controls comp
 
 Supported collector projects are `:quality:benchmarks`, `:quality:component-benchmarks` and `:quality:remote-benchmarks`.
 They use the existing `jmhHistorical`, `jmhComponents` and `jmhRemote` tasks and full `verifyHistoricalWorkloads`, `verifyComponentRenderingWork` and `verifyRemoteWorkloads` work gates.
+`suites[].compiled_main` optionally selects a validated compiled JVM entry point on the existing `:quality:benchmarks:jmhHistorical` template; omitting it preserves the historical main.
 Generated fixture selection does not require a central benchmark registry or a fixture-specific build-script branch.
 Remote protocol and retained-session defaults remain separate existing scopes; a supplemental compiled remote fixture uses the same generated selection contract.
 Select CPU fixtures whose required toolchains fit the fixed catalog profile.
 The existing component task also supplies OS-classified LWJGL/STB/FreeType native JARs, fixed font inputs and native access for CPU font-library controls.
 These controls do not require a graphics window or loaded game, but their actual DLL load, workload parity and release must pass in the job; a missing native library or required control fails the whole corpus.
 GPU/window/upload/input-latency/FPS and loaded-game acceptance is N/A in this CPU route; real game, browser and Paper/Velocity host evidence uses its own integration route.
-This manifest does not bind versioned Fabric adapter archives, Web/browser runs or Velocity main/probe and separately registered remote inventories.
+`suites[].external_runtime_inputs` optionally binds `baseline` and `candidate` to registered immutable JAR input labels on the shared verifier/collector classpath; omitting it preserves the default classpath and input-file layout.
 It also does not reproduce an unrestricted toolchain-discovery control or change its original RAM/metaspace conditions.
 Such owners retain their existing complete evidence routes; JVM success cannot substitute for those domains, and a changed measurement environment cannot be presented as the same comparison.
 
