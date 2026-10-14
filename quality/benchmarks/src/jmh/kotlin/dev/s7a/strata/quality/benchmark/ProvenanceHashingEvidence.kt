@@ -94,7 +94,7 @@ internal object ProvenanceHashingEvidence {
                 addProperty("improvement_claim_accepted", false)
                 add("non_cpu_scopes", JsonObject().apply { listOf("rendering", "upload", "gpu", "gui_gpu").forEach { addProperty(it, "N/A") } })
             }
-        try {
+        runCatching {
             val complete =
                 JvmPerformanceRunner.measure("complete-preparation-collection-verification", PerformancePlan(warmup = 0, samples = 1)) {
                     collectAll(target, controlsManifest, corpusManifest, report)
@@ -104,13 +104,12 @@ internal object ProvenanceHashingEvidence {
                 }
             report.add("complete_preparation_collection_verification", complete.evidence)
             PerformanceJson.writeNew(output, report)
-        } catch (failure: Throwable) {
+        }.onFailure { failure ->
             report.addProperty("status", "failed")
             report.addProperty("failure_type", failure.javaClass.name)
             report.addProperty("failure_message", failure.message)
             runCatching { PerformanceJson.writeNew(output.resolveSibling("${output.fileName}.failed.json"), report) }.exceptionOrNull()?.let(failure::addSuppressed)
-            throw failure
-        }
+        }.getOrThrow()
     }
 
     private fun collectAll(
@@ -140,26 +139,7 @@ internal object ProvenanceHashingEvidence {
             val rejections = JsonArray()
             report.add("phases", phases)
             report.add("rejected_inputs", rejections)
-            rows.forEach { row ->
-                library.prepare(row).use { prepared ->
-                    if (mode(row) in rejected) {
-                        rejections.add(prepared.rejection())
-                    } else {
-                        var verification: JsonObject? = null
-                        prepared.validate(prepared.operation())
-                        val result = JvmPerformanceRunner.measure(rowIdentity(row).id, afterOperation = { _, value -> verification = prepared.validate(value) }) { prepared.operation() }
-                        val phase =
-                            result.evidence.apply {
-                                listOf("mode", "entries", "shape").forEach { add(it, row.get(it).deepCopy()) }
-                                addProperty("warmup", PerformancePlan().warmup)
-                                add("input", row.deepCopy())
-                                add("verification", checkNotNull(verification))
-                                add("work_observation", workObservation(library, row))
-                            }
-                        phases.add(phase)
-                    }
-                }
-            }
+            rows.forEach { row -> collectRow(library, row, phases, rejections) }
             val after = library.certify()
             check(after == before) { "Measured library provenance changed during collection" }
             report.add("target_after", after)
@@ -168,6 +148,32 @@ internal object ProvenanceHashingEvidence {
         val fixtureAfter = fixtureIdentity()
         check(inputIdentity(controls) == controlled && fixtureAfter == fixture && ArtifactIdentity.file(corpusManifest).contentEquals(manifestHash)) { "Frozen fixture or control bytes changed" }
         report.add("fixture_after", fixtureAfter)
+    }
+
+    private fun collectRow(
+        library: ProvenanceHashingTarget,
+        row: JsonObject,
+        phases: JsonArray,
+        rejections: JsonArray,
+    ) {
+        library.prepare(row).use { prepared ->
+            if (mode(row) in rejected) {
+                rejections.add(prepared.rejection())
+            } else {
+                var verification: JsonObject? = null
+                prepared.validate(prepared.operation())
+                val result = JvmPerformanceRunner.measure(rowIdentity(row).id, afterOperation = { _, value -> verification = prepared.validate(value) }) { prepared.operation() }
+                val phase =
+                    result.evidence.apply {
+                        listOf("mode", "entries", "shape").forEach { add(it, row.get(it).deepCopy()) }
+                        addProperty("warmup", PerformancePlan().warmup)
+                        add("input", row.deepCopy())
+                        add("verification", checkNotNull(verification))
+                        add("work_observation", workObservation(library, row))
+                    }
+                phases.add(phase)
+            }
+        }
     }
 
     private fun workObservation(
@@ -274,8 +280,7 @@ internal object ProvenanceHashingEvidence {
 
     private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
 
-    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case =
-        ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, enumValues<ProvenanceHashingCorpus.Shape>().single { it.name.contentEquals(row.get("shape").asString) })
+    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, enumValues<ProvenanceHashingCorpus.Shape>().single { it.name.contentEquals(row.get("shape").asString) })
 
     private fun origin(type: Class<*>): Path = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
 }

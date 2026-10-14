@@ -120,7 +120,11 @@ internal object JvmEvidenceFiles {
         }
     }
 
-    private fun classHash(input: InputStream, expectedBytes: Long, buffer: ByteArray): String {
+    private fun classHash(
+        input: InputStream,
+        expectedBytes: Long,
+        buffer: ByteArray,
+    ): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val maximum = 8 * 1024 * 1024
         var bytes = 0L

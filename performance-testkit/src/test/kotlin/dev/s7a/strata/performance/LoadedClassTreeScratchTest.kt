@@ -26,6 +26,7 @@ import java.util.jar.JarOutputStream
 import javax.tools.ToolProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
@@ -74,7 +75,16 @@ internal class LoadedClassTreeScratchTest {
             observedLoader(jar, streams).use { loader ->
                 val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
                 LoadedArtifactMetadata.verifyComplete(report)
-                assertEquals(treeGolden(entries), report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree").get("sha256").asString)
+                assertEquals(
+                    treeGolden(entries),
+                    report
+                        .getAsJsonArray("modules")
+                        .single()
+                        .asJsonObject
+                        .getAsJsonObject("classTree")
+                        .get("sha256")
+                        .asString,
+                )
             }
         }
         assertNotSame(first[1].buffers.first(), second[1].buffers.first())
@@ -89,12 +99,17 @@ internal class LoadedClassTreeScratchTest {
         observedLoader(jar, streams, "fixture/Probe8192.class").use { loader ->
             val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(report) }
-            val tree = report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree")
+            val tree =
+                report
+                    .getAsJsonArray("modules")
+                    .single()
+                    .asJsonObject
+                    .getAsJsonObject("classTree")
             assertEquals("unavailable", tree.get("status").asString)
             assertTrue(tree.get("sha256").isJsonNull)
             assertTrue(tree.get("reason").asString.contains("Expected actual class-resource read failure"))
             assertTrue(streams.all { it.closed })
-            assertTrue(streams.none { it.entry == "fixture/Probe8193.class" })
+            assertFalse("fixture/Probe8193.class" in streams.map { it.entry })
         }
         Files.delete(jar)
     }
@@ -107,7 +122,12 @@ internal class LoadedClassTreeScratchTest {
         observedLoader(jar, streams).use { loader ->
             val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(report) }
-            val tree = report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree")
+            val tree =
+                report
+                    .getAsJsonArray("modules")
+                    .single()
+                    .asJsonObject
+                    .getAsJsonObject("classTree")
             assertTrue(tree.get("sha256").isJsonNull)
             assertTrue(tree.get("reason").asString.contains("Empty classpath resource"))
             assertTrue(streams.all { it.closed })
@@ -127,12 +147,30 @@ internal class LoadedClassTreeScratchTest {
                     captured = true
                     val report = LoadedArtifactMetadata.capture(nestedLoader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
                     LoadedArtifactMetadata.verifyComplete(report)
-                    assertEquals(treeGolden(entries), report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree").get("sha256").asString)
+                    assertEquals(
+                        treeGolden(entries),
+                        report
+                            .getAsJsonArray("modules")
+                            .single()
+                            .asJsonObject
+                            .getAsJsonObject("classTree")
+                            .get("sha256")
+                            .asString,
+                    )
                 }
             }).use { loader ->
                 val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
                 LoadedArtifactMetadata.verifyComplete(report)
-                assertEquals(treeGolden(entries), report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree").get("sha256").asString)
+                assertEquals(
+                    treeGolden(entries),
+                    report
+                        .getAsJsonArray("modules")
+                        .single()
+                        .asJsonObject
+                        .getAsJsonObject("classTree")
+                        .get("sha256")
+                        .asString,
+                )
             }
         }
         assertTrue(capturedStreamsAreClosed(outer, nested))
@@ -147,23 +185,36 @@ internal class LoadedClassTreeScratchTest {
         val barrier = CyclicBarrier(2)
         val executor = Executors.newFixedThreadPool(2)
         try {
-            val results = executor.invokeAll(List(2) {
-                Callable {
-                    val streams = mutableListOf<ObservedStream>()
-                    var first = true
-                    observedLoader(jar, streams, onRead = {
-                        if (first) {
-                            first = false
-                            barrier.await(30, TimeUnit.SECONDS)
-                        }
-                    }).use { loader ->
-                        val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
-                        LoadedArtifactMetadata.verifyComplete(report)
-                        assertEquals(treeGolden(entries), report.getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree").get("sha256").asString)
-                    }
-                    streams
-                }
-            }).map { it.get() }
+            val results =
+                executor
+                    .invokeAll(
+                        List(2) {
+                            Callable {
+                                val streams = mutableListOf<ObservedStream>()
+                                var first = true
+                                observedLoader(jar, streams, onRead = {
+                                    if (first) {
+                                        first = false
+                                        barrier.await(30, TimeUnit.SECONDS)
+                                    }
+                                }).use { loader ->
+                                    val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
+                                    LoadedArtifactMetadata.verifyComplete(report)
+                                    assertEquals(
+                                        treeGolden(entries),
+                                        report
+                                            .getAsJsonArray("modules")
+                                            .single()
+                                            .asJsonObject
+                                            .getAsJsonObject("classTree")
+                                            .get("sha256")
+                                            .asString,
+                                    )
+                                }
+                                streams
+                            }
+                        },
+                    ).map { it.get() }
             assertTrue(capturedStreamsAreClosed(results[0], results[1]))
             assertNotSame(results[0][1].buffers.first(), results[1][1].buffers.first())
         } finally {
@@ -172,27 +223,39 @@ internal class LoadedClassTreeScratchTest {
         Files.delete(jar)
     }
 
-    private fun capturedStreamsAreClosed(first: List<ObservedStream>, second: List<ObservedStream>): Boolean =
-        (first + second).all { it.closed }
-    private fun observedLoader(jar: Path, streams: MutableList<ObservedStream>, failingEntry: String? = null, onRead: (() -> Unit)? = null): URLClassLoader =
+    private fun capturedStreamsAreClosed(
+        first: List<ObservedStream>,
+        second: List<ObservedStream>,
+    ): Boolean = (first + second).all { it.closed }
+
+    private fun observedLoader(
+        jar: Path,
+        streams: MutableList<ObservedStream>,
+        failingEntry: String? = null,
+        onRead: (() -> Unit)? = null,
+    ): URLClassLoader =
         object : URLClassLoader(arrayOf(jar.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
             override fun getResource(name: String): URL? {
                 val actual = super.getResource(name) ?: return null
-                return URL(null, actual.toExternalForm(), object : URLStreamHandler() {
-                    override fun openConnection(url: URL): URLConnection =
-                        object : JarURLConnection(url) {
-                            private val delegate = actual.openConnection() as JarURLConnection
+                return URL(
+                    null,
+                    actual.toExternalForm(),
+                    object : URLStreamHandler() {
+                        override fun openConnection(url: URL): URLConnection =
+                            object : JarURLConnection(url) {
+                                private val delegate = actual.openConnection() as JarURLConnection
 
-                            override fun connect() = delegate.connect()
+                                override fun connect() = delegate.connect()
 
-                            override fun getJarFile(): JarFile = delegate.jarFile
+                                override fun getJarFile(): JarFile = delegate.jarFile
 
-                            override fun getInputStream(): InputStream {
-                                delegate.useCaches = false
-                                return ObservedStream(name, delegate.inputStream, name == failingEntry, onRead).also(streams::add)
+                                override fun getInputStream(): InputStream {
+                                    delegate.useCaches = false
+                                    return ObservedStream(name, delegate.inputStream, name == failingEntry, onRead).also(streams::add)
+                                }
                             }
-                        }
-                })
+                    },
+                )
             }
         }
 
@@ -203,6 +266,7 @@ internal class LoadedClassTreeScratchTest {
         return listOf(8191, 8192, 8193).associate { target ->
             val name = "Probe$target"
             val source = directory.resolve("$name.java")
+
             fun compile(padding: Int): ByteArray {
                 Files.writeString(source, "package fixture; public final class $name { public static final String PAD = \"${"a".repeat(padding)}\"; }")
                 assertEquals(0, compiler.run(null, null, null, "-d", classes.toString(), source.toString()))
@@ -237,12 +301,21 @@ internal class LoadedClassTreeScratchTest {
     /**
      * Records only actual stream calls, scratch identities and closure, never production implementation state.
      */
-    private class ObservedStream(val entry: String, input: InputStream, private val fail: Boolean, private val onRead: (() -> Unit)? = null) : FilterInputStream(input) {
+    private class ObservedStream(
+        val entry: String,
+        input: InputStream,
+        private val fail: Boolean,
+        private val onRead: (() -> Unit)? = null,
+    ) : FilterInputStream(input) {
         val buffers = mutableListOf<ByteArray>()
         var bytes = 0
         var closed = false
 
-        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        override fun read(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int,
+        ): Int {
             onRead?.invoke()
             buffers.add(buffer)
             if (fail) throw IOException("Expected actual class-resource read failure")

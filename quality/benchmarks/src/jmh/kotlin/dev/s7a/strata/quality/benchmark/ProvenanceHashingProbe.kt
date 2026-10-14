@@ -53,24 +53,8 @@ internal object ProvenanceHashingProbe {
             }
         }
         val archive = if (mode == ProvenanceHashingCorpus.Mode.EntryArchive) ZipFile(path.toFile()) else null
-        return archive.use {
-            val names =
-                archive
-                    ?.entries()
-                    ?.asSequence()
-                    ?.filterNot { it.isDirectory }
-                    ?.map { it.name }
-                    ?.sorted()
-                    ?.toList()
-                    ?: Files.walk(path).use { files ->
-                        files
-                            .filter(Files::isRegularFile)
-                            .map { path.relativize(it).joinToString("/") }
-                            .filter { name ->
-                                mode != ProvenanceHashingCorpus.Mode.ResourceSelection || name.startsWith("assets/") || name.startsWith("data/")
-                            }.sorted()
-                            .toList()
-                    }
+        return archive.use { _ ->
+            val names = entryNames(archive, path, mode)
             val callback = Class.forName("kotlin.jvm.functions.Function1", false, loader)
             val opener =
                 Proxy.newProxyInstance(loader, arrayOf(callback)) { _, method, arguments ->
@@ -84,7 +68,7 @@ internal object ProvenanceHashingProbe {
                 try {
                     method.invoke(type.getField("INSTANCE").get(null), names, opener) as String
                 } catch (failure: InvocationTargetException) {
-                    throw checkNotNull(failure.cause)
+                    throw failure.cause ?: failure
                 }
             check(hash.contentEquals(row.get("sha256").asString))
             check(opened == names.size && closed == opened && bytes == row.get("entry_bytes").asLong)
@@ -101,4 +85,26 @@ internal object ProvenanceHashingProbe {
             }
         }
     }
+
+    private fun entryNames(
+        archive: ZipFile?,
+        path: Path,
+        mode: ProvenanceHashingCorpus.Mode,
+    ): List<String> =
+        archive
+            ?.entries()
+            ?.asSequence()
+            ?.filterNot { entry -> entry.isDirectory }
+            ?.map { entry -> entry.name }
+            ?.sorted()
+            ?.toList()
+            ?: Files.walk(path).use { files ->
+                files
+                    .filter(Files::isRegularFile)
+                    .map { file -> path.relativize(file).joinToString("/") }
+                    .filter { name ->
+                        mode != ProvenanceHashingCorpus.Mode.ResourceSelection || name.startsWith("assets/") || name.startsWith("data/")
+                    }.sorted()
+                    .toList()
+            }
 }

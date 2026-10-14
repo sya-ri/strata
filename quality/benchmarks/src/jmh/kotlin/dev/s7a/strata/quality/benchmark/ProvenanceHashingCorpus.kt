@@ -75,7 +75,7 @@ internal object ProvenanceHashingCorpus {
             add(Case(Mode.RejectedPreservedTree, 0, Shape.Empty))
         }
 
-    private val markerName = "FixtureProbe00000"
+    private const val MARKER_NAME = "FixtureProbe00000"
 
     /**
      * Accepts one fresh output directory and writes its complete input manifest.
@@ -111,16 +111,7 @@ internal object ProvenanceHashingCorpus {
     ): JsonObject {
         val directory = root.resolve(case.id)
         Files.createDirectories(directory)
-        val classMode = case.mode in setOf(Mode.LoadedClassTree, Mode.PreservedClassTree)
-        repeat(case.entries) { index ->
-            val classEntry = classMode || (case.mode == Mode.EntryArchive && index == 0)
-            val size = length(case.shape, index, classEntry)
-            val name = if (classEntry) "fixture/FixtureProbe${index.toString().padStart(5, '0')}.class" else "assets/entry-${index.toString().padStart(5, '0')}.bin"
-            val content = if (classEntry) rename(template(root, size, templates), index) else ByteArray(size) { (it * 31 + index).toByte() }
-            val file = directory.resolve(name)
-            Files.createDirectories(checkNotNull(file.parent))
-            Files.write(file, content)
-        }
+        writeEntries(root, directory, case, templates)
         if (case.mode == Mode.ResourceSelection) {
             Files.writeString(directory.resolve("README.md"), "Excluded public consumer metadata")
             Files.createDirectories(directory.resolve("META-INF"))
@@ -149,8 +140,26 @@ internal object ProvenanceHashingCorpus {
             addProperty("sha256", hash)
             addProperty("entry_bytes", selected.sumOf { Files.size(directory.resolve(it)) })
             addProperty("marker", "assets/entry-00000.bin")
-            addProperty("representative", "fixture.$markerName")
+            addProperty("representative", "fixture.$MARKER_NAME")
             addProperty("physical_sha256", if (Files.isRegularFile(input)) hash(input) else framed(directory, entries(directory)))
+        }
+    }
+
+    private fun writeEntries(
+        root: Path,
+        directory: Path,
+        case: Case,
+        templates: MutableMap<Int, ByteArray>,
+    ) {
+        val classMode = case.mode in setOf(Mode.LoadedClassTree, Mode.PreservedClassTree)
+        repeat(case.entries) { index ->
+            val classEntry = classMode || (case.mode == Mode.EntryArchive && index == 0)
+            val size = length(case.shape, index, classEntry)
+            val name = if (classEntry) "fixture/FixtureProbe${index.toString().padStart(5, '0')}.class" else "assets/entry-${index.toString().padStart(5, '0')}.bin"
+            val content = if (classEntry) rename(template(root, size, templates), index) else ByteArray(size) { (it * 31 + index).toByte() }
+            val file = directory.resolve(name)
+            Files.createDirectories(checkNotNull(file.parent))
+            Files.write(file, content)
         }
     }
 
@@ -176,12 +185,12 @@ internal object ProvenanceHashingCorpus {
             val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler()) { "Provenance construction requires a full JDK" }
             val directory = root.resolve("compiled-template-$target")
             Files.createDirectories(directory)
-            val source = directory.resolve("$markerName.java")
+            val source = directory.resolve("$MARKER_NAME.java")
 
             fun compile(padding: Int): ByteArray {
-                Files.writeString(source, "package fixture; public final class $markerName { public static final String PAD = \"${"a".repeat(padding)}\"; }")
+                Files.writeString(source, "package fixture; public final class $MARKER_NAME { public static final String PAD = \"${"a".repeat(padding)}\"; }")
                 check(compiler.run(null, null, null, "-d", directory.toString(), source.toString()) == 0) { "Fixture compilation failed" }
-                return Files.readAllBytes(directory.resolve("fixture/$markerName.class"))
+                return Files.readAllBytes(directory.resolve("fixture/$MARKER_NAME.class"))
             }
             val minimal = compile(0)
             if (target == 0) minimal else compile(target - minimal.size).also { check(it.size == target) }
@@ -191,7 +200,7 @@ internal object ProvenanceHashingCorpus {
         template: ByteArray,
         index: Int,
     ): ByteArray {
-        val from = markerName.toByteArray(Charsets.US_ASCII)
+        val from = MARKER_NAME.toByteArray(Charsets.US_ASCII)
         val to = "FixtureProbe${index.toString().padStart(5, '0')}".toByteArray(Charsets.US_ASCII)
         check(from.size == to.size)
         val bytes = template.copyOf()

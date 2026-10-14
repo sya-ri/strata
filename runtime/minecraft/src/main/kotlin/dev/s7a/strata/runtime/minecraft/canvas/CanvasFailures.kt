@@ -7,12 +7,15 @@ import java.util.IdentityHashMap
  * Owner-thread failure accumulator for best-effort native canvas cleanup.
  *
  * It retains only the current operation's exception graph, preserves the first instance, and never suppresses one instance twice.
+ * Identity storage is created only when an initial or subsequently observed failure exists.
  * Calling [attempt] always attempts its callback; [throwIfPresent] is the only operation that throws collected failures.
  */
 internal class CanvasFailures(
     initial: Throwable? = null,
 ) {
-    private val seen = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
+    private var seen: MutableSet<Throwable>? = null
+    private val identities: MutableSet<Throwable>
+        get() = seen ?: Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>()).also { seen = it }
     private var first: Throwable? = initial
 
     init {
@@ -34,7 +37,7 @@ internal class CanvasFailures(
      * @param failure exception owned by its original thrower, retained only for this operation.
      */
     fun add(failure: Throwable) {
-        if (seen.add(failure).not()) return
+        if (identities.add(failure).not()) return
         val primary = first
         if (primary == null) first = failure else primary.addSuppressed(failure)
         failure.suppressed.forEach(::remember)
@@ -48,6 +51,6 @@ internal class CanvasFailures(
     }
 
     private fun remember(failure: Throwable) {
-        if (seen.add(failure)) failure.suppressed.forEach(::remember)
+        if (identities.add(failure)) failure.suppressed.forEach(::remember)
     }
 }

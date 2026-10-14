@@ -5,7 +5,6 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -26,13 +25,14 @@ internal class PreservedClassTreeStreamingTest {
 
     @Test
     fun exactBytesAndCanonicalUnicodeOrderMatchAnIndependentGolden() {
-        val entries = linkedMapOf(
-            "fixture/Empty.class" to byteArrayOf(),
-            "fixture/Short.class" to byteArrayOf(0, 1, -1),
-            "fixture/Wide.class" to ByteArray(8193) { (it * 17).toByte() },
-            "fixture/.class" to ByteArray(8191) { it.toByte() },
-            "fixture/𐀀.class" to ByteArray(8192) { (it * 7).toByte() },
-        )
+        val entries =
+            linkedMapOf(
+                "fixture/Empty.class" to byteArrayOf(),
+                "fixture/Short.class" to byteArrayOf(0, 1, -1),
+                "fixture/Wide.class" to ByteArray(8193) { (it * 17).toByte() },
+                "fixture/.class" to ByteArray(8191) { it.toByte() },
+                "fixture/𐀀.class" to ByteArray(8192) { (it * 7).toByte() },
+            )
         val path = write("mixed.jar", entries.entries.reversed().associate { it.key to it.value })
         val report = JvmEvidenceFiles.classTree(path)
         assertEquals(entries.size, report.countField("entryCount"))
@@ -69,9 +69,14 @@ internal class PreservedClassTreeStreamingTest {
     @Test
     fun everyShortReadCountsAndDeclaredSizeMismatchCannotReturnADigest() {
         val bytes = ByteArray(8193) { (it * 19).toByte() }
-        val input = object : ByteArrayInputStream(bytes) {
-            override fun read(buffer: ByteArray, offset: Int, length: Int): Int = super.read(buffer, offset, minOf(length, 101))
-        }
+        val input =
+            object : ByteArrayInputStream(bytes) {
+                override fun read(
+                    buffer: ByteArray,
+                    offset: Int,
+                    length: Int,
+                ): Int = super.read(buffer, offset, minOf(length, 101))
+            }
         assertEquals(sha256(bytes), hash(input, bytes.size.toLong()))
         listOf(-1L, bytes.size - 1L, bytes.size + 1L).forEach { declared ->
             assertFailsWith<IllegalArgumentException> { hash(ByteArrayInputStream(bytes), declared) }
@@ -89,11 +94,16 @@ internal class PreservedClassTreeStreamingTest {
     @Test
     fun aReadFailurePropagatesItsExactCauseAndTruncatedArchivesStayRejected() {
         val failure = IOException("short archive read failed")
-        val input = object : InputStream() {
-            override fun read(): Int = throw failure
+        val input =
+            object : InputStream() {
+                override fun read(): Int = throw failure
 
-            override fun read(buffer: ByteArray, offset: Int, length: Int): Int = throw failure
-        }
+                override fun read(
+                    buffer: ByteArray,
+                    offset: Int,
+                    length: Int,
+                ): Int = throw failure
+            }
         assertSame(failure, assertFailsWith<IOException> { hash(input, 1) })
         val path = write("truncated.jar", mapOf("fixture/Probe.class" to byteArrayOf(1, 2, 3)))
         val complete = Files.readAllBytes(path)
@@ -102,7 +112,10 @@ internal class PreservedClassTreeStreamingTest {
         Files.delete(path)
     }
 
-    private fun write(name: String, entries: Map<String, ByteArray>): Path =
+    private fun write(
+        name: String,
+        entries: Map<String, ByteArray>,
+    ): Path =
         directory.resolve(name).also { path ->
             ZipOutputStream(Files.newOutputStream(path)).use { archive ->
                 entries.forEach { (entry, bytes) ->
@@ -114,13 +127,14 @@ internal class PreservedClassTreeStreamingTest {
         }
 
     // Force short, mismatched and oversized stream contracts through the actual private streaming boundary.
-    private fun hash(input: InputStream, expected: Long): String {
-        val method = JvmEvidenceFiles.javaClass.declaredMethods.single { it.name.contentEquals("classHash") }.apply { isAccessible = true }
-        return try {
-            method.invoke(JvmEvidenceFiles, input, expected, ByteArray(DEFAULT_BUFFER_SIZE)) as String
-        } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
-        }
+    private fun hash(
+        input: InputStream,
+        expected: Long,
+    ): String {
+        val method =
+            JvmEvidenceFiles.javaClass.declaredMethods
+                .single { it.name.contentEquals("classHash") }
+        return HostReflection.call(method, JvmEvidenceFiles, input, expected, ByteArray(DEFAULT_BUFFER_SIZE)) as String
     }
 
     private fun golden(entries: Map<String, ByteArray>): String {
@@ -135,7 +149,9 @@ internal class PreservedClassTreeStreamingTest {
     /**
      * Generates bytes without a class-sized backing array and records the exact decompressed read bound.
      */
-    private class CountingInput(private val size: Long) : InputStream() {
+    private class CountingInput(
+        private val size: Long,
+    ) : InputStream() {
         var bytes = 0L
             private set
 
@@ -145,7 +161,11 @@ internal class PreservedClassTreeStreamingTest {
             return 0
         }
 
-        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        override fun read(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int,
+        ): Int {
             if (bytes == size) return -1
             val count = minOf(length.toLong(), size - bytes).toInt()
             buffer.fill(0, offset, offset + count)

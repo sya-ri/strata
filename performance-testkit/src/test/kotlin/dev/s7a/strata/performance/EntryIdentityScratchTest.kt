@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -33,13 +32,14 @@ internal class EntryIdentityScratchTest {
 
     @Test
     fun publicDirectoryAndSingleFileHashesKeepIndependentGoldenFraming() {
-        val entries = linkedMapOf(
-            "assets/z.txt" to ByteArray(8193) { it.toByte() },
-            "assets/a.txt" to byteArrayOf(),
-            "data/short.txt" to byteArrayOf(1, 2, 3),
-            "assets/middle.txt" to ByteArray(8191) { (it * 7).toByte() },
-            "data/equal.txt" to ByteArray(8192) { (it * 11).toByte() },
-        )
+        val entries =
+            linkedMapOf(
+                "assets/z.txt" to ByteArray(8193) { it.toByte() },
+                "assets/a.txt" to byteArrayOf(),
+                "data/short.txt" to byteArrayOf(1, 2, 3),
+                "assets/middle.txt" to ByteArray(8191) { (it * 7).toByte() },
+                "data/equal.txt" to ByteArray(8192) { (it * 11).toByte() },
+            )
         entries.forEach { (name, bytes) ->
             val path = directory.resolve(name)
             Files.createDirectories(checkNotNull(path.parent))
@@ -54,13 +54,14 @@ internal class EntryIdentityScratchTest {
 
     @Test
     fun unicodeEntryFramingSelectionAndArchiveOrderKeepExactIdentity() {
-        val selected = linkedMapOf(
-            "assets/marker.txt" to byteArrayOf(),
-            "assets/.txt" to ByteArray(8191) { it.toByte() },
-            "assets/𐀀.txt" to ByteArray(8193) { (it * 3).toByte() },
-            "fixture/Probe.class" to byteArrayOf(4, 5, 6),
-            "data/日本.json" to ByteArray(8192) { (it * 7).toByte() },
-        )
+        val selected =
+            linkedMapOf(
+                "assets/marker.txt" to byteArrayOf(),
+                "assets/.txt" to ByteArray(8191) { it.toByte() },
+                "assets/𐀀.txt" to ByteArray(8193) { (it * 3).toByte() },
+                "fixture/Probe.class" to byteArrayOf(4, 5, 6),
+                "data/日本.json" to ByteArray(8192) { (it * 7).toByte() },
+            )
         val entries = selected + ("README.md" to byteArrayOf(99)) + ("META-INF/ignored.json" to byteArrayOf(17))
         entries.forEach { (name, bytes) ->
             val path = directory.resolve(name)
@@ -107,12 +108,13 @@ internal class EntryIdentityScratchTest {
         val outer = mutableListOf<ObservedStream>()
         val nested = mutableListOf<ObservedStream>()
         var nestedResult: String? = null
-        val result = hash(entries.keys.sorted()) { name ->
-            if (nestedResult == null) {
-                nestedResult = hash(entries.keys.sorted()) { nestedName -> ObservedStream(entries.getValue(nestedName)).also(nested::add) }
+        val result =
+            hash(entries.keys.sorted()) { name ->
+                if (nestedResult == null) {
+                    nestedResult = hash(entries.keys.sorted()) { nestedName -> ObservedStream(entries.getValue(nestedName)).also(nested::add) }
+                }
+                ObservedStream(entries.getValue(name)).also(outer::add)
             }
-            ObservedStream(entries.getValue(name)).also(outer::add)
-        }
         assertEquals(framed(entries), result)
         assertEquals(result, nestedResult)
         assertNotSame(outer.first().buffers.first(), nested.first().buffers.first())
@@ -126,18 +128,21 @@ internal class EntryIdentityScratchTest {
         val right = left.mapValues { (_, bytes) -> bytes.map { (it.toInt() xor 127).toByte() }.toByteArray() }
         val executor = Executors.newFixedThreadPool(2)
         try {
-            val results = executor.invokeAll(listOf(left, right).map { entries ->
-                Callable {
-                    var first = true
-                    hash(entries.keys.sorted()) { name ->
-                        if (first) {
-                            first = false
-                            barrier.await()
+            val results =
+                executor.invokeAll(
+                    listOf(left, right).map { entries ->
+                        Callable {
+                            var first = true
+                            hash(entries.keys.sorted()) { name ->
+                                if (first) {
+                                    first = false
+                                    barrier.await()
+                                }
+                                ObservedStream(entries.getValue(name))
+                            }
                         }
-                        ObservedStream(entries.getValue(name))
-                    }
-                }
-            })
+                    },
+                )
             assertEquals(listOf(framed(left), framed(right)), results.map { it.get() })
         } finally {
             executor.shutdownNow()
@@ -148,11 +153,12 @@ internal class EntryIdentityScratchTest {
     fun aThrowingEntryClosesOpenedStreamsAndPreservesItsOriginalFailure() {
         val failure = IOException("read failed after a partial entry")
         val streams = mutableListOf<ObservedStream>()
-        val caught = assertFailsWith<IOException> {
-            hash(listOf("first", "second", "third")) { name ->
-                ObservedStream(ByteArray(8193), if (name.contentEquals("second")) failure else null).also(streams::add)
+        val caught =
+            assertFailsWith<IOException> {
+                hash(listOf("first", "second", "third")) { name ->
+                    ObservedStream(ByteArray(8193), if (name.contentEquals("second")) failure else null).also(streams::add)
+                }
             }
-        }
         assertSame(failure, caught)
         assertEquals(2, streams.size)
         assertTrue(streams.all { it.closed })
@@ -165,17 +171,17 @@ internal class EntryIdentityScratchTest {
         assertEquals(expected, hash(emptyList()) { error("An empty traversal must not open a stream") })
     }
 
-    private fun mixedEntries(): Map<String, ByteArray> =
-        listOf(0, 1, 7, 8191, 8192, 8193, 32_769).mapIndexed { index, size -> "entry-$index" to ByteArray(size) { (it * 31 + index).toByte() } }.toMap()
+    private fun mixedEntries(): Map<String, ByteArray> = listOf(0, 1, 7, 8191, 8192, 8193, 32_769).mapIndexed { index, size -> "entry-$index" to ByteArray(size) { (it * 31 + index).toByte() } }.toMap()
 
     // Observe the actual private traversal's stream boundary; no helper implementation or buffer field is copied.
-    private fun hash(entries: List<String>, open: (String) -> InputStream): String {
-        val method = EntryIdentity.javaClass.declaredMethods.single { it.name.contentEquals("hashEntries") && it.parameterCount == 2 }.apply { isAccessible = true }
-        return try {
-            method.invoke(EntryIdentity, entries, open) as String
-        } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
-        }
+    private fun hash(
+        entries: List<String>,
+        open: (String) -> InputStream,
+    ): String {
+        val method =
+            EntryIdentity.javaClass.declaredMethods
+                .single { it.name.contentEquals("hashEntries") && it.parameterCount == 2 }
+        return HostReflection.call(method, EntryIdentity, entries, open) as String
     }
 
     private fun framed(entries: Map<String, ByteArray>): String {
@@ -194,7 +200,10 @@ internal class EntryIdentityScratchTest {
     /**
      * Exposes positive short reads, an exact callback failure and the actual caller buffers without changing their bytes.
      */
-    private class ObservedStream(content: ByteArray, private val failure: IOException? = null) : InputStream() {
+    private class ObservedStream(
+        content: ByteArray,
+        private val failure: IOException? = null,
+    ) : InputStream() {
         private val input = ByteArrayInputStream(content)
         val buffers = mutableListOf<ByteArray>()
         var bytes = 0
@@ -204,7 +213,11 @@ internal class EntryIdentityScratchTest {
 
         override fun read(): Int = input.read()
 
-        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        override fun read(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int,
+        ): Int {
             if (0 < bytes) failure?.let { throw it }
             buffers.add(buffer)
             val read = input.read(buffer, offset, minOf(length, 113))

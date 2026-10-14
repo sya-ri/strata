@@ -1,0 +1,2344 @@
+diff --git a/docs/development/performance-testkit.md b/docs/development/performance-testkit.md
+index 408ff01d5f482a040534e675a371ea7f5ff19b5c..adea0f73b2a46eff166991a3dc7fb7dd36aa0064 100644
+--- a/docs/development/performance-testkit.md
++++ b/docs/development/performance-testkit.md
+@@ -242,6 +242,10 @@ Historical evidence keeps its original collector and workload contract; field-na
+ 
+ Evidence processing uses Java and the JVM testkit; Python is not a requirement and no Python compatibility package is shipped.
+ CPU and native reports use `LoadedArtifactMetadata` directly; historical field-name projections and distribution adapters are removed.
++Each synchronous entry traversal and loaded class-tree capture owns one bounded read buffer; nested or concurrent calls own independent scratch and independent resource digests.
++Preserved class-tree verification streams every entry to EOF under the existing maximum-plus-one, declared-size, per-entry, total-byte and entry-count gates instead of materializing each complete class.
++Digest framing, canonical ordering, lower-case SHA-256 encoding, origin checks and unavailable/error behavior remain unchanged.
++These traversal helpers retain no input, archive, class loader or scratch for a later invocation.
+ Consumers preserve the kit's distribution fields and unavailable values without translating them into an older schema.
+ `JvmPerformanceEvidence` rejects mismatched collectors, copied invocations, missing controlled conditions and duplicate phases.
+ Phase indexing returns canonical JSON text tuples, independent of parsed versus constructed number types and object property order.
+@@ -781,3 +785,27 @@ The ordinary CI entry then prepares and collects all rows of that domain in thre
+ The attempt explicitly records `complete-owner-domain-continuation`, `whole_issue_acceptance=false` and `prior_rows_adopted=false`; it cannot certify the whole issue or turn a prior failed attempt into a completed one.
+ Previously retained reports remain separately bound historical evidence and require their own source, archive, control and acceptance review.
+ The optional `--owner-report` entry selects an entire declared independent domain under the same scope rules and cannot override a configured continuation or select individual rows.
++
++## Artifact provenance hashing workload
++
++The provenance consumer measures the testkit library through an isolated platform-parent loader while keeping its outer collector fixed.
++Its corpus retains all 55 measured rows and three rejected controls, including independent directory, archive, loaded/preserved class-tree, single-file and resource-selection boundaries.
++Each measured operation keeps the original 30 warmups and 60 samples; corpus construction, independent goldens, stream probes and serialization stay outside its interval.
++The separate complete-preparation/collection/verification interval and unavailable work counts retain their original meaning; rendering, upload and GPU scopes are N/A.
++
++Use the existing bounded `strataPairedEvidence` request with the `jmhHistorical` JavaExec template and `ProvenanceHashingExecution` as its main class.
++The delegate accepts the unchanged `ProvenanceHashingEvidence` six-argument collect and nine-argument compare CLI.
++For the original CLI, the existing `strata.performance.fixtureInputs` manifest binds `provenance-fixture`, `outer-collector`, `control-libraries`, `provenance-corpus`, `baseline-library` and `candidate-library` to actual immutable files.
++The control-library properties file contains only the outer collector's dependencies, and neither measured archive belongs to the outer classpath.
++The shared controller separately freezes directory entries as deterministic fixture JARs before collecting either side, preserving the original neutral classpath, its directory pins and every archive entry.
++No additional Gradle task or launcher is required.
++The unchanged collector verifies the actual fixture/collector JARs, target helpers, full archive and complete class trees before and after every collection, and the delegate checks all input bytes and loader origins.
++
++An automatic standalone corpus uses the same manifest schema with an empty `suites` list and a nonempty complete `owner_reports` list.
++The `runtime_projects` inventory selects only `:performance-testkit`; its baseline/candidate archives are explicit isolated target inputs and never replace the neutral outer collector.
++The existing `runtime_classes` roles bind the actual archive and representative class reported by the isolated target, rather than crediting a prepared archive as loaded.
++The adapter accepts the existing two-argument collect and eight-argument compare requests, delegates the original six/nine arguments, and retains each complete original raw report before adding its actual runtime-metadata envelope.
++Those standard requests use the existing input properties for `owner-fixture`, `owner-collector`, `owner-baseline-identity`, `owner-candidate-identity` and `owner-target-identity`; the adapter resolves the original CLI roles from these actual files and the resolved control libraries.
++Corpus construction runs once before the original measured intervals; subsequent invocations revalidate the same complete corpus, goldens and rejected inputs.
++Actual compiled forwarding, archive-origin and complete source/ownership controls remain necessary before this route is qualified.
++The original full three-plus-three comparison, independent work observations, rejected controls and final project acceptance remain required; execution wiring alone establishes no improvement.
+diff --git a/gradle/performance/paired-jvm.py b/gradle/performance/paired-jvm.py
+index 9e4747365dea8020cdd611ef2a6af597da644acc..97f00d238df39f616216454c9dc0fbfa640405dd 100644
+--- a/gradle/performance/paired-jvm.py
++++ b/gradle/performance/paired-jvm.py
+@@ -101,9 +101,12 @@ def load_manifest(root, path):
+             pin(root, patch)
+     projects = data["runtime_projects"]
+     require(isinstance(projects, list) and projects and len(set(projects)) == len(projects), "Missing or duplicate runtime project")
+-    require(all(re.fullmatch(r":(?:api|velocity-api|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
++    require(all(re.fullmatch(r":(?:api|velocity-api|performance-testkit|runtime:(?:core|headless|remote|velocity|minecraft|minecraft-fonts-lwjgl))", item) for item in projects),
+             "Unsupported CPU runtime project")
+-    require(isinstance(data["suites"], list) and data["suites"], "No paired suites selected")
++    require(isinstance(data["suites"], list), "Invalid paired suite inventory")
++    require(data["suites"] or data.get("owner_reports"), "No complete paired corpus selected")
++    require(":performance-testkit" not in projects or (projects == [":performance-testkit"] and not data["suites"]),
++            "Measure the testkit only as an isolated standalone owner target")
+     names = set()
+     for suite in data["suites"]:
+         fields = {"project", "name", "benchmarks", "workloads", "parameters", "expected_cases"}
+@@ -767,6 +770,87 @@ def owner_processing_collector(classpath, collector):
+     return selected["path"]
+ 
+ 
++def owner_fixture_projects(data):
++    """Compile the existing JavaExec owners even when no JMH timing suite is selected."""
++    return sorted({suite["project"] for suite in data["suites"]}
++                  | {report["project"] for report in data.get("owner_reports", []) if report["kind"] == "java-exec"})
++
++
++def owner_runtime_mapping(runtime):
++    """The measured testkit is an input archive; it never replaces the fixed outer collector."""
++    return {project: item["path"] for project, item in runtime.items() if project != ":performance-testkit"}
++
++
++def owner_fixture_inputs(specification, inputs, runtime, side, collector, fixture):
++    """Bind actual target archives separately from immutable caller inputs and the neutral collector."""
++    result = {label: item["path"] for label, item in inputs.items()}
++    require(all(not label.startswith("owner-") for label in result), "Caller input overlaps reserved owner archive roles")
++    require(all(digest(Path(item["path"])) == item["sha256"] for item in inputs.values()), "Changed original owner input")
++    require(digest(Path(fixture["path"])) == fixture["sha256"], "Changed owner fixture archive")
++    require(Path(fixture["path"]).resolve() != Path(collector).resolve(), "Owner fixture overlaps its outer collector")
++    result["owner-fixture"] = fixture["path"]
++    result["owner-collector"] = collector
++    for label, binding in specification["runtime_classes"].items():
++        for variant in ("baseline", "candidate"):
++            archive = runtime[variant][binding["project"]]
++            require(digest(Path(archive["path"])) == archive["sha256"], "Changed owner target archive")
++            require(Path(archive["path"]).resolve() != Path(collector).resolve(), "Owner target overlaps its outer collector")
++            require(Path(archive["path"]).resolve() != Path(fixture["path"]).resolve(), "Owner target overlaps its fixture")
++            result[f"owner-{variant}-{label}"] = archive["path"]
++        result[f"owner-target-{label}"] = runtime[side][binding["project"]]["path"]
++    return result
++
++
++def archive_owner_classpath(path):
++    """Freeze directory entries as deterministic JARs outside collection, keeping original pins intact."""
++    original = prepared_classpath(path)
++    source_jars, retained_jars = path.parent / "source-jars", path.parent / "archive-jars"
++    source_jars.mkdir()
++    retained_jars.mkdir()
++    entries, conversions = [], []
++    for index, entry in enumerate(original["entries"]):
++        directory = Path(entry["path"])
++        if directory.is_file():
++            entries.append(entry)
++            continue
++        source = source_jars / f"classpath-{index}.jar"
++        members = {}
++        with zipfile.ZipFile(source, "x", compression=zipfile.ZIP_STORED) as archive:
++            for item in sorted(directory.rglob("*")):
++                if item.is_file():
++                    name = item.relative_to(directory).as_posix()
++                    require(name not in members and not item.is_symlink(), "Ambiguous owner fixture entry")
++                    members[name] = digest(item)
++                    archive.writestr(zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0)), item.read_bytes())
++        copied = preserve_file(source, retained_jars / source.name)
++        entries.append({"source": str(source), **copied})
++        conversions.append({"original": entry, "source_jar": str(source), "sha256": copied["sha256"], "members": members})
++    prepared_classpath(path)
++    destination = path.with_name("archived-classpath.json")
++    write_new(destination, {"schema": "strata-paired-jvm-classpath-v1", "entries": entries})
++    write_new(path.with_name("archive-binding.json"), {"original_classpath": str(path), "sha256": digest(path), "conversions": conversions})
++    verify_archived_owner_classpath(destination)
++    return destination
++
++
++def verify_archived_owner_classpath(path, binding_sha256=None):
++    """Retain the original source-directory and exact JAR-entry binding before every invocation."""
++    binding_path = path.with_name("archive-binding.json")
++    require(binding_sha256 is None or digest(binding_path) == binding_sha256, "Changed owner archive binding")
++    binding = read_json(binding_path)
++    original = Path(binding["original_classpath"])
++    require(digest(original) == binding["sha256"], "Changed original owner classpath pin")
++    prepared_classpath(original)
++    for conversion in binding["conversions"]:
++        jar = Path(conversion["source_jar"])
++        require(digest(jar) == conversion["sha256"], "Changed archived owner fixture")
++        with zipfile.ZipFile(jar) as archive:
++            require(len(archive.namelist()) == len(conversion["members"])
++                    and {name: hashlib.sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == conversion["members"],
++                    "Changed archived owner fixture entries")
++    return prepared_classpath(path)
++
++
+ def preflight_request(input_root, output, suite, side, classpath_path, runtime, sources, java, inputs):
+     """Bind one complete untimed controller request to the actual preserved and qualified input closure."""
+     specification = suite["preflight"]
+@@ -1139,7 +1223,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+         if input_producer:
+             require(source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == source_files(root, record["driver_head"]), "Candidate source differs from execution head")
+         fixture = workspaces["fixture"]
+-        owners = sorted({suite["project"] for suite in data["suites"]})
++        owners = owner_fixture_projects(data)
+         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
+         fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
+         for side in ("baseline", "candidate"):
+@@ -1159,10 +1243,10 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+         for side in ("baseline", "candidate"):
+             runtime_archives[side] = {project: preserve_file(archive_file(workspaces[side], project), output / "prepared" / side / f"target-{index}.jar")
+                                       for index, project in enumerate(data["runtime_projects"])}
+-            mapping = {project: item["path"] for project, item in runtime_archives[side].items()}
++            mapping = owner_runtime_mapping(runtime_archives[side])
+             runtime_manifests[side] = output / f"runtime-{side}.properties"
+             properties(runtime_manifests[side], mapping)
+-            record["archives"][side] = {project: digest(Path(path)) for project, path in mapping.items()}
++            record["archives"][side] = {project: item["sha256"] for project, item in runtime_archives[side].items()}
+         inputs = output / "fixture-inputs.properties"
+         input_archives = {item["label"]: preserve_file(pin(input_root, item["pin"]), output / "prepared" / "inputs" / f"input-{index}.bin")
+                           for index, item in enumerate(data["inputs"])}
+@@ -1308,6 +1392,21 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+         for specification in data.get("owner_reports", []):
+             runs, classpaths = {"baseline": [], "candidate": []}, {}
+             library_manifest = output / (specification["name"] + "-libraries.properties")
++            isolated = data["runtime_projects"] == [":performance-testkit"]
++            archive_binding, archived, fixture_archive = None, None, None
++            if isolated:
++                retained = output / "prepared-classpaths" / specification["name"] / "neutral"
++                request = output / (specification["name"] + "-classpath-owner-request.json")
++                write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
++                                    "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
++                                    "arguments": [str(output / "unused-owner-output.json"), "0"], "inputs": str(library_manifest)})
++                phase(f"prepare-{specification['name']}-owner-classpath", fixture,
++                      [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
++                       f"-Pstrata.paired.preserveClasspath={retained}", "-Pstrata.paired.prepareClasspath=true"], 0)
++                archived = archive_owner_classpath(retained / "classpath.json")
++                archive_binding = digest(archived.with_name("archive-binding.json"))
++                fixture_archive = class_entry(verify_archived_owner_classpath(archived, archive_binding), specification["main"])
++                classpaths = {side: retained / "classpath.json" for side in ("baseline", "candidate")}
+             for repetition in range(3):
+                 for side in ("baseline", "candidate"):
+                     for key, workspace in workspaces.items():
+@@ -1329,8 +1428,15 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+                     write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                         "template": specification["template"], "kind": specification["kind"], "main": specification["main"],
+                                         "arguments": arguments, "inputs": str(library_manifest)})
+-                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.paired.runtime={runtime_manifests[side]}",
+-                             f"-Pstrata.performance.fixtureInputs={inputs}"]
++                    owner_inputs = inputs
++                    if isolated:
++                        verify_archived_owner_classpath(archived, archive_binding)
++                        neutral = owner_processing_collector(classpaths[side], collector)
++                        owner_inputs = output / f"{specification['name']}-{side}-{repetition}-fixture-inputs.properties"
++                        properties(owner_inputs, owner_fixture_inputs(specification, input_archives, runtime_archives, side, neutral, fixture_archive))
++                    flags = [f"-Pstrata.paired.report={request}", f"-Pstrata.performance.fixtureInputs={owner_inputs}"]
++                    if owner_runtime_mapping(runtime_archives[side]):
++                        flags.append(f"-Pstrata.paired.runtime={runtime_manifests[side]}")
+                     if side not in classpaths:
+                         retained = output / "prepared-classpaths" / specification["name"] / side
+                         flags.append(f"-Pstrata.paired.preserveClasspath={retained}")
+@@ -1340,6 +1446,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+                         flags.append(f"-Pstrata.paired.classpath={classpaths[side]}")
+                     phase(f"collect-{specification['name']}-owner-{side}-{repetition}", fixture,
+                           [specification["project"] + ":strataPairedEvidence"] + flags + paired_selectors, 0)
++                    if isolated:
++                        verify_archived_owner_classpath(archived, archive_binding)
+                     prepared = prepared_classpath(classpaths[side])
+                     require(class_entry(prepared, "dev.s7a.strata.performance.JvmPerformanceMeter")["sha256"] == digest(collector), "Owner report substituted its collector")
+                     verify_owner_report(read_json(destination), specification, repetition, runtime_archives[side], invocation_ids | operation_ids | owner_ids)
+@@ -1356,9 +1464,16 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
+             write_new(request, {"schema": "strata-paired-jvm-owner-request-v1", "project": specification["project"],
+                                 "template": specification["template"], "kind": specification["kind"], "main": specification["comparison"],
+                                 "arguments": runs["baseline"] + runs["candidate"] + [processing_collector, str(comparison_path)], "inputs": str(library_manifest)})
++            flags = [f"-Pstrata.paired.classpath={classpaths['candidate']}"]
++            if isolated:
++                verify_archived_owner_classpath(archived, archive_binding)
++                flags.append(f"-Pstrata.performance.fixtureInputs={owner_inputs}")
++            else:
++                flags.append(f"-Pstrata.paired.runtime={runtime_manifests['candidate']}")
+             phase(f"compare-{specification['name']}-owner", fixture,
+-                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}",
+-                   f"-Pstrata.paired.runtime={runtime_manifests['candidate']}", f"-Pstrata.paired.classpath={classpaths['candidate']}"])
++                  [specification["project"] + ":strataPairedEvidence", f"-Pstrata.paired.report={request}"] + flags)
++            if isolated:
++                verify_archived_owner_classpath(archived, archive_binding)
+             comparison = read_json(comparison_path)
+             require(comparison["status"] == "passed" and len(comparison["phases"]) == len(specification["rows"]), "Incomplete owner comparison")
+             owner_comparisons.append((specification, comparison))
+diff --git a/gradle/tests/test_paired_jvm.py b/gradle/tests/test_paired_jvm.py
+index fe72f09a5e222d8763522ff6934920cd5e37dcc4..5a69c449577f240385c45001ecba0f973baa12ed 100644
+--- a/gradle/tests/test_paired_jvm.py
++++ b/gradle/tests/test_paired_jvm.py
+@@ -321,6 +321,112 @@ class PairedJvmTest(unittest.TestCase):
+                 "phase_keys": ["workload"], "rows": [{"workload": "all"}, {"workload": "control"}], "warmup": 100, "samples": 200,
+                 "runtime_classes": {"headless": {"project": ":runtime:headless", "class": "independent.Runtime"}}}
+ 
++    def test_complete_standalone_owner_corpus_has_no_fabricated_jmh_suite(self):
++        value = copy.deepcopy(self.manifest)
++        report = self.owner_specification()
++        report.update(project=":quality:benchmarks", template="jmhHistorical", kind="java-exec",
++                      rows=[{"workload": f"whole-{index}"} for index in range(55)], warmup=30, samples=60,
++                      controls=["verification"], runtime_classes={"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}})
++        value.update(runtime_projects=[":performance-testkit"], suites=[], owner_reports=[report])
++        self.assertEqual(self.load(value), value)
++        self.assertEqual(PAIRED.owner_fixture_projects(value), [":quality:benchmarks"])
++        for change in (lambda v: v.update(owner_reports=[]), lambda v: v["owner_reports"][0].update(rows=[]),
++                       lambda v: v["owner_reports"][0]["rows"].append(v["owner_reports"][0]["rows"][0]),
++                       lambda v: v["owner_reports"][0]["controls"].append("verification"),
++                       lambda v: v.update(suites=self.manifest["suites"])):
++            changed = copy.deepcopy(value)
++            change(changed)
++            with self.subTest(change=change), self.assertRaises(ValueError):
++                self.load(changed)
++
++    def test_neutral_outer_and_both_target_archive_roles_are_strictly_bound(self):
++        report = self.owner_specification()
++        report["runtime_classes"] = {"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}}
++        collector = self.root / "neutral.jar"
++        collector.write_bytes(b"fixed neutral collector")
++        fixture = self.root / "fixture.jar"
++        fixture.write_bytes(b"compiled fixture")
++        fixture_pin = {"path": str(fixture), "sha256": PAIRED.digest(fixture)}
++        runtime = {}
++        for side in ("baseline", "candidate"):
++            target = self.root / (side + ".jar")
++            target.write_bytes(side.encode())
++            runtime[side] = {":performance-testkit": {"path": str(target), "sha256": PAIRED.digest(target)}}
++        self.assertEqual(PAIRED.owner_runtime_mapping(runtime["candidate"]), {})
++        inputs = {"original-input": {"path": str(self.input), "sha256": PAIRED.digest(self.input)}}
++        bound = PAIRED.owner_fixture_inputs(report, inputs, runtime, "candidate", str(collector), fixture_pin)
++        self.assertEqual(bound["owner-target-identity"], str(self.root / "candidate.jar"))
++        self.assertEqual(bound["owner-collector"], str(collector))
++        self.assertEqual(bound["owner-fixture"], str(fixture))
++        self.assertEqual(bound["owner-baseline-identity"], str(self.root / "baseline.jar"))
++        self.assertEqual(bound["original-input"], str(self.input))
++        with self.assertRaises(ValueError):
++            PAIRED.owner_fixture_inputs(report, {"owner-collector": inputs["original-input"]}, runtime, "candidate", str(collector), fixture_pin)
++        wrong = copy.deepcopy(runtime)
++        wrong["candidate"][":performance-testkit"]["path"] = str(collector)
++        wrong["candidate"][":performance-testkit"]["sha256"] = PAIRED.digest(collector)
++        with self.assertRaises(ValueError):
++            PAIRED.owner_fixture_inputs(report, inputs, wrong, "candidate", str(collector), fixture_pin)
++        (self.root / "candidate.jar").write_bytes(b"substituted target")
++        with self.assertRaises(ValueError):
++            PAIRED.owner_fixture_inputs(report, inputs, runtime, "candidate", str(collector), fixture_pin)
++        fixture.write_bytes(b"substituted fixture")
++        with self.assertRaisesRegex(ValueError, "Changed owner fixture archive"):
++            PAIRED.owner_fixture_inputs(report, inputs, runtime, "baseline", str(collector), fixture_pin)
++
++    def test_full_standalone_report_rejects_missing_duplicate_control_and_wrong_origin(self):
++        binary = b"actual target representative"
++        archive = self.root / "target.jar"
++        with zipfile.ZipFile(archive, "w") as jar:
++            jar.writestr("independent/Runtime.class", binary)
++        specification = self.owner_specification()
++        specification.update(rows=[{"workload": f"whole-{index}"} for index in range(55)], warmup=30, samples=60,
++                             controls=["verification"], runtime_classes={"identity": {"project": ":performance-testkit", "class": "independent.Runtime"}})
++        report = {"schema_version": 1, "status": "passed", "workload_id": specification["workload_id"], "repetition": 0,
++                  "run_id": "12345678-1234-1234-1234-123456789abc",
++                  "phases": [{**row, "warmup": 30, "samples": 60, "verification": {"passed": True}} for row in specification["rows"]],
++                  "runtime_metadata": {"modules": [{"module": "identity", "status": "resolved", "representativeClass": "independent.Runtime",
++                                                    "codeSource": {"status": "available", "sha256": PAIRED.digest(archive)},
++                                                    "classResource": {"status": "available", "sha256": hashlib.sha256(binary).hexdigest()},
++                                                    "classTree": {"status": "available"}}]}}
++        runtime = {":performance-testkit": {"path": str(archive), "sha256": PAIRED.digest(archive)}}
++        PAIRED.verify_owner_report(report, specification, 0, runtime, set())
++        changes = [lambda value: value["phases"].pop(),
++                   lambda value: value["phases"].append(value["phases"][0]),
++                   lambda value: value["phases"][0].pop("verification"),
++                   lambda value: value["runtime_metadata"]["modules"][0]["codeSource"].update(sha256="0" * 64),
++                   lambda value: value["runtime_metadata"]["modules"][0]["classResource"].update(sha256="0" * 64)]
++        for change in changes:
++            changed = copy.deepcopy(report)
++            change(changed)
++            with self.subTest(change=change), self.assertRaises(ValueError):
++                PAIRED.verify_owner_report(changed, specification, 0, runtime, set())
++
++    def test_archived_owner_fixture_preserves_original_classpath_and_rejects_mutation(self):
++        owner = self.root / "owner"
++        owner.mkdir()
++        source = self.root / "compiled"
++        source.mkdir()
++        (source / "Main.class").write_bytes(b"actual compiled fixture")
++        retained = owner / "classes"
++        retained.mkdir()
++        (retained / "Main.class").write_bytes((source / "Main.class").read_bytes())
++        original = owner / "classpath.json"
++        PAIRED.write_new(original, {"schema": "strata-paired-jvm-classpath-v1", "entries": [
++            {"source": str(source), "path": str(retained), "sha256": PAIRED.path_identity(source)}]})
++        before = original.read_bytes()
++        archived = PAIRED.archive_owner_classpath(original)
++        binding = PAIRED.digest(owner / "archive-binding.json")
++        prepared = PAIRED.verify_archived_owner_classpath(archived, binding)
++        entry = PAIRED.class_entry(prepared, "Main")
++        with zipfile.ZipFile(entry["path"]) as jar:
++            self.assertEqual(jar.read("Main.class"), b"actual compiled fixture")
++        self.assertEqual(original.read_bytes(), before)
++        self.assertEqual(PAIRED.prepared_classpath(original)["entries"][0]["source"], str(source))
++        (owner / "archive-binding.json").write_text('{}', encoding="utf-8")
++        with self.assertRaisesRegex(ValueError, "Changed owner archive binding"):
++            PAIRED.verify_archived_owner_classpath(archived, binding)
++
+     def test_owner_reports_are_independent_of_jmh_rows_and_reject_incomplete_bindings(self):
+         value = copy.deepcopy(self.manifest)
+         value["runtime_projects"] += [":velocity-api", ":runtime:velocity"]
+diff --git a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/EntryIdentity.kt b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/EntryIdentity.kt
+index f118d6c8a894f99e097c271e35276cb0949fd0a0..e3c2a34bf7ac0ee67dd1418b2518a51dccb66713 100644
+--- a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/EntryIdentity.kt
++++ b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/EntryIdentity.kt
+@@ -11,6 +11,7 @@ import java.util.zip.ZipFile
+ 
+ /**
+  * Canonical entry hashing shared by directory and archive provenance.
++ * One synchronous traversal owns its read scratch; independent single-stream calls own separate scratch.
+  */
+ internal object EntryIdentity {
+     /**
+@@ -60,13 +61,15 @@ internal object EntryIdentity {
+         open: (String) -> InputStream,
+     ): String {
+         val digest = MessageDigest.getInstance("SHA-256")
++        if (entries.isEmpty()) return HexFormat.of().formatHex(digest.digest())
++        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+         entries.forEach { entry ->
+             val name = entry.toByteArray(Charsets.UTF_8)
+             digest.update(name.size.toString().toByteArray(Charsets.US_ASCII))
+             digest.update(':'.code.toByte())
+             digest.update(name)
+             digest.update(0.toByte())
+-            open(entry).use { input -> update(digest, input) }
++            open(entry).use { input -> update(digest, input, buffer) }
+             digest.update(0xff.toByte())
+         }
+         return HexFormat.of().formatHex(digest.digest())
+@@ -89,15 +92,15 @@ internal object EntryIdentity {
+      */
+     internal fun sha256(input: InputStream): String {
+         val digest = MessageDigest.getInstance("SHA-256")
+-        update(digest, input)
++        update(digest, input, ByteArray(DEFAULT_BUFFER_SIZE))
+         return HexFormat.of().formatHex(digest.digest())
+     }
+ 
+     private fun update(
+         digest: MessageDigest,
+         input: InputStream,
++        buffer: ByteArray,
+     ) {
+-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+         while (true) {
+             val size = input.read(buffer)
+             if (size < 0) return
+diff --git a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmEvidenceFiles.kt b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmEvidenceFiles.kt
+index f810be74c2dd175712a2aca2ae053af7767e2d7c..5d7f0bb9943b8d4008fee4f9a40675528f5171d0 100644
+--- a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmEvidenceFiles.kt
++++ b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/JvmEvidenceFiles.kt
+@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
+ import com.google.gson.JsonElement
+ import com.google.gson.JsonObject
+ import com.google.gson.JsonParser
++import java.io.InputStream
+ import java.nio.ByteBuffer
+ import java.nio.charset.CodingErrorAction
+ import java.nio.file.Files
+@@ -93,10 +94,12 @@ internal object JvmEvidenceFiles {
+ 
+     /**
+      * Recomputes the same unsigned-UTF-8 class tree used by loaded-origin verification.
++     * This traversal owns bounded read scratch and verifies complete actual bytes against each declared entry size.
+      */
+     internal fun classTree(path: Path): JsonObject {
+         val entries = ClassArchiveInventory.entries(path, 16_384, 8L * 1024 * 1024)
+         val tree = MessageDigest.getInstance("SHA-256")
++        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+         var total = 0L
+         ZipFile(path.toFile()).use { archive ->
+             entries.forEach { name ->
+@@ -104,9 +107,7 @@ internal object JvmEvidenceFiles {
+                 require(0 <= entry.size)
+                 total = Math.addExact(total, entry.size)
+                 require(total <= 64L * 1024 * 1024) { "Oversized preserved class tree" }
+-                val bytes = archive.getInputStream(entry).use { it.readNBytes(8 * 1024 * 1024 + 1) }
+-                require(bytes.size.toLong() == entry.size && bytes.size <= 8 * 1024 * 1024) { "Invalid preserved class resource size" }
+-                val hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
++                val hash = archive.getInputStream(entry).use { classHash(it, entry.size, buffer) }
+                 tree.update("$name=$hash\n".toByteArray(Charsets.UTF_8))
+             }
+         }
+@@ -118,4 +119,24 @@ internal object JvmEvidenceFiles {
+             addProperty("sha256", HexFormat.of().formatHex(tree.digest()))
+         }
+     }
++
++    private fun classHash(
++        input: InputStream,
++        expectedBytes: Long,
++        buffer: ByteArray,
++    ): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        val maximum = 8 * 1024 * 1024
++        var bytes = 0L
++        while (true) {
++            val remaining = maximum + 1L - bytes
++            val count = input.readNBytes(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
++            if (count == 0) break
++            bytes += count
++            require(bytes <= maximum) { "Invalid preserved class resource size" }
++            digest.update(buffer, 0, count)
++        }
++        require(bytes == expectedBytes) { "Invalid preserved class resource size" }
++        return HexFormat.of().formatHex(digest.digest())
++    }
+ }
+diff --git a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/LoadedArtifactMetadata.kt b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/LoadedArtifactMetadata.kt
+index ecde3dabbd79656117399b595f2a61268ef43a10..dd5d478ad32adf0fc73056c5c4c7d96af1435ca7 100644
+--- a/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/LoadedArtifactMetadata.kt
++++ b/performance-testkit/src/jvmMain/kotlin/dev/s7a/strata/performance/LoadedArtifactMetadata.kt
+@@ -14,6 +14,7 @@ import java.util.HexFormat
+ /**
+  * Bounded provenance from the actual loaded classes, without substituting standalone distribution JARs.
+  * Missing locations remain explicit failures rather than inferred hashes.
++ * Each complete loaded class tree owns one bounded read buffer; resource digests remain independent.
+  */
+ public object LoadedArtifactMetadata {
+     // Evidence preparation must not scan accidentally selected oversized archives without a bound.
+@@ -132,13 +133,14 @@ public object LoadedArtifactMetadata {
+                 val entries = ClassArchiveInventory.entries(archivePath, MAX_CLASS_ENTRIES, MAX_CLASS_ENTRY_BYTES)
+                 val classLoader = checkNotNull(representative.classLoader) { "The Strata class has no class loader" }
+                 val treeDigest = MessageDigest.getInstance("SHA-256")
++                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                 var totalBytes = 0L
+                 entries.forEach { entry ->
+                     val resource = checkNotNull(classLoader.getResource(entry)) { "Missing classpath resource: $entry" }
+                     requireLocalClassResource(resource, entry, archivePath)
+                     val connection = resource.openConnection().apply { useCaches = false }
+                     val (entryHash, entryBytes) =
+-                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES) }
++                        connection.getInputStream().use { input -> sha256(input, MAX_CLASS_ENTRY_BYTES, buffer) }
+                     require(0 < entryBytes) { "Empty classpath resource: $entry" }
+                     totalBytes = Math.addExact(totalBytes, entryBytes)
+                     require(totalBytes <= MAX_CLASS_TREE_BYTES) { "The class tree exceeds the metadata byte limit" }
+@@ -233,9 +235,9 @@ public object LoadedArtifactMetadata {
+     private fun sha256(
+         input: InputStream,
+         maxBytes: Long = MAX_HASH_BYTES,
++        buffer: ByteArray = ByteArray(DEFAULT_BUFFER_SIZE),
+     ): Pair<String, Long> {
+         val digest = MessageDigest.getInstance("SHA-256")
+-        val buffer = ByteArray(8192)
+         var bytes = 0L
+         while (true) {
+             val count = input.read(buffer)
+@@ -244,6 +246,6 @@ public object LoadedArtifactMetadata {
+             require(bytes <= maxBytes) { "The artifact entry exceeds the metadata hash limit" }
+             digest.update(buffer, 0, count)
+         }
+-        return digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) } to bytes
++        return HexFormat.of().formatHex(digest.digest()) to bytes
+     }
+ }
+diff --git a/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/EntryIdentityScratchTest.kt b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/EntryIdentityScratchTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..823d18db6bcce3797eb7ca0a20aa7dc676d3d302
+--- /dev/null
++++ b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/EntryIdentityScratchTest.kt
+@@ -0,0 +1,233 @@
++package dev.s7a.strata.performance
++
++import org.junit.jupiter.api.Test
++import org.junit.jupiter.api.io.TempDir
++import java.io.ByteArrayInputStream
++import java.io.ByteArrayOutputStream
++import java.io.IOException
++import java.io.InputStream
++import java.nio.file.Files
++import java.nio.file.Path
++import java.security.MessageDigest
++import java.util.Collections
++import java.util.HexFormat
++import java.util.IdentityHashMap
++import java.util.concurrent.Callable
++import java.util.concurrent.CyclicBarrier
++import java.util.concurrent.Executors
++import java.util.jar.JarEntry
++import java.util.jar.JarOutputStream
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertNotSame
++import kotlin.test.assertSame
++import kotlin.test.assertTrue
++
++/**
++ * Independent framing goldens and actual read-buffer observations preserve entry bytes, stream ownership and invocation isolation.
++ */
++internal class EntryIdentityScratchTest {
++    @TempDir
++    lateinit var directory: Path
++
++    @Test
++    fun publicDirectoryAndSingleFileHashesKeepIndependentGoldenFraming() {
++        val entries =
++            linkedMapOf(
++                "assets/z.txt" to ByteArray(8193) { it.toByte() },
++                "assets/a.txt" to byteArrayOf(),
++                "data/short.txt" to byteArrayOf(1, 2, 3),
++                "assets/middle.txt" to ByteArray(8191) { (it * 7).toByte() },
++                "data/equal.txt" to ByteArray(8192) { (it * 11).toByte() },
++            )
++        entries.forEach { (name, bytes) ->
++            val path = directory.resolve(name)
++            Files.createDirectories(checkNotNull(path.parent))
++            Files.write(path, bytes)
++        }
++        assertEquals(framed(entries), ArtifactIdentity.tree(directory))
++        val file = directory.resolve("abc.bin")
++        Files.writeString(file, "abc")
++        assertEquals("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", ArtifactIdentity.file(file))
++        assertEquals(entries.size, entries.count { Files.size(directory.resolve(it.key)) == it.value.size.toLong() })
++    }
++
++    @Test
++    fun unicodeEntryFramingSelectionAndArchiveOrderKeepExactIdentity() {
++        val selected =
++            linkedMapOf(
++                "assets/marker.txt" to byteArrayOf(),
++                "assets/.txt" to ByteArray(8191) { it.toByte() },
++                "assets/𐀀.txt" to ByteArray(8193) { (it * 3).toByte() },
++                "fixture/Probe.class" to byteArrayOf(4, 5, 6),
++                "data/日本.json" to ByteArray(8192) { (it * 7).toByte() },
++            )
++        val entries = selected + ("README.md" to byteArrayOf(99)) + ("META-INF/ignored.json" to byteArrayOf(17))
++        entries.forEach { (name, bytes) ->
++            val path = directory.resolve(name)
++            Files.createDirectories(checkNotNull(path.parent))
++            Files.write(path, bytes)
++        }
++        val golden = framed(selected)
++        assertEquals(golden, EntryIdentity.directorySha256(directory, EntryIdentity::selectedEntry))
++        listOf(entries.entries.toList(), entries.entries.reversed()).forEachIndexed { index, ordered ->
++            val archive = directory.resolve("ordered-$index.jar")
++            JarOutputStream(Files.newOutputStream(archive)).use { output ->
++                ordered.forEach { (name, bytes) ->
++                    output.putNextEntry(JarEntry(name))
++                    output.write(bytes)
++                    output.closeEntry()
++                }
++            }
++            assertEquals(golden, EntryIdentity.zipSha256(archive, EntryIdentity::selectedEntry))
++            Files.delete(archive)
++        }
++        Files.writeString(directory.resolve("README.md"), "Changed excluded metadata")
++        assertEquals(golden, EntryIdentity.directorySha256(directory, EntryIdentity::selectedEntry))
++        assertEquals(framed(selected.filterKeys(EntryIdentity::selectedResourceEntry)), ArtifactIdentity.resourceTree(directory, "assets/marker.txt").getValue("sha256"))
++    }
++
++    @Test
++    fun aCompleteTraversalReusesOnlyItsOwnBufferAndClosesEveryShortStream() {
++        val entries = mixedEntries()
++        val streams = mutableListOf<ObservedStream>()
++        val result = hash(entries.keys.sorted()) { name -> ObservedStream(entries.getValue(name)).also(streams::add) }
++        assertEquals(framed(entries), result)
++        assertEquals(entries.values.sumOf { it.size }, streams.sumOf { it.bytes })
++        assertEquals(entries.size, streams.size)
++        assertTrue(streams.all { it.closed })
++        val buffers = Collections.newSetFromMap(IdentityHashMap<ByteArray, Boolean>())
++        streams.forEach { buffers.addAll(it.buffers) }
++        assertEquals(1, buffers.size)
++        assertTrue(buffers.all { it.size == DEFAULT_BUFFER_SIZE })
++    }
++
++    @Test
++    fun nestedTraversalsCannotBorrowTheOuterScratch() {
++        val entries = mixedEntries()
++        val outer = mutableListOf<ObservedStream>()
++        val nested = mutableListOf<ObservedStream>()
++        var nestedResult: String? = null
++        val result =
++            hash(entries.keys.sorted()) { name ->
++                if (nestedResult == null) {
++                    nestedResult = hash(entries.keys.sorted()) { nestedName -> ObservedStream(entries.getValue(nestedName)).also(nested::add) }
++                }
++                ObservedStream(entries.getValue(name)).also(outer::add)
++            }
++        assertEquals(framed(entries), result)
++        assertEquals(result, nestedResult)
++        assertNotSame(outer.first().buffers.first(), nested.first().buffers.first())
++        assertTrue((outer + nested).all { it.closed })
++    }
++
++    @Test
++    fun simultaneousTraversalsKeepTheirExactBytes() {
++        val barrier = CyclicBarrier(2)
++        val left = mixedEntries()
++        val right = left.mapValues { (_, bytes) -> bytes.map { (it.toInt() xor 127).toByte() }.toByteArray() }
++        val executor = Executors.newFixedThreadPool(2)
++        try {
++            val results =
++                executor.invokeAll(
++                    listOf(left, right).map { entries ->
++                        Callable {
++                            var first = true
++                            hash(entries.keys.sorted()) { name ->
++                                if (first) {
++                                    first = false
++                                    barrier.await()
++                                }
++                                ObservedStream(entries.getValue(name))
++                            }
++                        }
++                    },
++                )
++            assertEquals(listOf(framed(left), framed(right)), results.map { it.get() })
++        } finally {
++            executor.shutdownNow()
++        }
++    }
++
++    @Test
++    fun aThrowingEntryClosesOpenedStreamsAndPreservesItsOriginalFailure() {
++        val failure = IOException("read failed after a partial entry")
++        val streams = mutableListOf<ObservedStream>()
++        val caught =
++            assertFailsWith<IOException> {
++                hash(listOf("first", "second", "third")) { name ->
++                    ObservedStream(ByteArray(8193), if (name.contentEquals("second")) failure else null).also(streams::add)
++                }
++            }
++        assertSame(failure, caught)
++        assertEquals(2, streams.size)
++        assertTrue(streams.all { it.closed })
++    }
++
++    @Test
++    fun anEmptyTraversalKeepsTheGoldenWithoutOpeningAStream() {
++        val expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
++        assertFailsWith<IllegalArgumentException> { ArtifactIdentity.tree(directory) }
++        assertEquals(expected, hash(emptyList()) { error("An empty traversal must not open a stream") })
++    }
++
++    private fun mixedEntries(): Map<String, ByteArray> = listOf(0, 1, 7, 8191, 8192, 8193, 32_769).mapIndexed { index, size -> "entry-$index" to ByteArray(size) { (it * 31 + index).toByte() } }.toMap()
++
++    // Observe the actual private traversal's stream boundary; no helper implementation or buffer field is copied.
++    private fun hash(
++        entries: List<String>,
++        open: (String) -> InputStream,
++    ): String {
++        val method =
++            EntryIdentity.javaClass.declaredMethods
++                .single { it.name.contentEquals("hashEntries") && it.parameterCount == 2 }
++        return HostReflection.call(method, EntryIdentity, entries, open) as String
++    }
++
++    private fun framed(entries: Map<String, ByteArray>): String {
++        val bytes = ByteArrayOutputStream()
++        entries.toSortedMap().forEach { (name, content) ->
++            val encoded = name.toByteArray(Charsets.UTF_8)
++            bytes.write("${encoded.size}:".toByteArray(Charsets.US_ASCII))
++            bytes.write(encoded)
++            bytes.write(0)
++            bytes.write(content)
++            bytes.write(255)
++        }
++        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.toByteArray()))
++    }
++
++    /**
++     * Exposes positive short reads, an exact callback failure and the actual caller buffers without changing their bytes.
++     */
++    private class ObservedStream(
++        content: ByteArray,
++        private val failure: IOException? = null,
++    ) : InputStream() {
++        private val input = ByteArrayInputStream(content)
++        val buffers = mutableListOf<ByteArray>()
++        var bytes = 0
++            private set
++        var closed = false
++            private set
++
++        override fun read(): Int = input.read()
++
++        override fun read(
++            buffer: ByteArray,
++            offset: Int,
++            length: Int,
++        ): Int {
++            if (0 < bytes) failure?.let { throw it }
++            buffers.add(buffer)
++            val read = input.read(buffer, offset, minOf(length, 113))
++            if (0 < read) bytes += read
++            return read
++        }
++
++        override fun close() {
++            closed = true
++            input.close()
++        }
++    }
++}
+diff --git a/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/LoadedClassTreeScratchTest.kt b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/LoadedClassTreeScratchTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..5199d0a9c12085550af98ec2ce944be0b7c53958
+--- /dev/null
++++ b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/LoadedClassTreeScratchTest.kt
+@@ -0,0 +1,332 @@
++package dev.s7a.strata.performance
++
++import org.junit.jupiter.api.Test
++import org.junit.jupiter.api.io.TempDir
++import java.io.FilterInputStream
++import java.io.IOException
++import java.io.InputStream
++import java.net.JarURLConnection
++import java.net.URL
++import java.net.URLClassLoader
++import java.net.URLConnection
++import java.net.URLStreamHandler
++import java.nio.file.Files
++import java.nio.file.Path
++import java.security.MessageDigest
++import java.util.Collections
++import java.util.HexFormat
++import java.util.IdentityHashMap
++import java.util.concurrent.Callable
++import java.util.concurrent.CyclicBarrier
++import java.util.concurrent.Executors
++import java.util.concurrent.TimeUnit
++import java.util.jar.JarEntry
++import java.util.jar.JarFile
++import java.util.jar.JarOutputStream
++import javax.tools.ToolProvider
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertFalse
++import kotlin.test.assertNotSame
++import kotlin.test.assertTrue
++
++/**
++ * Observes actual public loaded-resource traversal at the stream boundary without replacing the hashing implementation.
++ * Fixture classes are compiled by the JDK and resolved without initialization from their real local archive.
++ */
++internal class LoadedClassTreeScratchTest {
++    @TempDir
++    lateinit var directory: Path
++
++    @Test
++    fun oneTreeOwnsOneScratchAcrossRealCompiledClassResourcesAndShortReads() {
++        val entries = compiledEntries()
++        val jar = archive(entries)
++        val streams = mutableListOf<ObservedStream>()
++        observedLoader(jar, streams).use { loader ->
++            val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++            LoadedArtifactMetadata.verifyComplete(report)
++            val module = report.getAsJsonArray("modules").single().asJsonObject
++            val tree = module.getAsJsonObject("classTree")
++            assertEquals(entries.size, tree.get("entryCount").asInt)
++            assertEquals(entries.values.sumOf { it.size }.toLong(), tree.get("bytes").asLong)
++            assertEquals(treeGolden(entries), tree.get("sha256").asString)
++            assertEquals(ArtifactIdentity.file(jar), module.getAsJsonObject("codeSource").get("sha256").asString)
++            val resources = streams.drop(1)
++            assertEquals(entries.keys.sorted(), resources.map { it.entry })
++            assertTrue(streams.all { it.closed })
++            assertEquals(entries.values.sumOf { it.size }, resources.sumOf { it.bytes })
++            val buffers = Collections.newSetFromMap(IdentityHashMap<ByteArray, Boolean>())
++            resources.forEach { buffers.addAll(it.buffers) }
++            assertEquals(1, buffers.size)
++            assertEquals(DEFAULT_BUFFER_SIZE, buffers.single().size)
++            assertNotSame(streams.first().buffers.first(), buffers.single())
++        }
++        Files.delete(jar)
++    }
++
++    @Test
++    fun independentPublicTraversalsRetainTheSameBytesAndSeparateScratch() {
++        val entries = compiledEntries()
++        val jar = archive(entries)
++        val first = mutableListOf<ObservedStream>()
++        val second = mutableListOf<ObservedStream>()
++        listOf(first, second).forEach { streams ->
++            observedLoader(jar, streams).use { loader ->
++                val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++                LoadedArtifactMetadata.verifyComplete(report)
++                assertEquals(
++                    treeGolden(entries),
++                    report
++                        .getAsJsonArray("modules")
++                        .single()
++                        .asJsonObject
++                        .getAsJsonObject("classTree")
++                        .get("sha256")
++                        .asString,
++                )
++            }
++        }
++        assertNotSame(first[1].buffers.first(), second[1].buffers.first())
++        assertTrue((first + second).all { it.closed })
++    }
++
++    @Test
++    fun realResourceReadFailureClosesTheStreamAndRetainsUnavailableTree() {
++        val entries = compiledEntries()
++        val jar = archive(entries)
++        val streams = mutableListOf<ObservedStream>()
++        observedLoader(jar, streams, "fixture/Probe8192.class").use { loader ->
++            val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++            assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(report) }
++            val tree =
++                report
++                    .getAsJsonArray("modules")
++                    .single()
++                    .asJsonObject
++                    .getAsJsonObject("classTree")
++            assertEquals("unavailable", tree.get("status").asString)
++            assertTrue(tree.get("sha256").isJsonNull)
++            assertTrue(tree.get("reason").asString.contains("Expected actual class-resource read failure"))
++            assertTrue(streams.all { it.closed })
++            assertFalse("fixture/Probe8193.class" in streams.map { it.entry })
++        }
++        Files.delete(jar)
++    }
++
++    @Test
++    fun emptyArchiveClassCannotBecomeAvailableLoadedTree() {
++        val entries = compiledEntries() + ("fixture/Zero.class" to byteArrayOf())
++        val jar = archive(entries)
++        val streams = mutableListOf<ObservedStream>()
++        observedLoader(jar, streams).use { loader ->
++            val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++            assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(report) }
++            val tree =
++                report
++                    .getAsJsonArray("modules")
++                    .single()
++                    .asJsonObject
++                    .getAsJsonObject("classTree")
++            assertTrue(tree.get("sha256").isJsonNull)
++            assertTrue(tree.get("reason").asString.contains("Empty classpath resource"))
++            assertTrue(streams.all { it.closed })
++        }
++    }
++
++    @Test
++    fun aNestedPublicCaptureCannotReuseItsOuterScratch() {
++        val entries = compiledEntries()
++        val jar = archive(entries)
++        val outer = mutableListOf<ObservedStream>()
++        val nested = mutableListOf<ObservedStream>()
++        observedLoader(jar, nested).use { nestedLoader ->
++            var captured = false
++            observedLoader(jar, outer, onRead = {
++                if (captured.not()) {
++                    captured = true
++                    val report = LoadedArtifactMetadata.capture(nestedLoader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++                    LoadedArtifactMetadata.verifyComplete(report)
++                    assertEquals(
++                        treeGolden(entries),
++                        report
++                            .getAsJsonArray("modules")
++                            .single()
++                            .asJsonObject
++                            .getAsJsonObject("classTree")
++                            .get("sha256")
++                            .asString,
++                    )
++                }
++            }).use { loader ->
++                val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++                LoadedArtifactMetadata.verifyComplete(report)
++                assertEquals(
++                    treeGolden(entries),
++                    report
++                        .getAsJsonArray("modules")
++                        .single()
++                        .asJsonObject
++                        .getAsJsonObject("classTree")
++                        .get("sha256")
++                        .asString,
++                )
++            }
++        }
++        assertTrue(capturedStreamsAreClosed(outer, nested))
++        assertNotSame(outer[1].buffers.first(), nested[1].buffers.first())
++        Files.delete(jar)
++    }
++
++    @Test
++    fun simultaneousPublicCapturesOwnSeparateScratchAndCompleteBytes() {
++        val entries = compiledEntries()
++        val jar = archive(entries)
++        val barrier = CyclicBarrier(2)
++        val executor = Executors.newFixedThreadPool(2)
++        try {
++            val results =
++                executor
++                    .invokeAll(
++                        List(2) {
++                            Callable {
++                                val streams = mutableListOf<ObservedStream>()
++                                var first = true
++                                observedLoader(jar, streams, onRead = {
++                                    if (first) {
++                                        first = false
++                                        barrier.await(30, TimeUnit.SECONDS)
++                                    }
++                                }).use { loader ->
++                                    val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "fixture.Probe8191"), setOf("fixture"))
++                                    LoadedArtifactMetadata.verifyComplete(report)
++                                    assertEquals(
++                                        treeGolden(entries),
++                                        report
++                                            .getAsJsonArray("modules")
++                                            .single()
++                                            .asJsonObject
++                                            .getAsJsonObject("classTree")
++                                            .get("sha256")
++                                            .asString,
++                                    )
++                                }
++                                streams
++                            }
++                        },
++                    ).map { it.get() }
++            assertTrue(capturedStreamsAreClosed(results[0], results[1]))
++            assertNotSame(results[0][1].buffers.first(), results[1][1].buffers.first())
++        } finally {
++            executor.shutdownNow()
++        }
++        Files.delete(jar)
++    }
++
++    private fun capturedStreamsAreClosed(
++        first: List<ObservedStream>,
++        second: List<ObservedStream>,
++    ): Boolean = (first + second).all { it.closed }
++
++    private fun observedLoader(
++        jar: Path,
++        streams: MutableList<ObservedStream>,
++        failingEntry: String? = null,
++        onRead: (() -> Unit)? = null,
++    ): URLClassLoader =
++        object : URLClassLoader(arrayOf(jar.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
++            override fun getResource(name: String): URL? {
++                val actual = super.getResource(name) ?: return null
++                return URL(
++                    null,
++                    actual.toExternalForm(),
++                    object : URLStreamHandler() {
++                        override fun openConnection(url: URL): URLConnection =
++                            object : JarURLConnection(url) {
++                                private val delegate = actual.openConnection() as JarURLConnection
++
++                                override fun connect() = delegate.connect()
++
++                                override fun getJarFile(): JarFile = delegate.jarFile
++
++                                override fun getInputStream(): InputStream {
++                                    delegate.useCaches = false
++                                    return ObservedStream(name, delegate.inputStream, name == failingEntry, onRead).also(streams::add)
++                                }
++                            }
++                    },
++                )
++            }
++        }
++
++    private fun compiledEntries(): Map<String, ByteArray> {
++        val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler())
++        val classes = directory.resolve("classes")
++        Files.createDirectories(classes)
++        return listOf(8191, 8192, 8193).associate { target ->
++            val name = "Probe$target"
++            val source = directory.resolve("$name.java")
++
++            fun compile(padding: Int): ByteArray {
++                Files.writeString(source, "package fixture; public final class $name { public static final String PAD = \"${"a".repeat(padding)}\"; }")
++                assertEquals(0, compiler.run(null, null, null, "-d", classes.toString(), source.toString()))
++                return Files.readAllBytes(classes.resolve("fixture/$name.class"))
++            }
++            val initial = compile(0)
++            val bytes = compile(target - initial.size)
++            assertEquals(target, bytes.size)
++            "fixture/$name.class" to bytes
++        }
++    }
++
++    private fun archive(entries: Map<String, ByteArray>): Path {
++        val path = directory.resolve("measured.jar")
++        JarOutputStream(Files.newOutputStream(path)).use { output ->
++            entries.forEach { (name, bytes) ->
++                output.putNextEntry(JarEntry(name))
++                output.write(bytes)
++                output.closeEntry()
++            }
++        }
++        return path
++    }
++
++    private fun treeGolden(entries: Map<String, ByteArray>): String {
++        val text = entries.toSortedMap().entries.joinToString("") { (name, bytes) -> "$name=${hash(bytes)}\n" }
++        return hash(text.toByteArray(Charsets.UTF_8))
++    }
++
++    private fun hash(bytes: ByteArray): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
++
++    /**
++     * Records only actual stream calls, scratch identities and closure, never production implementation state.
++     */
++    private class ObservedStream(
++        val entry: String,
++        input: InputStream,
++        private val fail: Boolean,
++        private val onRead: (() -> Unit)? = null,
++    ) : FilterInputStream(input) {
++        val buffers = mutableListOf<ByteArray>()
++        var bytes = 0
++        var closed = false
++
++        override fun read(
++            buffer: ByteArray,
++            offset: Int,
++            length: Int,
++        ): Int {
++            onRead?.invoke()
++            buffers.add(buffer)
++            if (fail) throw IOException("Expected actual class-resource read failure")
++            val count = `in`.read(buffer, offset, minOf(length, 113))
++            if (0 < count) bytes += count
++            return count
++        }
++
++        override fun close() {
++            closed = true
++            super.close()
++        }
++    }
++}
+diff --git a/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/PreservedClassTreeStreamingTest.kt b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/PreservedClassTreeStreamingTest.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7e6aa7175ec6f4033181e2ee9df4f7968df1d65
+--- /dev/null
++++ b/performance-testkit/src/test/kotlin/dev/s7a/strata/performance/PreservedClassTreeStreamingTest.kt
+@@ -0,0 +1,176 @@
++package dev.s7a.strata.performance
++
++import org.junit.jupiter.api.Test
++import org.junit.jupiter.api.io.TempDir
++import java.io.ByteArrayInputStream
++import java.io.IOException
++import java.io.InputStream
++import java.nio.file.Files
++import java.nio.file.Path
++import java.security.MessageDigest
++import java.util.HexFormat
++import java.util.zip.ZipEntry
++import java.util.zip.ZipOutputStream
++import kotlin.test.assertEquals
++import kotlin.test.assertFailsWith
++import kotlin.test.assertSame
++
++/**
++ * Independent preserved-entry digests retain unsigned UTF-8 framing, empty-byte support and exact streaming bounds.
++ * Raw entry contents exercise hashing admission, without claiming that these detached inputs are loaded executable classes.
++ */
++internal class PreservedClassTreeStreamingTest {
++    @TempDir
++    lateinit var directory: Path
++
++    @Test
++    fun exactBytesAndCanonicalUnicodeOrderMatchAnIndependentGolden() {
++        val entries =
++            linkedMapOf(
++                "fixture/Empty.class" to byteArrayOf(),
++                "fixture/Short.class" to byteArrayOf(0, 1, -1),
++                "fixture/Wide.class" to ByteArray(8193) { (it * 17).toByte() },
++                "fixture/.class" to ByteArray(8191) { it.toByte() },
++                "fixture/𐀀.class" to ByteArray(8192) { (it * 7).toByte() },
++            )
++        val path = write("mixed.jar", entries.entries.reversed().associate { it.key to it.value })
++        val report = JvmEvidenceFiles.classTree(path)
++        assertEquals(entries.size, report.countField("entryCount"))
++        assertEquals(entries.values.sumOf { it.size.toLong() }, report.get("bytes").asLong)
++        assertEquals(golden(entries), report.textField("sha256"))
++        val moved = directory.resolve("moved.jar")
++        Files.move(path, moved)
++        assertEquals(report, JvmEvidenceFiles.classTree(moved))
++    }
++
++    @Test
++    fun exactClassAndTotalTreeCapsRemainValidAndTheNextByteFails() {
++        val maximum = 8 * 1024 * 1024
++        val content = ByteArray(maximum) { (it * 13).toByte() }
++        val entries = (0 until 8).associate { "fixture/Entry$it.class" to content }
++        val exact = JvmEvidenceFiles.classTree(write("exact.jar", entries))
++        assertEquals(64L * 1024 * 1024, exact.get("bytes").asLong)
++        assertEquals(golden(entries), exact.textField("sha256"))
++        val oversizedTree = write("tree-too-large.jar", entries + ("fixture/Last.class" to byteArrayOf(1)))
++        assertFailsWith<IllegalArgumentException> { JvmEvidenceFiles.classTree(oversizedTree) }
++        val oversizedEntry = write("entry-too-large.jar", mapOf("fixture/Probe.class" to ByteArray(maximum + 1)))
++        assertFailsWith<IllegalArgumentException> { JvmEvidenceFiles.classTree(oversizedEntry) }
++    }
++
++    @Test
++    fun exactEntryCountRetainsItsGateBeforeAnExtraClassCanBeAdmitted() {
++        val entries = (0 until 16_384).associate { "fixture/Entry$it.class" to byteArrayOf() }
++        val report = JvmEvidenceFiles.classTree(write("entry-count.jar", entries))
++        assertEquals(16_384, report.countField("entryCount"))
++        val excessive = write("entry-count-too-large.jar", entries + ("fixture/Last.class" to byteArrayOf()))
++        assertFailsWith<IllegalArgumentException> { JvmEvidenceFiles.classTree(excessive) }
++    }
++
++    @Test
++    fun everyShortReadCountsAndDeclaredSizeMismatchCannotReturnADigest() {
++        val bytes = ByteArray(8193) { (it * 19).toByte() }
++        val input =
++            object : ByteArrayInputStream(bytes) {
++                override fun read(
++                    buffer: ByteArray,
++                    offset: Int,
++                    length: Int,
++                ): Int = super.read(buffer, offset, minOf(length, 101))
++            }
++        assertEquals(sha256(bytes), hash(input, bytes.size.toLong()))
++        listOf(-1L, bytes.size - 1L, bytes.size + 1L).forEach { declared ->
++            assertFailsWith<IllegalArgumentException> { hash(ByteArrayInputStream(bytes), declared) }
++        }
++    }
++
++    @Test
++    fun aDecompressedStreamReadsAtMostTheOriginalMaximumPlusOneGuard() {
++        val maximum = 8 * 1024 * 1024
++        val input = CountingInput(maximum.toLong() + 100)
++        assertFailsWith<IllegalArgumentException> { hash(input, maximum.toLong()) }
++        assertEquals(maximum + 1L, input.bytes)
++    }
++
++    @Test
++    fun aReadFailurePropagatesItsExactCauseAndTruncatedArchivesStayRejected() {
++        val failure = IOException("short archive read failed")
++        val input =
++            object : InputStream() {
++                override fun read(): Int = throw failure
++
++                override fun read(
++                    buffer: ByteArray,
++                    offset: Int,
++                    length: Int,
++                ): Int = throw failure
++            }
++        assertSame(failure, assertFailsWith<IOException> { hash(input, 1) })
++        val path = write("truncated.jar", mapOf("fixture/Probe.class" to byteArrayOf(1, 2, 3)))
++        val complete = Files.readAllBytes(path)
++        Files.write(path, complete.copyOf(complete.size / 2))
++        assertFailsWith<IOException> { JvmEvidenceFiles.classTree(path) }
++        Files.delete(path)
++    }
++
++    private fun write(
++        name: String,
++        entries: Map<String, ByteArray>,
++    ): Path =
++        directory.resolve(name).also { path ->
++            ZipOutputStream(Files.newOutputStream(path)).use { archive ->
++                entries.forEach { (entry, bytes) ->
++                    archive.putNextEntry(ZipEntry(entry))
++                    archive.write(bytes)
++                    archive.closeEntry()
++                }
++            }
++        }
++
++    // Force short, mismatched and oversized stream contracts through the actual private streaming boundary.
++    private fun hash(
++        input: InputStream,
++        expected: Long,
++    ): String {
++        val method =
++            JvmEvidenceFiles.javaClass.declaredMethods
++                .single { it.name.contentEquals("classHash") }
++        return HostReflection.call(method, JvmEvidenceFiles, input, expected, ByteArray(DEFAULT_BUFFER_SIZE)) as String
++    }
++
++    private fun golden(entries: Map<String, ByteArray>): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        // These test names are declared in their independent expected unsigned UTF-8 order.
++        entries.forEach { (name, bytes) -> digest.update("$name=${sha256(bytes)}\n".toByteArray(Charsets.UTF_8)) }
++        return HexFormat.of().formatHex(digest.digest())
++    }
++
++    private fun sha256(bytes: ByteArray): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))
++
++    /**
++     * Generates bytes without a class-sized backing array and records the exact decompressed read bound.
++     */
++    private class CountingInput(
++        private val size: Long,
++    ) : InputStream() {
++        var bytes = 0L
++            private set
++
++        override fun read(): Int {
++            if (bytes == size) return -1
++            bytes++
++            return 0
++        }
++
++        override fun read(
++            buffer: ByteArray,
++            offset: Int,
++            length: Int,
++        ): Int {
++            if (bytes == size) return -1
++            val count = minOf(length.toLong(), size - bytes).toInt()
++            buffer.fill(0, offset, offset + count)
++            bytes += count
++            return count
++        }
++    }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingCorpus.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingCorpus.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..14145cf76c59da30bf7c097acd5f912d856b55ab
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingCorpus.kt
+@@ -0,0 +1,271 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.GsonBuilder
++import com.google.gson.JsonArray
++import com.google.gson.JsonObject
++import java.io.OutputStream
++import java.nio.file.Files
++import java.nio.file.Path
++import java.security.DigestInputStream
++import java.security.MessageDigest
++import java.util.HexFormat
++import java.util.jar.JarEntry
++import java.util.jar.JarOutputStream
++import javax.tools.ToolProvider
++
++/**
++ * Constructs the complete immutable provenance corpus and independent goldens outside collection.
++ * Construction owns its output directory and never runs a measured target or sample loop.
++ */
++@Suppress("TooManyFunctions") // Corpus construction and independent digest protocols have distinct boundaries.
++internal object ProvenanceHashingCorpus {
++    /**
++     * Exact consumer entry points; rejected empty trees are untimed admission controls.
++     */
++    internal enum class Mode {
++        EntryDirectory,
++        EntryArchive,
++        LoadedClassTree,
++        PreservedClassTree,
++        SingleFile,
++        ResourceSelection,
++        EmptyDirectory,
++        RejectedLoadedTree,
++        RejectedPreservedTree,
++    }
++
++    /**
++     * Immutable input distributions shared by the two library variants.
++     */
++    internal enum class Shape {
++        Short,
++        Mixed,
++        Chunks,
++        Large,
++        Empty,
++    }
++
++    /**
++     * One fixed corpus identity; directory and archive operations remain independent rows.
++     */
++    internal data class Case(
++        val mode: Mode,
++        val entries: Int,
++        val shape: Shape,
++    ) {
++        internal val id: String = "${mode.name}-$entries-${shape.name}"
++    }
++
++    /**
++     * Complete 55 measured rows plus three independently verified rejected controls.
++     */
++    internal val cases: List<Case> =
++        buildList {
++            listOf(Mode.EntryDirectory, Mode.EntryArchive, Mode.LoadedClassTree, Mode.PreservedClassTree).forEach { mode ->
++                listOf(1, 32, 1024, 4096).forEach { count ->
++                    listOf(Shape.Short, Shape.Mixed, Shape.Chunks).forEach { shape -> add(Case(mode, count, shape)) }
++                }
++                add(Case(mode, 1, Shape.Large))
++            }
++            add(Case(Mode.SingleFile, 1, Shape.Short))
++            add(Case(Mode.SingleFile, 1, Shape.Large))
++            add(Case(Mode.ResourceSelection, 32, Shape.Mixed))
++            add(Case(Mode.EmptyDirectory, 0, Shape.Empty))
++            add(Case(Mode.RejectedLoadedTree, 0, Shape.Empty))
++            add(Case(Mode.RejectedPreservedTree, 0, Shape.Empty))
++        }
++
++    private const val MARKER_NAME = "FixtureProbe00000"
++
++    /**
++     * Accepts one fresh output directory and writes its complete input manifest.
++     * A full JDK compiler is required; construction failures preserve the partial directory for diagnosis.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        require(args.size == 1)
++        val root = Path.of(args.single()).toAbsolutePath().normalize()
++        require(Files.exists(root).not()) { "Provenance corpus output must be fresh" }
++        Files.createDirectories(root)
++        val templates = HashMap<Int, ByteArray>()
++        try {
++            val rows = JsonArray()
++            cases.forEach { rows.add(create(root, it, templates)) }
++            val manifest =
++                JsonObject().apply {
++                    addProperty("contract", "strata-provenance-corpus-v1")
++                    addProperty("measured_rows", 55)
++                    addProperty("rejected_controls", 3)
++                    add("cases", rows)
++                }
++            Files.writeString(root.resolve("manifest.json"), GsonBuilder().setPrettyPrinting().create().toJson(manifest))
++        } finally {
++            templates.clear()
++        }
++    }
++
++    private fun create(
++        root: Path,
++        case: Case,
++        templates: MutableMap<Int, ByteArray>,
++    ): JsonObject {
++        val directory = root.resolve(case.id)
++        Files.createDirectories(directory)
++        writeEntries(root, directory, case, templates)
++        if (case.mode == Mode.ResourceSelection) {
++            Files.writeString(directory.resolve("README.md"), "Excluded public consumer metadata")
++            Files.createDirectories(directory.resolve("META-INF"))
++            Files.writeString(directory.resolve("META-INF/excluded.json"), "{\"excluded\":true}")
++        }
++        val archiveMode = case.mode in setOf(Mode.EntryArchive, Mode.LoadedClassTree, Mode.PreservedClassTree, Mode.RejectedLoadedTree, Mode.RejectedPreservedTree)
++        val selected = entries(directory).filter { case.mode != Mode.ResourceSelection || it.startsWith("assets/") || it.startsWith("data/") }
++        val input =
++            when {
++                archiveMode -> archive(directory, root.resolve("${case.id}.jar"))
++                case.mode == Mode.SingleFile -> directory.resolve(selected.single())
++                else -> directory
++            }
++        val hash =
++            when (case.mode) {
++                Mode.SingleFile -> hash(directory.resolve(selected.single()))
++                Mode.LoadedClassTree, Mode.PreservedClassTree -> classTree(directory, selected)
++                Mode.EmptyDirectory, Mode.RejectedLoadedTree, Mode.RejectedPreservedTree -> null
++                else -> framed(directory, selected)
++            }
++        return JsonObject().apply {
++            addProperty("mode", case.mode.name)
++            addProperty("entries", case.entries)
++            addProperty("shape", case.shape.name)
++            addProperty("path", input.toString())
++            addProperty("sha256", hash)
++            addProperty("entry_bytes", selected.sumOf { Files.size(directory.resolve(it)) })
++            addProperty("marker", "assets/entry-00000.bin")
++            addProperty("representative", "fixture.$MARKER_NAME")
++            addProperty("physical_sha256", if (Files.isRegularFile(input)) hash(input) else framed(directory, entries(directory)))
++        }
++    }
++
++    private fun writeEntries(
++        root: Path,
++        directory: Path,
++        case: Case,
++        templates: MutableMap<Int, ByteArray>,
++    ) {
++        val classMode = case.mode in setOf(Mode.LoadedClassTree, Mode.PreservedClassTree)
++        repeat(case.entries) { index ->
++            val classEntry = classMode || (case.mode == Mode.EntryArchive && index == 0)
++            val size = length(case.shape, index, classEntry)
++            val name = if (classEntry) "fixture/FixtureProbe${index.toString().padStart(5, '0')}.class" else "assets/entry-${index.toString().padStart(5, '0')}.bin"
++            val content = if (classEntry) rename(template(root, size, templates), index) else ByteArray(size) { (it * 31 + index).toByte() }
++            val file = directory.resolve(name)
++            Files.createDirectories(checkNotNull(file.parent))
++            Files.write(file, content)
++        }
++    }
++
++    private fun length(
++        shape: Shape,
++        index: Int,
++        classEntry: Boolean,
++    ): Int =
++        when (shape) {
++            Shape.Short -> if (classEntry) 0 else listOf(0, 1, 7)[index % 3]
++            Shape.Mixed -> if (classEntry) listOf(0, 8191, 8192, 8193, 32769)[index % 5] else listOf(0, 1, 7, 8191, 8192, 8193, 32769)[index % 7]
++            Shape.Chunks -> listOf(8191, 8192, 8193)[index % 3]
++            Shape.Large -> if (classEntry) 32769 else 64 * 1024 * 1024
++            Shape.Empty -> error("Empty inputs contain no entries")
++        }
++
++    private fun template(
++        root: Path,
++        target: Int,
++        templates: MutableMap<Int, ByteArray>,
++    ): ByteArray =
++        templates.getOrPut(target) {
++            val compiler = checkNotNull(ToolProvider.getSystemJavaCompiler()) { "Provenance construction requires a full JDK" }
++            val directory = root.resolve("compiled-template-$target")
++            Files.createDirectories(directory)
++            val source = directory.resolve("$MARKER_NAME.java")
++
++            fun compile(padding: Int): ByteArray {
++                Files.writeString(source, "package fixture; public final class $MARKER_NAME { public static final String PAD = \"${"a".repeat(padding)}\"; }")
++                check(compiler.run(null, null, null, "-d", directory.toString(), source.toString()) == 0) { "Fixture compilation failed" }
++                return Files.readAllBytes(directory.resolve("fixture/$MARKER_NAME.class"))
++            }
++            val minimal = compile(0)
++            if (target == 0) minimal else compile(target - minimal.size).also { check(it.size == target) }
++        }
++
++    private fun rename(
++        template: ByteArray,
++        index: Int,
++    ): ByteArray {
++        val from = MARKER_NAME.toByteArray(Charsets.US_ASCII)
++        val to = "FixtureProbe${index.toString().padStart(5, '0')}".toByteArray(Charsets.US_ASCII)
++        check(from.size == to.size)
++        val bytes = template.copyOf()
++        var replacements = 0
++        for (offset in 0..(bytes.size - from.size)) {
++            if (from.indices.all { bytes[offset + it] == from[it] }) {
++                to.copyInto(bytes, offset)
++                replacements += 1
++            }
++        }
++        check(0 < replacements)
++        return bytes
++    }
++
++    private fun entries(directory: Path): List<String> =
++        Files.walk(directory).use { files ->
++            files
++                .filter(Files::isRegularFile)
++                .map { directory.relativize(it).joinToString("/") }
++                .sorted()
++                .toList()
++        }
++
++    private fun archive(
++        directory: Path,
++        path: Path,
++    ): Path {
++        JarOutputStream(Files.newOutputStream(path)).use { output ->
++            entries(directory).forEach { name ->
++                output.putNextEntry(JarEntry(name).apply { time = 0 })
++                Files.newInputStream(directory.resolve(name)).use { it.transferTo(output) }
++                output.closeEntry()
++            }
++        }
++        return path
++    }
++
++    private fun framed(
++        directory: Path,
++        entries: List<String>,
++    ): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        entries.forEach { name ->
++            val encoded = name.toByteArray(Charsets.UTF_8)
++            digest.update("${encoded.size}:".toByteArray(Charsets.US_ASCII))
++            digest.update(encoded)
++            digest.update(0.toByte())
++            Files.newInputStream(directory.resolve(name)).use { input -> DigestInputStream(input, digest).transferTo(OutputStream.nullOutputStream()) }
++            digest.update(255.toByte())
++        }
++        return HexFormat.of().formatHex(digest.digest())
++    }
++
++    private fun classTree(
++        directory: Path,
++        entries: List<String>,
++    ): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        entries.forEach { name -> digest.update("$name=${hash(directory.resolve(name))}\n".toByteArray(Charsets.UTF_8)) }
++        return HexFormat.of().formatHex(digest.digest())
++    }
++
++    private fun hash(path: Path): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        Files.newInputStream(path).use { input -> DigestInputStream(input, digest).transferTo(OutputStream.nullOutputStream()) }
++        return HexFormat.of().formatHex(digest.digest())
++    }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingEvidence.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingEvidence.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..987a325d7d25cef1b941aebe2a8b004976c83b11
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingEvidence.kt
+@@ -0,0 +1,286 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonArray
++import com.google.gson.JsonObject
++import com.google.gson.JsonParser
++import dev.s7a.strata.performance.ArtifactIdentity
++import dev.s7a.strata.performance.JvmPerformanceInputs
++import dev.s7a.strata.performance.JvmPerformanceReports
++import dev.s7a.strata.performance.JvmPerformanceRunner
++import dev.s7a.strata.performance.LoadedArtifactMetadata
++import dev.s7a.strata.performance.PerformanceJson
++import dev.s7a.strata.performance.PerformancePlan
++import dev.s7a.strata.performance.PerformanceReportContract
++import dev.s7a.strata.performance.PerformanceReportMetric
++import java.net.URI
++import java.nio.file.Files
++import java.nio.file.Path
++import java.util.UUID
++
++/**
++ * Complete provenance workload registration for the existing fixed phase engine.
++ * Freeze this fixture archive, outer testkit and controls once before collecting either library variant.
++ * Compilation, actual isolation certification and missing work observations are separate acceptance gates.
++ */
++@Suppress("TooManyFunctions") // Registration, collection and independent processing have separate contracts.
++internal object ProvenanceHashingEvidence {
++    private enum class Command { Collect, Compare }
++
++    private val rejected = setOf(ProvenanceHashingCorpus.Mode.EmptyDirectory, ProvenanceHashingCorpus.Mode.RejectedLoadedTree, ProvenanceHashingCorpus.Mode.RejectedPreservedTree)
++    private val measured = ProvenanceHashingCorpus.cases.filter { rejected.contains(it.mode).not() }
++    private val contract =
++        PerformanceReportContract(
++            workloadId = "artifact-provenance-hashing-v1",
++            phaseKeys = listOf("mode", "entries", "shape"),
++            phaseCount = measured.size,
++            reportConditions = setOf("fixture_identity", "controlled_inputs", "input_manifest_sha256", "environment", "warmup", "rejected_inputs", "work_proof_scope", "non_cpu_scopes"),
++            phaseConditions = setOf("samples", "warmup", "input", "verification"),
++            variantReportFields = setOf("measured_library"),
++            variantPhaseFields = setOf("work_observation"),
++        )
++    private val metrics =
++        listOf(
++            PerformanceReportMetric("cpu_ns_per_operation", listOf("owner_thread_cpu_ns"), listOf("samples")),
++            PerformanceReportMetric("allocated_bytes_per_operation", listOf("owner_thread_allocated_bytes"), listOf("samples")),
++            PerformanceReportMetric("complete_hash_wall_ns_per_operation", listOf("wall_total_ns"), listOf("samples")),
++            PerformanceReportMetric("process_cpu_ns_per_operation", listOf("process_cpu_ns"), listOf("samples")),
++            PerformanceReportMetric("all_threads_allocated_bytes_per_operation", listOf("all_threads_allocated_bytes"), listOf("samples")),
++        )
++
++    /**
++     * Collect takes target JAR, control manifest, corpus manifest, fresh output and repetition index.
++     * Compare takes the frozen collector JAR, fresh output, three baseline and three candidate reports.
++     * Every command preserves failed raw evidence; subset/quick collection is not supported.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        require(args.isNotEmpty())
++        val command = enumValues<Command>().single { it.name.equals(args.first(), ignoreCase = true) }
++        when (command) {
++            Command.Collect -> {
++                require(args.size == 6)
++                collect(Path.of(args[1]), Path.of(args[2]), Path.of(args[3]), Path.of(args[4]), args[5].toInt())
++            }
++
++            Command.Compare -> {
++                require(args.size == 9)
++                val collector = Path.of(args[1])
++                require(Files.isSameFile(origin(PerformanceJson::class.java), collector))
++                val comparison = JvmPerformanceReports.compare(args.slice(3..5).map { Path.of(it) }, args.slice(6..8).map { Path.of(it) }, collector, contract, metrics, ::validateReport)
++                comparison.addProperty("acceptance_status", "pending-work-proof-and-whole-issue-gates")
++                comparison.addProperty("improvement_claim_accepted", false)
++                PerformanceJson.writeNew(Path.of(args[2]), comparison)
++            }
++        }
++    }
++
++    private fun collect(
++        target: Path,
++        controlsManifest: Path,
++        corpusManifest: Path,
++        output: Path,
++        repetition: Int,
++    ) {
++        require(repetition in 0..2 && Files.exists(output).not())
++        require(Files.isRegularFile(target) && Files.isRegularFile(origin(PerformanceJson::class.java)))
++        val report =
++            JsonObject().apply {
++                addProperty("schema_version", 1)
++                addProperty("workload_id", contract.workloadId)
++                addProperty("run_id", UUID.randomUUID().toString())
++                addProperty("repetition", repetition)
++                addProperty("warmup", PerformancePlan().warmup)
++                addProperty("work_proof_scope", "Actual entry-read identities and available target tree counters; materialization/encoding counts remain unverified")
++                addProperty("improvement_claim_accepted", false)
++                add("non_cpu_scopes", JsonObject().apply { listOf("rendering", "upload", "gpu", "gui_gpu").forEach { addProperty(it, "N/A") } })
++            }
++        runCatching {
++            val complete =
++                JvmPerformanceRunner.measure("complete-preparation-collection-verification", PerformancePlan(warmup = 0, samples = 1)) {
++                    collectAll(target, controlsManifest, corpusManifest, report)
++                    report.addProperty("status", "passed")
++                    validateReport(report)
++                    Unit
++                }
++            report.add("complete_preparation_collection_verification", complete.evidence)
++            PerformanceJson.writeNew(output, report)
++        }.onFailure { failure ->
++            report.addProperty("status", "failed")
++            report.addProperty("failure_type", failure.javaClass.name)
++            report.addProperty("failure_message", failure.message)
++            runCatching { PerformanceJson.writeNew(output.resolveSibling("${output.fileName}.failed.json"), report) }.exceptionOrNull()?.let(failure::addSuppressed)
++        }.getOrThrow()
++    }
++
++    private fun collectAll(
++        target: Path,
++        controlsManifest: Path,
++        corpusManifest: Path,
++        report: JsonObject,
++    ) {
++        val controls = JvmPerformanceInputs.read(controlsManifest)
++        require(controls.isNotEmpty() && controls.values.none { Files.isSameFile(it, target) || Files.isSameFile(it, origin(PerformanceJson::class.java)) })
++        val manifest = readManifest(corpusManifest)
++        val rows = manifest.getAsJsonArray("cases").map { it.asJsonObject }
++        verifyInputs(rows)
++        val controlled = inputIdentity(controls)
++        val fixture = fixtureIdentity()
++        val manifestHash = ArtifactIdentity.file(corpusManifest)
++        report.add("controlled_inputs", controlled)
++        report.add("fixture_before", fixture)
++        report.add("fixture_identity", stableMetadata(fixture))
++        report.addProperty("input_manifest_sha256", manifestHash)
++        report.add("environment", environment())
++        ProvenanceHashingTarget(target, controls.values).use { library ->
++            val before = library.certify()
++            report.add("measured_library", stableMetadata(before))
++            report.add("target_before", before)
++            val phases = JsonArray()
++            val rejections = JsonArray()
++            report.add("phases", phases)
++            report.add("rejected_inputs", rejections)
++            rows.forEach { row -> collectRow(library, row, phases, rejections) }
++            val after = library.certify()
++            check(after == before) { "Measured library provenance changed during collection" }
++            report.add("target_after", after)
++        }
++        verifyInputs(rows)
++        val fixtureAfter = fixtureIdentity()
++        check(inputIdentity(controls) == controlled && fixtureAfter == fixture && ArtifactIdentity.file(corpusManifest).contentEquals(manifestHash)) { "Frozen fixture or control bytes changed" }
++        report.add("fixture_after", fixtureAfter)
++    }
++
++    private fun collectRow(
++        library: ProvenanceHashingTarget,
++        row: JsonObject,
++        phases: JsonArray,
++        rejections: JsonArray,
++    ) {
++        library.prepare(row).use { prepared ->
++            if (mode(row) in rejected) {
++                rejections.add(prepared.rejection())
++            } else {
++                var verification: JsonObject? = null
++                prepared.validate(prepared.operation())
++                val result = JvmPerformanceRunner.measure(rowIdentity(row).id, afterOperation = { _, value -> verification = prepared.validate(value) }) { prepared.operation() }
++                val phase =
++                    result.evidence.apply {
++                        listOf("mode", "entries", "shape").forEach { add(it, row.get(it).deepCopy()) }
++                        addProperty("warmup", PerformancePlan().warmup)
++                        add("input", row.deepCopy())
++                        add("verification", checkNotNull(verification))
++                        add("work_observation", workObservation(library, row))
++                    }
++                phases.add(phase)
++            }
++        }
++    }
++
++    private fun workObservation(
++        library: ProvenanceHashingTarget,
++        row: JsonObject,
++    ): JsonObject =
++        if (mode(row) in setOf(ProvenanceHashingCorpus.Mode.EntryDirectory, ProvenanceHashingCorpus.Mode.EntryArchive, ProvenanceHashingCorpus.Mode.ResourceSelection)) {
++            library.probe(row)
++        } else {
++            JsonObject().apply {
++                addProperty("scope", "Actual public operation and independent complete golden; tree counters appear in verification where available")
++                add("observed_distinct_read_arrays", null)
++                add("class_materializations", null)
++                add("digest_encodings", null)
++                addProperty("remaining_gap", "Opaque operation needs independent allocation/work observations before acceptance")
++            }
++        }
++
++    private fun readManifest(path: Path): JsonObject {
++        require(Files.isRegularFile(path) && Files.size(path) <= 4L * 1024 * 1024)
++        val manifest = Files.newBufferedReader(path).use { JsonParser.parseReader(it).asJsonObject }
++        require(manifest.get("contract").asString.contentEquals("strata-provenance-corpus-v1") && manifest.get("measured_rows").asInt == measured.size && manifest.get("rejected_controls").asInt == rejected.size)
++        val rows = manifest.getAsJsonArray("cases").map { it.asJsonObject }
++        require(rows.map(::rowIdentity) == ProvenanceHashingCorpus.cases) { "Changed or incomplete provenance corpus" }
++        return manifest
++    }
++
++    private fun validateReport(report: JsonObject) {
++        require(report.get("warmup").asInt == PerformancePlan().warmup)
++        val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
++        require(phases.map(::rowIdentity) == measured && phases.all { it.get("samples").asInt == PerformancePlan().samples && it.get("warmup").asInt == PerformancePlan().warmup })
++        require(report.getAsJsonArray("rejected_inputs").map { rowIdentity(it.asJsonObject.getAsJsonObject("input")) } == ProvenanceHashingCorpus.cases.filter { it.mode in rejected })
++        require(report.get("improvement_claim_accepted").asBoolean.not())
++        val metadata = report.getAsJsonObject("target_before")
++        require(metadata == report.getAsJsonObject("target_after") && stableMetadata(metadata) == report.getAsJsonObject("measured_library"))
++        LoadedArtifactMetadata.verifyComplete(metadata)
++        val module = metadata.getAsJsonArray("modules").first().asJsonObject
++        val target = Path.of(URI.create(module.getAsJsonObject("codeSource").get("url").asString))
++        val controls =
++            report.getAsJsonObject("controlled_inputs").entrySet().associate { (label, value) ->
++                val identity = value.asJsonObject
++                val path = Path.of(identity.get("path").asString)
++                check(ArtifactIdentity.file(path).contentEquals(identity.get("sha256").asString))
++                label to path
++            }
++        ProvenanceHashingTarget(target, controls.values).use { require(stableMetadata(it.certify()) == report.getAsJsonObject("measured_library")) }
++        val fixtureBefore = report.getAsJsonObject("fixture_before")
++        require(fixtureBefore == report.getAsJsonObject("fixture_after") && stableMetadata(fixtureBefore) == report.getAsJsonObject("fixture_identity"))
++        LoadedArtifactMetadata.verifyComplete(fixtureBefore)
++        require(stableMetadata(fixtureIdentity()) == report.getAsJsonObject("fixture_identity"))
++    }
++
++    private fun verifyInputs(rows: List<JsonObject>) {
++        rows.forEach { row ->
++            val path = Path.of(row.get("path").asString)
++            val hash =
++                if (Files.isRegularFile(path)) {
++                    ArtifactIdentity.file(path)
++                } else if (mode(row) == ProvenanceHashingCorpus.Mode.EmptyDirectory) {
++                    require(Files.isDirectory(path) && Files.list(path).use { it.findAny().isEmpty })
++                    row.get("physical_sha256").asString
++                } else {
++                    ArtifactIdentity.tree(path)
++                }
++            check(hash.contentEquals(row.get("physical_sha256").asString)) { "Input bytes differ from frozen construction: $row" }
++        }
++    }
++
++    private fun fixtureIdentity(): JsonObject {
++        val type = ProvenanceHashingEvidence::class.java
++        require(Files.isRegularFile(origin(type))) { "Freeze the actual fixture archive before collection" }
++        val classes = linkedMapOf("fixture" to type, "collector" to JvmPerformanceRunner::class.java, "processor" to JvmPerformanceReports::class.java)
++        val collector = origin(PerformanceJson::class.java)
++        require(Files.isRegularFile(collector) && classes.values.drop(1).all { Files.isSameFile(origin(it), collector) })
++        val report = LoadedArtifactMetadata.capture(checkNotNull(type.classLoader), classes.mapValues { it.value.name }, classes.keys)
++        LoadedArtifactMetadata.verifyComplete(report)
++        return report
++    }
++
++    private fun stableMetadata(report: JsonObject): JsonObject =
++        report.deepCopy().apply {
++            // JVM object identity is not an archive identity; retain each full raw capture separately.
++            getAsJsonArray("modules").forEach { it.asJsonObject.remove("classLoader") }
++        }
++
++    private fun inputIdentity(inputs: Map<String, Path>): JsonObject =
++        JsonObject().apply {
++            inputs.toSortedMap().forEach { (label, path) ->
++                add(
++                    label,
++                    JsonObject().apply {
++                        addProperty("path", path.toString())
++                        addProperty("sha256", ArtifactIdentity.file(path))
++                    },
++                )
++            }
++        }
++
++    private fun environment(): JsonObject =
++        JsonObject().apply {
++            listOf("java.version", "java.vendor", "java.vm.name", "java.vm.version", "os.name", "os.version", "os.arch").forEach { addProperty(it, System.getProperty(it)) }
++            addProperty("available_processors", Runtime.getRuntime().availableProcessors())
++        }
++
++    private fun mode(row: JsonObject): ProvenanceHashingCorpus.Mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
++
++    private fun rowIdentity(row: JsonObject): ProvenanceHashingCorpus.Case = ProvenanceHashingCorpus.Case(mode(row), row.get("entries").asInt, enumValues<ProvenanceHashingCorpus.Shape>().single { it.name.contentEquals(row.get("shape").asString) })
++
++    private fun origin(type: Class<*>): Path = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingExecution.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingExecution.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..d59b518bb5a4b5b1f2da1c37812b772db02f0dd0
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingExecution.kt
+@@ -0,0 +1,168 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonArray
++import com.google.gson.JsonParser
++import dev.s7a.strata.performance.ArtifactIdentity
++import dev.s7a.strata.performance.JvmPerformanceInputs
++import dev.s7a.strata.performance.PerformanceJson
++import java.lang.reflect.InvocationTargetException
++import java.net.URLClassLoader
++import java.nio.file.Files
++import java.nio.file.Path
++
++/**
++ * Delegates the original provenance CLI through the shared bounded JavaExec request.
++ * The prepared fixture and outer collector stay independent from both measured library archives.
++ * Archive preparation and corpus construction finish before the original collection intervals.
++ */
++internal object ProvenanceHashingExecution {
++    /**
++     * Retains the original six/nine arguments and accepts the existing controller's two/eight arguments.
++     * Immutable fixture inputs bind every selected archive and the original corpus/control manifests.
++     */
++    @JvmStatic
++    public fun main(args: Array<String>) {
++        when (args.size) {
++            2 -> collectOwner(args)
++            8 -> compareOwner(args)
++            else -> execute(args, JvmPerformanceInputs.read(inputManifest()))
++        }
++    }
++
++    /**
++     * Prepares the existing complete corpus once before any original collection interval.
++     * Each complete raw report is retained before the owner envelope is written.
++     */
++    private fun collectOwner(args: Array<String>) {
++        val inputs = ownerInputs()
++        val libraries = inputs.getValue(Input.Controls.label)
++        val corpus = checkNotNull(inputs.getValue(Input.Corpus.label).parent)
++        if (Files.exists(corpus).not()) {
++            require(args[1].toInt() == 0)
++            ProvenanceHashingCorpus.main(arrayOf(corpus.toString()))
++        }
++        val original = Path.of(args[0]).resolveSibling("${Path.of(args[0]).fileName}.original.json")
++        val declared = JvmPerformanceInputs.read(inputManifest())
++        val target = declared.getValue("owner-target-identity")
++        execute(arrayOf("collect", target.toString(), libraries.toString(), inputs.getValue(Input.Corpus.label).toString(), original.toString(), args[1]), inputs)
++        val report = Files.newBufferedReader(original).use { JsonParser.parseReader(it).asJsonObject }
++        val actual = report.getAsJsonObject("target_before")
++        val module =
++            actual
++                .getAsJsonArray("modules")
++                .map { it.asJsonObject }
++                .single { it.get("representativeClass").asString.contentEquals(ArtifactIdentity::class.java.name) }
++        val runtime = actual.deepCopy().apply { add("modules", JsonArray().apply { add(module.deepCopy()) }) }
++        report.add("runtime_metadata", runtime)
++        report.addProperty("original_report_path", original.toString())
++        report.addProperty("original_report_sha256", ArtifactIdentity.file(original))
++        PerformanceJson.writeNew(Path.of(args[0]), report)
++    }
++
++    /**
++     * Delegates the existing three-plus-three comparison with its original argument order.
++     */
++    private fun compareOwner(args: Array<String>) {
++        val inputs = ownerInputs()
++        require(Files.isSameFile(Path.of(args[6]), inputs.getValue(Input.Collector.label)))
++        execute(arrayOf("compare", args[6], args[7], args[0], args[1], args[2], args[3], args[4], args[5]), inputs)
++    }
++
++    /**
++     * Resolves actual archives from the generic role manifest without replacing the outer testkit.
++     */
++    private fun ownerInputs(): Map<String, Path> {
++        val declared = JvmPerformanceInputs.read(inputManifest())
++        val expected = setOf("owner-fixture", "owner-collector", "owner-baseline-identity", "owner-candidate-identity", "owner-target-identity")
++        require(declared.keys.filter { it.startsWith("owner-") }.toSet() == expected)
++        val libraries = Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))
++        return mapOf(
++            Input.Fixture.label to declared.getValue("owner-fixture"),
++            Input.Collector.label to declared.getValue("owner-collector"),
++            Input.Controls.label to libraries,
++            Input.Corpus.label to libraries.resolveSibling("${libraries.fileName}.corpus").resolve("manifest.json"),
++            Input.Baseline.label to declared.getValue("owner-baseline-identity"),
++            Input.Candidate.label to declared.getValue("owner-candidate-identity"),
++        )
++    }
++
++    /**
++     * Retains strict archive/hash/origin admission for the original six/nine-argument CLI.
++     */
++    private fun execute(
++        args: Array<String>,
++        inputs: Map<String, Path>,
++    ) {
++        require(args.isNotEmpty())
++        val command = enumValues<Command>().single { it.name.equals(args.first(), ignoreCase = true) }
++        require(args.size == if (command == Command.Collect) 6 else 9)
++        val inputManifest = inputManifest()
++        require(inputs.keys == Input.entries.map { it.label }.toSet())
++        val before = inputs.mapValues { (_, path) -> ArtifactIdentity.file(path) }
++        val declaredBefore = JvmPerformanceInputs.read(inputManifest).mapValues { (_, path) -> ArtifactIdentity.file(path) }
++        val manifestHash = ArtifactIdentity.file(inputManifest)
++        val fixture = inputs.getValue(Input.Fixture.label)
++        val collector = inputs.getValue(Input.Collector.label)
++        require(Files.isSameFile(fixture, collector).not())
++        require(Files.isSameFile(origin(PerformanceJson::class.java), collector))
++        when (command) {
++            Command.Collect -> {
++                val target = Path.of(args[1])
++                require(listOf(Input.Baseline, Input.Candidate).count { Files.isSameFile(target, inputs.getValue(it.label)) } == 1)
++                require(Files.isSameFile(target, collector).not() && Files.isSameFile(target, fixture).not())
++                require(Files.isSameFile(Path.of(args[2]), inputs.getValue(Input.Controls.label)))
++                require(Files.isSameFile(Path.of(args[3]), inputs.getValue(Input.Corpus.label)))
++            }
++
++            Command.Compare -> {
++                require(Files.isSameFile(Path.of(args[1]), collector))
++            }
++        }
++        val controls = JvmPerformanceInputs.read(inputs.getValue(Input.Controls.label)).values
++        require(controls.none { control -> listOf(Input.Fixture, Input.Collector, Input.Baseline, Input.Candidate).any { Files.isSameFile(control, inputs.getValue(it.label)) } })
++        val archives = (listOf(fixture, collector) + controls).map { it.toAbsolutePath().normalize() }
++        require(archives.distinct().size == archives.size)
++        val controlHashes = controls.associateWith(ArtifactIdentity::file)
++        URLClassLoader("provenance-evidence", archives.map { it.toUri().toURL() }.toTypedArray(), ClassLoader.getPlatformClassLoader()).use { loader ->
++            val delegate = Class.forName(ProvenanceHashingEvidence::class.java.name, false, loader)
++            val kit = Class.forName(PerformanceJson::class.java.name, false, loader)
++            require(delegate.classLoader === loader && Files.isSameFile(origin(delegate), fixture))
++            require(kit.classLoader === loader && Files.isSameFile(origin(kit), collector))
++            try {
++                delegate.getMethod("main", Array<String>::class.java).invoke(null, args as Any)
++            } catch (failure: InvocationTargetException) {
++                throw failure.cause ?: failure
++            }
++        }
++        require(ArtifactIdentity.file(inputManifest) == manifestHash)
++        require(inputs.mapValues { (_, path) -> ArtifactIdentity.file(path) } == before)
++        require(JvmPerformanceInputs.read(inputManifest).mapValues { (_, path) -> ArtifactIdentity.file(path) } == declaredBefore)
++        require(controls.associateWith(ArtifactIdentity::file) == controlHashes)
++    }
++
++    /**
++     * Original external command decoded once at the CLI boundary.
++     */
++    private enum class Command {
++        Collect,
++        Compare,
++    }
++
++    /**
++     * Explicit immutable input roles; measured archives are never outer-classpath entries.
++     */
++    private enum class Input(
++        val label: String,
++    ) {
++        Fixture("provenance-fixture"),
++        Collector("outer-collector"),
++        Controls("control-libraries"),
++        Corpus("provenance-corpus"),
++        Baseline("baseline-library"),
++        Candidate("candidate-library"),
++    }
++
++    private fun origin(type: Class<*>): Path = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
++
++    private fun inputManifest(): Path = Path.of(checkNotNull(System.getProperty("strata.performance.fixtureInputs")))
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingProbe.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingProbe.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..ac6ccb5370893b98c69148b9376acc22429edaa6
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingProbe.kt
+@@ -0,0 +1,110 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import java.io.FilterInputStream
++import java.io.InputStream
++import java.lang.reflect.InvocationTargetException
++import java.lang.reflect.Proxy
++import java.nio.file.Files
++import java.nio.file.Path
++import java.util.IdentityHashMap
++import java.util.zip.ZipFile
++
++/**
++ * Observes actual entry-traversal reads outside timing through its real stream-opening callback.
++ * Array identity counts describe observed read scratch, not every allocation or digest encoding.
++ * Opaque loaded/preserved operations retain explicit gaps rather than inferred work counts.
++ */
++internal object ProvenanceHashingProbe {
++    /**
++     * Returns one detached observation; no stream, callback, class loader or scratch survives the call.
++     */
++    internal fun entries(
++        loader: ClassLoader,
++        row: JsonObject,
++    ): JsonObject {
++        val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
++        val path = Path.of(row.get("path").asString)
++        val buffers = IdentityHashMap<ByteArray, Boolean>()
++        var reads = 0L
++        var bytes = 0L
++        var opened = 0
++        var closed = 0
++
++        fun observe(input: InputStream): InputStream {
++            opened += 1
++            return object : FilterInputStream(input) {
++                override fun read(
++                    buffer: ByteArray,
++                    offset: Int,
++                    length: Int,
++                ): Int {
++                    buffers[buffer] = true
++                    reads += 1
++                    return `in`.read(buffer, offset, length).also { if (0 < it) bytes += it }
++                }
++
++                override fun read(buffer: ByteArray): Int = read(buffer, 0, buffer.size)
++
++                override fun close() {
++                    closed += 1
++                    super.close()
++                }
++            }
++        }
++        val archive = if (mode == ProvenanceHashingCorpus.Mode.EntryArchive) ZipFile(path.toFile()) else null
++        return archive.use { _ ->
++            val names = entryNames(archive, path, mode)
++            val callback = Class.forName("kotlin.jvm.functions.Function1", false, loader)
++            val opener =
++                Proxy.newProxyInstance(loader, arrayOf(callback)) { _, method, arguments ->
++                    check(method.name.contentEquals("invoke")) { "Unexpected traversal callback method" }
++                    val name = checkNotNull(arguments).single() as String
++                    observe(if (archive == null) Files.newInputStream(path.resolve(name)) else archive.getInputStream(checkNotNull(archive.getEntry(name))))
++                }
++            val type = Class.forName("dev.s7a.strata.performance.EntryIdentity", false, loader)
++            val method = type.declaredMethods.single { it.name.contentEquals("hashEntries") && it.parameterCount == 2 }.apply { isAccessible = true }
++            val hash =
++                try {
++                    method.invoke(type.getField("INSTANCE").get(null), names, opener) as String
++                } catch (failure: InvocationTargetException) {
++                    throw failure.cause ?: failure
++                }
++            check(hash.contentEquals(row.get("sha256").asString))
++            check(opened == names.size && closed == opened && bytes == row.get("entry_bytes").asLong)
++            JsonObject().apply {
++                addProperty("scope", "Actual private entry traversal using real input streams; separate from public operation timing")
++                addProperty("entries", opened)
++                addProperty("bytes", bytes)
++                addProperty("closed_streams", closed)
++                addProperty("read_calls", reads)
++                addProperty("observed_distinct_read_arrays", buffers.size)
++                add("class_materializations", null)
++                add("digest_encodings", null)
++                addProperty("remaining_gap", "Read identities do not count every allocation, class materialization or digest encoding")
++            }
++        }
++    }
++
++    private fun entryNames(
++        archive: ZipFile?,
++        path: Path,
++        mode: ProvenanceHashingCorpus.Mode,
++    ): List<String> =
++        archive
++            ?.entries()
++            ?.asSequence()
++            ?.filterNot { entry -> entry.isDirectory }
++            ?.map { entry -> entry.name }
++            ?.sorted()
++            ?.toList()
++            ?: Files.walk(path).use { files ->
++                files
++                    .filter(Files::isRegularFile)
++                    .map { file -> path.relativize(file).joinToString("/") }
++                    .filter { name ->
++                        mode != ProvenanceHashingCorpus.Mode.ResourceSelection || name.startsWith("assets/") || name.startsWith("data/")
++                    }.sorted()
++                    .toList()
++            }
++}
+diff --git a/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingTarget.kt b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingTarget.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..c082849dce32d7a9e1b5afef0f033f75965195ce
+--- /dev/null
++++ b/quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/ProvenanceHashingTarget.kt
+@@ -0,0 +1,208 @@
++package dev.s7a.strata.quality.benchmark
++
++import com.google.gson.JsonObject
++import com.google.gson.JsonParser
++import dev.s7a.strata.performance.ArtifactIdentity
++import dev.s7a.strata.performance.LoadedArtifactMetadata
++import java.lang.reflect.InvocationTargetException
++import java.lang.reflect.Method
++import java.net.URLClassLoader
++import java.nio.file.Files
++import java.nio.file.Path
++import java.util.jar.JarFile
++
++/**
++ * Invokes the actual library archive through an isolated platform-parent loader.
++ * The unchanged outer collector certifies every target helper's real archive and complete class tree.
++ * Reflection crosses the two Kotlin/Gson namespaces without sharing target classes with the collector.
++ */
++@Suppress("TooManyFunctions") // Target invocation, validation and certification remain separate untimed boundaries.
++internal class ProvenanceHashingTarget(
++    private val archive: Path,
++    controls: Collection<Path>,
++) : AutoCloseable {
++    private val loader = URLClassLoader("provenance-target", (listOf(archive) + controls).map { it.toUri().toURL() }.toTypedArray(), ClassLoader.getPlatformClassLoader())
++    private val identity = resolve { helper(ArtifactIdentity::class.java.name) }
++    private val metadata = resolve { helper(LoadedArtifactMetadata::class.java.name) }
++    private val preserved = resolve { helper("dev.s7a.strata.performance.JvmEvidenceFiles") }
++    private val foreignJson = resolve { Class.forName(JsonObject::class.java.name, false, loader) }
++    private val capture = resolve { metadata.javaClass.getMethod("capture", ClassLoader::class.java, Map::class.java, Set::class.java) }
++    private val verify = resolve { metadata.javaClass.getMethod("verifyComplete", foreignJson) }
++    private val classTree =
++        resolve {
++            preserved.javaClass.declaredMethods
++                .single {
++                    it.name.substringBefore('$').contentEquals("classTree") && it.parameterTypes.contentEquals(arrayOf(Path::class.java))
++                }.apply { isAccessible = true }
++        }
++    private val directory = resolve { identity.javaClass.getMethod("tree", Path::class.java) }
++    private val file = resolve { identity.javaClass.getMethod("file", Path::class.java) }
++    private val application = resolve { identity.javaClass.getMethod("applicationTrees", List::class.java) }
++    private val resources = resolve { identity.javaClass.getMethod("resourceTree", Path::class.java, String::class.java) }
++
++    /**
++     * Detached certification of the actual helper origins, representative bytes and every target class.
++     */
++    internal fun certify(): JsonObject {
++        val representatives = mapOf("identity" to identity.javaClass.name, "metadata" to metadata.javaClass.name, "preserved" to preserved.javaClass.name)
++        val report = LoadedArtifactMetadata.capture(loader, representatives, representatives.keys)
++        LoadedArtifactMetadata.verifyComplete(report)
++        return report
++    }
++
++    /**
++     * Opens an immutable consumer input and validates every executable class without initialization.
++     */
++    internal fun prepare(row: JsonObject): Prepared = Prepared(row)
++
++    /**
++     * Probes actual entry reads independently of the sampled public operation.
++     */
++    internal fun probe(row: JsonObject): JsonObject = ProvenanceHashingProbe.entries(loader, row)
++
++    override fun close() {
++        loader.close()
++    }
++
++    private fun <T> resolve(operation: () -> T): T =
++        runCatching {
++            operation()
++        }.getOrElse { failure ->
++            runCatching(loader::close).exceptionOrNull()?.let(failure::addSuppressed)
++            throw failure
++        }
++
++    private fun helper(name: String): Any {
++        val type = Class.forName(name, false, loader)
++        check(type.classLoader === loader) { "Target helper escaped its isolated loader: $name" }
++        val source = Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI())
++        check(Files.isSameFile(source, archive)) { "Target helper resolved from a different archive: $name" }
++        return type.getField("INSTANCE").get(null)
++    }
++
++    private fun call(
++        receiver: Any,
++        method: Method,
++        vararg arguments: Any,
++    ): Any =
++        try {
++            method.invoke(receiver, *arguments) ?: Unit
++        } catch (failure: InvocationTargetException) {
++            throw failure.cause ?: failure
++        }
++
++    /**
++     * Owns one input loader; validation and closure remain outside timed operations.
++     */
++    internal inner class Prepared(
++        private val row: JsonObject,
++    ) : AutoCloseable {
++        private val mode = enumValues<ProvenanceHashingCorpus.Mode>().single { it.name.contentEquals(row.get("mode").asString) }
++        private val path = Path.of(row.get("path").asString)
++        private val inputLoader = URLClassLoader("provenance-input", arrayOf(path.toUri().toURL()), ClassLoader.getPlatformClassLoader())
++        private val representative = row.get("representative").asString
++        private val loadedClasses: List<Class<*>> = prepareClasses()
++
++        private fun prepareClasses(): List<Class<*>> =
++            runCatching {
++                if (mode in setOf(ProvenanceHashingCorpus.Mode.EntryArchive, ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.PreservedClassTree)) {
++                    JarFile(path.toFile()).use { input ->
++                        input
++                            .entries()
++                            .asSequence()
++                            .filter { it.name.endsWith(".class") }
++                            .map { entry ->
++                                Class.forName(entry.name.removeSuffix(".class").replace('/', '.'), false, inputLoader).also { type ->
++                                    check(type.classLoader === inputLoader && Files.isSameFile(Path.of(checkNotNull(type.protectionDomain.codeSource).location.toURI()), path))
++                                }
++                            }.toList()
++                    }
++                } else {
++                    emptyList()
++                }
++            }.getOrElse { failure ->
++                runCatching(inputLoader::close).exceptionOrNull()?.let(failure::addSuppressed)
++                throw failure
++            }
++
++        /**
++         * Computes the complete public consumer operation or actual preserved-evidence verification.
++         */
++        internal fun operation(): Any =
++            when (mode) {
++                ProvenanceHashingCorpus.Mode.EntryDirectory, ProvenanceHashingCorpus.Mode.EmptyDirectory -> call(identity, directory, path)
++                ProvenanceHashingCorpus.Mode.SingleFile -> call(identity, file, path)
++                ProvenanceHashingCorpus.Mode.EntryArchive -> call(identity, application, listOf(loadedClasses.single { it.name.contentEquals(representative) }))
++                ProvenanceHashingCorpus.Mode.ResourceSelection -> call(identity, resources, path, row.get("marker").asString)
++                ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.RejectedLoadedTree -> call(metadata, capture, inputLoader, mapOf("fixture" to representative), setOf("fixture"))
++                ProvenanceHashingCorpus.Mode.PreservedClassTree, ProvenanceHashingCorpus.Mode.RejectedPreservedTree -> call(preserved, classTree, path)
++            }
++
++        /**
++         * Checks an independent golden and actual entry/byte counters after the complete operation.
++         */
++        internal fun validate(result: Any): JsonObject {
++            val tree =
++                when (mode) {
++                    ProvenanceHashingCorpus.Mode.LoadedClassTree -> {
++                        call(metadata, verify, result)
++                        detach(result)
++                            .getAsJsonArray("modules")
++                            .single()
++                            .asJsonObject
++                            .getAsJsonObject("classTree")
++                    }
++
++                    ProvenanceHashingCorpus.Mode.PreservedClassTree -> {
++                        detach(result)
++                    }
++
++                    else -> {
++                        null
++                    }
++                }
++            val hash =
++                tree?.get("sha256")?.asString ?: when (mode) {
++                    ProvenanceHashingCorpus.Mode.EntryArchive -> (result as Map<*, *>).values.single() as String
++                    ProvenanceHashingCorpus.Mode.ResourceSelection -> (result as Map<*, *>)["sha256"] as String
++                    else -> result as String
++                }
++            check(hash.contentEquals(row.get("sha256").asString)) { "Complete target hash differs from independent golden: $row" }
++            tree?.let {
++                check(it.get("entryCount").asInt == row.get("entries").asInt && it.get("bytes").asLong == row.get("entry_bytes").asLong)
++            }
++            return JsonObject().apply {
++                addProperty("sha256", hash)
++                add("actual_tree", tree?.deepCopy())
++                addProperty("entry_byte_observation", if (tree == null) "Independent input inventory; target stream probe required" else "Actual complete target class-tree report")
++            }
++        }
++
++        /**
++         * Proves rejected empty public inputs outside timing and retains their actual failure.
++         */
++        internal fun rejection(): JsonObject {
++            var response: Any? = null
++            val failure =
++                runCatching {
++                    val result = operation()
++                    response = result
++                    if (mode == ProvenanceHashingCorpus.Mode.RejectedLoadedTree) call(metadata, verify, result)
++                }.exceptionOrNull()
++            val rejectedFailure = checkNotNull(failure)
++            check(if (mode == ProvenanceHashingCorpus.Mode.RejectedLoadedTree) rejectedFailure is IllegalStateException else rejectedFailure is IllegalArgumentException) { "Empty input was not rejected by the actual consumer" }
++            return JsonObject().apply {
++                add("input", row.deepCopy())
++                addProperty("failure_type", rejectedFailure.javaClass.name)
++                addProperty("message", rejectedFailure.message)
++                response?.let { add("actual_response", detach(it)) }
++            }
++        }
++
++        override fun close() {
++            inputLoader.close()
++        }
++    }
++
++    private fun detach(value: Any): JsonObject = JsonParser.parseString(value.toString()).asJsonObject
++}

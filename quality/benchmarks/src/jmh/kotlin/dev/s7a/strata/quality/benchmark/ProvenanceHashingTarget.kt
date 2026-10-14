@@ -65,9 +65,9 @@ internal class ProvenanceHashingTarget(
     }
 
     private fun <T> resolve(operation: () -> T): T =
-        try {
+        runCatching {
             operation()
-        } catch (failure: Throwable) {
+        }.getOrElse { failure ->
             runCatching(loader::close).exceptionOrNull()?.let(failure::addSuppressed)
             throw failure
         }
@@ -88,7 +88,7 @@ internal class ProvenanceHashingTarget(
         try {
             method.invoke(receiver, *arguments) ?: Unit
         } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
+            throw failure.cause ?: failure
         }
 
     /**
@@ -104,7 +104,7 @@ internal class ProvenanceHashingTarget(
         private val loadedClasses: List<Class<*>> = prepareClasses()
 
         private fun prepareClasses(): List<Class<*>> =
-            try {
+            runCatching {
                 if (mode in setOf(ProvenanceHashingCorpus.Mode.EntryArchive, ProvenanceHashingCorpus.Mode.LoadedClassTree, ProvenanceHashingCorpus.Mode.PreservedClassTree)) {
                     JarFile(path.toFile()).use { input ->
                         input
@@ -120,7 +120,7 @@ internal class ProvenanceHashingTarget(
                 } else {
                     emptyList()
                 }
-            } catch (failure: Throwable) {
+            }.getOrElse { failure ->
                 runCatching(inputLoader::close).exceptionOrNull()?.let(failure::addSuppressed)
                 throw failure
             }
@@ -146,7 +146,11 @@ internal class ProvenanceHashingTarget(
                 when (mode) {
                     ProvenanceHashingCorpus.Mode.LoadedClassTree -> {
                         call(metadata, verify, result)
-                        detach(result).getAsJsonArray("modules").single().asJsonObject.getAsJsonObject("classTree")
+                        detach(result)
+                            .getAsJsonArray("modules")
+                            .single()
+                            .asJsonObject
+                            .getAsJsonObject("classTree")
                     }
 
                     ProvenanceHashingCorpus.Mode.PreservedClassTree -> {
