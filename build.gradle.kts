@@ -1310,6 +1310,9 @@ subprojects {
                 jvm()
             }
             js {
+                compilerOptions {
+                    freeCompilerArgs.add("-Xklib-relative-path-base=${rootDir.absolutePath}")
+                }
                 browser {
                     testTask {
                         useKarma { useChromeHeadless() }
