@@ -345,6 +345,7 @@ public open class BlitTemplateBenchmark {
                 scene.case = case
                 try {
                     scene.setup()
+                    println("blit.template.work ${scene.work()}")
                 } finally {
                     scene.close()
                 }

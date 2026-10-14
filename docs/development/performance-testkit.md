@@ -82,6 +82,7 @@ Atlas cases use multiple source rectangles from one immutable source image; the 
 Small/large sources and templates, cropped edges, one/four/32 groups, sparse/overlapping/reversed/stretched/oversized inputs, clips and fractional child transforms retain complete original geometry and straight ARGB.
 Prepared source pairs are outside timing, while initial frames include actual session creation, attach, first paint and close; rebuilds change the source at its ordinary capture/commit cutoff.
 The optional verifier compares original and actual presented pixels at physical densities one and two, immutable old frames, public copy/equality/hash, clean identity, bounded templates and balanced bindings.
+It emits each case's actual command, template-pixel, paint and binding diagnostic to the preserved untimed work-gate output.
 Use the existing historical shared-kit selectors and controlled API/core/headless runtime archives; the fixture adds no central registry or selector and reports no native uploads, GPU duration or FPS.
 Private-copy payload removed by owned transfer is a source-derived count from each accepted template's pixel area, separate from measured CPU time and normalized allocation.
 
