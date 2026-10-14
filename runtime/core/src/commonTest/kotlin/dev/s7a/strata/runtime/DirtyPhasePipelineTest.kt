@@ -79,7 +79,25 @@ internal class DirtyPhasePipelineTest {
                         val layout = measure || DirtyPhase.Layout in phases
                         val paint = layout || DirtyPhase.Paint in phases
                         val semantic = layout || DirtyPhase.Semantics in phases
-                        val expected = listOf(if (measure) 3 else 0, if (measure) 3 else if (layout) 1 else 0, if (measure) 3 else if (paint) 1 else 0, if (measure) 3 else if (semantic) 1 else 0)
+                        val expected =
+                            listOf(
+                                if (measure) 3 else 0,
+                                when {
+                                    measure -> 3
+                                    layout -> 1
+                                    else -> 0
+                                },
+                                when {
+                                    measure -> 3
+                                    paint -> 1
+                                    else -> 0
+                                },
+                                when {
+                                    measure -> 3
+                                    semantic -> 1
+                                    else -> 0
+                                },
+                            )
                         val after = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
                         assertEquals(expected, after.zip(before) { end, start -> end - start }, "Callbacks for mask $bits, monitoring=$monitoring")
                         monitor?.snapshot()?.let { snapshot ->
