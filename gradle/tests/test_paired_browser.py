@@ -262,6 +262,17 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.load(invalid)
 
+    def test_source_dependency_provisioning_is_explicit_bounded_and_keeps_original_repetitions(self):
+        value = self.source_manifest(3)
+        for enabled in (False, True):
+            value["provision_dependency_caches"] = enabled
+            self.assertEqual(self.load(value), value)
+            self.assertEqual((len(value["tasks"]), value["repetitions"]), (8, 3))
+        for invalid in (None, 0, 1, "true", [], {}):
+            value["provision_dependency_caches"] = invalid
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(value)
+
     def test_source_outputs_and_requested_tasks_require_actual_complete_bytes_and_execution(self):
         workspace = self.root / "source"
         directory = self.root / "source-evidence"
@@ -519,12 +530,16 @@ class PairedBrowserTest(unittest.TestCase):
                 item["sha256"] = self.shared.hashlib.sha256(b"synthetic compiled bytes").hexdigest()
 
         browser_data = data
-        for repetitions, failure, copy_failure in ((None, None, False), (None, "collect-standard-baseline", False), (None, None, True), (None, "collect-standard-baseline", True), (1, None, False), (3, None, False), (3, "source-candidate-1", False)):
+        cases = [(None, None, False, False), (None, "collect-standard-baseline", False, False), (None, None, True, False), (None, "collect-standard-baseline", True, False), (1, None, False, False), (3, None, False, False), (3, "source-candidate-1", False, False)]
+        cases += [(3, None, False, True), (1, None, False, True), (3, "provision-baseline", False, True), (3, "provision-candidate", False, True), (3, "source-candidate-1", False, True)]
+        for repetitions, failure, copy_failure, provisioning in cases:
             data = self.source_manifest(repetitions) if repetitions is not None else browser_data
+            if provisioning:
+                data["provision_dependency_caches"] = True
             if repetitions == 1:
                 data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
                 data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
-            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else ""))
+            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-" + failure if failure is not None else ""))
             calls, side_paths = [], {}
             api = SimpleNamespace(**vars(self.shared))
             api.git = lambda *args: "a" * 40
@@ -583,7 +598,7 @@ class PairedBrowserTest(unittest.TestCase):
                         retained = directory / "test-classpath"
                         retained.mkdir()
                         dependency = Path(request["workspace"]) / "runtime/core/build/libs/dependency.jar"
-                        dependency.parent.mkdir(parents=True)
+                        dependency.parent.mkdir(parents=True, exist_ok=True)
                         dependency.write_bytes(b"synthetic resolved dependency")
                         copy = retained / "classpath-0.jar"
                         copy.write_bytes(dependency.read_bytes())
@@ -639,7 +654,10 @@ class PairedBrowserTest(unittest.TestCase):
                     self.assertEqual(len(calls), 12)
                 else:
                     self.assertEqual((record["status"], record["completed_source_invocations"], record["tasks_per_invocation"], record["runtime_collection"]), ("prepared", repetitions * 2, len(data["tasks"]), "UNRUN"))
-                    self.assertEqual(calls, [f"source-{side}-{index}" for index in range(repetitions) for side in ("baseline", "candidate")])
+                    provisioning_names = ["provision-baseline", "provision-candidate"] if provisioning else []
+                    self.assertEqual(calls, provisioning_names + [f"source-{side}-{index}" for index in range(repetitions) for side in ("baseline", "candidate")])
+                    self.assertEqual(record["completed_dependency_provisioning_invocations"], len(provisioning_names))
+                    self.assertEqual([phase["source_metric_scope"] for phase in record["phases"]], ["untimed_dependency_provisioning"] * len(provisioning_names) + ["measured_source_preparation"] * (repetitions * 2))
                     self.assertTrue(all(phase["jobUserCpu100ns"] == 10 and phase["jobKernelCpu100ns"] == 20 and phase["peakJobCommittedBytes"] == 30 and phase["allocation_bytes"] is None and phase["rss_bytes"] is None for phase in record["phases"]))
                     pins = self.shared.read_json(output / "prepared-pins.json")
                     self.assertEqual(set(pins["compiled_pins"]), {"baseline", "candidate"})
@@ -653,6 +671,9 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertNotIn("collect-standard-candidate", calls)
                 self.assertFalse((output / "report.md").exists())
                 self.assertIn("Owned browser phase failed", record["error"])
+                if failure.startswith("provision-"):
+                    self.assertFalse(any(name.startswith("source-") for name in calls))
+                    self.assertFalse((output / "prepared-pins.json").exists())
             else:
                 self.assertEqual(record["status"], "failed")
                 self.assertEqual(calls[-1], "compare-supplemental")

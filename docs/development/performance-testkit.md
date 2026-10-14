@@ -816,6 +816,12 @@ Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-P
 Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
+For a comparison that requires provisioned dependency caches, set the optional boolean `provision_dependency_caches` to `true`.
+It runs exactly one untimed baseline and one untimed candidate invocation with the same full task lists, arguments, caps, output and test gates before the original alternating measured invocations.
+All provisioning diagnostics, outputs and actual Job counters remain in separate `untimed_dependency_provisioning` phase receipts; the original measured count is unchanged.
+The default adds no provisioning invocations, and a failed provisioning gate prevents every measured invocation.
+Dependency cache provisioning does not enable Gradle task-result or configuration caches: all invocations keep `--rerun-tasks`, `--no-build-cache` and `--no-configuration-cache`.
+Audit the retained setup and task logs for the requested cache context before accepting a Source comparison.
 Gradle preparation retains complete VM XML diagnostics up to 16 MiB per file, with the actual byte count, bound and SHA recorded; other JVM verification keeps its 1 MiB default.
 Process-isolation worker arguments carry the existing diagnostic flags explicitly, and preparation requires complete XML with observed executable/caps and closed PID/birth identity for every captured Java generation.
 An owned Job completion listener opens physical descendant handles as notifications arrive, alongside the existing complete member snapshots.

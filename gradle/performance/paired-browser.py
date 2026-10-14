@@ -117,7 +117,9 @@ def load_manifest(shared, root, data):
 def load_source_manifest(shared, root, data):
     """Admit complete finite Source invocations; actual output pins are captured only after ownership closes."""
     require = shared.require
-    require(set(data) == {"schema", "sources", "source_files", "inputs", "tasks", "arguments", "repetitions", "artifacts", "test_gate"}, "Invalid Source preparation fields")
+    fields = {"schema", "sources", "source_files", "inputs", "tasks", "arguments", "repetitions", "artifacts", "test_gate"}
+    require(fields <= set(data) <= fields | {"provision_dependency_caches"}, "Invalid Source preparation fields")
+    require(type(data.get("provision_dependency_caches", False)) is bool, "Dependency cache provisioning must be an explicit boolean")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three Source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"} and all(re.fullmatch(r"[0-9a-f]{40}", source[key]) for key in ("ref", "tree"))
@@ -356,7 +358,7 @@ def run(shared, root, selection, output):
         captured_class_loads = {}
         prepared = set()
 
-        def phase(name, workspace, arguments, node_program=None, test_gate=None):
+        def phase(name, workspace, arguments, node_program=None, test_gate=None, source_metric_scope=None):
             """Reuse the existing owning helper and fixed limits for Gradle or a pinned Node adapter."""
             nonlocal captured_class_loads
             shared.require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient whole-attempt time and upload reserve")
@@ -403,7 +405,8 @@ def run(shared, root, selection, output):
                     if test_gate is not None:
                         shared.preserve_test_reports(workspace, directory, test_gate)
             terminal = shared.read_json(directory / "terminal.json")
-            record["phases"].append({"name": name, "elapsed_seconds": time.monotonic() - phase_started, "exit_code": exit_code, "terminal": terminal})
+            record["phases"].append({"name": name, "elapsed_seconds": time.monotonic() - phase_started, "exit_code": exit_code, "terminal": terminal,
+                                     **({"source_metric_scope": source_metric_scope} if source_metric_scope is not None else {})})
             validate_terminal(shared, exit_code, terminal, shared.read_json(directory / "child-admission.json"))
             if len(record["phases"]) != 1:
                 first = record["phases"][0]["terminal"]
@@ -433,13 +436,14 @@ def run(shared, root, selection, output):
 
         if source_mode:
             latest = {}
-            for repetition in range(data["repetitions"]):
-                for side in ("baseline", "candidate"):
-                    directory = phase(f"source-{side}-{repetition}", workspaces[side], data["tasks"] + data["arguments"][side], test_gate=data["test_gate"])
-                    verify_source_tasks(shared, directory, data["tasks"])
-                    latest[side] = preserve_source_outputs(shared, workspaces[side], directory, data["artifacts"])
+            invocations = [(f"source-{side}-{repetition}", side, "measured_source_preparation") for repetition in range(data["repetitions"]) for side in ("baseline", "candidate")]
+            provisioning = [("provision-" + side, side, "untimed_dependency_provisioning") for side in ("baseline", "candidate")] if data.get("provision_dependency_caches", False) else []
+            for name, side, scope in provisioning + invocations:
+                directory = phase(name, workspaces[side], data["tasks"] + data["arguments"][side], test_gate=data["test_gate"], source_metric_scope=scope)
+                verify_source_tasks(shared, directory, data["tasks"])
+                latest[side] = preserve_source_outputs(shared, workspaces[side], directory, data["artifacts"])
             shared.write_new(output / "prepared-pins.json", {"schema": "strata-prepared-source-pins-v1", "driver_head": selection["execution_head"], "sources": data["sources"], "java_pins": java_pins, "compiled_pins": latest})
-            record.update(status="prepared", completed_source_invocations=data["repetitions"] * 2, tasks_per_invocation=len(data["tasks"]), runtime_collection="UNRUN")
+            record.update(status="prepared", completed_source_invocations=data["repetitions"] * 2, completed_dependency_provisioning_invocations=len(provisioning), tasks_per_invocation=len(data["tasks"]), runtime_collection="UNRUN")
             return
 
         collectors = {}
