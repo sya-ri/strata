@@ -1,0 +1,110 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "9f24298fbadf0304646af6a70073a84e226376a6",
+      "tree": "08b40beb0ed9a45f2f328848ac050efd6b2a0154",
+      "patches": [
+        {
+          "path": ".github/performance/source-cutoff-full/baseline.patch",
+          "sha256": "9f15501baddc4331be1b13e64c5304214c96dd082f48897b9efa21a48f4bb45c"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "9f24298fbadf0304646af6a70073a84e226376a6",
+      "tree": "bb2f36ced3f3d97460771bbdaf9883221d9f3dec",
+      "patches": [
+        {
+          "path": ".github/performance/source-cutoff-full/candidate.patch",
+          "sha256": "d152eef8a0b61e24827ff1c51cdb2a0a09a12fd14b2730e555ad6c304d885cb1"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "9f24298fbadf0304646af6a70073a84e226376a6",
+      "tree": "08b40beb0ed9a45f2f328848ac050efd6b2a0154",
+      "patches": [
+        {
+          "path": ".github/performance/source-cutoff-full/baseline.patch",
+          "sha256": "9f15501baddc4331be1b13e64c5304214c96dd082f48897b9efa21a48f4bb45c"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "source-cutoff-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.PendingSourceBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 22,
+      "profilers": [],
+      "operation_reports": {
+        "adapters": {
+          "dev.s7a.strata.quality.benchmark.PendingSourceBenchmark": "dev.s7a.strata.quality.benchmark.PendingSourceOperationReport"
+        },
+        "warmup": 30,
+        "samples": 60,
+        "expected_rows": 22,
+        "expected_controls": 6
+      },
+      "test_gates": [
+        {
+          "task": ":runtime:core:jvmTest",
+          "required_tests": [
+            "dev.s7a.strata.runtime.PortablePendingSourceTest#oneOfManyRootsUpdatesOnlyItsConsumerAndEqualProjectionStopsPropagation",
+            "dev.s7a.strata.runtime.PortablePendingSourceTest#publicationFromEqualityCannotChangeAnotherRootsAlreadyCapturedValue",
+            "dev.s7a.strata.runtime.PortablePendingSourceTest#sourceReplacementRemovalDetachAndStaleCallbacksPreserveSubscriptionLifetimes",
+            "dev.s7a.strata.runtime.PortablePendingSourceTest#throwingProjectionPreservesPrimaryAndReleasesEveryQueuedSourceDespiteCleanupFailure"
+          ]
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "label": "source-cutoff-baseline-patch",
+      "pin": {
+        "path": ".github/performance/source-cutoff-full/baseline.patch",
+        "sha256": "9f15501baddc4331be1b13e64c5304214c96dd082f48897b9efa21a48f4bb45c"
+      }
+    },
+    {
+      "label": "source-cutoff-candidate-patch",
+      "pin": {
+        "path": ".github/performance/source-cutoff-full/candidate.patch",
+        "sha256": "d152eef8a0b61e24827ff1c51cdb2a0a09a12fd14b2730e555ad6c304d885cb1"
+      }
+    },
+    {
+      "label": "source-cutoff-fixed-benchmark",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/PendingSourceBenchmark.kt",
+        "sha256": "fe2ebdab7549e84c655e3f4a3ff80feefd3ff15792b956d67eeafa0aa4932f93"
+      }
+    },
+    {
+      "label": "source-cutoff-fixed-adapter",
+      "pin": {
+        "path": "quality/benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/PendingSourceOperationReport.kt",
+        "sha256": "5210d3e181df92043560a7760d837d6655e00d8e2b7cf015dd0d8aa1f77cf3e1"
+      }
+    }
+  ],
+  "compiled_pins": {
+    "baseline": [],
+    "candidate": [],
+    "fixture": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
