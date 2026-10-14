@@ -32,7 +32,7 @@ public object RemoteWorkEvidence {
             return
         }
         verifySurface()
-        JmhFixtureSelection.verifyWork(JmhFixtureSelection.all())
+        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(JmhFixtureSelection.all()))
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt"), includes = listOf("RemoteProtocolBenchmark.diff")).size == 6)
         val benchmark = RemoteProtocolBenchmark()
@@ -62,7 +62,6 @@ public object RemoteWorkEvidence {
 
     /**
      * Rejects exact protocol API registration changes before full or smoke collection.
-     * Archived-runtime comparisons may select an explicit hashed fixture-input inventory; ordinary checks use the current repository registration.
      * Protocol and retained-session inputs register idle, update and lifetime operations without claiming host transport latency.
      */
     public fun verifySurface() {
