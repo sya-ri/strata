@@ -28,11 +28,12 @@ internal class DescriptionValidator {
      */
     fun validateChildren(children: List<Element>) {
         val active = identitySet<Element>()
-        val keys = HashSet<ElementKey<*>>()
+        var keys: HashSet<ElementKey<*>>? = null
         children.forEach { child ->
             val identity = child.identity
             if (identity is ElementIdentity.Keyed) {
-                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
+                val siblingKeys = keys ?: HashSet<ElementKey<*>>().also { keys = it }
+                require(siblingKeys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
             }
             visit(child, active)
         }
@@ -45,11 +46,12 @@ internal class DescriptionValidator {
         require(active.add(element)) { "An element description contains a cycle." }
         element.type.validateErased(element)
         element.modifier.elements().forEach { modifier -> modifier.type.validateErased(modifier) }
-        val keys = HashSet<ElementKey<*>>()
+        var keys: HashSet<ElementKey<*>>? = null
         element.children.forEach { child ->
             val identity = child.identity
             if (identity is ElementIdentity.Keyed) {
-                require(keys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
+                val siblingKeys = keys ?: HashSet<ElementKey<*>>().also { keys = it }
+                require(siblingKeys.add(identity.key)) { "Duplicate direct-sibling key: ${identity.key}." }
             }
             visit(child, active)
         }

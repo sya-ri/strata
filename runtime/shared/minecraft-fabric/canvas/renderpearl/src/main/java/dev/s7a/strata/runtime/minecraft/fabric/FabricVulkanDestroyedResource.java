@@ -16,4 +16,12 @@ public interface FabricVulkanDestroyedResource {
      * @return true only after native storage was destroyed; this nonblocking query never changes ownership.
      */
     boolean strataCanvasResourceDestroyed();
+    /**
+     * Physically destroys this closed, exclusively owned resource after initialization and every GUI use have completed.
+     *
+     * <p>The render-thread caller must establish GPU completion independently before this call.
+     * Logical close is only an acquisition prerequisite; acknowledgement still comes from successful native destruction.
+     * A later queued native destroy is idempotent after that acknowledgement, and an unsuccessful destroy remains owned.</p>
+     */
+    void strataDestroyCompletedResource();
 }

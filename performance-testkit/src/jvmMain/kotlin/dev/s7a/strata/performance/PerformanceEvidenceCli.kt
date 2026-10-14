@@ -24,6 +24,7 @@ public object PerformanceEvidenceCli {
             when (command) {
                 PerformanceEvidenceCommand.JmhSummary -> JmhPerformanceEvidence.summarize(paths(request, "runs"), collector, repetitions)
                 PerformanceEvidenceCommand.JmhComparison -> JmhPerformanceEvidence.compare(paths(request, "baseline"), paths(request, "candidate"), collector, repetitions)
+                PerformanceEvidenceCommand.OperationComparison -> JvmOperationReports.compare(request)
             }
         PerformanceJson.writeNew(Path.of(request.textField("output")), report)
     }
