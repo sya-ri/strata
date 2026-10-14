@@ -6,6 +6,8 @@ import dev.s7a.strata.geometry.Constraints
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.layout.VerticalAlignment
 import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.diagnostics.UiRenderMonitor
+import dev.s7a.strata.runtime.diagnostics.UiRenderNodeId
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,26 +28,30 @@ internal class FlowRetainedPolicyTest {
                 fixture.tree.startRenderMonitoring(65_536).use { monitor ->
                     val target = monitor.findNodes(fixture.target).single()
                     fixture.frame(bounds)
-                    var counts = monitor.snapshot().nodes.single { it.id == target }.counts
+                    var counts = targetCounts(monitor, target)
                     assertEquals(0L, counts.getValue(UiRenderMetric.Measure))
                     assertEquals(0L, counts.getValue(UiRenderMetric.Layout))
                     monitor.checkpoint()
                     fixture.update(ids, arrangement = Arrangement.End)
                     fixture.frame(bounds)
-                    counts = monitor.snapshot().nodes.single { it.id == target }.counts
+                    counts = targetCounts(monitor, target)
                     assertEquals(0L, counts.getValue(UiRenderMetric.Measure))
                     assertEquals(1L, counts.getValue(UiRenderMetric.Layout))
                     monitor.checkpoint()
                     fixture.update(ids, arrangement = Arrangement.End, alignment = VerticalAlignment.Bottom)
                     fixture.frame(bounds)
-                    counts = monitor.snapshot().nodes.single { it.id == target }.counts
+                    counts = targetCounts(monitor, target)
                     assertEquals(0L, counts.getValue(UiRenderMetric.Measure))
                     assertEquals(1L, counts.getValue(UiRenderMetric.Layout))
                     monitor.checkpoint()
-                    fixture.update(ids, arrangement = Arrangement.End, alignment = VerticalAlignment.Bottom,
-                        overrides = List(16) { if (it == 0) VerticalAlignment.Center else null })
+                    fixture.update(
+                        ids,
+                        arrangement = Arrangement.End,
+                        alignment = VerticalAlignment.Bottom,
+                        overrides = List(16) { if (it == 0) VerticalAlignment.Center else null },
+                    )
                     fixture.frame(bounds)
-                    counts = monitor.snapshot().nodes.single { it.id == target }.counts
+                    counts = targetCounts(monitor, target)
                     assertEquals(1L, counts.getValue(UiRenderMetric.Measure))
                     assertEquals(1L, counts.getValue(UiRenderMetric.Layout))
                     assertTrue(monitor.snapshot().overflowed.not())
@@ -53,4 +59,14 @@ internal class FlowRetainedPolicyTest {
             }
         }
     }
+
+    private fun targetCounts(
+        monitor: UiRenderMonitor,
+        target: UiRenderNodeId,
+    ): Map<UiRenderMetric, Long> =
+        monitor
+            .snapshot()
+            .nodes
+            .single { it.id == target }
+            .counts
 }

@@ -46,7 +46,8 @@ internal class FlowScopeLifetimeTest {
         }
     }
 
-    private fun description(probe: FlowScopeProbeModifier.Probe) = evaluateComponentTree {
-        FlowRow { Spacer(modifier = Modifier.Empty.then(FlowScopeProbeModifier(probe))) }
-    }
+    private fun description(probe: FlowScopeProbeModifier.Probe) =
+        evaluateComponentTree {
+            FlowRow { Spacer(modifier = Modifier.Empty.then(FlowScopeProbeModifier(probe))) }
+        }
 }

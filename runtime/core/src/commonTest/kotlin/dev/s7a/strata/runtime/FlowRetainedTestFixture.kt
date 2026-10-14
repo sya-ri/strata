@@ -49,24 +49,26 @@ internal class FlowRetainedTestFixture(
         overrides: List<VerticalAlignment?> = List(ids.size) { null },
         keyed: Boolean = true,
     ) {
-        val description = if (original) {
-            val children = ids.mapIndexed { index, id ->
-                val overridden = overrides[index]
-                val modifier = if (overridden == null) Modifier.Empty else Modifier.Empty.then(FlowReferenceNode.AlignmentParentData.Element(FlowReferenceNode.AlignmentParentData.Data(overridden)))
-                leaf(id, keyed, modifier, widths[index], heights[index])
-            }
-            FlowReferenceElement(horizontalSpacing, verticalSpacing, arrangement, alignment, children, target)
-        } else {
-            evaluateComponentTree {
-                FlowRow(key = target, horizontalSpacing = horizontalSpacing, verticalSpacing = verticalSpacing, horizontalArrangement = arrangement, verticalAlignment = alignment) {
-                    ids.forEachIndexed { index, id ->
+        val description =
+            if (original) {
+                val children =
+                    ids.mapIndexed { index, id ->
                         val overridden = overrides[index]
-                        val modifier = if (overridden == null) Modifier.Empty else Modifier.Empty.align(overridden)
-                        element(leaf(id, keyed, modifier, widths[index], heights[index]))
+                        val modifier = if (overridden == null) Modifier.Empty else Modifier.Empty.then(FlowReferenceNode.AlignmentParentData.Element(FlowReferenceNode.AlignmentParentData.Data(overridden)))
+                        leaf(id, keyed, modifier, widths[index], heights[index])
+                    }
+                FlowReferenceElement(horizontalSpacing, verticalSpacing, arrangement, alignment, children, target)
+            } else {
+                evaluateComponentTree {
+                    FlowRow(key = target, horizontalSpacing = horizontalSpacing, verticalSpacing = verticalSpacing, horizontalArrangement = arrangement, verticalAlignment = alignment) {
+                        ids.forEachIndexed { index, id ->
+                            val overridden = overrides[index]
+                            val modifier = if (overridden == null) Modifier.Empty else Modifier.Empty.align(overridden)
+                            element(leaf(id, keyed, modifier, widths[index], heights[index]))
+                        }
                     }
                 }
             }
-        }
         tree.update(description)
     }
 
@@ -84,12 +86,22 @@ internal class FlowRetainedTestFixture(
         return Output(size, commands, semantics, input, key, focused, focus.toList(), keys.toList())
     }
 
-    private fun leaf(id: Int, keyed: Boolean, modifier: Modifier, width: Int, height: Int): Element {
+    private fun leaf(
+        id: Int,
+        keyed: Boolean,
+        modifier: Modifier,
+        width: Int,
+        height: Int,
+    ): Element {
         val tag = TestProbe.ProbeId(id.toString())
-        val sized = modifier.size(width, height).onFocusChanged { focus += id to it }.onKeyEvent {
-            keys += id
-            if (it.key == KeyCode.Enter) InputResult.Consumed else InputResult.Ignored
-        }
+        val sized =
+            modifier
+                .size(width, height)
+                .onFocusChanged { focus += id to it }
+                .onKeyEvent {
+                    keys += id
+                    if (it.key == KeyCode.Enter) InputResult.Consumed else InputResult.Ignored
+                }
         return probe.element(tag, key = if (keyed) tag else null, modifier = sized)
     }
 
