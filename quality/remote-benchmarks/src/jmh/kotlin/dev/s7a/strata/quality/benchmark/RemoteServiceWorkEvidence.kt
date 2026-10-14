@@ -1,9 +1,10 @@
 package dev.s7a.strata.quality.benchmark
 
-import com.google.gson.Gson
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.quality.benchmark.RemoteServiceTrace.WorkSequence
 import dev.s7a.strata.runtime.remote.RemoteMessage
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * Exact generated timed matrix and real public-route work oracle, separate from JMH elapsed/allocation scores.
@@ -18,18 +19,22 @@ internal object RemoteServiceWorkEvidence {
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 232)
         check(RemoteServiceTopology.entries.size == 25)
         check(RemoteServiceTopology.entries.count { it.sessions == 0 } == 4)
+        val output = Files.createTempDirectory(Files.createDirectories(Path.of("build/reports/remote-service-work")), "invocation-")
         RemoteServiceTopology.entries.forEach { topology ->
-            verifySteady(topology)
-            verifyLifecycle(topology)
+            verifySteady(topology, output)
+            verifyLifecycle(topology, output)
             println("Negotiated service $topology: stable/update/churn/lifecycle work and terminal subscriptions verified")
         }
-        RemoteServiceGateEvidence.verify()
+        RemoteServiceGateEvidence.verify(output)
     }
 
     /**
      * Preserves the actual setup, stable/publication/churn and terminal prefix for each generated topology.
      */
-    private fun verifySteady(topology: RemoteServiceTopology) {
+    private fun verifySteady(
+        topology: RemoteServiceTopology,
+        output: Path,
+    ) {
         val transport = RemoteServiceOwnershipAudit()
         val fleet = RemoteServiceFleet(topology)
         val trace = RemoteServiceTrace(topology = fleet.topology, workSequence = WorkSequence.Steady)
@@ -57,7 +62,7 @@ internal object RemoteServiceWorkEvidence {
                 transport.verifyTransportDrained(fleet)
             }.onFailure(trace::verificationFailure).getOrThrow()
         } finally {
-            emit(fleet, trace)
+            emit(fleet, trace, output)
         }
     }
 
@@ -117,7 +122,10 @@ internal object RemoteServiceWorkEvidence {
     /**
      * Retains the complete real lifecycle prefix, including explicit zero-source controls and close output.
      */
-    private fun verifyLifecycle(topology: RemoteServiceTopology) {
+    private fun verifyLifecycle(
+        topology: RemoteServiceTopology,
+        output: Path,
+    ) {
         val transport = RemoteServiceOwnershipAudit()
         val lifecycle = RemoteServiceFleet(topology)
         val trace = RemoteServiceTrace(topology = lifecycle.topology, workSequence = WorkSequence.Lifecycle)
@@ -138,7 +146,7 @@ internal object RemoteServiceWorkEvidence {
                 transport.verifyTransportDrained(lifecycle)
             }.onFailure(trace::verificationFailure).getOrThrow()
         } finally {
-            emit(lifecycle, trace)
+            emit(lifecycle, trace, output)
         }
     }
 
@@ -167,13 +175,14 @@ internal object RemoteServiceWorkEvidence {
     private fun emit(
         fleet: RemoteServiceFleet,
         trace: RemoteServiceTrace,
+        output: Path,
     ) {
         try {
             trace.addresses = fleet.peers.values.map { it.player to it.address }
             trace.work = listOf(fleet.ticks, fleet.publications, fleet.evaluations, fleet.peers.values.sumOf { it.packets }, fleet.peers.values.sumOf { it.bytes })
             trace.phase(fleet)
         } finally {
-            println(Gson().toJson(trace))
+            trace.write(output)
         }
     }
 }

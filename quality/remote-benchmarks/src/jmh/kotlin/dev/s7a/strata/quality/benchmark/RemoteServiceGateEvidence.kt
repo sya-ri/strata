@@ -17,6 +17,7 @@ import dev.s7a.strata.spi.RuntimeExecutionOwner
 import dev.s7a.strata.ui.UiPresentation
 import java.lang.ref.Reference
 import java.lang.ref.WeakReference
+import java.nio.file.Path
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -30,7 +31,7 @@ internal object RemoteServiceGateEvidence {
     /**
      * Runs the finite registry before formal collection, independently of the timed case count.
      */
-    fun verify() {
+    fun verify(output: Path) {
         verifyTerminalOracleControls()
         val cases = RemoteServiceGate.cases()
         check(cases.size == 44 && cases.toSet().size == cases.size)
@@ -75,7 +76,7 @@ internal object RemoteServiceGateEvidence {
                     }.onFailure(trace::verificationFailure).getOrThrow()
                 }
             } finally {
-                println(Gson().toJson(trace))
+                trace.write(output)
             }
         }
     }

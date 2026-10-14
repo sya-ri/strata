@@ -2,11 +2,16 @@
 
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.Gson
+import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.runtime.remote.RemoteLifecycleEvent
 import dev.s7a.strata.runtime.remote.RemoteMessage
 import dev.s7a.strata.runtime.remote.RemoteMessageCodec
 import dev.s7a.strata.runtime.remote.RemotePacket
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.util.Base64
 
 /**
@@ -42,6 +47,17 @@ internal class RemoteServiceTrace(
 
     @Transient
     private val codec = RemoteMessageCodec()
+
+    /**
+     * Preserves the complete untimed prefix outside bounded console output, including failed verification.
+     * Each invocation owns a fresh directory and every finite case owns one new file within it.
+     */
+    fun write(directory: Path) {
+        val variant = case?.let { "${it.gate}-${it.trigger}-${it.targetSessions}-${it.depth}" } ?: checkNotNull(workSequence).name
+        val destination = directory.resolve("$variant-${topology.peers}-${topology.huds}-${topology.screens}.json")
+        Files.writeString(destination, Gson().toJson(this), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        println(Gson().toJson(mapOf("remoteServiceTrace" to destination.toAbsolutePath().normalize().toString(), "sha256" to ArtifactIdentity.file(destination))))
+    }
 
     /**
      * Records exact lifecycle encounter order and detached public values, without retaining an owner/session.

@@ -773,6 +773,8 @@ Churn therefore includes five, six or seven complete ticks and lifecycle include
 Select its five methods through the existing remote `strata.performance.workloads` option and collect both modes three times per actual runtime side with the shared kit.
 Its generated 116-case timed registry and independent finite callback/failure/release registry are separate admission gates.
 Untimed verification records actual messages, packet attempts, lifecycle events and failures in their combined encounter order for every topology, including failed prefixes.
+Each invocation preserves its complete traces as new JSON files under `build/reports/remote-service-work/invocation-*` in the fixture's working directory and prints their paths and SHA-256 hashes.
+Preserve those files directly with the acceptance evidence; bounded console output does not contain the complete traces.
 Public handle/subscription phases use replayable detached deltas, so repeated open phases do not store a full copy of every unchanged handle.
 JMH fleets keep these inspectors absent; an emitted prefix is not a passing process or parity receipt.
 JMH elapsed time, normalized allocation and logical membership positions describe different costs; elapsed scores do not supply actual thread CPU.
