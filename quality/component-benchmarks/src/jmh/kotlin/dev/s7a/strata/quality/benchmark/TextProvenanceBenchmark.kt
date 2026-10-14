@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -276,10 +277,17 @@ public open class TextProvenanceBenchmark {
      */
     public companion object {
         /**
+         * Connects the same complete operations to supplemental owner-thread CPU and allocation measurement.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = TextProvenanceOperationReport
+
+        /**
          * Requires the generated full matrix and every independent contract check before collection.
          */
         @JvmStatic
         public fun verifyWork() {
+            TextProvenanceOperationReport.verifyRows()
             check(JmhWorkloadInventory.capture(listOf(TextProvenanceBenchmark::class.java), setOf("avgt")).size == Case.entries.size)
             TextProvenanceFailures.verify()
             for (case in Case.entries) {

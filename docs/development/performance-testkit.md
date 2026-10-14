@@ -594,6 +594,11 @@ The complete six matrices require at least 7,152 seconds of declared warm-up/mea
 Preserve every CPU/allocation/control row and regression; quick, smoke and selected subsets do not satisfy the paired admission.
 Synthetic CPU fonts make native engine timing inapplicable to this corpus; current full JVM/browser/shared and all 22 supported Minecraft/native parity jobs still gate final correctness.
 
+The optional `operationReport()` adapter retains all 149 original boundaries through the shared owner-thread meter.
+Each lookup report samples its complete 512-query trace, and each slice report samples all 32 detached results; other reports retain the complete original operation and restoring frames.
+Prepared resources, independent before/after oracles and surviving-owner cleanup remain outside samples.
+Report actual owner-thread CPU, owner/all-thread allocation and wall time separately from JMH, preserving clean-frame controls and unavailable counters.
+
 ## Opt-in paired JVM CI
 
 The `JVM checks` workflow runs a complete frozen JVM comparison in one Windows runner when the final driver commit declares its input producer.
