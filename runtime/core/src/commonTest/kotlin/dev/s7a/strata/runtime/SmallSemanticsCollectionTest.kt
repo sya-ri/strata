@@ -37,9 +37,10 @@ internal class SmallSemanticsCollectionTest {
         val hidden = fixture.node(5, listOf(payload("hidden")))
         val root = fixture.node(0, participates = false)
         root.placedIndices = setOf(0, 1, 2, 3)
-        val children = listOf(passive, empty, one, many, hidden).map { node ->
-            fixture.element(node, modifier = if (node === one) Modifier.Empty.semantics(payload("modifier")) else Modifier.Empty)
-        }
+        val children =
+            listOf(passive, empty, one, many, hidden).map { node ->
+                fixture.element(node, modifier = if (node === one) Modifier.Empty.semantics(payload("modifier")) else Modifier.Empty)
+            }
         val session = createRuntimeUiSession { fixture.element(root, children, Modifier.Empty.semantics(payload("outer"))) }
         try {
             session.attach()
@@ -121,7 +122,14 @@ internal class SmallSemanticsCollectionTest {
         val expected = initial.semantics.toList()
         first.values = listOf(payload("changed"))
         first.invalidatePhase(DirtyPhase.Semantics)
-        assertEquals(payload("changed"), session.frame(constraints).semantics.first().semantics)
+        assertEquals(
+            payload("changed"),
+            session
+                .frame(constraints)
+                .semantics
+                .first()
+                .semantics,
+        )
         assertEquals(expected, initial.semantics)
         declaration.value = fixture.element(root, listOf(fixture.element(second), fixture.element(first)))
         val reordered = session.frame(constraints)
@@ -174,12 +182,13 @@ internal class SmallSemanticsCollectionTest {
     fun refreshedNonparticipantStillChecksTheExecutionOwner() {
         val owner = RuntimeExecutionOwner()
         val other = RuntimeExecutionOwner()
-        val (pipeline, entry) = owner.run {
-            val fixture = SemanticsCollectionFixture()
-            val node = fixture.node(0, participates = false)
-            val entry = RetainedNode(fixture.element(node), node, null)
-            SemanticsPipeline(OwnerGuard()) to entry
-        }
+        val (pipeline, entry) =
+            owner.run {
+                val fixture = SemanticsCollectionFixture()
+                val node = fixture.node(0, participates = false)
+                val entry = RetainedNode(fixture.element(node), node, null)
+                SemanticsPipeline(OwnerGuard()) to entry
+            }
         other.run { assertFailsWith<IllegalStateException> { pipeline.semantics(entry) } }
         assertNull(entry.localSemantics)
         owner.run { assertEquals(emptyList(), pipeline.semantics(entry)) }

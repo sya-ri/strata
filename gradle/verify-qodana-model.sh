@@ -954,11 +954,6 @@ while IFS=$'\t' read -r module_name source_type source_url; do
     exit 1
   }
   classify_target_source_path "$repository_relative_path"
-  # The benchmark owner's own source remains outside native-target parity; foreign links do not.
-  if [[ "$repository_relative_path" == 'quality/component-benchmarks/src/jmh/kotlin' && \
-    "$module_name" =~ ^(component-benchmarks|quality-component-benchmarks|strata\.quality\.component-benchmarks)$ ]]; then
-    target_source_allowed_owners=''
-  fi
   if $target_source_uses_target_namespace && [[ -z "$target_source_allowed_owners" ]]; then
     echo "Qodana project modules contain an unapproved target-namespace source root: $source_url" >&2
     exit 1
@@ -984,7 +979,20 @@ target_source_mismatches=$(
     --arg docsPattern "$docs_pattern" \
     --arg fontPattern "$font_backend_pattern" \
     --rawfile expectedTargetSources "$expected_target_source_roots" \
-    --rawfile actualSources "$model_source_roots" '
+    --rawfile actualSources "$model_source_roots" \
+    --slurpfile declarations "$project_root/build/qodana/declarations.json" '
+      def declaredJmhSource($source):
+        any($declarations[0].owners[];
+          .module == $source.module
+          and any(.roots[];
+            .exists and .generated == false
+            and .kind == $source.type
+            and ("file://$PROJECT_DIR$/" + .path) == $source.path
+          )
+        );
+      def rootCounts:
+        group_by([.owner, .version, .type, .path])
+        | map(.[0] + {count: length});
       def expectedTargetSources:
         $expectedTargetSources
         | split("\n")
@@ -1035,7 +1043,11 @@ target_source_mismatches=$(
             actualSources[]
             | . as $source
             | ({name: $source.module} | targetIdentity($runtimePattern; $integrationPattern; $docsPattern; $fontPattern)) as $identity
-            | select($identity.owner != "unexpected-module" or ($source.classifiedOwners | length) != 0)
+            # Keep native consumers exact; the final declaration verifier checks every JMH owner.
+            | select(
+                $identity.owner != "unexpected-module"
+                or (($source.classifiedOwners | length) != 0 and (declaredJmhSource($source) | not))
+              )
             | {
                 owner: $identity.owner,
                 version: $identity.version,
@@ -1048,7 +1060,10 @@ target_source_mismatches=$(
       | if $actual == $expected then
           []
         else
-          [{expected: $expected, actual: $actual}]
+          [{
+            missing: (($expected | rootCounts) - ($actual | rootCounts)),
+            unexpected: (($actual | rootCounts) - ($expected | rootCounts))
+          }]
         end
     ' "$model"
 )
@@ -1058,3 +1073,5 @@ else
   echo "Qodana project modules do not exactly match their existing owned and declared linked target source roots: $target_source_mismatches" >&2
   exit 1
 fi
+
+"$qodana_python" "$script_root/verify-qodana-declarations.py" "$project_root" "$model" "$qodana_container_project_root" "$(dirname "$input_model")/Java.json"

@@ -1,0 +1,55 @@
+{
+  "schema": "issue170-current-source-provenance-v1",
+  "published_pr_head": "cd21d4ed1acea0a34059d48b2cbe9380f21b3f74",
+  "source_base": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+  "sources": {
+    "baseline": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "e14229e453ff44467d4a4ac2754c6a9163234400",
+      "patches": [
+        {
+          "path": ".github/performance/issue170-full/baseline.patch",
+          "sha256": "baaac0ed60767190c3da97eca81e83daa01049470fc310d7e92d4d4baf22d675"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "c15bf04ce386e1602f8ede7a5048784f831b1e37",
+      "patches": [
+        {
+          "path": ".github/performance/issue170-full/candidate.patch",
+          "sha256": "a73423061d9661a9a9ed2c724fcbd6af24eec5eac70f4e9d280d00f3bef6edf3"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "c15bf04ce386e1602f8ede7a5048784f831b1e37",
+      "patches": [
+        {
+          "path": ".github/performance/issue170-full/candidate.patch",
+          "sha256": "a73423061d9661a9a9ed2c724fcbd6af24eec5eac70f4e9d280d00f3bef6edf3"
+        }
+      ]
+    }
+  },
+  "production_difference_only": [
+    "runtime/core/src/main/kotlin/dev/s7a/strata/runtime/SemanticsPipeline.kt"
+  ],
+  "candidate_only_retention_test": "runtime/core/src/test/kotlin/dev/s7a/strata/runtime/SmallSemanticsCollectorRetentionTest.kt",
+  "shared_test_ids": [
+    "dev.s7a.strata.runtime.SmallSemanticsCollectionTest#mixedCallbacksPreserveValuesBoundsVirtualAncestryUnplacedEntriesAndInput",
+    "dev.s7a.strata.runtime.SmallSemanticsCollectionTest#emptyAndSmallPayloadsPreserveSelfInvalidationAndPaintOnlyReuse",
+    "dev.s7a.strata.runtime.SmallSemanticsCollectionTest#priorFramesStayDetachedAfterPayloadChangesReorderRemovalDetachAndClose",
+    "dev.s7a.strata.runtime.SmallSemanticsCollectionTest#callbackFailuresBeforeAndAfterBufferGrowthCloseScopesAndPreservePrimaryAndDisposalOrder",
+    "dev.s7a.strata.runtime.SmallSemanticsCollectionTest#refreshedNonparticipantStillChecksTheExecutionOwner",
+    "dev.s7a.strata.runtime.SmallSemanticsScopeThreadTest#zeroSingletonAndManyCallbacksRejectOtherThreadsAndClosedScopes"
+  ],
+  "candidate_only_test_id": "dev.s7a.strata.runtime.SmallSemanticsCollectorRetentionTest#zeroSingletonAndManyClosedCollectorsReleaseConstructionValues",
+  "fixture_original_after_only_registration_removal_equal_public": true,
+  "owner_CPU_meter": "Existing JvmPerformanceRunner/PerformancePlan30warmup60samples; original JMH3x1s/5x1s/fork1/thread1/gc unchanged",
+  "actual_compiled_source_and_measurements": "Pending",
+  "prior_score_credit": 0,
+  "formatter_delta_scope": "One shared common-test formatting delta only; assertions/string literals unchanged, originalfixture/adapter/runtime production unchanged"
+}

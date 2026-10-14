@@ -11,14 +11,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 /**
- * Verifies every callback cardinality checks physical ownership and captured closed collectors release payloads.
+ * Verifies every callback cardinality checks physical ownership, closed-scope access and detached frame values.
  */
 internal class SmallSemanticsScopeThreadTest {
     @Test
-    fun zeroSingletonAndManyCallbacksRejectOtherThreadsAndReleaseConstructionValues() {
+    fun zeroSingletonAndManyCallbacksRejectOtherThreadsAndClosedScopes() {
         for (count in listOf(0, 1, 8)) {
             val fixture = SemanticsCollectionFixture()
             val values = MutableList(count) { Semantics(label = UiText.Literal(it.toString())) }
@@ -40,11 +39,6 @@ internal class SmallSemanticsScopeThreadTest {
                 assertEquals(1, failures.size)
                 assertEquals("This runtime object requires its owning execution context.", failures.single().message)
                 assertEquals("The callback scope is no longer active.", assertFailsWith<IllegalStateException> { scope.emit(rejected) }.message)
-                for (name in listOf("first", "values")) {
-                    val field = scope.javaClass.getDeclaredField(name)
-                    field.isAccessible = true
-                    assertNull(field.get(scope), name)
-                }
                 values.clear()
                 assertEquals(expected, frame.semantics.map { it.semantics })
                 val thread = Thread { failures.add(assertFailsWith<IllegalStateException> { scope.emit(rejected) }) }

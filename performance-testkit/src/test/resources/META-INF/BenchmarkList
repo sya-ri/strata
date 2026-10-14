@@ -1,0 +1,4 @@
+# Synthetic JMH metadata for selector and untimed-verifier tests; no generated benchmark execution.
+JMH S 63 dev.s7a.strata.performance.JmhFixtureSelectionTest.PlainFixture S 71 dev.s7a.strata.performance.JmhFixtureSelectionTest.PlainFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E
+JMH S 65 dev.s7a.strata.performance.JmhFixtureSelectionTest.CheckedFixture S 73 dev.s7a.strata.performance.JmhFixtureSelectionTest.CheckedFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E
+JMH S 64 dev.s7a.strata.performance.JmhFixtureSelectionTest.FailedFixture S 72 dev.s7a.strata.performance.JmhFixtureSelectionTest.FailedFixture_jmhTest S 4 work S 11 AverageTime E A 1 1 1 E E E E E E E E E E E E E E E E E

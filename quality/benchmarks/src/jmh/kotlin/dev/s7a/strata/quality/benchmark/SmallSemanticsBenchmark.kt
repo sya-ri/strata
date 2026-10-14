@@ -19,6 +19,7 @@ import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.PaintScope
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
@@ -433,6 +434,12 @@ public open class SmallSemanticsBenchmark {
      * Generic collector discovers this complete deterministic matrix without a fixture registry.
      */
     public companion object {
+        /**
+         * Reports every original collection row with the shared owner CPU and allocation meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SmallSemanticsOperationReport
+
         /**
          * Verifies all 26 generated cases with identical ordinary/captured callback inputs.
          */

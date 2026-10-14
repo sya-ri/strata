@@ -77,10 +77,11 @@ internal class SemanticsPipeline(
             } else if (initial == null) {
                 first = semantics
             } else {
-                values = ArrayList<Semantics>().also {
-                    it.add(initial)
-                    it.add(semantics)
-                }
+                values =
+                    ArrayList<Semantics>().also {
+                        it.add(initial)
+                        it.add(semantics)
+                    }
                 first = null
             }
         }
