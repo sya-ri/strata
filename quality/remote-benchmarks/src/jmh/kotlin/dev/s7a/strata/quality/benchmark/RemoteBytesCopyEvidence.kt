@@ -10,9 +10,9 @@ import com.sun.jdi.StringReference
 import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
 import dev.s7a.strata.performance.ArtifactIdentity
-import dev.s7a.strata.performance.PerformanceJson
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 
 /**
  * Observes actual Bytes snapshot arrays in a separate untimed JDI process, using only the standard JDK.
@@ -64,10 +64,18 @@ public object RemoteBytesCopyEvidence {
             require(typed.filter { it.first == RemoteBytesBenchmark.Corpus.ByteFree || it.second == RemoteBytesOperation.ActionFraming }.all { row ->
                 listOf("constructor_snapshot_arrays", "constructor_snapshot_bytes", "extraction_snapshot_arrays", "extraction_snapshot_bytes").all { row.third.get(it).asLong == 0L }
             })
+            val provenance = read(child)
+            val runtimeClasses = provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").map { it.asJsonObject.get("representativeClass").asString }.toSet()
             val origins = JsonObject()
             request.getAsJsonObject("required_classes").keySet().forEach { name ->
-                Class.forName(name, false, javaClass.classLoader)
-                origins.add(name, JsonObject().apply { addProperty("pid", ProcessHandle.current().pid()) })
+                val pid =
+                    if (name in runtimeClasses) {
+                        provenance.get("pid").asLong
+                    } else {
+                        Class.forName(name, false, javaClass.classLoader)
+                        ProcessHandle.current().pid()
+                    }
+                origins.add(name, JsonObject().apply { addProperty("pid", pid) })
             }
             results.add(
                 JsonObject().apply {
@@ -91,15 +99,14 @@ public object RemoteBytesCopyEvidence {
             require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
         }
         require(ArtifactIdentity.file(requestPath) == requestHash)
-        PerformanceJson.writeNew(
-            output.resolve("receipt.json"),
+        val receipt =
             JsonObject().apply {
                 addProperty("schema", "strata-paired-jvm-preflight-receipt-v1")
                 addProperty("status", "passed")
                 addProperty("request_sha256", requestHash)
                 add("controls", results)
-            },
-        )
+            }
+        Files.writeString(output.resolve("receipt.json"), receipt.toString(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
     }
 
     private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
