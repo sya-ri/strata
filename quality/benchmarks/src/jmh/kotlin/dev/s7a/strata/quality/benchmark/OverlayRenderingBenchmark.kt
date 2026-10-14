@@ -17,6 +17,19 @@ import org.openjdk.jmh.annotations.TearDown
 @OptIn(InternalStrataRuntimeApi::class)
 public open class OverlayRenderingBenchmark {
     /**
+     * Exposes the original deterministic gate to shared fixture selection.
+     */
+    public companion object {
+        /**
+         * Verifies original long-lived work, retention and independent pixel parity before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            OverlayWorkEvidence.main(emptyArray())
+        }
+    }
+
+    /**
      * Updates the lower layer and assembles all commands without rasterizing them.
      */
     @Benchmark

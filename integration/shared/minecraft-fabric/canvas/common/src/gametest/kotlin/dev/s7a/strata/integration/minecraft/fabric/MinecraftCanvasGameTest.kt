@@ -90,6 +90,7 @@ internal object MinecraftCanvasGameTest {
         verifyPortableOwners(context, profile)
         MinecraftOrderedCompositionGameTest.run(context, profile)
         MinecraftCycleButtonSelectionGameTest.run(context, profile)
+        MinecraftDestinationPaletteGameTest.run(context, profile)
     }
 
     private fun verifyPortableOwners(
@@ -102,7 +103,7 @@ internal object MinecraftCanvasGameTest {
         MinecraftCanvasConsumptionGameTest.run(context, profile)
         MinecraftCanvasGenerationGameTest.run(context, profile)
         MinecraftCanvasPointerGameTest.run(context, profile)
-        MinecraftCanvasFailureGameTest.run(context, profile)
+        MinecraftNativePerformancePacingGameTest.run(context) { MinecraftCanvasFailureGameTest.run(context, profile) }
         MinecraftSamplingCoverageDeviceGameTest.run(context)
         MinecraftSamplingCoveragePresenterGameTest.run(context, profile)
     }
