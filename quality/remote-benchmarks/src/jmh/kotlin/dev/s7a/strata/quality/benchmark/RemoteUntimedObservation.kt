@@ -107,12 +107,14 @@ internal object RemoteUntimedObservation {
         vm: VirtualMachine,
         classes: List<String>,
     ): List<EventRequest> =
-        classes.flatMap { name ->
-            listOf(
-                vm.eventRequestManager().createMethodEntryRequest().apply { addClassFilter(name) },
-                vm.eventRequestManager().createMethodExitRequest().apply { addClassFilter(name) },
-            )
-        }.onEach { it.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD) }
+        classes
+            .flatMap { name ->
+                listOf(
+                    vm.eventRequestManager().createMethodEntryRequest().apply { addClassFilter(name) },
+                    vm.eventRequestManager().createMethodExitRequest().apply { addClassFilter(name) },
+                )
+            }
+            .onEach { it.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD) }
 
     private fun observe(
         vm: VirtualMachine,

@@ -68,10 +68,12 @@ public object RemoteBytesCopyEvidence {
                         "artifacts",
                         JsonArray().apply {
                             listOf(counts, child).forEach { file ->
-                                add(JsonObject().apply {
-                                    addProperty("path", output.relativize(file).toString().replace('\\', '/'))
-                                    addProperty("sha256", ArtifactIdentity.file(file))
-                                })
+                                add(
+                                    JsonObject().apply {
+                                        addProperty("path", output.relativize(file).toString().replace('\\', '/'))
+                                        addProperty("sha256", ArtifactIdentity.file(file))
+                                    },
+                                )
                             }
                         },
                     )
@@ -96,16 +98,23 @@ public object RemoteBytesCopyEvidence {
         require(typed.map { it.first to it.second }.toSet().size == 64 && typed.size == 64)
         val construction = typed.single { it.first == RemoteBytesBenchmark.Corpus.Small32 && it.second == RemoteBytesOperation.ProjectionConstruction }.third
         require(construction.get("constructor_snapshot_arrays").asLong == 1L && construction.get("constructor_snapshot_bytes").asLong == 32L)
-        require(typed.filter { it.first == RemoteBytesBenchmark.Corpus.ByteFree || it.second == RemoteBytesOperation.ActionFraming }.all { row ->
-            listOf("constructor_snapshot_arrays", "constructor_snapshot_bytes", "extraction_snapshot_arrays", "extraction_snapshot_bytes").all { row.third.get(it).asLong == 0L }
-        })
+        require(
+            typed.filter { it.first == RemoteBytesBenchmark.Corpus.ByteFree || it.second == RemoteBytesOperation.ActionFraming }.all { row ->
+                listOf("constructor_snapshot_arrays", "constructor_snapshot_bytes", "extraction_snapshot_arrays", "extraction_snapshot_bytes").all { row.third.get(it).asLong == 0L }
+            },
+        )
     }
 
     private fun origins(
         request: JsonObject,
         provenance: JsonObject,
     ): JsonObject {
-        val runtimeClasses = provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").map { it.asJsonObject.get("representativeClass").asString }.toSet()
+        val runtimeClasses =
+            provenance
+                .getAsJsonObject("runtime_metadata")
+                .getAsJsonArray("modules")
+                .map { it.asJsonObject.get("representativeClass").asString }
+                .toSet()
         val result = JsonObject()
         request.getAsJsonObject("required_classes").keySet().forEach { name ->
             val pid =
