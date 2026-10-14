@@ -103,12 +103,7 @@ public object FabricRemoteScreens {
         inboxes.keys.filter { it !== native }.forEach { inboxes.remove(it)?.close() }
         if (native == null || failed) return
         runCatching {
-            val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
-            if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
-            repeat(64) {
-                val bytes = inbox.poll() ?: return@repeat
-                receiveFrame(native, bytes)
-            }
+            receiveFrames(native)
             peers.values
                 .toList()
                 .filter { it.isClosed.not() }
@@ -118,6 +113,19 @@ public object FabricRemoteScreens {
             peers.values.forEach { peer -> runCatching { peer.close(RemoteFailure.InvalidMessage) }.onFailure(failure::addSuppressed) }
             inboxes.remove(native)?.close()
             logger.warn("Strata remote channel ended", failure)
+        }
+    }
+
+    /**
+     * Transfers bounded current-connection ingress on the client tick thread before peer session work.
+     * An empty poll ends only this drain; failures propagate through the tick's channel cleanup boundary.
+     */
+    private fun receiveFrames(native: Connection) {
+        val inbox = inboxes.computeIfAbsent(native) { RemoteFrameInbox() }
+        if (inbox.failed) throw RemoteProtocolException(RemoteFailure.ResourceLimit, "Remote receive queue is full.")
+        for (index in 0 until 64) {
+            val bytes = inbox.poll() ?: break
+            receiveFrame(native, bytes)
         }
     }
 

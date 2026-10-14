@@ -7,6 +7,11 @@ import com.google.gson.JsonObject
  * Revalidates standard JMH raw metrics and independent fork confirmations without creating timings.
  */
 internal object JmhMetricEvidence {
+    /**
+     * External JMH metric IDs already covered by the legacy summary or independent provenance verification.
+     */
+    internal val summarizedSecondaryKeys: Set<String> = setOf("strata.provenance", "gc.alloc.rate.norm", "gc.count", "gc.time")
+
     internal val controlKeys: Set<String> =
         setOf("jmhVersion", "mode", "threads", "forks", "jvm", "jvmArgs", "jdkVersion", "vmName", "vmVersion", "warmupIterations", "warmupTime", "warmupBatchSize", "measurementIterations", "measurementTime", "measurementBatchSize")
 
@@ -29,6 +34,14 @@ internal object JmhMetricEvidence {
         metric(secondary, "gc.alloc.rate.norm", "B/op")
         metric(secondary, "gc.count", "counts")
         if (secondary.has("gc.time")) metric(secondary, "gc.time", "ms")
+        (secondary.keySet() - summarizedSecondaryKeys).forEach { name ->
+            val additional = secondary.objectField(name)
+            additional.textField("scoreUnit")
+            checkNotNull(additional.get("score")).metricValue()
+            val additionalSamples = additional.arrayField("rawData")
+            verifyMatrix(additionalSamples, row.countField("forks"), row.countField("measurementIterations"))
+            additionalSamples.forEach { fork -> fork.asJsonArray.forEach { it.metricValue() } }
+        }
     }
 
     private fun verifyProvenance(
