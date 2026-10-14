@@ -18,8 +18,9 @@ internal object ComponentProfile {
     /**
      * Creates the complete profile outside timed operations; no native or application resource is acquired.
      * The unchanged default is the component bitmap snapshot; supplemental metric fixtures may supply their own snapshot.
+     * A null snapshot selects deterministic compatibility ASCII glyphs instead of resource fonts.
      */
-    internal fun create(snapshot: MinecraftFontSnapshot = ComponentFontAssets.snapshot()): MinecraftUiProfile =
+    internal fun create(snapshot: MinecraftFontSnapshot? = ComponentFontAssets.snapshot()): MinecraftUiProfile =
         createMinecraftUiProfile {
             menuBackground(image(16, 16))
             containerBackground(image(256, 256))
@@ -46,7 +47,16 @@ internal object ComponentProfile {
             tooltipFrame(image(100, 100))
             textFieldNormal(image(200, 20))
             textFieldHighlighted(image(200, 20))
-            fonts(snapshot)
+            if (snapshot == null) {
+                for (codePoint in 0x21..0x7E) {
+                    val pixels = IntArray(64) { 0x00FFFFFF }
+                    pixels[(codePoint - 0x21) % 6] = -1
+                    pixels[14] = -1
+                    printableAsciiGlyph(codePoint, createDrawImage(IntSize(8, 8), pixels))
+                }
+            } else {
+                fonts(snapshot)
+            }
             buttonNormal(image(200, 20), 3, NineSliceCenterMode.Tiled)
             buttonHighlighted(image(200, 20), 3, NineSliceCenterMode.Tiled)
             buttonDisabled(image(200, 20), 1, NineSliceCenterMode.Tiled)

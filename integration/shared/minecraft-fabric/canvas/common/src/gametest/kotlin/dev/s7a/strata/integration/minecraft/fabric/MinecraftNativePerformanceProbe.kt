@@ -6,7 +6,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.ArtifactIdentity
-import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.MinecraftPerformanceMeter
 import dev.s7a.strata.performance.NativePerformanceFixture
 import dev.s7a.strata.performance.PerformanceJson
@@ -16,6 +15,7 @@ import dev.s7a.strata.quality.benchmark.ComponentWorkload
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftScreen
 import dev.s7a.strata.runtime.minecraft.fabric.createMinecraftScreen
+import dev.s7a.strata.runtime.render.DrawCommand
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
 import java.nio.file.Files
@@ -34,7 +34,7 @@ internal class MinecraftNativePerformanceProbe(
     private val profile: MinecraftUiProfile,
     private val canvas: MinecraftCanvasTestFixture,
     private val output: Path,
-    private val validateViewport: (Int) -> Unit,
+    private val options: MinecraftNativePerformanceOptions,
 ) {
     private val profileMode = PerformanceProfile.fromQuickFlag(System.getProperty("strata.performance.quick"))
     private val plan = profileMode.plan()
@@ -46,9 +46,10 @@ internal class MinecraftNativePerformanceProbe(
      * Native resources must be loaded before entry, and output must be fresh for this independent process.
      * Run through production verification so loaded module origins are actual archives rather than development directories.
      * The caller supplies verified host, window and options metadata and restores its viewport after return.
-     * [validateViewport] runs on the owner thread and must check actual framebuffer, GUI scale and option values.
+     * Returns an unpublished report; the entry point publishes success only after native and option cleanup.
+     * [options] verifies actual framebuffer, GUI scale, native pacing and borrowed settings on the client owner.
      */
-    internal fun run(conditions: JsonObject) {
+    internal fun run(conditions: JsonObject): JsonObject {
         val selection = selection()
         val report = createReport(conditions, selection)
         val phases = JsonArray()
@@ -87,8 +88,7 @@ internal class MinecraftNativePerformanceProbe(
             },
         )
         check(phases.size() == scales.size * selection.ids.size)
-        report.addProperty("status", "passed")
-        PerformanceJson.writeNew(output.resolve("report.json"), report)
+        return report
     }
 
     private fun selection(): PerformanceSelection = PerformanceSelection(if (sampledCorpus) MinecraftSampledPerformanceCase.entries.map { it.name }.toSet() else ComponentWorkload.entries.map { it.name }.toSet() + "NativeCanvas", System.getProperty("strata.performance.workloads") ?: if (profileMode == PerformanceProfile.Quick) (if (sampledCorpus) MinecraftSampledPerformanceCase.entries.first().name else ComponentWorkload.entries.first().name) else null)
@@ -101,7 +101,7 @@ internal class MinecraftNativePerformanceProbe(
         val report = conditions.deepCopy()
         report.add("selected_cases", JsonArray().apply { selection.ids.forEach(::add) })
         report.addProperty("schema_version", 1)
-        report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1"))
+        report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "$family-selected-paced-presented-v2" else "$family-paced-presented-v2"))
         if (profileMode == PerformanceProfile.Quick) report.addProperty("measurement_profile", profileMode.name)
         report.addProperty("run_id", UUID.randomUUID().toString())
         val fixtureType = MinecraftNativePerformanceProbe::class.java
@@ -139,22 +139,7 @@ internal class MinecraftNativePerformanceProbe(
             UiDefinition(payload.title, pausesGame = payload.pausesGame) { payload.content(this) }
         }
 
-    private fun runtimeMetadata(): JsonObject =
-        context.onClient {
-            LoadedArtifactMetadata
-                .capture(
-                    FabricMinecraftScreen::class.java.classLoader,
-                    mapOf(
-                        "api" to "dev.s7a.strata.render.DrawImage",
-                        "core" to "dev.s7a.strata.runtime.UiSession",
-                        "minecraft" to "dev.s7a.strata.runtime.minecraft.MinecraftUiHost",
-                        "headless" to "dev.s7a.strata.runtime.headless.HeadlessImage",
-                        "fonts" to "dev.s7a.strata.runtime.minecraft.font.lwjgl.LwjglMinecraftFontBackendFactory",
-                        "fabric" to FabricMinecraftScreen::class.java.name,
-                    ),
-                    setOf("api", "core", "minecraft", "headless", "fonts"),
-                ).also(LoadedArtifactMetadata::verifyComplete)
-        }
+    private fun runtimeMetadata(): JsonObject = context.nativePerformanceRuntimeMetadata()
 
     @Suppress("TooGenericExceptionCaught") // Native fixture failures remain primary while independent owner-thread cleanup is attempted.
     private fun measure(
@@ -170,6 +155,7 @@ internal class MinecraftNativePerformanceProbe(
         var failure: Throwable? = null
         try {
             context.onClient {
+                options.beginPhase(plan.samples)
                 gpu = createGpuProbe(plan.samples)
                 context.setScreen(screen)
                 meter = MinecraftPerformanceMeter(screen)
@@ -177,13 +163,17 @@ internal class MinecraftNativePerformanceProbe(
                     "$name presented scale $scale",
                     plan,
                     NativePerformanceFixture(
-                        ready = { context.currentScreen() === screen && context.hasOverlay().not() },
+                        ready = { context.currentScreen() === screen && context.hasOverlay().not() && options.pacingReady() },
                         settleFrames = 8,
                         validateFrame = {
                             check(context.currentScreen() === screen)
-                            validateViewport(scale)
+                            options.validate(scale)
                         },
-                        beforeSamples = { collecting = true },
+                        beforeSamples = {
+                            options.beforeSamples()
+                            collecting = true
+                        },
+                        afterSamples = { options.afterSamples() },
                     ),
                     update = { index ->
                         if (collecting) gpu?.arm()
@@ -192,11 +182,11 @@ internal class MinecraftNativePerformanceProbe(
                 )
             }
             context.waitFor(2400) { checkNotNull(meter).completed }
-            return collectResult(scale, name, checkNotNull(meter), gpu)
+            return collectResult(scale, name, checkNotNull(meter), gpu, screen)
         } catch (caught: Throwable) {
             failure = caught
             try {
-                val receipt = context.onClient { meter?.receipt() ?: JsonObject() }
+                val receipt = context.onClient { (meter?.receipt() ?: JsonObject()).apply { add("pacing_progress", options.pacingProgress()) } }
                 receipt.addProperty("case", name)
                 receipt.addProperty("gui_scale", scale)
                 receipt.addProperty("failure", caught.toString())
@@ -221,8 +211,9 @@ internal class MinecraftNativePerformanceProbe(
         name: String,
         meter: MinecraftPerformanceMeter,
         gpu: MinecraftNativeGpuProbe?,
+        screen: FabricMinecraftScreen,
     ): JsonObject {
-        val result = context.onClient { meter.result() }
+        val result = context.onClient { meter.result().apply { add("pacing", options.pacingEvidence()) } }
         val queries = gpu
         if (queries != null) {
             context.waitFor(2400) { queries.completed }
@@ -234,6 +225,7 @@ internal class MinecraftNativePerformanceProbe(
         result.addProperty("gui_scale", scale)
         result.addProperty("framebuffer_width", viewport.width)
         result.addProperty("framebuffer_height", viewport.height)
+        result.add("portable_composition", context.onClient { portableComposition(screen, name) })
         val screenshot = context.takeScreenshot("performance-$name-scale-$scale", viewport)
         val images = output.resolve("images")
         Files.createDirectories(images)
@@ -241,6 +233,28 @@ internal class MinecraftNativePerformanceProbe(
         result.addProperty("png_file", screenshot.fileName.toString())
         result.addProperty("png_sha256", ArtifactIdentity.file(screenshot))
         return result
+    }
+
+    // Inspect immutable current preparation after measurement; no diagnostic read enters a sampled interval.
+    private fun portableComposition(
+        screen: FabricMinecraftScreen,
+        name: String,
+    ): JsonObject {
+        val images = MinecraftCompositionParityInputs.portable(screen).map { it.first }
+        val gpuTiles = images.count(MinecraftCompositionParityInputs::composed)
+        val cpuSampledTiles =
+            images.count { image ->
+                MinecraftCompositionParityInputs.composed(image).not() &&
+                    (MinecraftCompositionParityInputs.member(image, "commands") as List<*>).any { it is DrawCommand.SampledImage }
+            }
+        val case = MinecraftSampledPerformanceCase.entries.singleOrNull { it.name == name }
+        val cpuRows = case == MinecraftSampledPerformanceCase.SampledOrderedRowsSmall || case == MinecraftSampledPerformanceCase.SampledScrolledRowsSmall
+        if (cpuRows) check(0 < cpuSampledTiles && gpuTiles == 0) { "Small sampled rows must measure portable CPU composition." }
+        return JsonObject().apply {
+            addProperty("tiles", images.size)
+            addProperty("gpu_tiles", gpuTiles)
+            addProperty("cpu_sampled_tiles", cpuSampledTiles)
+        }
     }
 
     // The optional class is compiled only for the native timestamp-query family; other targets report unavailable.
