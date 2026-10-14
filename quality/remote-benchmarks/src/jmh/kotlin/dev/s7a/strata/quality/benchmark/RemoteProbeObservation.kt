@@ -9,6 +9,11 @@ import com.sun.jdi.event.MethodExitEvent
  */
 internal interface RemoteProbeObservation {
     /**
+     * Exact production class filters whose entry and exit events belong to this observer.
+     */
+    val observedClasses: List<String>
+
+    /**
      * Detached complete case rows, with no references to production objects or debugger mirrors.
      */
     val rows: JsonArray
