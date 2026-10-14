@@ -64,36 +64,31 @@ public object NativeCanvasLookupOperationReport : JvmOperationReportAdapter {
         check(System.getProperty("compilerBlackholesEnabled", "false").toBoolean().not()) { "Supplemental owner collection requires the software consumer." }
         val benchmark = NativeCanvasLookupBenchmark()
         val reports = linkedMapOf<String, JsonObject>()
-        for (boundary in Boundary.entries) {
-            for (placement in Placement.entries) {
-                for (portable in listOf(8, 10_000)) {
-                    for (changed in listOf(false, true)) {
-                        val row = row(boundary, placement, portable, changed)
-                        val scene = Scene().apply {
-                            this.placement = placement
-                            this.portable = portable
-                            this.changed = changed
-                        }
-                        try {
-                            scene.setup()
-                            val sample =
-                                JvmPerformanceRunner.measure<Any>(row.id, plan) {
-                                    when (boundary) {
-                                        Boundary.Target -> benchmark.target(scene, sink)
-                                        Boundary.Protocol -> benchmark.protocol(scene, sink)
-                                        Boundary.Capture -> benchmark.capture(scene)
-                                        Boundary.OneShot -> benchmark.captureOneShot(scene)
-                                        Boundary.Rasterize -> benchmark.rasterizePrepared(scene)
-                                        Boundary.Combined -> benchmark.captureAndRasterize(scene)
-                                    }
-                                }
-                            check(reports.put(row.id, sample.evidence) == null)
-                        } finally {
-                            sink.evaporate("Yes, I am Stephen Hawking, and know a thing or two about black holes.")
-                            scene.close()
+        for (row in rows) {
+            val boundary = Boundary.entries.single { it.method == row.benchmark.substringAfterLast('.') }
+            val scene =
+                Scene().apply {
+                    placement = Placement.valueOf(row.parameters.getValue("placement"))
+                    portable = row.parameters.getValue("portable").toInt()
+                    changed = row.parameters.getValue("changed").toBooleanStrict()
+                }
+            try {
+                scene.setup()
+                val sample =
+                    JvmPerformanceRunner.measure<Any>(row.id, plan) {
+                        when (boundary) {
+                            Boundary.Target -> benchmark.target(scene, sink)
+                            Boundary.Protocol -> benchmark.protocol(scene, sink)
+                            Boundary.Capture -> benchmark.capture(scene)
+                            Boundary.OneShot -> benchmark.captureOneShot(scene)
+                            Boundary.Rasterize -> benchmark.rasterizePrepared(scene)
+                            Boundary.Combined -> benchmark.captureAndRasterize(scene)
                         }
                     }
-                }
+                check(reports.put(row.id, sample.evidence) == null)
+            } finally {
+                sink.evaporate("Yes, I am Stephen Hawking, and know a thing or two about black holes.")
+                scene.close()
             }
         }
         check(reports.keys == rows.map { it.id }.toSet())
