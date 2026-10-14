@@ -3,12 +3,75 @@ package dev.s7a.strata.runtime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 /**
  * Verifies identity-based cleanup failure accumulation and suppression order.
  */
 internal class FailureAccumulatorTest {
+    @Test
+    fun successfulCallbacksDoNotRecordAFailure() {
+        val accumulator = FailureAccumulator()
+        var completed = 0
+
+        repeat(128) {
+            accumulator.capture { completed += 1 }
+            accumulator.addOptional(null)
+            accumulator.throwIfPresent()
+        }
+
+        assertEquals(128, completed)
+        assertNull(accumulator.first)
+    }
+
+    @Test
+    fun valueEqualFailuresRemainDistinctAndEveryCallbackRuns() {
+        val first = EqualFailure()
+        val second = EqualFailure()
+        val accumulator = FailureAccumulator()
+        var completed = 0
+
+        listOf(first, first, second, second).forEach { failure ->
+            accumulator.capture {
+                completed += 1
+                throw failure
+            }
+        }
+        accumulator.capture { completed += 1 }
+
+        assertEquals(5, completed)
+        assertSame(first, accumulator.first)
+        assertEquals(1, first.suppressedExceptions.size)
+        assertSame(second, first.suppressedExceptions.single())
+        repeat(2) {
+            assertSame(first, assertFailsWith<EqualFailure> { accumulator.throwIfPresent() })
+        }
+    }
+
+    @Test
+    fun initialCyclicGraphAndDirectLaterGraphsKeepTheirExistingSemantics() {
+        val first = EqualFailure()
+        val existing = EqualFailure()
+        val later = EqualFailure()
+        val nested = EqualFailure()
+        first.addSuppressed(existing)
+        existing.addSuppressed(first)
+        later.addSuppressed(nested)
+        val accumulator = FailureAccumulator(first)
+
+        accumulator.add(existing)
+        accumulator.add(later)
+        accumulator.add(nested)
+        accumulator.addOptional(later)
+
+        assertSame(first, accumulator.first)
+        val suppressed = first.suppressedExceptions
+        assertEquals(3, suppressed.size)
+        listOf(existing, later, nested).forEachIndexed { index, failure -> assertSame(failure, suppressed[index]) }
+        assertSame(first, assertFailsWith<EqualFailure> { accumulator.throwFirst() })
+    }
+
     @Test
     fun deduplicatesIdentityAndPreservesInitialSuppressionOrder() {
         val first = IllegalStateException("first")
@@ -91,5 +154,11 @@ internal class FailureAccumulatorTest {
         val accumulator = FailureAccumulator()
 
         assertFailsWith<IllegalStateException> { accumulator.throwFirst() }
+    }
+
+    private class EqualFailure : RuntimeException("equal failure") {
+        override fun equals(other: Any?): Boolean = other is EqualFailure
+
+        override fun hashCode(): Int = 0
     }
 }

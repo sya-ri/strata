@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test
 
 /**
  * Requires an irreversible terminal cutoff and exactly-once ownership across trusted extension callback reentry.
- * This hazard predates the editable index; every case observes both complete and editable membership.
+ * The shared controls observe complete membership; the storage-specific subclass also requires an empty editable index.
  */
 @Suppress("TooManyFunctions") // One lifecycle matrix covers creation, updates, retirement, polling and their failure/reentry boundaries.
-internal class RemoteClientStateReentryTest {
+internal open class RemoteClientStateReentryTest {
     @Test
     fun closingFromFactoryReleasesItsReturnedValueWithoutAdmissionOrResurrection() {
         val states = RemoteClientStates(RemoteLimits())
@@ -164,7 +164,7 @@ internal class RemoteClientStateReentryTest {
                 assertEquals(0, nestedCreates)
                 assertEquals(1, value.releases)
                 assertTrue(entries(states).isEmpty())
-                assertTrue(editable(states).isEmpty())
+                assertStorageReleased(states)
                 states.flushEdits(NO_ACTIONS)
                 assertEquals(0, value.polls)
             }
@@ -334,7 +334,7 @@ internal class RemoteClientStateReentryTest {
 
     private fun assertClosed(states: RemoteClientStates) {
         assertTrue(entries(states).isEmpty())
-        assertTrue(editable(states).isEmpty())
+        assertStorageReleased(states)
         assertThrows(IllegalStateException::class.java) { states.get(1, KEY) }
         assertThrows(IllegalStateException::class.java) { states.update {} }
         assertThrows(IllegalStateException::class.java) { states.prepare(1, KEY, { error("Must not create") }, {}) }
@@ -348,10 +348,12 @@ internal class RemoteClientStateReentryTest {
         return field.get(states) as Map<*, *>
     }
 
-    private fun editable(states: RemoteClientStates): Map<*, *> {
-        val field = RemoteClientStates::class.java.getDeclaredField("editable")
-        field.isAccessible = true
-        return field.get(states) as Map<*, *>
+    /**
+     * Requires the original values store to release every entry before a terminal callback returns.
+     * Storage-specific controls may additionally inspect their derived membership.
+     */
+    protected open fun assertStorageReleased(states: RemoteClientStates) {
+        assertTrue(entries(states).isEmpty())
     }
 
     private class Owned(

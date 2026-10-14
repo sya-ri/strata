@@ -51,16 +51,18 @@ public sealed class UiScope protected constructor() {
     }
 
     /**
-     * Copies all descriptions emitted by this scope in declaration order.
+     * Ends the content callback and borrows its private membership in declaration order until [close].
+     * The caller must synchronously construct a defensively copying parent or inspect root cardinality before closing the scope in a `finally` block.
+     * Never retain this list or pass it to application callbacks.
+     * Ending callback access before parent construction also rejects reentry from external property getters.
      *
-     * The copy remains valid after this scope is closed, which releases the scope's references to the descriptions.
-     *
-     * @return an read-only snapshot for a new parent description.
+     * @return callback-owned membership, cleared when the enclosing builder closes the scope.
      */
     @JvmSynthetic
-    internal fun childElementsSnapshot(): List<Element> {
+    internal fun borrowChildElements(): List<Element> {
         checkUsable()
-        return emittedElements.toList()
+        active = false
+        return emittedElements
     }
 
     /**
