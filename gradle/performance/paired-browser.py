@@ -23,7 +23,12 @@ def load_manifest(shared, root, data):
         return load_source_manifest(shared, root, data)
     require = shared.require
     fields = {"schema", "sources", "runtime_files", "inputs", "collections", "compiled_pins", "java_pins", "collector_path", "correctness"}
-    require(set(data) == fields, "Invalid browser manifest fields")
+    require(fields <= set(data) <= fields | {"driver_source"}, "Invalid browser manifest fields")
+    if "driver_source" in data:
+        driver = data["driver_source"]
+        require(isinstance(driver, dict) and set(driver) == {"ref", "tree"}
+                and all(isinstance(driver[key], str) and re.fullmatch(r"[0-9a-f]{40}", driver[key]) for key in ("ref", "tree")),
+                "Pin the exact frozen driver commit and tree")
     require(set(data["sources"]) == {"fixture", "baseline", "candidate"}, "Supply all three browser source bindings")
     for source in data["sources"].values():
         require(set(source) == {"ref", "tree", "patches"}
@@ -308,6 +313,14 @@ def run(shared, root, selection, output):
             record["schema"] = "strata-source-preparation-attempt-v1"
         compiled_pins = data.get("compiled_pins", {side: [] for side in ("baseline", "candidate")})
         record.update(driver_head=selection["execution_head"], input_producer=selection["producer"], manifest_sha256=shared.digest(selection["path"]))
+        driver = shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
+        if driver is not None:
+            declaration = shared.declared_inputs(root, record["driver_head"])
+            shared.require(selection["producer"] and declaration is not None and declaration[0] == selection["producer"]
+                           and declaration[1] == selection["path"].relative_to(selection["root"]).as_posix()
+                           and shared.digest(selection["path"]) == selection["sha256"], "Separate browser driver requires unchanged immutable declared producer inputs")
+            record["driver_source"] = driver
+            record["scope"] = {"consumer_ci_establishes_subject_acceptance": False, "prior_rows_adopted": False}
         record["driver_sources"] = shared.preserve_driver_sources(root, output, ("paired-browser.py",))
         shutil.copyfile(selection["path"], output / "manifest.json")
         homes = {"toolchain": Path(os.environ["STRATA_PAIRED_TOOLCHAIN"]), "launcher": Path(os.environ["JAVA_HOME"])}
@@ -344,7 +357,7 @@ def run(shared, root, selection, output):
         else:
             workspaces["fixture"], record["sources"]["fixture"] = shared.materialize(root, output, "fixture", data["sources"]["fixture"], selection["root"])
         common_sources(shared, workspaces, data)
-        if selection["producer"] and source_mode is False:
+        if selection["producer"] and source_mode is False and driver is None:
             shared.require(shared.source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == shared.source_files(root, record["driver_head"]), "Browser candidate differs from execution head")
         inputs = {}
         for index, item in enumerate(data["inputs"]):
@@ -363,6 +376,7 @@ def run(shared, root, selection, output):
             nonlocal captured_class_loads
             shared.require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient whole-attempt time and upload reserve")
             shared.verify_driver_sources(record["driver_sources"])
+            shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
             for side in workspaces:
                 shared.source_guard(workspaces[side], data["sources"][side]["tree"])
             for side in prepared:
@@ -427,6 +441,7 @@ def run(shared, root, selection, output):
                 shared.require(all(type(value) is int and 0 <= value for value in counters.values()), "Actual Source Job counters are unavailable")
                 record["phases"][-1].update(owned_wall_seconds=owned_wall_seconds, **counters, allocation_bytes=None, rss_bytes=None)
             shared.verify_driver_sources(record["driver_sources"])
+            shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
             for side in workspaces:
                 shared.source_guard(workspaces[side], data["sources"][side]["tree"])
             for side in prepared:
@@ -450,7 +465,7 @@ def run(shared, root, selection, output):
         for side in ("baseline", "candidate"):
             workspace = workspaces[side]
             gate = {"task": ":integration:web:jvmTest", "required_tests": data["correctness"]["required_tests"]}
-            phase("prepare-" + side, workspace, [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"], test_gate=gate)
+            phase("prepare-" + side, workspace, [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver", ":api:jsJar", ":runtime:core:jsJar", ":runtime:web:jsJar"], test_gate=gate)
             for item in data["compiled_pins"][side]:
                 shared.pin(workspace, item)
             prepared.add(side)

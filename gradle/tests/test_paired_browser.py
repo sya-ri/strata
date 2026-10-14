@@ -485,6 +485,104 @@ class PairedBrowserTest(unittest.TestCase):
         self.assertEqual(self.fixture.selector_git("status", "--porcelain=v1"), "")
         self.assertEqual(self.fixture.selector_git("rev-parse", "HEAD"), head)
 
+    def test_browser_driver_schema_preserves_default_and_rejects_nonexact_bindings(self):
+        self.assertNotIn("driver_source", self.load(self.manifest))
+        value = copy.deepcopy(self.manifest)
+        value["driver_source"] = {"ref": "a" * 40, "tree": "b" * 40}
+        self.assertEqual(self.load(value), value)
+        for driver in (None, [], {}, {"ref": "a" * 40}, {"ref": "a" * 40, "tree": "b" * 40, "patches": []},
+                       {"ref": "master", "tree": "b" * 40}, {"ref": "a" * 40, "tree": "B" * 40}, {"ref": "a" * 40, "tree": None}):
+            changed = copy.deepcopy(value)
+            changed["driver_source"] = driver
+            with self.subTest(driver=driver), self.assertRaisesRegex(ValueError, "driver commit and tree"):
+                self.load(changed)
+
+    @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
+    def test_manual_browser_driver_reuses_complete_subject_and_actual_driver_guards(self):
+        base, producer, head, path, manifest = self.fixture.input_consumer(value=self.manifest, candidate_patch=True, separate_driver=True)
+        with self.shared.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selection, fixtures.tempfile.TemporaryDirectory() as prepared:
+            self.assertTrue(selection["explicit_manual"])
+            self.assertNotEqual(manifest["sources"]["candidate"]["tree"], self.fixture.selector_git("rev-parse", head + "^{tree}"))
+            self.assertEqual(self.shared.verify_driver_source(self.root, head, manifest, True)["ref"], base)
+            output = Path(prepared)
+            for side, text in (("baseline", "base source\n"), ("candidate", "candidate source\n")):
+                workspace, recorded = self.shared.materialize(self.root, output, side, manifest["sources"][side], selection["root"])
+                self.assertEqual((workspace / "source.txt").read_text(), text)
+                self.shared.source_guard(workspace, recorded["tree"])
+            patch_pin = manifest["sources"]["candidate"]["patches"][0]
+            self.shared.pin(selection["root"], patch_pin).write_bytes(b"changed subject patch\n")
+            with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+                self.shared.load_manifest(selection["root"], selection["path"])
+        for arguments in ({"manifest_sha256": "0" * 64}, {"data_ref": "0" * 40}, {"expected_head": "0" * 40}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                with self.shared.selected_inputs(self.root, path, **arguments):
+                    self.fail("Changed browser input binding accepted")
+        wrong = copy.deepcopy(manifest)
+        wrong["driver_source"]["tree"] = manifest["sources"]["candidate"]["tree"]
+        with self.assertRaisesRegex(ValueError, "driver commit or tree changed"):
+            self.shared.verify_driver_source(self.root, head, wrong, True)
+        unrelated = self.fixture.selector_git("commit-tree", manifest["driver_source"]["tree"], "-m", "Independent same-tree driver")
+        wrong["driver_source"] = {**manifest["driver_source"], "ref": unrelated}
+        with self.assertRaisesRegex(ValueError, "not an execution ancestor"):
+            self.shared.verify_driver_source(self.root, head, wrong, True)
+        wrong["driver_source"]["ref"] = "0" * 40
+        with self.assertRaises(fixtures.subprocess.CalledProcessError):
+            self.shared.verify_driver_source(self.root, head, wrong, True)
+        self.fixture.selector_git("update-index", "--chmod=+x", "gradle/performance/paired-jvm.py")
+        with self.assertRaisesRegex(ValueError, "index or working bytes changed"):
+            self.shared.verify_driver_source(self.root, head, manifest, True)
+        self.fixture.selector_git("restore", "--staged", "gradle/performance/paired-jvm.py")
+        (self.root / "gradle/performance/paired-jvm.py").write_bytes(b"changed live controller\n")
+        with self.assertRaisesRegex(ValueError, "working bytes changed"):
+            self.shared.select_manifest(self.root, path)
+        self.fixture.selector_git("restore", "gradle/performance/paired-jvm.py")
+        (self.root / "unrepresented.txt").write_bytes(b"extra non-data source\n")
+        self.fixture.selector_commit("Add undeclared execution source")
+        with self.assertRaisesRegex(ValueError, "source differs from execution head"):
+            self.shared.verify_driver_source(self.root, self.fixture.selector_git("rev-parse", "HEAD"), manifest, True)
+
+    def test_browser_driver_cannot_override_automatic_pr_or_default_candidate_identity(self):
+        base, _, head, path, _ = self.fixture.input_consumer(value=self.manifest, candidate_patch=True, separate_driver=True)
+        for arguments in ({}, {"base": base, "head": head}, {"explicit": path, "base": base, "head": head}):
+            with self.subTest(arguments=arguments), self.assertRaisesRegex(ValueError, "explicit manual"):
+                self.shared.select_manifest(self.root, **arguments)
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}), self.assertRaisesRegex(ValueError, "explicit manual"):
+            self.shared.select_manifest(self.root, path)
+        default = fixtures.PairedJvmTest("runTest")
+        default.setUp()
+        self.addCleanup(default.temporary.cleanup)
+        adapter = default.root / "tools/web/build.mjs"
+        adapter.parent.mkdir(parents=True)
+        adapter.write_bytes((self.root / "tools/web/build.mjs").read_bytes())
+        _, producer, head, path, _ = default.input_consumer(value=self.manifest, candidate_patch=True, mismatch="blob")
+        with self.assertRaisesRegex(ValueError, "Candidate source differs from execution head"):
+            with self.shared.selected_inputs(default.root, path, data_ref=producer, expected_head=head):
+                self.fail("Default candidate identity was bypassed")
+
+    @patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"})
+    def test_browser_run_refuses_replayed_producer_and_changed_planned_manifest_before_launch(self):
+        _, producer, head, path, _ = self.fixture.input_consumer(value=self.manifest, candidate_patch=True, separate_driver=True)
+        original_check_output = fixtures.subprocess.check_output
+        def git_only(arguments, **options):
+            self.assertEqual(arguments[0], "git", "No process may start for invalid declared input")
+            return original_check_output(arguments, **options)
+        with self.shared.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selected:
+            for mode in ("missing-producer", "wrong-producer", "changed-manifest-hash"):
+                selection = dict(selected)
+                if mode == "changed-manifest-hash":
+                    selection["sha256"] = "0" * 64
+                else:
+                    selection["producer"] = "" if mode == "missing-producer" else "0" * 40
+                output = self.root / mode
+                with self.subTest(mode=mode), patch.object(self.browser, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), \
+                     patch.object(self.browser.subprocess, "check_output", side_effect=git_only), \
+                     self.assertRaisesRegex(ValueError, "unchanged immutable declared producer inputs"):
+                    self.browser.run(self.shared, self.root, selection, output)
+                record = self.shared.read_json(output / "attempt.json")
+                self.assertEqual(record["status"], "failed")
+                self.assertEqual(record["phases"], [])
+                self.assertTrue(output.with_suffix(".zip").is_file())
+
     def test_fixture_and_collector_source_changes_are_rejected_before_launch(self):
         inventories = {"fixture": {"adapter.mjs": "same", "runtime/web/src/jsMain/Renderer.kt": "old"},
                        "baseline": {"adapter.mjs": "same", "runtime/web/src/jsMain/Renderer.kt": "old"},
@@ -556,6 +654,9 @@ class PairedBrowserTest(unittest.TestCase):
             item.update(executable_sha256=self.shared.digest(home / "bin/java.exe"), release_sha256=self.shared.digest(home / "release"))
         node = self.root / "node.exe"
         node.write_bytes(b"synthetic Node; never launched")
+        linked_archives = {":api:jsJar": "api/build/libs/api-js.klib", ":runtime:core:jsJar": "runtime/core/build/libs/core-js.klib", ":runtime:web:jsJar": "runtime/web/build/libs/web-js.klib"}
+        for pins in data["compiled_pins"].values():
+            pins.extend({"path": path, "sha256": "a" * 64} for path in linked_archives.values())
         for pins in data["compiled_pins"].values():
             for item in pins:
                 item["sha256"] = self.shared.hashlib.sha256(b"synthetic compiled bytes").hexdigest()
@@ -563,20 +664,36 @@ class PairedBrowserTest(unittest.TestCase):
         browser_data = data
         cases = [(None, None, False, False), (None, "collect-standard-baseline", False, False), (None, None, True, False), (None, "collect-standard-baseline", True, False), (1, None, False, False), (3, None, False, False), (3, "source-candidate-1", False, False)]
         cases += [(3, None, False, True), (1, None, False, True), (3, "provision-baseline", False, True), (3, "provision-candidate", False, True), (3, "source-candidate-1", False, True)]
-        for repetitions, failure, copy_failure, provisioning in cases:
+        cases = [(*case, False) for case in cases] + [(None, None, False, False, True), (None, "changed-driver-source", False, False, True)]
+        for repetitions, failure, copy_failure, provisioning, separate_driver in cases:
             data = self.source_manifest(repetitions) if repetitions is not None else browser_data
+            data = copy.deepcopy(data)
+            if separate_driver:
+                data["driver_source"] = {"ref": "d" * 40, "tree": "e" * 40}
             if provisioning:
                 data["provision_dependency_caches"] = True
             if repetitions == 1:
                 data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
                 data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
-            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-" + failure if failure is not None else ""))
+            output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-separate-driver" if separate_driver else "") + ("-" + failure if failure is not None else ""))
             calls, side_paths = [], {}
+            driver_checks = []
             api = SimpleNamespace(**vars(self.shared))
             api.git = lambda *args: "a" * 40
             api.load_manifest = lambda *args: data
             api.preserve_driver_sources = lambda *args: {}
             api.verify_driver_sources = lambda *args: None
+            def verify_driver_source(root, head, actual_data, explicit_manual):
+                if separate_driver is False:
+                    return None
+                self.assertIs(actual_data, data)
+                self.assertTrue(explicit_manual)
+                driver_checks.append(len(calls))
+                if failure == "changed-driver-source" and calls:
+                    raise ValueError("Changed frozen browser driver source")
+                return {**data["driver_source"], "execution_head": head, "execution_tree": "f" * 40}
+            api.verify_driver_source = verify_driver_source
+            api.declared_inputs = lambda *args: ("c" * 40, "manifest.json")
             api.source_files = lambda *args: {"same-common-fixture": "same"}
             api.source_guard = lambda *args: None
             api.class_load_inventory = lambda *args: {}
@@ -599,6 +716,8 @@ class PairedBrowserTest(unittest.TestCase):
                 workspace.mkdir(parents=True)
                 side_paths[side] = workspace
                 for item in browser_data["compiled_pins"][side]:
+                    if item["path"] in linked_archives.values():
+                        continue
                     path = workspace / item["path"]
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_bytes(b"synthetic compiled bytes")
@@ -614,6 +733,13 @@ class PairedBrowserTest(unittest.TestCase):
                 name = directory.name
                 calls.append(name)
                 console.write_bytes(b"synthetic command transcript\n")
+                if repetitions is None and name.startswith("prepare-"):
+                    self.assertEqual(request["arguments"][:8], [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver", *linked_archives])
+                    for task, relative in linked_archives.items():
+                        if task in request["arguments"]:
+                            path = Path(request["workspace"]) / relative
+                            path.parent.mkdir(parents=True, exist_ok=True)
+                            path.write_bytes(b"synthetic compiled bytes")
                 if repetitions is not None:
                     self.assertEqual(request["arguments"][:len(data["tasks"])], data["tasks"])
                     self.assertIn("--rerun-tasks", request["arguments"])
@@ -669,12 +795,15 @@ class PairedBrowserTest(unittest.TestCase):
             api.materialize, api.invoke = materialize, invoke
             node_metadata = json.dumps({"path": str(node), "version": "synthetic"})
             selection = {"root": self.root, "path": self.root / "manifest.json", "producer": "", "execution_head": "a" * 40}
+            if separate_driver:
+                selection.update(producer="c" * 40, explicit_manual=True)
             selection["path"].write_text(json.dumps(data), encoding="utf-8")
+            selection["sha256"] = self.shared.digest(selection["path"])
             with patch.object(self.browser, "os", SimpleNamespace(name="nt", path=self.browser.os.path, environ=self.browser.os.environ)), patch.object(self.browser, "sys", SimpleNamespace(executable=str(node))), patch.dict(self.browser.os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}), patch.object(self.browser.shutil, "which", return_value=str(node)), patch.object(self.browser.subprocess, "check_output", side_effect=lambda args, **kwargs: node_metadata if args[0] == str(node) else "{}"):
                 if failure is None and copy_failure is False:
                     self.browser.run(api, self.root, selection, output)
                 else:
-                    with self.assertRaisesRegex(ValueError, "Prepared evidence preservation failed" if failure is None else "Owned browser phase failed"):
+                    with self.assertRaisesRegex(ValueError, "Prepared evidence preservation failed" if failure is None else "Changed frozen browser driver source" if failure == "changed-driver-source" else "Owned browser phase failed"):
                         self.browser.run(api, self.root, selection, output)
             record = self.shared.read_json(output / "attempt.json")
             self.assertNotEqual(side_paths["baseline"], side_paths["candidate"])
@@ -683,6 +812,10 @@ class PairedBrowserTest(unittest.TestCase):
                 if repetitions is None:
                     self.assertEqual((record["status"], record["expected_cases"], record["measured_browser_invocations"]), ("passed", 372, 36))
                     self.assertEqual(len(calls), 12)
+                    if separate_driver:
+                        self.assertEqual(record["driver_source"], {**data["driver_source"], "execution_head": "a" * 40, "execution_tree": "f" * 40})
+                        self.assertEqual(record["scope"], {"consumer_ci_establishes_subject_acceptance": False, "prior_rows_adopted": False})
+                        self.assertEqual(driver_checks, [0] + [value for index in range(12) for value in (index, index + 1)])
                 else:
                     self.assertEqual((record["status"], record["completed_source_invocations"], record["tasks_per_invocation"], record["runtime_collection"]), ("prepared", repetitions * 2, len(data["tasks"]), "UNRUN"))
                     provisioning_names = ["provision-baseline", "provision-candidate"] if provisioning else []
@@ -696,6 +829,12 @@ class PairedBrowserTest(unittest.TestCase):
                     self.assertFalse((output / "report.md").exists())
                     if data["test_gate"] is not None:
                         self.assertTrue(all(self.shared.read_json(output / "phases" / name / "test-classpath-verified.json")["present_entries"] == 1 for name in calls))
+            elif failure == "changed-driver-source":
+                self.assertEqual(record["status"], "failed")
+                self.assertEqual(calls, ["prepare-baseline"])
+                self.assertEqual(driver_checks, [0, 0, 1])
+                self.assertFalse((output / "report.md").exists())
+                self.assertIn("Changed frozen browser driver source", record["error"])
             elif failure is not None:
                 self.assertEqual(record["status"], "failed")
                 self.assertEqual(calls[-1], failure)

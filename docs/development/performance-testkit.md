@@ -844,13 +844,17 @@ A completed preparation is recorded as `prepared` and establishes no runtime tim
 Freeze its actual `prepared-pins.json` values in a subsequent immutable producer/consumer manifest before running complete browser collection.
 
 The same opt-in hosted job and `Performance-Inputs` producer/consumer scheme accept `strata-paired-browser-ci-v1` inputs through the [shared browser controller](../../gradle/performance/paired-browser.py).
-The final consumer contains no performance data files; its candidate source still must match the exact execution head.
+The final consumer contains no performance data files; by default its candidate source must match the exact execution head.
+An explicit manual immutable manifest may separately pin `driver_source` with an exact commit `ref` and `tree`, using the same complete source, ancestor, index and live-byte guards as paired JVM collection.
+This keeps the prepared baseline/candidate application, fixture, collector and Java pins bound to their original sources while the independently pinned shared execution driver runs the collection.
+Automatic PR selection cannot override candidate identity through this field; changed driver or subject sources fail before collection and are rechecked around every owned phase.
 The manifest binds all three source trees, permits differences only in explicitly declared Web production files, and pins immutable inputs, both Java roles, the linked testkit JS artifact and each actual application bundle.
 Use the actual `jsJar.archiveFile` path for the collector, including its `.klib` extension when emitted; both variants must pin that same linked archive path.
 Existing `tools/web` adapters receive structured path arguments and retain their full compiled scenario inventories.
 No permanent workload registry or per-change workflow is required.
 
-Each side completes the existing JS distribution, JVM parity test, browser installation and shared driver checks before running the existing build and verification adapters.
+Each side completes the existing JS distribution, JVM parity test, browser installation, shared driver checks and API/core/Web `jsJar` tasks before running the existing build and verification adapters.
+These eight untimed preparation tasks reconstruct the complete actual linked archive closure before checking every frozen compiled pin; no missing archive is filtered from the inventory.
 Both runtime variants require complete fresh correctness files and the same fixture/tooling bytes.
 Every invocation uses the existing owned Windows Job, 4096 MiB admission, 3 GiB committed-memory limit, 1800-second work limit and 30-second cleanup limit.
 The pinned Node program is the directly suspended primary process; its known handle binds birth, image, byte pin, Job membership, unchanged affinity and fresh RAM admission before its thread resumes.
