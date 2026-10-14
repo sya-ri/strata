@@ -96,11 +96,19 @@ class PairedBrowserTest(unittest.TestCase):
                     "notificationReaderJoined": True, "totalProcesses": 32,
                     "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
                                              "totalProcesses": 32, "capturedGenerations": 32, "closedGenerations": 32}}
+        byte_bound = sum(1024 + 6 * len(member[0]["image"].encode("utf-16-le")) // 2 for member in members.values())
+        terminal.update(processAcquisition={"pending": 0, "metadataInFlight": 0, "physicalHandles": 0, "maximumPhysicalHandles": 32,
+                                            "maximumPending": 8, "unpublishedByteBound": 0, "publishedByteBound": byte_bound},
+                        memberHistorySerializedByteBound=byte_bound, newProcessNotifications=32,
+                        notificationOpenSuccesses=32, notificationOpenFailures=0, notificationImageSuccesses=32,
+                        notificationImageFailures=0, notificationMetadataSuccesses=32, notificationMetadataFailures=0)
         actual = {"immediate": True, "concurrentChildren": 8, "generations": [copy.deepcopy(value[0]) for value in members.values()]}
         receipt = boundary.validate_immediate_history(terminal, actual)
         self.assertEqual(receipt["independentGenerations"], 32)
         self.assertEqual(receipt["observedBelowFormerPollInterval"], 32)
-        for mode in ("missing", "duplicate", "image", "birth", "exit", "accounting", "unclosed", "no-short-lifetime"):
+        for mode in ("missing", "duplicate", "image", "birth", "exit", "accounting", "unclosed", "no-short-lifetime",
+                     "missing-acquisition", "pending-not-drained", "metadata-inflight", "unclosed-acquisition", "metadata-failure",
+                     "image-failure", "missing-metadata", "duplicate-delivery", "handle-bound", "byte-bound", "wrong-job", "wrong-affinity"):
             with self.subTest(mode=mode):
                 changed, oracle = copy.deepcopy(terminal), copy.deepcopy(actual)
                 if mode == "missing":
@@ -114,10 +122,24 @@ class PairedBrowserTest(unittest.TestCase):
                     changed["generationAccounting"]["totalProcesses"] = 33
                 elif mode == "unclosed":
                     changed["members"]["1"][0]["handleClosed"] = False
-                else:
+                elif mode == "no-short-lifetime":
                     for row in oracle["generations"]:
                         row["exitFileTime"] = row["creationFileTime"] + 100 * 10000
                         changed["members"][str(row["pid"])][0]["exitFileTime"] = row["exitFileTime"]
+                elif mode == "missing-acquisition":
+                    changed.pop("processAcquisition")
+                elif mode in ("pending-not-drained", "metadata-inflight", "unclosed-acquisition", "handle-bound"):
+                    changed["processAcquisition"][{"pending-not-drained": "pending", "metadata-inflight": "metadataInFlight",
+                                                   "unclosed-acquisition": "physicalHandles", "handle-bound": "maximumPhysicalHandles"}[mode]] = 257 if mode == "handle-bound" else 1
+                elif mode in ("metadata-failure", "image-failure", "missing-metadata", "duplicate-delivery"):
+                    changed[{"metadata-failure": "notificationMetadataFailures", "image-failure": "notificationImageFailures",
+                             "missing-metadata": "notificationMetadataSuccesses", "duplicate-delivery": "newProcessNotifications"}[mode]] += 1
+                elif mode == "byte-bound":
+                    changed["processAcquisition"]["unpublishedByteBound"] = 1024
+                elif mode == "wrong-job":
+                    changed["members"]["1"][0]["inOwnedJob"] = False
+                elif mode == "wrong-affinity":
+                    changed["members"]["1"][0]["affinityMask"] = 3
                 with self.assertRaises(ValueError):
                     boundary.validate_immediate_history(changed, oracle)
 
@@ -133,6 +155,10 @@ class PairedBrowserTest(unittest.TestCase):
         terminal["totalProcesses"] = 96
         terminal["maximumRetainedHandles"] = 64
         terminal["generationAccounting"].update(totalProcesses=96, capturedGenerations=96, closedGenerations=96)
+        byte_bound = sum(1024 + 6 * len(member[0]["image"].encode("utf-16-le")) // 2 for member in terminal["members"].values())
+        terminal["processAcquisition"].update(maximumPhysicalHandles=96, publishedByteBound=byte_bound)
+        terminal.update(memberHistorySerializedByteBound=byte_bound, newProcessNotifications=96,
+                        notificationOpenSuccesses=96, notificationImageSuccesses=96, notificationMetadataSuccesses=96)
         actual["held_generations"] = held
         receipt = boundary.validate_immediate_history(terminal, actual, 64)
         self.assertEqual((receipt["independentGenerations"], receipt["heldMetadataGenerations"], receipt["totalIndependentGenerations"]), (32, 64, 96))

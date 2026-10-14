@@ -56,6 +56,20 @@ public static class StrataPerformanceProcess {
         public IntPtr process, thread;
         public uint processId, threadId;
     }
+    // A pending claim owns this exact handle and its image; it is not a captured physical generation yet.
+    sealed class PendingProcess {
+        public uint pid;
+        public IntPtr handle;
+        public string image;
+        public long bytes;
+    }
+    // The shared bounds include reader/sampler temporaries, pending metadata and published handles.
+    sealed class Acquisitions {
+        public readonly Queue<PendingProcess> pending = new Queue<PendingProcess>();
+        public int handles, peakHandles, metadataInFlight, peakPending;
+        public long unpublishedBytes, publishedBytes;
+        public long newNotifications, exitNotifications;
+    }
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool GlobalMemoryStatusEx(ref Memory memory);
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr CreateJobObjectW(IntPtr attributes, string name);
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr OpenJobObjectW(uint access, bool inherit, string name);
@@ -123,8 +137,37 @@ public static class StrataPerformanceProcess {
         } finally { Require(CloseHandle(job)); }
     }
 
+    static void ReserveHandle(Acquisitions acquisitions) {
+        int count = Interlocked.Increment(ref acquisitions.handles);
+        if (256 < count) {
+            Interlocked.Decrement(ref acquisitions.handles);
+            throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
+        }
+        int previous;
+        do {
+            previous = Volatile.Read(ref acquisitions.peakHandles);
+            if (count <= previous) return;
+        } while (Interlocked.CompareExchange(ref acquisitions.peakHandles, count, previous) != previous);
+    }
+
+    static void ReleaseReservation(Acquisitions acquisitions) {
+        if (Interlocked.Decrement(ref acquisitions.handles) < 0) throw new InvalidOperationException("Owned physical handle released twice.");
+    }
+
+    static void CloseTracked(IntPtr handle, Acquisitions acquisitions) {
+        Require(CloseHandle(handle));
+        ReleaseReservation(acquisitions);
+    }
+
+    // Called under the gate; retain the maximum reservation so a refusal still reports its original observed bound.
+    static void CheckHistoryBound(Acquisitions acquisitions, Dictionary<string, object> result) {
+        long bytes = acquisitions.publishedBytes + acquisitions.unpublishedBytes;
+        result["memberHistorySerializedByteBound"] = Math.Max((long)result["memberHistorySerializedByteBound"], bytes);
+        if (3 * 1024 * 1024 < bytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
+    }
+
     // The sampler alone retires handles; lifetime queries run outside the brief per-generation close/removal lock.
-    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, object gate) {
+    static void Retire(Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, object gate, Acquisitions acquisitions) {
         List<KeyValuePair<uint, IntPtr>> snapshot;
         lock (gate) snapshot = new List<KeyValuePair<uint, IntPtr>>(handles);
         foreach (var item in snapshot) {
@@ -142,7 +185,7 @@ public static class StrataPerformanceProcess {
                 if (handles[item.Key] != item.Value || (long)record["creationFileTime"] != created || exited == 0)
                     throw new InvalidOperationException("Completed owned process generation changed.");
                 // A reused PID cannot publish between releasing its physical identity and removing the old map entry.
-                Require(CloseHandle(item.Value));
+                CloseTracked(item.Value, acquisitions);
                 record["exitCode"] = code;
                 record["exitFileTime"] = exited;
                 record["completed"] = true;
@@ -152,25 +195,31 @@ public static class StrataPerformanceProcess {
         }
     }
 
-    // Observe through the caller's physical handle before a shared record lock can delay a short-lived descendant.
-    static Dictionary<string, object> ObserveHandle(IntPtr job, uint pid, IntPtr handle, bool primary) {
+    // Image queries have an observed post-exit failure; acquire the actual image before remaining metadata work.
+    static string ObserveImage(IntPtr handle) {
+        var executable = new StringBuilder(32768);
+        uint size = (uint)executable.Capacity;
+        return QueryFullProcessImageNameW(handle, 0, executable, ref size) ? executable.ToString() : null;
+    }
+
+    // Deferred queries use the same held object; a post-exit query failure never establishes a captured generation.
+    static Dictionary<string, object> ObserveHandle(IntPtr job, uint pid, IntPtr handle, bool primary, string image = null) {
         bool member;
         Require(IsProcessInJob(handle, job, out member));
         if (member == false) return null;
         long created, exited, kernel, user;
         if (GetProcessTimes(handle, out created, out exited, out kernel, out user) == false) return null;
-        var executable = new StringBuilder(32768);
-        uint size = (uint)executable.Capacity;
-        if (QueryFullProcessImageNameW(handle, 0, executable, ref size) == false) return null;
+        if (image == null) image = ObserveImage(handle);
+        if (image == null) return null;
         UIntPtr affinity, system;
         if (GetProcessAffinityMask(handle, out affinity, out system) == false) return null;
-        var record = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", executable.ToString()}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}};
+        var record = new Dictionary<string, object> {{"pid", pid}, {"creationFileTime", created}, {"image", image}, {"affinityMask", affinity.ToUInt64()}, {"systemAffinityMask", system.ToUInt64()}, {"inOwnedJob", true}, {"completed", false}, {"handleClosed", false}};
         if (primary) record["primaryBeforeResume"] = true;
         return record;
     }
 
     // Called under the inventory lock; retained transfers ownership before any bound check can throw.
-    static void RetainHandle(uint pid, IntPtr handle, Dictionary<string, object> record, ref bool retained, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result) {
+    static void RetainHandle(uint pid, IntPtr handle, Dictionary<string, object> record, ref bool retained, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Acquisitions acquisitions, bool reserved = false) {
         long created = (long)record["creationFileTime"];
         List<Dictionary<string, object>> history;
         if (records.TryGetValue(pid, out history) == false) {
@@ -187,14 +236,50 @@ public static class StrataPerformanceProcess {
         retained = true;
         result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
         // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
-        long historyBytes = (long)result["memberHistorySerializedByteBound"] + 1024 + 6L * ((string)record["image"]).Length;
-        result["memberHistorySerializedByteBound"] = historyBytes;
-        if (3 * 1024 * 1024 < historyBytes) throw new InvalidOperationException("Owned process history exceeds the existing terminal report bound.");
+        if (reserved == false) acquisitions.publishedBytes += 1024 + 6L * ((string)record["image"]).Length;
+        CheckHistoryBound(acquisitions, result);
         if (256 < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
     }
 
-    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds, object gate) {
-        Retire(handles, records, gate);
+    // The sampler owns each dequeued claim until publication or closure; duplicate identity requires actual birth.
+    static void DrainPending(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, object gate, Acquisitions acquisitions) {
+        while (true) {
+            PendingProcess claim;
+            lock (gate) {
+                if (acquisitions.pending.Count == 0) return;
+                claim = acquisitions.pending.Dequeue();
+                acquisitions.metadataInFlight++;
+            }
+            bool retained = false;
+            try {
+                var observed = ObserveHandle(job, claim.pid, claim.handle, false, claim.image);
+                if (observed == null) {
+                    int error = Marshal.GetLastWin32Error();
+                    lock (gate) {
+                        result["notificationMetadataFailures"] = (long)result["notificationMetadataFailures"] + 1;
+                        result["lastNotificationMetadataError"] = error;
+                    }
+                    throw new InvalidOperationException("Acquired owned process metadata could not be observed.");
+                }
+                lock (gate) {
+                    result["notificationMetadataSuccesses"] = (long)result["notificationMetadataSuccesses"] + 1;
+                    RetainHandle(claim.pid, claim.handle, observed, ref retained, handles, records, result, acquisitions, true);
+                }
+            } finally {
+                lock (gate) {
+                    acquisitions.metadataInFlight--;
+                    acquisitions.unpublishedBytes -= claim.bytes;
+                    if (retained) acquisitions.publishedBytes += claim.bytes;
+                }
+                if (retained == false) CloseTracked(claim.handle, acquisitions);
+            }
+        }
+    }
+
+    static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds, object gate, Acquisitions acquisitions) {
+        DrainPending(job, handles, records, result, gate, acquisitions);
+        Retire(handles, records, gate, acquisitions);
+        DrainPending(job, handles, records, result, gate, acquisitions);
         const int maximumMembers = 256;
         int bytes = 8 + maximumMembers * IntPtr.Size;
         IntPtr buffer = Marshal.AllocHGlobal(bytes);
@@ -219,20 +304,23 @@ public static class StrataPerformanceProcess {
                     result["incompleteMemberQueries"] = (int)result["incompleteMemberQueries"] + 1;
                 }
                 if (seconds <= clock.Elapsed.TotalSeconds) throw new InvalidOperationException("Owned member inventory remained incomplete at the phase deadline.");
-                Retire(handles, records, gate);
+                DrainPending(job, handles, records, result, gate, acquisitions);
+                Retire(handles, records, gate, acquisitions);
                 Thread.Sleep((int)Math.Min(100, Math.Max(0, (seconds - clock.Elapsed.TotalSeconds) * 1000)));
             }
             lock (gate) result["maximumListedMembers"] = Math.Max((int)result["maximumListedMembers"], count);
             for (int index = 0; index < count; index++) {
+                DrainPending(job, handles, records, result, gate, acquisitions);
                 uint pid = (uint)Marshal.ReadIntPtr(buffer, 8 + index * IntPtr.Size).ToInt64();
                 lock (gate) { if (handles.ContainsKey(pid)) continue; }
+                ReserveHandle(acquisitions);
                 IntPtr handle = OpenProcess(0x1000 | 0x100000, false, pid);
-                if (handle == IntPtr.Zero) continue; // Final Job accounting rejects any generation missed by both capture paths.
+                if (handle == IntPtr.Zero) { ReleaseReservation(acquisitions); continue; } // Final accounting still rejects every missed generation.
                 bool retained = false;
                 try {
                     var observed = ObserveHandle(job, pid, handle, false);
-                    if (observed != null) lock (gate) RetainHandle(pid, handle, observed, ref retained, handles, records, result);
-                } finally { if (retained == false) Require(CloseHandle(handle)); }
+                    if (observed != null) lock (gate) RetainHandle(pid, handle, observed, ref retained, handles, records, result, acquisitions);
+                } finally { if (retained == false) CloseTracked(handle, acquisitions); }
             }
         } finally { Marshal.FreeHGlobal(buffer); }
         List<KeyValuePair<uint, IntPtr>> snapshot;
@@ -298,6 +386,7 @@ public static class StrataPerformanceProcess {
         bool readerStarted = false;
         var readerReady = new ManualResetEventSlim(false);
         var gate = new object();
+        var acquisitions = new Acquisitions();
         var memberHandles = new Dictionary<uint, IntPtr>();
         var members = new Dictionary<uint, List<Dictionary<string, object>>>();
         Stopwatch cleanup = null;
@@ -306,7 +395,9 @@ public static class StrataPerformanceProcess {
         var capture = new Dictionary<string, object> {
             {"maximumRetainedHandles", 0}, {"maximumListedMembers", 0}, {"incompleteMemberQueries", 0},
             {"memberHistorySerializedByteBound", 0L}, {"memberHistorySerializedByteLimit", 3 * 1024 * 1024},
-            {"newProcessNotifications", 0L}, {"exitProcessNotifications", 0L}, {"notificationOpenFailures", 0L}, {"notificationMetadataFailures", 0L}
+            {"notificationOpenFailures", 0L}, {"notificationOpenSuccesses", 0L},
+            {"notificationImageFailures", 0L}, {"notificationImageSuccesses", 0L},
+            {"notificationMetadataFailures", 0L}, {"notificationMetadataSuccesses", 0L}
         };
         try {
             if (program && FileHash(executable) != expectedSha) throw new InvalidOperationException("The owned Node executable differs from its actual pin.");
@@ -336,31 +427,47 @@ public static class StrataPerformanceProcess {
                         if (message == uint.MaxValue && key == UIntPtr.Zero && notifiedPid == IntPtr.Zero) return;
                         if (key.ToUInt64() != unchecked((ulong)job.ToInt64())) throw new InvalidOperationException("Foreign Job completion notification.");
                         if (message == 7 || message == 8) {
-                            lock (gate) capture["exitProcessNotifications"] = (long)capture["exitProcessNotifications"] + 1;
+                            Interlocked.Increment(ref acquisitions.exitNotifications);
                         }
                         if (message != 6) continue;
                         long rawPid = notifiedPid.ToInt64();
                         if (rawPid <= 0 || uint.MaxValue < rawPid) throw new InvalidOperationException("Invalid Job notification PID.");
                         uint pid = (uint)rawPid;
+                        Interlocked.Increment(ref acquisitions.newNotifications);
+                        ReserveHandle(acquisitions);
                         IntPtr handle = OpenProcess(0x1000 | 0x100000, false, pid);
                         int openError = handle == IntPtr.Zero ? Marshal.GetLastWin32Error() : 0;
                         bool retained = false;
                         try {
-                            var observed = handle == IntPtr.Zero ? null : ObserveHandle(job, pid, handle, false);
+                            // No membership, lifetime, affinity or history scan delays opening the next queued process.
+                            string image = handle == IntPtr.Zero ? null : ObserveImage(handle);
+                            int imageError = image == null && handle != IntPtr.Zero ? Marshal.GetLastWin32Error() : 0;
                             lock (gate) {
-                                capture["newProcessNotifications"] = (long)capture["newProcessNotifications"] + 1;
                                 if (handle == IntPtr.Zero) {
                                     capture["notificationOpenFailures"] = (long)capture["notificationOpenFailures"] + 1;
                                     capture["lastNotificationOpenError"] = openError;
                                     continue;
                                 }
-                                if (observed == null) {
-                                    capture["notificationMetadataFailures"] = (long)capture["notificationMetadataFailures"] + 1;
-                                    continue;
+                                capture["notificationOpenSuccesses"] = (long)capture["notificationOpenSuccesses"] + 1;
+                                if (image == null) {
+                                    capture["notificationImageFailures"] = (long)capture["notificationImageFailures"] + 1;
+                                    capture["lastNotificationImageError"] = imageError;
+                                    throw new InvalidOperationException("Owned process image acquisition failed.");
                                 }
-                                RetainHandle(pid, handle, observed, ref retained, memberHandles, members, capture);
+                                capture["notificationImageSuccesses"] = (long)capture["notificationImageSuccesses"] + 1;
+                                var claim = new PendingProcess {pid=pid, handle=handle, image=image, bytes=1024 + 6L * image.Length};
+                                acquisitions.pending.Enqueue(claim);
+                                retained = true; // The pending owner must survive a throwing byte-bound check.
+                                acquisitions.unpublishedBytes += claim.bytes;
+                                acquisitions.peakPending = Math.Max(acquisitions.peakPending, acquisitions.pending.Count);
+                                CheckHistoryBound(acquisitions, capture);
                             }
-                        } finally { if (handle != IntPtr.Zero && retained == false) Require(CloseHandle(handle)); }
+                        } finally {
+                            if (retained == false) {
+                                if (handle == IntPtr.Zero) ReleaseReservation(acquisitions);
+                                else CloseTracked(handle, acquisitions);
+                            }
+                        }
                     }
                 } catch (Exception failure) { lock (gate) capture["notificationError"] = failure.Message; }
             });
@@ -371,14 +478,20 @@ public static class StrataPerformanceProcess {
             Require(CreateProcessW(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x4 | 0x08000000, IntPtr.Zero, directory, ref startup, out process));
             Require(AssignProcessToJobObject(job, process.process));
             assigned = true;
-            IntPtr primary;
-            Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
+            ReserveHandle(acquisitions);
+            IntPtr primary = IntPtr.Zero;
             bool primaryRetained = false;
             try {
+                Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
                 var observedPrimary = ObserveHandle(job, process.processId, primary, true);
-                if (observedPrimary != null) lock (gate) RetainHandle(process.processId, primary, observedPrimary, ref primaryRetained, memberHandles, members, capture);
+                if (observedPrimary != null) lock (gate) RetainHandle(process.processId, primary, observedPrimary, ref primaryRetained, memberHandles, members, capture, acquisitions);
                 if (primaryRetained == false) throw new InvalidOperationException("Suspended primary process could not be captured.");
-            } finally { if (primaryRetained == false) Require(CloseHandle(primary)); }
+            } finally {
+                if (primaryRetained == false) {
+                    if (primary == IntPtr.Zero) ReleaseReservation(acquisitions);
+                    else CloseTracked(primary, acquisitions);
+                }
+            }
             // The known primary is already held; no descendant can start before the reader is ready and ResumeThread runs.
             reader.Start();
             readerStarted = true;
@@ -402,7 +515,7 @@ public static class StrataPerformanceProcess {
             result["callerPid"] = process.processId;
             uint wait;
             do {
-                Capture(job, memberHandles, members, capture, clock, workSeconds, gate);
+                Capture(job, memberHandles, members, capture, clock, workSeconds, gate, acquisitions);
                 lock (gate) { if (capture.ContainsKey("notificationError")) throw new InvalidOperationException((string)capture["notificationError"]); }
                 wait = WaitForSingleObject(process.process, 100);
             } while (wait == 0x102 && clock.Elapsed.TotalSeconds < workSeconds);
@@ -414,7 +527,7 @@ public static class StrataPerformanceProcess {
             var accounting = Account(job);
             double killReserve = Math.Min(1, cleanupSeconds / 2.0);
             while (0 < accounting.activeProcesses && cleanup.Elapsed.TotalSeconds + killReserve < cleanupSeconds) {
-                Capture(job, memberHandles, members, capture, cleanup, cleanupSeconds - killReserve, gate);
+                Capture(job, memberHandles, members, capture, cleanup, cleanupSeconds - killReserve, gate, acquisitions);
                 lock (gate) { if (capture.ContainsKey("notificationError")) throw new InvalidOperationException((string)capture["notificationError"]); }
                 Thread.Sleep(100);
                 accounting = Account(job);
@@ -435,7 +548,8 @@ public static class StrataPerformanceProcess {
             Require(GetExitCodeProcess(process.process, out exitCode));
             result["exitCode"] = exitCode;
             if (0 < accounting.activeProcesses) Require(TerminateJobObject(job, 125));
-            Retire(memberHandles, members, gate);
+            DrainPending(job, memberHandles, members, capture, gate, acquisitions);
+            Retire(memberHandles, members, gate, acquisitions);
         } catch (Exception failure) {
             result["error"] = failure.Message;
         } finally {
@@ -447,13 +561,15 @@ public static class StrataPerformanceProcess {
                     if ((bool)result["naturalRelease"] == false) closed &= TerminateJobObject(job, 126);
                     while (cleanup.Elapsed.TotalSeconds < cleanupSeconds) {
                         int retained;
-                        Retire(memberHandles, members, gate);
+                        DrainPending(job, memberHandles, members, capture, gate, acquisitions);
+                        Retire(memberHandles, members, gate, acquisitions);
                         lock (gate) retained = memberHandles.Count;
                         if (Account(job).activeProcesses == 0 && retained == 0) break;
                         Thread.Sleep(10);
                     }
                     result["activeProcessesAfterCleanup"] = Account(job).activeProcesses;
-                    Retire(memberHandles, members, gate);
+                    DrainPending(job, memberHandles, members, capture, gate, acquisitions);
+                    Retire(memberHandles, members, gate, acquisitions);
                     closed &= (uint)result["activeProcessesAfterCleanup"] == 0;
                 } catch (Exception failure) {
                     result["cleanupError"] = failure.Message;
@@ -468,7 +584,8 @@ public static class StrataPerformanceProcess {
                     result["notificationReaderJoined"] = joined;
                     closed &= joined;
                 }
-                Retire(memberHandles, members, gate);
+                DrainPending(job, memberHandles, members, capture, gate, acquisitions);
+                Retire(memberHandles, members, gate, acquisitions);
                 var finalAccounting = Account(job);
                 lock (gate) {
                     int captured = 0, completed = 0;
@@ -476,7 +593,9 @@ public static class StrataPerformanceProcess {
                         captured++;
                         if ((bool)member["completed"] && (bool)member["handleClosed"]) completed++;
                     }
-                    bool complete = closed && finalAccounting.activeProcesses == 0 && captured == finalAccounting.totalProcesses && completed == captured && capture.ContainsKey("notificationError") == false;
+                    bool complete = closed && finalAccounting.activeProcesses == 0 && captured == finalAccounting.totalProcesses && completed == captured && capture.ContainsKey("notificationError") == false
+                        && acquisitions.pending.Count == 0 && acquisitions.metadataInFlight == 0 && acquisitions.handles == 0 && acquisitions.unpublishedBytes == 0
+                        && (long)capture["notificationMetadataFailures"] == 0;
                     result["generationAccounting"] = new Dictionary<string, object> {{"schema", "strata-owned-generation-accounting-v1"}, {"totalProcesses", finalAccounting.totalProcesses}, {"capturedGenerations", captured}, {"closedGenerations", completed}, {"complete", complete}};
                     if ((bool)result["naturalRelease"] && complete == false && result.ContainsKey("error") == false)
                         result["error"] = "Owned process generations do not reconcile with actual Job accounting.";
@@ -493,9 +612,12 @@ public static class StrataPerformanceProcess {
                 closed &= CloseHandle(job);
             }
             List<IntPtr> remainingHandles;
+            List<PendingProcess> remainingPending;
             lock (gate) {
                 remainingHandles = new List<IntPtr>(memberHandles.Values);
                 memberHandles.Clear();
+                remainingPending = new List<PendingProcess>(acquisitions.pending);
+                acquisitions.pending.Clear();
                 foreach (var item in members) {
                     var snapshot = new List<Dictionary<string, object>>();
                     foreach (var member in item.Value) snapshot.Add(new Dictionary<string, object>(member));
@@ -503,7 +625,25 @@ public static class StrataPerformanceProcess {
                 }
                 foreach (var item in capture) result[item.Key] = item.Value;
             }
-            foreach (var handle in remainingHandles) closed &= CloseHandle(handle);
+            foreach (var handle in remainingHandles) {
+                if (CloseHandle(handle)) ReleaseReservation(acquisitions);
+                else closed = false;
+            }
+            foreach (var claim in remainingPending) {
+                if (CloseHandle(claim.handle)) {
+                    ReleaseReservation(acquisitions);
+                    acquisitions.unpublishedBytes -= claim.bytes;
+                } else closed = false;
+            }
+            result["newProcessNotifications"] = acquisitions.newNotifications;
+            result["exitProcessNotifications"] = acquisitions.exitNotifications;
+            result["processAcquisition"] = new Dictionary<string, object> {
+                {"pending", acquisitions.pending.Count}, {"metadataInFlight", acquisitions.metadataInFlight},
+                {"physicalHandles", acquisitions.handles}, {"maximumPhysicalHandles", acquisitions.peakHandles},
+                {"maximumPending", acquisitions.peakPending}, {"unpublishedByteBound", acquisitions.unpublishedBytes},
+                {"publishedByteBound", acquisitions.publishedBytes}
+            };
+            closed &= acquisitions.handles == 0 && acquisitions.metadataInFlight == 0 && acquisitions.pending.Count == 0 && acquisitions.unpublishedBytes == 0;
             readerReady.Dispose();
             if (process.thread != IntPtr.Zero) closed &= CloseHandle(process.thread);
             if (process.process != IntPtr.Zero) closed &= CloseHandle(process.process);

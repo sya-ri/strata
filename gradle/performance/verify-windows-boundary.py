@@ -18,6 +18,9 @@ SPEC.loader.exec_module(PAIRED)
 def validate_immediate_history(terminal, actual, held_count=0):
     """Match every independently held short descendant to complete physical Job generations."""
     PAIRED.verify_generation_accounting(terminal)
+    acquisition = terminal.get("processAcquisition", {})
+    PAIRED.require(0 < acquisition.get("maximumPending", 0) and 0 < terminal.get("notificationMetadataSuccesses", 0),
+                   "Immediate controls did not exercise bounded pending metadata acquisition")
     PAIRED.require(actual.get("immediate") is True and actual.get("concurrentChildren") == 8 and len(actual["generations"]) == 32,
                    "Incomplete independent immediate-descendant inventory")
     held = actual.get("held_generations", [])
@@ -40,7 +43,8 @@ def validate_immediate_history(terminal, actual, held_count=0):
             lifetimes.append(child["exitFileTime"] - child["creationFileTime"])
     PAIRED.require(any(lifetime < 100 * 10000 for lifetime in lifetimes), "Regression control did not observe a lifetime below the former 100ms poll interval")
     return {"independentGenerations": len(actual["generations"]), "heldMetadataGenerations": len(held), "totalIndependentGenerations": len(identities), "observedBelowFormerPollInterval": sum(lifetime < 100 * 10000 for lifetime in lifetimes),
-            "minimumLifetime100ns": min(lifetimes), "formerPollInterval100ns": 100 * 10000}
+            "minimumLifetime100ns": min(lifetimes), "formerPollInterval100ns": 100 * 10000, "processAcquisition": acquisition,
+            "imageAcquisitions": terminal["notificationImageSuccesses"], "metadataAcquisitions": terminal["notificationMetadataSuccesses"]}
 
 
 def validate_node_leak(terminal, program, console):

@@ -140,7 +140,7 @@ def load_manifest(root, path):
         for gate in gates:
             require(isinstance(gate, dict) and set(gate) == {"task", "required_tests"}, "Invalid independent test gate fields")
             task = gate["task"]
-            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:(?:test|jvmTest|fontTest[A-Za-z0-9_]+)", task)
+            require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)+", task)
                     and task.rsplit(":", 1)[0] in projects and task not in tasks, "Use unique existing runtime test tasks")
             tasks.add(task)
             tests = gate["required_tests"]
@@ -470,6 +470,27 @@ def verify_generation_accounting(terminal):
             and all(type(accounting.get(key)) is int and accounting[key] == len(identities)
                     for key in ("totalProcesses", "capturedGenerations", "closedGenerations"))
             and terminal["totalProcesses"] == len(identities), "Physical histories do not reconcile with actual Job totalProcesses")
+    if "processAcquisition" in terminal:
+        acquisition = terminal["processAcquisition"]
+        require(isinstance(acquisition, dict)
+                and all(type(acquisition.get(key)) is int and acquisition[key] == 0
+                        for key in ("pending", "metadataInFlight", "physicalHandles", "unpublishedByteBound"))
+                and type(acquisition.get("maximumPhysicalHandles")) is int and 0 < acquisition["maximumPhysicalHandles"] <= 256
+                and type(acquisition.get("maximumPending")) is int and 0 <= acquisition["maximumPending"] <= acquisition["maximumPhysicalHandles"],
+                "Acquired physical handles lack bounded drained ownership")
+        published_bound = sum(1024 + 6 * (len(member["image"].encode("utf-16-le")) // 2)
+                              for histories in terminal["members"].values() for member in histories)
+        require(type(acquisition.get("publishedByteBound")) is int and acquisition["publishedByteBound"] == published_bound
+                and type(terminal.get("memberHistorySerializedByteBound")) is int
+                and published_bound <= terminal["memberHistorySerializedByteBound"] <= 3 * 1024**2,
+                "Acquired physical history exceeds its shared byte bound")
+        counters = ("newProcessNotifications", "notificationOpenSuccesses", "notificationOpenFailures", "notificationImageSuccesses",
+                    "notificationImageFailures", "notificationMetadataSuccesses", "notificationMetadataFailures")
+        require(all(type(terminal.get(key)) is int and 0 <= terminal[key] for key in counters)
+                and terminal["notificationImageFailures"] == terminal["notificationMetadataFailures"] == 0
+                and terminal["newProcessNotifications"] == terminal["notificationOpenSuccesses"] + terminal["notificationOpenFailures"]
+                and terminal["notificationOpenSuccesses"] == terminal["notificationImageSuccesses"] == terminal["notificationMetadataSuccesses"],
+                "Acquired process image or metadata lacks complete delivery")
 
 
 def owned_generation(terminal, pid, vm_start, unique_invocation_pid=False):
@@ -996,6 +1017,12 @@ def verify_test_gate(directory, gate):
                                                 "counts": counts, "reports": inventory["reports"]})
 
 
+def test_classpath_preparation(data):
+    """Resolve every declared complete Test gate's libraries before validating frozen dependency pins."""
+    tasks = sorted({gate["task"] for suite in data["suites"] for gate in suite.get("test_gates", [])})
+    return ["-Pstrata.paired.prepareTestClasspaths=" + ",".join(tasks)] if tasks else []
+
+
 def verify_jmh_completion(data, invocation_ids, comparisons, completed):
     """Require every declared mode's complete ordered B0/C0/B1/C1/B2/C2 sequence and comparison."""
     modes = [(suite["name"], mode) for suite in data["suites"] for mode in suite.get("modes", ["avgt", "sample"])]
@@ -1257,11 +1284,12 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
         owners = sorted({suite["project"] for suite in data["suites"]})
         fixture_tasks = [archive_task(":performance-testkit")] + [project + ":jmhCompileGeneratedClasses" for project in owners]
         fixture_tasks += [report["project"] + ":testClasses" for report in data.get("owner_reports", []) if report["kind"] == "test"]
+        test_classpaths = test_classpath_preparation(data)
         for side in ("baseline", "candidate"):
             tasks = [archive_task(project) for project in data["runtime_projects"]]
             if workspaces[side] == fixture:
                 tasks += fixture_tasks
-            phase(f"prepare-{side}", workspaces[side], tasks)
+            phase(f"prepare-{side}", workspaces[side], tasks + test_classpaths)
         if fixture not in (workspaces["baseline"], workspaces["candidate"]):
             phase("prepare-fixture", fixture, fixture_tasks)
         for item in data["dependency_pins"]:

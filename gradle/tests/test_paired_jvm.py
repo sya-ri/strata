@@ -12,6 +12,7 @@ import re
 import subprocess
 import tempfile
 import textwrap
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -27,6 +28,19 @@ QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 
 class PairedJvmTest(unittest.TestCase):
     """Invalid manifests cannot weaken the declared complete three-repetition collection contract."""
+
+    def test_complete_gate_classpaths_are_resolved_before_dependency_pins_without_test_filters(self):
+        data = {"suites": [
+            {"test_gates": [{"task": ":runtime:core:jvmTest", "required_tests": ["dev.example.Core#whole"]}]},
+            {"test_gates": [{"task": ":runtime:headless:test", "required_tests": ["dev.example.Headless#whole"]},
+                            {"task": ":runtime:core:jvmTest", "required_tests": ["dev.example.Core#whole"]}]},
+            {},
+        ]}
+        self.assertEqual(["-Pstrata.paired.prepareTestClasspaths=:runtime:core:jvmTest,:runtime:headless:test"],
+                         PAIRED.test_classpath_preparation(data))
+        self.assertEqual([], PAIRED.test_classpath_preparation({"suites": [{}]}))
+        self.assertEqual(["dev.example.Core#whole"], data["suites"][0]["test_gates"][0]["required_tests"])
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
@@ -735,8 +749,14 @@ class PairedJvmTest(unittest.TestCase):
         value = copy.deepcopy(self.manifest)
         value["suites"][0]["test_gates"] = [{"task": ":runtime:headless:test", "required_tests": ["independent.Controls#full owner failure"]}]
         self.assertEqual(self.load(value), value)
-        changes = [lambda gate: gate.update(task=":runtime:headless:check"),
-                   lambda gate: gate.update(task=":quality:benchmarks:test"),
+        for task in (":runtime:headless:validateRuntime", ":runtime:headless:check"):
+            generic = copy.deepcopy(value)
+            generic["suites"][0]["test_gates"][0]["task"] = task
+            self.assertEqual(self.load(generic), generic)
+        changes = [lambda gate: gate.update(task=":quality:benchmarks:test"),
+                   lambda gate: gate.update(task="runtime:headless:test"),
+                   lambda gate: gate.update(task=":runtime:headless:"),
+                   lambda gate: gate.update(task=":runtime:headless::test"),
                    lambda gate: gate.update(task=":runtime:headless:test --tests One"),
                    lambda gate: gate.update(required_tests=[]),
                    lambda gate: gate.update(required_tests=["Controls"]),
@@ -749,6 +769,137 @@ class PairedJvmTest(unittest.TestCase):
         value["suites"][0]["test_gates"].append(value["suites"][0]["test_gates"][0])
         with self.assertRaises(ValueError):
             self.load(value)
+
+    def test_whole_preparation_resolves_all_test_classpaths_before_pins_and_aborts_on_changed_dependencies(self):
+        """Use synthetic physical-call receipts, as in the browser control; launch no Java or native helper."""
+        self.root.joinpath("gradle").mkdir()
+        self.root.joinpath("gradle/libs.versions.toml").write_text(
+            '[versions]\nperformance-toolchain="17.0.1+1"\nperformance-launcher="25.0.1"\n', encoding="utf-8")
+        homes = {}
+        for role, provider, version in (("toolchain", "Eclipse Adoptium", "17.0.1"), ("launcher", "Oracle Corporation", "25.0.1")):
+            home = self.root / role
+            home.joinpath("bin").mkdir(parents=True)
+            home.joinpath("bin/java.exe").write_bytes(b"synthetic Java; never launched")
+            home.joinpath("release").write_text(f'IMPLEMENTOR="{provider}"\nJAVA_VERSION="{version}"\n', encoding="utf-8")
+            homes[role] = home
+        helper = self.root / "pwsh.exe"
+        helper.write_bytes(b"synthetic helper; never launched")
+        gates = [{"task": task, "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
+                 for task in (":runtime:core:validateRuntime", ":runtime:headless:completeChecks")]
+        library_bytes = b"synthetic resolved Test dependency"
+        pins = [{"path": f"modules/dependency-{index}.jar", "sha256": hashlib.sha256(library_bytes).hexdigest()} for index in range(13)]
+
+        for mode in ("complete", "invalid", "missing", "mutated", "no-gates"):
+            with self.subTest(mode=mode):
+                data = copy.deepcopy(self.manifest)
+                data["sources"]["baseline"]["tree"] = "c" * 40
+                data["suites"][0]["test_gates"] = copy.deepcopy(gates)
+                data["suites"].append({**copy.deepcopy(data["suites"][0]), "name": "additional", "test_gates": [copy.deepcopy(gates[0])]})
+                if mode == "no-gates":
+                    for suite in data["suites"]:
+                        suite.pop("test_gates")
+                data["dependency_pins"] = copy.deepcopy(pins)
+                if mode == "invalid":
+                    data["dependency_pins"][-1]["sha256"] = "invalid"
+                manifest = self.root / (mode + "-manifest.json")
+                manifest.write_text(json.dumps(data), encoding="utf-8")
+                cache = self.root / (mode + "-cache")
+                output = self.root / (mode + "-attempt")
+                events, validated = [], []
+                property_arguments = PAIRED.test_classpath_preparation(data)
+                expected_tasks = sorted({gate["task"] for suite in data["suites"] for gate in suite.get("test_gates", [])})
+
+                def resolve_dependencies():
+                    for item in pins[:-1] if mode == "missing" else pins:
+                        library = cache / item["path"]
+                        library.parent.mkdir(parents=True, exist_ok=True)
+                        library.write_bytes(library_bytes)
+
+                if mode == "no-gates":
+                    resolve_dependencies()
+
+                def materialize(root, attempt, side, source, input_root):
+                    workspace = attempt / "workspaces" / side
+                    workspace.mkdir(parents=True)
+                    for project in data["runtime_projects"] + [":performance-testkit"]:
+                        archive = workspace.joinpath(*project.strip(":").split(":"), "build/libs/synthetic.jar")
+                        archive.parent.mkdir(parents=True, exist_ok=True)
+                        archive.write_bytes(b"synthetic compiled bytes")
+                    for relative in ("classes/kotlin/jmh", "jmh-generated-classes", "jmh-generated-resources"):
+                        workspace.joinpath("quality/benchmarks/build", relative).mkdir(parents=True)
+                    return workspace, source
+
+                def checked_pin(root, item):
+                    if root == cache:
+                        events.append(("pin", item["path"]))
+                    result = original_pin(root, item)
+                    if root == cache:
+                        validated.append(item["path"])
+                    return result
+
+                def invoke(arguments, root, console):
+                    request = PAIRED.read_json(Path(arguments[arguments.index("-Request") + 1]))
+                    terminal_path = Path(arguments[arguments.index("-Report") + 1])
+                    name, args = terminal_path.parent.name, request["arguments"]
+                    events.append(("invoke", name))
+                    if name.startswith("prepare-"):
+                        self.assertEqual([arg for arg in args if arg.startswith("-Pstrata.paired.prepareTestClasspaths=")], property_arguments)
+                        tasks = [PAIRED.archive_task(project) for project in data["runtime_projects"]]
+                        if name == "prepare-candidate":
+                            tasks += [":performance-testkit:jvmJar", ":quality:benchmarks:jmhCompileGeneratedClasses"]
+                        self.assertEqual([arg for arg in args if arg.startswith(":")], tasks)
+                        self.assertFalse(any(task in args for task in expected_tasks))
+                        self.assertEqual(validated, [])
+                        if property_arguments:
+                            self.assertEqual(property_arguments[0].split("=", 1)[1].split(","), expected_tasks)
+                            resolve_dependencies()
+                            if mode == "mutated" and name == "prepare-candidate":
+                                (cache / pins[0]["path"]).write_bytes(b"mutated archive")
+                    else:
+                        self.assertEqual(validated, [item["path"] for item in pins])
+                    if name.startswith("collect-"):
+                        raise ValueError("Synthetic timing boundary; no measurement")
+                    if name.startswith("tests-"):
+                        gate = next(gate for gate in gates if gate["task"] == args[0])
+                        reports = Path(request["workspace"]).joinpath(*gate["task"].strip(":").split(":")[:-1], "build/test-results", gate["task"].split(":")[-1])
+                        reports.mkdir(parents=True, exist_ok=True)
+                        reports.joinpath("TEST-independent.Controls.xml").write_text(
+                            '<testsuite tests="2" failures="0" errors="0" skipped="0"><testcase classname="independent.Controls" name="owner()"/>'
+                            '<testcase classname="independent.Controls" name="failure()"/></testsuite>', encoding="utf-8")
+                    console.write_bytes(b"synthetic command transcript\n")
+                    PAIRED.write_new(terminal_path, {"exitCode": 0, "naturalRelease": True, "handlesClosed": True,
+                                                   "jobName": name, "inheritedAffinityMask": 15, "systemAffinityMask": 15})
+                    PAIRED.write_new(terminal_path.parent / "child-admission.json", {"inOwnedJob": True, "jobName": name, "availablePhysicalBytes": 4 * 1024**3})
+                    return 0
+
+                original_pin = PAIRED.pin
+                with patch.multiple(PAIRED, git=lambda *args: "a" * 40, materialize=materialize, invoke=invoke, pin=checked_pin,
+                                    verify_driver_source=lambda *args: None, preserve_driver_sources=lambda *args: {},
+                                    verify_driver_sources=lambda *args: None, source_guard=lambda *args: None,
+                                    verify_vms=lambda *args: None, class_load_inventory=lambda *args: {}, preserve_class_loads=lambda *args: {}), \
+                     patch.object(PAIRED, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), \
+                     patch.dict(os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"]), "GRADLE_USER_HOME": str(cache)}), \
+                     patch.object(PAIRED.shutil, "which", return_value=str(helper)), patch.object(PAIRED.subprocess, "check_output", return_value="{}"):
+                    error = {"invalid": "Invalid dependency pin", "missing": "Missing or unsafe pinned file", "mutated": "Pinned bytes changed"}.get(mode, "Synthetic timing boundary")
+                    with self.assertRaisesRegex(ValueError, error), redirect_stdout(io.StringIO()):
+                        PAIRED.run(self.root, manifest, output)
+                preparations = [("invoke", "prepare-baseline"), ("invoke", "prepare-candidate")]
+                self.assertEqual(events[:2], [] if mode == "invalid" else preparations)
+                dependency_checks = [name for kind, name in events if kind == "pin"]
+                expected_pins = [] if mode == "invalid" else pins[:1] if mode == "mutated" else pins
+                self.assertEqual(dependency_checks, [item["path"] for item in expected_pins])
+                calls = [name for kind, name in events if kind == "invoke"]
+                if mode in ("invalid", "missing", "mutated"):
+                    self.assertEqual(calls, [] if mode == "invalid" else [name for _, name in preparations])
+                else:
+                    executed = [name for name in calls if name.startswith("tests-")]
+                    self.assertEqual(len(executed), 0 if mode == "no-gates" else 6)
+                    for name in executed:
+                        self.assertEqual(PAIRED.read_json(output / "phases" / name / "junit-verified.json")["required_tests"], gates[0]["required_tests"])
+                    self.assertTrue(calls[-1].startswith("collect-"))
+                self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "failed")
+                self.assertFalse((output / "raw").exists())
+                self.assertTrue(output.with_suffix(".zip").is_file())
 
     def test_independent_junit_gate_requires_actual_complete_method_results_and_preserves_reports(self):
         gate = {"task": ":runtime:headless:test", "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}

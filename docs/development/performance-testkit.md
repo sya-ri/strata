@@ -624,8 +624,10 @@ Such a corpus freezes the collector containing this generic secondary-metric pro
 Input labels may contain ordinary filename dots, so existing labels such as `unihex-bounds-assets.zip` remain unchanged; label values are never interpreted as filesystem paths.
 
 A suite may declare optional `test_gates` for independent tests on both original reconstructed runtime sources before any timed collection.
-Each gate has an existing runtime `task` and a nonempty `required_tests` inventory of exact `class#method` bindings; filters and additional task arguments are not allowed.
+Each gate has an existing runtime `task` registered as a Gradle `Test` and a nonempty `required_tests` inventory of exact `class#method` bindings; task names do not select the type, and filters and additional task arguments are not allowed.
 The driver runs the complete task on baseline and candidate without the fixture overlay, preserves all actual JUnit XML even on failure, and checks report counts and successful execution of each required method exactly once.
+Ordinary bounded preparation resolves every declared Test gate runtime classpath before validating frozen dependency archives, including on a fresh dependency cache.
+This resolution executes no Test main; all original dependency pins must pass before either unchanged full gate starts.
 These independent tests supplement the fixture's complete work and loaded-runtime controls.
 
 A suite may also declare an optional `preflight` object for a qualified compiled untimed controller.
@@ -825,7 +827,11 @@ Audit the retained setup and task logs for the requested cache context before ac
 Gradle preparation retains complete VM XML diagnostics up to 16 MiB per file, with the actual byte count, bound and SHA recorded; other JVM verification keeps its 1 MiB default.
 Process-isolation worker arguments carry the existing diagnostic flags explicitly, and preparation requires complete XML with observed executable/caps and closed PID/birth identity for every captured Java generation.
 An owned Job completion listener opens physical descendant handles as notifications arrive, alongside the existing complete member snapshots.
-The listener reads physical birth, image, Job membership and affinity through its own handle before waiting for the shared history lock; publishing transfers handle ownership before bound checks, and duplicate or failed observations close their temporary handles.
+The listener opens the physical handle and immediately reads its actual image, then transfers that same handle to bounded pending metadata processing before dequeuing the next notification.
+Only successful membership, birth and affinity queries through the held object establish a captured generation; a failed deferred query rejects the attempt, including when the process has exited.
+Pending, in-flight and published process handles share the existing 256-handle and 3 MiB history bounds; ownership transfers before any throwing history-bound check, and duplicates are resolved by actual birth rather than queued PID alone.
+The sampler drains pending metadata before retirement and member scans, and terminal qualification requires joined notification delivery, an empty pending inventory, no metadata operation in flight and every tracked physical handle closed.
+Original acquisition-stage counters and peak pending/physical-handle reservations remain in the terminal receipt; this reduces serial acquisition work without promising timely advisory delivery or successful post-exit metadata.
 Only the sampler retires transferred handles, and its member, lifetime and affinity queries run outside the brief map/history locks.
 Each retired handle's close and map removal are atomic under one per-generation lock so a reused PID cannot publish against a released handle's stale entry.
 Notifications are advisory; preparation independently reconciles every unique closed PID/birth history, including non-Java processes, with actual Job `totalProcesses` before qualifying any Java diagnostic.
