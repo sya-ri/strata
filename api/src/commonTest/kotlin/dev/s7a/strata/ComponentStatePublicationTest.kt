@@ -213,7 +213,7 @@ internal class ComponentStatePublicationTest {
         text.value = "text"
         area.value = "a\r\nb"
         area.value = "a\nb"
-        assertEquals(listOf(0.5, 1, "text", "a\nb"), values)
+        assertEquals(listOf<Any>(0.5, 1, "text", "a\nb"), values)
         handles.forEach { it.close() }
     }
 
