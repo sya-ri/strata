@@ -70,6 +70,45 @@ public final class dev/s7a/strata/performance/JvmApiInventory {
 	public final fun componentEntryPoints (Ljava/lang/ClassLoader;Ljava/util/Map;Ljava/lang/String;)Ljava/util/Map;
 }
 
+public abstract interface class dev/s7a/strata/performance/JvmOperationReportAdapter {
+	public abstract fun collect (Ldev/s7a/strata/performance/PerformancePlan;)Ljava/util/Map;
+	public fun collectVerified (Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
+	public fun getInputs ()Ljava/util/Map;
+	public abstract fun getRows ()Ljava/util/List;
+}
+
+public final class dev/s7a/strata/performance/JvmOperationReportAdapter$DefaultImpls {
+	public static fun collectVerified (Ldev/s7a/strata/performance/JvmOperationReportAdapter;Ldev/s7a/strata/performance/PerformancePlan;Lkotlin/jvm/functions/Function0;)Ljava/util/Map;
+	public static fun getInputs (Ldev/s7a/strata/performance/JvmOperationReportAdapter;)Ljava/util/Map;
+}
+
+public final class dev/s7a/strata/performance/JvmOperationReportRow {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZ)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()I
+	public final fun component6 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZ)Ldev/s7a/strata/performance/JvmOperationReportRow;
+	public static synthetic fun copy$default (Ldev/s7a/strata/performance/JvmOperationReportRow;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Ljava/lang/String;IZILjava/lang/Object;)Ldev/s7a/strata/performance/JvmOperationReportRow;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBenchmark ()Ljava/lang/String;
+	public final fun getBoundary ()Ljava/lang/String;
+	public final fun getControl ()Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getOperationsPerSample ()I
+	public final fun getParameters ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/s7a/strata/performance/JvmOperationReports {
+	public static final field INSTANCE Ldev/s7a/strata/performance/JvmOperationReports;
+	public static final fun main ([Ljava/lang/String;)V
+}
+
 public final class dev/s7a/strata/performance/JvmPerformanceEvidence {
 	public static final field INSTANCE Ldev/s7a/strata/performance/JvmPerformanceEvidence;
 	public final fun indexPhases (Lcom/google/gson/JsonObject;Ljava/util/List;Ljava/lang/Integer;)Ljava/util/Map;

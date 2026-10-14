@@ -146,8 +146,8 @@ public class NativeCanvasDevice(
             NativeCanvasPresentation(
                 deviceId,
                 nextBatch,
-                resolved,
-                receipts,
+                ownedCommands = resolved,
+                ownedSnapshots = receipts,
                 hasUncommittedCanvases = prepared.values.any { it == null },
             ).also { presentation ->
                 batch = Batch(presentation, selected)

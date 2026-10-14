@@ -45,4 +45,6 @@ extensions.configure<KotlinJvmProjectExtension> {
 
 tasks.test {
     useJUnitPlatform()
+    // TestKit releases its dedicated daemons when the class worker finishes.
+    forkEvery = 1
 }

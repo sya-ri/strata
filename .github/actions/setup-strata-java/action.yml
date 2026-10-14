@@ -1,13 +1,21 @@
 name: Set up Strata Java toolchains
-description: Installs every Java toolchain declared by the Gradle version catalog.
+description: Installs the required Java profile from the Gradle version catalog.
 inputs:
   directory:
     description: Product checkout containing the version catalog
     default: .
+  paired:
+    description: Install the frozen CPU/JVM fixture and launcher profile
+    default: 'false'
+outputs:
+  toolchain:
+    description: Frozen paired fixture toolchain home
+    value: ${{ steps.fixture.outputs.path }}
 runs:
   using: composite
   steps:
     - name: Read Java toolchains
+      if: inputs.paired != 'true'
       id: toolchains
       shell: bash
       working-directory: ${{ inputs.directory }}
@@ -19,7 +27,28 @@ runs:
           echo 'STRATA_JAVA_VERSIONS'
         } >> "$GITHUB_OUTPUT"
     - name: Install Java toolchains
+      if: inputs.paired != 'true'
       uses: actions/setup-java@v6
       with:
         distribution: temurin
         java-version: ${{ steps.toolchains.outputs.versions }}
+    - name: Read frozen paired Java profile
+      if: inputs.paired == 'true'
+      id: paired
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: |
+        python -B -c "import os,tomllib; v=tomllib.load(open('gradle/libs.versions.toml','rb'))['versions']; f=open(os.environ['GITHUB_OUTPUT'],'a'); f.write('toolchain='+v['performance-toolchain']+'\nlauncher='+v['performance-launcher']+'\n'); f.close()"
+    - name: Install frozen fixture toolchain
+      if: inputs.paired == 'true'
+      id: fixture
+      uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: ${{ steps.paired.outputs.toolchain }}
+    - name: Install frozen Gradle launcher
+      if: inputs.paired == 'true'
+      uses: actions/setup-java@v6
+      with:
+        distribution: oracle-openjdk
+        java-version: ${{ steps.paired.outputs.launcher }}
