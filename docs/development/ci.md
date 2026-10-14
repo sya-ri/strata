@@ -130,6 +130,9 @@ Disable an inspection only with an actionable rationale in the checked-in config
 ## Controller regression checks
 
 `Workflow checks` runs actionlint, shell syntax checks, Python behavior tests, and Java/CI/Qodana model fixtures without starting Minecraft.
+The linter step downloads official actionlint and ShellCheck release binaries, verifies their checksums, and installs the hash-checked Pyflakes wheel in a temporary environment.
+Tool versions belong in the version catalog; review the pinned ShellCheck and Pyflakes digests in `.github/check-workflows.sh` when changing their versions.
+Explicit executable paths and valid/invalid workflow, shell, and Python fixtures keep both script integrations enabled without Docker Hub credentials.
 It compiles the isolated publication tools without loading product projects.
 Behavior tests cover changed-path ownership, missing or altered prepared artifacts, successful preparation followed by a failed destination, immutable-release recovery, service conflicts, and receipt restoration.
 Checks do not enforce workflow prose or source statement order.
@@ -140,3 +143,6 @@ Checks do not enforce workflow prose or source statement order.
 Documentation inputs trigger Pages separately after merge; the checked site is generated once and old rendered versions come from `gh-pages`.
 See [Pages publication](release.md#pages-artifacts-and-deployment) and [documentation ownership](documentation.md#documentation-ownership).
 Wait for CI using `gh run watch <run-id> --exit-status`; inspect logs after completion or failure.
+
+The JVM workflow also supports an explicit paired measurement manifest; ordinary PRs without the default opt-in file skip its Windows job.
+See [paired JVM CI](performance-testkit.md#opt-in-paired-jvm-ci) for frozen inputs, supported collectors, process bounds and complete-attempt acceptance.

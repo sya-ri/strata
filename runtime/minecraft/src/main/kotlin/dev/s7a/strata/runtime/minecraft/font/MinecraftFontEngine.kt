@@ -21,6 +21,11 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Hits touch the same preceding raster keys in order before retrieving the winner, preserving raster eviction semantics.
  * Raster replacement or eviction and permanent face failure clear resolutions; walks that evict raster entries bypass admission.
  * Every resolution still preflights its font and retrieves the selected provider's ordinary glyph cache.
+ * The first applicable provider runs before resolution metadata; its successful result bypasses selection keys and entries.
+ * Fallback hits replay only later prefix touches, and empty prefixes are not admitted.
+ * Provider sequences with at most one entry use the original walk without resolution metadata.
+ * Miss-prefix storage is lazy and stops when the captured raster epoch changes or its existing admission bound cannot fit.
+ * Cold misses that grow the raster cache continue without selection metadata; a later fully cached walk may admit reuse.
  * Decoded dimensions and detached failure messages are bounded by the current snapshot's resources and settings, even with raster caching disabled.
  * Native faces have an independent entry bound of at most 16 and a combined encoded-input ceiling equal to the snapshot's maxAssetBytes.
  * Eviction closes faces before opening replacements; successful descriptor checks survive eviction without retaining native state.
@@ -30,6 +35,9 @@ import dev.s7a.strata.spi.InternalStrataRuntimeApi
  * Declaration aliases share an engine-local index; at most 65,536 boundary slots retain 512 KiB of primitive payload.
  * Small, first-range and unadmitted selections use the original ordered loop; pixel bounds remain lazy.
  * Closing clears snapshot, cache, and native references and never invalidates returned glyphs.
+ * Backend callbacks may close this owner; terminal owners admit no later cache or preflight state.
+ * A face returned after callback-driven close is released immediately without entering the engine.
+ * Interrupted preflight returns the missing shape, while completed detached glyph results and cleanup failures retain their identities.
  * Glyph selection, cache eviction, and terminal cleanup share this owner to preserve resource lifetime boundaries.
  *
  * @param snapshot immutable font definitions and resource bytes, safely reusable by other engines.
@@ -156,7 +164,7 @@ public class MinecraftFontEngine
         }
 
         /**
-         * Resolves the prepared provider sequence with epoch-bound metadata while preserving earlier miss touches.
+         * Resolves the first applicable provider before deriving fallback-only selection metadata and later miss touches.
          */
         private fun preparedGlyph(
             selected: ResourceId,
@@ -164,37 +172,90 @@ public class MinecraftFontEngine
             providers: List<FontProviderEntry>,
             current: MinecraftFontSnapshot,
         ): MinecraftFontGlyph {
-            val key = if (resolutionLimit == 0) null else ResolutionKey(selected, codePoint)
-            key?.let { resolutions[it] }?.let { resolution ->
-                resolution.misses.forEach { rasters[it] }
+            if (resolutionLimit == 0 || providers.size <= 1) return walkGlyph(null, codePoint, providers, current)
+            val epoch = rasterEpoch
+            var firstIndex = 0
+            while (firstIndex < providers.size && applies(providers[firstIndex].filter, current.options).not()) firstIndex++
+            if (firstIndex == providers.size) return missingGlyph
+            val first = providers[firstIndex]
+            val rasterEntries = rasters.size
+            cachedGlyph(first, codePoint)?.let { return it }
+            if (firstIndex == providers.lastIndex) return missingGlyph
+            if (epoch !== rasterEpoch || rasterEntries != rasters.size) return walkGlyph(null, codePoint, providers, current, firstIndex + 1)
+            val key = ResolutionKey(selected, codePoint)
+            resolutions[key]?.let { resolution ->
+                val firstMiss = missingRasterKey(first, codePoint)
+                touchResolutionMisses(resolution, firstMiss)
                 return resolution.provider?.let { cachedGlyph(it, codePoint) } ?: missingGlyph
             }
-            return walkGlyph(key, codePoint, providers, current)
+            return walkGlyph(key, codePoint, providers, current, firstIndex + 1, epoch)
         }
 
         /**
-         * Walks applicable providers in original order and admits only epoch-current, bounded resolution metadata.
+         * Replays the retained prefix after the first actual provider touch, preserving later duplicate miss keys.
+         */
+        private fun touchResolutionMisses(
+            resolution: Resolution,
+            firstMiss: RasterKey?,
+        ) {
+            for (index in resolution.misses.indices) {
+                val miss = resolution.misses[index]
+                if (index != 0 || miss != firstMiss) rasters[miss]
+            }
+        }
+
+        /**
+         * Continues the original provider order after an already attempted first provider, preserving its captured epoch and miss weight.
          */
         private fun walkGlyph(
             key: ResolutionKey?,
             codePoint: Int,
             providers: List<FontProviderEntry>,
             current: MinecraftFontSnapshot,
+            startIndex: Int = 0,
+            epoch: Any = rasterEpoch,
         ): MinecraftFontGlyph {
-            val epoch = rasterEpoch
-            val misses = if (key == null) null else ArrayList<RasterKey>()
-            for (entry in providers) {
-                if (applies(entry.filter, current.options)) {
-                    val glyph = cachedGlyph(entry, codePoint)
-                    if (glyph != null) {
-                        if (key != null) putResolution(key, entry, checkNotNull(misses), epoch)
-                        return glyph
-                    }
-                    if (misses != null) missingRasterKey(entry, codePoint)?.let(misses::add)
+            var misses: MutableList<RasterKey>? = null
+            var canAdmit = key != null && epoch === rasterEpoch
+            if (canAdmit && 0 < startIndex) {
+                missingRasterKey(providers[startIndex - 1], codePoint)?.let { firstMiss ->
+                    misses = appendResolutionMiss(null, firstMiss)
+                    canAdmit = misses != null
                 }
             }
-            if (key != null) putResolution(key, null, checkNotNull(misses), epoch)
+            for (index in startIndex until providers.size) {
+                val entry = providers[index]
+                if (applies(entry.filter, current.options).not()) continue
+                val rasterEntries = rasters.size
+                val glyph = cachedGlyph(entry, codePoint)
+                if (epoch !== rasterEpoch || rasterEntries != rasters.size) {
+                    canAdmit = false
+                    misses = null
+                }
+                if (glyph != null) {
+                    if (canAdmit) putResolution(checkNotNull(key), entry, misses.orEmpty(), epoch)
+                    return glyph
+                }
+                if (canAdmit) {
+                    missingRasterKey(entry, codePoint)?.let { miss ->
+                        misses = appendResolutionMiss(misses, miss)
+                        canAdmit = misses != null
+                    }
+                }
+            }
+            if (canAdmit) putResolution(checkNotNull(key), null, misses.orEmpty(), epoch)
             return missingGlyph
+        }
+
+        /**
+         * Creates transient prefix storage only when needed; null cancels admission that cannot fit the existing bound.
+         */
+        private fun appendResolutionMiss(
+            misses: MutableList<RasterKey>?,
+            miss: RasterKey,
+        ): MutableList<RasterKey>? {
+            if (resolutionLimit <= 1 + (misses?.size ?: 0)) return null
+            return (misses ?: ArrayList()).also { it.add(miss) }
         }
 
         /**
@@ -276,22 +337,23 @@ public class MinecraftFontEngine
             var ready = true
             for (entry in providers) {
                 val state =
-                    providerStatus.getOrPut(entry.identity) {
-                        runCatching { preflight(entry) }.fold(
-                            onSuccess = { LoadStatus.Ready },
-                            onFailure = { failure ->
-                                if ((failure is Exception).not()) throw failure
-                                loadDiagnostics +=
-                                    MinecraftFontDiagnostic(
-                                        MinecraftFontDiagnostic.Kind.ProviderLoadFailure,
-                                        font,
-                                        entry.source,
-                                        failure.message ?: "Font provider failed during CPU loading.",
-                                    )
-                                LoadStatus.Failed
-                            },
-                        )
-                    }
+                    providerStatus[entry.identity] ?: runCatching { preflight(entry) }.fold(
+                        onSuccess = { LoadStatus.Ready },
+                        onFailure = { failure ->
+                            if (failure is TerminalFaceCloseException) throw failure.failure
+                            if ((failure is Exception).not()) throw failure
+                            loadDiagnostics +=
+                                MinecraftFontDiagnostic(
+                                    MinecraftFontDiagnostic.Kind.ProviderLoadFailure,
+                                    font,
+                                    entry.source,
+                                    failure.message ?: "Font provider failed during CPU loading.",
+                                )
+                            LoadStatus.Failed
+                        },
+                    )
+                if (closed) return false
+                providerStatus[entry.identity] = state
                 if (state === LoadStatus.Failed) ready = false
             }
             fontStatus[font] = if (ready) LoadStatus.Ready else LoadStatus.Failed
@@ -310,7 +372,7 @@ public class MinecraftFontEngine
                 is FontProvider.TrueType -> {
                     val key = FontFaceKey(provider.resource, provider.settings)
                     faceFailures[key]?.raise()
-                    if (validatedFaces.contains(key).not()) face(provider)
+                    if (validatedFaces.contains(key).not()) face(provider, preparing = true)
                 }
 
                 is FontProvider.Space, is FontProvider.Unihex -> {}
@@ -390,7 +452,7 @@ public class MinecraftFontEngine
                 is FontProvider.Bitmap -> error("Bitmap glyph lookup requires its shared cell cache.")
                 is FontProvider.Space -> provider.advances[codePoint]?.let { advance -> spacingGlyph(advance) }
                 is FontProvider.Unihex -> unihexGlyph(entry.identity, provider, codePoint)
-                is FontProvider.TrueType -> face(provider).glyph(codePoint)
+                is FontProvider.TrueType -> face(provider)?.glyph(codePoint)
                 is FontProvider.Failed, is FontProvider.Reference -> error("Unresolved provider reached glyph lookup.")
             }
 
@@ -410,10 +472,10 @@ public class MinecraftFontEngine
             bitmapFailures[provider.resource]?.let { message -> throw IllegalArgumentException(message) }
             val image =
                 runCatching { decodeBitmap(provider.resource) }.getOrElse { failure ->
-                    if (failure is Exception) bitmapFailures[provider.resource] = failure.message ?: "Font bitmap decoding failed."
+                    if (closed.not() && failure is Exception) bitmapFailures[provider.resource] = failure.message ?: "Font bitmap decoding failed."
                     throw failure
                 }
-            bitmapSizes[provider.resource] = image.size
+            if (closed.not()) bitmapSizes[provider.resource] = image.size
             putRaster(key, RasterValue.Bitmap(image))
             return image
         }
@@ -536,7 +598,12 @@ public class MinecraftFontEngine
             return index.lookup(codePoint)
         }
 
-        private fun face(provider: FontProvider.TrueType): MinecraftTrueTypeFace {
+        private fun face(
+            provider: FontProvider.TrueType,
+            preparing: Boolean = false,
+        ): MinecraftTrueTypeFace? {
+            // A later provider beginning after glyph-driven close keeps the original closed-owner rejection.
+            if (closed) requireSnapshot()
             val key = FontFaceKey(provider.resource, provider.settings)
             faces[key]?.let { return it }
             faceFailures[key]?.raise()
@@ -549,6 +616,11 @@ public class MinecraftFontEngine
                 oldest.remove()
                 faceBytes -= previous.key.resource.size
                 previous.value.close()
+                if (closed) {
+                    if (preparing) return null
+                    // Glyph reopen previously rejected the already released backend before another native open.
+                    checkNotNull(backend)
+                }
             }
             val face =
                 runCatching {
@@ -556,16 +628,32 @@ public class MinecraftFontEngine
                     val bytes = provider.resource.copyBytes()
                     if (decoder is MinecraftBoundedFontBackend) decoder.openTrueType(bytes, provider.settings, requireSnapshot().limits) else decoder.openTrueType(bytes, provider.settings)
                 }.getOrElse { failure ->
-                    if (failure is Exception) {
+                    if (closed.not() && failure is Exception) {
                         invalidateResolutions()
                         faceFailures[key] = FaceFailure(failure.message ?: "Font TrueType opening failed.", allocationLimit = false)
                     }
                     throw failure
                 }
+            if (closed) {
+                closeUnadmittedFace(face, preparing)
+                return null
+            }
             faces[key] = face
             faceBytes += weight
             validatedFaces.add(key)
             return face
+        }
+
+        /**
+         * Releases a late face without changing its original cleanup failure or preflight diagnostic boundary.
+         */
+        private fun closeUnadmittedFace(
+            face: MinecraftTrueTypeFace,
+            preparing: Boolean,
+        ) {
+            val failure = runCatching(face::close).exceptionOrNull() ?: return
+            if (preparing) throw TerminalFaceCloseException(failure)
+            throw failure
         }
 
         private fun putRaster(
@@ -595,7 +683,7 @@ public class MinecraftFontEngine
             misses: List<RasterKey>,
             epoch: Any,
         ) {
-            if (closed) return
+            if (closed || misses.isEmpty()) return
             val units = 1 + misses.size
             if (resolutionLimit < units || epoch !== rasterEpoch) return
             // A backend may admit this same key while reentering the outer glyph walk.
@@ -671,6 +759,14 @@ public class MinecraftFontEngine
             val provider: FontProviderEntry?,
             val misses: List<RasterKey>,
         )
+
+        /**
+         * Carries a late unowned face's cleanup failure through ordinary provider-load diagnostics.
+         * Only preflight creates this private carrier; its exact original failure is rethrown before status admission.
+         */
+        private class TerminalFaceCloseException(
+            val failure: Throwable,
+        ) : RuntimeException(failure)
 
         private enum class LoadStatus {
             Ready,

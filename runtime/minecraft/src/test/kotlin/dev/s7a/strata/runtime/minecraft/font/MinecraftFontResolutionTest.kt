@@ -1,13 +1,18 @@
 package dev.s7a.strata.runtime.minecraft.font
 
-import dev.s7a.strata.geometry.IntSize
-import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.assertEquivalent
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.observingBackend
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.originalGlyph
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.raster
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.rasterKeys
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.reenteringBackend
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.resolutionEntries
+import dev.s7a.strata.runtime.minecraft.font.MinecraftFontResolutionOracle.resolutionUnits
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -35,7 +40,7 @@ internal class MinecraftFontResolutionTest {
                     val scalars = listOf('A'.code, 'A'.code, 'B'.code, 'A'.code, 'C'.code, 'C'.code) + (0x4E00..0x4E20) + listOf('A'.code, 'B'.code, 'Z'.code, 'A'.code)
                     for (scalar in scalars) assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, scalar)
                     assertTrue(resolutionUnits(candidate) <= minOf(budget, 4096))
-                    if (budget == 0) assertEquals(0, resolutionEntries(candidate))
+                    if (budget == 0 || depth == 1) assertEquals(0, resolutionEntries(candidate))
                 } finally {
                     candidate.close()
                     reference.close()
@@ -158,7 +163,7 @@ internal class MinecraftFontResolutionTest {
             MinecraftFontEngine(snapshot, { FontTestBackend() }).use { reference ->
                 repeat(3) { assertEquivalent(snapshot, reference, candidate, FontTestResources.defaultFont, 'A'.code) }
                 assertEquals(if (uniform) advance.toFloat() else 3f, candidate.glyph(FontTestResources.defaultFont, 'A'.code).advance)
-                assertEquals(1, resolutionEntries(candidate))
+                assertEquals(0, resolutionEntries(candidate))
                 assertEquals(0, resolutionEntries(reference))
             }
         }
@@ -245,6 +250,7 @@ internal class MinecraftFontResolutionTest {
                 assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), scalar)
             }
             assertEquals(0, resolutionUnits(candidate))
+            assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code)
             assertEquivalent(snapshot, reference, candidate, ResourceId("test", "pressure"), 'A'.code)
             assertOtherThreadRejects(snapshot, reference, candidate)
             assertEquals(2, resolutionUnits(candidate))
@@ -347,6 +353,7 @@ internal class MinecraftFontResolutionTest {
         try {
             repeat(5000) { offset ->
                 engine.glyph(FontTestResources.defaultFont, 0x4E00 + offset)
+                engine.glyph(FontTestResources.defaultFont, 0x4E00 + offset)
                 assertTrue(resolutionUnits(engine) <= 4096)
                 assertTrue(resolutionEntries(engine) <= 4096 / 11)
                 if (offset == 371) assertEquals(4092, resolutionUnits(engine))
@@ -400,103 +407,6 @@ internal class MinecraftFontResolutionTest {
         }
     }
 
-    private fun assertEquivalent(
-        snapshot: MinecraftFontSnapshot,
-        reference: MinecraftFontEngine,
-        candidate: MinecraftFontEngine,
-        font: ResourceId,
-        scalar: Int,
-    ) {
-        assertEquals(originalGlyph(snapshot, reference, font, scalar), candidate.glyph(font, scalar))
-        assertEquals(rasterKeys(reference), rasterKeys(candidate))
-        assertEquals(reference.retainedRasterBytes, candidate.retainedRasterBytes)
-        assertEquals(reference.retainedFaces, candidate.retainedFaces)
-        assertEquals(reference.diagnostics, candidate.diagnostics)
-    }
-
-    private fun originalGlyph(
-        snapshot: MinecraftFontSnapshot,
-        engine: MinecraftFontEngine,
-        font: ResourceId,
-        scalar: Int,
-    ): MinecraftFontGlyph {
-        FontJson.validateScalar(scalar)
-        val selected = if (snapshot.compatibility.providerFilters.not() && snapshot.options.uniform && font == FontTestResources.defaultFont) ResourceId("minecraft", "uniform") else font
-        val missing = engine.glyph(ResourceId("unknown", "reference"), scalar)
-        val providers = snapshot.fonts[selected] ?: return missing
-        if ((invoke(engine, "prepareFont", arrayOf(ResourceId::class.java, List::class.java), selected, providers) as Boolean).not()) return missing
-        for (entry in providers) {
-            val applies =
-                entry.filter.all { (option, expected) ->
-                    expected ==
-                        when (option) {
-                            FontOption.Uniform -> snapshot.options.uniform
-                            FontOption.JapaneseVariants -> snapshot.options.japaneseVariants
-                        }
-                }
-            if (applies) {
-                val glyph = invoke(engine, "cachedGlyph", arrayOf(FontProviderEntry::class.java, Int::class.java), entry, scalar) as MinecraftFontGlyph?
-                if (glyph != null) return glyph
-            }
-        }
-        return missing
-    }
-
-    // Reflection preserves the exact target throwable rather than wrapping the independent provider loop.
-    @Suppress("SwallowedException")
-    private fun invoke(
-        engine: MinecraftFontEngine,
-        name: String,
-        types: Array<Class<*>>,
-        vararg args: Any,
-    ): Any? =
-        try {
-            MinecraftFontEngine::class.java
-                .getDeclaredMethod(name, *types)
-                .apply { isAccessible = true }
-                .invoke(engine, *args)
-        } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.targetException)
-        }
-
-    private fun rasterKeys(engine: MinecraftFontEngine): List<Any?> =
-        (
-            MinecraftFontEngine::class.java
-                .getDeclaredField("rasters")
-                .apply { isAccessible = true }
-                .get(engine) as Map<*, *>
-        ).keys
-            .toList()
-
-    private fun resolutionEntries(engine: MinecraftFontEngine): Int =
-        (
-            MinecraftFontEngine::class.java
-                .getDeclaredField("resolutions")
-                .apply { isAccessible = true }
-                .get(engine) as Map<*, *>
-        ).size
-
-    private fun resolutionUnits(engine: MinecraftFontEngine): Int =
-        MinecraftFontEngine::class.java
-            .getDeclaredField("resolutionUnits")
-            .apply { isAccessible = true }
-            .getInt(engine)
-
-    private fun observingBackend(
-        width: Int,
-        onRaster: () -> Unit,
-    ): FontTestBackend =
-        FontTestBackend(
-            open = { _, _ ->
-                FontTestFace(
-                    lookup = {
-                        onRaster()
-                        raster(width)
-                    },
-                )
-            },
-        )
-
     private fun assertOtherThreadRejects(
         snapshot: MinecraftFontSnapshot,
         reference: MinecraftFontEngine,
@@ -517,23 +427,6 @@ internal class MinecraftFontResolutionTest {
         assertEquals(rasterKeys(reference), rasterKeys(candidate))
     }
 
-    private fun reenteringBackend(onFirstGlyph: (Int) -> Unit): FontTestBackend {
-        var reentered = false
-        return FontTestBackend(
-            open = { _, _ ->
-                FontTestFace(
-                    lookup = { scalar ->
-                        if (reentered.not()) {
-                            reentered = true
-                            onFirstGlyph(scalar)
-                        }
-                        raster(1)
-                    },
-                )
-            },
-        )
-    }
-
     private fun reopeningBackend(events: MutableList<String>): FontTestBackend {
         val opens = HashMap<Int, Int>()
         return FontTestBackend(
@@ -548,6 +441,4 @@ internal class MinecraftFontResolutionTest {
             release = { events += "backend-close" },
         )
     }
-
-    private fun raster(width: Int): MinecraftFontGlyph = MinecraftFontGlyph(7f, 0f, 0f, width.toFloat(), 1f, createDrawImage(IntSize(width, 1), IntArray(width) { -1 }))
 }

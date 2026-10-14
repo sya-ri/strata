@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.render.DrawImage
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.font.MinecraftBoundedFontBackend
@@ -31,7 +32,18 @@ public open class FontFallbackBenchmark {
          * Checks all registered cases, complete glyph parity and terminal ownership outside samples.
          */
         @JvmStatic
-        public fun verifyWork(): Unit = FontFallbackWorkEvidence.verify()
+        public fun verifyWork() {
+            FontWorkEvidence.main(emptyArray())
+            FontRasterWorkEvidence.verify()
+            FontFallbackWorkEvidence.verify()
+            FontFallbackOperationReport.verifyInventory()
+        }
+
+        /**
+         * Supplies the same complete 48-row boundary to the shared CPU and allocation collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = FontFallbackOperationReport
     }
 
     /**

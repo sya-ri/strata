@@ -1,0 +1,93 @@
+{
+  "schema": "strata-font-fallback-whole-source-v1",
+  "issue": 144,
+  "pull_request": 204,
+  "status": "Approved reader source correction and accepted ordinary master integration; current hosted full admissions/comparison Pending",
+  "original_candidate": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+  "ordinary_master_merge": "d70839bf1f2cbcdb850586ed89f7ddfed1976297",
+  "common_correctness_source": "2787ee0d0af908f9b4c60a2140aa9f029babc7bd",
+  "common_correctness_acceptance": "Current production OpenGL/Vulkan font-owner lifetime acceptance remains Pending",
+  "sources": {
+    "baseline": {
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "753ef000aa055b182714caa19dc55476630521a5",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/baseline.patch",
+          "sha256": "be3b6dc39188435ef76d0ebb49f4edc8698c3aa5261686d40abeee4cb6f131d0"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "d6d2702c2cefa109d068f20b2ac71f072f6d8769",
+      "tree": "1bede6694936e0fb8ab57dea21160c9eb9f8a5c9",
+      "patches": [
+        {
+          "path": ".github/performance/font-fallback-full/candidate.patch",
+          "sha256": "d82aaaf7e7c09f49e8bd1093a6e52c72ca892a473f7881c42b0fbdb656a4a443"
+        }
+      ]
+    }
+  },
+  "production_difference": [
+    "runtime/minecraft/src/main/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontEngine.kt"
+  ],
+  "candidate_only_test_sources": [
+    "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontResolutionTest.kt",
+    "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontResolutionAdmissionTest.kt",
+    "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontResolutionOracle.kt",
+    "runtime/minecraft/src/test/kotlin/dev/s7a/strata/runtime/minecraft/font/MinecraftFontResolutionFirstProviderTest.kt"
+  ],
+  "fixture_files": {
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackAssets.kt": "d8f2d124bd0dda9bae88869d464e13d9e73ef5855bf2edf68ab0f741d732e038",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackBenchmark.kt": "7ceed85ea640999986153446ff34133c1fa397afe1af19f8d4083bba97ccaed9",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackOperationReport.kt": "46a2b77eab240c15340d468aeb7693d86ec0c7eec5bab4768c7deaead36cff60",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkEvidence.kt": "4398a1addae3aa14249654b4c188e90c81c866fdb7c64b05cbe656cb8e8d574d",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontFallbackWorkload.kt": "070a0d32c554286d2b4e7039275b99ea98d8b46b4a56574b81f65db17f7c8df8",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontProviderBenchmark.kt": "060057a2ba6a2f5b96626bfde289e3b6a575b1ce16c0fbddc7461b116a3a625d",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterAssets.kt": "a4b9eba75dba9732128e69fb32fcb7fd87d22c3e951f71192dfc4d89f77b1701",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterOwnershipBenchmark.kt": "d4c907fa307abbe4863cd9e38a52ff7e4c804a570d3e41a3c198b619a1fb49c4",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontRasterWorkEvidence.kt": "7ada61b99a7d3f26e0343cba94b4d7f9172125089cbf7917ae43e47a0f6f0987",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontTextBenchmark.kt": "8dfb3f3ca3c4f98c03cf5d82c8e669b548b26627b41c4ea893cb6ad69f0ee3b3",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontWorkEvidence.kt": "a1f582e046bb70524756e7cd6f8c67901582c17423f02ce02870aa9cf09b2057",
+    "quality/component-benchmarks/src/jmh/kotlin/dev/s7a/strata/quality/benchmark/FontWorkload.kt": "c810e285ee9e604c9ea56a7f1cfcbd71173ff2ba29cf9d87bc0e7f0f73454ab2"
+  },
+  "measured_rows_per_mode": 48,
+  "primary_B3_C3_cells_per_mode": 288,
+  "primary_cells_both_modes": 576,
+  "supplemental_rows": 48,
+  "supplemental_B3_C3_cells": 288,
+  "full_original_untimed_gates": {
+    "FontWorkEvidence": 42,
+    "FontRasterWorkEvidence": 22,
+    "FontFallbackWorkEvidence": 48
+  },
+  "historical_first_provider_source": {
+    "candidate_tree": "da3e47b0773fb2a5d4aded5dca184a0e088b4a33",
+    "baseline_tree": "c66e7e32f0b9b5abdf5772894b62d6bd54bcd5a8",
+    "qualification_receipt_sha256": "0450b419899bb2ba470bd290bbcf6b9a3ea67ece800d796893f7dba7e4a6d462",
+    "binding": "Original f8 runtime/source acceptance retained at that source epoch; no relabelling as current master acceptance"
+  },
+  "historical_failed_d6_collection": {
+    "run_id": 38352617697,
+    "inner_raw_sha256": "d3ef08c2869bed3ae85eab96a717f8d8c0ff2927548a514dd8c410aee77f4122",
+    "status": "Failed shared reader attribution after partial avgt; no partial scores adopted and no timing credit"
+  },
+  "reviewed_reader_correction": {
+    "source_patch_sha256": "2161c276c923ae1a7c9693eba00d2a9abab1b5f4b55f08e9c897952eb9df4d61",
+    "scope": "Distinct closed non-Java helper records retained; java.exe/javaw.exe both count as Java, actual main remains strict java.exe"
+  },
+  "current_work_admission": "Pending actual full B/C original unfiltered test gates and complete112 work checks before the first timing phase",
+  "formal_timing_credit": false,
+  "native_presentation_timing": "Not measured by isolated JVM operations"
+}
