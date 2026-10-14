@@ -17,6 +17,96 @@ import java.util.concurrent.atomic.AtomicReference
 @OptIn(InternalStrataRuntimeApi::class)
 internal class NativeGuiResourcesTest {
     @Test
+    fun completedPhysicalReleaseKeepsChangingGenerationsWithinTheOwnerBound() {
+        NativeGuiResourceFixture().use { fixture ->
+            var previous: NativeGuiResourceSet? = null
+            repeat(8) { index ->
+                val set = fixture.initialized()
+                previous?.let(fixture.gui::release)
+                fixture.gui.beginUse(set)
+                fixture.gui.queued(set)
+                fixture.gui.endUse(set)
+                fixture.device.consumed()
+                // The host may only complete the preceding submit at the current frame's end.
+                fixture.driver.fences
+                    .take(index * 2)
+                    .forEach { it.signalled = true }
+                fixture.device.poll()
+                assertEquals(1, fixture.gui.retainedSetCount())
+                previous = set
+            }
+            assertEquals(8, fixture.allocations.size)
+            assertTrue(fixture.allocations.dropLast(1).all { it.closeCalls == 1 && it.destroyed })
+            assertEquals(0, fixture.allocations.last().closeCalls)
+            assertEquals(0, fixture.driver.finishCalls)
+            assertEquals(0, fixture.driver.drainCalls)
+        }
+    }
+
+    @Test
+    fun twoSubmitDestructionDelayCanExhaustOwnerPermitsAfterGpuCompletion() {
+        NativeGuiResourceFixture().use { fixture ->
+            val destructionQueues = List(2) { ArrayList<NativeGuiResourceFixture.Resource>() }
+            var queueIndex = 0
+
+            fun submit() {
+                queueIndex = (queueIndex + 1) % destructionQueues.size
+                destructionQueues[queueIndex].forEach { it.destroyed = true }
+                destructionQueues[queueIndex].clear()
+            }
+
+            fun generation(): NativeGuiResourceSet =
+                fixture.initialized().also {
+                    val resource = fixture.allocations.last()
+                    resource.destroyOnClose = false
+                    resource.onClose = { destructionQueues[queueIndex].add(resource) }
+                }
+
+            fun consume(set: NativeGuiResourceSet) {
+                fixture.gui.beginUse(set)
+                fixture.gui.queued(set)
+                fixture.gui.endUse(set)
+                fixture.device.consumed()
+            }
+
+            val first = generation()
+            consume(first)
+            submit()
+            val second = generation()
+            fixture.gui.release(first)
+            consume(second)
+            submit()
+            // Completion observed after submission requests destruction into its new two-submit bucket.
+            fixture.driver.signalAll()
+            fixture.device.poll()
+            assertEquals(1, fixture.allocations.first().closeCalls)
+            assertFalse(fixture.allocations.first().destroyed)
+
+            val third = generation()
+            fixture.gui.release(second)
+            consume(third)
+            submit()
+            fixture.driver.signalAll()
+            fixture.device.poll()
+            assertTrue(fixture.driver.fences.all { it.signalled })
+            assertEquals(3, fixture.gui.retainedSetCount())
+            assertEquals(listOf(1, 1, 0), fixture.allocations.map { it.closeCalls })
+            assertThrows(IllegalStateException::class.java) { generation() }
+            assertEquals(3, fixture.allocations.size)
+            assertEquals(0, fixture.driver.finishCalls)
+            assertEquals(0, fixture.driver.drainCalls)
+
+            submit()
+            fixture.device.poll()
+            assertTrue(fixture.allocations.take(2).all { it.destroyed })
+            assertEquals(1, fixture.gui.retainedSetCount())
+            generation()
+            assertEquals(2, fixture.gui.retainedSetCount())
+            assertEquals(4, fixture.allocations.size)
+        }
+    }
+
+    @Test
     fun reservationSurvivesUnsealedReleaseAndInitializationUntilItsFenceSignals() {
         NativeGuiResourceFixture().use { fixture ->
             val set = fixture.gui.reserve(fixture.owner, listOf(IntSize(2, 2)))

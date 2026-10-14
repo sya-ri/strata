@@ -307,6 +307,13 @@ internal class PaintPipeline(
          */
         val commands: MutableList<LocalDrawCommand> = ArrayList()
 
+        /**
+         * Checks the shared callback guard before reading delegated root-overlay geometry.
+         */
+        fun checkActive() {
+            guard.check()
+        }
+
         override val size: IntSize
             get() {
                 guard.check()
@@ -405,7 +412,10 @@ internal class PaintPipeline(
             get() = delegate.size
 
         override val anchorBounds: IntRect
-            get() = anchor
+            get() {
+                delegate.checkActive()
+                return anchor
+            }
 
         override fun withClip(
             localBounds: IntRect,
