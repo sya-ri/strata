@@ -43,8 +43,10 @@ internal class ComponentStateSnapshotTest {
         first.close()
         assertNull(snapshot(state))
         assertEquals(emptySet(), observers(state))
+        val releaseField = ComponentStateSubscription::class.java.getDeclaredField("release")
+        releaseField.isAccessible = true
         for (handle in listOf(first, second)) {
-            assertNull(ComponentStateSubscription::class.java.getDeclaredField("release").apply { isAccessible = true }.get(handle))
+            assertNull(releaseField.get(handle))
         }
         state.set(5)
         assertTrue(checkNotNull(snapshot(state)).isEmpty())
@@ -83,9 +85,15 @@ internal class ComponentStateSnapshotTest {
         assertEquals(emptySet(), observers(state))
     }
 
-    private fun snapshot(state: ObservableComponentState<*>): List<*>? =
-        ObservableComponentState::class.java.getDeclaredField("notificationSnapshot").apply { isAccessible = true }.get(state) as List<*>?
+    private fun snapshot(state: ObservableComponentState<*>): List<*>? {
+        val field = ObservableComponentState::class.java.getDeclaredField("notificationSnapshot")
+        field.isAccessible = true
+        return field.get(state) as List<*>?
+    }
 
-    private fun observers(state: ObservableComponentState<*>): Set<*> =
-        ObservableComponentState::class.java.getDeclaredField("observers").apply { isAccessible = true }.get(state) as Set<*>
+    private fun observers(state: ObservableComponentState<*>): Set<*> {
+        val field = ObservableComponentState::class.java.getDeclaredField("observers")
+        field.isAccessible = true
+        return field.get(state) as Set<*>
+    }
 }
