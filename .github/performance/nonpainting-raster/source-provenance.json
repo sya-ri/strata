@@ -1,0 +1,88 @@
+{
+  "schema": "issue189-current-source-provenance-v1",
+  "published_pr_head": "2ea08165658ef3de98f5775937e316c058d633b7",
+  "source_base": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+  "sources": {
+    "baseline": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "bab1ea0b4193a2caae771fa208fa5ab7a07bd1a0",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/baseline.patch",
+          "sha256": "dc81d0366ca4f5bd7d72c08186d2262c7ff6065acaba4b509240ff2ab58ae99c"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "abe337e3e82f7d04a842db544e2a2373fc7a5a69",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/candidate.patch",
+          "sha256": "677e260671acbc2fce1b6628d185739e0f2d85c58b5a7a497c5d50d42806033d"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "abe337e3e82f7d04a842db544e2a2373fc7a5a69",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/candidate.patch",
+          "sha256": "677e260671acbc2fce1b6628d185739e0f2d85c58b5a7a497c5d50d42806033d"
+        }
+      ]
+    }
+  },
+  "source_delta_only": [
+    "runtime/headless/src/main/kotlin/dev/s7a/strata/runtime/headless/HeadlessRendering.kt"
+  ],
+  "original_fixture_code_unchanged": true,
+  "cases": 72,
+  "modes": [
+    "avgt",
+    "sample"
+  ],
+  "B3C3_primary_cells": 864,
+  "source_qualification_candidate_tree": "abe337e3e82f7d04a842db544e2a2373fc7a5a69",
+  "original36_scenarios": [
+    "Empty",
+    "FillOffscreen",
+    "LogicalOffscreen",
+    "PhysicalOffscreen",
+    "SampledOffscreen",
+    "FillEmptyClip",
+    "LogicalEmptyClip",
+    "PhysicalEmptyClip",
+    "SampledEmptyClip",
+    "FillFractionalClip",
+    "LogicalFractionalClip",
+    "PhysicalFractionalClip",
+    "SampledFractionalClip",
+    "SampledSubpixel",
+    "SampledZeroTint",
+    "MixedNone",
+    "MixedOpaque",
+    "MixedTranslucent",
+    "PatternedNonpainting",
+    "FillVisible",
+    "LogicalVisible",
+    "PhysicalVisible",
+    "SampledVisible",
+    "FillOnePixel",
+    "LogicalOnePixel",
+    "PhysicalOnePixel",
+    "SampledOnePixel",
+    "BelowPalette",
+    "AtPalette",
+    "AbovePalette",
+    "BelowFillRun",
+    "AtFillRun",
+    "AboveFillRun",
+    "BelowSingleLookup",
+    "AtSingleLookup",
+    "AboveSingleLookup"
+  ],
+  "source_work_scope": "Complete selected verifyWork/pixel/source/borrowedownership; production materialization/table counts and timing remainPending",
+  "historical_result_credit": 0
+}

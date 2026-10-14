@@ -1,0 +1,73 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "bab1ea0b4193a2caae771fa208fa5ab7a07bd1a0",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/baseline.patch",
+          "sha256": "dc81d0366ca4f5bd7d72c08186d2262c7ff6065acaba4b509240ff2ab58ae99c"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "abe337e3e82f7d04a842db544e2a2373fc7a5a69",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/candidate.patch",
+          "sha256": "677e260671acbc2fce1b6628d185739e0f2d85c58b5a7a497c5d50d42806033d"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "c25849d7cb7f7f2319cf8b6cf5739ffe568e13d1",
+      "tree": "abe337e3e82f7d04a842db544e2a2373fc7a5a69",
+      "patches": [
+        {
+          "path": ".github/performance/nonpainting-raster/candidate.patch",
+          "sha256": "677e260671acbc2fce1b6628d185739e0f2d85c58b5a7a497c5d50d42806033d"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":api",
+    ":runtime:core",
+    ":runtime:headless"
+  ],
+  "suites": [
+    {
+      "project": ":quality:benchmarks",
+      "name": "nonpainting-raster-full",
+      "benchmarks": [
+        "dev.s7a.strata.quality.benchmark.NonpaintingRasterBenchmark"
+      ],
+      "workloads": [],
+      "parameters": {},
+      "expected_cases": 72,
+      "test_gates": [
+        {
+          "task": ":runtime:headless:test",
+          "required_tests": [
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingRasterTest#everyPrimitivePreservesPixelsOrderingAndBorrowedOwnershipAcrossEmptyPhysicalCoverage",
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingRasterTest#fractionalEdgesKeepExactPhysicalCentersAndAbsoluteSourceMapping",
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingRasterTest#zeroTintDoesNotBroadenIntoTransparentIntegerImageOrFillSkipping",
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingRasterTest#fullFillsAfterNonpaintingPrimitivesKeepIntermediateRoundingAtEveryAdmissionBoundary",
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingRasterTest#wholeListPreflightRejectsLaterFailuresBeforeWritingBorrowedStorage",
+            "dev.s7a.strata.runtime.headless.HeadlessNonpaintingConsumerTest#invisiblePaintingKeepsCallbacksSemanticsInputAndWholeFrameSourceCutoff"
+          ]
+        }
+      ]
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "baseline": [],
+    "candidate": [],
+    "fixture": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}
