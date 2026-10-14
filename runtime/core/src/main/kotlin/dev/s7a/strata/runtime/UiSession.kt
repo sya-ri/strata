@@ -68,7 +68,7 @@ internal class UiSession(
             validateMutation = ::checkWritable,
         )
     private val bindings: MutableList<UiSessionBinding<*>> = ArrayList()
-    private val pendingBindings = PendingBindingQueue<UiSessionBinding<*>> { it.captureOrder }
+    private val pendingBindings = PendingBindingQueue<UiSessionBinding<*>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
     private val screenScopeFacade = SessionScreenScope()
 
     @Volatile

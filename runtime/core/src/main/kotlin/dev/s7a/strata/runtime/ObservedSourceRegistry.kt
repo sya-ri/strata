@@ -19,7 +19,7 @@ internal class ObservedSourceRegistry(
     private val monitoring: RenderMonitoring = RenderMonitoring(),
 ) : AutoCloseable {
     private val bindings = IdentityMap<StateSource<*>, ObservedSourceBinding>()
-    private val pending = PendingBindingQueue<ObservedSourceBinding> { it.captureOrder }
+    private val pending = PendingBindingQueue<ObservedSourceBinding> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
     private var captureOrderDirty = false
     private val owners = IdentityMap<StateObserverNode, List<StateSource<*>>>()
     private val unusedBindings = LinkedHashSet<ObservedSourceBinding>()

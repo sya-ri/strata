@@ -15,9 +15,38 @@ import kotlin.test.assertTrue
  */
 internal class PendingBindingQueueTest {
     @Test
+    fun currentLongOrderPreservesEqualOrderAndDuplicatePublicationMembership() {
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
+        val minimum = binding(queue, Long.MIN_VALUE, 0)
+        val maximum = binding(queue, Long.MAX_VALUE, 0)
+        val firstEqual = binding(queue, 0, 0)
+        val secondEqual = binding(queue, 0, 0)
+        val published = listOf(maximum, secondEqual, minimum, firstEqual)
+        try {
+            published.forEach { current ->
+                current.enqueue(StateSnapshot(StateRevision(1), 1))
+                current.enqueue(StateSnapshot(StateRevision(2), 2))
+            }
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(listOf(minimum, secondEqual, firstEqual, maximum), queue.takeCaptured().also { selected -> selected.forEach { assertTrue(it.applyPending()) } })
+            assertEquals(List(4) { 2 }, published.map { it.committedValue })
+            published.forEach { it.enqueue(StateSnapshot(StateRevision(3), 3)) }
+            minimum.captureOrder = 1
+            maximum.captureOrder = -1
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(listOf(maximum, secondEqual, firstEqual, minimum), queue.takeCaptured().also { selected -> selected.forEach { assertTrue(it.applyPending()) } })
+            queue.capture(UiSessionBinding<*>::capturePending)
+            assertEquals(emptyList(), queue.takeCaptured())
+        } finally {
+            published.forEach(UiSessionBinding<*>::disable)
+            queue.clear()
+        }
+    }
+
+    @Test
     fun idleSingleAndCompleteChangesSelectExactlyTheirCurrentTargets() {
         for (count in listOf(1, 128, 1_024)) {
-            val queue = PendingBindingQueue<UiSessionBinding<Int>> { it.captureOrder }
+            val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
             val bindings = List(count) { index -> binding(queue, index.toLong(), 0) }
             queue.capture(UiSessionBinding<*>::capturePending)
             assertEquals(emptyList(), queue.takeCaptured())
@@ -42,7 +71,7 @@ internal class PendingBindingQueueTest {
 
     @Test
     fun newerEqualValueCommitsRevisionAndDoesNotReplayOrNotify() {
-        val queue = PendingBindingQueue<UiSessionBinding<Int>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val binding = binding(queue, 0, 7)
         binding.enqueue(StateSnapshot(StateRevision(2), 7))
         queue.capture(UiSessionBinding<*>::capturePending)
@@ -57,7 +86,7 @@ internal class PendingBindingQueueTest {
 
     @Test
     fun comparisonsRunAfterEverySelectedSnapshotFreezesAndLateRevisionsWait() {
-        val queue = PendingBindingQueue<UiSessionBinding<Value>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Value>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val second = binding(queue, 1, Value(0))
         val first = binding(queue, 0, Value(0) { second.enqueue(StateSnapshot(StateRevision(2), Value(2))) })
         first.enqueue(StateSnapshot(StateRevision(1), Value(1)))
@@ -76,7 +105,7 @@ internal class PendingBindingQueueTest {
 
     @Test
     fun callbackBeforeInitialSnapshotIsCoalescedAndFailedCutoffCleanupReleasesEveryTarget() {
-        val queue = PendingBindingQueue<UiSessionBinding<Value>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Value>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val failure = IllegalStateException("Comparison failed")
         val first = binding(queue, 0, Value(0) { throw failure })
         val second = binding(queue, 1, Value(0))
@@ -99,7 +128,7 @@ internal class PendingBindingQueueTest {
 
     @Test
     fun callbackPublishedAfterCompleteFreezeStaysOutsideTheCurrentSelection() {
-        val queue = PendingBindingQueue<UiSessionBinding<Int>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val first = binding(queue, 0, 0)
         val second = binding(queue, 1, 0)
         first.enqueue(StateSnapshot(StateRevision(1), 1))

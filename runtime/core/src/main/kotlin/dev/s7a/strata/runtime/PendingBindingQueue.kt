@@ -5,13 +5,13 @@ import dev.s7a.strata.runtime.platform.synchronized
 /**
  * Current revision targets for one owner's two-phase source cutoff.
  * Binding callbacks use [monitor] for snapshot updates and enqueue/remove; capture freezes the complete selection under that same lock.
- * [orderOf] reads only owner-maintained traversal order, and [capture] callbacks cannot compare values or run application code.
+ * [order] compares only owner-maintained traversal order, and [capture] callbacks cannot compare values or run application code.
  * At most one pending and one captured reference per current binding is retained; owner cleanup calls [clear].
  * Each nonempty cutoff replaces its pending set; removal rebuilds after its tracked peak exceeds twice current membership.
  * Empty frames therefore retain neither historical entries nor a historical pending-set peak.
  */
 internal class PendingBindingQueue<T : Any>(
-    private val orderOf: (T) -> Long,
+    private val order: Comparator<T>,
 ) {
     /**
      * Shared lock for queue membership and each participating binding's revision snapshots.
@@ -51,7 +51,7 @@ internal class PendingBindingQueue<T : Any>(
                 if (pending.isEmpty()) {
                     emptyList()
                 } else {
-                    pending.sortedBy(orderOf).also {
+                    pending.sortedWith(order).also {
                         pending = LinkedHashSet()
                         pendingPeak = 0
                     }

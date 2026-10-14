@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 internal class PendingBindingConcurrencyTest {
     @Test
     fun publisherDuringEqualityCompletesWithoutTheCutoffLockAndTargetsTheFollowingFrame() {
-        val queue = PendingBindingQueue<UiSessionBinding<Value>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Value>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val executor = Executors.newSingleThreadExecutor()
         val second = binding(queue, 1, Value(0))
         val first =
@@ -49,7 +49,7 @@ internal class PendingBindingConcurrencyTest {
 
     @Test
     fun concurrentPublishersCoalesceWithoutDroppingTheirLatestRevision() {
-        val queue = PendingBindingQueue<UiSessionBinding<Int>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val bindings = List(128) { index -> binding(queue, index.toLong(), 0) }
         val executor = Executors.newFixedThreadPool(4)
         try {
@@ -79,7 +79,7 @@ internal class PendingBindingConcurrencyTest {
 
     @Test
     fun sourceChurnReleasesQueuedTargetsConstructionCallbacksAndPastPendingCapacity() {
-        val queue = PendingBindingQueue<UiSessionBinding<Int>> { it.captureOrder }
+        val queue = PendingBindingQueue<UiSessionBinding<Int>> { first, second -> first.captureOrder.compareTo(second.captureOrder) }
         val bindings = List(1_024) { index -> binding(queue, index.toLong(), 0) }
         bindings.forEach { it.enqueue(StateSnapshot(StateRevision(1), 1)) }
         val pendingField = queue.javaClass.getDeclaredField("pending").also { it.isAccessible = true }
