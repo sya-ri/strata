@@ -1117,7 +1117,7 @@ class PairedJvmTest(unittest.TestCase):
                     self.assertFalse((directory / "verified.json").exists())
 
     def test_independent_file_flags_bind_reused_control_pids_without_inventing_a_working_directory(self):
-        modes = ("positive", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
+        modes = ("positive", "positive-large", "changed-flag", "changed-vm", "changed-file", "missing-file", "wrong-pid", "truncated",
                  "ambiguous-file", "ambiguous-vm", "wrong-birth", "wrong-origin", "reordered-controls", "console-only", "oversized")
         for mode in modes:
             with self.subTest(mode=mode):
@@ -1134,7 +1134,8 @@ class PairedJvmTest(unittest.TestCase):
                 for index, result in enumerate(receipt["controls"]):
                     path = directory / result["id"] / "class-load.log"
                     path.parent.mkdir()
-                    path.write_text(classes, encoding="utf-8")
+                    additional = "[123][info][class,load] fixture.Supplement source: file:/unchanged-input.jar\n" * 100000
+                    path.write_text(classes + additional if mode == "positive-large" else classes, encoding="utf-8")
                     artifact = {"path": path.relative_to(directory).as_posix(), "sha256": PAIRED.digest(path)}
                     result["artifacts"].append(artifact)
                     flag = "../../" + result["id"] + "/class-load.log"
@@ -1154,10 +1155,14 @@ class PairedJvmTest(unittest.TestCase):
                     paths[0].write_text(classes + "changed\n", encoding="utf-8")
                 elif mode == "missing-file":
                     paths[0].unlink()
-                elif mode in ("wrong-pid", "truncated", "wrong-origin", "oversized"):
+                elif mode in ("wrong-pid", "truncated", "wrong-origin"):
                     text = classes.replace("[123]", "[456]") if mode == "wrong-pid" else classes.rstrip("\n") if mode == "truncated" else \
-                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes) if mode == "wrong-origin" else classes + "x" * (1024 * 1024) + "\n"
+                        re.sub(r"source: [^\n]+", "source: file:/wrong.jar", classes)
                     paths[0].write_text(text, encoding="utf-8")
+                    receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
+                elif mode == "oversized":
+                    with paths[0].open("r+b") as stream:
+                        stream.truncate(PAIRED.CLASS_DIAGNOSTIC_BYTES + 1)
                     receipt["controls"][0]["artifacts"][-1]["sha256"] = PAIRED.digest(paths[0])
                 elif mode == "ambiguous-file":
                     receipt["controls"][0]["artifacts"].append(copy.deepcopy(receipt["controls"][0]["artifacts"][-1]))
@@ -1171,13 +1176,16 @@ class PairedJvmTest(unittest.TestCase):
                     receipt["controls"][0]["artifacts"].pop()
                 (phase / "vms.json").write_text(json.dumps(vms), encoding="utf-8")
                 PAIRED.write_new(directory / "receipt.json", receipt)
-                if mode == "positive":
+                if mode in ("positive", "positive-large"):
                     PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
                     files = PAIRED.read_json(directory / "verified.json")["independent_class_load_files"]
                     self.assertEqual(len(files), 2)
                     self.assertEqual([item["vm_start_ms"] for item in files], [1001, 5001])
                     self.assertTrue(all(item["working_directory_observation"] is None for item in files))
                     self.assertTrue(all(item["relative_path_relationship"].startswith("inferred") for item in files))
+                    if mode == "positive-large":
+                        self.assertTrue(all(path.stat().st_size > 1024 * 1024 for path in paths))
+                        self.assertEqual([item["sha256"] for item in files], [PAIRED.digest(path) for path in paths])
                 else:
                     with self.assertRaises((ValueError, FileNotFoundError)):
                         PAIRED.verify_preflight(directory, phase, terminal, PAIRED.digest(directory / "request.json"))
@@ -1610,8 +1618,11 @@ class PairedJvmTest(unittest.TestCase):
 
     def test_class_load_inventory_rejects_missing_duplicate_wrong_pid_rotation_and_truncation(self):
         line = "[123][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+        def oversized(path):
+            with path.open("r+b") as stream:
+                stream.truncate(PAIRED.CLASS_DIAGNOSTIC_BYTES + 1)
         changes = [lambda path: path.unlink(), lambda path: path.write_text(line.replace("[123]", "[999]")),
-                   lambda path: path.write_text(line.rstrip()), lambda path: path.write_text(line * 20000),
+                   lambda path: path.write_text(line.rstrip()), oversized,
                    lambda path: path.with_name("classes-123-2026-10-12_00-00-01.log").write_text(line),
                    lambda path: path.with_name(path.name + ".0").write_text(line)]
         for index, change in enumerate(changes):
@@ -1633,6 +1644,27 @@ class PairedJvmTest(unittest.TestCase):
                     PAIRED.class_loads(directory)
         with self.assertRaisesRegex(ValueError, "Missing owned class-load directory"):
             PAIRED.class_loads(self.root / "missing-phase")
+
+    def test_one_vm_complete_class_inventory_can_exceed_one_megabyte(self):
+        directory = self.root / "large-single-diagnostic"
+        owner = directory / "class-loads"
+        owner.mkdir(parents=True)
+        path = owner / "classes-123-2026-10-12_00-00-00.log"
+        line = "[123][info][class,load] fixture.Complete source: file:/frozen-runtime.jar\n"
+        complete = line * 100000
+        path.write_text(complete, encoding="utf-8")
+        self.assertGreater(path.stat().st_size, 1024 * 1024)
+        self.assertLess(path.stat().st_size, PAIRED.CLASS_DIAGNOSTIC_BYTES)
+        text, identities = PAIRED.class_loads(directory)
+        self.assertEqual(text, complete)
+        self.assertEqual(text.count("fixture.Complete source:"), 100000)
+        self.assertEqual(list(identities.values()), [{"path": str(path), "sha256": PAIRED.digest(path), "pid": 123}])
+        path.write_text(complete.replace("[123]", "[456]", 1), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "wrong-PID"):
+            PAIRED.class_loads(directory)
+        path.write_text(complete.rstrip("\n"), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "truncated"):
+            PAIRED.class_loads(directory)
 
     def test_early_setup_failure_preserves_failed_attempt_without_java(self):
         output = self.root / "early-failure"

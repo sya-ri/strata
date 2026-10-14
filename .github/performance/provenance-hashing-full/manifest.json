@@ -1,0 +1,352 @@
+{
+  "schema": "strata-paired-jvm-ci-v1",
+  "sources": {
+    "baseline": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "0b00d8808938d0c78e75fb96ee00568e99b8be7d",
+      "patches": [
+        {
+          "path": ".github/performance/provenance-hashing-full/baseline.patch",
+          "sha256": "3e756073c9c33e4d9a80fb76a742227157edb3825b03d60945c6761b65dcb305"
+        }
+      ]
+    },
+    "candidate": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "6785170a57c0483e7572ebe8b662c3b2b1c3081d",
+      "patches": [
+        {
+          "path": ".github/performance/provenance-hashing-full/candidate.patch",
+          "sha256": "40db6c251844cb83c40dc4d733428c35ffddb01e936581e9adc0a15e7503b5c3"
+        }
+      ]
+    },
+    "fixture": {
+      "ref": "1ca25f8b103b1ff7573a6d15e07442cf31374759",
+      "tree": "0b00d8808938d0c78e75fb96ee00568e99b8be7d",
+      "patches": [
+        {
+          "path": ".github/performance/provenance-hashing-full/fixture.patch",
+          "sha256": "3e756073c9c33e4d9a80fb76a742227157edb3825b03d60945c6761b65dcb305"
+        }
+      ]
+    }
+  },
+  "runtime_projects": [
+    ":performance-testkit"
+  ],
+  "suites": [],
+  "owner_reports": [
+    {
+      "name": "provenance-hashing-full",
+      "project": ":quality:benchmarks",
+      "template": "jmhHistorical",
+      "kind": "java-exec",
+      "main": "dev.s7a.strata.quality.benchmark.ProvenanceHashingExecution",
+      "comparison": "dev.s7a.strata.quality.benchmark.ProvenanceHashingExecution",
+      "workload_id": "artifact-provenance-hashing-v1",
+      "phase_keys": [
+        "mode",
+        "entries",
+        "shape"
+      ],
+      "rows": [
+        {
+          "mode": "EntryDirectory",
+          "entries": 1,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 32,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 32,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 32,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1024,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1024,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1024,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 4096,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 4096,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 4096,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryDirectory",
+          "entries": 1,
+          "shape": "Large"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 32,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 32,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 32,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1024,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1024,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1024,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 4096,
+          "shape": "Short"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 4096,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 4096,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "EntryArchive",
+          "entries": 1,
+          "shape": "Large"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1,
+          "shape": "Short"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 32,
+          "shape": "Short"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 32,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 32,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1024,
+          "shape": "Short"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1024,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1024,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 4096,
+          "shape": "Short"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 4096,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 4096,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "LoadedClassTree",
+          "entries": 1,
+          "shape": "Large"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1,
+          "shape": "Short"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 32,
+          "shape": "Short"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 32,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 32,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1024,
+          "shape": "Short"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1024,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1024,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 4096,
+          "shape": "Short"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 4096,
+          "shape": "Mixed"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 4096,
+          "shape": "Chunks"
+        },
+        {
+          "mode": "PreservedClassTree",
+          "entries": 1,
+          "shape": "Large"
+        },
+        {
+          "mode": "SingleFile",
+          "entries": 1,
+          "shape": "Short"
+        },
+        {
+          "mode": "SingleFile",
+          "entries": 1,
+          "shape": "Large"
+        },
+        {
+          "mode": "ResourceSelection",
+          "entries": 32,
+          "shape": "Mixed"
+        }
+      ],
+      "warmup": 30,
+      "samples": 60,
+      "controls": [
+        "verification",
+        "work_observation"
+      ],
+      "runtime_classes": {
+        "identity": {
+          "project": ":performance-testkit",
+          "class": "dev.s7a.strata.performance.ArtifactIdentity"
+        }
+      }
+    }
+  ],
+  "inputs": [],
+  "compiled_pins": {
+    "baseline": [],
+    "candidate": [],
+    "fixture": []
+  },
+  "dependency_pins": [],
+  "java_pins": []
+}

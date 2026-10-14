@@ -22,6 +22,10 @@ import zipfile
 import xml.etree.ElementTree as ElementTree
 
 
+# Whole owner corpora may load many immutable input classes in one bounded VM.
+CLASS_DIAGNOSTIC_BYTES = 64 * 1024 * 1024
+
+
 class FixtureProject(Enum):
     """Decode the existing CPU collector entry points at the manifest boundary."""
     HISTORICAL = (":quality:benchmarks", "jmhHistorical", "verifyHistoricalWorkloads")
@@ -420,7 +424,7 @@ def class_loads(directory):
     for path in sorted(owner.iterdir()):
         name = re.fullmatch(r"classes-([0-9]+)-[0-9_-]+\.log", path.name)
         require(name is not None and path.is_file() and not path.is_symlink()
-                and path.stat().st_size <= 1024 * 1024, "Invalid or oversized class-load diagnostic")
+                and path.stat().st_size <= CLASS_DIAGNOSTIC_BYTES, "Invalid or oversized class-load diagnostic")
         pid = int(name[1])
         text = path.read_text(encoding="utf-8")
         observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
@@ -590,7 +594,7 @@ def independent_class_file(directory, phase_directory, result, vm):
             else:
                 matched = target.resolve() == path.resolve()
             if matched:
-                require(path.stat().st_size <= 1024 * 1024, "Independent class-load diagnostic exceeds its retained bound")
+                require(path.stat().st_size <= CLASS_DIAGNOSTIC_BYTES, "Independent class-load diagnostic exceeds its retained bound")
                 text = path.read_text(encoding="utf-8")
                 observed = set(map(int, re.findall(r"(?m)^\[([0-9]+)\]\[info *\]\[class,load *\]", text)))
                 require(observed == {vm["pid"]} and text.endswith("\n"), "Wrong-PID or truncated independent class-load diagnostic")
