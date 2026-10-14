@@ -17,6 +17,7 @@ import dev.s7a.strata.performance.PerformanceSelection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.UUID
 
 /**
  * Registers settled native component presentation with the shared evidence processor.
@@ -37,12 +38,6 @@ internal object NativeComponentPerformanceEvidence {
             .use { it.readLines() }
             .toSet()
     private val sampledCases = checkNotNull(javaClass.getResourceAsStream("/native-sampled-images.tsv")).bufferedReader(Charsets.UTF_8).use { it.readLines() }.toSet()
-    private val outputArguments =
-        setOf(
-            "-Dstrata.performance.nativeOutput=",
-            "-Dstrata.canvas.shutdown.run=",
-            "-Dstrata.canvas.shutdown.receipt=",
-        )
     private val metrics =
         listOf(
             PerformanceReportMetric("extraction_p50_ns", listOf("wall_p50_ns")),
@@ -92,77 +87,187 @@ internal object NativeComponentPerformanceEvidence {
         )
 
     /**
-     * Processes the profile's independent raw invocations into a new summary without replacing evidence.
+     * Processes independent raw invocations through the shared summary or comparison API without replacing evidence.
+     * Each comparison side supplies its actual CPU receipt; archive, matrix, pacing and image checks apply to both sides.
      */
     @JvmStatic
     fun main(args: Array<String>) {
         require(args.size == 1)
         val request = JvmPerformanceEvidence.readReport(Path.of(args.single()))
+        val command = NativeEvidenceCommand.decode(request.get("command")?.asString)
+        val backend = request.get("backend")?.asString?.let(NativeEvidenceBackend::decode)
+        require(command == NativeEvidenceCommand.Summary || backend != null) { "A comparison must declare its actual native backend" }
+        val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
+        val sampledImages = request.get("sampled_images")?.asBoolean ?: false
+        val family = request.independentNativeFixture(sampledImages)?.get("family")?.asString
+        val selection = selection(request, profile, sampledImages)
+        val collector = collectorArchive
+        require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
+        val inputs = inputs(request, command, profile.plan().repetitions)
+        val cpuHashes = inputs.associate { it.second to ArtifactIdentity.file(it.second) }
+        val provenance = cpuProvenanceByRun(inputs)
+        val binaries = JsonArray()
+        val paths = inputs.flatMap { it.first }
+        val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
+        val reports = paths.map(JvmPerformanceEvidence::readReport)
+        val epoch = NativePresentationEpoch.fromWorkloadIds(reports.map { it.get("workload_id").asString }, selection, profile, sampledImages, family)
+        val presentationPresent = NativeComponentGpuEvidence.presentationGpuMetricsPresent(reports)
+        val validate = validation(request, provenance, imageDirectories, binaries, backend)
+        val reportContract = contract(selection, profile, sampledImages, epoch, family)
+        val reportMetrics = metrics + if (presentationPresent) presentationMetrics else emptyList()
+        val summary =
+            when (command) {
+                NativeEvidenceCommand.Summary -> JvmPerformanceReports.summarize(paths, collector, reportContract, reportMetrics, validate)
+                NativeEvidenceCommand.Comparison -> JvmPerformanceReports.compare(inputs[0].first, inputs[1].first, collector, reportContract, reportMetrics, validate)
+            }
+        when (command) {
+            NativeEvidenceCommand.Summary -> {
+                recordPresentationAvailability(summary, presentationPresent)
+                summary.addProperty("cpu_provenance_report_sha256", cpuHashes.getValue(inputs.single().second))
+            }
+
+            NativeEvidenceCommand.Comparison -> {
+                completeComparison(summary, inputs, cpuHashes, presentationPresent, reportContract.phaseCount)
+            }
+        }
+        summary.add("binary_receipts", binaries)
+        cpuHashes.forEach { (path, hash) -> require(ArtifactIdentity.file(path).contentEquals(hash)) { "Changed CPU provenance receipt" } }
+        PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    /**
+     * Decodes complete independent groups and their CPU receipts without changing the requested sampling profile.
+     */
+    private fun inputs(
+        request: JsonObject,
+        command: NativeEvidenceCommand,
+        repetitions: Int,
+    ): List<Pair<List<Path>, Path>> =
+        when (command) {
+            NativeEvidenceCommand.Summary -> listOf(request)
+            NativeEvidenceCommand.Comparison -> listOf(request.getAsJsonObject("baseline"), request.getAsJsonObject("candidate"))
+        }.map { input ->
+            val paths = input.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
+            require(paths.size == repetitions) { "Incomplete native repetition group" }
+            paths to Path.of(input.get("cpu_report").asString).toAbsolutePath().normalize()
+        }
+
+    /**
+     * Captures invocation-owned binary and argument observations; both operations share all native admission checks.
+     */
+    private fun validation(
+        request: JsonObject,
+        provenance: Map<UUID, JsonObject>,
+        imageDirectories: Set<Path>,
+        binaries: JsonArray,
+        backend: NativeEvidenceBackend?,
+    ): (JsonObject) -> Unit {
         val profile = PerformanceProfile.fromQuickFlag(request.get("quick")?.asString)
         val sampledImages = request.get("sampled_images")?.asBoolean ?: false
         val independent = request.independentNativeFixture(sampledImages)
         val family = independent?.get("family")?.asString
         val selection = selection(request, profile, sampledImages)
-        val collector = collectorArchive()
-        require(Files.isSameFile(Path.of(request.get("collector").asString), collector)) { "Specify the actual loaded collector archive" }
-        val provenance = cpuProvenance(request)
         val arguments = mutableListOf<JsonObject>()
-        val binaries = JsonArray()
-        val paths = request.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
-        val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
-        val presentationPresent = presentationGpuMetricsPresent(paths.map(JvmPerformanceEvidence::readReport))
-        val summary =
-            JvmPerformanceReports.summarize(
-                paths,
-                collector,
-                contract(selection, profile, sampledImages, family),
-                metrics + if (presentationPresent) presentationMetrics else emptyList(),
-            ) { report ->
-                verify(report, selection, profile, sampledImages, family)
-                if (independent != null) {
-                    require(report.get("independent_fixture_family").asString == family)
-                    require(report.get("independent_fixture_class") == independent.get("class"))
-                    require(report.getAsJsonArray("independent_fixture_cases") == independent.getAsJsonArray("cases")) { "Changed compiled native fixture matrix" }
-                }
-                arguments.add(
-                    JsonObject().apply {
-                        add(
-                            "jvm_arguments",
-                            JsonArray().apply {
-                                report.getAsJsonArray("jvm_arguments").forEach { value ->
-                                    if (outputArguments.none(value.asString::startsWith)) add(value.deepCopy())
-                                }
-                            },
-                        )
-                    },
-                )
-                JvmPerformanceEvidence.verifyEqual(arguments, setOf("jvm_arguments"))
-                binaries.add(NativePerformanceEvidence.verify(report, provenance, representatives, setOf("fabric")))
-                val fixture = Path.of(URI(report.get("fixture_archive").asString))
-                require(ArtifactIdentity.file(fixture).contentEquals(report.get("fixture_archive_sha256").asString)) { "Changed native fixture archive" }
-                val images = Path.of(report.get("image_directory").asString).toAbsolutePath().normalize()
-                require(images in imageDirectories) { "Unexpected native image directory" }
-                report.getAsJsonArray("phases").forEach { entry ->
-                    val phase = entry.asJsonObject
-                    val name = Path.of(phase.get("png_file").asString)
-                    require(name.nameCount == 1 && name.fileName.toString().endsWith(".png") && name.isAbsolute.not())
-                    require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
-                }
+        return { report ->
+            verify(report, selection, profile, sampledImages, family)
+            if (independent != null) {
+                require(report.get("independent_fixture_family").asString == family)
+                require(report.get("independent_fixture_class") == independent.get("class"))
+                require(report.getAsJsonArray("independent_fixture_cases") == independent.getAsJsonArray("cases")) { "Changed compiled native fixture matrix" }
             }
-        if (presentationPresent.not()) summary.recordUnavailablePresentation(presentationMetrics)
-        summary.add("binary_receipts", binaries)
-        summary.addProperty("cpu_provenance_report_sha256", ArtifactIdentity.file(Path.of(request.get("cpu_report").asString)))
-        PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+            backend?.verify(report)
+            binaries.add(NativePerformanceEvidence.verify(report, provenance.getValue(UUID.fromString(report.get("run_id").asString)), representatives, setOf("fabric")))
+            val fixture = Path.of(URI(report.get("fixture_archive").asString))
+            require(ArtifactIdentity.file(fixture).contentEquals(report.get("fixture_archive_sha256").asString)) { "Changed native fixture archive" }
+            val images = Path.of(report.get("image_directory").asString).toAbsolutePath().normalize()
+            require(images in imageDirectories) { "Unexpected native image directory" }
+            report.getAsJsonArray("phases").forEach { entry ->
+                val phase = entry.asJsonObject
+                val name = Path.of(phase.get("png_file").asString)
+                require(name.nameCount == 1 && name.fileName.toString().endsWith(".png") && name.isAbsolute.not())
+                require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
+            }
+            arguments.add(NativeComponentJvmArguments.read(report))
+            JvmPerformanceEvidence.verifyEqual(arguments, setOf("jvm_arguments"))
+        }
     }
 
-    private fun cpuProvenance(request: JsonObject): JsonObject {
-        val cpu = JvmPerformanceEvidence.readReport(Path.of(request.get("cpu_report").asString))
+    /**
+     * Adds the shared exact image comparison and explicit unavailable full-GPU fields to both processed sides.
+     */
+    private fun completeComparison(
+        comparison: JsonObject,
+        inputs: List<Pair<List<Path>, Path>>,
+        cpuHashes: Map<Path, String>,
+        presentationPresent: Boolean,
+        phaseCount: Int,
+    ) {
+        val images = JsonArray()
+        inputs[0].first.zip(inputs[1].first).forEach { (before, after) ->
+            images.add(JvmPerformanceReports.compareImages(checkNotNull(before.parent).resolve("images"), checkNotNull(after.parent).resolve("images"), phaseCount))
+        }
+        comparison.add("image_comparisons", images)
+        listOf("before", "after").zip(inputs).forEach { (field, input) ->
+            val side = comparison.getAsJsonObject(field)
+            recordPresentationAvailability(side, presentationPresent)
+            side.addProperty("cpu_provenance_report_sha256", cpuHashes.getValue(input.second))
+        }
+        if (presentationPresent.not()) {
+            comparison.getAsJsonArray("phases").forEach { row ->
+                listOf("before", "after").forEach { field ->
+                    presentationMetrics.forEach { metric -> row.asJsonObject.getAsJsonObject(field).add(metric.name, JsonNull.INSTANCE) }
+                }
+            }
+        }
+    }
+
+    /**
+     * Binds each independent native invocation to its side's actual CPU archive metadata.
+     * The invocation-owned map rejects duplicate UUIDs rather than borrowing another side's runtime identity.
+     */
+    internal fun cpuProvenanceByRun(inputs: List<Pair<List<Path>, Path>>): Map<UUID, JsonObject> {
+        val provenance = mutableMapOf<UUID, JsonObject>()
+        inputs.forEach { (paths, cpuPath) ->
+            val cpu = nativeCpuProvenance(JvmPerformanceEvidence.readReport(cpuPath))
+            paths.forEach { path ->
+                val id = UUID.fromString(JvmPerformanceEvidence.readReport(path).get("run_id").asString)
+                require(provenance.put(id, cpu) == null) { "Duplicate native invocation across runtime bindings" }
+            }
+        }
+        return provenance
+    }
+
+    /**
+     * Projects the five measured runtime representatives from the validated CPU receipt without modifying it.
+     */
+    private fun nativeCpuProvenance(cpu: JsonObject): JsonObject {
         val metadata = cpuRuntimeMetadata(cpu)
         val selected = JsonArray()
         metadata.getAsJsonArray("modules").forEach { entry ->
             if (entry.asJsonObject.get("representativeClass").asString in representatives) selected.add(entry.deepCopy())
         }
         return JsonObject().apply { add("strata", metadata.deepCopy().apply { add("modules", selected) }) }
+    }
+
+    /**
+     * Records explicit unavailable values for the legacy matrix after raw GPU availability has been validated.
+     */
+    private fun recordPresentationAvailability(
+        summary: JsonObject,
+        presentationPresent: Boolean,
+    ) {
+        if (presentationPresent) return
+        summary.getAsJsonArray("phases").forEach { row ->
+            val values = row.asJsonObject.getAsJsonObject("metrics")
+            presentationMetrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
+        }
+        summary.add(
+            "presentation_gpu",
+            JsonObject().apply {
+                addProperty("available", false)
+                addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
+            },
+        )
     }
 
     /**
@@ -181,38 +286,23 @@ internal object NativeComponentPerformanceEvidence {
     }
 
     /**
-     * Registers full presentation metrics only when every raw phase exposes their optional ancestor.
-     * Legacy adapters may omit it only while GUI queries are unavailable; mixed matrices are rejected.
+     * Resolves the actual loaded collector when the request reaches archive admission.
      */
-    internal fun presentationGpuMetricsPresent(reports: List<JsonObject>): Boolean {
-        val phases = reports.flatMap { report -> report.getAsJsonArray("phases").map { it.asJsonObject } }
-        val present = phases.map { it.has("presentation_gpu") }
-        require(present.isNotEmpty() && present.distinct().size == 1) { "Inconsistent full presentation GPU metric availability" }
-        val guiAvailable = phases.map { it.getAsJsonObject("native_gpu").get("available").asBoolean }
-        require(guiAvailable.distinct().size == 1) { "Inconsistent GUI GPU measurement availability" }
-        if (present.first()) {
-            val fullAvailable = phases.map { phase -> phase.get("presentation_gpu").let { it.isJsonNull.not() && it.asJsonObject.get("available").asBoolean } }
-            require(fullAvailable.distinct().size == 1 && fullAvailable.first() == guiAvailable.first()) { "Inconsistent full presentation GPU measurement availability" }
-        } else {
-            require(guiAvailable.first().not()) { "Available GUI queries require complete full presentation GPU pairs" }
+    private val collectorArchive: Path
+        get() {
+            val type = JvmPerformanceMeter::class.java
+            return Path.of(
+                type.protectionDomain.codeSource.location
+                    .toURI(),
+            )
         }
-        return present.first()
-    }
-
-    private fun collectorArchive(): Path {
-        val type = JvmPerformanceMeter::class.java
-        return Path.of(
-            type.protectionDomain.codeSource.location
-                .toURI(),
-        )
-    }
 
     private fun selection(
         request: JsonObject,
         profile: PerformanceProfile,
         sampledImages: Boolean,
     ): PerformanceSelection {
-        val declared = request.getAsJsonObject("independent_fixture")?.getAsJsonArray("cases")
+        val declared = request.independentNativeFixture(sampledImages)?.getAsJsonArray("cases")
         val corpus = declared?.map { it.asString }?.toSet() ?: if (sampledImages) sampledCases else cases
         if (declared != null) require(corpus.isNotEmpty() && corpus.size == declared.size() && corpus.all(String::isNotBlank)) { "Empty or duplicate independent native cases" }
         return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)
@@ -222,10 +312,11 @@ internal object NativeComponentPerformanceEvidence {
         selection: PerformanceSelection,
         profile: PerformanceProfile,
         sampledImages: Boolean,
+        epoch: NativePresentationEpoch,
         family: String? = null,
     ): PerformanceReportContract =
         PerformanceReportContract(
-            workloadId(selection, profile, sampledImages, family),
+            epoch.workloadId(selection, profile, sampledImages, family),
             listOf("case", "operation", "gui_scale"),
             selection.ids.size * profile.viewports((1..4).toList()).size,
             setOf(
@@ -250,20 +341,13 @@ internal object NativeComponentPerformanceEvidence {
                 "warmup",
                 "settle_frames",
                 "preparation_timeout_ms",
-            ) + (if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet()) + (if (family != null) setOf("independent_fixture_family", "independent_fixture_class", "independent_fixture_cases") else emptySet()),
-            setOf("samples", "framebuffer_width", "framebuffer_height"),
+            ) +
+                (if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet()) +
+                (if (epoch == NativePresentationEpoch.Paced) setOf("inactivity_mode") else emptySet()) +
+                (if (family != null) setOf("independent_fixture_family", "independent_fixture_class", "independent_fixture_cases") else emptySet()),
+            setOf("samples", "framebuffer_width", "framebuffer_height") + if (epoch == NativePresentationEpoch.Paced) setOf("pacing") else emptySet(),
             repetitions = profile.plan().repetitions,
         )
-
-    private fun workloadId(
-        selection: PerformanceSelection,
-        profile: PerformanceProfile,
-        sampledImages: Boolean,
-        independentFamily: String? = null,
-    ): String {
-        val family = independentFamily ?: if (sampledImages) "native-sampled-images" else "native-components"
-        return profile.workloadId(if (selection.narrowed) "$family-selected-presented-v1" else "$family-presented-v1")
-    }
 
     /**
      * Requires the reviewed case/scale matrix, complete presentation boundaries and balanced native release.
@@ -275,8 +359,7 @@ internal object NativeComponentPerformanceEvidence {
         sampledImages: Boolean = false,
         family: String? = null,
     ) {
-        val expectedId = workloadId(selection, profile, sampledImages, family)
-        require(report.get("workload_id").asString.contentEquals(expectedId)) { "Targeted evidence cannot satisfy full native acceptance" }
+        val epoch = NativePresentationEpoch.fromWorkloadId(report.get("workload_id").asString, selection, profile, sampledImages, family)
         report.getAsJsonArray("selected_cases")?.let { declared ->
             require(declared.size() == selection.ids.size && declared.map { it.asString }.toSet() == selection.ids) { "Changed native selection" }
         }
@@ -288,11 +371,12 @@ internal object NativeComponentPerformanceEvidence {
         val scales = profile.viewports((1..4).toList())
         require(report.get("warmup").asInt == plan.warmup && report.get("settle_frames").asInt == 8 && report.get("preparation_timeout_ms").asLong == plan.preparationTimeoutMillis)
         val phases = report.getAsJsonArray("phases").map { it.asJsonObject }
+        epoch.verifyPacing(report, phases)
         require(phases.map { it.get("case").asString to it.get("gui_scale").asInt }.toSet() == selection.ids.flatMap { name -> scales.map { name to it } }.toSet()) { "Changed native component matrix" }
         require(phases.size == selection.ids.size * scales.size) { "Duplicate native component intervals" }
         phases.forEach { phase ->
             require(phase.get("operation").asString.contentEquals("presented") && phase.get("samples").asInt == plan.samples)
-            verifyGpu(phase, plan.samples)
+            NativeComponentGpuEvidence.verifyGpu(phase, plan.samples)
             require(phase.getAsJsonObject("frame_interval").get("samples").asInt == plan.samples)
             require(phase.getAsJsonObject("native_counter_delta").get("renderExtractionCount").asInt == plan.samples)
             require(
@@ -309,41 +393,6 @@ internal object NativeComponentPerformanceEvidence {
             if ("NativeCanvas" in selection.ids) require(0 < release.get("${kind}_opened").asInt) { "Incomplete native resource release" }
         }
     }
-
-    private fun verifyGpu(
-        phase: JsonObject,
-        samples: Int,
-    ) {
-        val gpu = phase.getAsJsonObject("native_gpu")
-        verifyGpuResult(gpu, samples)
-        val presentation = phase.get("presentation_gpu")?.takeUnless { it.isJsonNull }?.asJsonObject
-        if (gpu.get("available").asBoolean) {
-            require(presentation != null && presentation.get("available").asBoolean) { "Available GUI queries require complete full presentation GPU pairs" }
-            require(presentation.get("scope") != gpu.get("scope")) { "Full presentation GPU scope cannot be the GUI-only scope" }
-        }
-        presentation?.let {
-            require(it.get("available") == gpu.get("available")) { "Inconsistent GPU scope availability" }
-            verifyGpuResult(it, samples)
-        }
-    }
-
-    private fun verifyGpuResult(
-        gpu: JsonObject,
-        samples: Int,
-    ) {
-        if (gpu.get("available").asBoolean) {
-            require(gpu.get("samples").asInt == samples)
-            val period = gpu.get("timestamp_period_ns").asDouble
-            require(period.isFinite() && 0.0 < period && gpu.get("scope").asString.isNotBlank())
-            listOf("duration", "operation_to_completion_observation").forEach { field ->
-                val distribution = gpu.getAsJsonObject(field)
-                require(distribution != null && distribution.get("samples")?.asInt == samples) { "Incomplete native GPU interval" }
-            }
-        } else {
-            require(gpu.get("reason").asString.isNotBlank())
-            require(gpu.get("duration").isJsonNull && gpu.get("operation_to_completion_observation").isJsonNull)
-        }
-    }
 }
 
 private fun JsonObject.independentNativeFixture(sampledImages: Boolean): JsonObject? {
@@ -353,18 +402,4 @@ private fun JsonObject.independentNativeFixture(sampledImages: Boolean): JsonObj
     require(checkNotNull(family).matches(Regex("native-[a-z][a-z0-9-]+")) && (family in setOf("native-components", "native-sampled-images")).not()) { "An independent fixture requires its own native evidence family" }
     require(independent.get("class").asString.isNotBlank())
     return independent
-}
-
-private fun JsonObject.recordUnavailablePresentation(metrics: List<PerformanceReportMetric>) {
-    getAsJsonArray("phases").forEach { row ->
-        val values = row.asJsonObject.getAsJsonObject("metrics")
-        metrics.forEach { metric -> values.add(metric.name, JsonNull.INSTANCE) }
-    }
-    add(
-        "presentation_gpu",
-        JsonObject().apply {
-            addProperty("available", false)
-            addProperty("reason", "The measured adapter exposes no full presentation GPU scope; GUI GPU queries are unavailable.")
-        },
-    )
 }

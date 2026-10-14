@@ -286,27 +286,29 @@ public open class SamplingCompositionBenchmark {
         ): Boolean {
             val target = (commands[occurrence] as DrawCommand.SampledImage).destination
             for (index in commands.indices) {
-                if (index == occurrence) continue
-                when (val other = commands[index]) {
-                    is DrawCommand.FillRectangle -> {
-                        if (other.color.value ushr 24 != 255) return false
-                    }
-
-                    is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> {
-                        return false
-                    }
-
-                    is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> {
-                    }
-
-                    is DrawCommand.SampledImage -> {
-                        if (other.tint.value ushr 24 == 0) continue
-                        if (other.alphaCutoff != 1f || opaqueTint(other.tint).not()) return false
-                        if (maxOf(target.left, other.destination.left) < minOf(target.right, other.destination.right) && maxOf(target.top, other.destination.top) < minOf(target.bottom, other.destination.bottom)) return false
-                    }
-                }
+                if (index != occurrence && oracleAllows(commands[index], target).not()) return false
             }
             return true
+        }
+
+        private fun oracleAllows(
+            other: DrawCommand,
+            target: FloatRect,
+        ): Boolean =
+            when (other) {
+                is DrawCommand.FillRectangle -> other.color.value ushr 24 == 255
+                is DrawCommand.BlitImage, is DrawCommand.BlitImagePixels, is DrawCommand.Platform -> false
+                is DrawCommand.PushClip, is DrawCommand.PushFractionalClip, DrawCommand.PopClip -> true
+                is DrawCommand.SampledImage -> sampledOracleAllows(other, target)
+            }
+
+        private fun sampledOracleAllows(
+            other: DrawCommand.SampledImage,
+            target: FloatRect,
+        ): Boolean {
+            if (other.tint.value ushr 24 == 0) return true
+            if (other.alphaCutoff != 1f || opaqueTint(other.tint).not()) return false
+            return (maxOf(target.left, other.destination.left) < minOf(target.right, other.destination.right) && maxOf(target.top, other.destination.top) < minOf(target.bottom, other.destination.bottom)).not()
         }
 
         private fun opaqueTint(tint: ArgbColor): Boolean = tint.value ushr 24 == 255 && listOf(tint.value ushr 16 and 255, tint.value ushr 8 and 255, tint.value and 255).all { it == 0 || it == 255 }
