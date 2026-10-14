@@ -55,12 +55,12 @@ internal object GridAlignmentParentData {
          * Updates the retained grid child alignment.
          *
          * @param next the incoming value.
-         * @return layout invalidation when the value changed.
+         * @return measurement invalidation when the value changed.
          */
         internal fun update(next: Data): DirtyMask {
             val changed = data != next
             data = next
-            return if (changed) DirtyMask.of(DirtyPhase.Layout) else DirtyMask.None
+            return if (changed) DirtyMask.of(DirtyPhase.Measure) else DirtyMask.None
         }
     }
 

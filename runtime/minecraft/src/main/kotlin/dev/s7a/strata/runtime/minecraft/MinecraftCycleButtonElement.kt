@@ -80,6 +80,8 @@ private class MinecraftCycleButtonElement private constructor(
         private var enabled = initial.enabled
         private var actions = initial.actions
         private var observer: ComponentStateSubscription? = null
+        private var selectedValue: Any? = null
+        private var selectedIndex = 0
         private var hovered = false
         private var focused = false
         private var disposed = false
@@ -178,6 +180,7 @@ private class MinecraftCycleButtonElement private constructor(
         }
 
         override fun detach() {
+            selectedValue = null
             hovered = false
             focused = false
         }
@@ -185,6 +188,7 @@ private class MinecraftCycleButtonElement private constructor(
         override fun dispose() {
             if (disposed) return
             disposed = true
+            selectedValue = null
             observer?.close()
             observer = null
             normalSprite = null
@@ -205,6 +209,7 @@ private class MinecraftCycleButtonElement private constructor(
             val paintChanged = presentationChanged(current)
             val semanticsChanged = enabled != current.enabled || state !== current.state || labels != current.labels
             if (state !== current.state) {
+                selectedValue = null
                 observer?.close()
                 state = current.state
                 observer = current.state.observe { invalidate(DirtyMask.of(DirtyPhase.Paint, DirtyPhase.Semantics)) }
@@ -240,8 +245,14 @@ private class MinecraftCycleButtonElement private constructor(
 
         private fun currentLabel(): Pair<MinecraftTextRun, MinecraftTextRun> {
             val currentState = checkNotNull(state)
-            val index = currentState.values.indexOf(currentState.value)
-            return checkNotNull(labels)[index]
+            val value = currentState.value
+            // Only the exact immutable live selection proves the same directional first match, including aliases.
+            // State replacement, detach and disposal drop this one owner-confined borrowed selection reference.
+            if (selectedValue !== value) {
+                selectedIndex = currentState.values.indexOf(value)
+                selectedValue = value
+            }
+            return checkNotNull(labels)[selectedIndex]
         }
 
         private fun cycleForward() {
