@@ -6,6 +6,7 @@ import dev.s7a.strata.component.Column
 import dev.s7a.strata.component.Row
 import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.evaluateComponentTree
+import dev.s7a.strata.element.Element
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.layout.Arrangement
 import dev.s7a.strata.modifier.Modifier
@@ -25,56 +26,7 @@ internal class HeadlessLinearMeasurementTest {
         val colors = listOf(ArgbColor(0xFFFF0000.toInt()), ArgbColor(0xFF00FF00.toInt()), ArgbColor(0xFF0000FF.toInt()))
         for (horizontal in listOf(true, false)) {
             for (arrangement in Arrangement.entries) {
-                val description =
-                    evaluateComponentTree {
-                        if (horizontal) {
-                            Row(horizontalArrangement = arrangement) {
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(2, 2)
-                                            .background(colors[0]),
-                                )
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .weight(1f)
-                                            .size(1, 2)
-                                            .background(colors[1]),
-                                )
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .weight(3f)
-                                            .size(1, 2)
-                                            .background(colors[2]),
-                                )
-                            }
-                        } else {
-                            Column(verticalArrangement = arrangement) {
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .size(2, 2)
-                                            .background(colors[0]),
-                                )
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .weight(1f)
-                                            .size(2, 1)
-                                            .background(colors[1]),
-                                )
-                                Spacer(
-                                    modifier =
-                                        Modifier.Empty
-                                            .weight(3f)
-                                            .size(2, 1)
-                                            .background(colors[2]),
-                                )
-                            }
-                        }
-                    }
+                val description = description(horizontal, arrangement, colors)
                 for (density in listOf(1, 2, 3)) {
                     val viewport = if (horizontal) IntSize(10, 2) else IntSize(2, 10)
                     val frame = renderHeadless(description, viewport, density)
@@ -84,6 +36,61 @@ internal class HeadlessLinearMeasurementTest {
             }
         }
     }
+
+    private fun description(
+        horizontal: Boolean,
+        arrangement: Arrangement,
+        colors: List<ArgbColor>,
+    ): Element =
+        evaluateComponentTree {
+            if (horizontal) {
+                Row(horizontalArrangement = arrangement) {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(2, 2)
+                                .background(colors[0]),
+                    )
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .weight(1f)
+                                .size(1, 2)
+                                .background(colors[1]),
+                    )
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .weight(3f)
+                                .size(1, 2)
+                                .background(colors[2]),
+                    )
+                }
+            } else {
+                Column(verticalArrangement = arrangement) {
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .size(2, 2)
+                                .background(colors[0]),
+                    )
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .weight(1f)
+                                .size(2, 1)
+                                .background(colors[1]),
+                    )
+                    Spacer(
+                        modifier =
+                            Modifier.Empty
+                                .weight(3f)
+                                .size(2, 1)
+                                .background(colors[2]),
+                    )
+                }
+            }
+        }
 
     /**
      * Checks every physical pixel against the literal fixed-first slot oracle before the caller checks semantics.
