@@ -16,19 +16,7 @@ internal class FlowRetainedParityTest {
         for (arrangement in Arrangement.entries) {
             for (alignment in VerticalAlignment.entries) {
                 for (overridden in listOf(false, true)) {
-                    FlowRetainedTestFixture(true).use { original ->
-                        FlowRetainedTestFixture(false).use { candidate ->
-                            val ids = (0 until 16).toList()
-                            for (fixture in listOf(original, candidate)) {
-                                fixture.update(ids, List(16) { it % 3 + 1 }, arrangement = arrangement, alignment = alignment,
-                                    overrides = List(16) { if (overridden) VerticalAlignment.entries[it % 3] else null })
-                            }
-                            for (bounds in listOf(Constraints.fixed(9, 180), Constraints(maxWidth = 7, maxHeight = 180), Constraints(), Constraints.fixed(0, 0))) {
-                                assertEquals(original.frame(bounds), candidate.frame(bounds))
-                                assertEquals(original.probe.inputObservations, candidate.probe.inputObservations)
-                            }
-                        }
-                    }
+                    assertPolicyParity(arrangement, alignment, overridden)
                 }
             }
         }
@@ -37,29 +25,68 @@ internal class FlowRetainedParityTest {
     @Test
     fun appendShrinkReorderWrapAndPolicyChangesKeepOriginalKeyedAndPositionalIdentity() {
         for (keyed in listOf(false, true)) {
-            FlowRetainedTestFixture(true).use { original ->
-                FlowRetainedTestFixture(false).use { candidate ->
-                    for (count in listOf(0, 1, 16, 128, 4_096, 128, 16, 1, 0)) {
-                        val ids = (0 until count).toList()
-                        for (order in listOf(ids, ids.reversed())) {
-                            for (arrangement in Arrangement.entries) {
-                                for (fixture in listOf(original, candidate)) fixture.update(order, List(count) { it % 2 + 1 }, arrangement = arrangement, keyed = keyed)
-                                assertEquals(original.frame(Constraints(maxWidth = 7, maxHeight = 180)), candidate.frame(Constraints(maxWidth = 7, maxHeight = 180)))
-                                assertEquals(original.probe.events, candidate.probe.events)
-                                assertEquals(original.probe.created.size, candidate.probe.created.size)
-                                for (fixture in listOf(original, candidate)) {
-                                    fixture.probe.events.clear()
-                                    fixture.probe.created.clear()
-                                    fixture.probe.measureConstraints.clear()
-                                    fixture.probe.inputObservations.clear()
-                                    fixture.probe.inputEvents.clear()
-                                    fixture.focus.clear()
-                                    fixture.keys.clear()
-                                }
-                            }
-                        }
+            assertTopologyParity(keyed)
+        }
+    }
+
+    private fun assertPolicyParity(
+        arrangement: Arrangement,
+        alignment: VerticalAlignment,
+        overridden: Boolean,
+    ) {
+        FlowRetainedTestFixture(true).use { original ->
+            FlowRetainedTestFixture(false).use { candidate ->
+                val ids = (0 until 16).toList()
+                for (fixture in listOf(original, candidate)) {
+                    fixture.update(
+                        ids,
+                        List(16) { it % 3 + 1 },
+                        arrangement = arrangement,
+                        alignment = alignment,
+                        overrides = List(16) { if (overridden) VerticalAlignment.entries[it % 3] else null },
+                    )
+                }
+                for (bounds in listOf(Constraints.fixed(9, 180), Constraints(maxWidth = 7, maxHeight = 180), Constraints(), Constraints.fixed(0, 0))) {
+                    assertEquals(original.frame(bounds), candidate.frame(bounds))
+                    assertEquals(original.probe.inputObservations, candidate.probe.inputObservations)
+                }
+            }
+        }
+    }
+
+    private fun assertTopologyParity(keyed: Boolean) {
+        FlowRetainedTestFixture(true).use { original ->
+            FlowRetainedTestFixture(false).use { candidate ->
+                for (count in listOf(0, 1, 16, 128, 4_096, 128, 16, 1, 0)) {
+                    val ids = (0 until count).toList()
+                    for (order in listOf(ids, ids.reversed())) {
+                        assertTopologyOrderParity(original, candidate, count, order, keyed)
                     }
                 }
+            }
+        }
+    }
+
+    private fun assertTopologyOrderParity(
+        original: FlowRetainedTestFixture,
+        candidate: FlowRetainedTestFixture,
+        count: Int,
+        order: List<Int>,
+        keyed: Boolean,
+    ) {
+        for (arrangement in Arrangement.entries) {
+            for (fixture in listOf(original, candidate)) fixture.update(order, List(count) { it % 2 + 1 }, arrangement = arrangement, keyed = keyed)
+            assertEquals(original.frame(Constraints(maxWidth = 7, maxHeight = 180)), candidate.frame(Constraints(maxWidth = 7, maxHeight = 180)))
+            assertEquals(original.probe.events, candidate.probe.events)
+            assertEquals(original.probe.created.size, candidate.probe.created.size)
+            for (fixture in listOf(original, candidate)) {
+                fixture.probe.events.clear()
+                fixture.probe.created.clear()
+                fixture.probe.measureConstraints.clear()
+                fixture.probe.inputObservations.clear()
+                fixture.probe.inputEvents.clear()
+                fixture.focus.clear()
+                fixture.keys.clear()
             }
         }
     }
