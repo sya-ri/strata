@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import dev.s7a.strata.component.Observe
 import dev.s7a.strata.component.Text
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.FrameTime
@@ -41,7 +42,14 @@ public open class UnihexOverrideBenchmark {
          * Independent pixel, metric, input and ownership admission.
          */
         @JvmStatic
-        public fun verifyWork(): Unit = UnihexOverrideWorkEvidence.verify()
+        public fun verifyWork() {
+            UnihexOverrideWorkEvidence.verify()
+            UnihexOverrideOperationReport.verifyInventory()
+        }
+
+        /** Supplies every original operation and scenario to the shared CPU and allocation collector. */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = UnihexOverrideOperationReport
     }
 
     /**

@@ -489,6 +489,8 @@ Class and method selection also apply to the font fixtures; their declared param
 `UnihexOverrideBenchmark` is a separate 144-case synthetic custom-pack corpus selected through the same generated fixture mechanism.
 Sixteen immutable scenarios cover zero, one, small, 128, 1,024 and unadmitted 8,193 ranges, first/middle/last/no matches, absent sparse glyphs, unsorted overlaps, supplementary scalars, padding, short owners, eviction and fully warm rasters.
 Its nine operations separate complete public glyph batches, repeated scalar lookup, one-query first-use ownership, snapshot load, engine lifecycle, actual retained Text clean/dirty frames, complete Text host lifecycle and snapshot/profile replacement.
+Its compiled operation-report adapter covers the same 144 rows through the shared owner-thread CPU and allocation collector.
+Reference glyphs and both Text-frame pixel sequences are prepared outside samples; complete result, retention and terminal-release checks follow the original operation boundaries.
 The original ZIP contains 192 synthetic eight-pixel glyphs with fixed row bits and a checked input manifest; prepare and register the exact ZIP through `strata.performance.fixtureInputs` alongside every frozen control input.
 `verifyWork()` checks the generated matrix, independent original-loop glyph pixels/metric bits, actual Text frame pixels, clean work, changed work and terminal ownership outside timing.
 It records original predicate counts, actual retained segments and reserved primitive payload separately; logarithmic probe bounds are source-derived and do not substitute for independent untimed probe/construction instrumentation.

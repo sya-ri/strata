@@ -116,6 +116,12 @@ public object UnihexOverrideWorkEvidence {
         val predicates: Long,
     )
 
+    /** Requires complete cache, subscription and interval-payload release after supplemental collection. */
+    internal fun verifyTerminalOwner(state: UnihexOverrideBenchmark.OverrideSession) {
+        check(state.retained == listOf(0L, 0L, 0L) && state.subscriptions == 0)
+        check(indexRetention(state).get("reserved_payload_bytes").asLong == 0L)
+    }
+
     private fun verifyTrace(
         scenario: UnihexOverrideScenario,
         state: UnihexOverrideBenchmark.OverrideSession,
