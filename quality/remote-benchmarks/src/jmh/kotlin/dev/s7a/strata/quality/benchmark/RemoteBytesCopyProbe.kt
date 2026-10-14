@@ -23,6 +23,27 @@ public object RemoteBytesCopyProbe {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.size == 1)
+        val executable =
+            Path.of(
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElseThrow(),
+            )
+        println(
+            "paired.jvm.origin " +
+                Gson().toJson(
+                    JsonObject().apply {
+                        addProperty("main", javaClass.name)
+                        addProperty("pid", ProcessHandle.current().pid())
+                        addProperty("executable", executable.toString())
+                        addProperty("executable_sha256", ArtifactIdentity.file(executable))
+                        addProperty("classpath", System.getProperty("java.class.path"))
+                        add("arguments", Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments))
+                    },
+                ),
+        )
         val targets = mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteTree")
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
@@ -45,14 +66,7 @@ public object RemoteBytesCopyProbe {
                 addProperty("workload_id", "remote-bytes-copy-observation-v1")
                 addProperty("status", "passed")
                 addProperty("reconstruction_millis", 60000)
-                val executable =
-                    Path.of(
-                        ProcessHandle
-                            .current()
-                            .info()
-                            .command()
-                            .orElseThrow(),
-                    )
+                addProperty("pid", ProcessHandle.current().pid())
                 addProperty("java_executable", executable.toString())
                 addProperty("java_executable_sha256", ArtifactIdentity.file(executable))
                 addProperty("java_version", System.getProperty("java.version"))

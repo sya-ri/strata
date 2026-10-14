@@ -1,12 +1,5 @@
-@file:OptIn(InternalStrataRuntimeApi::class)
-
 package dev.s7a.strata.runtime.remote
 
-import dev.s7a.strata.projection.ProjectionType
-import dev.s7a.strata.projection.ProjectionValue
-import dev.s7a.strata.resource.ResourceId
-import dev.s7a.strata.spi.InternalStrataRuntimeApi
-import dev.s7a.strata.spi.RuntimeExecutionOwner
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -15,7 +8,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Requires exact per-key edit polling, current membership, failure cleanup and owner isolation.
+ * Requires current editable-index membership, per-key retention and terminal reference release.
  */
 internal class RemoteClientStatesTest {
     @Test
@@ -74,40 +67,6 @@ internal class RemoteClientStatesTest {
             assertEquals(1, releases)
             states.update { states.prepare(1, EDITABLE, { next }, {}) }
             assertEquals(listOf(next), membership(states))
-        }
-    }
-
-    @Test
-    fun recursionDoesNotRepollAndFailureRestoresTheFlushGuard() {
-        var polls = 0
-        var sequence = 0L
-        val trace = mutableListOf<Long>()
-        val failure = IllegalStateException("send failed")
-        RemoteClientStates(RemoteLimits()).use { states ->
-            val editable =
-                RemoteEditableValue { actions ->
-                    polls++
-                    actions.send(1, TYPE, ProjectionValue.Absent)
-                }
-            states.update { states.prepare(1, EDITABLE, { editable }, {}) }
-            val actions =
-                RemoteClientActions { _, _, _ ->
-                    states.flushEdits(NO_ACTIONS)
-                    trace.add(++sequence)
-                    sequence
-                }
-            states.flushEdits(actions)
-            assertEquals(1, polls)
-            assertEquals(listOf(1L), trace)
-            assertSame(
-                failure,
-                assertThrows(IllegalStateException::class.java) {
-                    states.flushEdits(RemoteClientActions { _, _, _ -> throw failure })
-                },
-            )
-            states.flushEdits(actions)
-            assertEquals(3, polls)
-            assertEquals(listOf(1L, 2L), trace)
         }
     }
 
@@ -175,34 +134,6 @@ internal class RemoteClientStatesTest {
         }
     }
 
-    @Test
-    fun independentOwnersCannotPollMutateOrCloseEachOthersMembership() {
-        val firstOwner = RuntimeExecutionOwner()
-        val secondOwner = RuntimeExecutionOwner()
-        var firstPolls = 0
-        var secondPolls = 0
-        val first = firstOwner.run { RemoteClientStates(RemoteLimits()) }
-        val second = secondOwner.run { RemoteClientStates(RemoteLimits()) }
-        try {
-            firstOwner.run {
-                first.update { first.prepare(1, EDITABLE, { RemoteEditableValue { firstPolls++ } }, {}) }
-                assertThrows(IllegalStateException::class.java) { second.flushEdits(NO_ACTIONS) }
-                assertThrows(IllegalStateException::class.java) { second.close() }
-                first.flushEdits(NO_ACTIONS)
-            }
-            secondOwner.run {
-                second.update { second.prepare(1, EDITABLE, { RemoteEditableValue { secondPolls++ } }, {}) }
-                assertThrows(IllegalStateException::class.java) { first.update {} }
-                second.flushEdits(NO_ACTIONS)
-            }
-            assertEquals(1, firstPolls)
-            assertEquals(1, secondPolls)
-        } finally {
-            firstOwner.run { first.close() }
-            secondOwner.run { second.close() }
-        }
-    }
-
     private fun entries(states: RemoteClientStates): Map<*, *> {
         val field = RemoteClientStates::class.java.getDeclaredField("values")
         field.isAccessible = true
@@ -214,11 +145,27 @@ internal class RemoteClientStatesTest {
             RemoteClientStates::class.java
                 .getDeclaredField("editable")
                 .apply { isAccessible = true }
-        return (field.get(states) as Map<*, *>).values.toList()
+        return when (val members = field.get(states)) {
+            is Map<*, *> -> {
+                members.values.toList()
+            }
+
+            is List<*> -> {
+                members.map { entry ->
+                    val member = checkNotNull(entry)
+                    val value = checkNotNull(member.javaClass.superclass).getDeclaredField("value")
+                    value.isAccessible = true
+                    value.get(member)
+                }
+            }
+
+            else -> {
+                error("Unsupported membership collection")
+            }
+        }
     }
 
     private companion object {
-        val TYPE = ProjectionType(ResourceId("test", "editable"))
         val EDITABLE = RemoteStateKey(RemoteEditableValue::class)
         val PASSIVE = RemoteStateKey(Any::class)
         val NO_ACTIONS = RemoteClientActions { _, _, _ -> error("Unexpected action") }

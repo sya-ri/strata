@@ -11,8 +11,10 @@ import com.sun.jdi.event.VMDisconnectEvent
 import com.sun.jdi.request.EventRequest
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.PerformanceJson
+import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.concurrent.thread
 
 /**
  * Standard-JDK untimed debug process and immutable provenance for real application-owned work observers.
@@ -28,7 +30,6 @@ internal object RemoteUntimedObservation {
         args: Array<String>,
         probeClass: Class<*>,
         fixtureClass: Class<*>,
-        observedClasses: List<String>,
         workloadId: String,
         observation: RemoteProbeObservation,
     ) {
@@ -40,20 +41,30 @@ internal object RemoteUntimedObservation {
         val planHash = ArtifactIdentity.file(planFile)
         val observerClasses = listOf(observation.javaClass, javaClass, RemoteProbeObservation::class.java, RemoteProbeMarker::class.java)
         val observer = ArtifactIdentity.applicationTrees(observerClasses)
-        val connector = Bootstrap.virtualMachineManager().defaultConnector()
-        val arguments = connector.defaultArguments()
-        val classpath = System.getProperty("java.class.path")
-        require(classpath.contains('"').not() && child.toString().contains('"').not())
-        arguments.getValue("home").setValue(System.getProperty("java.home"))
-        arguments.getValue("options").setValue("-cp \"$classpath\"")
-        arguments.getValue("main").setValue("${probeClass.name} \"$child\"")
-        val vm = connector.launch(arguments)
+        val jvmArguments = ManagementFactory.getRuntimeMXBean().inputArguments
+        val vm = launch(probeClass, child, jvmArguments)
         val process = vm.process()
+        val readers = mutableListOf<Thread>()
         try {
-            observe(vm, probeClass, observedClasses, observation)
-            check(process.waitFor() == 0) { "Untimed probe failed: ${process.errorStream.bufferedReader().readText()}" }
+            readers += thread(name = "remote-untimed-stdout") { process.inputStream.use { it.copyTo(System.out) } }
+            readers += thread(name = "remote-untimed-stderr") { process.errorStream.use { it.copyTo(System.err) } }
+            observe(vm, probeClass, observation)
+            check(process.waitFor() == 0) { "Untimed probe failed; inspect the retained child output" }
+            readers.forEach(Thread::join)
             check(observation.complete())
             val provenance = read(child)
+            val childArguments = provenance.getAsJsonArray("jvm_arguments").map { it.asString }
+            val ordinaryArguments = childArguments.filterNot { it.contentEquals("-Xdebug") || it.startsWith("-Xrunjdwp:") || it.startsWith("-agentlib:jdwp=") }
+            require(ordinaryArguments.takeLast(jvmArguments.size) == jvmArguments) { "Untimed child changed the inherited JVM profile" }
+            val executable =
+                Path.of(
+                    ProcessHandle
+                        .current()
+                        .info()
+                        .command()
+                        .orElseThrow(),
+                )
+            require(provenance.get("java_executable_sha256").asString == ArtifactIdentity.file(executable))
             val revision = sourceRevision(planFile, planHash, fixtureClass, provenance)
             require(ArtifactIdentity.applicationTrees(observerClasses) == observer)
             PerformanceJson.writeNew(
@@ -72,31 +83,44 @@ internal object RemoteUntimedObservation {
                 },
             )
         } finally {
-            if (process.isAlive) process.destroyForcibly()
+            if (process.isAlive) process.destroyForcibly().waitFor()
+            readers.forEach(Thread::join)
         }
     }
+
+    private fun launch(
+        probeClass: Class<*>,
+        child: Path,
+        jvmArguments: List<String>,
+    ): VirtualMachine {
+        val connector = Bootstrap.virtualMachineManager().defaultConnector()
+        val arguments = connector.defaultArguments()
+        val classpath = System.getProperty("java.class.path")
+        require((jvmArguments + classpath + child.toString()).all { it.contains('"').not() && it.contains('\n').not() && it.contains('\r').not() })
+        arguments.getValue("home").setValue(System.getProperty("java.home"))
+        arguments.getValue("options").setValue(jvmArguments.joinToString(" ") { "\"$it\"" } + " -cp \"$classpath\"")
+        arguments.getValue("main").setValue("${probeClass.name} \"$child\"")
+        return connector.launch(arguments)
+    }
+
+    private fun observedRequests(
+        vm: VirtualMachine,
+        classes: List<String>,
+    ): List<EventRequest> =
+        classes.flatMap { name ->
+            listOf(
+                vm.eventRequestManager().createMethodEntryRequest().apply { addClassFilter(name) },
+                vm.eventRequestManager().createMethodExitRequest().apply { addClassFilter(name) },
+            )
+        }.onEach { it.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD) }
 
     private fun observe(
         vm: VirtualMachine,
         probeClass: Class<*>,
-        observedClasses: List<String>,
         observation: RemoteProbeObservation,
     ) {
         require(vm.canGetMethodReturnValues()) { "The probe requires JDI method return values" }
-        val entries =
-            observedClasses.map { name ->
-                vm.eventRequestManager().createMethodEntryRequest().apply {
-                    addClassFilter(name)
-                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                }
-            }
-        val exits =
-            observedClasses.map { name ->
-                vm.eventRequestManager().createMethodExitRequest().apply {
-                    addClassFilter(name)
-                    setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
-                }
-            }
+        val requests = observedRequests(vm, observation.observedClasses)
         vm.eventRequestManager().createMethodEntryRequest().apply {
             addClassFilter(probeClass.name)
             setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD)
@@ -121,11 +145,9 @@ internal object RemoteUntimedObservation {
             }
             if (observing != observation.active) {
                 if (observation.active) {
-                    entries.forEach { it.enable() }
-                    exits.forEach { it.enable() }
+                    requests.forEach { it.enable() }
                 } else {
-                    entries.forEach { it.disable() }
-                    exits.forEach { it.disable() }
+                    requests.forEach { it.disable() }
                 }
                 observing = observation.active
             }

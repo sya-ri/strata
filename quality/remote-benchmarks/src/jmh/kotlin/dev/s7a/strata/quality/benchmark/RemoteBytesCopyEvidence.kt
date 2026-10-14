@@ -2,12 +2,18 @@ package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.sun.jdi.ArrayReference
 import com.sun.jdi.Method
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
 import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
+import dev.s7a.strata.performance.ArtifactIdentity
+import dev.s7a.strata.projection.ProjectionValue
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 
 /**
  * Observes actual Bytes snapshot arrays in a separate untimed JDI process, using only the standard JDK.
@@ -17,19 +23,110 @@ import com.sun.jdi.event.MethodExitEvent
  */
 public object RemoteBytesCopyEvidence {
     /**
-     * Accepts fresh count and child-provenance paths plus the same frozen source/archive plan used by JMH.
+     * Accepts one shared preflight request, or fresh count and child-provenance paths plus the source/archive plan.
      * Run once per measured source on the frozen fixture classpath, outside all timing invocations.
      * The child deadline is extended solely for debug suspension; all observed rows are explicitly untimed.
      */
     @JvmStatic
     public fun main(args: Array<String>) {
-        RemoteUntimedObservation.run(args, RemoteBytesCopyProbe::class.java, RemoteBytesBenchmark::class.java, listOf("dev.s7a.strata.projection.ProjectionValue\$Bytes"), "remote-bytes-copy-observation-v1", Observation())
+        if (args.size == 1) {
+            preflight(Path.of(args.single()))
+            return
+        }
+        RemoteUntimedObservation.run(args, RemoteBytesCopyProbe::class.java, RemoteBytesBenchmark::class.java, "remote-bytes-copy-observation-v1", Observation())
     }
+
+    private fun preflight(requestPath: Path) {
+        val requestHash = ArtifactIdentity.file(requestPath)
+        val request = read(requestPath)
+        require(request.get("schema").asString.contentEquals("strata-paired-jvm-preflight-request-v1"))
+        val output = Path.of(request.get("output").asString).toAbsolutePath().normalize()
+        val results = JsonArray()
+        RemoteBytesBenchmark.verifyWork()
+        for (entry in request.getAsJsonArray("controls")) {
+            val control = entry.asJsonObject
+            val id = control.get("id").asString
+            val arguments = control.getAsJsonArray("arguments").map { it.asString }
+            require(arguments.size == 1 && id.matches(Regex("[A-Za-z0-9][A-Za-z0-9_-]*")))
+            val input = request.getAsJsonObject("inputs").getAsJsonObject(arguments.single())
+            val plan = Path.of(input.get("path").asString)
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
+            val directory = output.resolve(id)
+            Files.createDirectory(directory)
+            val counts = directory.resolve("counts.json")
+            val child = directory.resolve("child.json")
+            main(arrayOf(counts.toString(), child.toString(), plan.toString()))
+            val observed = read(counts)
+            verifyRows(observed)
+            results.add(
+                JsonObject().apply {
+                    addProperty("id", id)
+                    addProperty("status", "passed")
+                    add("observations", observed)
+                    add("origins", origins(request, read(child)))
+                    add(
+                        "artifacts",
+                        JsonArray().apply {
+                            listOf(counts, child).forEach { file ->
+                                add(JsonObject().apply {
+                                    addProperty("path", output.relativize(file).toString().replace('\\', '/'))
+                                    addProperty("sha256", ArtifactIdentity.file(file))
+                                })
+                            }
+                        },
+                    )
+                },
+            )
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
+        }
+        require(ArtifactIdentity.file(requestPath) == requestHash)
+        val receipt =
+            JsonObject().apply {
+                addProperty("schema", "strata-paired-jvm-preflight-receipt-v1")
+                addProperty("status", "passed")
+                addProperty("request_sha256", requestHash)
+                add("controls", results)
+            }
+        Files.writeString(output.resolve("receipt.json"), receipt.toString(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    }
+
+    private fun verifyRows(observed: JsonObject) {
+        val rows = observed.getAsJsonArray("phases").map { it.asJsonObject }
+        val typed = rows.map { Triple(RemoteBytesBenchmark.Corpus.valueOf(it.get("corpus").asString), RemoteBytesOperation.valueOf(it.get("operation").asString), it) }
+        require(typed.map { it.first to it.second }.toSet().size == 64 && typed.size == 64)
+        val construction = typed.single { it.first == RemoteBytesBenchmark.Corpus.Small32 && it.second == RemoteBytesOperation.ProjectionConstruction }.third
+        require(construction.get("constructor_snapshot_arrays").asLong == 1L && construction.get("constructor_snapshot_bytes").asLong == 32L)
+        require(typed.filter { it.first == RemoteBytesBenchmark.Corpus.ByteFree || it.second == RemoteBytesOperation.ActionFraming }.all { row ->
+            listOf("constructor_snapshot_arrays", "constructor_snapshot_bytes", "extraction_snapshot_arrays", "extraction_snapshot_bytes").all { row.third.get(it).asLong == 0L }
+        })
+    }
+
+    private fun origins(
+        request: JsonObject,
+        provenance: JsonObject,
+    ): JsonObject {
+        val runtimeClasses = provenance.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").map { it.asJsonObject.get("representativeClass").asString }.toSet()
+        val result = JsonObject()
+        request.getAsJsonObject("required_classes").keySet().forEach { name ->
+            val pid =
+                if (name in runtimeClasses) {
+                    provenance.get("pid").asLong
+                } else {
+                    Class.forName(name, false, javaClass.classLoader)
+                    ProcessHandle.current().pid()
+                }
+            result.add(name, JsonObject().apply { addProperty("pid", pid) })
+        }
+        return result
+    }
+
+    private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
 
     /**
      * Fixed complete corpus counts with only currently executing constructors retained until their matching return.
      */
     private class Observation : RemoteProbeObservation {
+        override val observedClasses = listOf(ProjectionValue.Bytes::class.java.name)
         override val rows = JsonArray()
         override val active: Boolean get() = current != null
         private val seen = mutableSetOf<Pair<RemoteBytesBenchmark.Corpus, RemoteBytesOperation>>()

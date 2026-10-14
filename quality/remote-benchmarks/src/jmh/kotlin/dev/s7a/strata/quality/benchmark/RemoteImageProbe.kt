@@ -19,6 +19,27 @@ public object RemoteImageProbe {
     @JvmStatic
     public fun main(args: Array<String>) {
         require(args.size == 1)
+        val executable =
+            Path.of(
+                ProcessHandle
+                    .current()
+                    .info()
+                    .command()
+                    .orElseThrow(),
+            )
+        println(
+            "paired.jvm.origin " +
+                Gson().toJson(
+                    JsonObject().apply {
+                        addProperty("main", javaClass.name)
+                        addProperty("pid", ProcessHandle.current().pid())
+                        addProperty("executable", executable.toString())
+                        addProperty("executable_sha256", ArtifactIdentity.file(executable))
+                        addProperty("classpath", System.getProperty("java.class.path"))
+                        add("arguments", Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments))
+                    },
+                ),
+        )
         val targets = mapOf("api" to "dev.s7a.strata.projection.ProjectionValue", "core" to "dev.s7a.strata.runtime.spi.RuntimeUiSession", "remote" to "dev.s7a.strata.runtime.remote.RemoteServerSession")
         val runtime = LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys)
         LoadedArtifactMetadata.verifyComplete(runtime)
@@ -26,14 +47,7 @@ public object RemoteImageProbe {
         val identity = ArtifactIdentity.applicationTrees(fixtures)
         for (extent in RemoteImageBenchmark.Extent.entries) {
             for (workload in RemoteImageBenchmark.Workload.entries) {
-                RemoteImageBenchmark.Scene(60000).use { scene ->
-                    scene.extent = extent
-                    scene.workload = workload
-                    scene.setup()
-                    begin(extent.name, workload.name)
-                    repeat(2) { scene.perform() }
-                    finish()
-                }
+                observe(extent, workload)
             }
         }
         check(LoadedArtifactMetadata.capture(javaClass.classLoader, targets, targets.keys) == runtime)
@@ -45,14 +59,7 @@ public object RemoteImageProbe {
                 addProperty("status", "passed")
                 addProperty("observed_operations_per_case", 2)
                 addProperty("reconstruction_millis", 60000)
-                val executable =
-                    Path.of(
-                        ProcessHandle
-                            .current()
-                            .info()
-                            .command()
-                            .orElseThrow(),
-                    )
+                addProperty("pid", ProcessHandle.current().pid())
                 addProperty("java_executable", executable.toString())
                 addProperty("java_executable_sha256", ArtifactIdentity.file(executable))
                 addProperty("java_version", System.getProperty("java.version"))
@@ -62,6 +69,20 @@ public object RemoteImageProbe {
                 add("fixture_identity", Gson().toJsonTree(identity))
             },
         )
+    }
+
+    private fun observe(
+        extent: RemoteImageBenchmark.Extent,
+        workload: RemoteImageBenchmark.Workload,
+    ) {
+        RemoteImageBenchmark.Scene(60000).use { scene ->
+            scene.extent = extent
+            scene.workload = workload
+            scene.setup()
+            begin(extent.name, workload.name)
+            repeat(2) { scene.perform() }
+            finish()
+        }
     }
 
     /**

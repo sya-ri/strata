@@ -19,13 +19,14 @@ public object RemoteImageEncodingEvidence {
      */
     @JvmStatic
     public fun main(args: Array<String>) {
-        RemoteUntimedObservation.run(args, RemoteImageProbe::class.java, RemoteImageBenchmark::class.java, listOf(RemoteImageCodec::class.java.name, "dev.s7a.strata.render.DrawImageSnapshot"), "remote-image-encoding-observation-v1", Observation())
+        RemoteUntimedObservation.run(args, RemoteImageProbe::class.java, RemoteImageBenchmark::class.java, "remote-image-encoding-observation-v1", Observation())
     }
 
     /**
      * Only one typed case and counters are retained; no debugger object, frame, image or production result survives.
      */
     private class Observation : RemoteProbeObservation {
+        override val observedClasses = listOf(RemoteImageCodec::class.java.name, "dev.s7a.strata.render.DrawImageSnapshot")
         override val rows = JsonArray()
         override val active: Boolean get() = current != null
         private var current: JsonObject? = null
@@ -61,9 +62,7 @@ public object RemoteImageEncodingEvidence {
                         owner = null
                     }
 
-                    null -> {
-                        Unit
-                    }
+                    null -> {}
                 }
                 return
             }

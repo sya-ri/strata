@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
+import java.util.RandomAccess
 
 /**
  * Measures current editable polling through a real registered client session without Minecraft or a network.
@@ -236,13 +237,20 @@ public open class RemoteClientStatesBenchmark {
             return RemoteMessage.Snapshot(1, revision, ProjectionValue.Absent, RemoteTree(1, listOf(node)))
         }
 
-        // Wrapping maps is confined to this untimed oracle; timed scenes retain the ordinary production maps.
+        // Wrapping collections is confined to this untimed oracle; timed scenes retain ordinary production collections.
         @Suppress("UNCHECKED_CAST")
-        private fun countTraversal(): List<VisitMap<Any?, Any?>> =
+        private fun countTraversal(): List<VisitCounter> =
             RemoteClientStates::class.java.declaredFields.mapNotNull { field ->
-                if (Map::class.java.isAssignableFrom(field.type).not()) return@mapNotNull null
+                val map = Map::class.java.isAssignableFrom(field.type)
+                val list = List::class.java.isAssignableFrom(field.type)
+                if (map.not() && list.not()) return@mapNotNull null
                 field.isAccessible = true
-                val counted = VisitMap(field.get(states) as MutableMap<Any?, Any?>)
+                val counted =
+                    if (map) {
+                        VisitMap(field.get(states) as MutableMap<Any?, Any?>)
+                    } else {
+                        VisitList(field.get(states) as MutableList<Any?>)
+                    }
                 field.set(states, counted)
                 counted
             }
@@ -319,12 +327,26 @@ public open class RemoteClientStatesBenchmark {
         )
 
         /**
+         * Shares only the independent value-iterator counter and retained collection checks.
+         */
+        private abstract class VisitCounter {
+            var visits = 0L
+            abstract val size: Int
+
+            abstract fun isEmpty(): Boolean
+        }
+
+        /**
          * Counts real value traversal in an independent, untimed session without modifying production source.
          */
         private class VisitMap<K, V>(
             private val backing: MutableMap<K, V>,
-        ) : MutableMap<K, V> by backing {
-            var visits = 0L
+        ) : VisitCounter(),
+            MutableMap<K, V> by backing {
+            override val size: Int get() = backing.size
+
+            override fun isEmpty(): Boolean = backing.isEmpty()
+
             override val values: MutableCollection<V> =
                 object : AbstractMutableCollection<V>() {
                     override val size: Int get() = backing.size
@@ -345,6 +367,33 @@ public open class RemoteClientStatesBenchmark {
                         }
                     }
                 }
+        }
+
+        /**
+         * Counts the same polling iterator as the map probe while retaining ordinary indexed list maintenance.
+         */
+        private class VisitList<V>(
+            private val backing: MutableList<V>,
+        ) : VisitCounter(),
+            MutableList<V> by backing,
+            RandomAccess {
+            override val size: Int get() = backing.size
+
+            override fun isEmpty(): Boolean = backing.isEmpty()
+
+            override fun iterator(): MutableIterator<V> {
+                val iterator = backing.iterator()
+                return object : MutableIterator<V> {
+                    override fun hasNext(): Boolean = iterator.hasNext()
+
+                    override fun next(): V {
+                        visits++
+                        return iterator.next()
+                    }
+
+                    override fun remove() = iterator.remove()
+                }
+            }
         }
 
         private companion object {
