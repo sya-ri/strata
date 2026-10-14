@@ -11,6 +11,9 @@ plugins {
 
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
 
+sourceSets.named("jmh") { kotlin.srcDir("src/fixture/kotlin") }
+extensions.configure<DetektExtension> { source.from("src/fixture/kotlin") }
+
 dependencies {
     add("jmh", project(":api"))
     add("jmh", project(":performance-testkit"))

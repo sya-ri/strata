@@ -188,6 +188,13 @@ jobs:
         bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
       env:
         DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
+    - name: Upload core Web test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-web-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
     - name: Upload fresh demo screenshots
       uses: actions/upload-artifact@v7
       with:
@@ -289,6 +296,13 @@ jobs:
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
+    - name: Upload core JVM test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-jvm-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
     - name: Verify scoped JVM collection without fixture registration
       run: python3 -B gradle/verify-jvm-fixture-collection.py
     - name: Upload scoped collection evidence
