@@ -220,6 +220,7 @@ public static class StrataPerformanceProcess {
 
     // Called under the inventory lock; retained transfers ownership before any bound check can throw.
     static void RetainHandle(uint pid, IntPtr handle, Dictionary<string, object> record, ref bool retained, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Acquisitions acquisitions, bool reserved = false) {
+        if (reserved == false) CheckHistoryBound(acquisitions, result);
         long created = (long)record["creationFileTime"];
         List<Dictionary<string, object>> history;
         if (records.TryGetValue(pid, out history) == false) {
@@ -236,8 +237,11 @@ public static class StrataPerformanceProcess {
         retained = true;
         result["maximumRetainedHandles"] = Math.Max((int)result["maximumRetainedHandles"], handles.Count);
         // Six bytes per UTF-16 unit covers JSON escaping; 1024 covers all fixed fields and PID/list indentation.
-        if (reserved == false) acquisitions.publishedBytes += 1024 + 6L * ((string)record["image"]).Length;
-        CheckHistoryBound(acquisitions, result);
+        if (reserved == false) {
+            acquisitions.publishedBytes += 1024 + 6L * ((string)record["image"]).Length;
+            CheckHistoryBound(acquisitions, result);
+        }
+        // A queued claim already reserved this same image and fixed metadata envelope; draining only transfers its charge.
         if (256 < handles.Count) throw new InvalidOperationException("Owned live handle inventory exceeds its bound.");
     }
 
@@ -274,6 +278,22 @@ public static class StrataPerformanceProcess {
                 if (retained == false) CloseTracked(claim.handle, acquisitions);
             }
         }
+    }
+
+    // Keep metadata failures fatal while still retiring held generations and reaching actual final Job accounting.
+    static bool CleanupCapture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, Dictionary<string, object> result, object gate, Acquisitions acquisitions) {
+        bool closed = true;
+        try { DrainPending(job, handles, records, capture, gate, acquisitions); }
+        catch (Exception failure) {
+            if (result.ContainsKey("cleanupError") == false) result["cleanupError"] = failure.Message;
+            closed = false;
+        }
+        try { Retire(handles, records, gate, acquisitions); }
+        catch (Exception failure) {
+            if (result.ContainsKey("cleanupError") == false) result["cleanupError"] = failure.Message;
+            closed = false;
+        }
+        return closed;
     }
 
     static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds, object gate, Acquisitions acquisitions) {
@@ -561,15 +581,13 @@ public static class StrataPerformanceProcess {
                     if ((bool)result["naturalRelease"] == false) closed &= TerminateJobObject(job, 126);
                     while (cleanup.Elapsed.TotalSeconds < cleanupSeconds) {
                         int retained;
-                        DrainPending(job, memberHandles, members, capture, gate, acquisitions);
-                        Retire(memberHandles, members, gate, acquisitions);
+                        closed &= CleanupCapture(job, memberHandles, members, capture, result, gate, acquisitions);
                         lock (gate) retained = memberHandles.Count;
                         if (Account(job).activeProcesses == 0 && retained == 0) break;
                         Thread.Sleep(10);
                     }
                     result["activeProcessesAfterCleanup"] = Account(job).activeProcesses;
-                    DrainPending(job, memberHandles, members, capture, gate, acquisitions);
-                    Retire(memberHandles, members, gate, acquisitions);
+                    closed &= CleanupCapture(job, memberHandles, members, capture, result, gate, acquisitions);
                     closed &= (uint)result["activeProcessesAfterCleanup"] == 0;
                 } catch (Exception failure) {
                     result["cleanupError"] = failure.Message;
@@ -584,9 +602,10 @@ public static class StrataPerformanceProcess {
                     result["notificationReaderJoined"] = joined;
                     closed &= joined;
                 }
-                DrainPending(job, memberHandles, members, capture, gate, acquisitions);
-                Retire(memberHandles, members, gate, acquisitions);
+                closed &= CleanupCapture(job, memberHandles, members, capture, result, gate, acquisitions);
                 var finalAccounting = Account(job);
+                result["activeProcessesAfterCleanup"] = finalAccounting.activeProcesses;
+                if (result.ContainsKey("totalProcesses") == false) result["totalProcesses"] = finalAccounting.totalProcesses;
                 lock (gate) {
                     int captured = 0, completed = 0;
                     foreach (var generations in members.Values) foreach (var member in generations) {

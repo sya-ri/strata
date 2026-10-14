@@ -15,6 +15,37 @@ PAIRED = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PAIRED)
 
 
+def validate_history_refusal(terminal, report_bytes):
+    """Keep an actual history refusal fatal while requiring independently completed cleanup and accounting."""
+    limit = 3 * 1024**2
+    PAIRED.require("history exceeds the existing terminal report bound" in terminal.get("error", "")
+                   and terminal.get("naturalRelease") is False and terminal.get("timedOut") is False,
+                   "History budget did not refuse the owned phase before its deadline")
+    PAIRED.require(terminal.get("handlesClosed") is True and terminal.get("activeProcessesAfterCleanup") == 0
+                   and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal.get("notificationReaderJoined") is True
+                   and "cleanupError" not in terminal, "Refused history did not complete terminal cleanup")
+    members = [member for histories in terminal["members"].values() for member in histories]
+    identities = {(member["pid"], member["creationFileTime"]) for member in members}
+    PAIRED.require(256 < len(members) == len(identities)
+                   and all(member.get("completed") is True and member.get("handleClosed") is True
+                           and member["creationFileTime"] <= member["exitFileTime"] for member in members)
+                   and terminal["maximumRetainedHandles"] <= 256 and terminal["maximumListedMembers"] <= 256,
+                   "History refusal did not preserve complete bounded process generations")
+    accounting = terminal.get("generationAccounting", {})
+    PAIRED.require(accounting.get("schema") == "strata-owned-generation-accounting-v1"
+                   and type(accounting.get("complete")) is bool and type(accounting.get("totalProcesses")) is int
+                   and len(members) <= accounting["totalProcesses"] == terminal.get("totalProcesses")
+                   and (accounting["complete"] is False or accounting["totalProcesses"] == len(members))
+                   and accounting.get("capturedGenerations") == accounting.get("closedGenerations") == len(members),
+                   "Refused history lost actual final Job accounting")
+    acquisition = terminal.get("processAcquisition", {})
+    PAIRED.require(all(type(acquisition.get(key)) is int and acquisition[key] == 0
+                       for key in ("pending", "metadataInFlight", "physicalHandles", "unpublishedByteBound")),
+                   "Refused history retained acquired handles or metadata")
+    PAIRED.require(limit < terminal["memberHistorySerializedByteBound"] <= limit + 1024 + 6 * 32768
+                   and report_bytes <= 4 * 1024**2, "Refused history escaped the unchanged terminal-reader capacity")
+
+
 def validate_immediate_history(terminal, actual, held_count=0):
     """Match every independently held short descendant to complete physical Job generations."""
     PAIRED.verify_generation_accounting(terminal)
@@ -126,16 +157,7 @@ def main():
                 PAIRED.require(terminal["maximumRetainedHandles"] <= 256 and terminal["maximumListedMembers"] <= 256
                                and terminal["naturalRelease"] is True, "History exceeded the unchanged live inventory bound")
             elif name == "history-budget-refusal":
-                limit = 3 * 1024**2
-                PAIRED.require("history exceeds the existing terminal report bound" in terminal.get("error", "")
-                               and terminal["naturalRelease"] is False and terminal["timedOut"] is False,
-                               "History budget did not refuse the owned phase before its deadline")
-                PAIRED.require(limit < terminal["memberHistorySerializedByteBound"] <= limit + 1024 + 6 * 32768
-                               and (directory / "terminal.json").stat().st_size <= 4 * 1024**2,
-                               "Refused history escaped the unchanged terminal-reader capacity")
-                PAIRED.require(256 < sum(len(generations) for generations in terminal["members"].values())
-                               and terminal["maximumRetainedHandles"] <= 256 and terminal["maximumListedMembers"] <= 256,
-                               "History refusal did not preserve complete bounded process generations")
+                validate_history_refusal(terminal, (directory / "terminal.json").stat().st_size)
             elif name == "ram-refusal":
                 PAIRED.require(terminal["nativeInvoked"] is False and terminal["naturalRelease"] is False, "RAM refusal launched a child")
             elif name == "timeout":

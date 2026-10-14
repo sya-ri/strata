@@ -13,6 +13,62 @@ import test_paired_jvm as fixtures
 
 
 class PairedBrowserTest(unittest.TestCase):
+    def test_history_refusal_keeps_fatal_error_and_requires_finalized_cleanup_accounting(self):
+        source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
+        spec = importlib.util.spec_from_file_location("boundary_refusal", source)
+        boundary = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(boundary)
+        error = "Owned process history exceeds the existing terminal report bound."
+        members = {str(pid): [{"pid": pid, "creationFileTime": pid * 10000, "exitFileTime": pid * 10000 + 1000,
+                              "completed": True, "handleClosed": True}] for pid in range(1, 258)}
+        terminal = {"error": error, "notificationError": error, "naturalRelease": False, "timedOut": False,
+                    "handlesClosed": True, "activeProcessesAfterCleanup": 0, "notificationReaderJoined": True,
+                    "members": members, "maximumRetainedHandles": 52, "maximumListedMembers": 22,
+                    "memberHistorySerializedByteBound": 3 * 1024**2 + 412, "totalProcesses": 259,
+                    "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "totalProcesses": 259,
+                                             "capturedGenerations": 257, "closedGenerations": 257, "complete": False},
+                    "processAcquisition": {"pending": 0, "metadataInFlight": 0, "physicalHandles": 0, "unpublishedByteBound": 0}}
+        boundary.validate_history_refusal(terminal, 2 * 1024**2)
+        self.assertEqual(terminal["error"], error)
+        self.assertFalse(terminal["generationAccounting"]["complete"])
+        for mode in ("original-cleanup-failure", "metadata-failure", "active", "missing-active", "missing-accounting", "wrong-total", "false-complete",
+                     "wrong-closed-count", "unjoined", "unclosed-generation", "missing-exit", "duplicate", "pending", "inflight",
+                     "unclosed-handle", "unpublished", "lost-fatal-error", "natural", "timeout", "unrefused-bound", "oversized-report"):
+            changed = copy.deepcopy(terminal)
+            if mode == "original-cleanup-failure":
+                changed.update(handlesClosed=False, cleanupError=error)
+                changed.pop("activeProcessesAfterCleanup")
+                changed.pop("generationAccounting")
+            elif mode == "metadata-failure":
+                changed["cleanupError"] = "Acquired owned process metadata could not be observed."
+            elif mode == "missing-active":
+                changed.pop("activeProcessesAfterCleanup")
+            elif mode == "missing-accounting":
+                changed.pop("generationAccounting")
+            elif mode == "wrong-total":
+                changed["generationAccounting"]["totalProcesses"] = 256
+            elif mode == "wrong-closed-count":
+                changed["generationAccounting"]["closedGenerations"] = 256
+            elif mode == "false-complete":
+                changed["generationAccounting"]["complete"] = True
+            elif mode == "unclosed-generation":
+                changed["members"]["1"][0]["handleClosed"] = False
+            elif mode == "missing-exit":
+                changed["members"]["1"][0]["exitFileTime"] = 0
+            elif mode == "duplicate":
+                changed["members"]["2"] = copy.deepcopy(changed["members"]["1"])
+            elif mode in ("pending", "inflight", "unclosed-handle", "unpublished"):
+                changed["processAcquisition"][{"pending": "pending", "inflight": "metadataInFlight",
+                                               "unclosed-handle": "physicalHandles", "unpublished": "unpublishedByteBound"}[mode]] = 1
+            else:
+                key, value = {"active": ("activeProcessesAfterCleanup", 1), "unjoined": ("notificationReaderJoined", False),
+                              "lost-fatal-error": ("error", ""), "natural": ("naturalRelease", True), "timeout": ("timedOut", True),
+                              "unrefused-bound": ("memberHistorySerializedByteBound", 3 * 1024**2),
+                              "oversized-report": ("report_bytes", 4 * 1024**2 + 1)}[mode]
+                changed[key] = value
+            with self.subTest(mode=mode), self.assertRaises(ValueError):
+                boundary.validate_history_refusal(changed, changed.get("report_bytes", 2 * 1024**2))
+
     def test_independent_immediate_oracle_observes_image_before_resume_and_preserves_same_handle_birth(self):
         source = Path(__file__).resolve().parent.parent / "performance/windows-process-history.py"
         spec = importlib.util.spec_from_file_location("immediate_oracle", source)
