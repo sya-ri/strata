@@ -27,6 +27,7 @@ internal class DirtyPhasePipelineTest {
             val leafDescription = probe.element(TestProbe.ProbeId("leaf"))
             val root = RetainedNode(rootDescription, probe.create(rootDescription), null)
             val leaf = RetainedNode(leafDescription, probe.create(leafDescription), root)
+            leaf.parent = root
             root.dirty = DirtyMask.None
             leaf.dirty = DirtyMask.None
             root.paintSubtreeDirty = false
@@ -80,10 +81,10 @@ internal class DirtyPhasePipelineTest {
                         val semantic = layout || DirtyPhase.Semantics in phases
                         val expected = listOf(if (measure) 3 else 0, if (measure) 3 else if (layout) 1 else 0, if (measure) 3 else if (paint) 1 else 0, if (measure) 3 else if (semantic) 1 else 0)
                         val after = listOf(probe.measureCalls, probe.layoutCalls, probe.paintCalls, probe.semanticsCalls)
-                        assertEquals(expected, after.zip(before) { end, start -> end - start })
+                        assertEquals(expected, after.zip(before) { end, start -> end - start }, "Callbacks for mask $bits, monitoring=$monitoring")
                         monitor?.snapshot()?.let { snapshot ->
                             listOf(UiRenderMetric.Measure, UiRenderMetric.Layout, UiRenderMetric.Paint, UiRenderMetric.Semantics).forEachIndexed { index, metric ->
-                                assertEquals(expected[index].toLong(), snapshot.counts[metric])
+                                assertEquals(expected[index].toLong(), snapshot.counts[metric], "$metric for mask $bits")
                             }
                             assertEquals(if (measure) 4L else 0L, snapshot.counts[UiRenderMetric.AncestorInvalidation])
                             assertEquals(if (phases.isEmpty()) 0L else 2L, snapshot.counts[UiRenderMetric.LocalInvalidation])
@@ -99,14 +100,16 @@ internal class DirtyPhasePipelineTest {
                         monitor?.close()
                     }
                     session.detach()
+                    assertEquals(0, probe.events.count { it is TestProbe.Event.Detach })
                     assertEquals(semantics, original.semantics)
                     session.attach()
+                    assertEquals(4, probe.events.count { it is TestProbe.Event.Attach })
                     assertEquals(commands, session.frame(constraints).drawCommands)
                 } finally {
                     session.close()
                 }
                 assertEquals(4, probe.events.count { it is TestProbe.Event.Dispose })
-                assertEquals(8, probe.events.count { it is TestProbe.Event.Detach })
+                assertEquals(4, probe.events.count { it is TestProbe.Event.Detach })
                 assertFailsWith<IllegalStateException> { probe.nodeForTag(leafId).invalidateForTest(mask) }
             }
         }

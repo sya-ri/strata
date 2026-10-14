@@ -13,11 +13,11 @@ import dev.s7a.strata.layout.MeasureScope
 import dev.s7a.strata.node.DirtyMask
 import dev.s7a.strata.node.DirtyPhase
 import dev.s7a.strata.node.LayoutNode
-import dev.s7a.strata.node.LifecycleNode
 import dev.s7a.strata.node.MeasureNode
 import dev.s7a.strata.node.Node
 import dev.s7a.strata.node.PaintNode
 import dev.s7a.strata.node.SemanticsNode
+import dev.s7a.strata.node.SessionAttachmentNode
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.render.ArgbColor
 import dev.s7a.strata.render.PaintScope
@@ -166,6 +166,9 @@ public open class DirtyPhaseFrameBenchmark {
         private var disposed = 0L
         private var attached = 0L
         private var detached = 0L
+        private var activeAttachments = 0
+        private var attachmentStarts = 0L
+        private var attachmentEnds = 0L
         private lateinit var session: RuntimeUiSession
         private var mask = DirtyMask.None
 
@@ -184,6 +187,7 @@ public open class DirtyPhaseFrameBenchmark {
             session.attach()
             verifyPresentation(session.frame(constraints))
             check(nodes.size == leaves + depth + 1)
+            check(activeAttachments == nodes.size)
         }
 
         /**
@@ -191,10 +195,22 @@ public open class DirtyPhaseFrameBenchmark {
          */
         public fun nextFrame(): RuntimeUiFrame {
             when (operation) {
-                Operation.Clean -> Unit
-                Operation.None -> checkNotNull(nodes[0]).dirty(DirtyMask.None)
-                Operation.Constraint -> wider = wider.not()
-                Operation.Structure -> alternate.value = alternate.value.not()
+                Operation.Clean -> {
+                    Unit
+                }
+
+                Operation.None -> {
+                    checkNotNull(nodes[0]).dirty(DirtyMask.None)
+                }
+
+                Operation.Constraint -> {
+                    wider = wider.not()
+                }
+
+                Operation.Structure -> {
+                    alternate.value = alternate.value.not()
+                }
+
                 else -> {
                     val count = if (operation.allLeaves) leaves else 1
                     for (index in 0 until count) checkNotNull(nodes[index]).dirty(mask)
@@ -218,18 +234,7 @@ public open class DirtyPhaseFrameBenchmark {
                     val before = calls.copyOf()
                     val beforeDisposed = disposed
                     val frame = nextFrame()
-                    val ancestors = depth + 1L
-                    val targets = if (operation.allLeaves) leaves.toLong() else 1L
-                    val all = leaves + ancestors
-                    val expected =
-                        when (operation) {
-                            Operation.Clean, Operation.None -> longArrayOf(0, 0, 0, 0)
-                            Operation.Constraint, Operation.Structure -> longArrayOf(all, all, all, all)
-                            Operation.MeasureFirst, Operation.MeasureAll -> longArrayOf(targets + ancestors, targets + ancestors, targets + ancestors, targets + ancestors)
-                            Operation.LayoutFirst, Operation.LayoutAll -> longArrayOf(0, targets, targets, targets)
-                            Operation.PaintFirst, Operation.PaintAll -> longArrayOf(0, 0, targets, 0)
-                            Operation.SemanticsFirst, Operation.SemanticsAll -> longArrayOf(0, 0, 0, targets)
-                        }
+                    val expected = expectedCalls()
                     check(calls.indices.all { calls[it] - before[it] == expected[it] }) {
                         "Unexpected $operation/$leaves/$depth callbacks: ${calls.indices.map { calls[it] - before[it] }} versus ${expected.toList()}"
                     }
@@ -250,8 +255,10 @@ public open class DirtyPhaseFrameBenchmark {
                 monitor?.close()
             }
             session.detach()
-            check(detached == attached)
+            check(activeAttachments == 0 && attachmentEnds == attachmentStarts)
+            check(detached == disposed)
             session.attach()
+            check(activeAttachments == nodes.size)
             verifyPresentation(session.frame(currentConstraints))
             check(original.drawCommands == oldCommands && original.semantics == oldSemantics)
         }
@@ -267,40 +274,60 @@ public open class DirtyPhaseFrameBenchmark {
             checkNotNull(nodes[0]).failure = phase to failure
             checkNotNull(nodes[0]).dirty(DirtyMask.All)
             check(runCatching { session.frame(currentConstraints) }.exceptionOrNull() === failure)
-            check(nodes.isEmpty() && detached == attached)
+            check(nodes.isEmpty() && detached == attached && activeAttachments == 0 && attachmentEnds == attachmentStarts)
             check(original.drawCommands == commands && original.semantics == semantics)
         }
 
         private fun description(replacement: Boolean): Element {
-            var current: Element = ProbeElement(this, -1, List(leaves) { ProbeElement(this, it, emptyList(), replacement) })
-            repeat(depth) { current = ProbeElement(this, -it - 2, listOf(current)) }
+            var current: Element = ProbeElement(this, -1, Role.Grid, List(leaves) { ProbeElement(this, it, Role.Leaf, emptyList(), replacement) })
+            repeat(depth) { current = ProbeElement(this, -it - 2, Role.Wrapper, listOf(current)) }
             return current
         }
 
+        private fun expectedCalls(): LongArray {
+            val ancestors = depth + 1L
+            val targets = if (operation.allLeaves) leaves.toLong() else 1L
+            val all = leaves + ancestors
+            return when (operation) {
+                Operation.Clean, Operation.None -> longArrayOf(0, 0, 0, 0)
+                Operation.Constraint, Operation.Structure -> longArrayOf(all, all, all, all)
+                Operation.MeasureFirst, Operation.MeasureAll -> longArrayOf(targets + ancestors, targets + ancestors, targets + ancestors, targets + ancestors)
+                Operation.LayoutFirst, Operation.LayoutAll -> longArrayOf(0, targets, targets, targets)
+                Operation.PaintFirst, Operation.PaintAll -> longArrayOf(0, 0, targets, 0)
+                Operation.SemanticsFirst, Operation.SemanticsAll -> longArrayOf(0, 0, 0, targets)
+            }
+        }
+
         private fun verifyPresentation(frame: RuntimeUiFrame) {
-            val ids = (-depth - 1..-1).toList() + (0 until leaves)
+            val ids = (-depth - 1..-1).map { it to Role.Wrapper } + (0 until leaves).map { it to Role.Leaf }
             check(frame.size == IntSize(if (wider) 33 else 32, 32))
-            val expectedCommands = ids.map { id -> DrawCommand.FillRectangle(bounds(id), color(id)) }
-            val expectedSemantics = ids.map { id -> SemanticsEntry(bounds(id), Semantics(label = UiText.Literal(id.toString()))) }
+            val expectedCommands = ids.map { (id, role) -> DrawCommand.FillRectangle(bounds(id, role), color(id, role)) }
+            val expectedSemantics = ids.map { (id, role) -> SemanticsEntry(bounds(id, role), Semantics(label = UiText.Literal(id.toString()))) }
             check(frame.drawCommands == expectedCommands && frame.semantics == expectedSemantics)
             val image = rasterizeHeadless(frame.drawCommands, frame.size)
             for (y in 0 until 32) {
                 for (x in 0 until frame.size.width) {
                     val id = y * 32 + x
-                    val expected = if (x < 32 && id < leaves) color(id).value else color(-1).value
+                    val expected = if (x < 32 && id < leaves) color(id, Role.Leaf).value else color(-1, Role.Grid).value
                     check(image.argbAt(x, y) == expected)
                 }
             }
         }
 
-        private fun bounds(id: Int): IntRect =
-            if (id < 0) {
+        private fun bounds(
+            id: Int,
+            role: Role,
+        ): IntRect =
+            if (role != Role.Leaf) {
                 IntRect(0, 0, if (id == -depth - 1 && wider) 33 else 32, 32)
             } else {
                 IntRect(id % 32, id / 32, id % 32 + 1, id / 32 + 1)
             }
 
-        private fun color(id: Int): ArgbColor = ArgbColor(if (id < 0) 0xFF112233.toInt() else 0xFF000000.toInt() or (id * 7919 and 0x00FFFFFF))
+        private fun color(
+            id: Int,
+            role: Role,
+        ): ArgbColor = ArgbColor(if (role == Role.Leaf) 0xFF000000.toInt() or (id * 7919 and 0x00FFFFFF) else 0xFF112233.toInt())
 
         /**
          * Naturally releases every current node and rejects any dangling runtime binding.
@@ -309,7 +336,7 @@ public open class DirtyPhaseFrameBenchmark {
         public fun close() {
             val current = nodes.values.toList()
             session.close()
-            check(nodes.isEmpty() && detached == attached)
+            check(nodes.isEmpty() && detached == attached && activeAttachments == 0 && attachmentEnds == attachmentStarts)
             check(current.all { runCatching { it.dirty(DirtyMask.None) }.exceptionOrNull() is IllegalStateException })
         }
 
@@ -319,8 +346,15 @@ public open class DirtyPhaseFrameBenchmark {
         private class ProbeNode(
             private val scene: Scene,
             private val id: Int,
-        ) : Node(), MeasureNode, LayoutNode, PaintNode, SemanticsNode, LifecycleNode {
+            private val role: Role,
+        ) : Node(),
+            MeasureNode,
+            LayoutNode,
+            PaintNode,
+            SemanticsNode,
+            SessionAttachmentNode {
             var failure: Pair<DirtyPhase, Throwable>? = null
+            private var attachmentActive = false
 
             override fun measure(
                 scope: MeasureScope,
@@ -330,19 +364,19 @@ public open class DirtyPhaseFrameBenchmark {
                 fail(DirtyPhase.Measure)
                 val childConstraints = Constraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
                 for (index in 0 until scope.childCount) scope.measureChild(index, childConstraints)
-                return constraints.constrain(if (id < 0) IntSize(32, 32) else IntSize(1, 1))
+                return constraints.constrain(if (role == Role.Leaf) IntSize(1, 1) else IntSize(32, 32))
             }
 
             override fun layout(scope: LayoutScope) {
                 scene.calls[1] += 1
                 fail(DirtyPhase.Layout)
-                for (index in 0 until scope.childCount) scope.placeChild(index, if (id == -1) IntOffset(index % 32, index / 32) else IntOffset.Zero)
+                for (index in 0 until scope.childCount) scope.placeChild(index, if (role == Role.Grid) IntOffset(index % 32, index / 32) else IntOffset.Zero)
             }
 
             override fun paint(scope: PaintScope) {
                 scene.calls[2] += 1
                 fail(DirtyPhase.Paint)
-                scope.fillRectangle(IntRect(0, 0, scope.size.width, scope.size.height), scene.color(id))
+                scope.fillRectangle(IntRect(0, 0, scope.size.width, scope.size.height), scene.color(id, role))
             }
 
             override fun semantics(scope: SemanticsScope) {
@@ -353,10 +387,28 @@ public open class DirtyPhaseFrameBenchmark {
 
             override fun attach() {
                 scene.attached += 1
+                sessionAttached()
             }
 
             override fun detach() {
                 scene.detached += 1
+                sessionDetached()
+            }
+
+            override fun sessionAttached() {
+                if (attachmentActive.not()) {
+                    attachmentActive = true
+                    scene.activeAttachments += 1
+                    scene.attachmentStarts += 1
+                }
+            }
+
+            override fun sessionDetached() {
+                if (attachmentActive) {
+                    attachmentActive = false
+                    scene.activeAttachments -= 1
+                    scene.attachmentEnds += 1
+                }
             }
 
             override fun dispose() {
@@ -380,6 +432,7 @@ public open class DirtyPhaseFrameBenchmark {
         private class ProbeElement(
             val scene: Scene,
             val id: Int,
+            val role: Role,
             children: List<Element>,
             replacement: Boolean = false,
         ) : Element(ElementIdentity.Keyed(ElementKey(Key(id, replacement))), TYPE, children) {
@@ -392,7 +445,7 @@ public open class DirtyPhaseFrameBenchmark {
                         elementClass = ProbeElement::class,
                         nodeClass = ProbeNode::class,
                         validateLocal = { _ -> },
-                        createNode = { element -> ProbeNode(element.scene, element.id).also { element.scene.nodes[element.id] = it } },
+                        createNode = { element -> ProbeNode(element.scene, element.id, element.role).also { element.scene.nodes[element.id] = it } },
                         updateNode = { _, _, _ -> DirtyMask.None },
                     )
             }
@@ -405,6 +458,12 @@ public open class DirtyPhaseFrameBenchmark {
             val id: Int,
             val replacement: Boolean,
         )
+
+        private enum class Role {
+            Wrapper,
+            Grid,
+            Leaf,
+        }
     }
 
     /**
@@ -420,18 +479,7 @@ public open class DirtyPhaseFrameBenchmark {
             for (operation in Operation.entries) {
                 for (leaves in listOf(1, 64, 1024)) {
                     for (depth in listOf(0, 3)) {
-                        for (monitoring in listOf(false, true)) {
-                            val scene = Scene()
-                            scene.operation = operation
-                            scene.leaves = leaves
-                            scene.depth = depth
-                            scene.setup()
-                            try {
-                                scene.verifyWork(monitoring)
-                            } finally {
-                                scene.close()
-                            }
-                        }
+                        verifyScene(operation, leaves, depth)
                     }
                 }
             }
@@ -442,6 +490,25 @@ public open class DirtyPhaseFrameBenchmark {
                 scene.setup()
                 try {
                     scene.verifyFailure(phase)
+                } finally {
+                    scene.close()
+                }
+            }
+        }
+
+        private fun verifyScene(
+            operation: Operation,
+            leaves: Int,
+            depth: Int,
+        ) {
+            for (monitoring in listOf(false, true)) {
+                val scene = Scene()
+                scene.operation = operation
+                scene.leaves = leaves
+                scene.depth = depth
+                scene.setup()
+                try {
+                    scene.verifyWork(monitoring)
                 } finally {
                     scene.close()
                 }
