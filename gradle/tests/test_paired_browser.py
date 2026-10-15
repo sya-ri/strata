@@ -3,6 +3,7 @@ import copy
 import importlib.util
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -573,7 +574,7 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertFalse(any(output.rglob("pins.json")))
 
     def test_acquired_toolchain_inputs_require_actual_selected_and_unused_vm_metadata(self):
-        for mode in ("complete", "missing-runtime", "wrong-vendor", "wrong-vm", "unobserved-home", "selected-byte-drift"):
+        for mode in ("complete", "missing-runtime", "wrong-vendor", "wrong-vm", "unobserved-home", "selected-byte-drift", "wrong-runtime-home", "missing-runtime-home"):
             with self.subTest(mode=mode):
                 workspace = self.root / ("acquire-" + mode)
                 directory = workspace / "phases/metadata"
@@ -581,7 +582,7 @@ class PairedBrowserTest(unittest.TestCase):
                 vms = workspace / "vms"
                 vms.mkdir()
                 homes, selected, records, entries = {}, [], [], {}
-                for major in (17, 21, 25):
+                for major in (8, 17, 21, 25):
                     home = workspace / ("jdk-" + str(major))
                     home.joinpath("bin").mkdir(parents=True)
                     home.joinpath("bin/java.exe").write_bytes(b"synthetic Java; never executed")
@@ -589,24 +590,31 @@ class PairedBrowserTest(unittest.TestCase):
                     homes[major] = home
                     entry = {"home": home.as_posix(), "major": major, "tree_sha256": "a" * 64}
                     entries[str(home)] = entry
-                    if major != 21:
+                    runtime_home = home / "jre" if major == 8 else home
+                    runtime_home.mkdir(exist_ok=True)
+                    if major in (17, 25):
                         selected.append({"home": str(home), "major": major, "vendor": "actual Gradle vendor", "runtime_version": str(major) + ".0.1", "jvm_version": str(major) + ".0.1"})
                     xml = vms / (str(major) + ".log")
                     vendor = "different" if mode == "wrong-vendor" and major == 21 else "actual VM vendor"
-                    vm_version = "different" if mode == "wrong-vm" and major == 21 else str(major) + ".0.1"
-                    xml.write_text(f"<hotspot_log><vm_version><release>{vm_version}</release></vm_version><vm_arguments><properties>java.vm.vendor={vendor}\njava.vm.version={vm_version}\n</properties></vm_arguments><hotspot_log_done/></hotspot_log>", encoding="utf-8")
+                    vm_version = "25.504-b01" if major == 8 else "different" if mode == "wrong-vm" and major == 21 else str(major) + ".0.1"
+                    specification = "1.8" if major == 8 else str(major)
+                    xml.write_text(f"<hotspot_log><vm_version><release>{vm_version}</release></vm_version><vm_arguments><properties>java.vm.vendor={vendor}\njava.vm.version={vm_version}\njava.vm.specification.version={specification}\n</properties></vm_arguments><hotspot_log_done/></hotspot_log>", encoding="utf-8")
                     if not (mode == "unobserved-home" and major == 21):
-                        records.append({"home": str(home), "diagnostic_sha256": self.shared.digest(xml)})
+                        records.append({"pid": major, "role": "probe", "home": str(runtime_home), "diagnostic_sha256": self.shared.digest(xml), "os_generation": {"image": str(home / "bin/java.exe")}})
                 metadata = {"schema": 1, "selected": selected, "jvm_only": True, "gradle_version": "9.8.0", "gradle_user_home": str(workspace / "user"),
                             "gradle_installation_home": str(workspace / "gradle"),
                             "daemon": {"home": str(homes[25]), "major": 25, "vm_vendor": "actual VM vendor", "runtime_version": "25.0.1", "jvm_version": "25.0.1"}}
                 self.shared.write_new(directory / "actual-toolchain-metadata.json", metadata)
                 self.shared.write_new(directory / "vms.json", records)
                 console = []
-                for major in (17, 21):
+                for major in (8, 17, 21):
                     if mode == "missing-runtime" and major == 21:
                         continue
-                    console.append(f"Received JVM installation metadata from '{homes[major]}': {{RUNTIME_VERSION={major}.0.1, VM_VERSION={major}.0.1, VM_VENDOR=actual VM vendor}}")
+                    runtime_home = homes[major] / "jre" if major == 8 and mode != "wrong-runtime-home" else homes[major]
+                    home_field = "" if mode == "missing-runtime-home" and major == 8 else f"JAVA_HOME={runtime_home}, "
+                    runtime_version = "1.8.0_504-b01" if major == 8 else str(major) + ".0.1"
+                    vm_version = "25.504-b01" if major == 8 else str(major) + ".0.1"
+                    console.append(f"Received JVM installation metadata from '{homes[major]}': {{{home_field}RUNTIME_VERSION={runtime_version}, VM_VERSION={vm_version}, VM_VENDOR=actual VM vendor, JAVA_VENDOR=actual Java vendor}}")
                 (directory / "console.log").write_text("\n".join(console), encoding="utf-8")
                 validator = Mock()
                 models = SimpleNamespace(JVM=SimpleNamespace(value="jvmOnly"), COMPLETE=SimpleNamespace(value="complete"))
@@ -618,8 +626,13 @@ class PairedBrowserTest(unittest.TestCase):
                     profile = self.shared.read_json(directory / "captured-inputs/profile.json")
                     inventory = self.shared.read_json(directory / "captured-inputs/installations.json")
                     self.assertEqual([item["major"] for item in profile["jdks"]], [17, 25])
-                    self.assertEqual(len(inventory["installations"]), 3)
-                    self.assertTrue(all(set(item) == {"home", "tree_sha256", "java_sha256", "release_sha256", "vm_vendor", "runtime_version", "jvm_version"} for item in inventory["installations"]))
+                    self.assertEqual(len(inventory["installations"]), 4)
+                    self.assertTrue(all(set(item) == {"home", "runtime_home", "tree_sha256", "java_sha256", "release_sha256", "vm_vendor", "runtime_version", "jvm_version"} for item in inventory["installations"]))
+                    legacy = next(item for item in inventory["installations"] if item["home"] == str(homes[8]))
+                    self.assertEqual(legacy["runtime_home"], str(homes[8] / "jre"))
+                    self.assertEqual(legacy["jvm_version"], "25.504-b01")
+                    self.assertEqual(legacy["runtime_version"], "1.8.0_504-b01")
+                    self.browser.verify_source_vm_metadata(self.shared, directory, inventory, {"builds": [{"daemon": metadata["daemon"]}]})
                     self.assertEqual(set(pins), {"profile", "installations"})
                     validator.assert_called_once()
                 else:
@@ -692,7 +705,7 @@ class PairedBrowserTest(unittest.TestCase):
         selections = {"builds": [{"daemon": {"home": str(home), "jvm_version": "17.0.1+4", "runtime_version": "17.0.1+4"}}]}
         def write_vm(text):
             path.write_text(text, encoding="utf-8")
-            (directory / "vms.json").write_text(json.dumps([{"pid": 31, "home": str(home), "role": "worker", "diagnostic_sha256": self.shared.digest(path), "os_generation": {"parentPid": 11, "creationFileTime": 110}}]))
+            (directory / "vms.json").write_text(json.dumps([{"pid": 31, "home": str(home), "role": "worker", "diagnostic_sha256": self.shared.digest(path), "os_generation": {"parentPid": 11, "creationFileTime": 110, "image": str(home / "bin/java.exe")}}]))
         write_vm(xml)
         self.browser.verify_source_vm_metadata(self.shared, directory, binding, selections)
         self.assertEqual(self.shared.read_json(directory / "vm-metadata-verified.json")[0]["runtime_metadata"]["authority"], "verified_actual_daemon_receipt")
@@ -1187,7 +1200,7 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertEqual(daemon_metaspace_mib, 384 if controlled else 1024)
                 if controlled:
                     directory = args[0]
-                    self.shared.write_new(directory / "vms.json", [{"pid": 31, "home": str(homes["launcher"]), "role": "daemon", "diagnostic_sha256": self.shared.digest(args[1][0])}])
+                    self.shared.write_new(directory / "vms.json", [{"pid": 31, "home": str(homes["launcher"]), "role": "daemon", "diagnostic_sha256": self.shared.digest(args[1][0]), "os_generation": {"image": str(homes["launcher"] / "bin/java.exe")}}])
             api.verify_vms = verify_vms
             api.preserve_test_reports = lambda *args: None
             api.verify_test_gate = lambda directory, gate: self.shared.write_new(directory / "junit-verified.json", {"counts": {"skipped": int(failure == "gate-" + directory.name)}})
@@ -1401,6 +1414,10 @@ class PairedBrowserTest(unittest.TestCase):
                         self.assertFalse(any(name.startswith("workspaces/") for name in archive.namelist()))
             if acquiring:
                 self.assertEqual(calls, [] if failure == "capture-init-before" else ["toolchain-input-acquisition"])
+                if failure in ("capture-inputs", "capture-known-java-changed"):
+                    images = self.shared.read_json(output / "phases/toolchain-input-acquisition/observed-java-images.json")
+                    self.assertEqual(set(images), {os.path.normcase(str(homes["launcher"] / "bin/java.exe"))})
+                    self.assertTrue(all(re.fullmatch(r"[0-9a-f]{64}", value) for value in images.values()))
                 self.assertFalse((output / "prepared-pins.json").exists())
                 self.assertFalse((output / "report.md").exists())
                 self.assertNotIn("completed_source_invocations", record)

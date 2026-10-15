@@ -2074,6 +2074,76 @@ class PairedJvmTest(unittest.TestCase):
                             PAIRED.verify_vms(directory, logs, terminal, allowed, 0, require_all_java_generations=True)
                     self.assertFalse((directory / "vms.json").exists())
 
+    def test_owned_java8_runtime_uses_the_pinned_held_launcher_and_preserves_origin_guards(self):
+        for role, main, heap, metaspace in (("probe", "JavaProbe", 32, 256), ("wrapper", "org.gradle.wrapper.GradleWrapperMain", 64, 256),
+                                             ("worker", "worker.org.gradle.process.internal.worker.GradleWorkerMain", 512, 256),
+                                             ("java_exec", "fixture.Collector", 768, 384), ("fork", "org.openjdk.jmh.runner.ForkedMain", 768, 384)):
+            for mode in ("complete", "unknown-image", "changed-bytes", "missing-image", "wrong-home", "wrong-spec", "missing-spec", "duplicate-spec",
+                         "wrong-origin", "wrong-classpath", "wrong-birth", "unclosed", "wrong-affinity", "truncated"):
+                with self.subTest(role=role, mode=mode):
+                    directory = self.root / (role + "-" + mode)
+                    home = directory / "jdk"
+                    executable = home / "bin/java.exe"
+                    executable.parent.mkdir(parents=True)
+                    executable.write_bytes(b"pinned root launcher; never executed")
+                    runtime_home = home / "jre"
+                    (runtime_home / "bin").mkdir(parents=True)
+                    (runtime_home / "bin/java.exe").write_bytes(b"different nested launcher; never selected")
+                    allowed = {os.path.normcase(str(executable)): PAIRED.digest(executable)}
+                    birth = 116444736000000000 + 1000 * 10000
+                    member = {"pid": 123, "creationFileTime": birth, "exitFileTime": birth + 500 * 10000,
+                              "image": str(executable), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                              "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                    terminal = {"members": {"123": [member]}, "naturalRelease": True, "handlesClosed": True,
+                                "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                                "nativeInvoked": True, "notificationReaderJoined": True, "totalProcesses": 1,
+                                "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                                         "totalProcesses": 1, "capturedGenerations": 1, "closedGenerations": 1}}
+                    origin = {"main": main, "executable": str(executable), "classpath": "frozen.jar"}
+                    if mode == "wrong-origin":
+                        origin["executable"] = str(runtime_home / "bin/java.exe")
+                    elif mode == "wrong-classpath":
+                        origin["classpath"] = "other.jar"
+                    (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                    classes = directory / "class-loads"
+                    classes.mkdir()
+                    if role == "fork":
+                        (classes / "classes-123-1970-01-01_00-00-01.log").write_text("[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                    specification = "" if mode == "missing-spec" else "java.vm.specification.version=" + ("17" if mode == "wrong-spec" else "1.8") + "\n"
+                    if mode == "duplicate-spec":
+                        specification *= 2
+                    if mode == "wrong-home":
+                        runtime_home = directory / "unrelated/jre"
+                    log = directory / "vm.log"
+                    document = (f"<hotspot_log process='123' time_ms='1001'><vm_arguments><command>{main}</command>\n"
+                                f"java.home={runtime_home}\njava.class.path=frozen.jar\n{specification}</vm_arguments>\n"
+                                f"-XX:MaxHeapSize={heap * 1024**2} -XX:MaxMetaspaceSize={metaspace * 1024**2}\n"
+                                + ("" if mode == "truncated" else "<hotspot_log_done/></hotspot_log>\n"))
+                    log.write_text(document, encoding="utf-8")
+                    if mode == "unknown-image":
+                        allowed.clear()
+                    elif mode == "changed-bytes":
+                        executable.write_bytes(b"changed root launcher")
+                    elif mode == "missing-image":
+                        executable.unlink()
+                    elif mode == "wrong-birth":
+                        member["creationFileTime"] += 5000 * 10000
+                    elif mode == "unclosed":
+                        member["handleClosed"] = False
+                    elif mode == "wrong-affinity":
+                        member["affinityMask"] = 3
+                    if mode == "complete" or mode in ("wrong-origin", "wrong-classpath") and role != "java_exec":
+                        PAIRED.verify_vms(directory, [log], terminal, allowed, int(role == "fork"), require_all_java_generations=True)
+                        record = PAIRED.read_json(directory / "vms.json")[0]
+                        self.assertEqual(record["home"], str(runtime_home))
+                        self.assertEqual(record["executable"], str(executable))
+                        self.assertEqual(record["vm_specification_versions"], ["1.8"])
+                        self.assertEqual(record["os_generation"], member)
+                    else:
+                        with self.assertRaises((ValueError, FileNotFoundError)):
+                            PAIRED.verify_vms(directory, [log], terminal, allowed, int(role == "fork"), require_all_java_generations=True)
+                        self.assertFalse((directory / "vms.json").exists())
+
     def test_source_sized_vm_diagnostic_retains_all_bytes_without_weakening_terminal_or_caps(self):
         for mode in ("complete", "default-bound", "explicit-overflow", "truncated", "duplicate-header", "changed-cap"):
             with self.subTest(mode=mode):

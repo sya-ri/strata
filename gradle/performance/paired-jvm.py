@@ -657,9 +657,9 @@ def unique_class_diagnostic(candidates, pid, vm_diagnostic, vm_files, terminal, 
     member = owned_generation(terminal, pid, int(starts[0]), unique_invocation_pid=unique_invocation_pid and same_pid == 1)
     if helpers:
         homes = re.findall(r"(?m)^java\.home=([^\r\n]+)", raw)
-        require(len(homes) == 1 and member in java
-                and os.path.normcase(member["image"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe"))),
-                "Unique JVM and actual Java generation disagree")
+        require(len(homes) == 1 and member in java, "Unique JVM and actual Java generation disagree")
+        java_installation_home(member["image"], html.unescape(homes[0]),
+                               re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", raw))
         for helper in helpers:
             require(Path(helper["image"]).is_absolute() and helper["inOwnedJob"] is True and helper["completed"] is True
                     and helper["handleClosed"] is True and helper["exitCode"] == 0
@@ -744,6 +744,21 @@ def independent_class_file(directory, phase_directory, result, vm):
     return matches[0] if matches else None
 
 
+def java_installation_home(executable, runtime_home, specification_versions=()):
+    """Bind a held launcher image to its runtime; Java 8 JDK tools use the nested jre home."""
+    executable, runtime_home = Path(executable), Path(runtime_home)
+    home = executable.parent.parent
+    require(executable.is_absolute() and runtime_home.is_absolute()
+            and ".." not in executable.parts and ".." not in runtime_home.parts
+            and executable.name.lower() == "java.exe" and executable.parent.name.lower() == "bin",
+            "Invalid actual Java launcher path")
+    require(os.path.normcase(str(runtime_home)) == os.path.normcase(str(home))
+            or list(specification_versions) == ["1.8"]
+            and os.path.normcase(str(runtime_home)) == os.path.normcase(str(home / "jre")),
+            "Java runtime home differs from its actual launcher installation")
+    return home
+
+
 def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
@@ -803,8 +818,6 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         elif main == "org.openjdk.jmh.runner.ForkedMain":
             role = "fork"
         else:
-            require(any(origin["main"] == main and os.path.normcase(origin["executable"]) == os.path.normcase(str(Path(html.unescape(homes[0]), "bin/java.exe")))
-                        and origin["classpath"] == html.unescape(classpaths[0]) for origin in origins), "Unbound actual JavaExec origin")
             role = "java_exec"
         caps = {}
         for name, cap in zip(("MaxHeapSize", "MaxMetaspaceSize"), profiles[role]):
@@ -812,11 +825,19 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
             require(len(flags) == 1 and int(flags[0]) == cap * 1024**2, f"Changed or unavailable actual finite VM cap: {role}/{name}")
             caps[name] = int(flags[0])
         pid, vm_start = map(int, headers[0])
+        specifications = re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", blocks[0])
         actual_executable = Path(html.unescape(homes[0]), "bin/java.exe")
+        if require_all_java_generations or role == "fork":
+            member = owned_generation(terminal, pid, vm_start, unique_invocation_pid=require_all_java_generations and pid_log_counts[pid] == 1)
+            actual_executable = Path(member["image"])
+            java_installation_home(actual_executable, html.unescape(homes[0]), specifications)
         require(os.path.normcase(str(actual_executable)) in allowed and digest(actual_executable) == allowed[os.path.normcase(str(actual_executable))], "Unknown or changed Java executable")
-        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
+        if role == "java_exec":
+            require(any(origin["main"] == main and os.path.normcase(origin["executable"]) == os.path.normcase(str(actual_executable))
+                        and origin["classpath"] == html.unescape(classpaths[0]) for origin in origins), "Unbound actual JavaExec origin")
+        evidence = {"pid": pid, "vm_start_ms": vm_start, "role": role, "command": command, "caps": caps, "classpath": html.unescape(classpaths[0]), "home": html.unescape(homes[0]), "executable": str(actual_executable), "diagnostic_sha256": digest(path), "diagnostic_bytes": diagnostic_bytes, "diagnostic_byte_bound": maximum_diagnostic_bytes}
+        evidence["vm_specification_versions"] = specifications
         if require_all_java_generations:
-            member = owned_generation(terminal, pid, vm_start, unique_invocation_pid=pid_log_counts[pid] == 1)
             require(os.path.normcase(member["image"]) == os.path.normcase(str(actual_executable))
                     and member["affinityMask"] == terminal["inheritedAffinityMask"]
                     and member["systemAffinityMask"] == terminal["systemAffinityMask"], "Java diagnostic generation changed image or affinity")
@@ -1090,7 +1111,9 @@ def verify_preflight(directory, phase_directory, terminal, expected_request_sha2
                     and member["inOwnedJob"] is True and member["completed"] is True and member["exitCode"] == 0
                     and member["affinityMask"] == terminal["inheritedAffinityMask"] and member["systemAffinityMask"] == terminal["systemAffinityMask"],
                     "Preflight observation lacks naturally released owning JVM proof")
-            require(os.path.normcase(member["image"]) == os.path.normcase(str(Path(vm["home"], "bin/java.exe"))), "Control loaded origin and OS executable disagree")
+            require(os.path.normcase(member["image"]) == os.path.normcase(vm.get("executable", str(Path(vm["home"], "bin/java.exe")))), "Control loaded origin and OS executable disagree")
+            if "executable" in vm:
+                java_installation_home(member["image"], vm["home"], vm["vm_specification_versions"])
             birth_ms = (member["creationFileTime"] - 116444736000000000) // 10000
             require(0 <= vm["vm_start_ms"] - birth_ms <= 2000, "Control OS generation and diagnostic disagree")
             pattern = r"(?m)^\s*\[" + str(pid) + r"\]\[info *\]\[class,load *\]\s+" + re.escape(name) + r" source: ([^\r\n]+)"

@@ -285,24 +285,27 @@ def capture_source_toolchain_inputs(shared, tools, workspace, directory, environ
                "gradle_installation_home": distribution.as_posix(), "inherited_properties": inherited,
                "inherited_environment": inherited_environment,
                "daemon_criteria": {"sha256": shared.digest(criteria), "properties": tools.properties(criteria)} if criteria.exists() else None}
-    authorities = {os.path.normcase(str(Path(metadata["daemon"]["home"]))): {key: metadata["daemon"][key] for key in ("runtime_version", "jvm_version", "vm_vendor")}}
+    authorities = {os.path.normcase(str(Path(metadata["daemon"]["home"]))): dict(runtime_home=metadata["daemon"]["home"], **{key: metadata["daemon"][key] for key in ("runtime_version", "jvm_version", "vm_vendor")})}
     console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
     for home, payload in re.findall(r"Received JVM installation metadata from '([^']+)': \{([^}\r\n]+)\}", console):
         pairs = [item.partition("=") for item in payload.split(", ")]
         shared.require(all(separator and key for key, separator, value in pairs) and len({key for key, _, _ in pairs}) == len(pairs), "Malformed acquired installation metadata")
         values = {key: value for key, _, value in pairs}
-        shared.require(all(key in values for key in ("RUNTIME_VERSION", "VM_VERSION", "VM_VENDOR")), "Acquired runtime metadata is incomplete")
-        authorities[os.path.normcase(str(Path(home)))] = {"runtime_version": values["RUNTIME_VERSION"], "jvm_version": values["VM_VERSION"], "vm_vendor": values["VM_VENDOR"]}
+        shared.require(all(key in values for key in ("JAVA_HOME", "RUNTIME_VERSION", "VM_VERSION", "VM_VENDOR")), "Acquired runtime metadata is incomplete")
+        authorities[os.path.normcase(str(Path(home)))] = {"runtime_home": values["JAVA_HOME"], "runtime_version": values["RUNTIME_VERSION"], "jvm_version": values["VM_VERSION"], "vm_vendor": values["VM_VENDOR"]}
     diagnostics = {shared.digest(path): path for path in (directory.parent.parent / "vms").glob("*.log")}
     inventory = {}
     for vm in shared.read_json(directory / "vms.json"):
-        home = tools.absolute_home(vm["home"])
-        key = os.path.normcase(str(home))
-        shared.require(key in authorities, "Acquired physical VM lacks fresh same-home runtime authority")
         xml = ElementTree.parse(diagnostics[vm["diagnostic_sha256"]]).getroot()
-        properties = dict(line.partition("=")[::2] for line in xml.findtext("vm_arguments/properties", "").splitlines() if "=" in line)
+        text = xml.findtext("vm_arguments/properties", "")
+        properties = dict(line.partition("=")[::2] for line in text.splitlines() if "=" in line)
+        home = tools.absolute_home(str(shared.java_installation_home(vm["os_generation"]["image"], vm["home"],
+                                        re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", text))))
+        key = os.path.normcase(str(home))
+        shared.require(key in authorities, "Acquired physical VM lacks fresh same-installation runtime authority")
         actual = authorities[key]
-        shared.require(properties.get("java.vm.vendor") == actual["vm_vendor"]
+        shared.require(os.path.normcase(str(Path(vm["home"]))) == os.path.normcase(str(Path(actual["runtime_home"])))
+                       and properties.get("java.vm.vendor") == actual["vm_vendor"]
                        and properties.get("java.vm.version") == xml.findtext("vm_version/release", "").strip() == actual["jvm_version"], "Acquired actual VM metadata disagrees")
         release = home / "release"
         entry = {"home": str(home), "tree_sha256": tools.installation_tree_digest(home), "java_sha256": shared.digest(home / "bin/java.exe"),
@@ -337,11 +340,13 @@ def controlled_source_inputs(shared, input_root, fixture, specification):
                    and isinstance(inventory["installations"], list) and 0 < len(inventory["installations"]) <= 32, "Invalid finite observed installation inventory")
     homes = set()
     for item in inventory["installations"]:
-        shared.require(set(item) == {"home", "tree_sha256", "java_sha256", "release_sha256", "vm_vendor", "jvm_version", "runtime_version"}
+        shared.require(set(item) - {"runtime_home"} == {"home", "tree_sha256", "java_sha256", "release_sha256", "vm_vendor", "jvm_version", "runtime_version"}
                        and all(isinstance(item[key], str) and re.fullmatch(r"[0-9a-f]{64}", item[key]) for key in ("tree_sha256", "java_sha256"))
                        and (item["release_sha256"] is None or isinstance(item["release_sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", item["release_sha256"]))
                        and all(isinstance(item[key], str) and item[key].strip() for key in ("vm_vendor", "jvm_version", "runtime_version")), "Pin complete observed bytes and independently observed VM metadata")
         home = os.path.normcase(str(tools.absolute_home(item["home"])))
+        runtime_home = os.path.normcase(str(tools.absolute_home(item.get("runtime_home", item["home"]))))
+        shared.require(runtime_home in (home, os.path.normcase(str(Path(item["home"]) / "jre"))), "Invalid pinned runtime home")
         shared.require(home not in homes, "Duplicate observed Java installation")
         homes.add(home)
     shared.require({os.path.normcase(str(Path(item["home"]))) for item in profile["jdks"]} <= homes, "Selected homes are absent from the observed discovery inventory")
@@ -385,28 +390,32 @@ def verify_source_vm_metadata(shared, directory, binding, selections):
     runtime = {}
     for build in selections["builds"]:
         daemon = build["daemon"]
-        runtime[os.path.normcase(str(Path(daemon["home"])))] = {"runtime_version": daemon["runtime_version"], "jvm_version": daemon["jvm_version"], "authority": "verified_actual_daemon_receipt"}
+        runtime[os.path.normcase(str(Path(daemon["home"])))] = {"runtime_home": daemon["home"], "runtime_version": daemon["runtime_version"], "jvm_version": daemon["jvm_version"], "authority": "verified_actual_daemon_receipt"}
     console = (directory / "console.log").read_text(encoding="utf-8-sig", errors="replace")
     for home, payload in re.findall(r"Received JVM installation metadata from '([^']+)': \{([^}\r\n]+)\}", console):
         pairs = [item.partition("=") for item in payload.split(", ")]
         shared.require(all(separator and key for key, separator, value in pairs) and len({key for key, _, _ in pairs}) == len(pairs), "Malformed actual installation metadata")
         values = {key: value for key, _, value in pairs}
         key = os.path.normcase(str(Path(home)))
-        shared.require(key in expected and all(name in values for name in ("RUNTIME_VERSION", "VM_VERSION", "VM_VENDOR", "JAVA_VENDOR")), "Unknown or incomplete actual installation metadata")
+        shared.require(key in expected and all(name in values for name in ("JAVA_HOME", "RUNTIME_VERSION", "VM_VERSION", "VM_VENDOR", "JAVA_VENDOR")), "Unknown or incomplete actual installation metadata")
         shared.require(values["VM_VENDOR"] == expected[key]["vm_vendor"], "Actual metadata vendor changed")
-        runtime[key] = {"runtime_version": values["RUNTIME_VERSION"], "jvm_version": values["VM_VERSION"], "java_vendor": values["JAVA_VENDOR"], "authority": "fresh_Gradle_metadata_diagnostic"}
+        runtime[key] = {"runtime_home": values["JAVA_HOME"], "runtime_version": values["RUNTIME_VERSION"], "jvm_version": values["VM_VERSION"], "java_vendor": values["JAVA_VENDOR"], "authority": "fresh_Gradle_metadata_diagnostic"}
     diagnostics = {shared.digest(path): path for path in (directory.parent.parent / "vms").glob("*.log")}
     records = []
     for vm in shared.read_json(directory / "vms.json"):
-        key = os.path.normcase(str(Path(vm["home"])))
+        xml = ElementTree.parse(diagnostics[vm["diagnostic_sha256"]]).getroot()
+        text = xml.findtext("vm_arguments/properties", "")
+        key = os.path.normcase(str(shared.java_installation_home(vm["os_generation"]["image"], vm["home"],
+                                 re.findall(r"(?m)^java\.vm\.specification\.version=([^\r\n]+)", text))))
         shared.require(key in expected and key in runtime, "Actual physical VM runtime metadata is unavailable")
         item, actual = expected[key], runtime[key]
-        xml = ElementTree.parse(diagnostics[vm["diagnostic_sha256"]]).getroot()
-        properties = dict(line.partition("=")[::2] for line in xml.findtext("vm_arguments/properties", "").splitlines() if "=" in line)
-        shared.require(properties.get("java.vm.vendor") == item["vm_vendor"]
+        properties = dict(line.partition("=")[::2] for line in text.splitlines() if "=" in line)
+        shared.require(os.path.normcase(str(Path(vm["home"]))) == os.path.normcase(str(Path(actual["runtime_home"])))
+                       == os.path.normcase(str(Path(item.get("runtime_home", item["home"]))))
+                       and properties.get("java.vm.vendor") == item["vm_vendor"]
                        and properties.get("java.vm.version") == xml.findtext("vm_version/release", "").strip() == item["jvm_version"]
                        and actual["jvm_version"] == item["jvm_version"] and actual["runtime_version"] == item["runtime_version"], "Actual physical VM vendor/runtime/JVM identity changed")
-        records.append({"pid": vm["pid"], "home": vm["home"], "role": vm["role"], "vm_vendor": properties["java.vm.vendor"],
+        records.append({"pid": vm["pid"], "home": vm["home"], "installation_home": item["home"], "role": vm["role"], "vm_vendor": properties["java.vm.vendor"],
                         "jvm_version": properties["java.vm.version"], "runtime_metadata": actual, "diagnostic_sha256": vm["diagnostic_sha256"]})
     shared.write_new(directory / "vm-metadata-verified.json", records)
 
@@ -720,6 +729,7 @@ def run(shared, root, selection, output):
                     images = {member["image"] for histories in terminal["members"].values() for member in histories if Path(member["image"]).name.lower() in ("java.exe", "javaw.exe")}
                     shared.require(0 < len(images) <= 32, "Missing or oversized acquired Java image inventory")
                     observed_java = {os.path.normcase(image): shared.digest(Path(image)) for image in images}
+                    shared.write_new(directory / "observed-java-images.json", observed_java)
                     shared.require(all(observed_java[path] == expected for path, expected in allowed_java.items() if path in observed_java),
                                    "Known pinned Java bytes changed during input acquisition")
                     allowed_java = observed_java
