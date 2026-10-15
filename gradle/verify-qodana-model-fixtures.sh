@@ -521,6 +521,21 @@ validate(model_path)
 original_inventory = (root / "build/qodana/declarations.json").read_bytes()
 # Reject omissions independently of agreement between the generated and imported views.
 original_docs_iml = docs_iml_path.read_bytes()
+# PROVIDED dependencies remain available when the exported auxiliary TEST sources run.
+provided_model = copy.deepcopy(model)
+provided_docs = next(module for module in provided_model["modules"] if module["name"] == "docs")
+provided_generated = ET.fromstring(original_docs_iml.decode())
+provided_manager = provided_generated.find("component")
+provided_dependencies = provided_manager.findall("orderEntry[@type='module-library']")
+provided_dependencies[0].attrib["scope"] = "PROVIDED"
+for dependency in provided_dependencies[1:]:
+    provided_manager.remove(dependency)
+provided_docs["orderEntries"].remove(next(entry for entry in provided_docs["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix()))
+docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(provided_generated, encoding="unicode"))
+provided_path = model_path.with_name("auxiliary-provided.json")
+provided_path.write_text(json.dumps(provided_model))
+validate(provided_path)
+docs_iml_path.write_bytes(original_docs_iml)
 for mutation in ("paired-omission", "generated-omission", "imported-omission", "wrong-kind", "duplicate", "broader", "foreign-owner", "exclusion", "exclude-pattern", "missing-dependency", "duplicate-dependency", "runtime-only-compile", "wrong-sdk", "wrong-language", "omitted-inventory", "duplicate-declaration", "changed-membership", "uncompiled-output"):
     candidate = copy.deepcopy(model)
     candidate_inventory = copy.deepcopy(inventory)

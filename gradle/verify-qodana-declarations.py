@@ -208,13 +208,15 @@ def verify(root, model_path, container_root, java_path):
                 scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
                 actual_scopes = [entry.attrib.get("scope", "COMPILE") for entry in generated_dependencies]
                 if "sourceSet" in owner:
+                    # PROVIDED is on IDEA's test runtime classpath as well as its test compile classpath.
+                    scopes.add("PROVIDED")
                     # IDEA retains distinct production-runtime and test edges; Qodana flattens their scope labels.
                     if not actual_scopes or not set(actual_scopes).issubset({"COMPILE", "TEST", "PROVIDED", "RUNTIME"}) or len(imported_dependencies) != len(actual_scopes) or len(set(actual_scopes)) != len(actual_scopes):
                         fail(f"missing, duplicate or wrong-owner auxiliary dependency: {name}: {dependency['identity']}")
                 elif len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
                     fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
                 if not scopes.intersection(actual_scopes):
-                    fail(f"required dependency has an incompatible compile/runtime scope: {name}")
+                    fail(f"required dependency has an incompatible compile/runtime scope: {name}: {configuration}: {dependency['identity']}")
 
     for owner in owners:
         name = owner["module"]
