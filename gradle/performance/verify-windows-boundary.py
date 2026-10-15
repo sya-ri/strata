@@ -118,6 +118,8 @@ def main():
             ("contended-immediate-history", f'@"{sys.executable}" -B "{history}" --output descendants --batches 4 --immediate --held 64\n', 4 * 1024**3, 120),
             ("history-budget-refusal", f'@"{sys.executable}" -B "{history}" --output descendants --batches 512 --immediate\n', 4 * 1024**3, 120),
             ("failure", "@exit /b 7\n", 4 * 1024**3, 30),
+            ("invalid-handle-error-result", f'@"{sys.executable}" -c "import ctypes,json; k=ctypes.WinDLL(\'kernel32\',use_last_error=True); k.CloseHandle.argtypes=[ctypes.c_void_p]; k.CloseHandle.restype=ctypes.c_int; ctypes.set_last_error(0); r=k.CloseHandle(ctypes.c_void_p(0x12345678)); e=ctypes.get_last_error(); print(json.dumps(dict(result=r,error=e))); assert r==0 and e==6"\n', 4 * 1024**3, 30),
+            ("unhandled-native-exception", f'@"{sys.executable}" -c "import ctypes; ctypes.WinDLL(\'kernel32\').RaiseException(ctypes.c_uint32(0xe0424242),0,0,None)"\n', 4 * 1024**3, 30),
             ("ram-refusal", "@exit /b 0\n", 2**50, 30),
             ("timeout", '@python -c "import time; time.sleep(30)"\n', 4 * 1024**3, 2),
             ("leaked-child", '@start "" /b python -c "import time; time.sleep(30)"\n@exit /b 0\n', 4 * 1024**3, 30),
@@ -133,7 +135,7 @@ def main():
                 process = subprocess.run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(helper), "-Request", str(request), "-Report", str(directory / "terminal.json")], stdout=log, stderr=subprocess.STDOUT)
             terminal = PAIRED.read_json(directory / "terminal.json")
             records.append({"case": name, "exit": process.returncode, "terminal": terminal})
-            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history", "immediate-history", "contended-immediate-history")), f"Unexpected actual boundary result: {name}")
+            PAIRED.require((process.returncode == 0) == (name in ("normal", "completed-history", "immediate-history", "contended-immediate-history", "invalid-handle-error-result")), f"Unexpected actual boundary result: {name}")
             PAIRED.require(terminal["handlesClosed"] is True, f"Owned handles or cleanup leaked: {name}")
             PAIRED.require(terminal.get("activeProcessesAfterCleanup", 0) == 0, f"Owned descendants remain: {name}")
             PAIRED.require(all(member["completed"] is True and member["handleClosed"] is True
@@ -166,6 +168,14 @@ def main():
                 PAIRED.require(terminal["naturalRelease"] is False and 0 < terminal["activeProcessesAtRelease"], "Leaked child was silently accepted")
             elif name == "failure":
                 PAIRED.require(terminal["exitCode"] == 7, "Native failure exit was lost")
+            elif name == "invalid-handle-error-result":
+                actual = json.loads((directory / "console.log").read_text(encoding="utf-8-sig"))
+                PAIRED.require(actual == {"result": 0, "error": 6} and 0 < terminal["debuggerInvalidHandleNotifications"]
+                               and terminal["naturalRelease"] is True, "Debugger changed the ordinary invalid-handle API result")
+                PAIRED.verify_generation_accounting(terminal)
+            elif name == "unhandled-native-exception":
+                PAIRED.require(terminal["exitCode"] == 1 and terminal["naturalRelease"] is True, "Debugger swallowed an unrelated native exception")
+                PAIRED.verify_generation_accounting(terminal)
         launcher = shutil.which("node")
         PAIRED.require(launcher is not None, "Node owner controls require the installed launcher")
         identity = json.loads(subprocess.check_output([launcher, "-p", "JSON.stringify({path:process.execPath,version:process.version})"], text=True))

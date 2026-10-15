@@ -489,6 +489,7 @@ public static class StrataPerformanceProcess {
             }
             uint continuation = 0x00010002; // DBG_CONTINUE for non-exception events.
             bool exited = observed.kind == 5;
+            bool continued = false;
             try {
                 if (observed.kind == 3) {
                     lock (gate) capture["processCreationEvents"] = (long)capture["processCreationEvents"] + 1;
@@ -516,7 +517,9 @@ public static class StrataPerformanceProcess {
                         AcquireCreatedProcess(job, observed.pid, observed.info.creation.process, capture, gate, acquisitions);
                         DrainPending(job, handles, records, capture, gate, acquisitions, true);
                         UseCreationLease(observed.pid, observed.info.creation.process, handles, records, capture, gate, acquisitions);
-                        // Preserve physical snapshots for Job members outside this debugging chain, while the new child is gated.
+                        // The exact generation's image/birth/affinity is retained; whole-Job scans need not keep its creator suspended.
+                        Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
+                        continued = true;
                         Capture(job, handles, records, capture, clock, seconds, gate, acquisitions, false);
                     } else {
                         // A fatal refusal cannot grow the bounded history during termination; actual Job totals remain unreconciled.
@@ -526,6 +529,12 @@ public static class StrataPerformanceProcess {
                     DuplicateExitLease(observed.pid, handles, records, capture, gate, acquisitions);
                 } else if (observed.kind == 1) {
                     continuation = 0x80010001; // Pass application exceptions to their normal handler.
+                    // CloseHandle adds a debugger-only first-chance exception before its ordinary FALSE/last-error result.
+                    // https://learn.microsoft.com/windows/win32/api/handleapi/nf-handleapi-closehandle
+                    if (observed.info.exception.firstChance == 1 && observed.info.exception.exception.code == 0xc0000008) {
+                        continuation = 0x00010002;
+                        lock (gate) capture["debuggerInvalidHandleNotifications"] = (long)capture["debuggerInvalidHandleNotifications"] + 1;
+                    }
                     if (observed.info.exception.firstChance == 1 && observed.info.exception.exception.code == 0x80000003
                         && acquisitions.initialBreakpoints.Add(observed.pid)) continuation = 0x00010002;
                 } else if (observed.kind < 2 || 9 < observed.kind) {
@@ -545,7 +554,7 @@ public static class StrataPerformanceProcess {
                 try {
                     if ((observed.kind == 3 || observed.kind == 6) && observed.info.file != IntPtr.Zero) Require(CloseHandle(observed.info.file));
                 } finally {
-                    Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
+                    if (continued == false) Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
                     if (exited) {
                         if (acquisitions.debugProcesses.Remove(observed.pid) == false) throw new InvalidOperationException("Exit lacks its actual creation event.");
                         acquisitions.initialBreakpoints.Remove(observed.pid);
@@ -703,7 +712,7 @@ public static class StrataPerformanceProcess {
             {"notificationImageFailures", 0L}, {"notificationImageSuccesses", 0L},
             {"notificationMetadataFailures", 0L}, {"notificationMetadataSuccesses", 0L},
             {"processCreationCapture", "debug-before-continue-v2"}, {"processCreationEvents", 0L}, {"creationEventsAfterFailure", 0L},
-            {"creationLeaseTransfers", 0L}, {"exitDuplicateSuccesses", 0L}, {"exitDuplicateFailures", 0L},
+            {"creationLeaseTransfers", 0L}, {"exitDuplicateSuccesses", 0L}, {"exitDuplicateFailures", 0L}, {"debuggerInvalidHandleNotifications", 0L},
             {"processCreationHandleSource", "debug-event-lease-with-exit-duplicate"},
             {"debugEventCounts", new Dictionary<string, long>()}
         };

@@ -820,6 +820,11 @@ Accepted history has a 3 MiB serialized upper bound; the first refused generatio
 The remaining report capacity covers fixed terminal metadata without truncating a generation or increasing the reader limit.
 Each signalled owned handle records its actual exit and PID/creation-time identity before closing; immutable generation lists preserve legitimate PID reuse instead of replacing history.
 VM checks select exactly one matching birth and reject missing, ambiguous, altered, active or wrong-affinity generations.
+The creator thread captures each debugged descendant's image, birth and affinity before continuing its creation event; the complete Job scan runs after that continuation.
+The boundary borrows the Windows-owned creation handle until exit and takes its own same-generation duplicate before continuing exit, while the independently charged primary anchor remains available for final queries.
+The [debugger-only first-chance invalid-handle notification from `CloseHandle`](https://learn.microsoft.com/windows/win32/api/handleapi/nf-handleapi-closehandle) is handled so that the ordinary false return and last-error result reach the caller.
+Unrelated application exceptions and last-chance notifications retain their normal exception dispatch.
+Native controls verify both the invalid-handle API result and an unrelated failing native exception in addition to the original process, resource and cleanup cases.
 The real boundary controls include 288 completed observed descendants with eight concurrent children, alongside the unchanged normal, failure, RAM-refusal, timeout and leaked-child cases.
 A separate eight-concurrent-child control reaches the actual history budget under the same source-control deadline and memory profile, retains the first refused generation and proves bounded-report failure plus zero owned cleanup.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.

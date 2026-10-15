@@ -2023,6 +2023,33 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "Invalid finite daemon metaspace cap"):
                 PAIRED.verify_vms(self.root, [], {}, {}, daemon_metaspace_mib=invalid)
 
+    def test_compiled_qualification_preserves_long_paths_before_its_first_checkout(self):
+        self.selector_repository()
+        relative = Path("runtime/shared") / Path(*(["long-source-directory"] * 12)) / "Original.kt"
+        original = self.root / relative
+        original.parent.mkdir(parents=True)
+        original.write_bytes(b"original long-path runtime source\n")
+        controller = self.root / "gradle/performance/fixtures/QualifiedFixtureController.java"
+        controller.parent.mkdir(parents=True)
+        controller.write_bytes(b"independent source fixture; never compiled\n")
+        head = self.selector_commit("Preserve long-path qualification sources")
+        output = self.root / "build/qualified"
+        output.mkdir(parents=True)
+        script = Path(PAIRED.__file__).with_name("verify-qualified-preflight.py")
+        specification = importlib.util.spec_from_file_location("qualified_long_path_control", script)
+        qualified = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(qualified)
+        global_config = self.root / "empty-global.gitconfig"
+        global_config.write_bytes(b"")
+        with patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(global_config), "GIT_CONFIG_NOSYSTEM": "1"}):
+            source, copied_controller = qualified.frozen_fixture(self.root, output)
+            checkout = output / "workspaces/fixture-source"
+            self.assertEqual((checkout / relative).read_bytes(), original.read_bytes())
+            self.assertEqual(PAIRED.git(checkout, "config", "--local", "--get", "core.longpaths"), "true")
+            self.assertEqual(source["ref"], head)
+            self.assertEqual(copied_controller, controller)
+            self.assertEqual((checkout / "quality/remote-benchmarks/src/jmh/java/independent/fixture/QualifiedFixtureController.java").read_bytes(), controller.read_bytes())
+
     def test_source_java_exec_caps_bind_actual_closed_generations_without_changing_forks(self):
         cases = ((512, 256, "java_exec", 512, 256, True), (768, 384, "java_exec", 768, 384, True),
                  (512, 256, "java_exec", 768, 384, False), (768, 384, "java_exec", 512, 256, False),
