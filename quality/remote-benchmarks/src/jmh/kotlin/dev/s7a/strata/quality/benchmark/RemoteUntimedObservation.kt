@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.sun.jdi.Bootstrap
@@ -14,6 +15,7 @@ import dev.s7a.strata.performance.PerformanceJson
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import kotlin.concurrent.thread
 
 /**
@@ -183,6 +185,93 @@ internal object RemoteUntimedObservation {
         val source = sources.single { it.getAsJsonObject("archives") == archives }
         require(ArtifactIdentity.file(planFile) == planHash)
         return source.get("revision").asString
+    }
+
+    /**
+     * Runs the declared untimed controls and preserves their exact input, origin and artifact receipts.
+     * Callers run their complete work verifier first and validate their original typed rows before publication.
+     */
+    fun preflight(
+        requestPath: Path,
+        observe: (Array<String>) -> Unit,
+        verifyRows: (JsonObject) -> Unit,
+    ) {
+        val requestHash = ArtifactIdentity.file(requestPath)
+        val request = read(requestPath)
+        require(request.get("schema").asString.contentEquals("strata-paired-jvm-preflight-request-v1"))
+        val output = Path.of(request.get("output").asString).toAbsolutePath().normalize()
+        val results = JsonArray()
+        for (entry in request.getAsJsonArray("controls")) {
+            val control = entry.asJsonObject
+            val id = control.get("id").asString
+            val arguments = control.getAsJsonArray("arguments").map { it.asString }
+            require(arguments.size == 1 && id.matches(Regex("[A-Za-z0-9][A-Za-z0-9_-]*")))
+            val input = request.getAsJsonObject("inputs").getAsJsonObject(arguments.single())
+            val plan = Path.of(input.get("path").asString)
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
+            val directory = output.resolve(id)
+            Files.createDirectory(directory)
+            val counts = directory.resolve("counts.json")
+            val child = directory.resolve("child.json")
+            observe(arrayOf(counts.toString(), child.toString(), plan.toString()))
+            val observed = read(counts)
+            verifyRows(observed)
+            results.add(
+                JsonObject().apply {
+                    addProperty("id", id)
+                    addProperty("status", "passed")
+                    add("observations", observed)
+                    add("origins", origins(request, read(child)))
+                    add(
+                        "artifacts",
+                        JsonArray().apply {
+                            listOf(counts, child).forEach { file ->
+                                add(
+                                    JsonObject().apply {
+                                        addProperty("path", output.relativize(file).toString().replace('\\', '/'))
+                                        addProperty("sha256", ArtifactIdentity.file(file))
+                                    },
+                                )
+                            }
+                        },
+                    )
+                },
+            )
+            require(ArtifactIdentity.file(plan) == input.get("sha256").asString)
+        }
+        require(ArtifactIdentity.file(requestPath) == requestHash)
+        val receipt =
+            JsonObject().apply {
+                addProperty("schema", "strata-paired-jvm-preflight-receipt-v1")
+                addProperty("status", "passed")
+                addProperty("request_sha256", requestHash)
+                add("controls", results)
+            }
+        Files.writeString(output.resolve("receipt.json"), receipt.toString(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    }
+
+    private fun origins(
+        request: JsonObject,
+        provenance: JsonObject,
+    ): JsonObject {
+        val runtimeClasses =
+            provenance
+                .getAsJsonObject("runtime_metadata")
+                .getAsJsonArray("modules")
+                .map { it.asJsonObject.get("representativeClass").asString }
+                .toSet()
+        val result = JsonObject()
+        request.getAsJsonObject("required_classes").keySet().forEach { name ->
+            val pid =
+                if (name in runtimeClasses) {
+                    provenance.get("pid").asLong
+                } else {
+                    Class.forName(name, false, javaClass.classLoader)
+                    ProcessHandle.current().pid()
+                }
+            result.add(name, JsonObject().apply { addProperty("pid", pid) })
+        }
+        return result
     }
 
     private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }
