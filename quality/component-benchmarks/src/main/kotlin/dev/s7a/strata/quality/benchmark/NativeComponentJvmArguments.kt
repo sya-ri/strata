@@ -44,7 +44,7 @@ internal object NativeComponentJvmArguments {
         val arguments = report.getAsJsonArray("jvm_arguments").map { it.asString }
         require(arguments.count { it.startsWith(FABRIC_MODS_ARGUMENT) } <= 1) { "Duplicate native mod argument" }
         if (command == NativeEvidenceCommand.PacingComparison) {
-            val policy = arguments.filter { it.startsWith(INACTIVITY_ARGUMENT) }.single()
+            val policy = arguments.single { it.startsWith(INACTIVITY_ARGUMENT) }
             require(policy.removePrefix(INACTIVITY_ARGUMENT).uppercase(Locale.ROOT) == report.get("inactivity_mode").asString) { "Native policy option disagrees with its actual receipt" }
         }
         return JsonObject().apply {
