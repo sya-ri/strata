@@ -6,12 +6,14 @@ import dev.s7a.strata.performance.JvmOperationReportRow
 import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.SingleAxisImageBackgroundBenchmark.TileSession
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Collects all original producer, declaration and complete retained-frame boundaries.
  * Each row creates its real owner outside sampling and closes it on every exit; reports retain
  * no host, paint scope, source image or frame. JMH remains the independent primary timer.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 public object SingleAxisImageBackgroundOperationReport : JvmOperationReportAdapter {
     override val rows: List<JvmOperationReportRow> =
         SingleAxisImageTileWorkload.entries.flatMap { workload ->

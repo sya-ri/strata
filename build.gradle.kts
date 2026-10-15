@@ -1490,6 +1490,7 @@ subprojects {
     }
     minecraftFabricTargets.firstOrNull { target -> path == target.integrationProjectPath }?.let { target ->
         val nativeTests = target.canvasTestSourcePaths.map { sourcePath -> rootProject.file("$sourcePath/src/gametest") }
+        val imageBackgroundReference = rootProject.file("integration/shared/image-backgrounds/src/test/kotlin")
         val canvasTestDependencies = dependencies
         configurations.matching { it.name == "gametestCompileOnly" }.configureEach {
             canvasTestDependencies.add(name, canvasMixinDependency)
@@ -1511,10 +1512,12 @@ subprojects {
         extensions.configure<KotlinJvmProjectExtension> {
             sourceSets.matching { it.name == "gametest" }.configureEach {
                 kotlin.srcDirs(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+                kotlin.srcDir(imageBackgroundReference)
             }
         }
         extensions.configure<DetektExtension> {
             source.from(nativeTests.map { sourceRoot -> sourceRoot.resolve("kotlin") })
+            source.from(imageBackgroundReference)
         }
     }
     if (completeIdeaModelActive) {
