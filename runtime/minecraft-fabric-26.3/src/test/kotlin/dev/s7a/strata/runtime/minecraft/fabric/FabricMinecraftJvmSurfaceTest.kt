@@ -342,7 +342,7 @@ internal class FabricMinecraftJvmSurfaceTest {
 
                 GuiConsumerFamily.DirectSubmission -> {
                     mapOf(
-                        "$packageName.FabricVulkanDestroyedResource" to setOf("strataCanvasResourceDestroyed"),
+                        "$packageName.FabricVulkanDestroyedResource" to setOf("strataCanvasResourceDestroyed", "strataDestroyCompletedResource"),
                         "$packageName.mixin.vulkan.FabricVulkanCanvasDeviceAccessor" to setOf("strataCanvasBackend"),
                         "$packageName.mixin.vulkan.FabricVulkanCanvasEncoderAccessor" to setOf("strataCanvasDestructionQueue"),
                     )

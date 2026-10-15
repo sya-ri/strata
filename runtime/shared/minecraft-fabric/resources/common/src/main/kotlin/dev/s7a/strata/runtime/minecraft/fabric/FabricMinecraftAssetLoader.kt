@@ -10,7 +10,6 @@ import dev.s7a.strata.render.createDrawImage
 import dev.s7a.strata.resource.ResourceId
 import net.minecraft.client.Minecraft
 import java.io.IOException
-import java.io.InputStream
 
 /**
  * Loads one immutable UI image from the active resource manager.
@@ -55,13 +54,13 @@ internal fun createPlayerSkinSnapshot(image: NativeImage): DrawImage {
 
 private val playerSkinSize = IntSize(64, 64)
 
-private val currentImageDecode = FabricMinecraftImageDecodeCache(::decodeFabricMinecraftUiImage)
-
-private fun decodeFabricMinecraftUiImage(stream: InputStream): FabricMinecraftImageDecodeCache.Decoded =
-    NativeImage.read(stream).use { image ->
-        val size = IntSize(image.getWidth(), image.getHeight())
-        require(0 < size.width && 0 < size.height) { "Minecraft UI image dimensions must be positive." }
-        FabricMinecraftImageDecodeCache.Decoded(size, copyFabricMinecraftArgbPixels(image))
+private val currentImageDecode =
+    FabricMinecraftImageDecodeCache { stream ->
+        NativeImage.read(stream).use { image ->
+            val size = IntSize(image.getWidth(), image.getHeight())
+            require(0 < size.width && 0 < size.height) { "Minecraft UI image dimensions must be positive." }
+            FabricMinecraftImageDecodeCache.Decoded(size, copyFabricMinecraftArgbPixels(image))
+        }
     }
 
 /**
