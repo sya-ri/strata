@@ -3,6 +3,7 @@ import copy
 import importlib.util
 import json
 import os
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 import sys
@@ -375,6 +376,45 @@ class PairedBrowserTest(unittest.TestCase):
             mutation(invalid)
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.load(invalid)
+
+    def test_existing_remote_inventory_capture_preserves_build_output_and_source_fences(self):
+        value = self.source_manifest(1)
+        task = ":quality:remote-benchmarks:captureRemoteInventory"
+        output = "quality/remote-benchmarks/build/performance/remote-api.tsv"
+        value.update(tasks=[task], artifacts=[{"glob": output, "minimum": 1}], test_gate=None)
+        self.assertEqual(self.load(value), value)
+        for invalid_task in (":quality:remote-benchmarks:captureUnknownInventory", ":quality:remote-benchmarks:jmhRemote"):
+            with self.subTest(task=invalid_task), self.assertRaisesRegex(ValueError, "existing Source preparation tasks"):
+                self.load({**value, "tasks": [invalid_task]})
+        workspace, directory = self.root / "capture-workspace", self.root / "capture-evidence"
+        artifact = workspace / output
+        artifact.parent.mkdir(parents=True)
+        artifact.write_bytes(b"independent actual-inventory placeholder for file-preservation control\n")
+        directory.mkdir()
+        pins = self.browser.preserve_source_outputs(self.shared, workspace, directory, value["artifacts"])
+        self.assertEqual(pins, [{"path": output, "sha256": self.shared.digest(artifact)}])
+        self.assertEqual((directory / "artifacts" / output).read_bytes(), artifact.read_bytes())
+        for state in ("", " SKIPPED", " FROM-CACHE", " FAILED"):
+            (directory / "console.log").write_text("> Task " + task + state + "\n", encoding="utf-8")
+            if state:
+                with self.subTest(state=state), self.assertRaisesRegex(ValueError, "Requested Source task"):
+                    self.browser.verify_source_tasks(self.shared, directory, [task])
+            else:
+                self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, [task]), {task: "executed"})
+        tracked = "quality/remote-benchmarks/src/jmh/resources/remote-api.tsv"
+        self.fixture.selector_repository()
+        checkout = self.root
+        (checkout / ".git/info/attributes").write_bytes(b"* -text\n")
+        path = checkout / tracked
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("original registry\n", encoding="utf-8")
+        self.fixture.selector_git("add", tracked)
+        self.fixture.selector_git("commit", "-m", "Record registry control")
+        tree = self.fixture.selector_git("rev-parse", "HEAD^{tree}")
+        self.shared.source_guard(checkout, tree)
+        path.write_text("changed by capture\n", encoding="utf-8")
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.shared.source_guard(checkout, tree)
 
     def test_source_dependency_provisioning_is_explicit_bounded_and_keeps_original_repetitions(self):
         value = self.source_manifest(3)

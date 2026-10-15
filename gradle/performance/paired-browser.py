@@ -153,7 +153,7 @@ def load_source_manifest(shared, root, data):
         shared.pin(root, item["pin"])
     tasks = data["tasks"]
     require(isinstance(tasks, list) and tasks and len(tasks) == len(set(tasks)) and len(tasks) <= 32, "Declare the complete unique Source task list")
-    endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory", "jvmJar", "jar", "jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "verifyRemoteWorkloads"}
+    endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory", "captureRemoteInventory", "jvmJar", "jar", "jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "verifyRemoteWorkloads"}
     for task in tasks:
         require(isinstance(task, str) and re.fullmatch(r":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*:[A-Za-z0-9]+", task)
                 and (controlled or task.rsplit(":", 1)[1] in endings), "Use existing Source preparation tasks")
