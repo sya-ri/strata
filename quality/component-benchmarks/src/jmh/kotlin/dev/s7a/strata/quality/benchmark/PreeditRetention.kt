@@ -67,9 +67,9 @@ internal object PreeditRetention {
         pending: ArrayDeque<Any>,
     ) {
         var type: Class<*>? = value.javaClass
-        while (type != null && type != Any::class.java) {
+        while (type != null && type.name.startsWith("dev.s7a.strata.runtime.") && type.name.contains(".font.").not()) {
             type.declaredFields.filter { Modifier.isStatic(it.modifiers).not() && it.type.isPrimitive.not() }.forEach {
-                check(it.trySetAccessible())
+                check(it.trySetAccessible()) { "Cannot inspect owned field ${it.declaringClass.name}.${it.name}" }
                 it.get(value)?.let(pending::add)
             }
             type = type.superclass
