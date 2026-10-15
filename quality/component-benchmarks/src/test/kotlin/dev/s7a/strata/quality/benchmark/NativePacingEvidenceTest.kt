@@ -107,6 +107,46 @@ internal class NativePacingEvidenceTest {
         assertFails { NativePacingEvidence.verify(report) }
     }
 
+    @Test
+    internal fun policyComparisonRequiresActualAfkThrottlingAndSupportedMatchedDirections() {
+        fun timed(mode: Inactivity, reason: Reason): JsonObject =
+            complete(mode, reason).apply {
+                addProperty("inactivity_mode", mode.name)
+                addProperty("collection_elapsed_ns", 1)
+                addProperty("collection_elapsed_scope", "Synthetic admission input, not measured evidence")
+            }
+        val baseline = List(3) { timed(Inactivity.AFK, Reason.SHORT_AFK) }
+        val candidate = List(3) { timed(Inactivity.MINIMIZED, Reason.OUT_OF_LEVEL_MENU) }
+        NativePacingEvidence.verifyPolicyComparison(baseline, candidate)
+        assertFails { NativePacingEvidence.verifyPolicyComparison(candidate, baseline) }
+        assertFails { NativePacingEvidence.verifyPolicyComparison(baseline.take(2), candidate) }
+        val unthrottled = List(3) { timed(Inactivity.AFK, Reason.OUT_OF_LEVEL_MENU) }
+        assertFails { NativePacingEvidence.verifyPolicyComparison(unthrottled, candidate) }
+        val unavailable = List(3) { timed(Inactivity.UNAVAILABLE, Reason.UNAVAILABLE) }
+        assertFails { NativePacingEvidence.verifyPolicyComparison(baseline, unavailable) }
+        listOf("collection_elapsed_ns", "collection_elapsed_scope").forEach { field ->
+            val incomplete = baseline.map(JsonObject::deepCopy)
+            incomplete[0].remove(field)
+            assertFails { NativePacingEvidence.verifyPolicyComparison(incomplete, candidate) }
+        }
+        listOf(0, -1, 1.5).forEach { elapsed ->
+            val incomplete = baseline.map(JsonObject::deepCopy)
+            incomplete[0].addProperty("collection_elapsed_ns", elapsed)
+            assertFails { NativePacingEvidence.verifyPolicyComparison(incomplete, candidate) }
+        }
+    }
+
+    @Test
+    internal fun policyComparisonRejectsMissingOrDifferentVerifiedBinaryReceipts() {
+        val receipts = JsonArray().apply { repeat(6) { add(JsonArray().apply { add("Synthetic receipt, not archive verification") }) } }
+        NativePacingEvidence.verifyPolicyBinaries(receipts)
+        receipts[5].asJsonArray.add("Different already verified binary")
+        assertFails { NativePacingEvidence.verifyPolicyBinaries(receipts) }
+        receipts.remove(5)
+        assertFails { NativePacingEvidence.verifyPolicyBinaries(receipts) }
+        assertFails { NativePacingEvidence.verifyPolicyBinaries(JsonArray()) }
+    }
+
     private fun complete(
         mode: Inactivity = Inactivity.MINIMIZED,
         reason: Reason = Reason.OUT_OF_LEVEL_MENU,

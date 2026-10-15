@@ -108,6 +108,24 @@ internal class NativeComponentJvmArgumentsTest {
         assertFails { compare(before, after) }
     }
 
+    @Test
+    internal fun explicitPolicyComparisonBindsOneActualOptionAndPreservesOrdinaryStrictness() {
+        val before = report("policy-before")
+        val after = report("policy-after")
+        before.addProperty("inactivity_mode", "AFK")
+        after.addProperty("inactivity_mode", "MINIMIZED")
+        before.getAsJsonArray("jvm_arguments").add("-Dstrata.performance.inactivity=afk")
+        after.getAsJsonArray("jvm_arguments").add("-Dstrata.performance.inactivity=minimized")
+        assertFails { compare(before, after) }
+        val policy = NativeEvidenceCommand.PacingComparison
+        JvmPerformanceEvidence.verifyEqual(listOf(NativeComponentJvmArguments.read(before, policy), NativeComponentJvmArguments.read(after, policy)), setOf("jvm_arguments"))
+        after.addProperty("inactivity_mode", "AFK")
+        assertFails { NativeComponentJvmArguments.read(after, policy) }
+        after.addProperty("inactivity_mode", "MINIMIZED")
+        after.getAsJsonArray("jvm_arguments").add("-Dstrata.performance.inactivity=minimized")
+        assertFails { NativeComponentJvmArguments.read(after, policy) }
+    }
+
     private fun compare(
         before: JsonObject,
         after: JsonObject,

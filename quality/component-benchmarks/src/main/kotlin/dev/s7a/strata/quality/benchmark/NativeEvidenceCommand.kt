@@ -8,6 +8,7 @@ internal enum class NativeEvidenceCommand(
 ) {
     Summary("summary"),
     Comparison("comparison"),
+    PacingComparison("pacing-comparison"),
     ;
 
     /**

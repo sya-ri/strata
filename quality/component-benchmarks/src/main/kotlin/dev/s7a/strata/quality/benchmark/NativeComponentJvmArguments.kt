@@ -6,6 +6,7 @@ import dev.s7a.strata.performance.ArtifactIdentity
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
+import java.util.Locale
 
 /**
  * Compares actual native VM options while identifying the two admitted experiment mod inputs by their bound origins.
@@ -13,6 +14,7 @@ import java.nio.file.Path
  */
 internal object NativeComponentJvmArguments {
     private const val FABRIC_MODS_ARGUMENT = "-Dfabric.addMods="
+    private const val INACTIVITY_ARGUMENT = "-Dstrata.performance.inactivity="
     private val outputArguments =
         setOf(
             "-Dstrata.performance.nativeOutput=",
@@ -34,9 +36,16 @@ internal object NativeComponentJvmArguments {
      * Retains every non-output VM argument in order, replacing only verified experiment mod paths with their roles.
      * A missing mod property preserves legacy arguments; substituted or duplicate bound inputs fail admission.
      */
-    internal fun read(report: JsonObject): JsonObject {
+    internal fun read(
+        report: JsonObject,
+        command: NativeEvidenceCommand = NativeEvidenceCommand.Summary,
+    ): JsonObject {
         val arguments = report.getAsJsonArray("jvm_arguments").map { it.asString }
         require(arguments.count { it.startsWith(FABRIC_MODS_ARGUMENT) } <= 1) { "Duplicate native mod argument" }
+        if (command == NativeEvidenceCommand.PacingComparison) {
+            val policy = arguments.filter { it.startsWith(INACTIVITY_ARGUMENT) }.single()
+            require(policy.removePrefix(INACTIVITY_ARGUMENT).uppercase(Locale.ROOT) == report.get("inactivity_mode").asString) { "Native policy option disagrees with its actual receipt" }
+        }
         return JsonObject().apply {
             add(
                 "jvm_arguments",
@@ -44,6 +53,7 @@ internal object NativeComponentJvmArguments {
                     arguments.forEach { argument ->
                         when {
                             outputArguments.any(argument::startsWith) -> Unit
+                            command == NativeEvidenceCommand.PacingComparison && argument.startsWith(INACTIVITY_ARGUMENT) -> add(INACTIVITY_ARGUMENT)
                             argument.startsWith(FABRIC_MODS_ARGUMENT) -> add(mods(report, argument.removePrefix(FABRIC_MODS_ARGUMENT)))
                             else -> add(argument)
                         }

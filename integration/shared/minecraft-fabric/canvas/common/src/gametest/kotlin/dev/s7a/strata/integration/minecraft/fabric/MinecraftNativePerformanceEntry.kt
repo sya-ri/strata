@@ -2,6 +2,7 @@ package dev.s7a.strata.integration.minecraft.fabric
 
 import com.google.gson.JsonObject
 import dev.s7a.strata.geometry.IntSize
+import dev.s7a.strata.performance.PerformanceDeadline
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.runtime.minecraft.MinecraftUiProfile
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
@@ -23,6 +24,7 @@ internal object MinecraftNativePerformanceEntry {
         profile: MinecraftUiProfile,
         output: Path,
     ) {
+        val collectionDeadline = PerformanceDeadline(1_800_000)
         var options: MinecraftNativePerformanceOptions? = null
         var fixture: MinecraftCanvasTestFixture? = null
         var failure: Throwable? = null
@@ -54,6 +56,9 @@ internal object MinecraftNativePerformanceEntry {
                     )
                 }
             report.addProperty("borrowed_options_restored", true)
+            check(collectionDeadline.isWithin()) { "Native collection exceeded its whole-fixture deadline" }
+            report.addProperty("collection_elapsed_ns", collectionDeadline.elapsedNanos())
+            report.addProperty("collection_elapsed_scope", "Borrowed options through completed native and option restoration, including preparation and PNG persistence; excludes client startup and report serialization")
             report.addProperty("status", "passed")
             PerformanceJson.writeNew(output.resolve("report.json"), report)
         } catch (caught: Throwable) {

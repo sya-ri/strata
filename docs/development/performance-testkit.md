@@ -230,6 +230,16 @@ Each raw invocation remains bound to its side's actual CPU origins; duplicate in
 `JvmPerformanceReports.compare` owns all aggregation and metric comparison, and `compareImages` verifies the complete PNG inventory for each paired repetition.
 Preserve raw reports, PNGs and the actual loaded archive paths until processing completes; copying a receipt does not change its recorded origins.
 
+Use `command: "pacing-comparison"` only for the explicit AFK baseline and MINIMIZED candidate on the same newly frozen runtime and fixture binaries.
+Both sides require three independent Standard invocations, the same complete selection, counts, viewport, backend, driver and query configuration, and current `paced-presented-v3` reports.
+Every baseline invocation must observe an actual AFK throttle reason, and every boundary on both sides must expose the supported policy and live reason.
+The requested policy is the only controlled condition allowed to differ; actual pacing transitions remain recorded outcomes rather than conditions reconstructed from frame intervals.
+Ordinary comparisons continue to require equal pacing observations.
+The processor retains every invocation's full pacing boundary arrays and whole collection elapsed time, with sampled frame intervals, render-thread frame CPU, extraction CPU/allocation, upload payload and the two GPU scopes reported separately.
+Collection elapsed includes borrowing options, preparation, PNG persistence and successful native/option restoration, and excludes client startup and final report serialization.
+It does not replace a separately recorded Gradle/client invocation duration or establish an application FPS claim.
+Historical `presented-v1` and `paced-presented-v2` receipts retain their original identities and cannot satisfy a current policy comparison.
+
 Rendering/extraction-family representatives are 1.20.6, 1.21.1, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1, 26.2 and 26.3, selected from the existing target declarations.
 These ten tuples cover the current UI, Canvas and test-extraction families; they do not certify all combinations of transport, input, Java compatibility or resource loading across the 22 supported targets.
 The exact case registry is `quality/component-benchmarks/src/main/resources/native-components.tsv`; a changed canonical matrix requires review rather than an automatic baseline update.

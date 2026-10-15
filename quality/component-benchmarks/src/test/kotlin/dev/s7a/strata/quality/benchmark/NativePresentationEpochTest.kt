@@ -28,4 +28,20 @@ internal class NativePresentationEpochTest {
             }
         }
     }
+
+    @Test
+    internal fun onlyExplicitPolicyComparisonAdmitsDifferentPacingOutcomes() {
+        val selection = PerformanceSelection(setOf("TextField"))
+        val ordinary = NativeComponentPerformanceEvidence.contract(selection, PerformanceProfile.Standard, false, NativePresentationEpoch.TimedPaced)
+        assertEquals(true, "inactivity_mode" in ordinary.reportConditions && "pacing" in ordinary.phaseConditions)
+        val policy = NativeComponentPerformanceEvidence.contract(selection, PerformanceProfile.Standard, false, NativePresentationEpoch.TimedPaced, NativeEvidenceCommand.PacingComparison)
+        assertEquals(setOf("inactivity_mode"), policy.variantReportFields)
+        assertEquals(ordinary.reportConditions - "inactivity_mode", policy.reportConditions)
+        assertEquals(ordinary.phaseConditions - "pacing", policy.phaseConditions)
+        assertEquals(ordinary.workloadId, policy.workloadId)
+        assertEquals(3, policy.repetitions)
+        assertEquals(NativeEvidenceCommand.PacingComparison, NativeEvidenceCommand.decode("pacing-comparison"))
+        assertEquals(NativeEvidenceCommand.Comparison, NativeEvidenceCommand.decode("comparison"))
+        assertFails { NativeEvidenceCommand.decode("unknown") }
+    }
 }

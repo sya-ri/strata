@@ -86,6 +86,13 @@ internal object NativeComponentPerformanceEvidence {
             PerformanceReportMetric("presentation_gpu_p99_ns", listOf("presentation_gpu", "duration", "p99_ns")),
         )
 
+    private val pacingMetrics =
+        listOf("frame_interval", "render_thread_frame_cpu").flatMap { scope ->
+            listOf("p50_ns", "p99_ns", "total_ns", "max_ns").map { metric ->
+                PerformanceReportMetric("${scope}_$metric", listOf(scope, metric))
+            } + PerformanceReportMetric("${scope}_mean_ns", listOf(scope, "total_ns"), listOf(scope, "samples"))
+        }
+
     /**
      * Processes independent raw invocations through the shared summary or comparison API without replacing evidence.
      * Each comparison side supplies its actual CPU receipt; archive, matrix, pacing and image checks apply to both sides.
@@ -110,14 +117,18 @@ internal object NativeComponentPerformanceEvidence {
         val imageDirectories = paths.map { checkNotNull(it.parent).resolve("images") }.toSet()
         val reports = paths.map(JvmPerformanceEvidence::readReport)
         val epoch = NativePresentationEpoch.fromWorkloadIds(reports.map { it.get("workload_id").asString }, selection, profile, sampledImages)
+        if (command == NativeEvidenceCommand.PacingComparison) {
+            require(profile == PerformanceProfile.Standard && epoch == NativePresentationEpoch.TimedPaced) { "Pacing policy comparison requires the current timed Standard fixture" }
+            NativePacingEvidence.verifyPolicyComparison(reports.take(3), reports.drop(3))
+        }
         val presentationPresent = NativeComponentGpuEvidence.presentationGpuMetricsPresent(reports)
         val validate = validation(request, provenance, imageDirectories, binaries, backend)
-        val reportContract = contract(selection, profile, sampledImages, epoch)
-        val reportMetrics = metrics + if (presentationPresent) presentationMetrics else emptyList()
+        val reportContract = contract(selection, profile, sampledImages, epoch, command)
+        val reportMetrics = metrics + (if (presentationPresent) presentationMetrics else emptyList()) + if (command == NativeEvidenceCommand.PacingComparison) pacingMetrics else emptyList()
         val summary =
             when (command) {
                 NativeEvidenceCommand.Summary -> JvmPerformanceReports.summarize(paths, collector, reportContract, reportMetrics, validate)
-                NativeEvidenceCommand.Comparison -> JvmPerformanceReports.compare(inputs[0].first, inputs[1].first, collector, reportContract, reportMetrics, validate)
+                NativeEvidenceCommand.Comparison, NativeEvidenceCommand.PacingComparison -> JvmPerformanceReports.compare(inputs[0].first, inputs[1].first, collector, reportContract, reportMetrics, validate)
             }
         when (command) {
             NativeEvidenceCommand.Summary -> {
@@ -125,13 +136,47 @@ internal object NativeComponentPerformanceEvidence {
                 summary.addProperty("cpu_provenance_report_sha256", cpuHashes.getValue(inputs.single().second))
             }
 
-            NativeEvidenceCommand.Comparison -> {
+            NativeEvidenceCommand.Comparison, NativeEvidenceCommand.PacingComparison -> {
                 completeComparison(summary, inputs, cpuHashes, presentationPresent, reportContract.phaseCount)
+                if (command == NativeEvidenceCommand.PacingComparison) {
+                    NativePacingEvidence.verifyPolicyBinaries(binaries)
+                    summary.addProperty("comparison_scope", "AFK to MINIMIZED inactivity policy on identical runtime and fixture bytes; live pacing observations are outcomes")
+                }
             }
         }
+        if (epoch == NativePresentationEpoch.TimedPaced) recordCollectionRuns(summary, reports)
         summary.add("binary_receipts", binaries)
         cpuHashes.forEach { (path, hash) -> require(ArtifactIdentity.file(path).contentEquals(hash)) { "Changed CPU provenance receipt" } }
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
+    }
+
+    /**
+     * Retains invocation observations without combining whole-fixture elapsed with sampled operation metrics.
+     */
+    private fun recordCollectionRuns(
+        summary: JsonObject,
+        reports: List<JsonObject>,
+    ) {
+        summary.add(
+            "collection_runs",
+            JsonArray().apply {
+                reports.forEach { report ->
+                    add(
+                        JsonObject().apply {
+                            listOf("run_id", "inactivity_mode", "collection_elapsed_ns", "collection_elapsed_scope").forEach { add(it, report.get(it).deepCopy()) }
+                            add(
+                                "pacing_phases",
+                                JsonArray().apply {
+                                    report.getAsJsonArray("phases").forEach { phase ->
+                                        add(JsonObject().apply { listOf("case", "gui_scale", "pacing").forEach { add(it, phase.asJsonObject.get(it).deepCopy()) } })
+                                    }
+                                },
+                            )
+                        },
+                    )
+                }
+            },
+        )
     }
 
     /**
@@ -144,7 +189,7 @@ internal object NativeComponentPerformanceEvidence {
     ): List<Pair<List<Path>, Path>> =
         when (command) {
             NativeEvidenceCommand.Summary -> listOf(request)
-            NativeEvidenceCommand.Comparison -> listOf(request.getAsJsonObject("baseline"), request.getAsJsonObject("candidate"))
+            NativeEvidenceCommand.Comparison, NativeEvidenceCommand.PacingComparison -> listOf(request.getAsJsonObject("baseline"), request.getAsJsonObject("candidate"))
         }.map { input ->
             val paths = input.getAsJsonArray("runs").map { Path.of(it.asString).toAbsolutePath().normalize() }
             require(paths.size == repetitions) { "Incomplete native repetition group" }
@@ -179,7 +224,7 @@ internal object NativeComponentPerformanceEvidence {
                 require(name.nameCount == 1 && name.fileName.toString().endsWith(".png") && name.isAbsolute.not())
                 require(ArtifactIdentity.file(images.resolve(name)).contentEquals(phase.get("png_sha256").asString)) { "Changed native image" }
             }
-            arguments.add(NativeComponentJvmArguments.read(report))
+            arguments.add(NativeComponentJvmArguments.read(report, NativeEvidenceCommand.decode(request.get("command")?.asString)))
             JvmPerformanceEvidence.verifyEqual(arguments, setOf("jvm_arguments"))
         }
     }
@@ -298,11 +343,12 @@ internal object NativeComponentPerformanceEvidence {
         return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)
     }
 
-    private fun contract(
+    internal fun contract(
         selection: PerformanceSelection,
         profile: PerformanceProfile,
         sampledImages: Boolean,
         epoch: NativePresentationEpoch,
+        command: NativeEvidenceCommand = NativeEvidenceCommand.Summary,
     ): PerformanceReportContract =
         PerformanceReportContract(
             epoch.workloadId(selection, profile, sampledImages),
@@ -332,8 +378,10 @@ internal object NativeComponentPerformanceEvidence {
                 "preparation_timeout_ms",
             ) +
                 (if (profile == PerformanceProfile.Quick) setOf("measurement_profile") else emptySet()) +
-                (if (epoch == NativePresentationEpoch.Paced) setOf("inactivity_mode") else emptySet()),
-            setOf("samples", "framebuffer_width", "framebuffer_height") + if (epoch == NativePresentationEpoch.Paced) setOf("pacing") else emptySet(),
+                (if (epoch != NativePresentationEpoch.Legacy && command != NativeEvidenceCommand.PacingComparison) setOf("inactivity_mode") else emptySet()) +
+                (if (epoch == NativePresentationEpoch.TimedPaced) setOf("collection_elapsed_scope") else emptySet()),
+            setOf("samples", "framebuffer_width", "framebuffer_height") + if (epoch != NativePresentationEpoch.Legacy && command != NativeEvidenceCommand.PacingComparison) setOf("pacing") else emptySet(),
+            variantReportFields = if (command == NativeEvidenceCommand.PacingComparison) setOf("inactivity_mode") else emptySet(),
             repetitions = profile.plan().repetitions,
         )
 

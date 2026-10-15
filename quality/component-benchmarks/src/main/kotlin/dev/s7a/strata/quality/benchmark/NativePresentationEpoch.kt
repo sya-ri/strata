@@ -12,6 +12,7 @@ internal enum class NativePresentationEpoch(
 ) {
     Legacy("presented-v1"),
     Paced("paced-presented-v2"),
+    TimedPaced("paced-presented-v3"),
     ;
 
     /**
@@ -35,8 +36,9 @@ internal enum class NativePresentationEpoch(
         phases: List<JsonObject>,
     ) {
         when (this) {
-            Paced -> {
+            Paced, TimedPaced -> {
                 NativePacingEvidence.verify(report)
+                if (this == TimedPaced) NativePacingEvidence.verifyCollectionElapsed(report)
             }
 
             Legacy -> {

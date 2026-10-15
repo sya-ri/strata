@@ -96,7 +96,7 @@ internal class MinecraftNativePerformanceProbe(
         val report = conditions.deepCopy()
         report.add("selected_cases", JsonArray().apply { selection.ids.forEach(::add) })
         report.addProperty("schema_version", 1)
-        report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "$family-selected-paced-presented-v2" else "$family-paced-presented-v2"))
+        report.addProperty("workload_id", profileMode.workloadId(if (selection.narrowed) "$family-selected-paced-presented-v3" else "$family-paced-presented-v3"))
         if (profileMode == PerformanceProfile.Quick) report.addProperty("measurement_profile", profileMode.name)
         report.addProperty("run_id", UUID.randomUUID().toString())
         val fixtureType = MinecraftNativePerformanceProbe::class.java

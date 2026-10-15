@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
 /**
@@ -58,6 +59,50 @@ internal object NativePacingEvidence {
         require(boolean(report, "borrowed_options_restored")) { "Native options were not restored before publishing success" }
         val configuredLimit = integer(report, "framerate_limit")
         report.getAsJsonArray("phases").forEach { verifyPhase(it.asJsonObject, requested, configuredLimit) }
+    }
+
+    /**
+     * Whole fixture elapsed time includes preparation, PNG persistence and successful restoration.
+     * It is a single invocation observation, separate from every sampled frame distribution.
+     */
+    internal fun verifyCollectionElapsed(report: JsonObject) {
+        val elapsed = requireNotNull(report.get("collection_elapsed_ns")) { "Missing whole native collection elapsed time" }
+        require(elapsed.isJsonPrimitive && elapsed.asJsonPrimitive.isNumber && 0 < elapsed.asBigDecimal.longValueExact()) { "Invalid whole native collection elapsed time" }
+        val scope = requireNotNull(report.get("collection_elapsed_scope")) { "Missing native collection elapsed scope" }
+        require(scope.isJsonPrimitive && scope.asJsonPrimitive.isString && scope.asString.isNotBlank()) { "Invalid native collection elapsed scope" }
+    }
+
+    /**
+     * Requires an explicit AFK baseline and MINIMIZED candidate, with live reasons on both sides.
+     * Each baseline invocation must actually observe AFK throttling; raw transitions remain outcomes.
+     * Archive, collector, counts, controlled conditions and exact-image admission remain the caller's gates.
+     */
+    internal fun verifyPolicyComparison(
+        baseline: List<JsonObject>,
+        candidate: List<JsonObject>,
+    ) {
+        require(baseline.size == 3 && candidate.size == 3) { "Pacing policy evidence requires independent B3/C3 invocations" }
+        listOf(baseline to Inactivity.AFK, candidate to Inactivity.MINIMIZED).forEach { (reports, requested) ->
+            reports.forEach { report ->
+                verify(report)
+                verifyCollectionElapsed(report)
+                require(enumValue<Inactivity>(report, "inactivity_mode") == requested) { "Unexpected pacing policy comparison side" }
+                val observations = report.getAsJsonArray("phases").flatMap { phase ->
+                    phase.asJsonObject.getAsJsonObject("pacing").getAsJsonArray("boundaries").map { boundary(it.asJsonObject) }
+                }
+                require(observations.all { it.inactivity == requested && it.reason != Reason.UNAVAILABLE }) { "Pacing policy comparison requires actual supported policy and throttle reasons" }
+                if (requested == Inactivity.AFK) {
+                    require(observations.any { it.reason == Reason.SHORT_AFK || it.reason == Reason.LONG_AFK }) { "Baseline never observed actual AFK throttling" }
+                }
+            }
+        }
+    }
+
+    /**
+     * Receipts supplied here must already have passed actual archive and complete class-tree verification.
+     */
+    internal fun verifyPolicyBinaries(receipts: JsonArray) {
+        require(receipts.size() == 6 && receipts.all { it == receipts[0] }) { "Pacing policy comparison requires identical measured runtime binaries" }
     }
 
     private fun verifyPhase(
