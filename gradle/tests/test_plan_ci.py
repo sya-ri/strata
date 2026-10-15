@@ -21,6 +21,10 @@ class PlanCiTest(unittest.TestCase):
                          "${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}", group)
         self.assertIn("  cancel-in-progress: true\n", workflow)
         self.assertIn("    - name: Select opt-in paired JVM measurement\n      if: inputs.subject_ref == ''\n", workflow)
+        minecraft = workflow.split("\n  minecraft:\n", 1)[1].split("\n  documentation:", 1)[0]
+        checkout_ref = next(line.removeprefix("        ref: ") for line in minecraft.splitlines() if line.startswith("        ref: "))
+        # Empty input preserves checkout's event-ref and event-SHA default; a selected SHA remains explicit.
+        self.assertEqual("${{ needs.plan.outputs.subject_ref }}", checkout_ref)
 
     def test_default_full_plan_keeps_every_existing_gate(self):
         result = planner.plan([], full=True)

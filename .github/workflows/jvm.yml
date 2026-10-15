@@ -421,7 +421,7 @@ jobs:
     - name: Check out source
       uses: actions/checkout@v7
       with:
-        ref: ${{ needs.plan.outputs.subject_ref || github.ref }}
+        ref: ${{ needs.plan.outputs.subject_ref }}
         fetch-depth: 1
         persist-credentials: false
     - name: Assert immutable client source
