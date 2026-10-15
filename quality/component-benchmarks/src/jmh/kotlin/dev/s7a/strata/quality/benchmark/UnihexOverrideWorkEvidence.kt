@@ -116,12 +116,6 @@ public object UnihexOverrideWorkEvidence {
         val predicates: Long,
     )
 
-    /** Requires complete cache, subscription and interval-payload release after supplemental collection. */
-    internal fun verifyTerminalOwner(state: UnihexOverrideBenchmark.OverrideSession) {
-        check(state.retained == listOf(0L, 0L, 0L) && state.subscriptions == 0)
-        check(indexRetention(state).get("reserved_payload_bytes").asLong == 0L)
-    }
-
     private fun verifyTrace(
         scenario: UnihexOverrideScenario,
         state: UnihexOverrideBenchmark.OverrideSession,
@@ -175,7 +169,10 @@ public object UnihexOverrideWorkEvidence {
         return MinecraftFontGlyph(width / 2f + 1f, 0f, 0f, width / 2f, 8f, createDrawImage(IntSize(width, 16), pixels), boldOffset = 0.5f, shadowOffset = 0.5f) to predicates
     }
 
-    private fun indexRetention(state: UnihexOverrideBenchmark.OverrideSession): JsonObject {
+    /**
+     * Captures retained interval count and reserved payload for the same original owner assertions.
+     */
+    internal fun indexRetention(state: UnihexOverrideBenchmark.OverrideSession): JsonObject {
         val engine =
             state.javaClass
                 .getDeclaredField("engine")

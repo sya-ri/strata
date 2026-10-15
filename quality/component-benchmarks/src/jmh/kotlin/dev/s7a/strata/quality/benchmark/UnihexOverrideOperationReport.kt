@@ -42,7 +42,9 @@ public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
     override val rows: List<JvmOperationReportRow> =
         Operation.entries.flatMap { operation -> UnihexOverrideScenario.entries.map { scenario -> row(operation, scenario) } }
 
-    /** Requires exact method and scenario coverage from the real generated JMH registry. */
+    /**
+     * Requires exact method and scenario coverage from the real generated JMH registry.
+     */
     internal fun verifyInventory() {
         val actual = JmhWorkloadInventory.capture(listOf(UnihexOverrideBenchmark::class.java), setOf("avgt"))
         val declared = rows.map { JmhPerformanceRunner.workloadIdentity(it.benchmark, "avgt", it.parameters) }.toSet()
@@ -100,7 +102,8 @@ public object UnihexOverrideOperationReport : JvmOperationReportAdapter {
                 }.evidence
         } finally {
             owner.close()
-            UnihexOverrideWorkEvidence.verifyTerminalOwner(owner)
+            check(owner.retained == listOf(0L, 0L, 0L) && owner.subscriptions == 0)
+            check(UnihexOverrideWorkEvidence.indexRetention(owner).get("reserved_payload_bytes").asLong == 0L)
         }
     }
 

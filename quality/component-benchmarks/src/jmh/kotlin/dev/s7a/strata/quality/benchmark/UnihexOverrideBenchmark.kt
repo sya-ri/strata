@@ -47,7 +47,9 @@ public open class UnihexOverrideBenchmark {
             UnihexOverrideOperationReport.verifyInventory()
         }
 
-        /** Supplies every original operation and scenario to the shared CPU and allocation collector. */
+        /**
+         * Supplies every original operation and scenario to the shared CPU and allocation collector.
+         */
         @JvmStatic
         public fun operationReport(): JvmOperationReportAdapter = UnihexOverrideOperationReport
     }
