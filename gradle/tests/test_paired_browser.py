@@ -236,6 +236,58 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(mode=mode), self.assertRaises(ValueError):
                 boundary.validate_immediate_history(changed, oracle, 64)
 
+        created = copy.deepcopy(terminal)
+        created.update(processCreationCapture="debug-before-continue-v1", processCreationEvents=96,
+                       creationEventsAfterFailure=0, newProcessNotifications=0, debugEventCounts={"3": 96, "5": 96},
+                       processCreationAbi={"pointerBytes": 8, "eventBytes": 176, "unionOffset": 16, "firstChanceOffset": 152},
+                       processCreationHandleSource="duplicate-debug-event-handle", notificationOpenSuccesses=0,
+                       notificationDuplicateSuccesses=96, notificationDuplicateFailures=0)
+        created["processAcquisition"].update(debugProcessHandles=0, maximumPhysicalHandles=192)
+        for histories in created["members"].values():
+            histories[0]["creationEventBeforeContinue"] = True
+        # Lost advisory Job messages do not lose the independently held creation-event generations.
+        boundary.validate_immediate_history(created, actual, 64)
+        auxiliary = copy.deepcopy(created)
+        # Debugging descendants and physical Job membership are distinct; retain actual snapshots of auxiliary members too.
+        for histories in list(auxiliary["members"].values())[32:]:
+            histories[0].pop("creationEventBeforeContinue")
+        auxiliary.update(processCreationEvents=32, debugEventCounts={"3": 32, "5": 32},
+                         notificationDuplicateSuccesses=32, notificationImageSuccesses=32, notificationMetadataSuccesses=32)
+        boundary.validate_immediate_history(auxiliary, actual, 64)
+        for mode in ("missing-generation", "missing-witness", "wrong-event-count", "open-failure", "capture-error",
+                     "after-failure", "missing-debug-handles", "unclosed-debug-handles", "unknown-protocol", "wrong-abi", "missing-exit-event", "terminal-error", "duplicate-failure", "handle-source"):
+            changed = copy.deepcopy(created)
+            if mode == "missing-generation":
+                changed["members"].pop("1")
+            elif mode == "missing-witness":
+                changed["members"]["1"][0].pop("creationEventBeforeContinue")
+            elif mode == "wrong-event-count":
+                changed["processCreationEvents"] -= 1
+            elif mode == "open-failure":
+                changed["notificationOpenFailures"] = 1
+            elif mode == "capture-error":
+                changed["creationCaptureError"] = "actual acquisition failure"
+            elif mode == "after-failure":
+                changed["creationEventsAfterFailure"] = 1
+            elif mode == "missing-debug-handles":
+                changed["processAcquisition"].pop("debugProcessHandles")
+            elif mode == "unclosed-debug-handles":
+                changed["processAcquisition"]["debugProcessHandles"] = 1
+            elif mode == "wrong-abi":
+                changed["processCreationAbi"]["unionOffset"] = 12
+            elif mode == "missing-exit-event":
+                changed["debugEventCounts"]["5"] = 95
+            elif mode == "terminal-error":
+                changed["error"] = "actual failed metadata acquisition"
+            elif mode == "duplicate-failure":
+                changed["notificationDuplicateFailures"] = 1
+            elif mode == "handle-source":
+                changed["processCreationHandleSource"] = "cached-pid"
+            else:
+                changed["processCreationCapture"] = "unowned"
+            with self.subTest(creation_mode=mode), self.assertRaises(ValueError):
+                boundary.validate_immediate_history(changed, actual, 64)
+
     def test_ready_leak_requires_actual_survival_in_the_owned_job(self):
         source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"
         spec = importlib.util.spec_from_file_location("boundary", source)

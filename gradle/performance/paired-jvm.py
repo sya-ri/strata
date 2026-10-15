@@ -514,11 +514,16 @@ def class_loads(directory):
 
 def verify_generation_accounting(terminal):
     """Reconcile every closed physical PID/birth history with actual terminal Job accounting."""
+    creation_capture = terminal.get("processCreationCapture")
+    require(creation_capture in (None, "debug-before-continue-v1"), "Unknown owned process creation capture")
+    if creation_capture is not None:
+        require(isinstance(terminal.get("processAcquisition"), dict), "Creation capture lacks its physical handle inventory")
     accounting = terminal.get("generationAccounting", {})
     require(isinstance(accounting, dict) and accounting.get("schema") == "strata-owned-generation-accounting-v1"
             and accounting.get("complete") is True and terminal.get("notificationReaderJoined") is True,
             "Missing complete physical generation accounting")
     require(terminal.get("nativeInvoked") is True and terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
+            and "error" not in terminal and "cleanupError" not in terminal
             and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
             "Generation accounting lacks natural closed terminal proof")
     identities = set()
@@ -527,6 +532,9 @@ def verify_generation_accounting(terminal):
                 "Invalid physical process histories")
         previous_exit = None
         for member in histories:
+            if creation_capture is not None:
+                require("creationEventBeforeContinue" not in member or type(member["creationEventBeforeContinue"]) is bool,
+                        "Malformed actual creation-event witness")
             require(type(member.get("pid")) is int and member["pid"] == int(pid) and type(member.get("creationFileTime")) is int
                     and type(member.get("exitFileTime")) is int and member["creationFileTime"] <= member["exitFileTime"]
                     and 0 < member["creationFileTime"]
@@ -560,10 +568,33 @@ def verify_generation_accounting(terminal):
                 "Acquired physical history exceeds its shared byte bound")
         counters = ("newProcessNotifications", "notificationOpenSuccesses", "notificationOpenFailures", "notificationImageSuccesses",
                     "notificationImageFailures", "notificationMetadataSuccesses", "notificationMetadataFailures")
+        delivered = terminal.get("newProcessNotifications")
+        acquired = terminal.get("notificationOpenSuccesses")
+        acquisition_failures = terminal.get("notificationOpenFailures")
+        if creation_capture is not None:
+            counters += ("notificationDuplicateSuccesses", "notificationDuplicateFailures")
+            acquired = terminal.get("notificationDuplicateSuccesses")
+            acquisition_failures = terminal.get("notificationDuplicateFailures")
+            delivered = terminal.get("processCreationEvents")
+            abi = terminal.get("processCreationAbi", {})
+            counts = terminal.get("debugEventCounts", {})
+            require(isinstance(abi, dict) and all(type(abi.get(key)) is int for key in ("pointerBytes", "eventBytes", "unionOffset", "firstChanceOffset"))
+                    and tuple(abi[key] for key in ("pointerBytes", "eventBytes", "unionOffset", "firstChanceOffset")) in ((8, 176, 16, 152), (4, 96, 12, 80))
+                    and isinstance(counts, dict) and all(isinstance(key, str) and re.fullmatch(r"[1-9]", key) and type(value) is int and 0 <= value for key, value in counts.items())
+                    and counts.get("3") == counts.get("5") == delivered,
+                    "Creation capture lacks its actual ABI or complete native create/exit event counts")
+            witnessed = sum(member.get("creationEventBeforeContinue") is True for histories in terminal["members"].values() for member in histories)
+            require(type(delivered) is int and 0 < delivered == witnessed <= terminal["totalProcesses"]
+                    and type(terminal.get("creationEventsAfterFailure")) is int and terminal["creationEventsAfterFailure"] == 0
+                    and "creationCaptureError" not in terminal
+                    and type(acquisition.get("debugProcessHandles")) is int and acquisition["debugProcessHandles"] == 0
+                    and terminal.get("processCreationHandleSource") == "duplicate-debug-event-handle"
+                    and terminal.get("notificationOpenSuccesses") == terminal.get("notificationOpenFailures") == acquisition_failures == 0,
+                    "Creation events do not reconcile with actual closed Job generations")
         require(all(type(terminal.get(key)) is int and 0 <= terminal[key] for key in counters)
                 and terminal["notificationImageFailures"] == terminal["notificationMetadataFailures"] == 0
-                and terminal["newProcessNotifications"] == terminal["notificationOpenSuccesses"] + terminal["notificationOpenFailures"]
-                and terminal["notificationOpenSuccesses"] == terminal["notificationImageSuccesses"] == terminal["notificationMetadataSuccesses"],
+                and delivered == acquired + acquisition_failures
+                and acquired == terminal["notificationImageSuccesses"] == terminal["notificationMetadataSuccesses"],
                 "Acquired process image or metadata lacks complete delivery")
 
 
