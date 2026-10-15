@@ -70,7 +70,9 @@ public object CompositionTargetsOperationReport : JvmOperationReportAdapter {
             else -> false
         }
 
-    /** Original JMH methods and their complete CPU-input preparation scopes. */
+    /**
+     * Original JMH methods and their complete CPU-input preparation scopes.
+     */
     private enum class Boundary(
         val method: String,
         val description: String,
