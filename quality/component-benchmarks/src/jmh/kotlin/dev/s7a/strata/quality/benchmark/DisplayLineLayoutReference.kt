@@ -37,7 +37,16 @@ internal class DisplayLineLayoutReference(
         if (workload.consumer !== Consumer.Display) {
             Int.MAX_VALUE
         } else {
-            minOf(workload.policy.maxLines, if (size.height == Int.MAX_VALUE) Int.MAX_VALUE else if (size.height == 0) 0 else 1 + (size.height - 1) / step)
+            minOf(
+                workload.policy.maxLines,
+                if (size.height == Int.MAX_VALUE) {
+                    Int.MAX_VALUE
+                } else if (size.height == 0) {
+                    0
+                } else {
+                    1 + (size.height - 1) / step
+                },
+            )
         }
     private val admitted = complete.take(visibleLimit)
     private val rows = admitted.mapIndexed { index, row -> compact(row, index == admitted.lastIndex && admitted.size < complete.size) }
@@ -73,16 +82,18 @@ internal class DisplayLineLayoutReference(
      */
     internal fun verifyPixels(frame: RuntimeUiFrame) {
         val clip = if (workload.consumer === Consumer.TextArea) IntRect(4, 4, size.width - 4, size.height - 4) else IntRect(0, 0, size.width, size.height)
-        val actual = buildList {
-            add(DrawCommand.PushClip(clip))
-            addAll(frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>())
-            add(DrawCommand.PopClip)
-        }
-        val expected = buildList {
-            add(DrawCommand.PushClip(clip))
-            if (workload.shape !== Shape.Exceptional) rows.forEachIndexed { index, row -> addAll(glyphs(row, index)) }
-            add(DrawCommand.PopClip)
-        }
+        val actual =
+            buildList {
+                add(DrawCommand.PushClip(clip))
+                addAll(frame.drawCommands.filterIsInstance<DrawCommand.SampledImage>())
+                add(DrawCommand.PopClip)
+            }
+        val expected =
+            buildList {
+                add(DrawCommand.PushClip(clip))
+                if (workload.shape !== Shape.Exceptional) rows.forEachIndexed { index, row -> addAll(glyphs(row, index)) }
+                add(DrawCommand.PopClip)
+            }
         val window = IntSize(minOf(64, size.width).coerceAtLeast(1), minOf(64, size.height).coerceAtLeast(1))
         for (scale in 1..3) {
             check(rasterizeHeadless(actual, window, scale).copyArgb().contentEquals(rasterizeHeadless(expected, window, scale).copyArgb()))
@@ -93,7 +104,10 @@ internal class DisplayLineLayoutReference(
      * Invokes the actual private range helper outside timing with complete measured advances.
      * The original five-argument and bounded six-argument descriptors are decoded only at this external symbol adapter.
      */
-    internal fun verifyRangeWork(owner: Any, layout: Any): Int {
+    internal fun verifyRangeWork(
+        owner: Any,
+        layout: Any,
+    ): Int {
         val renderer = if (workload.consumer === Consumer.TextArea) TextAreaInputAccess.field(TextAreaInputAccess.field(owner, "current"), "renderer") else TextAreaInputAccess.field(owner, "renderer")
         val type = Class.forName("dev.s7a.strata.runtime.minecraft.MinecraftTextLineBreaker")
         val engine = type.getDeclaredField("INSTANCE").apply { isAccessible = true }.get(null)
@@ -138,7 +152,11 @@ internal class DisplayLineLayoutReference(
         return result
     }
 
-    private fun paragraph(start: Int, end: Int, nextStart: Int): List<Row> {
+    private fun paragraph(
+        start: Int,
+        end: Int,
+        nextStart: Int,
+    ): List<Row> {
         if (start == end || workload.policy.wrap === TextWrap.None || width == Int.MAX_VALUE) return listOf(row(start, end, nextStart))
         val result = ArrayList<Row>()
         var first = start
@@ -170,7 +188,11 @@ internal class DisplayLineLayoutReference(
         return result
     }
 
-    private fun row(start: Int, end: Int, nextStart: Int): Row {
+    private fun row(
+        start: Int,
+        end: Int,
+        nextStart: Int,
+    ): Row {
         val offsets = ArrayList<Int>()
         val prefixes = ArrayList<Float>()
         offsets.add(start)
@@ -184,16 +206,23 @@ internal class DisplayLineLayoutReference(
         return Row(offsets.toIntArray(), prefixes.toFloatArray(), nextStart)
     }
 
-    private fun compact(row: Row, moreLines: Boolean): Row {
+    private fun compact(
+        row: Row,
+        moreLines: Boolean,
+    ): Row {
         if (workload.consumer !== Consumer.Display || workload.policy.overflow !== TextOverflow.Ellipsis || (moreLines.not() && assets.compatibility.roundedWidth(row.prefixes.last()) <= width)) return row
-        val end = row.offsets.indices.lastOrNull { index ->
-            val marker = assets.advance('.'.code, markerFont(row, index))
-            assets.compatibility.roundedWidth(((row.prefixes[index] + marker) + marker) + marker) <= width
-        } ?: return row
+        val end =
+            row.offsets.indices.lastOrNull { index ->
+                val marker = assets.advance('.'.code, markerFont(row, index))
+                assets.compatibility.roundedWidth(((row.prefixes[index] + marker) + marker) + marker) <= width
+            } ?: return row
         return Row(row.offsets.copyOf(end + 1), row.prefixes.copyOf(end + 1), row.nextStart, true)
     }
 
-    private fun markerFont(row: Row, index: Int): ResourceId =
+    private fun markerFont(
+        row: Row,
+        index: Int,
+    ): ResourceId =
         when {
             0 < index -> fontAt(row.offsets[index - 1])
             row.offsets.first() < value.length -> fontAt(row.offsets.first())
@@ -202,7 +231,11 @@ internal class DisplayLineLayoutReference(
         }
 
     private fun visual(row: Row): List<Pair<Int, ResourceId>> {
-        val scalars = row.offsets.dropLast(1).map { offset -> value.codePointAt(offset) to fontAt(offset) }.toMutableList()
+        val scalars =
+            row.offsets
+                .dropLast(1)
+                .map { offset -> value.codePointAt(offset) to fontAt(offset) }
+                .toMutableList()
         if (row.marker) repeat(3) { scalars.add('.'.code to markerFont(row, row.offsets.lastIndex)) }
         return if (workload.shape === Shape.DisplayOrder && workload.consumer !== Consumer.TextArea) scalars.asReversed() else scalars
     }
@@ -215,7 +248,10 @@ internal class DisplayLineLayoutReference(
 
     private fun runWidth(row: Row): Int = nativeRunWidth(row).coerceAtLeast(0)
 
-    private fun glyphs(row: Row, index: Int): List<DrawCommand> {
+    private fun glyphs(
+        row: Row,
+        index: Int,
+    ): List<DrawCommand> {
         val image = createDrawImage(IntSize(1, 1), intArrayOf(-1))
         val origin = if (workload.consumer === Consumer.TextArea) 4 else 0
         var x = 0f

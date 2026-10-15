@@ -163,15 +163,20 @@ internal class DisplayLineLayoutFixture(
                 states[next.ordinal].value = values[content.value.ordinal]
                 selected.value = next
             }
+
             Operation.Edit -> {
                 val next = opposite(content.value)
                 states[selected.value.ordinal].value = values[next.ordinal]
                 content.value = next
             }
+
             Operation.Reflow, Operation.Height -> {
                 size.value = if (size.value === firstSize) secondSize else firstSize
             }
-            Operation.Clean -> Unit
+
+            Operation.Clean -> {
+                return
+            }
         }
     }
 
@@ -217,8 +222,10 @@ internal class DisplayLineLayoutFixture(
         return UiText.concat(UiText.Literal(value.substring(0, split)).withFont(assets.defaultFont), UiText.Literal(value.substring(split)).withFont(assets.alternateFont))
     }
 
-    private fun fontAt(side: Side, offset: Int): ResourceId =
-        if (workload.shape === Shape.MixedFonts && fontSplits[side.ordinal] <= offset) assets.alternateFont else assets.defaultFont
+    private fun fontAt(
+        side: Side,
+        offset: Int,
+    ): ResourceId = if (workload.shape === Shape.MixedFonts && fontSplits[side.ordinal] <= offset) assets.alternateFont else assets.defaultFont
 
     private fun owner(): Any = TextLineLayoutAccess.owner(host, accessConsumer)
 

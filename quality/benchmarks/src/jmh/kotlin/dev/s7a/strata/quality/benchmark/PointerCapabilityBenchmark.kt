@@ -350,7 +350,7 @@ public open class PointerCapabilityBenchmark {
                 }
 
                 Operation.Detach -> {
-                    Unit
+                    return
                 }
 
                 Operation.Move, Operation.Drag, Operation.Scroll, Operation.PressCycle, Operation.CaptureCycle, Operation.Clean -> {

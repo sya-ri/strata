@@ -33,7 +33,7 @@ public object HistoricalWorkloadEvidence {
         check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 54)
         // New compiled fixtures participate without changing this launcher or Gradle registration.
         val compiled = JmhFixtureSelection.all()
-        JmhFixtureSelection.verifyWork(compiled)
+        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(compiled))
         compiled.forEach { fixture ->
             val includes = JmhFixtureSelection.includes(listOf(fixture))
             val expected = JmhWorkloadInventory.capture(listOf(fixture), setOf("avgt"), includes = includes)
