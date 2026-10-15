@@ -181,6 +181,36 @@ def verify(root, model_path, container_root, java_path):
         fail("missing project SDK")
     sdk = sdk_model[0].attrib["project-jdk-name"]
     project_java = int(sdk_model[0].attrib["languageLevel"][4:])
+    def verify_dependencies(owner, manager, imported, directory):
+        """Check each real compiler/runtime closure without assuming auxiliary dependencies match main."""
+        name = owner["module"]
+        dependencies = owner["dependencies"]
+        classpaths = owner["classpaths"]
+        if set(classpaths) != {"compile", "runtime"} or set(dependencies) != set(classpaths.values()) or ("sourceSet" not in owner and any(not closure for closure in dependencies.values())):
+            fail(f"missing compile/runtime dependency closure: {name}")
+        for configuration, closure in dependencies.items():
+            for dependency in closure:
+                if dependency["kind"] == "Module":
+                    identity = dependency["identity"]
+                    required_project = declarations_by_project.get(dependency["project"])
+                    if not required_project or required_project["module"] != identity or len(modules[identity]) != 1:
+                        fail(f"unresolved required project dependency: {name}: {identity}")
+                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module']") if entry.attrib.get("module-name") == identity]
+                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == identity]
+                elif dependency["kind"] == "Library":
+                    library = pathlib.Path(dependency["path"])
+                    if not library.exists() or sha256(library) != dependency["sha256"]:
+                        fail(f"unresolved or changed required library: {name}: {dependency['identity']}")
+                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == library for item in entry.findall("./library/CLASSES/root"))]
+                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == library]
+                else:
+                    fail(f"unsupported dependency kind: {dependency['kind']}")
+                if len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
+                    fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
+                scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
+                if generated_dependencies[0].attrib.get("scope", "COMPILE") not in scopes:
+                    fail(f"required dependency has an incompatible compile/runtime scope: {name}")
+
     for owner in owners:
         name = owner["module"]
         if len(modules[name]) != 1:
@@ -242,32 +272,7 @@ def verify(root, model_path, container_root, java_path):
             fail(f"missing or incompatible owner SDK: {name}")
         if generated_sdks[0].attrib.get("jdkName", sdk) != sdk:
             fail(f"wrong generated SDK: {name}")
-        dependencies = owner["dependencies"]
-        classpaths = owner["classpaths"]
-        if set(classpaths) != {"compile", "runtime"} or set(dependencies) != set(classpaths.values()) or any(not closure for closure in dependencies.values()):
-            fail(f"missing compile/runtime dependency closure: {name}")
-        for configuration, closure in dependencies.items():
-            for dependency in closure:
-                if dependency["kind"] == "Module":
-                    identity = dependency["identity"]
-                    required_project = declarations_by_project.get(dependency["project"])
-                    if not required_project or required_project["module"] != identity or len(modules[identity]) != 1:
-                        fail(f"unresolved required project dependency: {name}: {identity}")
-                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module']") if entry.attrib.get("module-name") == identity]
-                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Module" and entry.get("name") == identity]
-                elif dependency["kind"] == "Library":
-                    library = pathlib.Path(dependency["path"])
-                    if not library.exists() or sha256(library) != dependency["sha256"]:
-                        fail(f"unresolved or changed required library: {name}: {dependency['identity']}")
-                    generated_dependencies = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == library for item in entry.findall("./library/CLASSES/root"))]
-                    imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == library]
-                else:
-                    fail(f"unsupported dependency kind: {dependency['kind']}")
-                if len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
-                    fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
-                scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
-                if generated_dependencies[0].attrib.get("scope", "COMPILE") not in scopes:
-                    fail(f"required dependency has an incompatible compile/runtime scope: {name}")
+        verify_dependencies(owner, manager, imported, directory)
         # Explicitly shared declarations preserve native component and showcase inputs; undeclared attribution fails.
         for foreign_name, foreign_modules in modules.items():
             if foreign_name == name:
@@ -297,7 +302,100 @@ def verify(root, model_path, container_root, java_path):
                 foreign_contents = [{"path": url_path(root, foreign_directory, item.attrib["url"], container_root, False).as_posix()} for item in foreign_manager.findall("content")]
                 if not declared_shared_root(foreign_iml.stem, foreign_contents, iml_kind(folder), foreign_path):
                     fail(f"generated JMH root attributed to a foreign owner: {name}: {foreign_iml.stem}: {relative}")
-    print(f"Verified {len(owners)} declaration-derived JMH owners, roots, SDKs and compile/runtime dependency closures against IDEA and Qodana.")
+    auxiliary = inventory["auxiliary"]
+    identities = [(entry["project"], entry["sourceSet"]) for entry in auxiliary]
+    expected_identities = {(entry["project"], name) for entry in declared_projects for name in entry["auxiliarySourceSets"]}
+    if len(set(identities)) != len(identities) or set(identities) != expected_identities:
+        fail("configured working auxiliary compilations and detailed inventory differ")
+    auxiliary_by_module = collections.defaultdict(list)
+    for owner in auxiliary:
+        declaration = declarations_by_project.get(owner["project"])
+        if not declaration or declaration["module"] != owner["module"] or declaration["directory"] != owner["directory"]:
+            fail("auxiliary owner differs from the complete configured project model")
+        auxiliary_by_module[owner["module"]].append(owner)
+    for name, compilations in auxiliary_by_module.items():
+        if len(modules[name]) != 1:
+            fail(f"missing or duplicate auxiliary owner: {name}")
+        owner = compilations[0]
+        directory = repository_path(root, owner["directory"])
+        iml = repository_path(root, owner["iml"])
+        if iml.stem != name or any(entry["iml"] != owner["iml"] for entry in compilations):
+            fail(f"wrong generated auxiliary owner: {name}")
+        if sum(url_path(root, directory, entry.attrib["fileurl"], container_root, False) == iml for entry in module_entries) != 1:
+            fail(f"generated project does not own exactly one auxiliary module: {name}")
+        manager, folders = read_iml(iml)
+        imported = modules[name][0]
+        contents = imported.get("contentEntries", [])
+        if len(contents) != 1 or url_path(root, directory, contents[0]["path"], source=False) != directory or url_path(root, directory, manager.find("content").attrib["url"], container_root, False) != directory:
+            fail(f"wrong auxiliary content owner: {name}")
+        expected = set()
+        for compilation in compilations:
+            roots = compilation["roots"]
+            if len({(entry["kind"], entry["path"]) for entry in roots}) != len(roots):
+                fail(f"duplicate auxiliary root declaration: {name}")
+            for entry in roots:
+                path = repository_path(root, entry["path"])
+                if entry["generated"] or entry["sourceSet"] != compilation["sourceSet"] or not declared_shared_root(name, contents, entry["kind"], path):
+                    fail(f"auxiliary root is not an exact configured authored declaration: {name}: {path}")
+                files = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
+                if entry["exists"] != path.is_dir() or entry["files"] != files or not set(files).issubset(current):
+                    fail(f"auxiliary root membership, existence or bytes changed: {name}: {path}")
+                if entry["exists"]:
+                    expected.add((entry["kind"], path))
+            outputs = compilation["outputs"]
+            if len({entry["path"] for entry in outputs}) != len(outputs) or not any(entry["files"] for entry in outputs):
+                fail(f"working auxiliary compilation has no unique compiler outputs: {name}")
+            for output in outputs:
+                path = repository_path(root, output["path"])
+                files = {file.relative_to(root).as_posix(): sha256(file) for file in path.rglob("*") if file.is_file()} if path.is_dir() else {}
+                if output["exists"] != path.is_dir() or output["files"] != files:
+                    fail(f"auxiliary compiler outputs are missing or changed: {name}: {path}")
+                generated_libraries = [entry for entry in manager.findall("orderEntry[@type='module-library']") if any(url_path(root, directory, item.attrib["url"], container_root, False) == path for item in entry.findall("./library/CLASSES/root"))]
+                imported_libraries = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == path]
+                if len(generated_libraries) != len(imported_libraries) or len(generated_libraries) > 1:
+                    fail(f"auxiliary owned output is duplicated or differently attributed: {name}: {path}")
+            verify_dependencies(compilation, manager, imported, directory)
+        generated = collections.Counter((iml_kind(folder), url_path(root, directory, folder.attrib["url"], container_root)) for folder in folders)
+        actual = collections.Counter((folder["type"], url_path(root, directory, folder["path"])) for folder in contents[0].get("sourceFolders", []))
+        for observed in (generated, actual):
+            if any(observed[pair] != 1 for pair in expected):
+                fail(f"missing, duplicate or wrong-kind auxiliary root: {name}")
+            for pair in observed:
+                if any(pair[1] == path or pair[1] in path.parents or path in pair[1].parents for _, path in expected) and pair not in expected:
+                    fail(f"broader or overlapping auxiliary root: {name}: {pair}")
+        if contents[0].get("excludePatterns", []):
+            fail(f"imported patterns may hide auxiliary inputs: {name}")
+        exclusions = [url_path(root, directory, entry.attrib["url"], container_root, False) for entry in manager.findall("./content/excludeFolder")]
+        exclusions += [url_path(root, directory, entry["path"], source=False) for entry in contents[0].get("excludeFolders", [])]
+        if any(excluded == path or excluded in path.parents for excluded in exclusions for _, path in expected):
+            fail(f"exclusion hides auxiliary inputs: {name}")
+        java_owners = [entry for entry in java["modules"] if entry["name"] == name]
+        sdks = [entry for entry in imported["orderEntries"] if entry.get("type") == "SDK"]
+        generated_sdks = manager.findall("orderEntry[@type='inheritedJdk']") + manager.findall("orderEntry[@type='jdk']")
+        if len(java_owners) != 1 or any(entry["java"] != java_owners[0].get("languageLevel") for entry in compilations) or manager.attrib.get("LANGUAGE_LEVEL") != f"JDK_{owner['java']}" or project_java < owner["java"]:
+            fail(f"wrong auxiliary compiler language level: {name}")
+        if len(sdks) != 1 or sdks[0].get("name") != sdk or len(generated_sdks) != 1 or generated_sdks[0].attrib.get("jdkName", sdk) != sdk:
+            fail(f"wrong auxiliary SDK: {name}")
+        for entry in module_entries:
+            foreign_iml = url_path(root, directory, entry.attrib["fileurl"], container_root, False)
+            if foreign_iml == iml:
+                continue
+            foreign_manager, foreign_folders = read_iml(foreign_iml)
+            foreign_contents = [{"path": url_path(root, foreign_iml.parent, item.attrib["url"], container_root, False).as_posix()} for item in foreign_manager.findall("content")]
+            for folder in foreign_folders:
+                path = url_path(root, foreign_iml.parent, folder.attrib["url"], container_root)
+                if any(path == owned or path in owned.parents or owned in path.parents for _, owned in expected) and not declared_shared_root(foreign_iml.stem, foreign_contents, iml_kind(folder), path):
+                    fail(f"generated auxiliary root attributed to a foreign owner: {name}: {path}")
+        for foreign_name, foreign_modules in modules.items():
+            if foreign_name == name:
+                continue
+            for foreign in foreign_modules:
+                for content in foreign.get("contentEntries", []):
+                    for folder in content.get("sourceFolders", []):
+                        path = url_path(root, directory, folder["path"])
+                        if any(path == owned or path in owned.parents or owned in path.parents for _, owned in expected) and not declared_shared_root(foreign_name, foreign.get("contentEntries", []), folder["type"], path):
+                            fail(f"imported auxiliary root attributed to a foreign owner: {name}: {path}")
+    print(f"Verified {len(owners)} declaration-derived JMH owners and {len(auxiliary)} working auxiliary compilations against IDEA and Qodana.")
 
 
 if __name__ == "__main__":
