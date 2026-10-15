@@ -14,7 +14,7 @@ import java.nio.file.Path
  */
 public object UiTextCompositionOperationReport : JvmOperationReportAdapter {
     private val lengths = listOf(1, 2, 8, 32, 128)
-    private val batch = 256
+    private const val batch = 256
 
     override val inputs: Map<String, Path>
         get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))

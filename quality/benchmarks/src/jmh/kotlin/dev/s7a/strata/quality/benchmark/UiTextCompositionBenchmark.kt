@@ -103,12 +103,16 @@ public open class UiTextCompositionBenchmark {
 
         /**
          * Constructs a detached composition using the public array entry point.
+         * The frozen operation includes the caller's spread copy on both runtime sides.
          */
+        @Suppress("SpreadOperator")
         public fun constructed(): UiText.Concatenated = UiText.Concatenated(*parts)
 
         /**
          * Constructs a detached composition through the companion's original shortcuts.
+         * The frozen operation includes the caller's spread copy on both runtime sides.
          */
+        @Suppress("SpreadOperator")
         public fun combined(): UiText = UiText.concat(*parts)
 
         /**
