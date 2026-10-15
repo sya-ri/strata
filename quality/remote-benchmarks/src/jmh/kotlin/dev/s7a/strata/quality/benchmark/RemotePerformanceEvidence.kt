@@ -23,6 +23,10 @@ public object RemotePerformanceEvidence {
             SelectedRemotePerformanceEvidence.main(args)
             return
         }
+        collectRegistered(args)
+    }
+
+    private fun collectRegistered(args: Array<String>) {
         RemoteWorkEvidence.verifySurface()
         val sessions = System.getProperty("strata.performance.remoteSessions", "false").toBooleanStrict()
         val selected = System.getProperty("strata.performance.benchmarks") != null || System.getProperty("strata.performance.parameters") != null
