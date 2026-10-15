@@ -1,6 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import org.openjdk.jmh.annotations.Benchmark
@@ -64,10 +65,17 @@ public open class TextFieldPreeditBenchmark {
      */
     public companion object {
         /**
+         * Connects all original operation rows to the shared owner-thread meter without changing JMH sampling.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = TextFieldPreeditOperationReport
+
+        /**
          * Checks all 78 rows and independent full-frame pixel, input, work, semantics and terminal assertions.
          */
         @JvmStatic
         public fun verifyWork() {
+            TextFieldPreeditOperationReport.verifyRows()
             check(TextFieldPreeditRow.entries.size == 78)
             check(
                 TextFieldPreeditRow.entries
