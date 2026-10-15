@@ -130,7 +130,7 @@ public object LoadedArtifactMetadata {
             add("sha256", JsonNull.INSTANCE)
             runCatching {
                 require(codeSource != null) { "The loaded class did not expose a code source" }
-                val archivePath = requireLocalCodeSource(codeSource)
+                val archivePath = requireLocalArtifact(codeSource, allowDirectory = true)
                 val entries = ClassArchiveInventory.entries(archivePath, MAX_CLASS_ENTRIES, MAX_CLASS_ENTRY_BYTES)
                 val classLoader = checkNotNull(representative.classLoader) { "The Strata class has no class loader" }
                 val treeDigest = MessageDigest.getInstance("SHA-256")
@@ -182,7 +182,7 @@ public object LoadedArtifactMetadata {
         require(connection.entryName == expectedEntry) {
             "The classpath resource resolved a different entry: ${connection.entryName}"
         }
-        val resolvedArchive = requireLocalFile(connection.jarFileURL)
+        val resolvedArchive = requireLocalArtifact(connection.jarFileURL)
         require(Files.isSameFile(expectedArchive, resolvedArchive)) {
             "The classpath resource resolved from a different code source: ${connection.jarFileURL}"
         }
@@ -197,7 +197,7 @@ public object LoadedArtifactMetadata {
             add("sha256", JsonNull.INSTANCE)
             addProperty("url", location.toExternalForm())
             runCatching {
-                val root = requireLocalCodeSource(location)
+                val root = requireLocalArtifact(location, allowDirectory = true)
                 val name = "${representative.name.replace('.', '/')}.class"
                 val resourceLocation = checkNotNull(representative.getResource("/$name")) { "Missing classpath resource: $name" }
                 val actual = JvmEvidenceFiles.classDirectoryResource(root, name, resourceLocation)
@@ -215,13 +215,6 @@ public object LoadedArtifactMetadata {
         }
     }
 
-    private fun requireLocalCodeSource(location: URL): Path {
-        val uri = location.toURI()
-        require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Only local code sources are read" }
-        val path = Path.of(uri)
-        return if (Files.isDirectory(path)) path else requireLocalFile(location)
-    }
-
     private fun captureLocation(resolve: () -> URL?): JsonObject =
         JsonObject().apply {
             add("sha256", JsonNull.INSTANCE)
@@ -233,13 +226,13 @@ public object LoadedArtifactMetadata {
                 val connection = location.openConnection().apply { useCaches = false }
                 when (LocalResourceProtocol.decode(location.protocol)) {
                     LocalResourceProtocol.File -> {
-                        requireLocalFile(location)
+                        requireLocalArtifact(location)
                         addProperty("kind", "file")
                     }
 
                     LocalResourceProtocol.Jar -> {
                         require(connection is JarURLConnection) { "The jar URL has no standard entry metadata" }
-                        requireLocalFile(connection.jarFileURL)
+                        requireLocalArtifact(connection.jarFileURL)
                         addProperty("containerUrl", connection.jarFileURL.toExternalForm())
                         addProperty("entryName", connection.entryName)
                         if (connection.entryName == null) {
@@ -268,9 +261,11 @@ public object LoadedArtifactMetadata {
             }
         }
 
-    private fun requireLocalFile(location: URL): Path {
-        require(LocalResourceProtocol.decode(location.protocol) == LocalResourceProtocol.File && location.host.isEmpty()) { "Only local file-backed artifacts are read" }
-        val path = Path.of(location.toURI())
+    private fun requireLocalArtifact(location: URL, allowDirectory: Boolean = false): Path {
+        val uri = location.toURI()
+        require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Only local file-backed artifacts are read" }
+        val path = Path.of(uri)
+        if (allowDirectory && Files.isDirectory(path)) return path
         require(Files.isRegularFile(path)) { "The location is not a regular file: $location" }
         require(Files.size(path) <= MAX_HASH_BYTES) { "The artifact exceeds the metadata hash limit: $location" }
         return path

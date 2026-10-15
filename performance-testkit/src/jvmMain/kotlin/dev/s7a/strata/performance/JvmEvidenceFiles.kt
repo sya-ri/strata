@@ -152,7 +152,7 @@ internal object JvmEvidenceFiles {
             val entry = path.resolve(name)
             val size = Files.size(entry)
             val maximum = 8 * 1024 * 1024
-            require(0 < size && size <= maximum) { "Invalid class-directory resource size" }
+            require(size in 1L..maximum.toLong()) { "Invalid class-directory resource size" }
             total = Math.addExact(total, size)
             require(total <= 64L * 1024 * 1024) { "Oversized preserved class tree" }
             val hash =

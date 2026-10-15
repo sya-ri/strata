@@ -30,6 +30,8 @@ import kotlin.test.assertTrue
  * Actual compiled directory origins, archive parity and fail-closed physical resource verification.
  */
 internal class LoadedClassDirectoryTest {
+    private val representativeResource = "directoryfixture/Probe.class"
+
     @TempDir
     lateinit var temporary: Path
 
@@ -84,7 +86,7 @@ internal class LoadedClassDirectoryTest {
             assertFails { NativePerformanceEvidence.verify(native, wrap(changed), setOf("directoryfixture.Probe"), emptySet()) }
         }
         object : URLClassLoader(arrayOf(root.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
-            override fun getResource(name: String): URL? = if (name == "directoryfixture/Probe.class") URL(resourceAlias) else super.getResource(name)
+            override fun getResource(name: String): URL? = if (name == representativeResource) URL(resourceAlias) else super.getResource(name)
         }.use { loader ->
             val alias = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), emptySet())
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(alias) }
@@ -147,7 +149,7 @@ internal class LoadedClassDirectoryTest {
         Files.copy(root.resolve("directoryfixture/Probe.class"), outside)
         listOf(outside.toUri().toURL(), URL("https://example.invalid/Probe.class")).forEach { shadow ->
             object : URLClassLoader(arrayOf(root.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
-                override fun getResource(name: String): URL? = if (name == "directoryfixture/Probe.class") shadow else super.getResource(name)
+                override fun getResource(name: String): URL? = if (name == representativeResource) shadow else super.getResource(name)
             }.use { loader ->
                 assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), emptySet())) }
             }
@@ -173,7 +175,7 @@ internal class LoadedClassDirectoryTest {
     @Test
     fun unsafeEmptyOversizedAndExcessiveDirectoryInventoriesFail() {
         val root = compileDirectory()
-        assertFails { JvmEvidenceFiles.classTree(Files.createDirectory(temporary.resolve("empty"))) }
+        assertFails { JvmEvidenceFiles.classTree(Files.createDirectory(temporary.resolve("empty")).toRealPath()) }
         assertFails { ClassArchiveInventory.entries(root, 1, 8L * 1024 * 1024) }
         val unsafe = root.resolve("unsafe=name.class")
         Files.write(unsafe, byteArrayOf(1))
@@ -186,7 +188,7 @@ internal class LoadedClassDirectoryTest {
         RandomAccessFile(root.resolve("Large.class").toFile(), "rw").use { it.setLength(8L * 1024 * 1024 + 1) }
         assertFails { JvmEvidenceFiles.classTree(root) }
         Files.delete(root.resolve("Large.class"))
-        val total = Files.createDirectory(temporary.resolve("total"))
+        val total = Files.createDirectory(temporary.resolve("total")).toRealPath()
         repeat(9) { index -> RandomAccessFile(total.resolve("Class$index.class").toFile(), "rw").use { it.setLength(8L * 1024 * 1024) } }
         assertFails { JvmEvidenceFiles.classTree(total) }
     }
@@ -220,7 +222,7 @@ internal class LoadedClassDirectoryTest {
         Files.copy(jar, other)
         val shadow = URL("jar:${other.toUri().toURL()}!/directoryfixture/Probe.class")
         object : URLClassLoader(arrayOf(jar.toUri().toURL()), ClassLoader.getPlatformClassLoader()) {
-            override fun getResource(name: String): URL? = if (name == "directoryfixture/Probe.class") shadow else super.getResource(name)
+            override fun getResource(name: String): URL? = if (name == representativeResource) shadow else super.getResource(name)
         }.use { loader ->
             val shadowed = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), setOf("fixture"))
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(shadowed) }
@@ -241,7 +243,7 @@ internal class LoadedClassDirectoryTest {
         Files.writeString(source, "package directoryfixture; public final class Probe { static { System.setProperty(\"strata.testkit.directory.initialized\", \"yes\"); } public static class Nested {} } class Other {}")
         val root = Files.createDirectory(temporary.resolve("classes"))
         assertEquals(0, checkNotNull(ToolProvider.getSystemJavaCompiler()).run(null, null, null, "-d", root.toString(), source.toString()))
-        return root
+        return root.toRealPath()
     }
 
     private fun archive(root: Path): Path {
