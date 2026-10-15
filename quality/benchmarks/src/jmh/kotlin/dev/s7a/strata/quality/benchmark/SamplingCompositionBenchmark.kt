@@ -7,6 +7,7 @@ import dev.s7a.strata.geometry.FloatRect
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.ArtifactIdentity
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.render.ArgbColor
@@ -222,6 +223,12 @@ public open class SamplingCompositionBenchmark {
      * Optional shared fixture verification and a separate actual-runtime work diagnostic, both outside timing.
      */
     public companion object {
+        /**
+         * Supplies every original proof and partition row to the shared owner-thread collector.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SamplingCompositionOperationReport
+
         /**
          * Verifies the complete immutable case metadata, conservative relationships and literal opaque-mask pixels.
          */
