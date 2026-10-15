@@ -105,23 +105,24 @@ internal class FabricMinecraftPortableFrames {
         val offset = if (workspace == null) 0 else 1
         val textures = ArrayList<FabricMinecraftPortableTexture>(images.size)
         val set = resources.reserve(identity, targetPlan?.reservations ?: reservations)
-        val prepared = prepareSet(resources, set) {
-            workspace?.let { resources.add(set, it) }
-            val rasterPixels = allocateRasterPixels(images, matches)
-            HeadlessRasterScratch().use { scratch ->
-                images.forEachIndexed { index, input ->
-                    val source = matchedSource(matches, index)
-                    if (previous != null && 0 <= source) {
-                        resources.reuse(set, previous.set, source + previous.resourceOffset)
-                        textures.add(previous.textures[source])
-                    } else {
-                        textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled, composed, workspace) { resource -> resources.add(set, resource) })
-                        uploaded(input)
+        val prepared =
+            prepareSet(resources, set) {
+                workspace?.let { resources.add(set, it) }
+                val rasterPixels = allocateRasterPixels(images, matches)
+                HeadlessRasterScratch().use { scratch ->
+                    images.forEachIndexed { index, input ->
+                        val source = matchedSource(matches, index)
+                        if (previous != null && 0 <= source) {
+                            resources.reuse(set, previous.set, source + previous.resourceOffset)
+                            textures.add(previous.textures[source])
+                        } else {
+                            textures.add(prepareTexture(input, rasterPixels, scratch, rasterized, sampled, composed, workspace) { resource -> resources.add(set, resource) })
+                            uploaded(input)
+                        }
                     }
                 }
+                Prepared(images, textures.toList(), resources, set, offset, imageReservations, workspace)
             }
-            Prepared(images, textures.toList(), resources, set, offset, imageReservations, workspace)
-        }
         current = prepared
         previous?.let { it.resources.release(it.set) }
         return prepared

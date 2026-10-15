@@ -12,11 +12,16 @@ import dev.s7a.strata.runtime.render.DrawCommand
 @Suppress("unused") // Synthetic geometry and axis-proof visitors call this exact no-op classification.
 internal fun DrawCommand.isFabricMinecraftCompositionNoOp(): Boolean =
     when (this) {
-        is DrawCommand.FillRectangle -> color.value ushr 24 == 0
+        is DrawCommand.FillRectangle -> {
+            color.value ushr 24 == 0
+        }
+
         is DrawCommand.SampledImage -> {
             val alpha = tint.value ushr 24
             alpha == 0 || alpha.toFloat() / 255f < alphaCutoff
         }
 
-        else -> false
+        else -> {
+            false
+        }
     }
