@@ -722,46 +722,26 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
     }
 
     /**
-     * Renders the authoritative carried stack in Minecraft's final item stratum.
+     * Presents this bridge's current inventory overlays through the shared copied-stack submission order.
      *
-     * @param graphics native extraction target.
-     * @param font active Minecraft font for item decorations.
-     * @param mouseX current logical pointer x.
-     * @param mouseY current logical pointer y.
-     */
-    void renderCarried(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
-        requireUsable();
-        LocalPlayer player = requireMinecraft().player;
-        if (player == null) {
-            return;
-        }
-        ItemStack carried = activeMenu().getCarried();
-        if (carried.isEmpty()) {
-            return;
-        }
-        ItemStack snapshot = carried.copy();
-        int x = Math.subtractExact(mouseX, 8);
-        int y = Math.subtractExact(mouseY, 8);
-        graphics.nextStratum();
-        graphics.item(snapshot, x, y);
-        graphics.itemDecorations(font, snapshot, x, y);
-    }
-
-    /**
-     * Presents the native tooltip for the currently hit-tested synchronized Slot.
-     *
-     * <p>The binding owns its copied snapshot; no tooltip state outlives this native frame.</p>
-     *
-     * @param graphics borrowed native GUI context.
+     * @param graphics borrowed native GUI target.
      * @param font active Minecraft font.
      * @param mouseX current logical pointer x.
      * @param mouseY current logical pointer y.
      */
-    void renderTooltip(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
+    void renderOverlays(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
         requireUsable();
-        Binding target = hovered;
-        if (target == null || target.snapshot.isEmpty() || requireMinecraft().player == null) return;
-        FabricMinecraftSlotTooltipRenderer.render(graphics, font, target.snapshot.copy(), activeMenu().getCarried(), mouseX, mouseY);
+        if (requireMinecraft().player == null) return;
+        FabricMinecraftInventoryOverlays.render(
+                activeMenu().getCarried(), hovered == null ? null : hovered.snapshot,
+                (snapshot, carried) -> FabricMinecraftSlotTooltipRenderer.render(graphics, font, snapshot, carried, mouseX, mouseY),
+                snapshot -> {
+                    int x = Math.subtractExact(mouseX, 8);
+                    int y = Math.subtractExact(mouseY, 8);
+                    graphics.nextStratum();
+                    graphics.item(snapshot, x, y);
+                    graphics.itemDecorations(font, snapshot, x, y);
+                });
     }
 
     private boolean withInput(NativeInput current, BooleanSupplier operation) {
