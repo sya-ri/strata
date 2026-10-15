@@ -14,7 +14,7 @@ import java.nio.file.Path
  */
 public object UiTextCompositionOperationReport : JvmOperationReportAdapter {
     private val lengths = listOf(1, 2, 8, 32, 128)
-    private const val batch = 256
+    private const val BATCH = 256
 
     override val inputs: Map<String, Path>
         get() = JmhFixtureSelection.inputs() + mapOf("headless-api" to Path.of(checkNotNull(javaClass.getResource("/headless-api.tsv")).toURI()))
@@ -37,11 +37,11 @@ public object UiTextCompositionOperationReport : JvmOperationReportAdapter {
         check(invocations.size == rows.size)
         var last: Any? = null
         JvmPerformanceRunner.warmup(plan.warmup) {
-            invocations.forEach { invoke -> repeat(batch) { last = invoke() } }
+            invocations.forEach { invoke -> repeat(BATCH) { last = invoke() } }
         }
         return JvmPerformanceRunner.sequence(plan.samples, rows.associate { it.id to plan.samples }) { _, sequence ->
             rows.forEachIndexed { index, row ->
-                sequence.sample(row.id) { repeat(batch) { last = invocations[index]() } }
+                sequence.sample(row.id) { repeat(BATCH) { last = invocations[index]() } }
                 checkNotNull(last)
             }
         }
@@ -58,7 +58,7 @@ public object UiTextCompositionOperationReport : JvmOperationReportAdapter {
             "${UiTextCompositionBenchmark::class.java.name}.$method",
             parameters,
             "Repeat the original complete $method invocation 256 times, retaining the last result; declarations rebuild 128 labels per invocation.",
-            operationsPerSample = batch,
+            operationsPerSample = BATCH,
             control = control,
         )
 
