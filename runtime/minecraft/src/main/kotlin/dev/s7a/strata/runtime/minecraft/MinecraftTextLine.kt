@@ -19,16 +19,15 @@ import kotlin.math.abs
  */
 internal class MinecraftTextLine private constructor(
     @get:JvmSynthetic
+    internal val run: MinecraftTextRun,
+    @get:JvmSynthetic
     internal val start: Int,
     @get:JvmSynthetic
     internal val end: Int,
     @get:JvmSynthetic
     internal val nextStart: Int,
-    @get:JvmSynthetic
-    internal val run: MinecraftTextRun,
-    offsets: IntArray,
-    positions: IntArray,
-    ownership: Ownership,
+    private val offsets: IntArray,
+    private val positions: IntArray,
 ) {
     /**
      * Snapshots arbitrary caller-owned arrays through the original six-argument JVM construction contract.
@@ -41,10 +40,8 @@ internal class MinecraftTextLine private constructor(
         run: MinecraftTextRun,
         offsets: IntArray,
         positions: IntArray,
-    ) : this(start, end, nextStart, run, offsets, positions, Ownership.Defensive)
+    ) : this(run, start, end, nextStart, offsets.copyOf(), positions.copyOf())
 
-    private val offsets = if (ownership === Ownership.Exclusive) offsets else offsets.copyOf()
-    private val positions = if (ownership === Ownership.Exclusive) positions else positions.copyOf()
     private val monotone = (1 until this.positions.size).all { index -> this.positions[index - 1] <= this.positions[index] }
 
     /**
@@ -164,11 +161,6 @@ internal class MinecraftTextLine private constructor(
         return nearest
     }
 
-    private enum class Ownership {
-        Defensive,
-        Exclusive,
-    }
-
     /**
      * Privileged construction for one completed current line; arbitrary callers use the defensive constructor.
      */
@@ -196,6 +188,6 @@ internal class MinecraftTextLine private constructor(
             run: MinecraftTextRun,
             offsets: IntArray,
             positions: IntArray,
-        ): MinecraftTextLine = MinecraftTextLine(start, end, nextStart, run, offsets, positions, Ownership.Exclusive)
+        ): MinecraftTextLine = MinecraftTextLine(run, start, end, nextStart, offsets, positions)
     }
 }
