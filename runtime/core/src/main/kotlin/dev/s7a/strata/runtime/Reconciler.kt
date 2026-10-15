@@ -162,7 +162,9 @@ internal class Reconciler(
     ) {
         if (root.dynamicDescriptions === descriptions) return
         validator.validateChildren(descriptions)
-        reconcileChildren(root, descriptions)
+        if (root.children.isNotEmpty() || descriptions.isNotEmpty()) {
+            reconcileChildren(root, descriptions)
+        }
         root.dynamicDescriptions = descriptions
     }
 
@@ -266,6 +268,7 @@ internal class Reconciler(
             }
         }
         if (retained.node is DynamicChildrenNode) return
+        if (retained.children.isEmpty() && description.children.isEmpty()) return
         reconcileChildren(retained, description.children)
     }
 

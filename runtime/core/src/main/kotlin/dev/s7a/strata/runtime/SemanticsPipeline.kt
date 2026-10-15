@@ -31,17 +31,7 @@ internal class SemanticsPipeline(
     ) {
         if (DirtyPhase.Semantics in retained.dirty || retained.localSemantics == null) {
             retained.dirty -= DirtyMask.of(DirtyPhase.Semantics)
-            val collector = SemanticsCollector(ownerGuard)
-            try {
-                val semanticsCapability = retained.node as? SemanticsNode
-                if (semanticsCapability != null) {
-                    monitoring.record(UiRenderMetric.Semantics, retained)
-                    semanticsCapability.semantics(collector)
-                }
-                retained.localSemantics = collector.snapshot()
-            } finally {
-                collector.close()
-            }
+            retained.localSemantics = collectLocalSemantics(retained)
         }
         retained.localSemantics.orEmpty().forEach { semantics ->
             output.add(SemanticsEntry(retained.bounds, semantics))
@@ -55,32 +45,75 @@ internal class SemanticsPipeline(
     }
 
     /**
+     * Refreshes one node's detached payload and closes every actual callback scope before returning or throwing.
+     */
+    private fun collectLocalSemantics(retained: RetainedEntry): List<Semantics> {
+        val semanticsCapability = retained.node as? SemanticsNode
+        if (semanticsCapability == null) {
+            ownerGuard.check()
+            return emptyList()
+        }
+        val collector = SemanticsCollector(ownerGuard)
+        try {
+            monitoring.record(UiRenderMetric.Semantics, retained)
+            semanticsCapability.semantics(collector)
+            return collector.snapshot()
+        } finally {
+            collector.close()
+        }
+    }
+
+    /**
      * Collects one node's unresolved semantics during its active callback.
      */
     private class SemanticsCollector(
-        ownerGuard: OwnerGuard,
+        private val ownerGuard: OwnerGuard,
     ) : SemanticsScope {
-        private val guard = ScopeGuard(ownerGuard)
-        private val values: MutableList<Semantics> = ArrayList()
+        private var closed: Boolean = false
+        private var first: Semantics? = null
+        private var values: MutableList<Semantics>? = null
 
         override fun emit(semantics: Semantics) {
-            guard.check()
-            values.add(semantics)
+            checkActive()
+            val buffer = values
+            if (buffer != null) {
+                buffer.add(semantics)
+                return
+            }
+            val initial = first
+            if (initial == null) {
+                first = semantics
+            } else {
+                values =
+                    ArrayList<Semantics>().also {
+                        it.add(initial)
+                        it.add(semantics)
+                    }
+                first = null
+            }
         }
 
         /**
          * Snapshots emitted payloads while the callback scope remains active.
          */
         fun snapshot(): List<Semantics> {
-            guard.check()
-            return values.toList()
+            checkActive()
+            return values?.toList() ?: first?.let { listOf(it) } ?: emptyList()
         }
 
         /**
          * Closes this collector after the semantics callback.
          */
         fun close() {
-            guard.close()
+            ownerGuard.check()
+            closed = true
+            first = null
+            values = null
+        }
+
+        private fun checkActive() {
+            ownerGuard.check()
+            check(closed.not()) { "The callback scope is no longer active." }
         }
     }
 }
