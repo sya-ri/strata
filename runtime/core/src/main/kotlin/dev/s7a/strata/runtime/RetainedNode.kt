@@ -182,17 +182,7 @@ internal class RetainedNode(
         previous: List<RetainedNode>,
         predicate: (RetainedNode) -> Boolean,
     ): List<RetainedNode> {
-        if (children.isNotEmpty()) {
-            var allMatch = true
-            for (index in children.indices) {
-                val child = children[index]
-                if (child.cleanupStarted || predicate(child).not()) {
-                    allMatch = false
-                    break
-                }
-            }
-            if (allMatch) return children
-        }
+        if (children.isNotEmpty() && allChildrenMatch(predicate)) return children
         var selected: MutableList<RetainedNode>? = null
         var matched = 0
         for (index in children.indices) {
@@ -213,6 +203,14 @@ internal class RetainedNode(
             }
         }
         return selected ?: if (matched == previous.size) previous else previous.take(matched)
+    }
+
+    private inline fun allChildrenMatch(predicate: (RetainedNode) -> Boolean): Boolean {
+        for (index in children.indices) {
+            val child = children[index]
+            if (child.cleanupStarted || predicate(child).not()) return false
+        }
+        return true
     }
 
     override fun effectiveChildAt(index: Int): RetainedEntry = children[index].effectiveRoot
