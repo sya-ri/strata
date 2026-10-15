@@ -86,7 +86,7 @@ public class LifetimePollingOperationReport(
         if (case.operation == Operation.Retire) {
             return JvmPerformanceRunner
                 .measure(id, plan, afterOperation = { _, result -> check(result == 0) }) {
-                    NativeLifetimePollingWorkload(subject, case.count, Condition.InitializationPending).use { it.retireAndSignal() }
+                    NativeLifetimePollingWorkload(subject, case.count, Condition.InitializationPending).use { workload -> workload.retireAndSignal() }
                 }.evidence
         }
         return NativeLifetimePollingWorkload(subject, case.count, case.condition ?: Condition.Settled).use { workload ->
@@ -113,7 +113,7 @@ public class LifetimePollingOperationReport(
         if (case.operation == Operation.Retire) {
             return JvmPerformanceRunner
                 .measure(id, plan, afterOperation = { _, result -> check(result == 0) }) {
-                    SampledLifetimePollingWorkload(case.count, Condition.InitializationPending).use { it.retireAndSignal() }
+                    SampledLifetimePollingWorkload(case.count, Condition.InitializationPending).use { workload -> workload.retireAndSignal() }
                 }.evidence
         }
         return SampledLifetimePollingWorkload(case.count, case.condition ?: Condition.Settled).use { workload ->
