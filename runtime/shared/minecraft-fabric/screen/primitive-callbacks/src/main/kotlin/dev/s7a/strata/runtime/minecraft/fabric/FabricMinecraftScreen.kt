@@ -49,8 +49,6 @@ import org.lwjgl.glfw.GLFW
 @OptIn(InternalStrataRuntimeApi::class)
 @Suppress("TooManyFunctions", "TooGenericExceptionCaught")
 public class FabricMinecraftScreen private constructor(
-    // Deferred render, input and lifecycle callbacks require this retained constructor property.
-    @Suppress("CanBeParameter")
     private val host: MinecraftUiHost,
     private val inventory: FabricMinecraftInventoryBridge,
     private var parent: Screen?,

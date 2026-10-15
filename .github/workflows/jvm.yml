@@ -25,10 +25,13 @@ jobs:
       all_minecraft: ${{ steps.plan.outputs.all_minecraft }}
       minecraft: ${{ steps.plan.outputs.minecraft }}
       paired_manifest: ${{ steps.paired.outputs.paired_manifest }}
+      paired_data_ref: ${{ steps.paired.outputs.paired_data_ref }}
+      paired_manifest_sha256: ${{ steps.paired.outputs.paired_manifest_sha256 }}
       preflight: ${{ steps.plan.outputs.preflight }}
     steps:
     - uses: actions/checkout@v7
       with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 0
         persist-credentials: false
     - uses: ./.github/actions/setup-strata-java
@@ -40,7 +43,18 @@ jobs:
       shell: bash
       env:
         MANIFEST: ${{ inputs.paired_manifest }}
-      run: python3 -B gradle/performance/paired-jvm.py --select --manifest "${MANIFEST:-.github/performance/paired-jvm.json}"
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |-
+        args=(--select)
+        if [[ -n "$MANIFEST" ]]; then
+          args+=(--manifest "$MANIFEST")
+        fi
+        if [[ "$EVENT" == pull_request ]]; then
+          args+=(--base "$BASE" --head "$HEAD")
+        fi
+        python3 -B gradle/performance/paired-jvm.py "${args[@]}"
     - name: Select changed inputs
       run: |-
         args=(--full)
@@ -75,9 +89,16 @@ jobs:
         persist-credentials: false
     - name: Preserve attempt admission
       shell: pwsh
+      env:
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
       run: |
         New-Item -ItemType Directory -Force -Path build/performance-ci > $null
-        @{run=$env:GITHUB_RUN_ID; attempt=$env:GITHUB_RUN_ATTEMPT; head=$env:GITHUB_SHA; status='pending'; runner=$env:RUNNER_NAME} | ConvertTo-Json | Set-Content build/performance-ci/bootstrap.json
+        $actualHead = (git rev-parse HEAD).Trim()
+        if ($LASTEXITCODE -ne 0 -or $actualHead -ne $env:EXPECTED_HEAD) { throw 'Paired checkout differs from the selected driver revision' }
+        @{run=$env:GITHUB_RUN_ID; attempt=$env:GITHUB_RUN_ATTEMPT; head=$actualHead; event_sha=$env:GITHUB_SHA; manifest=$env:MANIFEST; data_ref=$env:DATA_REF; manifest_sha256=$env:MANIFEST_SHA256; status='pending'; runner=$env:RUNNER_NAME} | ConvertTo-Json | Set-Content build/performance-ci/bootstrap.json
     - name: Install the catalog-backed fixed Java profile
       id: java
       uses: ./.github/actions/setup-strata-java
@@ -92,8 +113,11 @@ jobs:
       shell: pwsh
       env:
         MANIFEST: ${{ needs.plan.outputs.paired_manifest }}
+        DATA_REF: ${{ needs.plan.outputs.paired_data_ref }}
+        MANIFEST_SHA256: ${{ needs.plan.outputs.paired_manifest_sha256 }}
+        EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
-      run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+      run: python -B gradle/performance/paired-jvm.py --manifest "$env:MANIFEST" --data-ref "$env:DATA_REF" --manifest-sha256 "$env:MANIFEST_SHA256" --expected-head "$env:EXPECTED_HEAD" --output "build/performance-ci/paired-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Verify owned invocation failure and terminal cleanup
       shell: pwsh
       run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
@@ -164,6 +188,13 @@ jobs:
         bash ./gradlew "${tasks[@]}" -Pstrata.webDemoInstallSystemDependencies=true
       env:
         DOCS_FULL: ${{ needs.plan.outputs.docs_full }}
+    - name: Upload core Web test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-web-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
     - name: Upload fresh demo screenshots
       uses: actions/upload-artifact@v7
       with:
@@ -182,7 +213,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Check GitHub Actions workflows
-      uses: docker://rhysd/actionlint:1.7.12
+      run: bash .github/check-workflows.sh
     - name: Set up Java
       uses: ./.github/actions/setup-strata-java
     - name: Set up Gradle for release fixtures
@@ -231,7 +262,7 @@ jobs:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Verify Web runtime and static build
-      run: .\gradlew.bat :integration:web:check '-Pstrata.webOnly=true'
+      run: .\gradlew.bat :integration:web:check
     - name: Upload browser evidence
       if: always()
       uses: actions/upload-artifact@v7
@@ -260,6 +291,13 @@ jobs:
         :integration:api:check :quality:detekt-rules:check :detekt-rules:check :runtime:core:check :runtime:remote:check :runtime:paper:check :runtime:velocity:check
         :runtime:headless:check :runtime:minecraft:check :runtime:minecraft-fonts-lwjgl:check :koverHtmlReport :koverXmlReport -Pkover
         -x :api:jsBrowserTest -x :api:jsNodeTest -x :runtime:core:jsBrowserTest -x :runtime:core:jsNodeTest
+    - name: Upload core JVM test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: core-jvm-test-results
+        path: runtime/core/build/test-results/
+        if-no-files-found: warn
     - name: Verify scoped JVM collection without fixture registration
       run: python3 -B gradle/verify-jvm-fixture-collection.py
     - name: Upload scoped collection evidence
@@ -275,6 +313,14 @@ jobs:
         name: kover-reports
         path: build/reports/kover
         if-no-files-found: error
+    - name: Upload compiler ABI dumps
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: compiler-abi-dumps
+        path: '**/build/kotlin/abi/'
+        if-no-files-found: ignore
+        retention-days: 7
     needs: plan
     if: needs.plan.outputs.common == 'true'
   minecraft-matrix:
@@ -365,11 +411,11 @@ jobs:
           integration/docs/build/component-showcase/check
         if-no-files-found: error
         retention-days: 7
-    - name: Upload loaded-client failure evidence
-      if: failure()
+    - name: Upload loaded-client evidence for ${{ matrix.id }}
+      if: success() || failure()
       uses: actions/upload-artifact@v7
       with:
-        name: minecraft-failure-evidence-${{ matrix.id }}
+        name: minecraft-loaded-client-evidence-${{ matrix.id }}
         path: |
           integration/*/build/minecraft-verification/
           integration/*/build/minecraft-production-verification/
