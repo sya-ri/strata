@@ -811,6 +811,145 @@ class PairedJvmTest(unittest.TestCase):
         value["suites"][0].update(project=":quality:remote-benchmarks", benchmarks=[], workloads=["RemoteProtocolBenchmark.diff"])
         self.assertEqual(self.load(value), value)
 
+    def test_logical_input_trees_preserve_consumed_object_and_pack_paths_with_flat_compatibility(self):
+        inputs = []
+        for group in ("first", "second"):
+            payload = (group + " object").encode()
+            object_hash = hashlib.sha1(payload).hexdigest()
+            files = {"index.json": b"index", f"objects/{object_hash[:2]}/{object_hash}": payload,
+                     "pack/assets/example/font/default.json": b"font", "pack/assets/example/font/extra.json": b"extra"}
+            for index, (relative, data) in enumerate(files.items()):
+                source = self.root / "source" / group / relative
+                source.parent.mkdir(parents=True, exist_ok=True)
+                source.write_bytes(data)
+                inputs.append({"label": f"{group}-{index}", "pin": {"path": source.relative_to(self.root).as_posix(), "sha256": PAIRED.digest(source)},
+                               "layout": {"root": group, "path": relative}})
+        inputs.append({"label": "legacy", "pin": self.pin})
+        value = copy.deepcopy(self.manifest)
+        value["inputs"] = inputs
+        self.assertEqual(self.load(value), value)
+        owner = self.root / "prepared"
+        result = PAIRED.preserve_inputs(self.root, owner, inputs)
+        self.assertEqual((owner / "input-8.bin").read_bytes(), self.input.read_bytes())
+        for group in ("first", "second"):
+            object_path = Path(result[f"{group}-1"]["path"])
+            objects = object_path.parent.parent
+            self.assertEqual(objects, owner / group / "objects")
+            self.assertEqual((objects / object_path.name[:2] / object_path.name).read_bytes(), (group + " object").encode())
+            custom = Path(result[f"{group}-2"]["path"])
+            pack = custom.parent.parent.parent.parent
+            self.assertEqual((pack / "assets/example/font/extra.json").read_bytes(), b"extra")
+        self.assertEqual(set(result), {item["label"] for item in inputs})
+        for item in inputs:
+            self.assertEqual(PAIRED.digest(Path(result[item["label"]]["path"])), item["pin"]["sha256"])
+
+    def test_deleted_producer_inputs_keep_logical_paths_and_original_pins_in_fresh_trees(self):
+        payload = {".github/performance/owned/object.bin": b"immutable object",
+                   ".github/performance/owned/font.json": b"font document"}
+        value = copy.deepcopy(self.manifest)
+        object_hash = hashlib.sha1(payload[".github/performance/owned/object.bin"]).hexdigest()
+        value["inputs"] = [
+            {"label": "object", "pin": {"path": ".github/performance/owned/object.bin",
+                                       "sha256": hashlib.sha256(payload[".github/performance/owned/object.bin"]).hexdigest()},
+             "layout": {"root": "objects", "path": f"{object_hash[:2]}/{object_hash}"}},
+            {"label": "custom", "pin": {"path": ".github/performance/owned/font.json",
+                                       "sha256": hashlib.sha256(payload[".github/performance/owned/font.json"]).hexdigest()},
+             "layout": {"root": "custom", "path": "pack/assets/example/font/default.json"}},
+            {"label": "legacy", "pin": self.pin},
+        ]
+        _, producer, head, path, _ = self.input_consumer(value=value, payload=payload)
+        self.assertFalse((self.root / ".github/performance").exists())
+        with PAIRED.selected_inputs(self.root, path, data_ref=producer, expected_head=head) as selection:
+            frozen = PAIRED.load_manifest(selection["root"], selection["path"])
+            with self.assertRaises(ValueError):
+                PAIRED.preserve_inputs(self.root, self.root / "wrong-origin", frozen["inputs"])
+            for index in range(2):
+                owner = self.root / f"fresh-{index}"
+                result = PAIRED.preserve_inputs(selection["root"], owner, frozen["inputs"])
+                object_path = Path(result["object"]["path"])
+                self.assertEqual(object_path.parent.parent, owner / "objects")
+                self.assertEqual(object_path.read_bytes(), payload[".github/performance/owned/object.bin"])
+                font_path = Path(result["custom"]["path"])
+                self.assertEqual(font_path.parents[3], owner / "custom/pack")
+                self.assertEqual(font_path.read_bytes(), payload[".github/performance/owned/font.json"])
+                self.assertEqual(Path(result["legacy"]["path"]), owner / "input-2.bin")
+                for item in frozen["inputs"]:
+                    self.assertEqual(result[item["label"]]["sha256"], item["pin"]["sha256"])
+            (selection["root"] / frozen["inputs"][0]["pin"]["path"]).write_bytes(b"changed producer object")
+            with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+                PAIRED.preserve_inputs(selection["root"], self.root / "changed-producer", frozen["inputs"])
+        self.assertEqual(self.selector_git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.selector_git("status", "--porcelain=v1", "--untracked-files=no"), "")
+
+    def test_logical_input_layout_rejects_traversal_nonportable_names_and_destination_collisions(self):
+        def item(root, path, label="input"):
+            return {"label": label, "pin": self.pin, "layout": {"root": root, "path": path}}
+        invalid = [[item(root, "file")] for root in ("", "../root", "root/child", "C:", "a" * 65, "NUL")]
+        invalid += [[item("group", path)] for path in ("", ".", "../file", "nested/../file", "/absolute", "C:/file", "folder\\file",
+                                                        "nested//file", "./file", ".git/file", ".GIT/file", "NUL.txt", "nested/COM1.dat",
+                                                        "CONIN$", "nested/conout$.txt", "file.", "a" * 4097)]
+        invalid += [[item("group", "file", "a"), item("group", "file", "b")],
+                    [item("group", "file", "a"), item("group", "FILE", "b")],
+                    [item("group", "folder/a", "a"), item("group", "Folder/b", "b")],
+                    [item("group", "a", "a"), item("Group", "b", "b")],
+                    [item("group", "file", "a"), item("group", "file/child", "b")],
+                    [item("group", "file/child", "a"), item("group", "file", "b")]]
+        for layout in (None, [], {}, {"root": "group"}, {"root": "group", "path": "file", "extra": True}, {"root": 1, "path": "file"}, {"root": "group", "path": 1}):
+            invalid.append([{"label": "input", "pin": self.pin, "layout": layout}])
+        for inputs in invalid:
+            value = copy.deepcopy(self.manifest)
+            value["inputs"] = inputs
+            with self.subTest(inputs=inputs), self.assertRaises(ValueError):
+                self.load(value)
+
+    def test_logical_inputs_reject_linked_destination_without_touching_its_target(self):
+        for nested in (False, True):
+            owner = self.root / f"prepared-{nested}"
+            owner.mkdir()
+            target = (owner if nested else self.root) / f"protected-{nested}"
+            target.mkdir()
+            protected = target / "sentinel"
+            protected.write_bytes(b"untouched")
+            link = owner / "group"
+            if os.name == "nt":
+                result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+            else:
+                link.symlink_to(target, target_is_directory=True)
+            inputs = [{"label": "nested", "pin": self.pin, "layout": {"root": "group", "path": "new-file"}}]
+            with self.subTest(nested=nested), self.assertRaises(ValueError):
+                PAIRED.preserve_inputs(self.root, owner, inputs)
+            self.assertEqual(protected.read_bytes(), b"untouched")
+            self.assertFalse((target / "new-file").exists())
+            self.assertEqual(self.input.read_text(encoding="utf-8"), "fixed input\n")
+
+    def test_logical_inputs_reject_changed_pins_and_undeclared_tree_entries(self):
+        inputs = [{"label": "nested", "pin": self.pin, "layout": {"root": "group", "path": "nested/file"}}]
+        self.input.write_bytes(b"changed")
+        with self.assertRaises(ValueError):
+            PAIRED.preserve_inputs(self.root, self.root / "changed", inputs)
+        self.input.write_text("fixed input\n", encoding="utf-8")
+        owner = self.root / "extra"
+        owner.mkdir()
+        (owner / "undeclared").write_bytes(b"extra")
+        with self.assertRaises(ValueError):
+            PAIRED.preserve_inputs(self.root, owner, inputs)
+        self.assertEqual((owner / "undeclared").read_bytes(), b"extra")
+        empty = self.root / "empty-directory"
+        (empty / "undeclared").mkdir(parents=True)
+        with self.assertRaises(ValueError):
+            PAIRED.preserve_inputs(self.root, empty, inputs)
+
+    def test_logical_inputs_preserve_existing_external_archive_suffixes_and_explicit_names(self):
+        inputs = [{"label": "archive", "pin": self.pin}, {"label": "flat", "pin": self.pin}]
+        result = PAIRED.preserve_inputs(self.root, self.root / "external", inputs, {"archive"})
+        self.assertEqual(Path(result["archive"]["path"]).name, "input-0.jar")
+        self.assertEqual(Path(result["flat"]["path"]).name, "input-1.bin")
+        inputs[0]["layout"] = {"root": "group", "path": "assets/original.jar"}
+        result = PAIRED.preserve_inputs(self.root, self.root / "explicit", inputs, {"archive"})
+        self.assertEqual(Path(result["archive"]["path"]), self.root / "explicit/group/assets/original.jar")
+        self.assertEqual(result["archive"]["sha256"], self.pin["sha256"])
+
     def test_preserve_existing_dotted_input_labels_and_compiled_profiler_names(self):
         value = copy.deepcopy(self.manifest)
         value["inputs"][0]["label"] = "unihex-bounds-assets.zip"

@@ -48,10 +48,11 @@ def load_manifest(shared, root, data):
     labels = set()
     require(isinstance(data["inputs"], list) and data["inputs"], "Declare immutable browser inputs")
     for item in data["inputs"]:
-        require(set(item) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", item["label"])
+        require({"label", "pin"} <= set(item) <= {"label", "pin", "layout"} and re.fullmatch(r"[A-Za-z0-9_.-]+", item["label"])
                 and item["label"] not in labels, "Invalid or duplicate browser input")
         labels.add(item["label"])
         shared.pin(root, item["pin"])
+    shared.input_paths(data["inputs"])
     require(set(data["compiled_pins"]) == {"baseline", "candidate"}, "Supply both prepared Web inventories")
     for pins in data["compiled_pins"].values():
         require(isinstance(pins, list) and pins, "Declare actual compiled Web pins")
@@ -153,9 +154,10 @@ def load_source_manifest(shared, root, data):
     labels = set()
     require(isinstance(data["inputs"], list), "Invalid Source input inventory")
     for item in data["inputs"]:
-        require(set(item) == {"label", "pin"} and re.fullmatch(r"[A-Za-z0-9_.-]+", item["label"]) and item["label"] not in labels, "Invalid Source input label")
+        require({"label", "pin"} <= set(item) <= {"label", "pin", "layout"} and re.fullmatch(r"[A-Za-z0-9_.-]+", item["label"]) and item["label"] not in labels, "Invalid Source input label")
         labels.add(item["label"])
         shared.pin(root, item["pin"])
+    shared.input_paths(data["inputs"])
     tasks = data["tasks"]
     require(isinstance(tasks, list) and tasks and len(tasks) == len(set(tasks)) and len(tasks) <= 32, "Declare the complete unique Source task list")
     endings = {"compileKotlinJs", "compileKotlinJvm", "compileTestKotlinJs", "checkKotlinAbi", "lintKotlin", "detekt", "jsBrowserDistribution", "jvmTest", "installWebBrowsers", "jsJar", "verifyBrowserPerformanceDriver", "captureRuntimeSurfaceInventory", "captureRemoteInventory", "jvmJar", "jar", "jmhClasses", "jmhCompileGeneratedClasses", "lintKotlinJmh", "detektJmh", "test", "verifyHistoricalWorkloads", "verifyComponentRenderingWork", "verifyRemoteWorkloads"}
@@ -615,10 +617,8 @@ def run(shared, root, selection, output):
                              "installations": toolchains["installations"], "binder_sha256": toolchains["binder_sha256"], "init_sha256": toolchains["init_sha256"]})
         if selection["producer"] and source_mode is False and driver is None:
             shared.require(shared.source_files(workspaces["candidate"], data["sources"]["candidate"]["tree"]) == shared.source_files(root, record["driver_head"]), "Browser candidate differs from execution head")
-        inputs = {}
-        for index, item in enumerate(data["inputs"]):
-            preserved = shared.preserve_file(shared.pin(selection["root"], item["pin"]), output / "inputs" / f"input-{index}.bin")
-            inputs[item["label"]] = preserved["path"]
+        preserved_inputs = shared.preserve_inputs(selection["root"], output / "inputs", data["inputs"])
+        inputs = {label: item["path"] for label, item in preserved_inputs.items()}
         shared.write_new(output / "fixture-inputs.json", inputs)
         vms = output / "vms"
         vms.mkdir()

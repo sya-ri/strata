@@ -329,6 +329,25 @@ class PairedBrowserTest(unittest.TestCase):
                 "arguments": {"baseline": [], "candidate": ["-Pstrata.webOnly=true"]}, "repetitions": repetitions,
                 "artifacts": [{"glob": item["path"], "minimum": 1} for item in self.manifest["compiled_pins"]["candidate"]], "test_gate": None}
 
+    def test_source_and_browser_inputs_share_logical_path_admission_and_preserved_bytes(self):
+        for source in (False, True):
+            value = copy.deepcopy(self.source_manifest() if source else self.manifest)
+            value["inputs"][0]["layout"] = {"root": "shared", "path": "objects/aa/object"}
+            self.assertEqual(self.load(value), value)
+            owner = self.root / ("source-inputs" if source else "browser-inputs")
+            result = self.shared.preserve_inputs(self.root, owner, value["inputs"])
+            self.assertEqual(Path(result["fixture"]["path"]), owner / "shared/objects/aa/object")
+            self.assertEqual(result["fixture"]["sha256"], self.fixture.pin["sha256"])
+            for layout in ({"root": "shared", "path": "../escape"}, {"root": "shared", "path": "CONOUT$"}):
+                invalid = copy.deepcopy(value)
+                invalid["inputs"][0]["layout"] = layout
+                with self.assertRaises(ValueError):
+                    self.load(invalid)
+            invalid = copy.deepcopy(value)
+            invalid["inputs"].append({**copy.deepcopy(invalid["inputs"][0]), "label": "alias"})
+            with self.assertRaisesRegex(ValueError, "Duplicate logical input destination"):
+                self.load(invalid)
+
     def test_source_manifest_retains_full_tasks_order_and_existing_model_argument(self):
         value = self.source_manifest()
         self.assertEqual(self.load(value), value)
