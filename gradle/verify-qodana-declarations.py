@@ -379,7 +379,7 @@ def verify(root, model_path, container_root, java_path):
         java_owners = [entry for entry in java["modules"] if entry["name"] == name]
         sdks = [entry for entry in imported["orderEntries"] if entry.get("type") == "SDK"]
         generated_sdks = manager.findall("orderEntry[@type='inheritedJdk']") + manager.findall("orderEntry[@type='jdk']")
-        if len(java_owners) != 1 or any(entry["java"] != java_owners[0].get("languageLevel") for entry in compilations) or manager.attrib.get("LANGUAGE_LEVEL") != f"JDK_{owner['java']}" or project_java < owner["java"]:
+        if len(java_owners) != 1 or any(entry["java"] != java_owners[0].get("languageLevel") for entry in compilations) or manager.attrib.get("LANGUAGE_LEVEL", f"JDK_{project_java}") != f"JDK_{owner['java']}" or project_java < owner["java"]:
             fail(f"wrong auxiliary compiler language level: {name}")
         if len(sdks) != 1 or sdks[0].get("name") != sdk or len(generated_sdks) != 1 or generated_sdks[0].attrib.get("jdkName", sdk) != sdk:
             fail(f"wrong auxiliary SDK: {name}")

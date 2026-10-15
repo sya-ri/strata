@@ -536,7 +536,18 @@ provided_path = model_path.with_name("auxiliary-provided.json")
 provided_path.write_text(json.dumps(provided_model))
 validate(provided_path)
 docs_iml_path.write_bytes(original_docs_iml)
-for mutation in ("paired-omission", "generated-omission", "imported-omission", "wrong-kind", "duplicate", "broader", "foreign-owner", "exclusion", "exclude-pattern", "missing-dependency", "duplicate-dependency", "runtime-only-compile", "wrong-sdk", "wrong-language", "omitted-inventory", "duplicate-declaration", "changed-membership", "uncompiled-output"):
+# An omitted module level inherits the project level; it must still equal the compiler declaration.
+original_misc = (idea / "misc.xml").read_bytes()
+inherited_misc = ET.fromstring(original_misc.decode())
+inherited_misc.find("component").attrib["languageLevel"] = "JDK_17"
+(idea / "misc.xml").write_text(ET.tostring(inherited_misc, encoding="unicode"))
+inherited_docs = ET.fromstring(original_docs_iml.decode())
+del inherited_docs.find("component").attrib["LANGUAGE_LEVEL"]
+docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(inherited_docs, encoding="unicode"))
+validate(model_path)
+(idea / "misc.xml").write_bytes(original_misc)
+docs_iml_path.write_bytes(original_docs_iml)
+for mutation in ("paired-omission", "generated-omission", "imported-omission", "wrong-kind", "duplicate", "broader", "foreign-owner", "exclusion", "exclude-pattern", "missing-dependency", "duplicate-dependency", "runtime-only-compile", "wrong-sdk", "wrong-language", "wrong-inherited-language", "omitted-inventory", "duplicate-declaration", "changed-membership", "uncompiled-output"):
     candidate = copy.deepcopy(model)
     candidate_inventory = copy.deepcopy(inventory)
     module = next(module for module in candidate["modules"] if module["name"] == "docs")
@@ -583,6 +594,8 @@ for mutation in ("paired-omission", "generated-omission", "imported-omission", "
         next(entry for entry in module["orderEntries"] if entry["type"] == "SDK")["name"] = "wrong-sdk"
     elif mutation == "wrong-language":
         manager.attrib["LANGUAGE_LEVEL"] = "JDK_21"
+    elif mutation == "wrong-inherited-language":
+        del manager.attrib["LANGUAGE_LEVEL"]
     elif mutation == "omitted-inventory":
         candidate_inventory["auxiliary"] = []
     elif mutation == "duplicate-declaration":
