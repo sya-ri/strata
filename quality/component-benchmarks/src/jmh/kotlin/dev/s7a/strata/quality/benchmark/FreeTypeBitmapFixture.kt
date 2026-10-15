@@ -25,7 +25,7 @@ internal class FreeTypeBitmapFixture(
     private var target: MinecraftTrueTypeFace? = null
     private var source: ByteBuffer? = null
     private var bitmap: FT_Bitmap? = null
-    private lateinit var convert: Method
+    private val convert: Method
     private val stride = axis + if (layout.padded) 3 else 0
     private val pitch = if (layout.reversed) -stride else stride
     private val seed = listOf(1, 8, 16, 64, 256).indexOf(axis) * 4 + layout.ordinal
