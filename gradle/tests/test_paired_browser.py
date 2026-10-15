@@ -377,6 +377,25 @@ class PairedBrowserTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 self.load(invalid)
 
+    def test_source_versioned_project_paths_keep_task_and_full_test_gate_guards(self):
+        value = self.source_manifest(1)
+        project = ":runtime:minecraft-fabric-26.3"
+        value["tasks"] = [project + ":" + task for task in ("jar", "checkKotlinAbi", "lintKotlin", "detekt", "test")]
+        value["test_gate"] = {"task": project + ":test", "required_tests": ["dev.example.ParityTest#fullTransitions"]}
+        self.assertEqual(self.load(value), value)
+        for task in (":runtime:minecraft-fabric-26..3:jar", ":runtime:..:jar", ":runtime:.26:jar",
+                     ":runtime:minecraft-fabric-26.:jar", "runtime:minecraft-fabric-26.3:jar", project + ":clean", project + ":jmhHistorical"):
+            invalid = copy.deepcopy(value)
+            invalid["tasks"][0] = task
+            with self.subTest(task=task), self.assertRaisesRegex(ValueError, "existing Source preparation tasks"):
+                self.load(invalid)
+        for mutation in (lambda item: item.update(test_gate=None), lambda item: item["tasks"].append(project + ":test"),
+                         lambda item: item["test_gate"].update(task=":runtime:minecraft-fabric-26.2:test")):
+            invalid = copy.deepcopy(value)
+            mutation(invalid)
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                self.load(invalid)
+
     def test_existing_remote_inventory_capture_preserves_build_output_and_source_fences(self):
         value = self.source_manifest(1)
         task = ":quality:remote-benchmarks:captureRemoteInventory"

@@ -202,6 +202,39 @@ public static class StrataPerformanceProcess {
         return QueryFullProcessImageNameW(handle, 0, executable, ref size) ? executable.ToString() : null;
     }
 
+    // Failure-only observations borrow this private handle and never establish a captured generation or replace the original error.
+    static Dictionary<string, object> ObserveAcquisitionFailure(IntPtr job, uint pid, IntPtr handle, string stage, int error) {
+        var diagnostic = new Dictionary<string, object> {{"stage", stage}, {"pid", pid}, {"nativeError", error}, {"handleAvailable", handle != IntPtr.Zero}, {"heldHandleQueriesAttempted", false}};
+        if (handle == IntPtr.Zero) return diagnostic;
+        diagnostic["heldHandleQueriesAttempted"] = true;
+        // Exit FILETIME is defined only when this wait already observed termination before GetProcessTimes.
+        uint wait = WaitForSingleObject(handle, 0);
+        int waitError = wait == uint.MaxValue ? Marshal.GetLastWin32Error() : 0;
+        diagnostic["wait"] = new Dictionary<string, object> {{"value", wait}, {"error", waitError}};
+        long created, exited, kernel, user;
+        bool timesRead = GetProcessTimes(handle, out created, out exited, out kernel, out user);
+        int timesError = timesRead ? 0 : Marshal.GetLastWin32Error();
+        var times = new Dictionary<string, object> {{"success", timesRead}, {"error", timesError}};
+        if (timesRead) {
+            times["creationFileTime"] = created;
+            if (wait == 0) times["exitFileTime"] = exited;
+        }
+        diagnostic["times"] = times;
+        uint code;
+        bool codeRead = GetExitCodeProcess(handle, out code);
+        int codeError = codeRead ? 0 : Marshal.GetLastWin32Error();
+        var status = new Dictionary<string, object> {{"success", codeRead}, {"error", codeError}};
+        if (codeRead) status["reportedCode"] = code;
+        diagnostic["exitStatus"] = status;
+        bool member;
+        bool membershipRead = IsProcessInJob(handle, job, out member);
+        int membershipError = membershipRead ? 0 : Marshal.GetLastWin32Error();
+        var membership = new Dictionary<string, object> {{"success", membershipRead}, {"error", membershipError}};
+        if (membershipRead) membership["inOwnedJob"] = member;
+        diagnostic["membership"] = membership;
+        return diagnostic;
+    }
+
     // Deferred queries use the same held object; a post-exit query failure never establishes a captured generation.
     static Dictionary<string, object> ObserveHandle(IntPtr job, uint pid, IntPtr handle, bool primary, string image = null) {
         bool member;
@@ -439,6 +472,7 @@ public static class StrataPerformanceProcess {
             reader = new Thread(() => {
                 try {
                     readerReady.Set();
+                    bool acquisitionFailureObserved = false;
                     while (true) {
                         uint message;
                         UIntPtr key;
@@ -462,7 +496,13 @@ public static class StrataPerformanceProcess {
                             // No membership, lifetime, affinity or history scan delays opening the next queued process.
                             string image = handle == IntPtr.Zero ? null : ObserveImage(handle);
                             int imageError = image == null && handle != IntPtr.Zero ? Marshal.GetLastWin32Error() : 0;
+                            Dictionary<string, object> failureEvidence = null;
+                            if (acquisitionFailureObserved == false && (handle == IntPtr.Zero || image == null)) {
+                                failureEvidence = ObserveAcquisitionFailure(job, pid, handle, handle == IntPtr.Zero ? "open" : "image", handle == IntPtr.Zero ? openError : imageError);
+                                acquisitionFailureObserved = true;
+                            }
                             lock (gate) {
+                                if (failureEvidence != null) capture["firstProcessAcquisitionFailure"] = failureEvidence;
                                 if (handle == IntPtr.Zero) {
                                     capture["notificationOpenFailures"] = (long)capture["notificationOpenFailures"] + 1;
                                     capture["lastNotificationOpenError"] = openError;
