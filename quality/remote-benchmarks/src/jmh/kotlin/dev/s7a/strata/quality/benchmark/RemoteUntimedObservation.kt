@@ -115,8 +115,7 @@ internal object RemoteUntimedObservation {
                     vm.eventRequestManager().createMethodEntryRequest().apply { addClassFilter(name) },
                     vm.eventRequestManager().createMethodExitRequest().apply { addClassFilter(name) },
                 )
-            }
-            .onEach { it.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD) }
+            }.onEach { it.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD) }
 
     private fun observe(
         vm: VirtualMachine,
