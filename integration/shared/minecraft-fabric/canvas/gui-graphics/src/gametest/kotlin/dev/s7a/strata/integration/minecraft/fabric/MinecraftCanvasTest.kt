@@ -89,6 +89,10 @@ private fun withMinecraftCanvasContext(
                 return previous
             }
 
+            override fun movePointer(position: IntOffset) {
+                context.movePointer(position)
+            }
+
             override fun pressPointer(
                 screen: Screen,
                 position: IntOffset,

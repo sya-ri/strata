@@ -273,13 +273,7 @@ public open class CompositionTargetsBenchmark {
                     val right = minOf(size.width, left + 256)
                     val bottom = minOf(size.height, top + 256)
                     val area = IntRect(left, top, right, bottom)
-                    val count =
-                        when (case) {
-                            Case.DenseOddLarge -> 3
-                            Case.NoOpHeavyLarge, Case.CutoffHeavyLarge -> 8
-                            Case.MixedPassesLarge -> group % 17 + 1
-                            else -> 4
-                        }
+                    val count = passCount(group)
                     val scroll = if (case == Case.ScrollLarge) generation * 0.25f else 0f
                     val sampled =
                         List(count) { pass ->
@@ -294,15 +288,32 @@ public open class CompositionTargetsBenchmark {
                                 orientation = if (pass % 2 == 0) SampledImageOrientation.Normal else SampledImageOrientation.FlipHorizontal,
                             )
                         }
-                    val fills =
-                        if (case == Case.ActivePassSwapLarge) {
-                            listOf(DrawCommand.FillRectangle(IntRect(left, top, minOf(right, left + 127), bottom), ArgbColor(if (generation == 0) 0x00ABCDEF else 0x80445566.toInt())), DrawCommand.FillRectangle(IntRect(minOf(right, left + 128), top, right, bottom), ArgbColor(if (generation == 0) 0x80112233.toInt() else 0x00ABCDEF)))
-                        } else {
-                            listOf(DrawCommand.FillRectangle(area, ArgbColor(0x40213759 xor (group * 7919))))
-                        }
+                    val fills = fills(area, group, generation)
                     fills + sampled + if (case == Case.NoOpHeavyLarge) List(8) { DrawCommand.FillRectangle(area, ArgbColor(0x00ABCDEF)) } else emptyList()
                 }
         }
+
+        private fun passCount(group: Int): Int =
+            when (case) {
+                Case.DenseOddLarge -> 3
+                Case.NoOpHeavyLarge, Case.CutoffHeavyLarge -> 8
+                Case.MixedPassesLarge -> group % 17 + 1
+                else -> 4
+            }
+
+        private fun fills(
+            area: IntRect,
+            group: Int,
+            generation: Int,
+        ): List<DrawCommand.FillRectangle> =
+            if (case == Case.ActivePassSwapLarge) {
+                listOf(
+                    DrawCommand.FillRectangle(IntRect(area.left, area.top, minOf(area.right, area.left + 127), area.bottom), ArgbColor(if (generation == 0) 0x00ABCDEF else 0x80445566.toInt())),
+                    DrawCommand.FillRectangle(IntRect(minOf(area.right, area.left + 128), area.top, area.right, area.bottom), ArgbColor(if (generation == 0) 0x80112233.toInt() else 0x00ABCDEF)),
+                )
+            } else {
+                listOf(DrawCommand.FillRectangle(area, ArgbColor(0x40213759 xor (group * 7919))))
+            }
 
         private fun plan(
             inputs: Any,
@@ -401,17 +412,25 @@ public open class CompositionTargetsBenchmark {
                 val scene = Scene()
                 scene.case = case
                 try {
-                    if (loaded) {
-                        scene.setup()
-                    } else {
-                        val commands = scene.prepareSources()
-                        check(commands.size == 2 && commands.all { it.isNotEmpty() })
-                        check((commands[0] === commands[1]) == case.static)
-                        if (case.extent == IntSize(64, 64)) commands.forEach { check(rasterizeHeadless(it, case.extent).size == case.extent) }
-                    }
+                    verifyScene(scene, case, loaded)
                 } finally {
                     scene.close()
                 }
+            }
+        }
+
+        private fun verifyScene(
+            scene: Scene,
+            case: Case,
+            loaded: Boolean,
+        ) {
+            if (loaded) {
+                scene.setup()
+            } else {
+                val commands = scene.prepareSources()
+                check(commands.size == 2 && commands.all { it.isNotEmpty() })
+                check((commands[0] === commands[1]) == case.static)
+                if (case.extent == IntSize(64, 64)) commands.forEach { check(rasterizeHeadless(it, case.extent).size == case.extent) }
             }
         }
 
