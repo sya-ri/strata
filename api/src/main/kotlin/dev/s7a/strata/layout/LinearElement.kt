@@ -168,7 +168,7 @@ internal class LinearElement(
         ): Long {
             val childCount = scope.childCount
             val firstFixedChild = weights?.indexOfFirst { it == null } ?: 0
-            if (firstFixedChild < 0 || childCount <= firstFixedChild) {
+            if ((firstFixedChild in 0 until childCount).not()) {
                 return 0L
             }
             val childConstraints = fixedConstraints(constraints)
