@@ -86,8 +86,10 @@ public object JvmOperationReports {
         ) { "Operation adapter is outside the frozen fixture closure" }
         val destination = Path.of(request.textField("output")).toAbsolutePath().normalize()
         require(Files.exists(destination).not()) { "Operation evidence already exists" }
-        JmhFixtureSelection.verifyWork(fixtures)
-        val collected = adapters.flatMap { adapter -> adapter.collect(plan).entries.map { it.key to it.value } }
+        val collected =
+            adapters.flatMapIndexed { index, adapter ->
+                adapter.collectVerified(plan) { JmhFixtureSelection.verifyWork(listOf(fixtures[index])) }.entries.map { it.key to it.value }
+            }
         require(collected.map { it.first }.toSet().size == collected.size && collected.map { it.first }.toSet() == rows.map { it.id }.toSet()) { "Incomplete or duplicate operation reports" }
         val phases = phases(rows, collected.toMap(), plan.samples)
         require(JmhForkConfiguration.capture(OptionsBuilder().include(".*").forks(1).build(), fixtures, targets, inputs) == identity) { "Loaded operation identities changed during collection" }

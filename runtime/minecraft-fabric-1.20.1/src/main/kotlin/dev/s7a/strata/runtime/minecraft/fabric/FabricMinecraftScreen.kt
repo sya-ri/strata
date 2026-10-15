@@ -168,10 +168,7 @@ public class FabricMinecraftScreen private constructor(
                 presentation.present(graphics, commands, frame.size, dispatch::render)
             }
             if (attached.not()) return
-            if (FabricUiSessions.acceptsPointer(this)) {
-                inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
-                inventory.renderTooltip(graphics, minecraftClient.font, mouseX, mouseY)
-            }
+            renderInventoryOverlays(graphics, mouseX, mouseY)
         } catch (failure: Throwable) {
             guiFailure = failure
             terminalFailure(failure)
@@ -331,6 +328,17 @@ public class FabricMinecraftScreen private constructor(
             return
         }
         runHost { lifecycle.requestClose() }
+    }
+
+    private fun renderInventoryOverlays(
+        graphics: GuiGraphics,
+        mouseX: Int,
+        mouseY: Int,
+    ) {
+        if (FabricUiSessions.acceptsPointer(this)) {
+            inventory.renderCarried(graphics, minecraftClient.font, mouseX, mouseY)
+            inventory.renderTooltip(graphics, minecraftClient.font, mouseX, mouseY)
+        }
     }
 
     private fun dispatch(event: PointerEvent): Boolean =
