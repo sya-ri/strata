@@ -30,14 +30,14 @@ import dev.s7a.strata.resource.ResourceId
 import dev.s7a.strata.runtime.minecraft.font.FontTestReferences
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.ui.UiDefinition
-import java.lang.ref.Reference
-import java.lang.ref.WeakReference
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import java.lang.ref.Reference
+import java.lang.ref.WeakReference
 
 /**
  * Proves input-time relative metadata, atomic current-input ownership and every existing composition cutoff.
@@ -121,12 +121,13 @@ internal class MinecraftTextFieldPreeditRangeTest {
     fun productionHostFailureReleasesCompositionWhileFailedHostRemainsReachable() {
         val width = ReactiveTestSource(80)
         val state = TextFieldState("A")
-        val host = createMinecraftUiHost(
-            UiDefinition {
-                Observe(width) { current -> TextField(state, IntSize(current, 20), modifier = Modifier.Empty.initialFocus()) }
-            },
-            MinecraftProfileFixture.create(),
-        )
+        val host =
+            createMinecraftUiHost(
+                UiDefinition {
+                    Observe(width) { current -> TextField(state, IntSize(current, 20), modifier = Modifier.Empty.initialFocus()) }
+                },
+                MinecraftProfileFixture.create(),
+            )
         try {
             host.attach()
             host.frame(IntSize(80, 20))
@@ -143,7 +144,10 @@ internal class MinecraftTextFieldPreeditRangeTest {
     /**
      * Applies each release boundary through the production node or state while the fixture stays reachable.
      */
-    private fun applyCutoff(cutoff: Cutoff, fixture: Fixture) {
+    private fun applyCutoff(
+        cutoff: Cutoff,
+        fixture: Fixture,
+    ) {
         when (cutoff) {
             Cutoff.Replacement -> fixture.input(TextInputEvent.Preedit("C", 1, listOf("C"), 0))
             Cutoff.Empty -> fixture.input(TextInputEvent.Preedit("", 0, emptyList(), -1))
@@ -216,29 +220,57 @@ internal class MinecraftTextFieldPreeditRangeTest {
         /**
          * Reads private metadata without introducing a production inspection API.
          */
-        fun member(owner: Any, name: String): Any? = owner.javaClass.getDeclaredField(name).also { it.isAccessible = true }.get(owner)
+        fun member(
+            owner: Any,
+            name: String,
+        ): Any? =
+            owner.javaClass
+                .getDeclaredField(name)
+                .also { it.isAccessible = true }
+                .get(owner)
 
         /**
          * Repaints with current geometry and releases the capture after this call.
          */
         fun paint() {
             val recording = MinecraftTextRecordingScope()
-            (node as PaintNode).paint(object : PaintScope by recording { override val size = IntSize(80, 20) })
+            (node as PaintNode).paint(
+                object : PaintScope by recording {
+                    override val size = IntSize(80, 20)
+                },
+            )
         }
 
         /**
          * Applies the production property diff while retaining the same node.
          */
-        fun update(state: TextFieldState = this.state, enabled: Boolean = true, appearanceColor: Int = 0xFF426789.toInt()): DirtyMask {
+        fun update(
+            state: TextFieldState = this.state,
+            enabled: Boolean = true,
+            appearanceColor: Int = 0xFF426789.toInt(),
+        ): DirtyMask {
             val next = description(state, enabled, appearanceColor)
             val result = element.type.updateErased(element, next, node)
             element = next
             return result
         }
 
-        private fun description(state: TextFieldState, enabled: Boolean, appearanceColor: Int): Element =
+        private fun description(
+            state: TextFieldState,
+            enabled: Boolean,
+            appearanceColor: Int,
+        ): Element =
             createMinecraftTextFieldElement(
-                sprite, sprite, renderer, ResourceId("minecraft", "default"), state, IntSize(80, 20), enabled, TextStyle.ContainerLabel, Modifier.Empty, null,
+                sprite,
+                sprite,
+                renderer,
+                ResourceId("minecraft", "default"),
+                state,
+                IntSize(80, 20),
+                enabled,
+                TextStyle.ContainerLabel,
+                Modifier.Empty,
+                null,
                 MinecraftTextInputAppearance(sprite, sprite, caretColor = ArgbColor(appearanceColor)),
             )
 
@@ -247,7 +279,9 @@ internal class MinecraftTextFieldPreeditRangeTest {
                 (node as LifecycleNode).detach()
                 (node as LifecycleNode).dispose()
                 release()
-            } finally { renderer.close() }
+            } finally {
+                renderer.close()
+            }
         }
     }
 }
