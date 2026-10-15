@@ -100,6 +100,9 @@ public open class ResourceImageDecodeBenchmark {
      * Checks every compiled row against source pixels, lazy calls, fresh overflow identities, and terminal release.
      */
     public companion object {
+        /**
+         * Verifies every compiled case and input pattern before collection, including complete owner release.
+         */
         @JvmStatic
         public fun verifyWork() {
             Case.entries.forEach { case ->
