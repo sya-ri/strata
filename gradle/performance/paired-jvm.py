@@ -71,6 +71,106 @@ def digest(path):
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
+def preserve_failed_jvm_diagnostics(directory, workspace, terminal, environment):
+    """Keep bounded, sanitized failed-JVM reports from known invocation roots without masking its original failure."""
+    receipt = {"schema": "strata-failed-owned-jvm-diagnostics-v1", "qualified": False, "entries": [], "errors": [],
+               "maximum_read_bytes": 4 * 1024**2, "maximum_retained_bytes": 4 * 1024**2, "maximum_file_bytes": 1024**2,
+               "maximum_files": 16, "read_bytes": 0, "retained_bytes": 0}
+    try:
+        effective = dict(os.environ, **environment)
+        sensitive = r"token|password|passwd|secret|credential|authorization|api[_-]?key|access[_-]?key|private[_-]?key"
+        secrets = sorted({value for key, value in effective.items() if value and re.search(sensitive, key, re.I)}, key=len, reverse=True)
+        def sanitized(data, crash):
+            text = data.decode("utf-8-sig", errors="replace")
+            if crash:
+                boundary = re.search(r"(?im)^(?:Registers:|Register to memory mapping|Top of Stack:|Instructions:|VM Arguments:|Environment Variables:|.*P R O C E S S.*)", text)
+                if boundary:
+                    text = text[:boundary.start()]
+            text = re.sub(r"(?im)^.*(?:Command Line:|jvm_args:|Configuring env variables|" + sensitive + r").*(?:\n|$)", "[sensitive line omitted]\n", text)
+            for value in secrets:
+                text = text.replace(value, "[redacted]")
+            return re.sub(r"https?://\S+", "[URL omitted]", text).encode("utf-8")
+        generations = []
+        if terminal.get("nativeInvoked") is True:
+            for pid, histories in terminal.get("members", {}).items():
+                for member in histories:
+                    born, exited = member.get("creationFileTime"), member.get("exitFileTime")
+                    image = Path(member.get("image", ""))
+                    if (type(member.get("pid")) is int and str(member["pid"]) == pid
+                            and type(born) is int and 0 < born and type(exited) is int and born <= exited
+                            and member.get("inOwnedJob") is True and member.get("completed") is True and member.get("handleClosed") is True
+                            and type(member.get("exitCode")) is int and member["exitCode"] != 0
+                            and image.is_absolute() and image.name.lower() in ("java.exe", "javaw.exe")):
+                        generations.append(member)
+        receipt["known_failed_jvm_generations"] = len(generations)
+        receipt["omitted_generations"] = max(0, len(generations) - 16)
+        if generations:
+            wrapper = (Path(__file__).resolve().parents[2] / "gradle/wrapper/gradle-wrapper.properties").read_bytes()
+            version = re.search(r"(?m)^distributionUrl=.*?/gradle-([^/]+?)-(?:bin|all)\.zip\s*$", wrapper.decode("utf-8")).group(1)
+            require(re.fullmatch(r"[0-9]+(?:\.[0-9]+)+(?:-[A-Za-z0-9.-]+)?", version), "Invalid fixed Gradle version")
+            receipt["gradle_wrapper_sha256"] = hashlib.sha256(wrapper).hexdigest()
+            home = Path(effective.get("GRADLE_USER_HOME", str(Path.home() / ".gradle"))).resolve()
+            workspace = Path(workspace).resolve()
+            roots = [("workspace", workspace, workspace), ("gradle-daemon", home, home / "daemon" / version)]
+            for member in sorted(generations, key=lambda item: item["exitFileTime"], reverse=True)[:16]:
+                owner = {key: member[key] for key in ("pid", "creationFileTime", "exitFileTime")}
+                for label, root, folder in roots:
+                    names = [f"hs_err_pid{member['pid']}.log"] + ([f"daemon-{member['pid']}.out.log"] if label == "gradle-daemon" else [])
+                    for name in names:
+                        if (receipt["maximum_read_bytes"] <= receipt["read_bytes"] or receipt["maximum_retained_bytes"] <= receipt["retained_bytes"]
+                                or len(receipt["entries"]) == receipt["maximum_files"]):
+                            receipt["truncated"] = True
+                            continue
+                        source = folder / name
+                        if not source.exists():
+                            continue
+                        try:
+                            require(not source.is_symlink() and not folder.is_symlink() and not folder.parent.is_symlink(), "Linked diagnostic path")
+                            resolved = source.resolve()
+                            require(resolved.is_relative_to(root), "Diagnostic escaped its invocation root")
+                            before = source.stat()
+                            require(stat.S_ISREG(before.st_mode), "Nonregular diagnostic")
+                            born_ns = (member["creationFileTime"] - 116444736000000000) * 100
+                            exit_ns = (member["exitFileTime"] - 116444736000000000) * 100
+                            require(born_ns <= before.st_mtime_ns <= exit_ns, "Diagnostic belongs to another process lifetime")
+                            limit = min(receipt["maximum_file_bytes"], receipt["maximum_read_bytes"] - receipt["read_bytes"])
+                            offset = max(0, before.st_size - limit) if name.startswith("daemon-") else 0
+                            with source.open("rb") as stream:
+                                stream.seek(offset)
+                                raw = stream.read(limit)
+                            receipt["read_bytes"] += len(raw)
+                            after = source.stat()
+                            require((before.st_size, before.st_mtime_ns, before.st_ino) == (after.st_size, after.st_mtime_ns, after.st_ino)
+                                    and source.resolve() == resolved, "Diagnostic changed while being read")
+                            crash = name.startswith("hs_err_")
+                            if crash:
+                                observed_pid = re.search(rb"\bpid\s*[=:]\s*([0-9]+)\b", raw[:8192])
+                                require(observed_pid and int(observed_pid[1]) == member["pid"], "Crash report lacks its actual owned PID")
+                            retained_limit = min(limit, receipt["maximum_retained_bytes"] - receipt["retained_bytes"])
+                            retained = sanitized(raw, crash)[:retained_limit].decode("utf-8", errors="ignore").encode("utf-8")
+                            destination = Path(directory) / "failed-jvm-diagnostics" / f"{member['pid']}-{member['creationFileTime']}" / (label + "-" + name)
+                            destination.parent.mkdir(parents=True, exist_ok=True)
+                            with destination.open("xb") as target:
+                                target.write(retained)
+                            receipt["retained_bytes"] += len(retained)
+                            receipt["entries"].append({"owner": owner, "source_root": label, "source_relative": resolved.relative_to(root).as_posix(),
+                                "source_file_bytes": before.st_size, "source_mtime_ns": before.st_mtime_ns, "source_range_offset": offset,
+                                "source_range_bytes": len(raw), "source_range_sha256": hashlib.sha256(raw).hexdigest(),
+                                "source_file_sha256": hashlib.sha256(raw).hexdigest() if offset == 0 and len(raw) == before.st_size else None,
+                                "retained_path": destination.relative_to(directory).as_posix(), "retained_bytes": len(retained),
+                                "retained_sha256": hashlib.sha256(retained).hexdigest(), "sanitized": True, "qualified": False})
+                        except Exception as failure:
+                            receipt["errors"].append({"owner": owner, "source_root": label, "name": name, "error_type": type(failure).__name__})
+    except Exception as failure:
+        receipt["errors"].append({"stage": "diagnostic-retention", "error_type": type(failure).__name__})
+    receipt["status"] = "retained-unqualified" if receipt["entries"] else "unavailable"
+    try:
+        write_new(Path(directory) / "failed-jvm-diagnostics.json", receipt)
+    except Exception as failure:
+        receipt["manifest_error_type"] = type(failure).__name__
+    return receipt
+
+
 def canonical_path(value):
     """Decode the existing canonical repository-relative path format without filesystem resolution."""
     require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_$+./-]+", value), "Invalid repository path")
@@ -1459,6 +1559,8 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
                 verify_driver_source(root, record["driver_head"], data, explicit_manual)
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic()-phase_started, "exit_code": exit_code, "terminal": terminal,
                                     "available_disk_bytes": shutil.disk_usage(output).free})
+            if exit_code != 0:
+                record["phases"][-1]["failed_jvm_diagnostics"] = preserve_failed_jvm_diagnostics(directory, workspace, terminal, environment)
             require(exit_code == 0 and terminal["exitCode"] == 0 and terminal["naturalRelease"] is True and terminal["handlesClosed"] is True,
                     f"Owned phase failed: {name}; retained {directory}")
             admission = read_json(directory / "child-admission.json")

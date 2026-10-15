@@ -719,6 +719,8 @@ def run(shared, root, selection, output):
             record["phases"].append({"name": name, "elapsed_seconds": time.monotonic() - phase_started, "exit_code": exit_code, "terminal": terminal,
                                      **({"source_metric_scope": source_metric_scope, "invocation_started_ns": invocation_started_ns,
                                          "invocation_closed_ns": invocation_closed_ns} if source_metric_scope is not None else {})})
+            if exit_code != 0 and node_program is None:
+                record["phases"][-1]["failed_jvm_diagnostics"] = shared.preserve_failed_jvm_diagnostics(directory, workspace, terminal, environment)
             validate_terminal(shared, exit_code, terminal, shared.read_json(directory / "child-admission.json"), resources["minimumFreePhysicalBytes"])
             if len(record["phases"]) != 1:
                 first = record["phases"][0]["terminal"]

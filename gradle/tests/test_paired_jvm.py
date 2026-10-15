@@ -30,6 +30,94 @@ QUALIFICATION_SPEC.loader.exec_module(QUALIFICATION)
 class PairedJvmTest(unittest.TestCase):
     """Invalid manifests cannot weaken the declared complete three-repetition collection contract."""
 
+    def test_failed_owned_jvm_reports_are_fresh_bounded_sanitized_pins_without_admission(self):
+        workspace, home, output = self.root / "workspace", self.root / "gradle-home", self.root / "failure"
+        workspace.mkdir()
+        output.mkdir()
+        wrapper = Path(PAIRED.__file__).resolve().parents[2] / "gradle/wrapper/gradle-wrapper.properties"
+        version = re.search(r"(?m)^distributionUrl=.*?/gradle-([^/]+?)-(?:bin|all)\.zip\s*$", wrapper.read_text(encoding="utf-8"))[1]
+        daemon = home / "daemon" / version
+        daemon.mkdir(parents=True)
+        now = 1700000000000000000
+        born = 116444736000000000 + (now - 1000000000) // 100
+        terminal = {"nativeInvoked": True, "members": {"7240": [{"pid": 7240, "creationFileTime": born,
+            "exitFileTime": born + 20000000, "image": str(workspace / "java.exe"), "inOwnedJob": True,
+            "completed": True, "handleClosed": True, "exitCode": 1}]}}
+        crash = daemon / "hs_err_pid7240.log"
+        raw = b"# fatal error, pid=7240\n# Problematic frame: jvm.dll+0x123\nCommand Line: credential=keep-private\nNative frames:\nV jvm.dll\nRegisters:\nprivate memory\nEnvironment Variables:\nTOKEN=keep-private\n"
+        crash.write_bytes(raw)
+        os.utime(crash, ns=(now, now))
+        daemon_log = daemon / "daemon-7240.out.log"
+        log = b"x\n" * (1024**2 // 2 + 100) + b"daemon stopped keep-private\nAuthorization: encoded-private\n"
+        daemon_log.write_bytes(log)
+        os.utime(daemon_log, ns=(now, now))
+        before = copy.deepcopy(terminal)
+        result = PAIRED.preserve_failed_jvm_diagnostics(output, workspace, terminal,
+                                                      {"GRADLE_USER_HOME": str(home), "GITHUB_TOKEN": "keep-private"})
+        self.assertFalse(result["qualified"])
+        self.assertEqual(result["known_failed_jvm_generations"], 1)
+        self.assertEqual(len(result["entries"]), 2)
+        self.assertEqual(terminal, before)
+        for entry in result["entries"]:
+            data = (output / entry["retained_path"]).read_bytes()
+            self.assertFalse(entry["qualified"])
+            self.assertEqual(entry["retained_sha256"], hashlib.sha256(data).hexdigest())
+            self.assertLessEqual(entry["retained_bytes"], 1024**2)
+            self.assertNotIn(b"keep-private", data)
+            self.assertNotIn(b"encoded-private", data)
+            if entry["source_relative"].endswith(crash.name):
+                self.assertEqual(entry["source_file_sha256"], hashlib.sha256(raw).hexdigest())
+                self.assertIn(b"Problematic frame", data)
+                self.assertNotIn(b"private memory", data)
+            else:
+                self.assertIsNone(entry["source_file_sha256"])
+                self.assertEqual(entry["source_range_sha256"], hashlib.sha256(log[-1024**2:]).hexdigest())
+        self.assertLessEqual(result["read_bytes"], 4 * 1024**2)
+        self.assertLessEqual(result["retained_bytes"], 4 * 1024**2)
+        os.utime(crash, ns=(now - 3000000000, now - 3000000000))
+        os.utime(daemon_log, ns=(now - 3000000000, now - 3000000000))
+        stale = self.root / "stale"
+        stale.mkdir()
+        self.assertEqual(PAIRED.preserve_failed_jvm_diagnostics(stale, workspace, terminal, {"GRADLE_USER_HOME": str(home)})["entries"], [])
+        os.utime(crash, ns=(now, now))
+        crash.write_bytes(b"# fatal error, pid=9999\n")
+        os.utime(crash, ns=(now, now))
+        mismatch = self.root / "mismatch"
+        mismatch.mkdir()
+        self.assertEqual(PAIRED.preserve_failed_jvm_diagnostics(mismatch, workspace, terminal, {"GRADLE_USER_HOME": str(home)})["entries"], [])
+        crash.write_bytes(raw)
+        os.utime(crash, ns=(now, now))
+        escaped = self.root / "escaped"
+        escaped.mkdir()
+        outside = self.root / "outside-private.log"
+        real_resolve = Path.resolve
+        with patch.object(Path, "resolve", lambda path, *a, **kw: outside if path == crash else real_resolve(path, *a, **kw)):
+            refused_path = PAIRED.preserve_failed_jvm_diagnostics(escaped, workspace, terminal, {"GRADLE_USER_HOME": str(home)})
+        self.assertEqual(refused_path["entries"], [])
+        self.assertEqual(refused_path["read_bytes"], 0)
+        many = {"nativeInvoked": True, "members": {}}
+        for pid in (7241, 7242, 7243):
+            member = {**terminal["members"]["7240"][0], "pid": pid}
+            many["members"][str(pid)] = [member]
+            for target, data in ((workspace / f"hs_err_pid{pid}.log", f"# fatal error, pid={pid}\n".encode() + b"frame\n" * (1024**2 // 6 + 10)),
+                                 (daemon / f"daemon-{pid}.out.log", log)):
+                target.write_bytes(data)
+                os.utime(target, ns=(now, now))
+        bounded = self.root / "bounded"
+        bounded.mkdir()
+        aggregate = PAIRED.preserve_failed_jvm_diagnostics(bounded, workspace, many, {"GRADLE_USER_HOME": str(home), "GITHUB_TOKEN": "keep-private"})
+        self.assertLessEqual(aggregate["read_bytes"], 4 * 1024**2)
+        self.assertLessEqual(aggregate["retained_bytes"], 4 * 1024**2)
+        self.assertTrue(aggregate["truncated"])
+        unowned = copy.deepcopy(terminal)
+        unowned["members"]["7240"][0]["inOwnedJob"] = False
+        refused = self.root / "unowned"
+        refused.mkdir()
+        self.assertEqual(PAIRED.preserve_failed_jvm_diagnostics(refused, workspace, unowned, {"GRADLE_USER_HOME": str(home)})["known_failed_jvm_generations"], 0)
+        with patch.object(PAIRED, "write_new", side_effect=OSError("must not mask original failure")):
+            unavailable = PAIRED.preserve_failed_jvm_diagnostics(output, workspace, unowned, {})
+        self.assertEqual(unavailable["manifest_error_type"], "OSError")
+
     def test_complete_gate_classpaths_are_resolved_before_dependency_pins_without_test_filters(self):
         data = {"suites": [
             {"test_gates": [{"task": ":runtime:core:jvmTest", "required_tests": ["dev.example.Core#whole"]}]},

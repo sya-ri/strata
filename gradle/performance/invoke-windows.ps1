@@ -95,6 +95,8 @@ public static class StrataPerformanceProcess {
         public long unpublishedBytes, publishedBytes;
         public long newNotifications, exitNotifications;
         public bool captureFailed;
+        public IntPtr anchor, rootThread;
+        public bool anchorReserved, anchorCloseAttempted;
         public readonly Dictionary<uint, IntPtr> debugProcesses = new Dictionary<uint, IntPtr>();
         public readonly HashSet<uint> initialBreakpoints = new HashSet<uint>();
     }
@@ -188,6 +190,18 @@ public static class StrataPerformanceProcess {
     static void CloseTracked(IntPtr handle, Acquisitions acquisitions) {
         Require(CloseHandle(handle));
         ReleaseReservation(acquisitions);
+    }
+
+    // The original primary handle has its own reservation and is closed at most once.
+    static bool CloseAnchor(Acquisitions acquisitions) {
+        if (acquisitions.anchorReserved == false) return true;
+        if (acquisitions.anchorCloseAttempted) return false;
+        acquisitions.anchorCloseAttempted = true;
+        if (acquisitions.anchor != IntPtr.Zero && CloseHandle(acquisitions.anchor) == false) return false;
+        acquisitions.anchor = IntPtr.Zero;
+        acquisitions.anchorReserved = false;
+        ReleaseReservation(acquisitions);
+        return true;
     }
 
     // Called under the gate; retain the maximum reservation so a refusal still reports its original observed bound.
@@ -478,12 +492,26 @@ public static class StrataPerformanceProcess {
             try {
                 if (observed.kind == 3) {
                     lock (gate) capture["processCreationEvents"] = (long)capture["processCreationEvents"] + 1;
-                    if (observed.info.creation.process == IntPtr.Zero || observed.info.creation.thread == IntPtr.Zero)
-                        throw new InvalidOperationException("Creation event lacks its actual physical process or thread handle.");
+                    if (observed.info.creation.process == IntPtr.Zero)
+                        throw new InvalidOperationException("Creation event lacks its actual physical process handle.");
                     if (acquisitions.debugProcesses.ContainsKey(observed.pid)) throw new InvalidOperationException("Duplicate live debug process identity.");
                     acquisitions.debugProcesses.Add(observed.pid, observed.info.creation.process);
+                    if (observed.info.creation.thread == acquisitions.rootThread) acquisitions.rootThread = IntPtr.Zero;
                     // Windows owns this event handle until EXIT_PROCESS is continued; include it in the same bound.
-                    ReserveHandle(acquisitions, true);
+                    if (observed.info.creation.process == acquisitions.anchor) {
+                        // Transfer the already charged alias to Windows; keep a separate anchor for post-EXIT queries.
+                        acquisitions.anchor = IntPtr.Zero;
+                        acquisitions.anchorReserved = false;
+                        ReserveHandle(acquisitions);
+                        acquisitions.anchorReserved = true;
+                        if (DuplicateHandle(GetCurrentProcess(), observed.info.creation.process, GetCurrentProcess(), out acquisitions.anchor, 0, false, 2) == false) {
+                            int error = Marshal.GetLastWin32Error();
+                            acquisitions.anchor = IntPtr.Zero;
+                            throw new Win32Exception(error);
+                        }
+                    } else ReserveHandle(acquisitions, true);
+                    if (observed.info.creation.thread == IntPtr.Zero)
+                        throw new InvalidOperationException("Creation event lacks its actual physical thread handle.");
                     if (acquisitions.captureFailed == false) {
                         AcquireCreatedProcess(job, observed.pid, observed.info.creation.process, capture, gate, acquisitions);
                         DrainPending(job, handles, records, capture, gate, acquisitions, true);
@@ -727,14 +755,20 @@ public static class StrataPerformanceProcess {
             result["clockBeforeResume"] = ObserveClock();
             var startup = new Startup {size=(uint)Marshal.SizeOf<Startup>(), flags=0x100, input=GetStdHandle(-10), output=GetStdHandle(-11), error=GetStdHandle(-12)};
             if (program == false) command += " -JobName \"" + name + "\"";
+            ReserveHandle(acquisitions);
+            acquisitions.anchorReserved = true;
             Require(CreateProcessW(executable, command, IntPtr.Zero, IntPtr.Zero, true, 0x1 | 0x4 | 0x08000000, IntPtr.Zero, directory, ref startup, out process));
-            Require(AssignProcessToJobObject(job, process.process));
+            acquisitions.anchor = process.process;
+            acquisitions.rootThread = process.thread;
+            process.process = IntPtr.Zero;
+            process.thread = IntPtr.Zero;
+            Require(AssignProcessToJobObject(job, acquisitions.anchor));
             assigned = true;
             ReserveHandle(acquisitions);
             IntPtr primary = IntPtr.Zero;
             bool primaryRetained = false;
             try {
-                Require(DuplicateHandle(GetCurrentProcess(), process.process, GetCurrentProcess(), out primary, 0, false, 2));
+                Require(DuplicateHandle(GetCurrentProcess(), acquisitions.anchor, GetCurrentProcess(), out primary, 0, false, 2));
                 var observedPrimary = ObserveHandle(job, process.processId, primary, true);
                 if (observedPrimary != null) lock (gate) RetainHandle(process.processId, primary, observedPrimary, ref primaryRetained, memberHandles, members, capture, acquisitions);
                 if (primaryRetained == false) throw new InvalidOperationException("Suspended primary process could not be captured.");
@@ -749,7 +783,7 @@ public static class StrataPerformanceProcess {
             readerStarted = true;
             if (readerReady.Wait(TimeSpan.FromSeconds(cleanupSeconds)) == false) throw new InvalidOperationException("Job notification reader did not start within the owned startup bound.");
             UIntPtr affinity, systemAffinity;
-            Require(GetProcessAffinityMask(process.process, out affinity, out systemAffinity));
+            Require(GetProcessAffinityMask(acquisitions.anchor, out affinity, out systemAffinity));
             result["inheritedAffinityMask"] = affinity.ToUInt64();
             result["systemAffinityMask"] = systemAffinity.ToUInt64();
             result["affinityConfigured"] = false;
@@ -762,7 +796,7 @@ public static class StrataPerformanceProcess {
                 result["primaryAdmission"] = new Dictionary<string, object> {{"jobName", name}, {"pid", process.processId}, {"creationFileTime", actual["creationFileTime"]}, {"image", actual["image"]}, {"inOwnedJob", true}, {"availablePhysicalBytes", memory.availablePhysical}, {"beforeResume", true}};
             }
             var clock = Stopwatch.StartNew();
-            Require(ResumeThread(process.thread) != uint.MaxValue);
+            Require(ResumeThread(acquisitions.rootThread) != uint.MaxValue);
             result["nativeInvoked"] = true;
             result["callerPid"] = process.processId;
             uint wait;
@@ -770,7 +804,7 @@ public static class StrataPerformanceProcess {
                 Capture(job, memberHandles, members, capture, clock, workSeconds, gate, acquisitions);
                 lock (gate) { if (capture.ContainsKey("notificationError")) throw new InvalidOperationException((string)capture["notificationError"]); }
                 CaptureCreations(job, memberHandles, members, capture, gate, acquisitions, clock, workSeconds, 100);
-                wait = WaitForSingleObject(process.process, 0);
+                wait = WaitForSingleObject(acquisitions.anchor, 0);
             } while (wait == 0x102 && clock.Elapsed.TotalSeconds < workSeconds);
             if (wait == 0x102) {
                 result["timedOut"] = true;
@@ -798,7 +832,7 @@ public static class StrataPerformanceProcess {
             if (observed.jobMemory.ToUInt64() != memoryLimit || (observed.basic.flags & 0x2000) == 0 || (observed.basic.flags & (0x800 | 0x1000)) != 0)
                 throw new InvalidOperationException("Actual owning Job limits or no-breakaway contract changed.");
             uint exitCode;
-            Require(GetExitCodeProcess(process.process, out exitCode));
+            Require(GetExitCodeProcess(acquisitions.anchor, out exitCode));
             result["exitCode"] = exitCode;
             if (0 < accounting.activeProcesses) Require(TerminateJobObject(job, 125));
             DrainPending(job, memberHandles, members, capture, gate, acquisitions);
@@ -807,7 +841,7 @@ public static class StrataPerformanceProcess {
             result["error"] = failure.Message;
         } finally {
             bool closed = true;
-            if (process.process != IntPtr.Zero && assigned == false) closed &= TerminateProcess(process.process, 126);
+            if (acquisitions.anchor != IntPtr.Zero && assigned == false) closed &= TerminateProcess(acquisitions.anchor, 126);
             if (job != IntPtr.Zero) {
                 if (cleanup == null) cleanup = Stopwatch.StartNew();
                 try {
@@ -836,6 +870,7 @@ public static class StrataPerformanceProcess {
                     closed &= joined;
                 }
                 closed &= CleanupCapture(job, memberHandles, members, capture, result, gate, acquisitions, cleanup, cleanupSeconds);
+                closed &= CloseAnchor(acquisitions);
                 var finalAccounting = Account(job);
                 result["activeProcessesAfterCleanup"] = finalAccounting.activeProcesses;
                 if (result.ContainsKey("totalProcesses") == false) result["totalProcesses"] = finalAccounting.totalProcesses;
@@ -896,6 +931,7 @@ public static class StrataPerformanceProcess {
                     acquisitions.unpublishedBytes -= claim.bytes;
                 } else closed = false;
             }
+            closed &= CloseAnchor(acquisitions);
             result["newProcessNotifications"] = acquisitions.newNotifications;
             result["exitProcessNotifications"] = acquisitions.exitNotifications;
             result["processAcquisition"] = new Dictionary<string, object> {
@@ -906,8 +942,8 @@ public static class StrataPerformanceProcess {
             };
             closed &= acquisitions.debugProcesses.Count == 0 && acquisitions.handles == 0 && acquisitions.metadataInFlight == 0 && acquisitions.pending.Count == 0 && acquisitions.unpublishedBytes == 0;
             readerReady.Dispose();
-            if (process.thread != IntPtr.Zero) closed &= CloseHandle(process.thread);
-            if (process.process != IntPtr.Zero) closed &= CloseHandle(process.process);
+            if (acquisitions.rootThread != IntPtr.Zero) closed &= CloseHandle(acquisitions.rootThread);
+
             result["handlesClosed"] = closed;
             result["endedUtc"] = DateTime.UtcNow.ToString("O");
         }

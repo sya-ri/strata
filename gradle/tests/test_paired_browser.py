@@ -257,7 +257,7 @@ class PairedBrowserTest(unittest.TestCase):
         leased = copy.deepcopy(created)
         leased.update(processCreationCapture="debug-before-continue-v2", processCreationHandleSource="debug-event-lease-with-exit-duplicate",
                       creationLeaseTransfers=96, exitDuplicateSuccesses=96, exitDuplicateFailures=0)
-        leased["processAcquisition"]["maximumPhysicalHandles"] = 97
+        leased["processAcquisition"]["maximumPhysicalHandles"] = 98
         for histories in leased["members"].values():
             histories[0]["exitDuplicateBeforeContinue"] = True
         boundary.validate_immediate_history(leased, actual, 64)
@@ -268,9 +268,12 @@ class PairedBrowserTest(unittest.TestCase):
             if histories[0].get("creationEventBeforeContinue") is True:
                 histories[0]["exitDuplicateBeforeContinue"] = True
         boundary.validate_immediate_history(leased_auxiliary, actual, 64)
+        at_cap = copy.deepcopy(leased)
+        at_cap["processAcquisition"]["maximumPhysicalHandles"] = 256
+        boundary.validate_immediate_history(at_cap, actual, 64)
         for mode in ("missing-exit-duplicate-witness", "untyped-exit-witness", "wrong-lease-count", "wrong-exit-count",
                      "exit-duplicate-failure", "untyped-exit-counter", "missing-exit-counter", "wrong-owned-handle-source",
-                     "actual264-over-cap", "dangling-auto-handle", "exit-without-creation"):
+                     "actual264-over-cap", "one-over-cap", "dangling-auto-handle", "exit-without-creation"):
             changed = copy.deepcopy(leased)
             if mode == "missing-exit-duplicate-witness":
                 changed["members"]["1"][0].pop("exitDuplicateBeforeContinue")
@@ -290,6 +293,8 @@ class PairedBrowserTest(unittest.TestCase):
                 changed["processCreationHandleSource"] = "duplicate-debug-event-handle"
             elif mode == "actual264-over-cap":
                 changed["processAcquisition"]["maximumPhysicalHandles"] = 264
+            elif mode == "one-over-cap":
+                changed["processAcquisition"]["maximumPhysicalHandles"] = 257
             elif mode == "exit-without-creation":
                 changed["members"]["1"][0].pop("creationEventBeforeContinue")
             else:
