@@ -5,9 +5,11 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.InputStream
+import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
@@ -97,6 +99,7 @@ internal object JvmEvidenceFiles {
      * This traversal owns bounded read scratch and verifies complete actual bytes against each declared entry size.
      */
     internal fun classTree(path: Path): JsonObject {
+        if (Files.isDirectory(path)) return classDirectoryTree(path)
         val entries = ClassArchiveInventory.entries(path, 16_384, 8L * 1024 * 1024)
         val tree = MessageDigest.getInstance("SHA-256")
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
@@ -111,6 +114,64 @@ internal object JvmEvidenceFiles {
                 tree.update("$name=$hash\n".toByteArray(Charsets.UTF_8))
             }
         }
+        return JsonObject().apply {
+            addProperty("status", "available")
+            addProperty("algorithm", "sha256(path=sha256(resource-bytes)\\n)-utf8-v1")
+            addProperty("entryCount", entries.size)
+            addProperty("bytes", total)
+            addProperty("sha256", HexFormat.of().formatHex(tree.digest()))
+        }
+    }
+
+    /**
+     * Binds a file resource to its canonical declared class directory, rejecting aliases and escapes.
+     */
+    internal fun classDirectoryResource(
+        root: Path,
+        name: String,
+        location: URL,
+    ): Path {
+        val uri = location.toURI()
+        require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Expected a local class resource" }
+        val directory = root.toAbsolutePath()
+        require(directory == directory.normalize()) { "Noncanonical class directory: $root" }
+        val expected = directory.resolve(name).normalize()
+        require(directory.toRealPath() == directory && expected.startsWith(directory) && expected.toRealPath() == expected) { "Aliased or escaping class resource: $name" }
+        val actual = Path.of(uri).toAbsolutePath()
+        require(actual == actual.normalize()) { "Noncanonical class resource: $location" }
+        require(actual == expected && Files.isRegularFile(actual)) { "The classpath resource resolved from a different code source: $location" }
+        return actual
+    }
+
+    private fun classDirectoryTree(path: Path): JsonObject {
+        val entries = ClassArchiveInventory.entries(path, 16_384, 8L * 1024 * 1024)
+        val tree = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        entries.forEach { name ->
+            val entry = path.resolve(name)
+            val size = Files.size(entry)
+            val maximum = 8 * 1024 * 1024
+            require(0 < size && size <= maximum) { "Invalid class-directory resource size" }
+            total = Math.addExact(total, size)
+            require(total <= 64L * 1024 * 1024) { "Oversized preserved class tree" }
+            val hash =
+                Files.newInputStream(entry, LinkOption.NOFOLLOW_LINKS).use { input ->
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    var bytes = 0L
+                    while (true) {
+                        val count = input.readNBytes(buffer, 0, minOf(buffer.size.toLong(), maximum + 1L - bytes).toInt())
+                        if (count == 0) break
+                        bytes += count
+                        require(bytes <= maximum) { "Invalid class-directory resource size" }
+                        digest.update(buffer, 0, count)
+                    }
+                    require(bytes == size) { "Class-directory resource size changed" }
+                    HexFormat.of().formatHex(digest.digest())
+                }
+            tree.update("$name=$hash\n".toByteArray(Charsets.UTF_8))
+        }
+        require(entries == ClassArchiveInventory.entries(path, 16_384, 8L * 1024 * 1024)) { "Class directory inventory changed" }
         return JsonObject().apply {
             addProperty("status", "available")
             addProperty("algorithm", "sha256(path=sha256(resource-bytes)\\n)-utf8-v1")

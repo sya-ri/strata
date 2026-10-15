@@ -26,7 +26,8 @@ public object LoadedArtifactMetadata {
 
     /**
      * Resolves registered representative classes without initialization through the measured host loader.
-     * Class trees validate every resource against that class's actual archive origin.
+     * Class trees validate every resource against that class's actual archive or directory origin.
+     * A directory code source declares its complete class-only tree algorithm, count and byte size separately from archive-file hashes.
      */
     public fun capture(
         loader: ClassLoader,
@@ -38,7 +39,7 @@ public object LoadedArtifactMetadata {
                 "scope",
                 "Representative classes and every class resource in registered module code sources are resolved " +
                     "without class initialization through the measured host class loader. Hashes identify the exact " +
-                    "local code-source file/JAR entry and class resource bytes at setup, " +
+                    "local code-source file/JAR entry or declared class-directory tree and class resource bytes at setup, " +
                     "not transformed in-memory bytecode. Fabric processed/nested wrappers are not substituted " +
                     "with standalone Maven JARs. Unavailable locations or hashes retain their failure reason.",
             )
@@ -109,7 +110,7 @@ public object LoadedArtifactMetadata {
                 val codeSource = type.protectionDomain?.codeSource?.location
                 addProperty("classLoader", type.classLoader?.toString())
                 addProperty("packageImplementationVersion", type.`package`?.implementationVersion)
-                add("codeSource", captureLocation { codeSource })
+                add("codeSource", captureCodeSource(type, codeSource))
                 add("classResource", captureLocation { type.getResource("/${className.replace('.', '/')}.class") })
                 if (includeClassTree) {
                     add("classTree", captureClassTree(type, codeSource))
@@ -129,7 +130,7 @@ public object LoadedArtifactMetadata {
             add("sha256", JsonNull.INSTANCE)
             runCatching {
                 require(codeSource != null) { "The loaded class did not expose a code source" }
-                val archivePath = requireLocalFile(codeSource)
+                val archivePath = requireLocalCodeSource(codeSource)
                 val entries = ClassArchiveInventory.entries(archivePath, MAX_CLASS_ENTRIES, MAX_CLASS_ENTRY_BYTES)
                 val classLoader = checkNotNull(representative.classLoader) { "The Strata class has no class loader" }
                 val treeDigest = MessageDigest.getInstance("SHA-256")
@@ -149,10 +150,15 @@ public object LoadedArtifactMetadata {
                     treeDigest.update(entryHash.toByteArray(Charsets.US_ASCII))
                     treeDigest.update('\n'.code.toByte())
                 }
+                val hash = HexFormat.of().formatHex(treeDigest.digest())
+                if (Files.isDirectory(archivePath)) {
+                    val actual = JvmEvidenceFiles.classTree(archivePath)
+                    require(actual.textField("sha256").contentEquals(hash) && actual.get("bytes").asLong == totalBytes) { "Loaded class directory bytes differ from its code source" }
+                }
                 addProperty("algorithm", CLASS_TREE_ALGORITHM)
                 addProperty("entryCount", entries.size)
                 addProperty("bytes", totalBytes)
-                addProperty("sha256", HexFormat.of().formatHex(treeDigest.digest()))
+                addProperty("sha256", hash)
                 addProperty("status", "available")
             }.onFailure {
                 addProperty("status", "unavailable")
@@ -165,6 +171,10 @@ public object LoadedArtifactMetadata {
         expectedEntry: String,
         expectedArchive: Path,
     ) {
+        if (Files.isDirectory(expectedArchive)) {
+            JvmEvidenceFiles.classDirectoryResource(expectedArchive, expectedEntry, location)
+            return
+        }
         val connection = location.openConnection().apply { useCaches = false }
         require(LocalResourceProtocol.decode(location.protocol) == LocalResourceProtocol.Jar && connection is JarURLConnection) {
             "The class resource URL is not backed by a standard local JAR"
@@ -176,6 +186,40 @@ public object LoadedArtifactMetadata {
         require(Files.isSameFile(expectedArchive, resolvedArchive)) {
             "The classpath resource resolved from a different code source: ${connection.jarFileURL}"
         }
+    }
+
+    private fun captureCodeSource(
+        representative: Class<*>,
+        location: URL?,
+    ): JsonObject {
+        if (location == null || LocalResourceProtocol.decode(location.protocol) != LocalResourceProtocol.File || Files.isDirectory(Path.of(location.toURI())).not()) return captureLocation { location }
+        return JsonObject().apply {
+            add("sha256", JsonNull.INSTANCE)
+            addProperty("url", location.toExternalForm())
+            runCatching {
+                val root = requireLocalCodeSource(location)
+                val name = "${representative.name.replace('.', '/')}.class"
+                val resourceLocation = checkNotNull(representative.getResource("/$name")) { "Missing classpath resource: $name" }
+                val actual = JvmEvidenceFiles.classDirectoryResource(root, name, resourceLocation)
+                val resource = captureLocation { resourceLocation }
+                require(Files.size(actual) <= MAX_CLASS_ENTRY_BYTES) { "Oversized representative resource" }
+                JvmEvidenceFiles.verifyFile(actual, resource.textField("sha256"))
+                val tree = JvmEvidenceFiles.classTree(root)
+                tree.entrySet().forEach { (key, value) -> add(key, value) }
+                addProperty("kind", ArtifactLocationKind.ClassDirectory.token)
+                addProperty("hashedUrl", location.toExternalForm())
+            }.onFailure {
+                addProperty("status", "unavailable")
+                addProperty("reason", it.toString())
+            }
+        }
+    }
+
+    private fun requireLocalCodeSource(location: URL): Path {
+        val uri = location.toURI()
+        require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Only local code sources are read" }
+        val path = Path.of(uri)
+        return if (Files.isDirectory(path)) path else requireLocalFile(location)
     }
 
     private fun captureLocation(resolve: () -> URL?): JsonObject =
