@@ -198,8 +198,18 @@ internal class TiledImageTopologyTest {
         assertNotSame(previous, topology(layer))
         session.close()
         assertEmptyTopology(layer)
-        assertTrue(configuration.value.source.active.isEmpty())
-        assertEquals(originalPixels.toList(), samples(original).single().image.copyArgb().toList())
+        assertTrue(
+            configuration.value.source.active
+                .isEmpty(),
+        )
+        assertEquals(
+            originalPixels.toList(),
+            samples(original)
+                .single()
+                .image
+                .copyArgb()
+                .toList(),
+        )
     }
 
     @Test

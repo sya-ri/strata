@@ -61,7 +61,9 @@ internal object TiledImageTopologyOracle {
         val height = level.tilePixelSize.height * level.contentUnitsPerPixel
         val left = Math.multiplyExact(id.column, width)
         val top = Math.multiplyExact(id.row, height)
+
         fun horizontal(value: Long): Float = ((BigDecimal.valueOf(value) - BigDecimal(metrics.center.x)).toDouble() * metrics.scale + size.width / 2.0).toFloat()
+
         fun vertical(value: Long): Float = ((BigDecimal.valueOf(value) - BigDecimal(metrics.center.y)).toDouble() * metrics.scale + size.height / 2.0).toFloat()
         return FloatRect(horizontal(left), vertical(top), horizontal(Math.addExact(left, width)), vertical(Math.addExact(top, height)))
     }
