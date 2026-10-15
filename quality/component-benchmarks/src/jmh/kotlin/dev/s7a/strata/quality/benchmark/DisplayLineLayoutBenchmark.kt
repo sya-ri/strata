@@ -2,6 +2,7 @@ package dev.s7a.strata.quality.benchmark
 
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.text.TextLayout
@@ -174,10 +175,17 @@ public open class DisplayLineLayoutBenchmark {
      */
     public companion object {
         /**
+         * Connects every original public opportunity to the shared owner-thread meter without changing JMH sampling.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = DisplayLineLayoutOperationReport
+
+        /**
          * Requires all 52 generated cases and independent full-layout/pixel/lifetime verification.
          */
         @JvmStatic
         public fun verifyWork() {
+            DisplayLineLayoutOperationReport.verifyRows()
             check(JmhWorkloadInventory.capture(listOf(DisplayLineLayoutBenchmark::class.java), setOf("avgt")).size == 52)
             Case.entries.forEach { workload -> DisplayLineLayoutFixture(workload).use { fixture -> fixture.verify() } }
         }
