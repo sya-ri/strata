@@ -227,9 +227,7 @@ internal class ScrollInputFixture(
                 pointerCycle(barForward, barReverse)
             }
 
-            Action.Clean -> {
-                Unit
-            }
+            Action.Clean -> {}
         }
         return frame()
     }
