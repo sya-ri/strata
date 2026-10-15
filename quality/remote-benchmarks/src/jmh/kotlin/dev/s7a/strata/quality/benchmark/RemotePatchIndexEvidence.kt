@@ -10,6 +10,7 @@ import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
 import dev.s7a.strata.runtime.remote.RemoteDeclaration
 import dev.s7a.strata.runtime.remote.RemoteTree
+import java.nio.file.Path
 
 /**
  * Untimed observation of actual component identity reads used by tree-constructor indexing on both runtime archives.
@@ -23,7 +24,29 @@ public object RemotePatchIndexEvidence {
      */
     @JvmStatic
     public fun main(args: Array<String>) {
+        if (args.size == 1) {
+            RemotePatchIndexBenchmark.verifyWork()
+            RemoteUntimedObservation.preflight(Path.of(args.single()), ::main, ::verifyRows)
+            return
+        }
         RemoteUntimedObservation.run(args, RemotePatchIndexProbe::class.java, RemotePatchIndexBenchmark::class.java, "remote-patch-index-observation-v1", Observation())
+    }
+
+    private fun verifyRows(observed: JsonObject) {
+        val rows = observed.getAsJsonArray("phases").map { it.asJsonObject }
+        val seen = mutableSetOf<List<Any>>()
+        val unit = rows.first { it.get("nodes").asInt == 1 }.get("index_component_identity_reads").asLong
+        require(unit in 0L..1L)
+        rows.forEach { row ->
+            val nodes = row.get("nodes").asInt
+            val shape = RemotePatchIndexBenchmark.Shape.valueOf(row.get("shape").asString)
+            val change = RemotePatchIndexBenchmark.Change.valueOf(row.get("change").asString)
+            val operation = RemotePatchIndexOperation.valueOf(row.get("operation").asString)
+            require(nodes in listOf(1, 128, 8192) && seen.add(listOf(nodes, shape, change, operation)))
+            require(row.get("index_component_identity_reads").asLong == nodes * unit)
+            require(row.get("validation_modifier_identity_reads").asLong == nodes.toLong())
+        }
+        require(rows.size == 3 * RemotePatchIndexBenchmark.Shape.entries.size * RemotePatchIndexBenchmark.Change.entries.size * RemotePatchIndexOperation.entries.size)
     }
 
     /**
