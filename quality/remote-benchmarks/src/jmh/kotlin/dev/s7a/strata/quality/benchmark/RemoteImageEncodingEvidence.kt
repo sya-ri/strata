@@ -7,6 +7,7 @@ import com.sun.jdi.StringReference
 import com.sun.jdi.event.MethodEntryEvent
 import com.sun.jdi.event.MethodExitEvent
 import dev.s7a.strata.runtime.remote.RemoteImageCodec
+import java.nio.file.Path
 
 /**
  * Untimed counts of actual pixel encoding calls and returned source-pixel snapshot arrays on both runtime archives.
@@ -19,7 +20,43 @@ public object RemoteImageEncodingEvidence {
      */
     @JvmStatic
     public fun main(args: Array<String>) {
+        if (args.size == 1) {
+            RemoteImageBenchmark.verifyWork()
+            RemoteUntimedObservation.preflight(Path.of(args.single()), ::main, ::verifyRows)
+            return
+        }
         RemoteUntimedObservation.run(args, RemoteImageProbe::class.java, RemoteImageBenchmark::class.java, "remote-image-encoding-observation-v1", Observation())
+    }
+
+    private fun verifyRows(observed: JsonObject) {
+        val rows = observed.getAsJsonArray("phases").map { it.asJsonObject }
+        val seen = mutableSetOf<Pair<RemoteImageBenchmark.Extent, RemoteImageBenchmark.Workload>>()
+        rows.forEach { row ->
+            val extent = RemoteImageBenchmark.Extent.valueOf(row.get("extent").asString)
+            val workload = RemoteImageBenchmark.Workload.valueOf(row.get("workload").asString)
+            require(seen.add(extent to workload) && row.get("observed_operations").asInt == 2)
+            val calls = row.get("pixel_encoding_calls").asLong
+            val expected =
+                when (workload) {
+                    RemoteImageBenchmark.Workload.ColdEncode,
+                    RemoteImageBenchmark.Workload.Replacements,
+                    RemoteImageBenchmark.Workload.EqualIdentityChurn,
+                    -> setOf(2L)
+
+                    RemoteImageBenchmark.Workload.IdleProjection -> setOf(0L, 2L)
+                    RemoteImageBenchmark.Workload.SharedNodes,
+                    RemoteImageBenchmark.Workload.IndependentSessions,
+                    -> setOf(0L, 4L)
+
+                    RemoteImageBenchmark.Workload.RemovalReadmission -> setOf(1L)
+                    RemoteImageBenchmark.Workload.ResourceReference,
+                    RemoteImageBenchmark.Workload.EmptyProjection,
+                    -> setOf(0L)
+                }
+            require(calls in expected && row.get("source_snapshot_arrays").asLong == calls)
+            require(row.get("source_snapshot_bytes").asLong == calls * extent.size.width * extent.size.height * Int.SIZE_BYTES)
+        }
+        require(rows.size == RemoteImageBenchmark.Extent.entries.size * RemoteImageBenchmark.Workload.entries.size)
     }
 
     /**
