@@ -75,10 +75,26 @@ internal class ResourceImageDecodeWorkload(
     init {
         listOfNotNull(nativeType, cacheType).forEach { type ->
             check(type.classLoader === loader) { "Image fixtures require ordinary application-loader classes." }
-            check(Files.isRegularFile(Path.of(type.protectionDomain.codeSource.location.toURI()))) { "Image fixtures require actual packaged archives." }
+            check(
+                Files.isRegularFile(
+                    Path.of(
+                        type.protectionDomain.codeSource.location
+                            .toURI(),
+                    ),
+                ),
+            ) { "Image fixtures require actual packaged archives." }
         }
         if (case == ResourceImageDecodeBenchmark.Case.EncodedOverflow) check(8 * 1024 * 1024 < inputs.first().encoded.size)
-        if (case == ResourceImageDecodeBenchmark.Case.PayloadOverflow) check(16L * 1024 * 1024 <= inputs.first().pixels.size.toLong() * Int.SIZE_BYTES)
+        if (case == ResourceImageDecodeBenchmark.Case.PayloadOverflow) {
+            check(
+                16L * 1024 * 1024 <=
+                    inputs
+                        .first()
+                        .pixels
+                        .size
+                        .toLong() * Int.SIZE_BYTES,
+            )
+        }
         resolve()
     }
 
@@ -300,7 +316,12 @@ internal class ResourceImageDecodeWorkload(
                             .apply { isAccessible = true }
                             .get(cache) as AtomicReference<*>
                     val state = reference.get()
-                    check(state.javaClass.getDeclaredField("entry").apply { isAccessible = true }.get(state) == null)
+                    check(
+                        state.javaClass
+                            .getDeclaredField("entry")
+                            .apply { isAccessible = true }
+                            .get(state) == null,
+                    )
                 }
             }
         }
