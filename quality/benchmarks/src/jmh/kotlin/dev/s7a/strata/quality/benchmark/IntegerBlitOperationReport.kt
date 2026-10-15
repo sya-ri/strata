@@ -59,5 +59,4 @@ public object IntegerBlitOperationReport : JvmOperationReportAdapter {
             check(0 < sampled.value.size.width && 0 < sampled.value.size.height)
             row.id to sampled.evidence
         }
-
 }
