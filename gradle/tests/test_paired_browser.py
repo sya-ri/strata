@@ -118,7 +118,7 @@ class PairedBrowserTest(unittest.TestCase):
                      patch.object(oracle.ctypes, "WinError", side_effect=lambda code=0: OSError("Synthetic Windows failure"), create=True), \
                      patch.object(oracle.ctypes, "get_last_error", return_value=31, create=True), \
                      patch.object(oracle.subprocess, "STARTUPINFO", return_value=SimpleNamespace(), create=True), \
-                     patch.object(oracle.subprocess, "CREATE_NO_WINDOW", 0x08000000, create=True), patch.dict(oracle.os.environ, {"COMSPEC": "requested-path-is-not-observed.exe"}):
+                     patch.object(oracle.subprocess, "DETACHED_PROCESS", 0x8, create=True), patch.dict(oracle.os.environ, {"COMSPEC": "requested-path-is-not-observed.exe"}):
                     child = None
                     try:
                         if mode == "complete":
@@ -136,6 +136,7 @@ class PairedBrowserTest(unittest.TestCase):
                         if child is not None:
                             oracle.close_immediate(child)
                     self.assertEqual([call.args[0] for call in api.CloseHandle.call_args_list], [102, 101])
+                    self.assertEqual(api.CreateProcess.call_args.args[5], 0xC)
 
     def test_immediate_descendant_control_requires_complete_independent_physical_histories(self):
         source = Path(__file__).resolve().parent.parent / "performance/verify-windows-boundary.py"

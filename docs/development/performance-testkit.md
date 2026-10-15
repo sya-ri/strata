@@ -827,6 +827,7 @@ The [debugger-only first-chance invalid-handle notification from `CloseHandle`](
 Unrelated application exceptions and last-chance notifications retain their normal exception dispatch.
 Native controls verify both the invalid-handle API result and an unrelated failing native exception in addition to the original process, resource and cleanup cases.
 The real boundary controls include 288 completed observed descendants with eight concurrent children, alongside the unchanged normal, failure, RAM-refusal, timeout and leaked-child cases.
+Immediate exit-only commands use [detached console creation](https://learn.microsoft.com/windows/win32/procthread/process-creation-flags) to avoid starting an unused console host, while retaining 32 natural exits, eight concurrent suspended admissions, the optional 64 held commands and the original sub-100 ms lifetime requirement.
 A separate eight-concurrent-child control reaches the actual history budget under the same source-control deadline and memory profile, retains the first refused generation and proves bounded-report failure plus zero owned cleanup.
 Closed JVM diagnostics verify actual effective caps and Java origins; measured JMH forks additionally require captured OS generations, zero exits, membership in the actual Job and unchanged inherited affinity.
 Full class-load attribution uses one fixed attempt-owned staging directory so the logger argument remains identical across measured repetitions.

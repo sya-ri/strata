@@ -21,7 +21,8 @@ def immediate_child():
     kernel.ResumeThread.argtypes = [ctypes.c_void_p]
     kernel.ResumeThread.restype = ctypes.c_ulong
     command = subprocess.list2cmdline([os.environ["COMSPEC"], "/d", "/c", "exit /b 0"])
-    process, thread, pid, _ = _winapi.CreateProcess(None, command, None, None, False, subprocess.CREATE_NO_WINDOW | 0x4, None, None, subprocess.STARTUPINFO())
+    # The exit-only control needs no console; a hidden console still starts a separate console host.
+    process, thread, pid, _ = _winapi.CreateProcess(None, command, None, None, False, subprocess.DETACHED_PROCESS | 0x4, None, None, subprocess.STARTUPINFO())
     child = {"process": process, "thread": thread, "pid": pid, "kernel": kernel, "api": _winapi}
     try:
         created, exited, system, user = (ctypes.c_ulonglong() for _ in range(4))
