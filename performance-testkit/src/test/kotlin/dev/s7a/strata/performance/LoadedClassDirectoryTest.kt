@@ -46,7 +46,14 @@ internal class LoadedClassDirectoryTest {
         assertEquals("class_directory", origin.textField("kind"))
         assertEquals(3, origin.countField("entryCount"))
         assertEquals(golden(root), origin.textField("sha256"))
-        assertEquals(module.objectField("classTree"), archiveReport.arrayField("modules").single().asJsonObject.objectField("classTree"))
+        assertEquals(
+            module.objectField("classTree"),
+            archiveReport
+                .arrayField("modules")
+                .single()
+                .asJsonObject
+                .objectField("classTree"),
+        )
         val receipt = NativePerformanceEvidence.verify(wrap(archiveReport), wrap(directoryReport), setOf("directoryfixture.Probe"), emptySet()).single().asJsonObject
         assertEquals(origin.get("sha256"), receipt.get("cpu_class_directory_sha256"))
         assertNull(System.getProperty("strata.testkit.directory.initialized"))
@@ -80,7 +87,12 @@ internal class LoadedClassDirectoryTest {
         val resourceAlias = "$prefix/directoryfixture/../directoryfixture/Probe.class"
         listOf("codeSource" to "$prefix/directoryfixture/../", "classResource" to resourceAlias).forEach { (field, alias) ->
             val changed = report.deepCopy()
-            val location = changed.arrayField("modules").single().asJsonObject.objectField(field)
+            val location =
+                changed
+                    .arrayField("modules")
+                    .single()
+                    .asJsonObject
+                    .objectField(field)
             location.addProperty("url", alias)
             location.addProperty("hashedUrl", alias)
             assertFails { NativePerformanceEvidence.verify(native, wrap(changed), setOf("directoryfixture.Probe"), emptySet()) }
@@ -101,7 +113,20 @@ internal class LoadedClassDirectoryTest {
         val other = root.resolve("directoryfixture/Other.class")
         val bytes = Files.readAllBytes(other)
         Files.write(other, bytes + byteArrayOf(1))
-        assertNotEquals(original.arrayField("modules").single().asJsonObject.objectField("codeSource").get("sha256"), capture(root).arrayField("modules").single().asJsonObject.objectField("codeSource").get("sha256"))
+        assertNotEquals(
+            original
+                .arrayField("modules")
+                .single()
+                .asJsonObject
+                .objectField("codeSource")
+                .get("sha256"),
+            capture(root)
+                .arrayField("modules")
+                .single()
+                .asJsonObject
+                .objectField("codeSource")
+                .get("sha256"),
+        )
         assertFails { NativePerformanceEvidence.verify(wrap(jarReport), wrap(original), setOf("directoryfixture.Probe"), emptySet()) }
         Files.write(other, bytes)
         val added = root.resolve("directoryfixture/Added.class")
@@ -167,7 +192,15 @@ internal class LoadedClassDirectoryTest {
         observedLoader(root, "directoryfixture/Other.class", streams).use { loader ->
             val report = LoadedArtifactMetadata.capture(loader, mapOf("fixture" to "directoryfixture.Probe"), setOf("fixture"))
             assertFailsWith<IllegalStateException> { LoadedArtifactMetadata.verifyComplete(report) }
-            assertEquals("unavailable", report.arrayField("modules").single().asJsonObject.objectField("classTree").textField("status"))
+            assertEquals(
+                "unavailable",
+                report
+                    .arrayField("modules")
+                    .single()
+                    .asJsonObject
+                    .objectField("classTree")
+                    .textField("status"),
+            )
         }
         assertTrue(streams.isNotEmpty() && streams.all { it.closed })
         Files.delete(root.resolve("directoryfixture/Other.class"))
@@ -215,7 +248,12 @@ internal class LoadedClassDirectoryTest {
         assertEquals(1, NativePerformanceEvidence.verify(wrap(report), wrap(report), setOf("directoryfixture.Probe"), emptySet()).size())
         listOf("class_directory", "unknown").forEach { kind ->
             val changed = report.deepCopy()
-            changed.arrayField("modules").single().asJsonObject.objectField("codeSource").addProperty("kind", kind)
+            changed
+                .arrayField("modules")
+                .single()
+                .asJsonObject
+                .objectField("codeSource")
+                .addProperty("kind", kind)
             assertFails { NativePerformanceEvidence.verify(wrap(changed), wrap(report), setOf("directoryfixture.Probe"), emptySet()) }
             assertFails { NativePerformanceEvidence.verify(wrap(report), wrap(changed), setOf("directoryfixture.Probe"), emptySet()) }
         }
