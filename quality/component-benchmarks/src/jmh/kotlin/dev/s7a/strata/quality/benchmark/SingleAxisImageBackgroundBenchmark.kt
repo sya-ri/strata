@@ -16,6 +16,7 @@ import dev.s7a.strata.modifier.imageBackground
 import dev.s7a.strata.modifier.scaleToFit
 import dev.s7a.strata.modifier.size
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.performance.RuntimeWorkMonitor
 import dev.s7a.strata.performance.WorkExpectation
@@ -282,6 +283,12 @@ public open class SingleAxisImageBackgroundBenchmark {
      */
     public companion object {
         /**
+         * Supplements every unchanged JMH boundary with the shared owner-thread operation meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = SingleAxisImageBackgroundOperationReport
+
+        /**
          * Validates every generated mode row and genuine callback/host/original-pixel/lifetime control before forks.
          */
         @JvmStatic
@@ -289,6 +296,7 @@ public open class SingleAxisImageBackgroundBenchmark {
             val fixtures = listOf(SingleAxisImageBackgroundBenchmark::class.java)
             check(JmhWorkloadInventory.capture(fixtures, setOf("avgt")).size == 96)
             check(JmhWorkloadInventory.capture(fixtures, setOf("avgt", "sample")).size == 192)
+            check(SingleAxisImageBackgroundOperationReport.rows.size == 96)
             SingleAxisImageTileWorkload.entries.forEach { workload -> verify(workload) }
         }
 
