@@ -821,6 +821,7 @@ The remaining report capacity covers fixed terminal metadata without truncating 
 Each signalled owned handle records its actual exit and PID/creation-time identity before closing; immutable generation lists preserve legitimate PID reuse instead of replacing history.
 VM checks select exactly one matching birth and reject missing, ambiguous, altered, active or wrong-affinity generations.
 The creator thread captures each debugged descendant's image, birth and affinity before continuing its creation event; the complete Job scan runs after that continuation.
+Complete Job scans share one monotonic 100 ms cadence across event bursts and the work/cleanup phases, while generation acquisition and exit retirement remain event driven.
 The boundary borrows the Windows-owned creation handle until exit and takes its own same-generation duplicate before continuing exit, while the independently charged primary anchor remains available for final queries.
 The [debugger-only first-chance invalid-handle notification from `CloseHandle`](https://learn.microsoft.com/windows/win32/api/handleapi/nf-handleapi-closehandle) is handled so that the ordinary false return and last-error result reach the caller.
 Unrelated application exceptions and last-chance notifications retain their normal exception dispatch.

@@ -94,6 +94,8 @@ public static class StrataPerformanceProcess {
         public int handles, peakHandles, metadataInFlight, peakPending;
         public long unpublishedBytes, publishedBytes;
         public long newNotifications, exitNotifications;
+        // The creator thread shares one monotonic sampling deadline across event bursts and cleanup clocks.
+        public long nextMemberCaptureTimestamp;
         public bool captureFailed;
         public IntPtr anchor, rootThread;
         public bool anchorReserved, anchorCloseAttempted;
@@ -472,7 +474,6 @@ public static class StrataPerformanceProcess {
 
     // Run only on the CreateProcess thread, including cleanup. Job messages remain advisory diagnostics.
     static void CaptureCreations(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, object gate, Acquisitions acquisitions, Stopwatch clock, double seconds, uint waitMilliseconds = 0) {
-        double nextMemberCapture = clock.Elapsed.TotalMilliseconds + 100;
         while (clock.Elapsed.TotalSeconds < seconds) {
             DebugEvent observed;
             if (WaitForDebugEventEx(out observed, waitMilliseconds) == false) {
@@ -561,10 +562,9 @@ public static class StrataPerformanceProcess {
             }
             // Keep the original membership cadence even under continuous events; capture each new generation before continuing it.
             // A whole-Job scan per creation suspends unrelated debug events and expands the short lifetimes being verified.
-            if (acquisitions.captureFailed == false && nextMemberCapture <= clock.Elapsed.TotalMilliseconds) {
+            if (acquisitions.captureFailed == false && acquisitions.nextMemberCaptureTimestamp <= Stopwatch.GetTimestamp()) {
                 try { Capture(job, handles, records, capture, clock, seconds, gate, acquisitions, false); }
                 catch { acquisitions.captureFailed = true; throw; }
-                nextMemberCapture = clock.Elapsed.TotalMilliseconds + 100;
             }
         }
     }
@@ -592,6 +592,8 @@ public static class StrataPerformanceProcess {
 
     static void Capture(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> result, Stopwatch clock, double seconds, object gate, Acquisitions acquisitions, bool creationEvents = true) {
         if (creationEvents) CaptureCreations(job, handles, records, result, gate, acquisitions, clock, seconds);
+        // Empty event queues end bursts between loader events; those returns must not restart a complete scan.
+        if (Stopwatch.GetTimestamp() < acquisitions.nextMemberCaptureTimestamp) return;
         DrainPending(job, handles, records, result, gate, acquisitions);
         Retire(handles, records, gate, acquisitions);
         DrainPending(job, handles, records, result, gate, acquisitions);
@@ -653,6 +655,7 @@ public static class StrataPerformanceProcess {
                     throw new InvalidOperationException("Owned process membership or unchanged affinity changed.");
             }
         }
+        acquisitions.nextMemberCaptureTimestamp = Stopwatch.GetTimestamp() + Stopwatch.Frequency / 10;
     }
 
     /// <summary>Quotes one literal Windows argument without shell expansion, including empty values and trailing backslashes.</summary>
