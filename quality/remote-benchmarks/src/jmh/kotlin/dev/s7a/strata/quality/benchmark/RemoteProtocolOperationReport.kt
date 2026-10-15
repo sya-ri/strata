@@ -50,38 +50,48 @@ public object RemoteProtocolOperationReport : JvmOperationReportAdapter {
         }
 
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
-        rows.flatMap { row ->
-            val operation = Operation.entries.single { row.benchmark.endsWith(".${it.method}") }
-            val benchmark = RemoteProtocolBenchmark()
-            val input =
-                RemoteProtocolBenchmark.Protocol().also {
-                    it.nodes = row.parameters.getValue("nodes").toInt()
-                    it.change = RemoteChange.valueOf(row.parameters.getValue("change"))
-                    it.setup()
-                }
-            val expected = operation.expected(input)
-            JvmPerformanceRunner.warmup(plan.warmup) { verify(operation.run(benchmark, input), expected) }
-            JvmPerformanceRunner
-                .sequence(plan.samples, mapOf(row.id to plan.samples)) { _, sequence ->
-                    var result: Any? = null
-                    sequence.sample(row.id) { result = operation.run(benchmark, input) }
-                    verify(checkNotNull(result), expected)
-                }.entries
-                .map { it.key to it.value }
-        }.toMap()
+        rows
+            .flatMap { row ->
+                val operation = Operation.entries.single { row.benchmark.endsWith(".${it.method}") }
+                val benchmark = RemoteProtocolBenchmark()
+                val input =
+                    RemoteProtocolBenchmark.Protocol().also {
+                        it.nodes = row.parameters.getValue("nodes").toInt()
+                        it.change = RemoteChange.valueOf(row.parameters.getValue("change"))
+                        it.setup()
+                    }
+                val expected = operation.expected(input)
+                JvmPerformanceRunner.warmup(plan.warmup) { verify(operation.run(benchmark, input), expected) }
+                JvmPerformanceRunner
+                    .sequence(plan.samples, mapOf(row.id to plan.samples)) { _, sequence ->
+                        var result: Any? = null
+                        sequence.sample(row.id) { result = operation.run(benchmark, input) }
+                        verify(checkNotNull(result), expected)
+                    }.entries
+                    .map { it.key to it.value }
+            }.toMap()
 
     private fun verify(
         result: Any,
         expected: Any,
     ) {
         when {
-            result is ByteArray && expected is ByteArray -> check(result.contentEquals(expected))
-            result is RemotePatch && expected is RemotePatch -> check(result.root == expected.root && result.changed == expected.changed && result.removed == expected.removed)
+            result is ByteArray && expected is ByteArray -> {
+                check(result.contentEquals(expected))
+            }
+
+            result is RemotePatch && expected is RemotePatch -> {
+                check(result.root == expected.root && result.changed == expected.changed && result.removed == expected.removed)
+            }
+
             result is RemoteMessage && expected is RemoteMessage -> {
                 val codec = RemoteMessageCodec()
                 check(codec.encode(result).contentEquals(codec.encode(expected)))
             }
-            else -> check(result == expected)
+
+            else -> {
+                check(result == expected)
+            }
         }
     }
 }

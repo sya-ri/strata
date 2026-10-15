@@ -43,28 +43,29 @@ public object RemoteTextOperationReport : JvmOperationReportAdapter {
         }
 
     override fun collect(plan: PerformancePlan): Map<String, JsonObject> =
-        rows.flatMap { row ->
-            val operation = Operation.entries.single { row.benchmark.endsWith(".${it.method}") }
-            val benchmark = RemoteTextBenchmark()
-            val input = RemoteTextBenchmark.Input().also { it.corpus = RemoteTextCorpus.valueOf(row.parameters.getValue("corpus")) }
-            try {
-                input.setup()
-                JvmPerformanceRunner.warmup(plan.warmup) {
-                    input.prepareReceive()
-                    verify(operation.run(benchmark, input), input)
-                }
-                JvmPerformanceRunner
-                    .sequence(plan.samples, mapOf(row.id to plan.samples)) { _, sequence ->
+        rows
+            .flatMap { row ->
+                val operation = Operation.entries.single { row.benchmark.endsWith(".${it.method}") }
+                val benchmark = RemoteTextBenchmark()
+                val input = RemoteTextBenchmark.Input().also { it.corpus = RemoteTextCorpus.valueOf(row.parameters.getValue("corpus")) }
+                try {
+                    input.setup()
+                    JvmPerformanceRunner.warmup(plan.warmup) {
                         input.prepareReceive()
-                        var result: Any? = null
-                        sequence.sample(row.id) { result = operation.run(benchmark, input) }
-                        verify(checkNotNull(result), input)
-                    }.entries
-                    .map { it.key to it.value }
-            } finally {
-                input.close()
-            }
-        }.toMap()
+                        verify(operation.run(benchmark, input), input)
+                    }
+                    JvmPerformanceRunner
+                        .sequence(plan.samples, mapOf(row.id to plan.samples)) { _, sequence ->
+                            input.prepareReceive()
+                            var result: Any? = null
+                            sequence.sample(row.id) { result = operation.run(benchmark, input) }
+                            verify(checkNotNull(result), input)
+                        }.entries
+                        .map { it.key to it.value }
+                } finally {
+                    input.close()
+                }
+            }.toMap()
 
     private fun verify(
         result: Any,
