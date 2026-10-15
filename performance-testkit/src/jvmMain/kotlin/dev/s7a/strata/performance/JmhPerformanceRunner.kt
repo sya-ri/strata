@@ -93,7 +93,10 @@ public object JmhPerformanceRunner {
         )
     }
 
-    private fun environment(): JsonObject =
+    /**
+     * Captures actual JVM and host properties for both JMH and supplemental operation admission.
+     */
+    internal fun environment(): JsonObject =
         Gson()
             .toJsonTree(
                 listOf("java.version", "java.vendor", "java.vm.name", "os.name", "os.version", "os.arch").associateWith(System::getProperty) +

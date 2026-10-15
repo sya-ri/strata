@@ -25,6 +25,11 @@ public abstract class dev/s7a/strata/gradle/fabric/LibraryClientProductionRunTas
 	public abstract fun getVerificationLibraries ()Lorg/gradle/api/file/ConfigurableFileCollection;
 }
 
+public final class dev/s7a/strata/gradle/performance/JmhEvidenceConventionsKt {
+	public static final fun configureJmhEvidence (Lorg/gradle/api/tasks/JavaExec;Ljava/io/File;ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public static synthetic fun configureJmhEvidence$default (Lorg/gradle/api/tasks/JavaExec;Ljava/io/File;ILjava/lang/String;Ljava/lang/String;ZLjava/lang/String;ILjava/lang/Object;)V
+}
+
 public final class dev/s7a/strata/gradle/performance/PublishedPerformanceInventory {
 	public static final field INSTANCE Ldev/s7a/strata/gradle/performance/PublishedPerformanceInventory;
 	public final fun verify (Ljava/util/Set;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)I

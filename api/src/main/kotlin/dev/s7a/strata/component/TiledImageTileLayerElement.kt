@@ -226,19 +226,21 @@ internal class TiledImageTileLayerElement(
             levels = current.levels
             destinationSize = current.destinationSize
             cachePolicy = current.cachePolicy
-            if (sourceChanged) {
-                if (sourceGeneration == Long.MAX_VALUE) throw ArithmeticException("Tile source generations exhausted.")
-                sourceGeneration++
-                source = current.source
-                plan = TilePlan.Empty
-                closeEntries(removeAllEntries())
-            }
+            if (sourceChanged) replaceSource(current.source)
             if (stateChanged) replaceState(current.state)
             return when {
                 sizeChanged -> DirtyMask.of(DirtyPhase.Measure)
                 bindingChanged || policyChanged -> DirtyMask.of(DirtyPhase.Layout, DirtyPhase.Paint)
                 else -> DirtyMask.None
             }
+        }
+
+        private fun replaceSource(next: TiledImageSource) {
+            if (sourceGeneration == Long.MAX_VALUE) throw ArithmeticException("Tile source generations exhausted.")
+            sourceGeneration++
+            source = next
+            plan = TilePlan.Empty
+            closeEntries(removeAllEntries())
         }
 
         private fun replaceState(next: PanZoomState) {

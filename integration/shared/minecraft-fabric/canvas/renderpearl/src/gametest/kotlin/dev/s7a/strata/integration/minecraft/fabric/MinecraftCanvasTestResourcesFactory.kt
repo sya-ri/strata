@@ -46,6 +46,8 @@ internal fun createMinecraftCanvasTestResources(): MinecraftCanvasTestResources 
     return object : MinecraftCanvasTestResources {
         private var closed = false
 
+        override val inputValidation: List<MinecraftCanvasInputValidation> = listOf(MinecraftCanvasVulkanRetirementValidation, MinecraftCanvasVulkanPortableQuotaValidation)
+
         override val backend: MinecraftCanvasTestBackend = MinecraftCanvasTestBackend.parse(device.deviceInfo.backendName())
 
         override val backendDescription: String = device.deviceInfo.toString()

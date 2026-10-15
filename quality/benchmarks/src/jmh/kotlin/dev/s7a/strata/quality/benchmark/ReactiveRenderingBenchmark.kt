@@ -31,6 +31,19 @@ import org.openjdk.jmh.annotations.TearDown
 @OptIn(InternalStrataRuntimeApi::class)
 public open class ReactiveRenderingBenchmark {
     /**
+     * Exposes the original deterministic gate to shared fixture selection.
+     */
+    public companion object {
+        /**
+         * Verifies every original reactive workload before collection.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            ReactiveWorkEvidence.main(emptyArray())
+        }
+    }
+
+    /**
      * Publishes one scenario input and returns a completed retained frame.
      */
     @Benchmark
