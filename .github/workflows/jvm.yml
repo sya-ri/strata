@@ -201,14 +201,14 @@ jobs:
       with:
         cache-read-only: false
         gradle-home-cache-excludes: caches/fabric-loom
+    - name: Verify real resource refusal and terminal cleanup
+      shell: pwsh
+      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - name: Qualify the real whole control and timing boundary
       shell: pwsh
       env:
         STRATA_PAIRED_TOOLCHAIN: ${{ steps.java.outputs.toolchain }}
       run: python -B gradle/performance/verify-qualified-preflight.py --output "build/performance-ci/qualified-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
-    - name: Verify real resource refusal and terminal cleanup
-      shell: pwsh
-      run: python -B gradle/performance/verify-windows-boundary.py --output "build/performance-ci/qualified-boundary-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
     - uses: actions/upload-artifact@v7
       if: always()
       with:

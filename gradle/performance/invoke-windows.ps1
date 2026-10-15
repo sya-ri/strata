@@ -472,6 +472,7 @@ public static class StrataPerformanceProcess {
 
     // Run only on the CreateProcess thread, including cleanup. Job messages remain advisory diagnostics.
     static void CaptureCreations(IntPtr job, Dictionary<uint, IntPtr> handles, Dictionary<uint, List<Dictionary<string, object>>> records, Dictionary<string, object> capture, object gate, Acquisitions acquisitions, Stopwatch clock, double seconds, uint waitMilliseconds = 0) {
+        double nextMemberCapture = clock.Elapsed.TotalMilliseconds + 100;
         while (clock.Elapsed.TotalSeconds < seconds) {
             DebugEvent observed;
             if (WaitForDebugEventEx(out observed, waitMilliseconds) == false) {
@@ -489,7 +490,6 @@ public static class StrataPerformanceProcess {
             }
             uint continuation = 0x00010002; // DBG_CONTINUE for non-exception events.
             bool exited = observed.kind == 5;
-            bool continued = false;
             try {
                 if (observed.kind == 3) {
                     lock (gate) capture["processCreationEvents"] = (long)capture["processCreationEvents"] + 1;
@@ -517,10 +517,6 @@ public static class StrataPerformanceProcess {
                         AcquireCreatedProcess(job, observed.pid, observed.info.creation.process, capture, gate, acquisitions);
                         DrainPending(job, handles, records, capture, gate, acquisitions, true);
                         UseCreationLease(observed.pid, observed.info.creation.process, handles, records, capture, gate, acquisitions);
-                        // The exact generation's image/birth/affinity is retained; whole-Job scans need not keep its creator suspended.
-                        Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
-                        continued = true;
-                        Capture(job, handles, records, capture, clock, seconds, gate, acquisitions, false);
                     } else {
                         // A fatal refusal cannot grow the bounded history during termination; actual Job totals remain unreconciled.
                         lock (gate) capture["creationEventsAfterFailure"] = (long)capture["creationEventsAfterFailure"] + 1;
@@ -554,7 +550,7 @@ public static class StrataPerformanceProcess {
                 try {
                     if ((observed.kind == 3 || observed.kind == 6) && observed.info.file != IntPtr.Zero) Require(CloseHandle(observed.info.file));
                 } finally {
-                    if (continued == false) Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
+                    Require(ContinueDebugEvent(observed.pid, observed.threadId, continuation));
                     if (exited) {
                         if (acquisitions.debugProcesses.Remove(observed.pid) == false) throw new InvalidOperationException("Exit lacks its actual creation event.");
                         acquisitions.initialBreakpoints.Remove(observed.pid);
@@ -562,6 +558,13 @@ public static class StrataPerformanceProcess {
                         Retire(handles, records, gate, acquisitions);
                     }
                 }
+            }
+            // Keep the original membership cadence even under continuous events; capture each new generation before continuing it.
+            // A whole-Job scan per creation suspends unrelated debug events and expands the short lifetimes being verified.
+            if (acquisitions.captureFailed == false && nextMemberCapture <= clock.Elapsed.TotalMilliseconds) {
+                try { Capture(job, handles, records, capture, clock, seconds, gate, acquisitions, false); }
+                catch { acquisitions.captureFailed = true; throw; }
+                nextMemberCapture = clock.Elapsed.TotalMilliseconds + 100;
             }
         }
     }
