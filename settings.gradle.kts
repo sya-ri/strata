@@ -1,5 +1,6 @@
 import org.gradle.api.Task
 import org.gradle.api.initialization.resolve.RepositoriesMode
+import org.gradle.api.publish.maven.tasks.PublishToMavenLocal
 import org.gradle.api.tasks.JavaExec
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
@@ -179,11 +180,12 @@ fun requiresCompleteJvmModel(name: String, group: String?): Boolean =
         )
 
 /** Refuses complete acceptance and loaded-game execution through resolved scoped task metadata. */
-fun installScopedSourceBoundary(property: String, minecraftProjects: Set<String> = emptySet()) {
+fun installScopedSourceBoundary(property: String, minecraftProjects: Set<String> = emptySet(), scopedAcceptance: (Task) -> Boolean = { false }) {
     fun requiresCompleteModel(task: Task): Boolean =
-        requiresCompleteJvmModel(task.name, task.group) ||
+        (requiresCompleteJvmModel(task.name, task.group) && scopedAcceptance(task).not()) ||
+            task.name in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick") ||
             (minecraftProjects.isNotEmpty() &&
-                (task.name in setOf("benchmarkMinecraft", "benchmarkMinecraftQuick", "runClientGameTest", "runProductionClientGameTest", "runPublishedCoordinateClientGameTest") ||
+                (task.name in setOf("runClientGameTest", "runProductionClientGameTest", "runPublishedCoordinateClientGameTest") ||
                     (task is JavaExec && task.project.path in minecraftProjects)))
 
     gradle.projectsEvaluated {
@@ -211,16 +213,11 @@ if (jvmOnly) {
     include(*jvmProjectPaths.toTypedArray())
     installScopedSourceBoundary("strata.jvmOnly")
 } else if (webOnly) {
-    require(gradle.startParameter.taskNames.isNotEmpty() && gradle.startParameter.taskNames.all { task ->
-        task.substringBeforeLast(':') in webProjectPaths &&
-            ((task.substringAfterLast(':') in setOf("check", "jsTest") && task != ":quality:component-benchmarks:check") ||
-                (task.substringBeforeLast(':') in setOf(":runtime:core", ":runtime:minecraft") && task.substringAfterLast(':') in setOf("formatKotlin", "updateKotlinAbi")) ||
-                (task.substringBeforeLast(':') == ":performance-testkit" && task.substringAfterLast(':') in setOf("jvmTest", "compileKotlinJs", "publishToMavenLocal", "formatKotlin", "tasks", "updateKotlinAbi", "processEvidence")) ||
-                (task.substringBeforeLast(':') in setOf(":quality:benchmarks", ":quality:component-benchmarks", ":quality:remote-benchmarks") && task.substringAfterLast(':') in setOf("formatKotlin", "jmh", "jmhHistorical", "jmhPortableTiles", "jmhRemote", "jmhComponents", "captureComponentInventory", "captureRuntimeSurfaceInventory", "captureHeadlessInventory", "captureRemoteInventory")) ||
-                (task.substringBeforeLast(':') == ":quality:detekt-rules" && task.substringAfterLast(':') in setOf("formatKotlin")) ||
-                (task.substringBeforeLast(':') == ":integration:web" && task.substringAfterLast(':') in setOf("formatKotlin", "measureWebPerformance")))
-    }) { "strata.webOnly supports only fully qualified shared Web/JVM quality tasks; component check and published inventory acceptance require the complete build." }
     include(*webProjectPaths.toTypedArray())
+    installScopedSourceBoundary("strata.webOnly") { task ->
+        (task.name == "check" && task.project.path in webProjectPaths && task.project.path != ":quality:component-benchmarks") ||
+            (task.project.path == ":performance-testkit" && (task.name == "publishToMavenLocal" || task is PublishToMavenLocal))
+    }
 } else {
     val commonProjectPaths = listOf(
         ":api",
