@@ -730,10 +730,9 @@ final class FabricMinecraftInventoryBridge implements MinecraftUiPlatform, Minec
      * @param mouseY current logical pointer y.
      */
     void renderOverlays(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
-        requireUsable();
-        if (requireMinecraft().player == null) return;
         FabricMinecraftInventoryOverlays.render(
-                activeMenu().getCarried(), hovered == null ? null : hovered.snapshot,
+                () -> requireMinecraft().player == null ? null : activeMenu().getCarried(),
+                () -> requireMinecraft().player == null || hovered == null ? null : hovered.snapshot,
                 (snapshot, carried) -> FabricMinecraftSlotTooltipRenderer.render(graphics, font, snapshot, carried, mouseX, mouseY),
                 snapshot -> {
                     int x = Math.subtractExact(mouseX, 8);

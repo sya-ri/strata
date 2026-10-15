@@ -2,10 +2,11 @@ package dev.s7a.strata.runtime.minecraft.fabric;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Submits one frame's borrowed inventory state in carried-item then hovered-tooltip order.
+ * Submits current inventory state in carried-item then hovered-tooltip order.
  *
  * <p>Both native GUI families use this client-thread boundary. Each presenter receives a detached stack, and no callback or stack is retained after the call.</p>
  */
@@ -13,19 +14,25 @@ final class FabricMinecraftInventoryOverlays {
     private FabricMinecraftInventoryOverlays() {}
 
     /**
-     * Copies populated stacks at submission and leaves version-specific drawing and tooltip eligibility to the presenters.
+     * Reads each overlay's current state at its submission boundary and leaves native drawing and tooltip eligibility to the presenters.
+     * The sources validate their bridge owner on every read, so native item presentation cannot leave a stale hover or menu for the tooltip.
      *
-     * @param carried authoritative carried stack for this submission.
-     * @param hovered current synchronized hover snapshot, or null when no binding is hit.
-     * @param tooltip native tooltip presenter; its second argument borrows the current carried stack for eligibility.
-     * @param item native carried-item presenter, invoked before the tooltip presenter.
+     * @param carriedSource authoritative carried stack, or null when its player is absent.
+     * @param hoveredSource synchronized hover snapshot, or null when no binding is hit or its player is absent.
+     * @param renderTooltip native tooltip presenter; its second argument borrows the current carried stack for eligibility.
+     * @param renderCarried native carried-item presenter, invoked before the tooltip presenter.
      */
-    static void render(ItemStack carried, ItemStack hovered, BiConsumer<ItemStack, ItemStack> tooltip, Consumer<ItemStack> item) {
-        if (carried.isEmpty() == false) {
-            item.accept(carried.copy());
+    static void render(Supplier<ItemStack> carriedSource, Supplier<ItemStack> hoveredSource, BiConsumer<ItemStack, ItemStack> renderTooltip, Consumer<ItemStack> renderCarried) {
+        ItemStack carried = carriedSource.get();
+        if (carried != null && carried.isEmpty() == false) {
+            renderCarried.accept(carried.copy());
         }
+        ItemStack hovered = hoveredSource.get();
         if (hovered != null && hovered.isEmpty() == false) {
-            tooltip.accept(hovered.copy(), carried);
+            ItemStack currentCarried = carriedSource.get();
+            if (currentCarried != null) {
+                renderTooltip.accept(hovered.copy(), currentCarried);
+            }
         }
     }
 }
