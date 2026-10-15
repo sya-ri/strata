@@ -707,11 +707,12 @@ def independent_class_file(directory, phase_directory, result, vm):
     return matches[0] if matches else None
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False):
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
             "Invalid finite VM diagnostic byte bound")
     require(type(require_all_java_generations) is bool, "Invalid Java generation coverage mode")
+    require(type(daemon_metaspace_mib) is int and 0 < daemon_metaspace_mib <= 1024, "Invalid finite daemon metaspace cap")
     if require_all_java_generations:
         require(terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
                 and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
@@ -724,7 +725,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         require(len(headers) == 1, "VM diagnostic lacks a unique PID header")
         pid = int(headers[0][0])
         pid_log_counts[pid] = pid_log_counts.get(pid, 0) + 1
-    profiles = {"wrapper": (64, 256), "daemon": (768, 1024), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
+    profiles = {"wrapper": (64, 256), "daemon": (768, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]
@@ -1307,7 +1308,7 @@ def run(root, manifest_path, output, input_root=None, input_producer="", executi
             logs = vm_directory.as_posix()
             flags = f"-XX:+UnlockDiagnosticVMOptions -XX:+PrintCommandLineFlags -XX:-DisplayVMOutput -XX:+LogVMOutput -XX:LogFile={logs}/vm-%p-%t.log"
             environment = {"JAVA_OPTS": "-Xmx64m -XX:MaxMetaspaceSize=256m", "GRADLE_OPTS": "", "JAVA_TOOL_OPTIONS": f"-Xmx32m -XX:MaxMetaspaceSize=256m {flags}", "JDK_JAVA_OPTIONS": "", "_JAVA_OPTIONS": "",
-                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix()}
+                           "STRATA_PAIRED_WORKSPACE": workspace.as_posix(), "STRATA_PAIRED_LOGS": logs, "STRATA_PAIRED_CLASS_LOGS": class_staging.as_posix(), "STRATA_PAIRED_DAEMON_METASPACE_MIB": "1024"}
             matches = [side for side in selected_input_files if f"-Pstrata.paired.runtime={runtime_manifests[side]}" in arguments]
             require(len(matches) <= 1, "Ambiguous runtime inventory input side")
             input_flags = []

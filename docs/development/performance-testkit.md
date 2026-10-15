@@ -826,7 +826,11 @@ The optional `--owner-report` entry selects an entire declared independent domai
 The same hosted job accepts `strata-source-preparation-ci-v1` for explicit Source preparation before compiled pins are available.
 It binds all three source trees, the exact differing source-file list, immutable inputs, a complete existing Gradle task list and both argument lists, one or three alternating baseline/candidate invocations, required output patterns and an optional full JVM test gate.
 The common driver and prepared Source subjects have separate frozen identities; preparing another change does not require that change to contain the common driver.
-Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-Pstrata.jvmOnly=true`; worker, memory, deadline, cache, task and sampling overrides are rejected.
+Each side may select one existing model argument, `-Pstrata.webOnly=true` or `-Pstrata.jvmOnly=true`; worker, deadline, cache, task and sampling overrides are rejected.
+An optional immutable `resource_profile` file pin supplies exactly `minimumFreePhysicalBytes` and `daemonMetaspaceMiB` for both Source sides.
+The finite admission range is 4–16 GiB, and the positive daemon metaspace cap cannot exceed the default 1024 MiB; all other role caps, scheduling and limits remain fixed.
+The same input is checked before and after every phase and preserved verbatim; actual fresh Job admission must meet that floor, and the existing init and closed VM XML verifier require the declared daemon cap.
+Without this input, Source keeps its existing 4 GiB admission and 1024 MiB daemon metaspace profile.
 Source preparation admits the existing JVM/JS archive and compilation tasks, JMH compilation/quality tasks, complete workload verification and runtime-surface inventory tasks, and explicitly declared tracked TSV source resources and compiler ABI snapshots.
 A requested `test` or `jvmTest` task requires its matching full test gate; multiple requested test tasks, missing gates and partial test filters fail.
 Every requested task must execute successfully with `--rerun-tasks`, and each invocation uses the same owned Windows boundary, source fences and terminal archive as collection.
@@ -836,6 +840,15 @@ All provisioning diagnostics, outputs and actual Job counters remain in separate
 The default adds no provisioning invocations, and a failed provisioning gate prevents every measured invocation.
 Dependency cache provisioning does not enable Gradle task-result or configuration caches: all invocations keep `--rerun-tasks`, `--no-build-cache` and `--no-configuration-cache`.
 Audit the retained setup and task logs for the requested cache context before accepting a Source comparison.
+Controlled discovery comparisons supply both `toolchain_binding` and `preparations`.
+The binding contains immutable `profile` and `installations` file pins; the profile follows the frozen subject's controlled-toolchain binder contract, and the finite installation inventory binds every observed selected or unused Java home through its complete tree, executable, optional release-file digest and independently observed VM vendor/runtime/JVM metadata.
+The frozen common subject owns the binder and selection init; both sides verify actual selected metadata, while the baseline retains default discovery and the candidate disables discovery through the bound standard properties.
+Every preparation verifies both original declared profile and installation-inventory file pins before binding and after execution; a changed input fails instead of rebinding a later phase to new bytes.
+Unknown homes, changed bytes, a prebounded baseline and missing fresh physical-VM vendor/version or same-home runtime metadata fail.
+Each preparation supplies `name`, `tasks`, `artifacts` and `test_gate`; their concatenated ordered work and output inventories must equal the original complete manifest.
+Native Gradle resolution handles those requests, and each complete matched attempt executes every preparation in order with separate terminal, work, classpath, selection, generation and metric receipts.
+Controlled records distinguish `tasks_per_attempt` from the named `tasks_per_preparation`, and complete measured/provisioning attempts from their physical invocation counts; the default flat route retains `tasks_per_invocation`.
+Provisioning retains its separate scope and runs all preparations on both sides before the measured attempts; raw monotonic invocation boundaries permit the complete start-to-terminal wall interval across preparations to remain distinct from the sum of invocation intervals.
 Gradle preparation retains complete VM XML diagnostics up to 16 MiB per file, with the actual byte count, bound and SHA recorded; other JVM verification keeps its 1 MiB default.
 Process-isolation worker arguments carry the existing diagnostic flags explicitly, and preparation requires complete XML with observed executable/caps and closed PID/birth identity for every captured Java generation.
 An owned Job completion listener opens physical descendant handles as notifications arrive, alongside the existing complete member snapshots.

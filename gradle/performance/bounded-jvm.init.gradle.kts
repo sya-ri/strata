@@ -93,7 +93,10 @@ gradle.projectsEvaluated {
     check(rootProject.providers.gradleProperty("kotlin.compiler.execution.strategy").get() == "in-process")
     check(rootProject.providers.gradleProperty("detekt.use.worker.api").get() == "false")
     check(Runtime.getRuntime().maxMemory() <= 768L * 1024L * 1024L)
-    check(ManagementFactory.getRuntimeMXBean().inputArguments.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=1g")
+    val daemonMetaspaceMiB = System.getenv("STRATA_PAIRED_DAEMON_METASPACE_MIB")?.toInt() ?: 1024
+    check(daemonMetaspaceMiB in 1..1024)
+    val daemonMetaspace = if (daemonMetaspaceMiB == 1024) "1g" else "${daemonMetaspaceMiB}m"
+    check(ManagementFactory.getRuntimeMXBean().inputArguments.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=$daemonMetaspace")
     val vmLogs = File(checkNotNull(System.getenv("STRATA_PAIRED_LOGS"))).canonicalFile
     check(vmLogs.isDirectory && Files.isSymbolicLink(vmLogs.toPath()).not())
     // Gradle process-isolation workers discard the inherited environment on Windows.

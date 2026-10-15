@@ -1729,6 +1729,45 @@ class PairedJvmTest(unittest.TestCase):
         self.assertEqual(actual["diagnostic_sha256"], PAIRED.digest(log))
         self.assertNotIn("working_directory", actual)
 
+
+    def test_source_daemon_cap_requires_matching_closed_xml_and_keeps_other_role_caps(self):
+        for index, (declared, actual, role, closed, valid) in enumerate(((384, 384, "daemon", True, True),
+                (1024, 1024, "daemon", True, True), (384, 1024, "daemon", True, False),
+                (1024, 384, "daemon", True, False), (384, 384, "daemon", False, False),
+                (384, 256, "worker", True, True), (384, 384, "worker", True, False))):
+            with self.subTest(declared=declared, actual=actual, role=role, closed=closed):
+                directory = self.root / ("source-daemon-cap-" + str(index))
+                directory.joinpath("class-loads").mkdir(parents=True)
+                (directory / "console.log").write_text("", encoding="utf-8")
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"synthetic pinned Java; never launched")
+                main = "org.gradle.launcher.daemon.bootstrap.GradleDaemon" if role == "daemon" else "worker.org.gradle.process.internal.worker.GradleWorkerMain"
+                heap = (768 if role == "daemon" else 512) * 1024**2
+                log = directory / "vm.log"
+                log.write_text(f"<hotspot_log process='123' time_ms='1001'><vm_arguments><command>{main} 1</command>\njava.home={home}\njava.class.path=frozen.jar\n"
+                               f"</vm_arguments>\n-XX:MaxHeapSize={heap} -XX:MaxMetaspaceSize={actual * 1024**2}\n"
+                               + ("<hotspot_log_done/></hotspot_log>\n" if closed else ""), encoding="utf-8")
+                member = {"pid": 123, "creationFileTime": 116444736010000000, "exitFileTime": 116444736020000000, "image": str(executable),
+                          "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                terminal = {"members": {"123": [member]}, "naturalRelease": True, "handlesClosed": True, "activeProcessesAfterCleanup": 0,
+                            "inheritedAffinityMask": 15, "systemAffinityMask": 15, "nativeInvoked": True, "notificationReaderJoined": True, "totalProcesses": 1,
+                            "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                                     "totalProcesses": 1, "capturedGenerations": 1, "closedGenerations": 1}}
+                arguments = (directory, [log], terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, 0)
+                if valid:
+                    PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared)
+                    record = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual((record["role"], record["caps"]["MaxMetaspaceSize"], record["os_generation"]), (role, actual * 1024**2, member))
+                else:
+                    with self.assertRaises(ValueError):
+                        PAIRED.verify_vms(*arguments, require_all_java_generations=True, daemon_metaspace_mib=declared)
+                    self.assertFalse((directory / "vms.json").exists())
+        for invalid in (True, 0, 1025, "384", None):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "Invalid finite daemon metaspace cap"):
+                PAIRED.verify_vms(self.root, [], {}, {}, daemon_metaspace_mib=invalid)
+
     def test_process_isolation_worker_diagnostics_survive_empty_environment_and_cover_generations(self):
         source = (Path(__file__).resolve().parents[1] / "performance/bounded-jvm.init.gradle.kts").read_text(encoding="utf-8")
         block = re.search(r"val workerDiagnostics = listOf\(([\s\S]*?)\n    \)", source).group(1)
