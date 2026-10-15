@@ -193,7 +193,9 @@ public object PreeditWorkEvidence {
         check(semantics.semantics.role == SemanticsRole.TextArea)
         check(semantics.semantics.value == UiText.Literal(editor.state.value))
         check(semantics.semantics.disabled == editor.enabled.value.not())
-        check(editor.state.scrollState.metrics.offset == expected.scroll)
+        check(editor.state.scrollState.metrics.offset == expected.scroll) {
+            "Independent vertical scroll differs: actual=${editor.state.scrollState.metrics.offset}, expected=${expected.scroll}"
+        }
         val pixels = rasterizeHeadless(frame.drawCommands, editor.viewport).copyArgb()
         check(pixels.contentEquals(expected.pixels())) { "Independent complete-frame pixels differ" }
         val underlines =

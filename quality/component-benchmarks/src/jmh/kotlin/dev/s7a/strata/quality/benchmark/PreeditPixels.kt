@@ -5,7 +5,7 @@ import dev.s7a.strata.input.InputResult
 import dev.s7a.strata.input.TextInputEvent
 
 /**
- * Independent complete 72 by 44 ARGB oracle for the frozen one-pixel font and unwrapped editor.
+ * Independent complete 72 by 44 ARGB oracle for the frozen one-pixel font and default word-wrapped editor.
  * Uses scalar positions, explicit four-pixel padding, nine-pixel lines, caret following and focused extrema.
  * It consumes reference output, never real commands, runtime layouts, glyph runs or candidate normalization.
  * The frozen insertion offset remains separate from committed length after an external value update.
@@ -19,7 +19,6 @@ internal class PreeditPixels(
     private val insertion: Int = committed.length,
 ) {
     private var current: PreeditReference.Result? = null
-    private var horizontal = 0
     private var vertical = 0
 
     init {
@@ -37,18 +36,13 @@ internal class PreeditPixels(
         current = next
         val layout = layout()
         val caret = checkNotNull(layout.positions[insertion + (current?.caret ?: 0)])
-        val maximum = maxOf(0, maxOf(caret.x, layout.width) - 64 + 1)
         if (textChanged) {
-            horizontal = horizontal.coerceIn(0, maximum)
             vertical = vertical.coerceIn(0, maxOf(0, layout.height - 36))
         }
         if (textChanged || caretChanged) {
             if (caret.y < vertical) vertical = caret.y
             if (vertical + 36 < caret.y + 9) vertical = caret.y + 9 - 36
-            if (caret.x < horizontal) horizontal = caret.x
-            if (horizontal + 64 <= caret.x) horizontal = caret.x - 64 + 1
         }
-        horizontal = horizontal.coerceIn(0, maximum)
         return InputResult.Consumed
     }
 
@@ -71,13 +65,13 @@ internal class PreeditPixels(
             }
         }
         layout.glyphs.forEach { position ->
-            val x = 4 + position.x - horizontal
+            val x = 4 + position.x
             val y = 4 + position.y - vertical
             fill(x, y, x + 1, y + 1, 0xFF404040.toInt())
         }
         underlines().forEach { fill(it.left, it.top, it.right, it.bottom, -1) }
         val caret = checkNotNull(layout.positions[insertion + (current?.caret ?: 0)])
-        val x = caret.x - horizontal
+        val x = caret.x
         if (0 <= x && x <= 64) {
             val left = if (x == 64) 67 else x + 4
             fill(left, caret.y - vertical + 4, left + 1, caret.y - vertical + 13, -1)
@@ -97,8 +91,8 @@ internal class PreeditPixels(
             val last = minOf(end, line.end)
             if (last <= first) return@mapNotNull null
             val positions = line.boundaries.filter { it.first in first..last }.map { it.second }
-            val left = (positions.minOrNull() ?: 0).minus(horizontal).coerceIn(0, 64) + 4
-            val right = (positions.maxOrNull() ?: 0).minus(horizontal).coerceIn(0, 64) + 4
+            val left = (positions.minOrNull() ?: 0).coerceIn(0, 64) + 4
+            val right = (positions.maxOrNull() ?: 0).coerceIn(0, 64) + 4
             val top = line.y + 12 - vertical
             if (left < right && top in 4 until 40) IntRect(left, top, right, top + 1) else null
         }
@@ -125,7 +119,6 @@ internal class PreeditPixels(
         val positions: List<Position?>,
         val glyphs: List<Position>,
         val lines: List<Line>,
-        val width: Int,
         val height: Int,
     )
 
@@ -134,33 +127,65 @@ internal class PreeditPixels(
         val positions = MutableList<Position?>(text.length + 1) { null }
         val glyphs = ArrayList<Position>()
         val lines = ArrayList<Line>()
-        var x = 0
-        var y = 0
-        var offset = 0
-        var start = 0
-        var maximum = 0
-        val boundaries = arrayListOf(0 to 0)
-        positions[0] = Position(0, 0)
-        while (offset < text.length) {
-            val scalar = text.codePointAt(offset)
-            if (scalar == 10) {
-                lines.add(Line(start, offset, y, boundaries.toList()))
-                maximum = maxOf(maximum, x)
-                offset++
-                y += 9
-                x = 0
-                start = offset
-                boundaries.clear()
-                boundaries.add(offset to 0)
-            } else {
+        val ranges = lineRanges(text)
+        ranges.forEachIndexed { index, range ->
+            val (start, end) = range
+            val y = index * 9
+            var x = 0
+            var offset = start
+            val boundaries = arrayListOf(start to 0)
+            positions[start] = Position(0, y)
+            while (offset < end) {
+                val scalar = text.codePointAt(offset)
                 glyphs.add(Position(x, y))
                 x += advances[scalar] ?: 1
                 offset += Character.charCount(scalar)
                 boundaries.add(offset to x)
+                positions[offset] = Position(x, y)
             }
-            positions[offset] = Position(x, y)
+            lines.add(Line(start, end, y, boundaries))
         }
-        lines.add(Line(start, offset, y, boundaries))
-        return Layout(positions, glyphs, lines, maxOf(maximum, x), y + 9)
+        return Layout(positions, glyphs, lines, ranges.size * 9)
+    }
+
+    private fun lineRanges(text: String): List<Pair<Int, Int>> {
+        val ranges = ArrayList<Pair<Int, Int>>()
+        var start = 0
+        do {
+            val end = text.indexOf('\n', start).takeIf { 0 <= it } ?: text.length
+            if (start == end) ranges.add(start to end)
+            var first = start
+            while (first < end) {
+                val last = wordEnd(text, first, end)
+                ranges.add(first to last)
+                first = last
+            }
+            start = end + 1
+        } while (start <= text.length)
+        return ranges
+    }
+
+    private fun wordEnd(
+        text: String,
+        start: Int,
+        end: Int,
+    ): Int {
+        var offset = start
+        var width = 0
+        var whitespace = start
+        while (offset < end) {
+            val scalar = text.codePointAt(offset)
+            val nextWidth = width + (advances[scalar] ?: 1)
+            if (64 < nextWidth && start < offset) return if (start < whitespace) whitespace else offset
+            width = nextWidth
+            offset += Character.charCount(scalar)
+            val breakable =
+                when (scalar) {
+                    0xA0, 0x2007, 0x202F -> false
+                    else -> Character.isWhitespace(scalar) || Character.isSpaceChar(scalar)
+                }
+            if (breakable) whitespace = offset
+        }
+        return end
     }
 }
