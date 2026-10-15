@@ -64,6 +64,17 @@ Shared-kit owner CPU intervals supplement JMH elapsed time and normalized alloca
 Each CPU report validates and hashes its exact paired JMH receipt/results, actual runtime archives, fixture tree, collector, full workload controls and actual JVM/OS/argument metadata before and after collection.
 An immutable external source plan binds both exact revisions to their archive inventories and the frozen fixture revision/tree; it is archived as the same fixture input on both sides.
 
+### Standard component notification membership
+
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
+The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
+The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
+Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.
+Callback failures still stop delivery after committing the value.
+No value, callback result or historical plan is cached.
+Common publication controls preserve order, mutation, reentry, normalization and failure behavior; JVM storage controls verify warm identity and immediate release without garbage-collection timing.
+Stable changed writes can avoid repeated membership copies; equal/unobserved writes, first admission, churn and completed-frame operations require separate measurements before claiming an improvement.
+
 ### Current CycleButton selection
 
 Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
