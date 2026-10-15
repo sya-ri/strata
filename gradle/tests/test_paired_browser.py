@@ -629,6 +629,33 @@ class PairedBrowserTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         self.load(value)
 
+    def test_source_java_exec_limits_require_a_pinned_pair_within_existing_caps(self):
+        value = self.source_manifest()
+        path = self.root / "source-execution-resources.json"
+        defaults = {"minimumFreePhysicalBytes": 4 * 1024**3, "daemonMetaspaceMiB": 1024}
+        for heap, metaspace in ((64, 1), (512, 256), (768, 384), (63, 256), (769, 256),
+                                (True, 256), ("512", 256), (None, 256), (512, 0), (512, 385),
+                                (512, True), (512, "256"), (512, None)):
+            limits = {**defaults, "javaExecHeapMiB": heap, "javaExecMetaspaceMiB": metaspace}
+            path.write_text(json.dumps(limits), encoding="utf-8")
+            value["resource_profile"] = {"path": path.name, "sha256": self.shared.digest(path)}
+            with self.subTest(heap=heap, metaspace=metaspace):
+                if type(heap) is int and 64 <= heap <= 768 and type(metaspace) is int and 0 < metaspace <= 384:
+                    self.assertEqual(self.load(value), value)
+                    self.assertEqual(self.browser.source_resources(self.shared, self.root, value), limits)
+                    path.write_text(json.dumps(defaults), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        self.load(value)
+                else:
+                    with self.assertRaises(ValueError):
+                        self.load(value)
+        for extra in ({"javaExecHeapMiB": 512}, {"javaExecMetaspaceMiB": 256},
+                      {"javaExecHeapMiB": 512, "javaExecMetaspaceMiB": 256, "forkHeapMiB": 512}):
+            path.write_text(json.dumps({**defaults, **extra}), encoding="utf-8")
+            value["resource_profile"] = {"path": path.name, "sha256": self.shared.digest(path)}
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                self.load(value)
+
 
     def test_toolchain_input_acquisition_is_separate_from_frozen_binding_and_original_work(self):
         value = self.controlled_source_manifest()
@@ -1255,7 +1282,8 @@ class PairedBrowserTest(unittest.TestCase):
                 data["provision_dependency_caches"] = True
             if controlled:
                 resource_path = self.root / "controlled-resources.json"
-                resource_path.write_text(json.dumps({"minimumFreePhysicalBytes": 4608 * 1024**2, "daemonMetaspaceMiB": 384}), encoding="utf-8")
+                resource_path.write_text(json.dumps({"minimumFreePhysicalBytes": 4608 * 1024**2, "daemonMetaspaceMiB": 384,
+                                                     "javaExecHeapMiB": 512, "javaExecMetaspaceMiB": 256}), encoding="utf-8")
                 data["resource_profile"] = {"path": resource_path.name, "sha256": self.shared.digest(resource_path)}
             if repetitions == 1 and not acquiring:
                 data["tasks"] = [":integration:web:jsBrowserDistribution", ":integration:web:jvmTest", ":integration:web:installWebBrowsers", ":performance-testkit:jsJar", ":performance-testkit:verifyBrowserPerformanceDriver"]
@@ -1293,10 +1321,11 @@ class PairedBrowserTest(unittest.TestCase):
             api.source_guard = source_guard
             api.class_load_inventory = lambda *args: {}
             api.preserve_class_loads = lambda *args: {}
-            def verify_vms(*args, maximum_diagnostic_bytes, require_all_java_generations, daemon_metaspace_mib):
+            def verify_vms(*args, maximum_diagnostic_bytes, require_all_java_generations, daemon_metaspace_mib, java_exec_heap_mib, java_exec_metaspace_mib):
                 self.assertEqual(maximum_diagnostic_bytes, 16 * 1024**2)
                 self.assertTrue(require_all_java_generations)
                 self.assertEqual(daemon_metaspace_mib, 384 if controlled else 1024)
+                self.assertEqual((java_exec_heap_mib, java_exec_metaspace_mib), (512, 256) if controlled else (768, 384))
                 if controlled:
                     directory = args[0]
                     self.shared.write_new(directory / "vms.json", [{"pid": 31, "home": str(homes["launcher"]), "role": "daemon", "diagnostic_sha256": self.shared.digest(args[1][0]), "os_generation": {"image": str(homes["launcher"] / "bin/java.exe")}}])
@@ -1425,6 +1454,8 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertEqual(request["environment"]["STRATA_PAIRED_DAEMON_METASPACE_MIB"], "384" if controlled else "1024")
                 if "program" not in request:
                     self.assertTrue(any(argument.startswith("-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=" + ("384m" if controlled else "1g") + " ") for argument in request["arguments"]))
+                    caps = [argument for argument in request["arguments"] if argument.startswith("-Pstrata.paired.sourceJavaExec")]
+                    self.assertEqual(caps, ["-Pstrata.paired.sourceJavaExecHeapMiB=512", "-Pstrata.paired.sourceJavaExecMetaspaceMiB=256"] if controlled else [])
                 image = str(homes["launcher"] / "bin/java.exe") if acquiring else str(node)
                 member = {"pid": 1, "image": image, "primaryBeforeResume": True, "inOwnedJob": True, "completed": True, "handleClosed": True, "exitCode": 0,
                           "creationFileTime": 1, "exitFileTime": 2, "affinityMask": 15, "systemAffinityMask": 15}
@@ -1540,7 +1571,7 @@ class PairedBrowserTest(unittest.TestCase):
                 else:
                     count = 2 if controlled else 1
                     self.assertEqual((record["status"], record["completed_source_invocations"], record["runtime_collection"]), ("prepared", repetitions * 2 * count, "UNRUN"))
-                    self.assertEqual(record["source_resources"], {"minimumFreePhysicalBytes": 4608 * 1024**2 if controlled else 4 * 1024**3, "daemonMetaspaceMiB": 384 if controlled else 1024})
+                    self.assertEqual(record["source_resources"], self.shared.read_json(resource_path) if controlled else {"minimumFreePhysicalBytes": 4 * 1024**3, "daemonMetaspaceMiB": 1024})
                     if not controlled:
                         self.assertEqual(record["tasks_per_invocation"], len(data["tasks"]))
                     provisioning_names = ["provision-baseline", "provision-candidate"] if provisioning else []

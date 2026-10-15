@@ -2023,6 +2023,58 @@ class PairedJvmTest(unittest.TestCase):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "Invalid finite daemon metaspace cap"):
                 PAIRED.verify_vms(self.root, [], {}, {}, daemon_metaspace_mib=invalid)
 
+    def test_source_java_exec_caps_bind_actual_closed_generations_without_changing_forks(self):
+        cases = ((512, 256, "java_exec", 512, 256, True), (768, 384, "java_exec", 768, 384, True),
+                 (512, 256, "java_exec", 768, 384, False), (768, 384, "java_exec", 512, 256, False),
+                 (512, 256, "java_exec", 512, 384, False), (512, 256, "java_exec", 768, 256, False),
+                 (512, 256, "worker", 512, 256, True), (512, 256, "worker", 768, 384, False),
+                 (512, 256, "fork", 768, 384, True), (512, 256, "fork", 512, 256, False))
+        for index, (heap, metaspace, role, actual_heap, actual_metaspace, valid) in enumerate(cases):
+            with self.subTest(role=role, declared=(heap, metaspace), actual=(actual_heap, actual_metaspace)):
+                directory = self.root / ("source-execution-cap-" + str(index))
+                classes = directory / "class-loads"
+                classes.mkdir(parents=True)
+                home = directory / "jdk"
+                executable = home / "bin/java.exe"
+                executable.parent.mkdir(parents=True)
+                executable.write_bytes(b"synthetic pinned Java; never launched")
+                main = {"java_exec": "fixture.Collector", "worker": "worker.org.gradle.process.internal.worker.GradleWorkerMain",
+                        "fork": "org.openjdk.jmh.runner.ForkedMain"}[role]
+                origin = {"main": main, "executable": str(executable), "classpath": "frozen.jar"}
+                (directory / "console.log").write_text("paired.jvm.origin " + json.dumps(origin) + "\n", encoding="utf-8")
+                if role == "fork":
+                    (classes / "classes-123-1970-01-01_00-00-01.log").write_text("[123][info][class,load] org.openjdk.jmh.runner.ForkedMain source: file:/frozen.jar\n", encoding="utf-8")
+                log = directory / "vm.log"
+                log.write_text(f"<hotspot_log process='123' time_ms='1001'><vm_arguments><command>{main}</command>\n"
+                               f"java.home={home}\njava.class.path=frozen.jar\n</vm_arguments>\n"
+                               f"-XX:MaxHeapSize={actual_heap * 1024**2} -XX:MaxMetaspaceSize={actual_metaspace * 1024**2}\n"
+                               "<hotspot_log_done/></hotspot_log>\n", encoding="utf-8")
+                member = {"pid": 123, "creationFileTime": 116444736010000000, "exitFileTime": 116444736020000000,
+                          "image": str(executable), "inOwnedJob": True, "completed": True, "handleClosed": True,
+                          "exitCode": 0, "affinityMask": 15, "systemAffinityMask": 15}
+                terminal = {"members": {"123": [member]}, "naturalRelease": True, "handlesClosed": True,
+                            "activeProcessesAfterCleanup": 0, "inheritedAffinityMask": 15, "systemAffinityMask": 15,
+                            "nativeInvoked": True, "notificationReaderJoined": True, "totalProcesses": 1,
+                            "generationAccounting": {"schema": "strata-owned-generation-accounting-v1", "complete": True,
+                                                     "totalProcesses": 1, "capturedGenerations": 1, "closedGenerations": 1}}
+                arguments = (directory, [log], terminal, {os.path.normcase(str(executable)): PAIRED.digest(executable)}, int(role == "fork"))
+                options = {"require_all_java_generations": True, "java_exec_heap_mib": heap, "java_exec_metaspace_mib": metaspace}
+                if valid:
+                    PAIRED.verify_vms(*arguments, **options)
+                    record = PAIRED.read_json(directory / "vms.json")[0]
+                    self.assertEqual((record["role"], record["os_generation"], record["caps"]),
+                                     (role, member, {"MaxHeapSize": actual_heap * 1024**2, "MaxMetaspaceSize": actual_metaspace * 1024**2}))
+                else:
+                    with self.assertRaisesRegex(ValueError, "actual finite VM cap"):
+                        PAIRED.verify_vms(*arguments, **options)
+                    self.assertFalse((directory / "vms.json").exists())
+        for options in ({"java_exec_heap_mib": item} for item in (True, 63, 769, "512", None)):
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, "Invalid finite JavaExec caps"):
+                PAIRED.verify_vms(self.root, [], {}, {}, **options)
+        for options in ({"java_exec_metaspace_mib": item} for item in (True, 0, 385, "256", None)):
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, "Invalid finite JavaExec caps"):
+                PAIRED.verify_vms(self.root, [], {}, {}, **options)
+
     def test_process_isolation_worker_diagnostics_survive_empty_environment_and_cover_generations(self):
         source = (Path(__file__).resolve().parents[1] / "performance/bounded-jvm.init.gradle.kts").read_text(encoding="utf-8")
         block = re.search(r"val workerDiagnostics = listOf\(([\s\S]*?)\n    \)", source).group(1)

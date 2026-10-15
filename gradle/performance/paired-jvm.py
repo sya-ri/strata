@@ -900,12 +900,14 @@ def java_installation_home(executable, runtime_home, specification_versions=()):
     return home
 
 
-def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024):
+def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum_diagnostic_bytes=1024 * 1024, require_all_java_generations=False, daemon_metaspace_mib=1024, java_exec_heap_mib=768, java_exec_metaspace_mib=384):
     """Bind actual last-effective JVM caps to closed diagnostics and captured OS fork generations."""
     require(type(maximum_diagnostic_bytes) is int and 0 < maximum_diagnostic_bytes <= 16 * 1024**2,
             "Invalid finite VM diagnostic byte bound")
     require(type(require_all_java_generations) is bool, "Invalid Java generation coverage mode")
     require(type(daemon_metaspace_mib) is int and 0 < daemon_metaspace_mib <= 1024, "Invalid finite daemon metaspace cap")
+    require(type(java_exec_heap_mib) is int and 64 <= java_exec_heap_mib <= 768
+            and type(java_exec_metaspace_mib) is int and 0 < java_exec_metaspace_mib <= 384, "Invalid finite JavaExec caps")
     if require_all_java_generations:
         require(terminal.get("naturalRelease") is True and terminal.get("handlesClosed") is True
                 and type(terminal.get("activeProcessesAfterCleanup")) is int and terminal["activeProcessesAfterCleanup"] == 0,
@@ -918,7 +920,7 @@ def verify_vms(directory, files, terminal, allowed, expected_forks=None, maximum
         require(len(headers) == 1, "VM diagnostic lacks a unique PID header")
         pid = int(headers[0][0])
         pid_log_counts[pid] = pid_log_counts.get(pid, 0) + 1
-    profiles = {"wrapper": (64, 256), "daemon": (768, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (768, 384), "fork": (768, 384)}
+    profiles = {"wrapper": (64, 256), "daemon": (768, daemon_metaspace_mib), "probe": (32, 256), "generator": (512, 256), "worker": (512, 256), "java_exec": (java_exec_heap_mib, java_exec_metaspace_mib), "fork": (768, 384)}
     console = (directory / "console.log").read_text(encoding="utf-8", errors="replace")
     loaded_classes, class_identities = class_loads(directory)
     origins = [json.loads(line.split("paired.jvm.origin ", 1)[1]) for line in console.splitlines() if "paired.jvm.origin " in line]

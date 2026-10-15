@@ -79,13 +79,15 @@ def client_plan(root, versions, backend, subject_ref):
         build = (root / projects[1] / "build.gradle.kts").read_text(encoding="utf-8")
         declaration = re.search(r"enum class Backend\(val argument: String\)\s*\{([^}]+)\}", build)
         tasks = [f":integration:minecraft-fabric-{version}:{name}" for name in ("runClientGameTest", "runProductionClientGameTest")]
+        check = re.search(r'tasks\.named\("check"\)\s*\{\s*dependsOn\("runClientGameTest",\s*runProductionClientGameTest\)\s*\}', build)
         if (not declaration or f'("{backend}")' not in declaration[1]
                 or 'Scope.Full' not in build or '"strata.canvas.backend"' not in build
+                or not check
                 or any(f'"{task.rsplit(":", 1)[1]}"' not in build for task in tasks)):
             raise ValueError(f"Minecraft {version} does not declare full {backend} development and production client verification")
         entries.append(dict(id=f"minecraft-{version.replace('.', '-')}-{backend}", version=version,
                             documentation=False, name=f"Minecraft {version} {backend} full clients",
-                            gradle_arguments=" ".join(tasks + [f"-Pstrata.minecraftVersions={version}",
+                            gradle_arguments=" ".join([f":integration:minecraft-fabric-{version}:check", f"-Pstrata.minecraftVersions={version}",
                                                                f"-Pstrata.canvas.backend={backend}", "-Pstrata.canvas.scope=full", "--continue"]),
                             loom_projects="\n".join(projects)))
     result = plan([])

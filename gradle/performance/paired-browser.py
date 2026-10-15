@@ -199,14 +199,20 @@ def load_source_manifest(shared, root, data):
 
 
 def source_resources(shared, root, data):
-    """Read one immutable finite Source profile; only raise admission or tighten the daemon cap."""
+    """Read immutable Source limits that only raise admission or tighten preparation JVM caps."""
     if "resource_profile" not in data:
         return {"minimumFreePhysicalBytes": 4 * 1024**3, "daemonMetaspaceMiB": 1024}
     limits = shared.read_json(shared.pin(root, data["resource_profile"]))
-    shared.require(isinstance(limits, dict) and set(limits) == {"minimumFreePhysicalBytes", "daemonMetaspaceMiB"}
+    fields = {"minimumFreePhysicalBytes", "daemonMetaspaceMiB"}
+    execution = {"javaExecHeapMiB", "javaExecMetaspaceMiB"}
+    shared.require(isinstance(limits, dict) and (set(limits) == fields or set(limits) == fields | execution)
                    and type(limits["minimumFreePhysicalBytes"]) is int and 4 * 1024**3 <= limits["minimumFreePhysicalBytes"] <= 16 * 1024**3
                    and type(limits["daemonMetaspaceMiB"]) is int and 0 < limits["daemonMetaspaceMiB"] <= 1024,
                    "Source resources must retain finite admission and daemon bounds")
+    if execution <= set(limits):
+        shared.require(type(limits["javaExecHeapMiB"]) is int and 64 <= limits["javaExecHeapMiB"] <= 768
+                       and type(limits["javaExecMetaspaceMiB"]) is int and 0 < limits["javaExecMetaspaceMiB"] <= 384,
+                       "Source JavaExec caps must retain finite heap and metaspace bounds")
     return limits
 
 
@@ -690,6 +696,9 @@ def run(shared, root, selection, output):
                 if source_mode:
                     arguments += ["--rerun-tasks"]
                     arguments += ["-Pstrata.paired.sourceClasspaths=" + str(directory / "source-classpaths")]
+                    if "javaExecHeapMiB" in resources:
+                        arguments += ["-Pstrata.paired.sourceJavaExecHeapMiB=" + str(resources["javaExecHeapMiB"]),
+                                      "-Pstrata.paired.sourceJavaExecMetaspaceMiB=" + str(resources["javaExecMetaspaceMiB"])]
                     if test_gate is not None:
                         arguments += ["-Pstrata.paired.testClasspathTask=" + test_gate["task"], "-Pstrata.paired.preserveTestClasspath=" + str(directory / "test-classpath")]
                 if toolchains is not None:
@@ -735,7 +744,11 @@ def run(shared, root, selection, output):
                     shared.require(all(observed_java[path] == expected for path, expected in allowed_java.items() if path in observed_java),
                                    "Known pinned Java bytes changed during input acquisition")
                     allowed_java = observed_java
-                shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java, maximum_diagnostic_bytes=16 * 1024**2, require_all_java_generations=True, daemon_metaspace_mib=resources["daemonMetaspaceMiB"])
+                shared.verify_vms(directory, sorted(set(vms.glob("*.log")) - before), terminal, allowed_java,
+                                  maximum_diagnostic_bytes=16 * 1024**2, require_all_java_generations=True,
+                                  daemon_metaspace_mib=resources["daemonMetaspaceMiB"],
+                                  java_exec_heap_mib=resources.get("javaExecHeapMiB", 768),
+                                  java_exec_metaspace_mib=resources.get("javaExecMetaspaceMiB", 384))
                 if binding is not None:
                     selections = toolchains["tools"].verify(binding, workspace, binding_environment, directory / "console.log")
                     verify_source_vm_metadata(shared, directory, toolchains, selections)

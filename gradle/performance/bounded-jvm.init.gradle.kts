@@ -97,6 +97,13 @@ gradle.projectsEvaluated {
     check(daemonMetaspaceMiB in 1..1024)
     val daemonMetaspace = if (daemonMetaspaceMiB == 1024) "1g" else "${daemonMetaspaceMiB}m"
     check(ManagementFactory.getRuntimeMXBean().inputArguments.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=$daemonMetaspace")
+    val sourceJavaExecHeap = rootProject.providers.gradleProperty("strata.paired.sourceJavaExecHeapMiB").orNull
+    val sourceJavaExecMetaspace = rootProject.providers.gradleProperty("strata.paired.sourceJavaExecMetaspaceMiB").orNull
+    check((sourceJavaExecHeap == null) == (sourceJavaExecMetaspace == null))
+    check(sourceJavaExecHeap == null || rootProject.providers.gradleProperty("strata.paired.sourceClasspaths").isPresent)
+    val javaExecHeapMiB = sourceJavaExecHeap?.toInt() ?: 768
+    val javaExecMetaspaceMiB = sourceJavaExecMetaspace?.toInt() ?: 384
+    check(javaExecHeapMiB in 64..768 && javaExecMetaspaceMiB in 1..384)
     val vmLogs = File(checkNotNull(System.getenv("STRATA_PAIRED_LOGS"))).canonicalFile
     check(vmLogs.isDirectory && Files.isSymbolicLink(vmLogs.toPath()).not())
     // Gradle process-isolation workers discard the inherited environment on Windows.
@@ -213,15 +220,15 @@ gradle.projectsEvaluated {
         }
         project.tasks.withType<JavaExec>().configureEach {
             minHeapSize = "64m"
-            maxHeapSize = "768m"
+            maxHeapSize = "${javaExecHeapMiB}m"
             val classLoads = File(checkNotNull(System.getenv("STRATA_PAIRED_CLASS_LOGS"))).canonicalFile
             check(classLoads.isDirectory)
-            jvmArgs("-XX:MaxMetaspaceSize=384m")
+            jvmArgs("-XX:MaxMetaspaceSize=${javaExecMetaspaceMiB}m")
             doFirst {
                 val classLoadPath = File(classLoads, "classes-%p-%t.log").relativeTo(workingDir.canonicalFile).invariantSeparatorsPath
                 jvmArgs("-Xlog:class+load=info:file=$classLoadPath:pid,level,tags:filecount=0")
-                check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx768m")
-                check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=384m")
+                check(allJvmArgs.lastOrNull { it.startsWith("-Xmx") } == "-Xmx${javaExecHeapMiB}m")
+                check(allJvmArgs.lastOrNull { it.startsWith("-XX:MaxMetaspaceSize=") } == "-XX:MaxMetaspaceSize=${javaExecMetaspaceMiB}m")
                 listOf("benchmarks", "workloads").forEach { name ->
                     rootProject.providers.gradleProperty("strata.performance.$name").orNull?.let {
                         systemProperty("strata.performance.$name", it)
