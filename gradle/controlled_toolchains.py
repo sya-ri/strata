@@ -239,7 +239,10 @@ def bind(profile_path, root, environment, arguments, evidence, *, bounded=True):
         expected.update({INSTALLATIONS + "auto-detect": "false", INSTALLATIONS + "auto-download": "false",
                          INSTALLATIONS + "fromEnv": "", INSTALLATIONS + "paths": ",".join(entry["home"] for entry in profile["jdks"])})
     controlled += [f"-D{key}={value}" for key, value in expected.items()]
-    controlled += ["--no-configuration-cache", "--console=plain", "--info", "-I", str(Path(root) / "gradle/controlled-toolchains.init.gradle")]
+    controlled += ["--no-configuration-cache"]
+    if not any(argument == "--console" or argument.startswith("--console=") for argument in arguments):
+        controlled.append("--console=plain")
+    controlled += ["--info", "-I", str(Path(root) / "gradle/controlled-toolchains.init.gradle")]
     frozen = {"root": str(Path(root).resolve()), "jvm_only": Model(profile["model"]) is Model.JVM,
               "profile": profile, "profile_sha256": digest(profile_path), "profile_path": str(Path(profile_path).resolve()),
               "properties": expected, "receipts": str(receipts), "arguments": controlled}

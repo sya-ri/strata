@@ -82,6 +82,21 @@ class ControlledToolchainsTest(unittest.TestCase):
         self.assertEqual(["org.gradle.java.home"], list(json.loads(manifest.read_text())["properties"]))
         self.assertFalse(any(TOOLS.INSTALLATIONS in argument for argument in arguments))
 
+    def test_existing_console_mode_is_preserved_without_a_duplicate_option(self):
+        self.profile_path.write_text(json.dumps(self.profile))
+        modes = ([], ["--console=plain"], ["--console", "plain"], ["--console=rich"])
+        for bounded in (False, True):
+            for index, mode in enumerate(modes):
+                with self.subTest(bounded=bounded, mode=mode):
+                    requested = self.arguments + mode
+                    arguments, _, manifest = TOOLS.bind(
+                        self.profile_path, self.root, self.environment, requested,
+                        self.root / f"console-{bounded}-{index}", bounded=bounded)
+                    self.assertEqual(requested, arguments[:len(requested)])
+                    console = [argument for argument in arguments if argument == "--console" or argument.startswith("--console=")]
+                    self.assertEqual([mode[0]] if mode else ["--console=plain"], console)
+                    self.assertEqual(arguments, json.loads(manifest.read_text())["arguments"])
+
     def test_full_model_refuses_missing_java21(self):
         self.profile["jdks"].pop(1)
         with self.assertRaisesRegex(ValueError, "Missing"):
