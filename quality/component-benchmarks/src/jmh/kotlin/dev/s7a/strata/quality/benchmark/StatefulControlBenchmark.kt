@@ -2,9 +2,14 @@
 
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.geometry.IntRect
+import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
+import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
+import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
+import dev.s7a.strata.text.UiText
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -140,6 +145,7 @@ public class StatefulControlBenchmark {
          */
         @JvmStatic
         public fun verifyWork() {
+            println("stateful-control-work,count,kind,labels,choices,change,operation,pass," + UiRenderMetric.entries.joinToString(",") { it.name })
             for (count in listOf(1, 64, 512)) {
                 for (kind in Kind.entries) {
                     for (labels in Labels.entries) {
@@ -157,8 +163,75 @@ public class StatefulControlBenchmark {
             for (choices in Choices.entries) {
                 for (change in Change.entries) {
                     StatefulControlFixture(count, kind, labels, choices, change).use { it.verifyWork() }
+                    println("stateful-control-complete,$count,$kind,$labels,$choices,$change")
                 }
             }
+        }
+
+        /**
+         * Emits actual existing monitoring counters for one complete untimed operation; it owns no timer.
+         */
+        internal fun reportWork(
+            case: String,
+            operation: String,
+            pass: Int,
+            before: Map<UiRenderMetric, Long>,
+            after: Map<UiRenderMetric, Long>,
+        ) {
+            val counts = UiRenderMetric.entries.joinToString(",") { metric -> (after.getValue(metric) - before.getValue(metric)).toString() }
+            println("stateful-control-work,$case,$operation,$pass,$counts")
+        }
+
+        /**
+         * Constructs the independent original-asset row pixels without calling profile painting code.
+         */
+        internal fun expectedRow(
+            expected: IntArray,
+            top: Int,
+            row: StatefulControlBenchmark.Kind,
+            text: String,
+        ) {
+            val checkboxRow = row == StatefulControlBenchmark.Kind.Checkbox
+            val width = if (checkboxRow) 20 else 150
+            for (y in top until top + 20) {
+                for (x in 0 until width) expected[y * 150 + x] = 0xFF102030.toInt()
+            }
+            if (row == StatefulControlBenchmark.Kind.Slider) {
+                for (y in top until top + 20) {
+                    for (x in 0 until 8) expected[y * 150 + x] = 0xFF405060.toInt()
+                }
+            }
+            val left = if (checkboxRow) 24 else (150 - text.length * 2) / 2
+            val textTop = top + if (checkboxRow) 5 else 6
+            for (glyph in text.indices) {
+                expected[(textTop + 1) * 150 + left + glyph * 2 + 1] = 0xFF3F3F3F.toInt()
+                expected[textTop * 150 + left + glyph * 2] = -1
+            }
+        }
+
+        /**
+         * Checks original public labels, values, roles and exact row geometry independently of node updates.
+         */
+        internal fun verifySemantics(
+            semantic: SemanticsEntry,
+            top: Int,
+            row: StatefulControlBenchmark.Kind,
+            text: String,
+        ) {
+            check(semantic.bounds == IntRect(0, top, 150, top + 20))
+            check(semantic.semantics.label == UiText.Literal(text))
+            check(semantic.semantics.disabled.not())
+            val role =
+                when (row) {
+                    StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
+                    StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
+                    StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
+                    else -> error("Missing primitive role")
+                }
+            check(semantic.semantics.role == role)
+            if (row == StatefulControlBenchmark.Kind.Checkbox) check(semantic.semantics.checked == false)
+            if (row == StatefulControlBenchmark.Kind.Slider) check(semantic.semantics.value == UiText.Literal("0.0"))
+            if (row == StatefulControlBenchmark.Kind.Cycle) check(semantic.semantics.value == UiText.Literal(text))
         }
     }
 }

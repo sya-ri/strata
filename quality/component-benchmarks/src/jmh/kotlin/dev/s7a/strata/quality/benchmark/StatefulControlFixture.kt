@@ -16,7 +16,6 @@ import dev.s7a.strata.component.Spacer
 import dev.s7a.strata.component.UiScope
 import dev.s7a.strata.element.Element
 import dev.s7a.strata.element.ElementKey
-import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.modifier.Modifier
 import dev.s7a.strata.modifier.size
@@ -24,11 +23,9 @@ import dev.s7a.strata.runtime.diagnostics.UiRenderMetric
 import dev.s7a.strata.runtime.headless.rasterizeHeadless
 import dev.s7a.strata.runtime.minecraft.createMinecraftUiHost
 import dev.s7a.strata.runtime.render.DrawCommand
-import dev.s7a.strata.runtime.semantics.SemanticsEntry
 import dev.s7a.strata.runtime.spi.RuntimeDeclaration
 import dev.s7a.strata.runtime.spi.RuntimeUiFrame
 import dev.s7a.strata.runtime.spi.RuntimeUiSession
-import dev.s7a.strata.semantics.SemanticsRole
 import dev.s7a.strata.spi.InternalStrataRuntimeApi
 import dev.s7a.strata.state.mutableStateOf
 import dev.s7a.strata.text.UiText
@@ -43,7 +40,7 @@ internal class StatefulControlFixture(
     private val count: Int,
     private val kind: StatefulControlBenchmark.Kind,
     private val labels: StatefulControlBenchmark.Labels,
-    choices: StatefulControlBenchmark.Choices,
+    private val choices: StatefulControlBenchmark.Choices,
     private val change: StatefulControlBenchmark.Change,
 ) : AutoCloseable {
     init {
@@ -119,6 +116,7 @@ internal class StatefulControlFixture(
     /**
      * Checks independently calculated pixels and semantics, exact reuse controls, work bounds and old-frame immutability.
      * Historical extra control painting is admitted only here; the runtime tests require candidate paint elimination.
+     * Emits actual per-operation work outside sampling so both variants' complete counter tables remain auditable.
      */
     fun verifyWork() {
         val original = host.frame(viewport)
@@ -143,6 +141,7 @@ internal class StatefulControlFixture(
                     val originalRows = commands.filter { command -> (command as? DrawCommand.SampledImage)?.destination?.top != (count * 20).toFloat() }
                     check(rowCommands == originalRows)
                 }
+                StatefulControlBenchmark.reportWork("$count,$kind,$labels,$choices,$change", "completeFrame", it, before, work)
             }
             val beforeProjection = monitor.snapshot().counts
             val declaration = nextDeclaration()
@@ -150,6 +149,7 @@ internal class StatefulControlFixture(
             val projected = monitor.snapshot().counts
             check(projected.getValue(UiRenderMetric.Paint) == beforeProjection.getValue(UiRenderMetric.Paint))
             check(projected.getValue(UiRenderMetric.Measure) == beforeProjection.getValue(UiRenderMetric.Measure))
+            StatefulControlBenchmark.reportWork("$count,$kind,$labels,$choices,$change", "declarationReconcile", 0, beforeProjection, projected)
             verifyFrame(host.frame(viewport))
         } finally {
             monitor.close()
@@ -219,59 +219,13 @@ internal class StatefulControlFixture(
             val row = rowKind(index)
             if (row == StatefulControlBenchmark.Kind.NoControls) continue
             val text = label(index, current) + if (row == StatefulControlBenchmark.Kind.Cycle) "!" else ""
-            expectedRow(expected, index * 20, row, text)
-            verifySemantics(frame.semantics[index], index * 20, row, text)
+            StatefulControlBenchmark.expectedRow(expected, index * 20, row, text)
+            StatefulControlBenchmark.verifySemantics(frame.semantics[index], index * 20, row, text)
         }
         val statusColor = if (current % 2 == 0) 0xFF707080.toInt() else 0xFF808090.toInt()
         for (x in 0 until 150) expected[count * 20 * 150 + x] = statusColor
         val actual = rasterizeHeadless(frame.drawCommands, viewport).copyArgb()
         check(expected.contentEquals(actual)) { "$count/$kind/$labels/$change: independent original-asset pixels differ" }
-    }
-
-    private fun expectedRow(
-        expected: IntArray,
-        top: Int,
-        row: StatefulControlBenchmark.Kind,
-        text: String,
-    ) {
-        val checkboxRow = row == StatefulControlBenchmark.Kind.Checkbox
-        val width = if (checkboxRow) 20 else 150
-        for (y in top until top + 20) {
-            for (x in 0 until width) expected[y * 150 + x] = 0xFF102030.toInt()
-        }
-        if (row == StatefulControlBenchmark.Kind.Slider) {
-            for (y in top until top + 20) {
-                for (x in 0 until 8) expected[y * 150 + x] = 0xFF405060.toInt()
-            }
-        }
-        val left = if (checkboxRow) 24 else (150 - text.length * 2) / 2
-        val textTop = top + if (checkboxRow) 5 else 6
-        for (glyph in text.indices) {
-            expected[(textTop + 1) * 150 + left + glyph * 2 + 1] = 0xFF3F3F3F.toInt()
-            expected[textTop * 150 + left + glyph * 2] = -1
-        }
-    }
-
-    private fun verifySemantics(
-        semantic: SemanticsEntry,
-        top: Int,
-        row: StatefulControlBenchmark.Kind,
-        text: String,
-    ) {
-        check(semantic.bounds == IntRect(0, top, 150, top + 20))
-        check(semantic.semantics.label == UiText.Literal(text))
-        check(semantic.semantics.disabled.not())
-        val role =
-            when (row) {
-                StatefulControlBenchmark.Kind.Checkbox -> SemanticsRole.Checkbox
-                StatefulControlBenchmark.Kind.Slider -> SemanticsRole.Slider
-                StatefulControlBenchmark.Kind.Cycle -> SemanticsRole.CycleButton
-                else -> error("Missing primitive role")
-            }
-        check(semantic.semantics.role == role)
-        if (row == StatefulControlBenchmark.Kind.Checkbox) check(semantic.semantics.checked == false)
-        if (row == StatefulControlBenchmark.Kind.Slider) check(semantic.semantics.value == UiText.Literal("0.0"))
-        if (row == StatefulControlBenchmark.Kind.Cycle) check(semantic.semantics.value == UiText.Literal(text))
     }
 
     override fun close() {
