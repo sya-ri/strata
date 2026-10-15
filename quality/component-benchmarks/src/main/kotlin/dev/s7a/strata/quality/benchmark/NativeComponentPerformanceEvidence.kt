@@ -151,39 +151,10 @@ internal object NativeComponentPerformanceEvidence {
                 }
             }
         }
-        if (epoch == NativePresentationEpoch.TimedPaced) recordCollectionRuns(summary, reports)
+        if (epoch == NativePresentationEpoch.TimedPaced) NativePacingEvidence.recordCollectionRuns(summary, reports)
         summary.add("binary_receipts", binaries)
         cpuHashes.forEach { (path, hash) -> require(ArtifactIdentity.file(path).contentEquals(hash)) { "Changed CPU provenance receipt" } }
         PerformanceJson.writeNew(Path.of(request.get("output").asString), summary)
-    }
-
-    /**
-     * Retains invocation observations without combining whole-fixture elapsed with sampled operation metrics.
-     */
-    private fun recordCollectionRuns(
-        summary: JsonObject,
-        reports: List<JsonObject>,
-    ) {
-        summary.add(
-            "collection_runs",
-            JsonArray().apply {
-                reports.forEach { report ->
-                    add(
-                        JsonObject().apply {
-                            listOf("run_id", "inactivity_mode", "collection_elapsed_ns", "collection_elapsed_scope").forEach { add(it, report.get(it).deepCopy()) }
-                            add(
-                                "pacing_phases",
-                                JsonArray().apply {
-                                    report.getAsJsonArray("phases").forEach { phase ->
-                                        add(JsonObject().apply { listOf("case", "gui_scale", "pacing").forEach { add(it, phase.asJsonObject.get(it).deepCopy()) } })
-                                    }
-                                },
-                            )
-                        },
-                    )
-                }
-            },
-        )
     }
 
     /**
@@ -350,6 +321,10 @@ internal object NativeComponentPerformanceEvidence {
         return PerformanceSelection(corpus, request.get("workloads")?.asString ?: if (profile == PerformanceProfile.Quick) corpus.first() else null)
     }
 
+    /**
+     * Registers the selected corpus and fixture epoch without changing Standard counts or controlled inputs.
+     * Only explicit policy comparison treats requested inactivity as a side-specific condition and live pacing as outcomes.
+     */
     internal fun contract(
         selection: PerformanceSelection,
         profile: PerformanceProfile,

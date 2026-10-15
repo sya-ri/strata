@@ -105,6 +105,35 @@ internal object NativePacingEvidence {
         require(receipts.size() == 6 && receipts.all { it == receipts[0] }) { "Pacing policy comparison requires identical measured runtime binaries" }
     }
 
+    /**
+     * Retains invocation observations without combining whole-fixture elapsed with sampled operation metrics.
+     */
+    internal fun recordCollectionRuns(
+        summary: JsonObject,
+        reports: List<JsonObject>,
+    ) {
+        summary.add(
+            "collection_runs",
+            JsonArray().apply {
+                reports.forEach { report ->
+                    add(
+                        JsonObject().apply {
+                            listOf("run_id", "inactivity_mode", "collection_elapsed_ns", "collection_elapsed_scope").forEach { add(it, report.get(it).deepCopy()) }
+                            add(
+                                "pacing_phases",
+                                JsonArray().apply {
+                                    report.getAsJsonArray("phases").forEach { phase ->
+                                        add(JsonObject().apply { listOf("case", "gui_scale", "pacing").forEach { add(it, phase.asJsonObject.get(it).deepCopy()) } })
+                                    }
+                                },
+                            )
+                        },
+                    )
+                }
+            },
+        )
+    }
+
     private fun verifyPhase(
         phase: JsonObject,
         requested: Inactivity,
