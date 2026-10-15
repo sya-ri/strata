@@ -128,7 +128,7 @@ public open class CycleOptionConstructionBenchmark {
 
         private fun verify(state: CycleButtonState<Int>) {
             check(state.values == values && state.value == 0)
-            check(state.format(0) == "0")
+            verifyText("0", state.format(0))
             check(state.next() == values[1 % values.size])
             check(state.previous() == 0)
         }
@@ -165,13 +165,21 @@ public open class CycleOptionConstructionBenchmark {
             val benchmark = CycleOptionConstructionBenchmark()
             for (state in listOf(benchmark.enumFactory(), benchmark.enumControl())) {
                 check(state.values == listOf(Choice.First, Choice.Second, Choice.Third, Choice.Fourth))
-                check(state.value == Choice.Second && state.format(Choice.Second) == "Second")
+                check(state.value == Choice.Second)
+                verifyText("Second", state.format(Choice.Second))
                 check(state.next() == Choice.Third && state.previous() == Choice.Second)
             }
-            check(benchmark.emptyListRejected().message == "CycleButton values must not be empty.")
-            check(benchmark.emptyCollectionRejected().message == "CycleButton values must not be empty.")
-            check(benchmark.duplicateRejected().message == "CycleButton values must be unique.")
-            check(benchmark.outsideInitialRejected().message == "CycleButton initial value must belong to its values.")
+            verifyText("CycleButton values must not be empty.", benchmark.emptyListRejected().message)
+            verifyText("CycleButton values must not be empty.", benchmark.emptyCollectionRejected().message)
+            verifyText("CycleButton values must be unique.", benchmark.duplicateRejected().message)
+            verifyText("CycleButton initial value must belong to its values.", benchmark.outsideInitialRejected().message)
+        }
+
+        private fun verifyText(
+            expected: String,
+            actual: String?,
+        ) {
+            check(actual == expected)
         }
 
         /**
