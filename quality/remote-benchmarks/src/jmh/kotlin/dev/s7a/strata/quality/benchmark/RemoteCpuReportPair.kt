@@ -1,5 +1,6 @@
 package dev.s7a.strata.quality.benchmark
 
+import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import dev.s7a.strata.performance.ArtifactIdentity
@@ -49,12 +50,29 @@ internal object RemoteCpuReportPair {
         require(read(Path.of(pair.get("source_plan").asString)) == pair.get("source_archive_plan"))
         require(pair.get("environment") == cpu.get("environment") && pair.get("cpu_jvm_arguments") == cpu.get("jvm_arguments"))
         require(pair.getAsJsonObject("jmh_controls").get("jvmArgs") == cpu.get("jvm_arguments"))
+        verifyInventoryArguments(cpu, pair)
         receipt.getAsJsonObject("environment").entrySet().forEach { (key, value) -> require(cpu.getAsJsonObject("environment").get(key) == value) }
         val targets = pair.getAsJsonObject("target_archive_identity")
         cpu.getAsJsonObject("runtime_metadata").getAsJsonArray("modules").forEach { entry ->
             val module = entry.asJsonObject
             require(targets.get(module.get("module").asString) == module.getAsJsonObject("codeSource").get("sha256"))
         }
+    }
+
+    private fun verifyInventoryArguments(
+        cpu: JsonObject,
+        pair: JsonObject,
+    ) {
+        val paths = cpu.getAsJsonObject("input_paths").entrySet().associate { (label, path) -> label to Path.of(path.asString) }
+        val hashes = cpu.getAsJsonObject("inputs")
+        require(paths.keys == hashes.keySet() && pair.get("input_paths") == cpu.get("input_paths"))
+        paths.forEach { (label, path) -> require(ArtifactIdentity.file(path) == hashes.get(label).asString) }
+        val recorded = cpu.get("inventory_argument").takeUnless { it.isJsonNull }?.asJsonObject
+        val arguments = cpu.getAsJsonArray("jvm_arguments").map { it.asString }
+        val normalized = RemoteInventoryArguments.verify(arguments, recorded, paths)
+        require(pair.get("inventory_argument") == cpu.get("inventory_argument"))
+        require(pair.get("comparison_jvm_arguments") == cpu.get("comparison_jvm_arguments"))
+        require(Gson().toJsonTree(normalized) == cpu.get("comparison_jvm_arguments"))
     }
 
     private fun read(path: Path): JsonObject = Files.newBufferedReader(path, Charsets.UTF_8).use { JsonParser.parseReader(it).asJsonObject }

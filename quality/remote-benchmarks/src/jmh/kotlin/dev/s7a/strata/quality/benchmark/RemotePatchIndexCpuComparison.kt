@@ -23,9 +23,9 @@ public object RemotePatchIndexCpuComparison {
                 workloadId = "remote-patch-index-v1",
                 phaseKeys = listOf("nodes", "shape", "change", "operation"),
                 phaseCount = 72,
-                reportConditions = setOf("fixture_identity", "inputs", "environment", "jvm_arguments", "native_uploads", "gpu_time", "fps"),
+                reportConditions = setOf("fixture_identity", "inputs", "environment", "comparison_jvm_arguments", "input_paths", "native_uploads", "gpu_time", "fps"),
                 phaseConditions = setOf("operations_per_sample", "measured_operations", "processed_operations", "samples", "warmup"),
-                variantReportFields = setOf("runtime_metadata"),
+                variantReportFields = setOf("runtime_metadata", "jvm_arguments", "inventory_argument"),
             )
         val metrics =
             listOf(
