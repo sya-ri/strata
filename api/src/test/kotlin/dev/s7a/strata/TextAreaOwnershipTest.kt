@@ -37,8 +37,7 @@ internal class TextAreaOwnershipTest {
                         }
                         state.observe {}.close()
                     }
-                }
-                .get(5, TimeUnit.SECONDS)
+                }.get(5, TimeUnit.SECONDS)
             owner.run { assertEquals("日\n🙂", state.value) }
         } finally {
             executor.shutdownNow()
