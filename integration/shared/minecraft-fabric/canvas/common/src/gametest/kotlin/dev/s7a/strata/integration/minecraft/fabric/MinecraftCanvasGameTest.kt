@@ -92,7 +92,6 @@ internal object MinecraftCanvasGameTest {
         MinecraftSampledSourceRequestsGameTest.run(context, profile)
         MinecraftSamplingCompositionGameTest.run(context, profile)
 
-
         MinecraftCycleButtonSelectionGameTest.run(context, profile)
         MinecraftDestinationPaletteGameTest.run(context, profile)
     }
