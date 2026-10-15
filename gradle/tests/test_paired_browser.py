@@ -629,6 +629,28 @@ class PairedBrowserTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         self.load(value)
 
+    def test_controlled_wrapper_bootstrap_requires_identical_complete_sources(self):
+        workspaces = {side: self.root / side for side in ("baseline", "candidate")}
+        paths = ("gradlew.bat", "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties")
+        for side, workspace in workspaces.items():
+            for relative in paths:
+                path = workspace / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(("original wrapper " + relative).encode())
+        expected = {relative: self.shared.digest(workspaces["baseline"] / relative) for relative in paths}
+        self.assertEqual(self.browser.matched_source_wrappers(self.shared, workspaces), expected)
+        for relative in paths:
+            path = workspaces["candidate"] / relative
+            original = path.read_bytes()
+            path.write_bytes(original + b"changed")
+            with self.subTest(changed=relative), self.assertRaisesRegex(ValueError, "wrappers differ"):
+                self.browser.matched_source_wrappers(self.shared, workspaces)
+            path.unlink()
+            with self.subTest(missing=relative), self.assertRaisesRegex(ValueError, "Missing or linked"):
+                self.browser.matched_source_wrappers(self.shared, workspaces)
+            path.write_bytes(original)
+        self.assertEqual(self.browser.matched_source_wrappers(self.shared, workspaces), expected)
+
     def test_source_java_exec_limits_require_a_pinned_pair_within_existing_caps(self):
         value = self.source_manifest()
         path = self.root / "source-execution-resources.json"
@@ -1262,6 +1284,7 @@ class PairedBrowserTest(unittest.TestCase):
         cases += [(None, None, False, False, False, True), (None, "changed-driver-source", False, False, False, True)]
         cases += [(3, None, False, True, True, False), (3, "provision-baseline-fixtures", False, True, True, False),
                   (3, "source-candidate-1-fixtures", False, True, True, False), (3, "gate-source-baseline-0-api", False, True, True, False)]
+        cases += [(3, "wrapper-bootstrap", False, True, True, False)]
         mutations = {name + "-" + when: name for name in ("profile", "installations") for when in ("between-phases", "during-phase")}
         cases += [(3, name, False, True, True, False) for name in mutations]
         cases += [(1, "capture-inputs", False, False, True, False), (1, "capture-command-failure", False, False, True, False), (1, "capture-known-java-changed", False, False, True, False)]
@@ -1290,6 +1313,7 @@ class PairedBrowserTest(unittest.TestCase):
                 data["test_gate"] = {"task": ":integration:web:jvmTest", "required_tests": self.manifest["correctness"]["required_tests"]}
             output = self.root / (("complete" if failure is None else "failed") + ("-copy-failure" if copy_failure else "") + ("-source-" + str(repetitions) if repetitions is not None else "") + ("-provisioning" if provisioning else "") + ("-separate-driver" if separate_driver else "") + ("-controlled" if controlled else "") + ("-" + failure if failure is not None else ""))
             calls, side_paths = [], {}
+            distribution_installed = False
             driver_checks = []
             api = SimpleNamespace(**vars(self.shared))
             original_failure = ValueError("JVM parity tests were skipped" if failure == "gate-source-baseline-0" else "Owned browser phase failed")
@@ -1333,6 +1357,7 @@ class PairedBrowserTest(unittest.TestCase):
             api.preserve_test_reports = lambda *args: None
             api.verify_test_gate = lambda directory, gate: self.shared.write_new(directory / "junit-verified.json", {"counts": {"skipped": int(failure == "gate-" + directory.name)}})
             def bind(profile, workspace, environment, arguments, evidence, *, bounded):
+                self.assertTrue(distribution_installed, "Strict profile binding preceded the owned wrapper bootstrap")
                 requested = next(item for item in data["preparations"] if item["tasks"][0] == arguments[0])
                 self.assertEqual(arguments[:len(requested["tasks"])], requested["tasks"])
                 evidence.mkdir()
@@ -1378,19 +1403,32 @@ class PairedBrowserTest(unittest.TestCase):
                     workspace.joinpath("gradle").mkdir()
                     workspace.joinpath("gradle/controlled_toolchains.py").write_bytes(b"synthetic frozen binder")
                     workspace.joinpath("gradle/controlled-toolchains.init.gradle").write_bytes(b"synthetic frozen init")
+                    for relative in ("gradlew.bat", "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties"):
+                        wrapper = workspace / relative
+                        wrapper.parent.mkdir(parents=True, exist_ok=True)
+                        wrapper.write_bytes(("same frozen wrapper " + relative).encode())
                 path = workspace / browser_data["collections"][0]["adapter"]["path"]
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes((self.root / path.relative_to(workspace)).read_bytes())
                 return workspace, source
 
             def invoke(arguments, root, console):
-                nonlocal preparation
+                nonlocal preparation, distribution_installed
                 request = self.shared.read_json(Path(arguments[arguments.index("-Request") + 1]))
                 terminal_path = Path(arguments[arguments.index("-Report") + 1])
                 directory = terminal_path.parent
                 name = directory.name
                 calls.append(name)
                 console.write_bytes(b"synthetic command transcript\n")
+                bootstrap = controlled and not acquiring and name == "wrapper-bootstrap"
+                if bootstrap:
+                    self.assertEqual(request["arguments"][:2], ["--version", "-Pstrata.jvmOnly=true"])
+                    self.assertNotIn("STRATA_TOOLCHAIN_BINDING", request["environment"])
+                    self.assertFalse(any("org.gradle.java.installations." in argument for argument in request["arguments"]))
+                    self.assertFalse(any(key.startswith("ORG_GRADLE_PROJECT_org.gradle.java.") for key in request["environment"]))
+                    distribution_installed = failure != name
+                    xml = output / "vms/bootstrap.log"
+                    xml.write_text("<hotspot_log><hotspot_log_done/></hotspot_log>", encoding="utf-8")
                 if acquiring:
                     if failure == "capture-init-during":
                         (output / "capture-toolchain-inputs.init.gradle").write_text("throw new GradleException('changed during invoke')", encoding="utf-8")
@@ -1409,7 +1447,7 @@ class PairedBrowserTest(unittest.TestCase):
                             path = Path(request["workspace"]) / relative
                             path.parent.mkdir(parents=True, exist_ok=True)
                             path.write_bytes(b"synthetic compiled bytes")
-                if repetitions is not None and not acquiring:
+                if repetitions is not None and not acquiring and not bootstrap:
                     preparation = next(item for item in data["preparations"] if name.endswith("-" + item["name"])) if controlled else data
                     self.assertEqual(request["arguments"][:len(preparation["tasks"])], preparation["tasks"])
                     self.assertIn("--rerun-tasks", request["arguments"])
@@ -1576,9 +1614,9 @@ class PairedBrowserTest(unittest.TestCase):
                         self.assertEqual(record["tasks_per_invocation"], len(data["tasks"]))
                     provisioning_names = ["provision-baseline", "provision-candidate"] if provisioning else []
                     attempts = provisioning_names + [f"source-{side}-{index}" for index in range(repetitions) for side in ("baseline", "candidate")]
-                    self.assertEqual(calls, [name + "-" + item["name"] for name in attempts for item in data["preparations"]] if controlled else attempts)
+                    self.assertEqual(calls, ["wrapper-bootstrap", *[name + "-" + item["name"] for name in attempts for item in data["preparations"]]] if controlled else attempts)
                     self.assertEqual(record["completed_dependency_provisioning_invocations"], len(provisioning_names) * count)
-                    self.assertEqual([phase["source_metric_scope"] for phase in record["phases"]], ["untimed_dependency_provisioning"] * (len(provisioning_names) * count) + ["measured_source_preparation"] * (repetitions * 2 * count))
+                    self.assertEqual([phase["source_metric_scope"] for phase in record["phases"]], (["untimed_wrapper_bootstrap"] if controlled else []) + ["untimed_dependency_provisioning"] * (len(provisioning_names) * count) + ["measured_source_preparation"] * (repetitions * 2 * count))
                     self.assertTrue(all(phase["jobUserCpu100ns"] == 10 and phase["jobKernelCpu100ns"] == 20 and phase["peakJobCommittedBytes"] == 30 and phase["allocation_bytes"] is None and phase["rss_bytes"] is None for phase in record["phases"]))
                     pins = self.shared.read_json(output / "prepared-pins.json")
                     self.assertEqual(set(pins["compiled_pins"]), {"baseline", "candidate"})
@@ -1590,14 +1628,17 @@ class PairedBrowserTest(unittest.TestCase):
                         self.assertEqual((output / "source-resource-profile.json").read_bytes(), resource_path.read_bytes())
                         self.assertEqual((record["complete_measured_attempts"], record["preparations_per_attempt"], record["complete_dependency_provisioning_attempts"]), (6, 2, 2))
                         self.assertTrue(all([item["path"] for item in values] == [item["glob"] for item in data["artifacts"]] for values in pins["compiled_pins"].values()))
-                        self.assertTrue(all((output / "phases" / name / "toolchains/selection-verified.json").is_file() and (output / "phases" / name / "vm-metadata-verified.json").is_file() for name in calls))
+                        self.assertTrue(all((output / "phases" / name / "toolchains/selection-verified.json").is_file() and (output / "phases" / name / "vm-metadata-verified.json").is_file() for name in calls if name != "wrapper-bootstrap"))
+                        self.assertFalse(record["wrapper_bootstrap"]["source_timing_credit"])
+                        self.assertEqual(record["wrapper_bootstrap"]["phase"], "wrapper-bootstrap")
+                        self.assertEqual(record["wrapper_bootstrap"]["wrappers"], self.browser.matched_source_wrappers(self.shared, side_paths))
                         self.assertTrue(all(phase["invocation_started_ns"] <= phase["invocation_closed_ns"] for phase in record["phases"]))
                     self.assertFalse((output / "report.md").exists())
                     if data["test_gate"] is not None:
                         self.assertTrue(all(self.shared.read_json(output / "phases" / name / "test-classpath-verified.json")["present_entries"] == 1 for name in calls if not controlled or name.endswith("-api")))
             elif failure in mutations:
                 self.assertEqual(record["status"], "failed")
-                self.assertEqual(calls, ["provision-baseline-api"])
+                self.assertEqual(calls, ["wrapper-bootstrap", "provision-baseline-api"])
                 self.assertIn("Pinned bytes changed", record["error"])
                 self.assertFalse((output / "phases/provision-baseline-fixtures/request.json").exists())
                 self.assertFalse((output / "prepared-pins.json").exists())
@@ -1621,6 +1662,11 @@ class PairedBrowserTest(unittest.TestCase):
                 self.assertIn("JVM parity tests were skipped" if failure.startswith("gate-") else "Owned browser phase failed", record["error"])
                 if failure.startswith("provision-"):
                     self.assertFalse(any(name.startswith("source-") for name in calls))
+                    self.assertFalse((output / "prepared-pins.json").exists())
+                if failure == "wrapper-bootstrap":
+                    self.assertEqual(calls, ["wrapper-bootstrap"])
+                    self.assertNotIn("wrapper_bootstrap", record)
+                    self.assertNotIn("completed_source_invocations", record)
                     self.assertFalse((output / "prepared-pins.json").exists())
             else:
                 self.assertEqual(record["status"], "failed")

@@ -890,6 +890,10 @@ The default adds no provisioning invocations, and a failed provisioning gate pre
 Dependency cache provisioning does not enable Gradle task-result or configuration caches: all invocations keep `--rerun-tasks`, `--no-build-cache` and `--no-configuration-cache`.
 Audit the retained setup and task logs for the requested cache context before accepting a Source comparison.
 Controlled discovery comparisons supply both `toolchain_binding` and `preparations`.
+Before strict profile binding, the collector pins identical checked-in wrapper scripts, archive and distribution properties on both sides and runs the ordinary wrapper's `--version` once through the existing owned phase.
+The wrapper may install its declared distribution in the existing Gradle user home; the collector does not rewrite the pinned installation path or relax the subsequent profile checks.
+This bootstrap has its own retained untimed phase, with the same admission, Job, JVM, source, cleanup and deadline checks, and contributes no source-preparation timing credit.
+Bootstrap failure stops before any declared preparation or collection, while the original complete task groups, test gates, provisioning and measured repetition counts remain required.
 When hosted installation inputs do not yet exist, the separate opt-in `capture_toolchain_inputs=true` acquires them once through the same owned Gradle phase and finite resource profile.
 It declares the complete intended preparation/test/output inventory, uses one repetition without dependency provisioning or existing `toolchain_binding`, and executes only the ordinary `help` task with a frozen metadata init.
 The init requests the original model's language versions and records actual Gradle selection, daemon, distribution and user-home metadata; closed VM XML and fresh same-home diagnostics bind every observed selected or unused Java home.

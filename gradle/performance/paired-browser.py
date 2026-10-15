@@ -390,6 +390,19 @@ def bind_source_request(shared, binding, workspace, side, arguments, environment
     return arguments, environment, manifest, effective
 
 
+def matched_source_wrappers(shared, workspaces):
+    """Pin the same checked-in wrapper on both controlled sides before any bootstrap executes."""
+    files = ("gradlew.bat", "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties")
+    pins = {}
+    for name in files:
+        paths = [shared.relative_path(workspaces[side], name) for side in ("baseline", "candidate")]
+        shared.require(all(path.is_file() and not path.is_symlink() for path in paths), "Missing or linked controlled Source wrapper")
+        values = [shared.digest(path) for path in paths]
+        shared.require(values[0] == values[1], "Controlled Source wrappers differ")
+        pins[name] = values[0]
+    return pins
+
+
 def verify_source_vm_metadata(shared, directory, binding, selections):
     """Join every closed physical VM's actual vendor/version with fresh same-home runtime metadata."""
     expected = {os.path.normcase(str(Path(item["home"]))): item for item in binding["installations"]}
@@ -651,9 +664,12 @@ def run(shared, root, selection, output):
         captured_class_loads = {}
         prepared = set()
 
-        def phase(name, workspace, arguments, node_program=None, test_gate=None, source_metric_scope=None, acquisition_environment=None):
+        def phase(name, workspace, arguments, node_program=None, test_gate=None, source_metric_scope=None, acquisition_environment=None, wrapper_bootstrap=False):
             """Reuse the existing owning helper and fixed limits for Gradle or a pinned Node adapter."""
             nonlocal captured_class_loads, allowed_java
+            shared.require(type(wrapper_bootstrap) is bool and (not wrapper_bootstrap or source_mode and toolchains is not None
+                           and not capture and node_program is None and test_gate is None and acquisition_environment is None
+                           and arguments == ["--version", *data["arguments"]["baseline"]]), "Invalid controlled wrapper bootstrap")
             shared.require(time.monotonic() - started + 1830 + 180 < 6 * 60 * 60, "Insufficient whole-attempt time and upload reserve")
             shared.verify_driver_sources(record["driver_sources"])
             shared.verify_driver_source(root, record["driver_head"], data, selection.get("explicit_manual", False))
@@ -701,7 +717,7 @@ def run(shared, root, selection, output):
                                       "-Pstrata.paired.sourceJavaExecMetaspaceMiB=" + str(resources["javaExecMetaspaceMiB"])]
                     if test_gate is not None:
                         arguments += ["-Pstrata.paired.testClasspathTask=" + test_gate["task"], "-Pstrata.paired.preserveTestClasspath=" + str(directory / "test-classpath")]
-                if toolchains is not None:
+                if toolchains is not None and not wrapper_bootstrap:
                     side = next(side for side in ("baseline", "candidate") if workspaces[side] == workspace)
                     arguments, environment, binding, binding_environment = bind_source_request(shared, toolchains, workspace, side, arguments, environment, directory / "toolchains")
             request = {"workspace": str(workspace), "arguments": arguments, "environment": environment, "minimumFreePhysicalBytes": resources["minimumFreePhysicalBytes"], "jobCommittedBytes": 3 * 1024**3, "workSeconds": 1800, "cleanupSeconds": 30}
@@ -781,6 +797,14 @@ def run(shared, root, selection, output):
             if capture:
                 shared.require(shared.digest(init) == capture_init_sha256, "Acquisition metadata init bytes changed during execution")
             return (directory, request) if capture else directory
+
+        if toolchains is not None:
+            wrappers = matched_source_wrappers(shared, workspaces)
+            directory = phase("wrapper-bootstrap", workspaces["baseline"], ["--version", *data["arguments"]["baseline"]],
+                              source_metric_scope="untimed_wrapper_bootstrap", wrapper_bootstrap=True)
+            shared.require(matched_source_wrappers(shared, workspaces) == wrappers, "Controlled Source wrapper changed during bootstrap")
+            record["wrapper_bootstrap"] = {"phase": directory.name, "wrappers": wrappers, "source_timing_credit": False,
+                                           "profile_validation": "Required by the original strict binder before the first preparation"}
 
         if capture:
             init = output / "capture-toolchain-inputs.init.gradle"
