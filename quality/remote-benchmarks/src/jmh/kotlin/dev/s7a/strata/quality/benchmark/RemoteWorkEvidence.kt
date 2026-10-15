@@ -31,6 +31,7 @@ public object RemoteWorkEvidence {
             Files.writeString(destination, protocolSurface().getValue("remote").sorted().joinToString("\n", postfix = "\n"))
             return
         }
+        RemoteInventoryArguments.verifyWork()
         verifySurface()
         JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(JmhFixtureSelection.all()))
         check(JmhWorkloadInventory.capture(listOf(RemoteProtocolBenchmark::class.java), setOf("avgt")).size == 30)

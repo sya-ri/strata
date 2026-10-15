@@ -52,6 +52,7 @@ public object IncomingFragmentCpuEvidence {
         check(JvmApiInventory.capture(javaClass.classLoader, mapOf("remote" to targets.getValue("remote"))) == surface)
         check(ArtifactIdentity.applicationTrees(fixtures) == identity)
         check(inputs().mapValues { ArtifactIdentity.file(it.value) } == inputs)
+        val inventoryArguments = RemoteInventoryArguments.capture(ManagementFactory.getRuntimeMXBean().inputArguments, System.getProperty("strata.performance.remoteInventory"), inputs())
         PerformanceJson.writeNew(
             Path.of(args[0]),
             JsonObject().apply {
@@ -64,7 +65,8 @@ public object IncomingFragmentCpuEvidence {
                 add("remote_api_symbols", Gson().toJsonTree(surface))
                 add("fixture_identity", Gson().toJsonTree(identity))
                 add("inputs", Gson().toJsonTree(inputs))
-                add("environment", environment())
+                add("environment", environment(inventoryArguments.first))
+                add("inventory_argument", inventoryArguments.second)
                 add("phases", phases)
                 addProperty("native_uploads", "N/A: native-independent incoming transport")
                 addProperty("gpu_time", "N/A: no native presentation")
@@ -122,10 +124,10 @@ public object IncomingFragmentCpuEvidence {
         return libraries + fixtures
     }
 
-    private fun environment(): JsonObject =
+    private fun environment(arguments: List<String>): JsonObject =
         Gson()
             .toJsonTree(
                 listOf("java.version", "java.vendor", "java.vm.name", "os.name", "os.version", "os.arch").associateWith(System::getProperty) +
-                    mapOf("available_processors" to Runtime.getRuntime().availableProcessors().toString(), "host" to System.getenv("COMPUTERNAME"), "jvm_arguments" to ManagementFactory.getRuntimeMXBean().inputArguments),
+                    mapOf("available_processors" to Runtime.getRuntime().availableProcessors().toString(), "host" to System.getenv("COMPUTERNAME"), "jvm_arguments" to arguments),
             ).asJsonObject
 }
