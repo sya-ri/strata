@@ -229,6 +229,7 @@ internal class MinecraftStatefulControlFrameTest {
         for (kind in Kind.entries) {
             val revision = mutableStateOf(0)
             val failure = IllegalStateException("Current control callback failed")
+            val fail = { throw failure }
             val checkbox = CheckboxState()
             val slider = SliderState(0.0)
             val cycle = CycleButtonState(listOf(0, 1, 2))
@@ -237,13 +238,13 @@ internal class MinecraftStatefulControlFrameTest {
                     UiDefinition("failure") {
                         val version = revision.value
                         when (kind) {
-                            Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { if (version == 1) throw failure })
-                            Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { if (version == 1) throw failure })
-                            Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { if (version == 1) throw failure })
+                            Kind.Checkbox -> Checkbox("A", checkbox, modifier = Modifier.Empty.onCheckedChange { if (version == 1) fail() })
+                            Kind.Slider -> Slider("A", slider, modifier = Modifier.Empty.onSliderChange { if (version == 1) fail() })
+                            Kind.Cycle -> CycleButton(cycle, modifier = Modifier.Empty.onCycle<Int> { if (version == 1) fail() })
                         }
                     },
                     MinecraftProfileFixture.create(),
-                    )
+                )
             try {
                 host.attach()
                 val original = host.frame(IntSize(150, 20))
