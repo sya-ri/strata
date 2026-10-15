@@ -129,10 +129,7 @@ public object FreeTypeGrayscaleWorkEvidence {
                 }
 
                 FreeTypeGrayscaleBenchmark.Control.MalformedConverterInput -> {
-                    val failures = result as List<*>
-                    check(failures.size == 3 && failures.all { it is IllegalArgumentException })
-                    val expected = listOf("The ttf provider requires grayscale glyphs.", "FreeType glyph dimensions changed during rasterization.", "FreeType returned an invalid glyph stride.")
-                    check(failures.map { (it as Throwable).message } == expected)
+                    malformed(result)
                 }
 
                 FreeTypeGrayscaleBenchmark.Control.CompleteCleanTextFrame -> {
@@ -150,6 +147,13 @@ public object FreeTypeGrayscaleWorkEvidence {
             }
             records.add(record)
         }
+    }
+
+    private fun malformed(result: Any) {
+        val failures = result as List<*>
+        check(failures.size == 3 && failures.all { it is IllegalArgumentException })
+        val expected = listOf("The ttf provider requires grayscale glyphs.", "FreeType glyph dimensions changed during rasterization.", "FreeType returned an invalid glyph stride.")
+        check(failures.map { (it as Throwable).message } == expected)
     }
 
     private fun equalGlyph(

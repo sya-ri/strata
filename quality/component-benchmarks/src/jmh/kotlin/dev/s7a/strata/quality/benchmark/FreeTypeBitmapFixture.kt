@@ -75,7 +75,7 @@ internal class FreeTypeBitmapFixture(
         try {
             convert.invoke(checkNotNull(target), checkNotNull(bitmap), axis, axis) as DrawImage
         } catch (failure: InvocationTargetException) {
-            throw checkNotNull(failure.cause)
+            throw (failure.cause ?: failure)
         }
 
     /**
