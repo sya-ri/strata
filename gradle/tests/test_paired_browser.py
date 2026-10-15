@@ -724,6 +724,46 @@ class PairedBrowserTest(unittest.TestCase):
         (directory / "console.log").write_text("\n".join("> Task " + task for task in tasks) + "\n", encoding="utf-8")
         self.assertEqual(self.browser.verify_source_tasks(self.shared, directory, tasks), dict.fromkeys(tasks, "executed"))
 
+    def test_failed_source_outputs_remain_partial_and_keep_strict_complete_inventory(self):
+        workspace = self.root / "source"
+        report = workspace / "build/reports/work/failed.json"
+        report.parent.mkdir(parents=True)
+        report.write_bytes(b'{"status":"failed","prefix":["open","callback","failure"]}')
+        patterns = [{"glob": "build/reports/work/*.json", "minimum": 2}]
+        with self.assertRaisesRegex(ValueError, "Incomplete actual Source"):
+            self.browser.preserve_source_outputs(self.shared, workspace, self.root / "strict", patterns)
+        directory = self.root / "partial"
+        pins = self.browser.preserve_source_outputs(self.shared, workspace, directory, patterns, partial=True)
+        receipt = self.shared.read_json(directory / "partial-source-pins.json")
+        self.assertEqual(receipt, {"status": "partial", "qualified": False,
+                                  "missing": [{"glob": patterns[0]["glob"], "minimum": 2, "observed": 1}], "artifacts": pins})
+        self.assertEqual((directory / "artifacts" / report.relative_to(workspace)).read_bytes(), report.read_bytes())
+        self.assertEqual(pins, [{"path": report.relative_to(workspace).as_posix(), "sha256": self.shared.digest(report)}])
+        self.assertFalse((directory / "compiled-pins.json").exists())
+        self.assertFalse((directory / "prepared-pins.json").exists())
+
+    def test_partial_source_outputs_reject_escape_and_changed_original_bytes(self):
+        workspace = self.root / "source"
+        workspace.mkdir()
+        outside = self.root / "outside.json"
+        outside.write_bytes(b"outside")
+        with self.assertRaisesRegex(ValueError, "Noncanonical repository path"):
+            self.browser.preserve_source_outputs(self.shared, workspace, self.root / "escape",
+                                                 [{"glob": "../outside.json", "minimum": 1}], partial=True)
+        report = workspace / "failed.json"
+        report.write_bytes(b"complete failed prefix")
+        api = SimpleNamespace(**vars(self.shared))
+        def copy_then_change(source, destination):
+            retained = self.shared.preserve_file(source, destination)
+            source.write_bytes(b"changed after copy")
+            return retained
+        api.preserve_file = copy_then_change
+        directory = self.root / "changed"
+        with self.assertRaisesRegex(ValueError, "Pinned bytes changed"):
+            self.browser.preserve_source_outputs(api, workspace, directory, [{"glob": "*.json", "minimum": 1}], partial=True)
+        self.assertFalse((directory / "partial-source-pins.json").exists())
+        self.assertFalse((directory / "compiled-pins.json").exists())
+
     def test_source_preparation_can_freeze_an_independent_subject_without_relaxing_consumer_identity(self):
         value = self.source_manifest()
         _, producer, head, path, expected = self.fixture.input_consumer(value=value, candidate_patch=True, mismatch="blob")
@@ -1078,6 +1118,8 @@ class PairedBrowserTest(unittest.TestCase):
         cases = [(None, None, False, False), (None, "collect-standard-baseline", False, False), (None, None, True, False), (None, "collect-standard-baseline", True, False), (1, None, False, False), (3, None, False, False), (3, "source-candidate-1", False, False)]
         cases += [(3, None, False, True), (1, None, False, True), (3, "provision-baseline", False, True), (3, "provision-candidate", False, True), (3, "source-candidate-1", False, True)]
         cases = [(*case, False, False) for case in cases]
+        cases += [(1, "source-baseline-0", False, False, False, False), (1, "source-baseline-0", True, False, False, False),
+                  (1, "gate-source-baseline-0", False, False, False, False)]
         cases += [(None, None, False, False, False, True), (None, "changed-driver-source", False, False, False, True)]
         cases += [(3, None, False, True, True, False), (3, "provision-baseline-fixtures", False, True, True, False),
                   (3, "source-candidate-1-fixtures", False, True, True, False), (3, "gate-source-baseline-0-api", False, True, True, False)]
@@ -1089,6 +1131,9 @@ class PairedBrowserTest(unittest.TestCase):
             acquiring = failure in ("capture-inputs", "capture-command-failure", "capture-known-java-changed", "capture-init-before", "capture-init-during")
             data = self.controlled_source_manifest() if controlled else self.source_manifest(repetitions) if repetitions is not None else browser_data
             data = copy.deepcopy(data)
+            failed_prefix = failure in ("source-baseline-0", "gate-source-baseline-0")
+            if failed_prefix:
+                data["artifacts"].append({"glob": "build/reports/work/*.json", "minimum": 2})
             if acquiring:
                 data.pop("toolchain_binding")
                 data.update(capture_toolchain_inputs=True, repetitions=1)
@@ -1107,6 +1152,12 @@ class PairedBrowserTest(unittest.TestCase):
             calls, side_paths = [], {}
             driver_checks = []
             api = SimpleNamespace(**vars(self.shared))
+            original_failure = ValueError("JVM parity tests were skipped" if failure == "gate-source-baseline-0" else "Owned browser phase failed")
+            def require(condition, message):
+                if failed_prefix and not condition and message == str(original_failure):
+                    raise original_failure
+                self.shared.require(condition, message)
+            api.require = require
             api.git = lambda *args: "a" * 40
             api.load_manifest = lambda *args: data
             api.preserve_driver_sources = lambda *args: {}
@@ -1163,7 +1214,7 @@ class PairedBrowserTest(unittest.TestCase):
                                                         for role, home in homes.items()]}
             if copy_failure:
                 def preserve_file(source, target):
-                    if target.is_relative_to(output / "prepared"):
+                    if target.is_relative_to(output / "prepared") or target.is_relative_to(output / "failed-source"):
                         raise OSError("Injected prepared-only copy failure")
                     return self.shared.preserve_file(source, target)
                 api.preserve_file = preserve_file
@@ -1250,6 +1301,13 @@ class PairedBrowserTest(unittest.TestCase):
                         self.shared.write_new(retained / "original-classpath.json", {"sources": [str(empty), str(dependency)], "absent_outputs": [{"source": str(empty), "task": ":integration:web:compileJvmMainJava", "reason": "NO-SOURCE"}]})
                         with console.open("a", encoding="utf-8") as transcript:
                             transcript.write("> Task :integration:web:compileJvmMainJava NO-SOURCE\n")
+                if failed_prefix and name == failure.removeprefix("gate-"):
+                    report = Path(request["workspace"]) / "build/reports/work/failed.json"
+                    report.parent.mkdir(parents=True)
+                    report.write_bytes(b'{"status":"failed","prefix":["open","callback","failure"]}')
+                    if failure == "source-baseline-0":
+                        with console.open("a", encoding="utf-8") as transcript:
+                            transcript.write("> Task " + preparation["tasks"][0] + " FAILED\n")
                 floor = 4608 * 1024**2 if controlled else 4 * 1024**3
                 self.assertEqual((request["minimumFreePhysicalBytes"], request["jobCommittedBytes"], request["workSeconds"], request["cleanupSeconds"]), (floor, 3 * 1024**3, 1800, 30))
                 self.assertEqual(request["environment"]["STRATA_PAIRED_DAEMON_METASPACE_MIB"], "384" if controlled else "1024")
@@ -1289,8 +1347,8 @@ class PairedBrowserTest(unittest.TestCase):
                 return exit_code
 
             preserve_outputs = self.browser.preserve_source_outputs
-            def preserve_then_mutate(shared, workspace, directory, specification):
-                result = preserve_outputs(shared, workspace, directory, specification)
+            def preserve_then_mutate(shared, workspace, directory, specification, **options):
+                result = preserve_outputs(shared, workspace, directory, specification, **options)
                 if failure in mutations and failure.endswith("between-phases") and directory.name == "provision-baseline-api":
                     path = self.shared.pin(self.root, data["toolchain_binding"][mutations[failure]])
                     path.write_text(json.dumps({"synthetic": "changed-" + mutations[failure]}), encoding="utf-8")
@@ -1312,11 +1370,35 @@ class PairedBrowserTest(unittest.TestCase):
                 if failure in (None, "capture-inputs") and copy_failure is False:
                     self.browser.run(api, self.root, selection, output)
                 else:
-                    with self.assertRaisesRegex(ValueError, "Acquisition metadata init bytes changed" if failure in ("capture-init-before", "capture-init-during") else "Prepared evidence preservation failed" if failure is None else "Known pinned Java bytes changed" if failure == "capture-known-java-changed" else "Pinned bytes changed" if failure in mutations else "Changed frozen browser driver source" if failure == "changed-driver-source" else "JVM parity tests were skipped" if failure.startswith("gate-") else "Owned browser phase failed"):
+                    with self.assertRaisesRegex(ValueError, "Acquisition metadata init bytes changed" if failure in ("capture-init-before", "capture-init-during") else "Prepared evidence preservation failed" if failure is None else "Known pinned Java bytes changed" if failure == "capture-known-java-changed" else "Pinned bytes changed" if failure in mutations else "Changed frozen browser driver source" if failure == "changed-driver-source" else "JVM parity tests were skipped" if failure.startswith("gate-") else "Owned browser phase failed") as raised:
                         self.browser.run(api, self.root, selection, output)
             record = self.shared.read_json(output / "attempt.json")
             self.assertNotEqual(side_paths["baseline"], side_paths["candidate"])
             self.assertTrue(output.with_suffix(".zip").is_file())
+            if failed_prefix:
+                self.assertIs(raised.exception, original_failure)
+                self.assertEqual(record["error"], "ValueError: " + str(original_failure))
+                self.assertEqual(record["sources"]["baseline"], data["sources"]["baseline"])
+                self.assertFalse((output / "prepared-pins.json").exists())
+                self.assertNotIn("completed_source_invocations", record)
+                directory = output / "failed-source/baseline"
+                self.assertFalse(list(directory.rglob("compiled-pins.json")))
+                terminal = self.shared.read_json(output / "phases/source-baseline-0/terminal.json")
+                self.assertEqual(terminal["exitCode"], 0 if failure.startswith("gate-") else 7)
+                self.assertTrue(terminal["handlesClosed"])
+                self.assertEqual(terminal["activeProcessesAfterCleanup"], 0)
+                if not copy_failure:
+                    partial = self.shared.read_json(directory / "partial-source-pins.json")
+                    self.assertFalse(partial["qualified"])
+                    self.assertIn({"glob": "build/reports/work/*.json", "minimum": 2, "observed": 1}, partial["missing"])
+                    report = directory / "artifacts/build/reports/work/failed.json"
+                    self.assertEqual(report.read_bytes(), b'{"status":"failed","prefix":["open","callback","failure"]}')
+                    inventory = self.shared.read_json(output / "file-inventory.json")
+                    self.assertEqual(inventory[report.relative_to(output).as_posix()]["sha256"], self.shared.digest(report))
+                    with self.shared.zipfile.ZipFile(output.with_suffix(".zip")) as archive:
+                        self.assertEqual(archive.read(report.relative_to(output).as_posix()), report.read_bytes())
+                        self.assertIn("phases/source-baseline-0/terminal.json", archive.namelist())
+                        self.assertFalse(any(name.startswith("workspaces/") for name in archive.namelist()))
             if acquiring:
                 self.assertEqual(calls, [] if failure == "capture-init-before" else ["toolchain-input-acquisition"])
                 self.assertFalse((output / "prepared-pins.json").exists())

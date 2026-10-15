@@ -411,12 +411,17 @@ def verify_source_vm_metadata(shared, directory, binding, selections):
     shared.write_new(directory / "vm-metadata-verified.json", records)
 
 
-def preserve_source_outputs(shared, workspace, directory, patterns):
-    """Keep every declared actual output byte and reject missing, escaping or oversized compilation artifacts."""
+def preserve_source_outputs(shared, workspace, directory, patterns, *, partial=False):
+    """Keep bounded actual outputs; partial failure evidence cannot supply compiled pins."""
     pins = {}
+    missing = []
     for item in patterns:
         paths = sorted(path for path in workspace.glob(item["glob"]) if path.is_file())
-        shared.require(item["minimum"] <= len(paths), "Incomplete actual Source artifact inventory: " + item["glob"])
+        if partial:
+            if len(paths) < item["minimum"]:
+                missing.append({"glob": item["glob"], "minimum": item["minimum"], "observed": len(paths)})
+        else:
+            shared.require(item["minimum"] <= len(paths), "Incomplete actual Source artifact inventory: " + item["glob"])
         for path in paths:
             relative = path.relative_to(workspace).as_posix()
             shared.relative_path(workspace, relative)
@@ -427,7 +432,10 @@ def preserve_source_outputs(shared, workspace, directory, patterns):
         shared.require(shared.preserve_file(workspace / path, directory / "artifacts" / path)["sha256"] == pin["sha256"], "Source artifact changed while preserving")
         shared.pin(workspace, pin)
     result = list(pins.values())
-    shared.write_new(directory / "compiled-pins.json", result)
+    if partial:
+        shared.write_new(directory / "partial-source-pins.json", {"status": "partial", "qualified": False, "missing": missing, "artifacts": result})
+    else:
+        shared.write_new(directory / "compiled-pins.json", result)
     return result
 
 
@@ -547,6 +555,7 @@ def run(shared, root, selection, output):
               "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "sources": {}, "phases": [], "cpu_ns": None, "allocated_bytes": None,
               "gpu_loaded_game": "N/A"}
     workspaces = {}
+    source_mode = False
     try:
         shared.require(shared.git(root, "rev-parse", "HEAD") == selection["execution_head"], "Browser driver head changed")
         data = shared.load_manifest(selection["root"], selection["path"])
@@ -834,6 +843,17 @@ def run(shared, root, selection, output):
     finally:
         execution_failed = "error" in record
         preservation_errors = []
+        if source_mode and execution_failed:
+            preparations = data.get("preparations", [{"artifacts": data["artifacts"]}])
+            patterns = [item for preparation in preparations for item in preparation["artifacts"]]
+            for side in ("baseline", "candidate"):
+                if side not in workspaces:
+                    continue
+                workspace = workspaces[side]
+                try:
+                    preserve_source_outputs(shared, workspace, output / "failed-source" / side, patterns, partial=True)
+                except Exception as failure:
+                    preservation_errors.append({"source": str(workspace), "scope": "partial-source", "error": f"{type(failure).__name__}: {failure}"})
         for side in ("baseline", "candidate"):
             if side in workspaces:
                 workspace = workspaces[side]
