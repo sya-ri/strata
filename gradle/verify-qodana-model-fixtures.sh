@@ -476,13 +476,16 @@ for entry in auxiliary_roots:
 ET.SubElement(docs_manager, "orderEntry", type="inheritedJdk")
 docs_library = ET.SubElement(docs_manager, "orderEntry", type="module-library", scope="TEST")
 ET.SubElement(ET.SubElement(ET.SubElement(docs_library, "library"), "CLASSES"), "root", url="jar://" + auxiliary_library.as_posix() + "!/")
+runtime_library = copy.deepcopy(docs_library)
+runtime_library.attrib["scope"] = "RUNTIME"
+docs_manager.append(runtime_library)
 docs_iml_path.write_text('<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(docs_generated, encoding="unicode"))
 ET.SubElement(modules_parent, "module", fileurl="file://$PROJECT_DIR$/integration/docs/docs.iml")
 (idea / "modules.xml").write_text(ET.tostring(project, encoding="unicode"))
 docs_module = next(module for module in model["modules"] if module["name"] == "docs")
 docs_module["contentEntries"][0]["path"] = "file://$PROJECT_DIR$/integration/docs/"
 docs_module["contentEntries"][0]["sourceFolders"].extend(dict(type=entry["kind"], path="file://$PROJECT_DIR$/" + entry["path"]) for entry in auxiliary_roots if entry["exists"])
-docs_module["orderEntries"] = [dict(type="SDK", name="jbr-25"), dict(type="ModuleSource"), dict(type="Library", name=auxiliary_library.as_posix())]
+docs_module["orderEntries"] = [dict(type="SDK", name="jbr-25"), dict(type="ModuleSource"), dict(type="Library", name=auxiliary_library.as_posix()), dict(type="Library", name=auxiliary_library.as_posix())]
 auxiliary = dict(project=":integration:docs", directory="integration/docs", module="docs", iml="integration/docs/docs.iml", sourceSet="verification", java=17,
                  roots=auxiliary_roots, outputs=auxiliary_outputs, classpaths={"compile": "verificationCompileClasspath", "runtime": "verificationRuntimeClasspath"},
                  dependencies={"verificationCompileClasspath": [auxiliary_dependency], "verificationRuntimeClasspath": [auxiliary_dependency]})
@@ -556,7 +559,11 @@ for mutation in ("paired-omission", "generated-omission", "imported-omission", "
         manager.append(copy.deepcopy(manager.find("orderEntry[@type='module-library']")))
         module["orderEntries"].append(copy.deepcopy(next(entry for entry in module["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix())))
     elif mutation == "runtime-only-compile":
-        manager.find("orderEntry[@type='module-library']").attrib["scope"] = "RUNTIME"
+        dependencies = manager.findall("orderEntry[@type='module-library']")
+        dependencies[0].attrib["scope"] = "RUNTIME"
+        for dependency in dependencies[1:]:
+            manager.remove(dependency)
+        module["orderEntries"].remove(next(entry for entry in module["orderEntries"] if entry["type"] == "Library" and entry["name"] == auxiliary_library.as_posix()))
     elif mutation == "wrong-sdk":
         next(entry for entry in module["orderEntries"] if entry["type"] == "SDK")["name"] = "wrong-sdk"
     elif mutation == "wrong-language":

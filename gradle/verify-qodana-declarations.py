@@ -205,10 +205,15 @@ def verify(root, model_path, container_root, java_path):
                     imported_dependencies = [entry for entry in imported["orderEntries"] if entry.get("type") == "Library" and url_path(root, directory, entry.get("name"), source=False) == library]
                 else:
                     fail(f"unsupported dependency kind: {dependency['kind']}")
-                if len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
-                    fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
                 scopes = {"COMPILE", "TEST", "PROVIDED"} if configuration == classpaths["compile"] else {"COMPILE", "TEST", "RUNTIME"}
-                if generated_dependencies[0].attrib.get("scope", "COMPILE") not in scopes:
+                actual_scopes = [entry.attrib.get("scope", "COMPILE") for entry in generated_dependencies]
+                if "sourceSet" in owner:
+                    # IDEA retains distinct production-runtime and test edges; Qodana flattens their scope labels.
+                    if not actual_scopes or not set(actual_scopes).issubset({"COMPILE", "TEST", "PROVIDED", "RUNTIME"}) or len(imported_dependencies) != len(actual_scopes) or len(set(actual_scopes)) != len(actual_scopes):
+                        fail(f"missing, duplicate or wrong-owner auxiliary dependency: {name}: {dependency['identity']}")
+                elif len(generated_dependencies) != 1 or len(imported_dependencies) != 1:
+                    fail(f"missing, duplicate or wrong-owner dependency: {name}: {dependency['identity']}")
+                if not scopes.intersection(actual_scopes):
                     fail(f"required dependency has an incompatible compile/runtime scope: {name}")
 
     for owner in owners:
