@@ -15,7 +15,7 @@ import tempfile
 import textwrap
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import zipfile
 
 
@@ -335,7 +335,10 @@ class PairedJvmTest(unittest.TestCase):
                             (directory / "terminal.json").write_text(json.dumps(terminal), encoding="utf-8")
                         return 0
 
-                    patches = (patch.dict(os.environ, homes), patch.object(PAIRED, "git", return_value="a" * 40), patch.object(PAIRED, "verify_driver_source", return_value=None), patch.object(PAIRED, "preserve_driver_sources", return_value={}), patch.object(PAIRED, "verify_driver_sources"), patch.object(PAIRED, "source_guard"), patch.object(PAIRED, "materialize", side_effect=lambda root, output, side, source, inputs: (workspace, source)), patch.object(PAIRED, "archive_file", side_effect=lambda workspace, project: archives[project]), patch.object(PAIRED.subprocess, "check_output", return_value='{"source_only_fake":true}'), patch.object(PAIRED, "invoke", side_effect=fake_invoke), patch.object(PAIRED, "table"))
+                    executable = Path(PAIRED.sys.executable).resolve()
+                    helper = self.root / "pwsh.exe"
+                    helper.write_bytes(b"synthetic helper; never launched")
+                    patches = (patch.dict(os.environ, homes), patch.object(PAIRED, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), patch.object(PAIRED, "sys", SimpleNamespace(executable=str(executable))), patch.object(PAIRED.shutil, "which", return_value=str(helper)), patch.object(PAIRED, "git", return_value="a" * 40), patch.object(PAIRED, "verify_driver_source", return_value=None), patch.object(PAIRED, "preserve_driver_sources", return_value={}), patch.object(PAIRED, "verify_driver_sources"), patch.object(PAIRED, "source_guard"), patch.object(PAIRED, "materialize", side_effect=lambda root, output, side, source, inputs: (workspace, source)), patch.object(PAIRED, "archive_file", side_effect=lambda workspace, project: archives[project]), patch.object(PAIRED.subprocess, "check_output", return_value='{"source_only_fake":true}'), patch.object(PAIRED, "invoke", side_effect=fake_invoke), patch.object(PAIRED, "table"))
                     with ExitStack() as stack:
                         for context in patches:
                             stack.enter_context(context)
@@ -345,6 +348,7 @@ class PairedJvmTest(unittest.TestCase):
                         else:
                             PAIRED.run(source_root, manifest, output, input_root=self.root)
                     attempt = PAIRED.read_json(output / "attempt.json")
+                    self.assertEqual(attempt["executables"][0], {"path": str(executable), "sha256": PAIRED.digest(executable)})
                     if mutate:
                         self.assertEqual(attempt["status"], "failed")
                         self.assertFalse(any(name.startswith("collect-") for name, _ in calls))
@@ -363,6 +367,23 @@ class PairedJvmTest(unittest.TestCase):
                     self.assertTrue(all((output / "phases" / name / "vms.json").is_file() for name, _ in calls))
                 finally:
                     self.root, self.input = original_root, original_input
+
+    def test_fake_route_admission_preserves_real_platform_and_regular_file_guards(self):
+        output = self.root / "must-not-start"
+        actual_name, actual_path_type = os.name, type(Path())
+        with patch.object(PAIRED, "os", SimpleNamespace(name="posix")), self.assertRaisesRegex(ValueError, "Windows owned-process boundary"):
+            PAIRED.run(self.root, self.root / "missing.json", output)
+        self.assertFalse(output.exists())
+        self.assertEqual((os.name, type(Path())), (actual_name, actual_path_type))
+        executable = Path(PAIRED.sys.executable).resolve()
+        alias = Mock(spec=Path)
+        alias.is_file.return_value = True
+        alias.is_symlink.return_value = True
+        alias.resolve.return_value = executable
+        with self.assertRaisesRegex(ValueError, "Missing or unsafe pinned file"):
+            PAIRED.digest(alias)
+        self.assertEqual(PAIRED.digest(alias.resolve()), hashlib.sha256(executable.read_bytes()).hexdigest())
+        alias.open.assert_not_called()
 
     def test_original_average_time_only_profile_keeps_all_cases_controls_and_repetitions(self):
         original = copy.deepcopy(self.manifest)
@@ -1083,6 +1104,7 @@ class PairedJvmTest(unittest.TestCase):
             homes[role] = home
         helper = self.root / "pwsh.exe"
         helper.write_bytes(b"synthetic helper; never launched")
+        executable = Path(PAIRED.sys.executable).resolve()
         gates = [{"task": task, "required_tests": ["independent.Controls#owner", "independent.Controls#failure"]}
                  for task in (":runtime:core:validateRuntime", ":runtime:headless:completeChecks")]
         library_bytes = b"synthetic resolved Test dependency"
@@ -1177,6 +1199,7 @@ class PairedJvmTest(unittest.TestCase):
                                     verify_driver_sources=lambda *args: None, source_guard=lambda *args: None,
                                     verify_vms=lambda *args: None, class_load_inventory=lambda *args: {}, preserve_class_loads=lambda *args: {}), \
                      patch.object(PAIRED, "os", SimpleNamespace(name="nt", path=os.path, environ=os.environ)), \
+                     patch.object(PAIRED, "sys", SimpleNamespace(executable=str(executable))), \
                      patch.dict(os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"]), "GRADLE_USER_HOME": str(cache)}), \
                      patch.object(PAIRED.shutil, "which", return_value=str(helper)), patch.object(PAIRED.subprocess, "check_output", return_value="{}"):
                     error = {"invalid": "Invalid dependency pin", "missing": "Missing or unsafe pinned file", "mutated": "Pinned bytes changed"}.get(mode, "Synthetic timing boundary")
@@ -1197,6 +1220,9 @@ class PairedJvmTest(unittest.TestCase):
                         self.assertEqual(PAIRED.read_json(output / "phases" / name / "junit-verified.json")["required_tests"], gates[0]["required_tests"])
                     self.assertTrue(calls[-1].startswith("collect-"))
                 self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "failed")
+                if mode != "invalid":
+                    self.assertEqual(PAIRED.read_json(output / "attempt.json")["executables"][0],
+                                     {"path": str(executable), "sha256": PAIRED.digest(executable)})
                 self.assertFalse((output / "raw").exists())
                 self.assertTrue(output.with_suffix(".zip").is_file())
 

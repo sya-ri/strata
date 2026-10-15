@@ -158,8 +158,10 @@ class CompleteInputRouteTest(unittest.TestCase):
             return selectors
 
         platform = SimpleNamespace(name="nt", path=os.path, environ=os.environ)
+        executable = Path(PAIRED.sys.executable).resolve()
         with ExitStack() as stack:
             stack.enter_context(patch.object(PAIRED, "os", platform))
+            stack.enter_context(patch.object(PAIRED, "sys", SimpleNamespace(executable=str(executable))))
             stack.enter_context(patch.dict(os.environ, {"JAVA_HOME": str(homes["launcher"]), "STRATA_PAIRED_TOOLCHAIN": str(homes["toolchain"])}))
             for name, implementation in {"git": lambda *args: "a" * 40, "preserve_driver_sources": lambda *args: {}, "verify_driver_sources": lambda *args: None, "materialize": materialize, "source_guard": lambda *args: None, "archive_file": lambda workspace, project: workspace.joinpath(*project.strip(":").split(":"), "build/libs/module.jar"), "class_load_inventory": lambda *args: {}, "preserve_class_loads": lambda *args: {}, "invoke": invoke, "verify_vms": lambda *args, **kwargs: None, "preflight_request": preflight, "verify_preflight": lambda *args: None, "verify_owner_report": lambda *args: None, "table": lambda *args: None, "input_property_files": prepare_selectors}.items():
                 stack.enter_context(patch.object(PAIRED, name, implementation))
@@ -173,6 +175,8 @@ class CompleteInputRouteTest(unittest.TestCase):
                                     else "Frozen inventory")
                 with self.assertRaisesRegex(ValueError, expected_message):
                     PAIRED.run(root, manifest, output)
+        self.assertEqual(PAIRED.read_json(output / "attempt.json")["executables"][0],
+                         {"path": str(executable), "sha256": PAIRED.digest(executable)})
         if failure is None:
             self.assertEqual(PAIRED.read_json(output / "attempt.json")["status"], "passed")
             self.assertEqual(len([name for name in calls if name.startswith("collect-whole-avgt-")]), 6)
