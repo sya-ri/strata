@@ -261,7 +261,10 @@ public object LoadedArtifactMetadata {
             }
         }
 
-    private fun requireLocalArtifact(location: URL, allowDirectory: Boolean = false): Path {
+    private fun requireLocalArtifact(
+        location: URL,
+        allowDirectory: Boolean = false,
+    ): Path {
         val uri = location.toURI()
         require(LocalResourceProtocol.decode(uri.scheme) == LocalResourceProtocol.File && uri.rawAuthority.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null) { "Only local file-backed artifacts are read" }
         val path = Path.of(uri)

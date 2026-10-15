@@ -119,22 +119,23 @@ internal class LoadedClassDirectoryTest {
         val native = wrap(capture(archive(root)))
         val outside = temporary.resolve("outside.class")
         Files.copy(root.resolve("directoryfixture/Probe.class"), outside)
-        val mutations = listOf<(JsonObject) -> Unit>(
-            { it.objectField("codeSource").addProperty("kind", "file") },
-            { it.objectField("codeSource").addProperty("status", "unavailable") },
-            { it.objectField("codeSource").addProperty("hashedUrl", outside.toUri().toString()) },
-            { it.objectField("codeSource").addProperty("algorithm", "sha256") },
-            { it.objectField("codeSource").addProperty("entryCount", 1) },
-            { it.objectField("codeSource").addProperty("bytes", 1) },
-            { it.objectField("codeSource").addProperty("sha256", "0".repeat(64)) },
-            { it.objectField("codeSource").addProperty("url", "https://example.invalid/classes") },
-            { it.objectField("codeSource").addProperty("url", root.toUri().toString() + "?query=1") },
-            { it.objectField("classResource").addProperty("url", outside.toUri().toString()) },
-            { it.objectField("classResource").addProperty("status", "unavailable") },
-            { it.objectField("classResource").addProperty("kind", "jar_entry") },
-            { it.objectField("classResource").addProperty("hashedUrl", outside.toUri().toString()) },
-            { it.objectField("classResource").addProperty("url", root.resolve("directoryfixture/Probe.class").toUri().toString() + "#fragment") },
-        )
+        val mutations =
+            listOf<(JsonObject) -> Unit>(
+                { it.objectField("codeSource").addProperty("kind", "file") },
+                { it.objectField("codeSource").addProperty("status", "unavailable") },
+                { it.objectField("codeSource").addProperty("hashedUrl", outside.toUri().toString()) },
+                { it.objectField("codeSource").addProperty("algorithm", "sha256") },
+                { it.objectField("codeSource").addProperty("entryCount", 1) },
+                { it.objectField("codeSource").addProperty("bytes", 1) },
+                { it.objectField("codeSource").addProperty("sha256", "0".repeat(64)) },
+                { it.objectField("codeSource").addProperty("url", "https://example.invalid/classes") },
+                { it.objectField("codeSource").addProperty("url", root.toUri().toString() + "?query=1") },
+                { it.objectField("classResource").addProperty("url", outside.toUri().toString()) },
+                { it.objectField("classResource").addProperty("status", "unavailable") },
+                { it.objectField("classResource").addProperty("kind", "jar_entry") },
+                { it.objectField("classResource").addProperty("hashedUrl", outside.toUri().toString()) },
+                { it.objectField("classResource").addProperty("url", root.resolve("directoryfixture/Probe.class").toUri().toString() + "#fragment") },
+            )
         mutations.forEach { mutate ->
             val changed = original.deepCopy()
             mutate(changed.arrayField("modules").single().asJsonObject)
@@ -305,10 +306,17 @@ internal class LoadedClassDirectoryTest {
     /**
      * Records closure of the actual resource streams, including a deterministic failing read.
      */
-    private class ObservedStream(input: InputStream, private val fail: Boolean) : FilterInputStream(input) {
+    private class ObservedStream(
+        input: InputStream,
+        private val fail: Boolean,
+    ) : FilterInputStream(input) {
         var closed = false
 
-        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        override fun read(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int,
+        ): Int {
             if (fail) throw IOException("Expected directory resource read failure")
             return `in`.read(buffer, offset, length)
         }
