@@ -267,7 +267,22 @@ internal class TextProvenanceFixture(
         val actualStarts = access.retainedStarts(content)
         check(actualStarts.contentEquals(storedStarts))
         val lookupComparisons = lookupComparisonCount(reference, expectedStarts)
-        val boundaryCount = if (firstExplicitBoundary == null) 0 else expectedStarts.size
+        reportConstruction(reference.value.length, runs, expectedStarts.size, firstExplicitBoundary)
+        val sourceSliceScalars = slices.sumOf { (first, last) -> reference.value.codePointCount(first, last) }
+        val sourceSliceRuns = slices.sumOf { (first, last) -> if (first == last) 0 else 1 + expectedStarts.count { first < it && it < last } }
+        println("text-provenance-work=" + case.name + ",codeUnitMembership=" + reference.value.length + ",runMembership=" + runs + ",boundaryMembership=" + storedStarts.size + ",logicalBoundaryCount=" + expectedStarts.size + ",lookupTrace=" + lookups.size + ",independentLookupComparisons=" + lookupComparisons + ",denseSliceScalars=" + sourceSliceScalars + ",intersectedSliceRuns=" + sourceSliceRuns + ",temporaryAllocation=requires-gc-profiler")
+    }
+
+    /**
+     * Reports independent source-level builder storage counts without entering an operation sample.
+     */
+    private fun reportConstruction(
+        denseLength: Int,
+        runs: Int,
+        logicalBoundaries: Int,
+        firstExplicitBoundary: Int?,
+    ) {
+        val boundaryCount = if (firstExplicitBoundary == null) 0 else logicalBoundaries
         var boundaryCapacity = 0L
         var boundaryGrowthCopied = 0L
         var boundaryAllocated = boundaryCount.toLong()
@@ -281,10 +296,7 @@ internal class TextProvenanceFixture(
             }
         }
         val literalRuns = nonemptyLiteralCount(assets.texts[0])
-        println("text-provenance-construction=" + case.name + ",sourceOnly=true,denseFontWrites=" + reference.value.length + ",denseFontSnapshotMembership=" + reference.value.length + ",runFontWrites=" + runs + ",runFontSnapshotMembership=" + runs + ",runSelectionCalls=" + literalRuns + ",runCoalescingComparisons=" + (literalRuns - 1).coerceAtLeast(0) + ",boundaryWrites=" + boundaryCount + ",boundaryGrowthCopied=" + boundaryGrowthCopied + ",boundarySnapshotCopied=" + boundaryCount + ",boundaryAllocatedSlots=" + boundaryAllocated + ",fontListGrowthAndVmAllocation=requires-gc-profiler")
-        val sourceSliceScalars = slices.sumOf { (first, last) -> reference.value.codePointCount(first, last) }
-        val sourceSliceRuns = slices.sumOf { (first, last) -> if (first == last) 0 else 1 + expectedStarts.count { first < it && it < last } }
-        println("text-provenance-work=" + case.name + ",codeUnitMembership=" + reference.value.length + ",runMembership=" + runs + ",boundaryMembership=" + storedStarts.size + ",logicalBoundaryCount=" + expectedStarts.size + ",lookupTrace=" + lookups.size + ",independentLookupComparisons=" + lookupComparisons + ",denseSliceScalars=" + sourceSliceScalars + ",intersectedSliceRuns=" + sourceSliceRuns + ",temporaryAllocation=requires-gc-profiler")
+        println("text-provenance-construction=" + case.name + ",sourceOnly=true,denseFontWrites=" + denseLength + ",denseFontSnapshotMembership=" + denseLength + ",runFontWrites=" + runs + ",runFontSnapshotMembership=" + runs + ",runSelectionCalls=" + literalRuns + ",runCoalescingComparisons=" + (literalRuns - 1).coerceAtLeast(0) + ",boundaryWrites=" + boundaryCount + ",boundaryGrowthCopied=" + boundaryGrowthCopied + ",boundarySnapshotCopied=" + boundaryCount + ",boundaryAllocatedSlots=" + boundaryAllocated + ",fontListGrowthAndVmAllocation=requires-gc-profiler")
     }
 
     private fun lookupComparisonCount(

@@ -218,7 +218,7 @@ internal class MinecraftTextContent private constructor(
                 if (fonts.isNotEmpty() && fonts.last() == font) return
                 if (fonts.isNotEmpty() && (starts.isNotEmpty() || start != fonts.size)) {
                     val index = fonts.size - 1
-                    if (index >= starts.size) {
+                    if (starts.size <= index) {
                         val implicit = starts.isEmpty()
                         val capacity = maxOf(8L, starts.size.toLong() * 2L, index.toLong() + 1L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                         starts = starts.copyOf(capacity)
