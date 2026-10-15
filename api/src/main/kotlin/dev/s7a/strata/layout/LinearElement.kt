@@ -166,11 +166,15 @@ internal class LinearElement(
             weights: Array<WeightParentData.Data?>?,
             childSizes: Array<IntSize?>,
         ): Long {
+            val childCount = scope.childCount
+            val firstFixedChild = weights?.indexOfFirst { it == null } ?: 0
+            if (firstFixedChild < 0 || childCount <= firstFixedChild) {
+                return 0L
+            }
+            val childConstraints = fixedConstraints(constraints)
             var fixedMain = 0L
-            var commonConstraints: Constraints? = null
-            for (index in 0 until scope.childCount) {
+            for (index in firstFixedChild until childCount) {
                 if (weights?.get(index) == null) {
-                    val childConstraints = commonConstraints ?: fixedConstraints(constraints).also { commonConstraints = it }
                     val size = scope.measureChild(index, childConstraints)
                     childSizes[index] = size
                     fixedMain += mainExtent(size)
@@ -208,10 +212,9 @@ internal class LinearElement(
             weights: Array<WeightParentData.Data?>,
             childSizes: Array<IntSize?>,
         ) {
-            var commonConstraints: Constraints? = null
+            val childConstraints = intrinsicWeightedConstraints(constraints)
             for (index in 0 until scope.childCount) {
                 if (weights[index] != null) {
-                    val childConstraints = commonConstraints ?: intrinsicWeightedConstraints(constraints).also { commonConstraints = it }
                     childSizes[index] = scope.measureChild(index, childConstraints)
                 }
             }
