@@ -72,15 +72,22 @@ public object RemotePerformanceEvidence {
         requested: String?,
     ): Map<String, Set<String>> =
         when {
-            selected -> JmhFixtureSelection.parameters()
+            selected -> {
+                JmhFixtureSelection.parameters()
+            }
 
             sessions -> {
                 val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
                 mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
             }
 
-            smoke -> mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))
-            else -> emptyMap()
+            smoke -> {
+                mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))
+            }
+
+            else -> {
+                emptyMap()
+            }
         }
 
     private fun inputs(): Map<String, Path> {
