@@ -133,16 +133,26 @@ public open class FrameClipBenchmark {
             listOf("avgt", "sample").forEach { mode -> check(JmhWorkloadInventory.capture(fixtures, setOf(mode)).size == 126) }
             val settings =
                 arrayOf(
-                    "-bm", "sample",
-                    "-wi", "3",
-                    "-w", "1s",
-                    "-i", "5",
-                    "-r", "1s",
-                    "-f", "1",
-                    "-t", "1",
-                    "-tu", "us",
-                    "-foe", "true",
-                    "-prof", "gc",
+                    "-bm",
+                    "sample",
+                    "-wi",
+                    "3",
+                    "-w",
+                    "1s",
+                    "-i",
+                    "5",
+                    "-r",
+                    "1s",
+                    "-f",
+                    "1",
+                    "-t",
+                    "1",
+                    "-tu",
+                    "us",
+                    "-foe",
+                    "true",
+                    "-prof",
+                    "gc",
                 )
             val expected = (JmhFixtureSelection.includes(fixtures) + settings).toTypedArray()
             check(FrameClipPerformanceEvidence.arguments(arrayOf(".*") + settings).contentEquals(expected))

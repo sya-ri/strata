@@ -65,6 +65,17 @@ The prepared resolution control does not measure the screen's clean-frame identi
 For C ordinary visibility checks at depth D, the removed folds contain C*D intersections, replaced by D prefix updates for one enclosing stack.
 These are conditional source work counts, not measured CPU or allocation savings; primitive intersections and raw fractional checks remain.
 
+### Standard component notification membership
+
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
+The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
+The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
+Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.
+Callback failures still stop delivery after committing the value.
+No value, callback result or historical plan is cached.
+Common publication controls preserve order, mutation, reentry, normalization and failure behavior; JVM storage controls verify warm identity and immediate release without garbage-collection timing.
+Stable changed writes can avoid repeated membership copies; equal/unobserved writes, first admission, churn and completed-frame operations require separate measurements before claiming an improvement.
+
 ### Current CycleButton selection
 
 Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
