@@ -8,6 +8,7 @@ import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.performance.ArtifactIdentity
 import dev.s7a.strata.performance.JmhWorkloadInventory
+import dev.s7a.strata.performance.JvmOperationReportAdapter
 import dev.s7a.strata.performance.LoadedArtifactMetadata
 import dev.s7a.strata.performance.PerformanceJson
 import dev.s7a.strata.render.ArgbColor
@@ -396,11 +397,18 @@ public open class CompositionTargetsBenchmark {
      */
     public companion object {
         /**
+         * Retains all original actual Fabric boundaries in the shared supplemental owner-thread meter.
+         */
+        @JvmStatic
+        public fun operationReport(): JvmOperationReportAdapter = CompositionTargetsOperationReport
+
+        /**
          * Checks all 30 declared fresh/replacement rows and their real source/metadata ownership outside timing.
          */
         @JvmStatic
         public fun verifyWork() {
             check(JmhWorkloadInventory.capture(listOf(CompositionTargetsBenchmark::class.java), setOf("avgt")).size == 30)
+            check(CompositionTargetsOperationReport.rows.size == 30)
             val loaded =
                 try {
                     Class.forName("dev.s7a.strata.runtime.minecraft.fabric.FabricMinecraftFrameInputs", false, javaClass.classLoader)
