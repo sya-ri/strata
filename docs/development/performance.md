@@ -786,7 +786,7 @@ The separate stress corpus records initial ownership, clean frames and real upda
 Untruncated lines transfer the original offsets directly; an ellipsis cut first trims offsets to exactly the admitted visible boundaries.
 Positions are constructed at their final visible length, and neither array is mutated or retained by the producer after transfer.
 The privileged factory exposes no array or mutable view; the existing six-argument constructor still snapshots arbitrary caller arrays.
-The private ownership discriminator controls construction only and is not retained as line state.
+The general constructor copies caller arrays before delegating to private admission, which directly retains the two exclusive arrays.
 
 Every line keeps only its detached run, private current metrics and derived admission/ink data.
 Layout replacement releases the owner's old reference; editor detach clears current composition/layout, and terminal component disposal clears borrowed input/service references.
