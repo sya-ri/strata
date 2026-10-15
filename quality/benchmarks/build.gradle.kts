@@ -11,11 +11,16 @@ plugins {
 
 extensions.configure<DetektExtension> { source.from("src/jmh/kotlin") }
 
+sourceSets.named("jmh") { kotlin.srcDir("src/fixture/kotlin") }
+extensions.configure<DetektExtension> { source.from("src/fixture/kotlin") }
+
 dependencies {
     add("jmh", project(":api"))
     add("jmh", project(":performance-testkit"))
     add("jmh", project(":runtime:core"))
     add("jmh", project(":runtime:headless"))
+    add("jmh", project(":runtime:minecraft"))
+    add("jmh", project(":runtime:minecraft-fonts-lwjgl"))
 }
 
 jmh {
@@ -37,7 +42,11 @@ jmh {
 
 val historicalGenerated = tasks.named<JavaCompile>("jmhCompileGeneratedClasses")
 val historicalGenerator = tasks.named<JmhBytecodeGeneratorTask>("jmhRunBytecodeGenerator")
-val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir })
+val externalRuntime = providers.gradleProperty("strata.performance.externalRuntime").orNull?.let { path ->
+    rootProject.file(path).canonicalFile.also { require(it.isFile && it.extension == "jar") { "External runtime must be an actual JAR" } }
+}
+// Verifier and collector share this archive before the existing exact classpath capture.
+val historicalClasspath = sourceSets.named("jmh").get().runtimeClasspath + files(historicalGenerated.flatMap { it.destinationDirectory }, historicalGenerator.flatMap { it.generatedResourcesDir }) + files(listOfNotNull(externalRuntime))
 val historicalLauncher = tasks.named<JMHTask>("jmh").flatMap { it.javaLauncher }
 
 tasks.register<JavaExec>("jmhPortableTiles") {
@@ -81,7 +90,10 @@ tasks.register<JavaExec>("jmhHistorical") {
     dependsOn(historicalGenerated, historicalGenerator)
     classpath = historicalClasspath
     javaLauncher.set(historicalLauncher)
-    mainClass.set("dev.s7a.strata.quality.benchmark.HistoricalPerformanceEvidence")
+    val compiledMain = providers.gradleProperty("strata.performance.compiledMain")
+        .getOrElse("dev.s7a.strata.quality.benchmark.HistoricalPerformanceEvidence")
+    require(compiledMain.matches(Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+"))) { "Select one compiled JVM main class" }
+    mainClass.set(compiledMain)
     val repetition = providers.gradleProperty("strata.performance.repetition").map(String::toInt).getOrElse(0)
     require(0 <= repetition)
     val quick = providers.gradleProperty("strata.performance.quick").map(String::toBooleanStrict).getOrElse(false)

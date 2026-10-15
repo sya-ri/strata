@@ -1171,9 +1171,11 @@ if (completeIdeaModelActive) {
                 val idea = owner.extensions.findByType<IdeaModel>()?.module
                 val sourceSets = owner.extensions.findByType<SourceSetContainer>()
                 val kotlin = owner.extensions.findByType<KotlinJvmProjectExtension>()
+                val platformCompilations = owner.extensions.findByType<KotlinMultiplatformExtension>()?.targets?.flatMap { it.compilations }.orEmpty()
                 val roots = sourceSets?.flatMap { sourceSet ->
-                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty()
-                    val test = sourceSet.name != "main"
+                    val matching = platformCompilations.filter { it.name == sourceSet.name || it.defaultSourceSet.name == sourceSet.name }
+                    val inputs = kotlin?.target?.compilations?.findByName(sourceSet.name)?.allKotlinSourceSets.orEmpty() + matching.flatMap { it.allKotlinSourceSets }
+                    val test = sourceSet.name != "main" && matching.none { it.name == "main" }
                     listOf(
                         (if (test) "TestSource" else "Source") to (sourceSet.java.srcDirs + inputs.flatMap { it.kotlin.srcDirs }),
                         (if (test) "TestResource" else "Resource") to (sourceSet.resources.srcDirs + inputs.flatMap { it.resources.srcDirs }),
@@ -1312,10 +1314,19 @@ subprojects {
             js {
                 browser {
                     testTask {
-                        useKarma { useChromeHeadless() }
+                        useKarma {
+                            useChromeHeadless()
+                            useConfigDirectory(rootProject.file("gradle/karma.config.d"))
+                        }
                     }
                 }
-                if (hasJvmTarget) nodejs()
+                if (hasJvmTarget) {
+                    nodejs {
+                        testTask {
+                            useMocha { timeout = "30s" }
+                        }
+                    }
+                }
             }
             compilerOptions {
                 allWarningsAsErrors.set(true)

@@ -1,5 +1,7 @@
 package dev.s7a.strata.quality.benchmark
 
+import dev.s7a.strata.performance.JmhFixtureSelection
+import dev.s7a.strata.performance.JmhWorkloadInventory
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Param
@@ -115,6 +117,36 @@ public open class FrameClipBenchmark {
         @Setup(Level.Trial)
         public fun setup() {
             workload = FrameClipWorkload.edge(scenario)
+        }
+    }
+
+    /**
+     * Checks the complete generated inventory and both existing launcher argument forms without loading Fabric.
+     */
+    public companion object {
+        /**
+         * Runs through the ordinary shared generated-fixture work gate, outside any measured invocation.
+         */
+        @JvmStatic
+        public fun verifyWork() {
+            val fixtures = listOf(FrameClipBenchmark::class.java)
+            listOf("avgt", "sample").forEach { mode -> check(JmhWorkloadInventory.capture(fixtures, setOf(mode)).size == 126) }
+            val settings =
+                arrayOf(
+                    "-bm", "sample",
+                    "-wi", "3",
+                    "-w", "1s",
+                    "-i", "5",
+                    "-r", "1s",
+                    "-f", "1",
+                    "-t", "1",
+                    "-tu", "us",
+                    "-foe", "true",
+                    "-prof", "gc",
+                )
+            val expected = (JmhFixtureSelection.includes(fixtures) + settings).toTypedArray()
+            check(FrameClipPerformanceEvidence.arguments(arrayOf(".*") + settings).contentEquals(expected))
+            check(FrameClipPerformanceEvidence.arguments(settings).contentEquals(expected))
         }
     }
 }
