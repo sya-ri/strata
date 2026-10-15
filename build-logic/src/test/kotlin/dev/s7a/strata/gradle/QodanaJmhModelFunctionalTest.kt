@@ -27,7 +27,7 @@ internal class QodanaJmhModelFunctionalTest {
         write("gradle.properties", "org.gradle.kotlin.dsl.allWarningsAsErrors=true\n")
         val temporaryOwner = "working-${directory.fileName.toString().filter(Char::isLetterOrDigit)}"
         val owners = listOf("bench-one", "bench-two", temporaryOwner)
-        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", ${owners.joinToString { "\"$it\"" }})\n")
+        Files.writeString(directory.resolve("settings.gradle.kts"), "rootProject.name = \"fixture\"\ninclude(\"support\", \"shared-kmp\", ${owners.joinToString { "\"$it\"" }})\n")
         val production = Files.readString(repository.resolve("build.gradle.kts"))
         val inventory = production.substringAfter("if (completeIdeaModelActive) {\n    apply(plugin = \"idea\")\n").substringBefore("\n}\n\nallprojects")
         val callback = production.substringAfter("    plugins.withId(\"me.champeau.jmh\") {").substringBefore("        val analysisJava")
@@ -45,18 +45,24 @@ internal class QodanaJmhModelFunctionalTest {
             import org.gradle.jvm.toolchain.JavaToolchainService
             import org.gradle.plugins.ide.idea.model.IdeaModel
             import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+            import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
             plugins {
                 idea
                 alias(libs.plugins.kotlin.jvm) apply false
+                alias(libs.plugins.kotlin.multiplatform) apply false
                 alias(libs.plugins.jmh) apply false
             }
             val completeIdeaModelActive = true
             $inventory
             subprojects {
-                apply(plugin = "org.jetbrains.kotlin.jvm")
+                if (name == "shared-kmp") {
+                    apply(plugin = "org.jetbrains.kotlin.multiplatform")
+                } else {
+                    apply(plugin = "org.jetbrains.kotlin.jvm")
+                    extensions.configure<JavaPluginExtension> { toolchain.languageVersion.set(JavaLanguageVersion.of(17)) }
+                }
                 apply(plugin = "idea")
                 repositories { mavenCentral() }
-                extensions.configure<JavaPluginExtension> { toolchain.languageVersion.set(JavaLanguageVersion.of(17)) }
                 plugins.withId("me.champeau.jmh") {
             $callback
                 }
@@ -67,6 +73,21 @@ internal class QodanaJmhModelFunctionalTest {
         write("support/src/main/java/fixture/Support.java", "package fixture; public class Support { public static int value() { return 7; } }")
         write("shared-inputs/kotlin/fixture/SharedValue.kt", "package fixture\ninternal fun sharedValue(): Int = 11\n")
         write("shared-inputs/resources/shared.txt", "shared compilation resource\n")
+        write(
+            "shared-kmp/build.gradle.kts",
+            """
+            plugins { alias(libs.plugins.kotlin.multiplatform) }
+            kotlin {
+                jvm()
+                jvmToolchain(17)
+                sourceSets.named("commonTest") {
+                    kotlin.srcDir(rootProject.file("shared-inputs/kotlin"))
+                    resources.srcDir(rootProject.file("shared-inputs/resources"))
+                }
+            }
+            """.trimIndent(),
+        )
+        write("shared-kmp/src/commonMain/kotlin/fixture/OwnedValue.kt", "package fixture\npublic fun ownedValue(): Int = 13\n")
         owners.forEach { owner ->
             write(
                 "$owner/build.gradle.kts",
@@ -122,6 +143,14 @@ internal class QodanaJmhModelFunctionalTest {
                 assertTrue(entries.any { (it["identity"] as String).startsWith("org.openjdk.jmh:jmh-core:") })
             }
         }
+        val projects = (parsed["projects"] as List<*>).map { it as Map<*, *> }
+        val sharedRoots = projects.single { it["project"] == ":shared-kmp" }["roots"] as List<*>
+        val roots = sharedRoots.map { it as Map<*, *> }
+        assertTrue(roots.any { it["kind"] == "Source" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
+        assertTrue(roots.any { it["kind"] == "TestSource" && it["path"] == "shared-inputs/kotlin" })
+        assertTrue(roots.any { it["kind"] == "TestResource" && it["path"] == "shared-inputs/resources" })
+        assertTrue(roots.none { it["kind"] == "TestSource" && it["path"] == "shared-kmp/src/commonMain/kotlin" })
+        assertEquals(TaskOutcome.SUCCESS, result.task(":shared-kmp:compileKotlinJvm")?.outcome)
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
         assertEquals(parsed, JsonSlurper().parse(directory.resolve("build/qodana/declarations.json").toFile()))
@@ -150,6 +179,7 @@ internal class QodanaJmhModelFunctionalTest {
             "cleanIdea",
             "idea",
             "qodanaDeclarationInventory",
+            ":shared-kmp:compileKotlinJvm",
             "--no-configure-on-demand",
             "--max-workers=1",
             "--no-parallel",

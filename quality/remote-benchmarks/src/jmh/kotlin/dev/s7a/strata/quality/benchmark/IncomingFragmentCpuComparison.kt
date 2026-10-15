@@ -24,7 +24,7 @@ public object IncomingFragmentCpuComparison {
                 phaseCount = 120,
                 reportConditions = setOf("fixture_identity", "inputs", "environment", "native_uploads", "gpu_time", "fps"),
                 phaseConditions = setOf("measured_cycles", "samples", "warmup", "native_packets", "logical_bytes", "admitted_fragments", "admitted_fragment_bytes", "decoder_fragment_bytes", "decoder_fragment_arrays", "assembly_bytes", "timed_assembly_bytes"),
-                variantReportFields = setOf("runtime_metadata", "remote_api_symbols"),
+                variantReportFields = setOf("runtime_metadata", "remote_api_symbols", "inventory_argument"),
                 variantPhaseFields = setOf("queue_copied_bytes", "queue_copy_arrays"),
             )
         val metrics =
