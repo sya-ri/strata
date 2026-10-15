@@ -98,12 +98,21 @@ class CpuPlanTest(unittest.TestCase):
                     "harness": sources["harness"]["sha256"], "inputs": {str(control): control_entry["sha256"], str(probe): probe_entry["sha256"]}}
         inventory = [json.dumps(["fixture." + name + "." + method, mode.value, {"size": str(size)}])
                      for method in ("idle", "update") for size in (1, 2)]
-        value = {"contract": "strata-jmh-cpu-admission-v1", "status": "passed", "collector_identity": collector, "sources": sources,
+        value = {"contract": "strata-jmh-cpu-admission-v1", "status": "passed", "sources": sources,
                  "inputs": {"control": control_entry, "cpu-executor-probe": probe_entry}, "targets": {"runtime": target_entry}, "identity": identity,
                  "registered_workloads": inventory, "arguments": ["fixture." + name + ".*", "-bm", mode.value, "-wi", "1", "-i", "2", "-prof", "gc"]}
         path = root / "admission.json"
         cpu.write_new(path, value)
         return path
+
+    def test_admission_uses_captured_collector_and_rejects_conflicting_duplicate(self):
+        path = Path(self.config["corpora"][0]["admissions"]["avgt"]["baseline"])
+        captured = cpu.document(path)["identity"]["collector"]
+        self.assertNotIn("collector_identity", cpu.document(path))
+        self.assertEqual(captured, cpu.admission(path)["collector_identity"])
+        self.mutate(path, lambda value: value.update(collector_identity={"code_source_sha256": "f" * 64}))
+        with self.assertRaisesRegex(ValueError, "collector identity differs"):
+            cpu.admission(path)
 
     def freeze(self):
         self.plan = cpu.freeze(self.config_path, self.plan_root)

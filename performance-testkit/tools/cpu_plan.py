@@ -169,6 +169,9 @@ def admission(path):
     value["registered_workloads"] = rows(value["registered_workloads"])
     for group in ("sources", "inputs", "targets"):
         verify_artifacts(path.parent, value[group])
+    captured_collector = value["identity"]["collector"]
+    require(value.get("collector_identity", captured_collector) == captured_collector, "Admission collector identity differs")
+    value["collector_identity"] = captured_collector
     require(value["sources"]["collector"]["sha256"] == value["collector_identity"]["code_source_sha256"], "Admission collector differs")
     return value
 
