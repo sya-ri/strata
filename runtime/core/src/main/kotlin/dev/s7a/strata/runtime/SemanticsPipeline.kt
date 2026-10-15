@@ -67,19 +67,21 @@ internal class SemanticsPipeline(
      * Collects one node's unresolved semantics during its active callback.
      */
     private class SemanticsCollector(
-        ownerGuard: OwnerGuard,
+        private val ownerGuard: OwnerGuard,
     ) : SemanticsScope {
-        private val guard = ScopeGuard(ownerGuard)
+        private var closed: Boolean = false
         private var first: Semantics? = null
         private var values: MutableList<Semantics>? = null
 
         override fun emit(semantics: Semantics) {
-            guard.check()
+            checkActive()
             val buffer = values
-            val initial = first
             if (buffer != null) {
                 buffer.add(semantics)
-            } else if (initial == null) {
+                return
+            }
+            val initial = first
+            if (initial == null) {
                 first = semantics
             } else {
                 values =
@@ -95,7 +97,7 @@ internal class SemanticsPipeline(
          * Snapshots emitted payloads while the callback scope remains active.
          */
         fun snapshot(): List<Semantics> {
-            guard.check()
+            checkActive()
             return values?.toList() ?: first?.let { listOf(it) } ?: emptyList()
         }
 
@@ -103,9 +105,15 @@ internal class SemanticsPipeline(
          * Closes this collector after the semantics callback.
          */
         fun close() {
-            guard.close()
+            ownerGuard.check()
+            closed = true
             first = null
             values = null
+        }
+
+        private fun checkActive() {
+            ownerGuard.check()
+            check(closed.not()) { "The callback scope is no longer active." }
         }
     }
 }
