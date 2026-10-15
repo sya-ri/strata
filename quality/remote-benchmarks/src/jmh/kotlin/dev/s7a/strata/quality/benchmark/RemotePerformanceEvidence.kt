@@ -26,24 +26,8 @@ public object RemotePerformanceEvidence {
         require(smoke.not() || selected.not()) { "Smoke and generated fixture selection are separate scopes" }
         val requested = System.getProperty("strata.performance.workloads")
         val methods = if (sessions.not() && selected.not() && requested != null) JmhFixtureSelection.methods(JmhFixtureSelection.all(), requested) else null
-        val fixtures =
-            when {
-                selected -> JmhFixtureSelection.select(listOf(RemoteProtocolBenchmark::class.java))
-                sessions -> listOf(RemoteSessionBenchmark::class.java)
-                methods != null -> JmhFixtureSelection.all().filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
-                else -> listOf(RemoteProtocolBenchmark::class.java)
-            }
-        val parameters =
-            if (selected) {
-                JmhFixtureSelection.parameters()
-            } else if (sessions) {
-                val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
-                mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
-            } else if (smoke) {
-                mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))
-            } else {
-                emptyMap()
-            }
+        val fixtures = selectFixtures(selected, sessions, methods)
+        val parameters = selectParameters(selected, sessions, smoke, requested)
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val includes =
             if (selected) {
@@ -68,6 +52,36 @@ public object RemotePerformanceEvidence {
             inputs,
         )
     }
+
+    private fun selectFixtures(
+        selected: Boolean,
+        sessions: Boolean,
+        methods: List<String>?,
+    ): List<Class<*>> =
+        when {
+            selected -> JmhFixtureSelection.select(listOf(RemoteProtocolBenchmark::class.java))
+            sessions -> listOf(RemoteSessionBenchmark::class.java)
+            methods != null -> JmhFixtureSelection.all().filter { fixture -> methods.any { it.substringBeforeLast('.') == fixture.name.replace('$', '.') } }
+            else -> listOf(RemoteProtocolBenchmark::class.java)
+        }
+
+    private fun selectParameters(
+        selected: Boolean,
+        sessions: Boolean,
+        smoke: Boolean,
+        requested: String?,
+    ): Map<String, Set<String>> =
+        when {
+            selected -> JmhFixtureSelection.parameters()
+
+            sessions -> {
+                val selection = PerformanceSelection(RemoteSessionWorkload.entries.map { it.name }.toSet(), requested)
+                mapOf("workload" to if (smoke) selection.ids.take(1).toSet() else selection.ids)
+            }
+
+            smoke -> mapOf("nodes" to setOf("100"), "change" to setOf(RemoteChange.Single.name))
+            else -> emptyMap()
+        }
 
     private fun inputs(): Map<String, Path> {
         val required = JvmPerformanceInputs.read(Path.of(checkNotNull(System.getProperty("strata.performance.inputs")))) + mapOf("remote-api" to Path.of(checkNotNull(javaClass.getResource("/remote-api.tsv")).toURI()))
