@@ -140,11 +140,22 @@ public open class TiledImageRemoteBenchmark {
         /**
          * Returns an independently constructed local public frame for optional pixel/command admission only.
          */
-        public fun localFrame(): RuntimeUiFrame =
-            createRuntimeUiSession(content = input::element).use { local ->
-                local.attach()
-                local.frame(constraints)
+        public fun localFrame(): RuntimeUiFrame {
+            val reference = TiledImageBenchmarkInput(case)
+            val metrics = input.navigation.metrics
+            reference.navigation.centerOn(metrics.center)
+            reference.navigation.zoomTo(metrics.zoom)
+            try {
+                return createRuntimeUiSession(content = reference::element).use { local ->
+                    local.attach()
+                    val frame = local.frame(constraints)
+                    check(reference.navigation.metrics == metrics)
+                    frame
+                }
+            } finally {
+                reference.verifyReleased()
             }
+        }
 
         /**
          * Reads actual authoritative current-grid metadata only during optional untimed admission.
