@@ -5,6 +5,7 @@ import dev.s7a.strata.performance.JmhPerformanceRunner
 import dev.s7a.strata.performance.JmhWorkloadInventory
 import dev.s7a.strata.performance.JvmPerformanceInputs
 import org.openjdk.jmh.annotations.Mode
+import org.openjdk.jmh.runner.options.CommandLineOptions
 import java.nio.file.Path
 
 /**
@@ -25,8 +26,10 @@ public object FrameClipPerformanceEvidence {
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()))
         check(expected.size == 126)
+        val selectedArguments = arguments(args.drop(2).toTypedArray())
+        JmhFixtureSelection.verifyIncludes(expected, CommandLineOptions(*selectedArguments).includes)
         JmhPerformanceRunner.run(
-            arguments(args.drop(2).toTypedArray()),
+            selectedArguments,
             fixtures,
             mapOf(
                 "api" to "dev.s7a.strata.render.DrawImage",
@@ -45,10 +48,11 @@ public object FrameClipPerformanceEvidence {
 
     /**
      * Keeps all clip methods while preserving the supplied JMH settings and the original standalone CLI form.
-     * The existing shared template's generic inclusion placeholder cannot select unrelated generated fixtures.
+     * JMH parses leading include filters; the complete clip corpus replaces them without changing option tokens.
      */
     internal fun arguments(settings: Array<String>): Array<String> {
-        val forwarded = if (settings.firstOrNull() == ".*") settings.drop(1) else settings.toList()
+        val includes = CommandLineOptions(*settings).includes
+        val forwarded = settings.dropWhile(includes::contains)
         return (JmhFixtureSelection.includes(listOf(FrameClipBenchmark::class.java)) + forwarded).toTypedArray()
     }
 }

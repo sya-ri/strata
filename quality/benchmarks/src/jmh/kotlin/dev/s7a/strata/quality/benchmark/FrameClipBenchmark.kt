@@ -157,6 +157,7 @@ public open class FrameClipBenchmark {
             val expected = (JmhFixtureSelection.includes(fixtures) + settings).toTypedArray()
             check(FrameClipPerformanceEvidence.arguments(arrayOf(".*") + settings).contentEquals(expected))
             check(FrameClipPerformanceEvidence.arguments(settings).contentEquals(expected))
+            check(FrameClipPerformanceEvidence.arguments(JmhFixtureSelection.includes(fixtures).toTypedArray() + settings).contentEquals(expected))
         }
     }
 }
