@@ -33,7 +33,8 @@ internal object NativeComponentJvmArguments {
     }
 
     /**
-     * Retains every non-output VM argument in order, replacing only verified experiment mod paths with their roles.
+     * Retains non-output VM arguments in order, replacing verified experiment mod paths with their roles.
+     * Only explicit policy comparison replaces the verified inactivity value while retaining its argument position.
      * A missing mod property preserves legacy arguments; substituted or duplicate bound inputs fail admission.
      */
     internal fun read(

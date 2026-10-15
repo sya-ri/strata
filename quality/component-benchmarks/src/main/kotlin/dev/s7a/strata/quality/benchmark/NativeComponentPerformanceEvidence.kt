@@ -87,11 +87,18 @@ internal object NativeComponentPerformanceEvidence {
         )
 
     private val pacingMetrics =
-        listOf("frame_interval", "render_thread_frame_cpu").flatMap { scope ->
+        listOf("frame_interval", "render_thread_frame_cpu", "owner_thread_cpu_distribution").flatMap { scope ->
             listOf("p50_ns", "p99_ns", "total_ns", "max_ns").map { metric ->
                 PerformanceReportMetric("${scope}_$metric", listOf(scope, metric))
             } + PerformanceReportMetric("${scope}_mean_ns", listOf(scope, "total_ns"), listOf(scope, "samples"))
-        }
+        } +
+            listOf(
+                PerformanceReportMetric("extraction_mean_ns", listOf("wall_total_ns"), listOf("samples")),
+                PerformanceReportMetric("all_threads_allocated_bytes_per_sample", listOf("all_threads_allocated_bytes"), listOf("samples")),
+            ) +
+            listOf("p50", "p95", "p99", "max").map { percentile ->
+                PerformanceReportMetric("owner_allocation_${percentile}_bytes", listOf("owner_thread_allocation_distribution", "${percentile}_ns"))
+            }
 
     /**
      * Processes independent raw invocations through the shared summary or comparison API without replacing evidence.
