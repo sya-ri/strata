@@ -218,12 +218,24 @@ internal class MinecraftTextContentProvenanceTest {
             val alternating = UiText.Concatenated((0 until length).map { index -> UiText.Literal("A").withFont(if (index % 2 == 0) firstFont else secondFont) })
             val dense = MinecraftTextContent.create(alternating)
             assertEquals(length, fonts(dense).size)
-            assertArrayEquals(IntArray(length - 1) { it + 1 }, starts(dense))
+            assertEquals(0, starts(dense).size)
             val reference = MinecraftDenseTextContentReference.create(alternating)
             for (offset in 0 until length) assertEquals(reference.fontAt(offset), dense.fontAt(offset))
         }
         val supplementary = MinecraftTextContent.create(UiText.concat(UiText.Literal("🙂").withFont(firstFont), UiText.Literal("日").withFont(secondFont)))
         assertArrayEquals(intArrayOf(2), starts(supplementary))
+    }
+
+    @Test
+    fun implicitUnitStartsAndExtendedTailMaterializeOnlyAtTheFirstNonunitBoundary() {
+        val prefix = (0 until 17).map { index -> UiText.Literal("A").withFont(if (index % 2 == 0) firstFont else secondFont) }
+        val implicit = UiText.Concatenated(prefix + UiText.Literal("🙂tail").withFont(firstFont))
+        assertEquals(0, starts(MinecraftTextContent.create(implicit)).size)
+        compareEverySlice(implicit)
+        val materialized = UiText.concat(implicit, UiText.Literal("end").withFont(secondFont), UiText.Literal("q").withFont(firstFont))
+        val expected = IntArray(18) { if (it < 16) it + 1 else if (it == 16) 23 else 26 }
+        assertArrayEquals(expected, starts(MinecraftTextContent.create(materialized)))
+        compareEverySlice(materialized)
     }
 
     private fun compareEverySlice(text: UiText) {

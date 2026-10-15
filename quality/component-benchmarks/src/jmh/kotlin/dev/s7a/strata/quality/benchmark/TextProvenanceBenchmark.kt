@@ -291,7 +291,13 @@ public open class TextProvenanceBenchmark {
             check(JmhWorkloadInventory.capture(listOf(TextProvenanceBenchmark::class.java), setOf("avgt")).size == Case.entries.size)
             TextProvenanceFailures.verify()
             for (case in Case.entries) {
-                TextProvenanceFixture(case).use { fixture -> fixture.verify() }
+                TextProvenanceFixture(case).use { fixture ->
+                    fixture.verify()
+                    // Supplemental reports require the same oracle after completed, restoring operations.
+                    fixture.perform()
+                    fixture.perform()
+                    fixture.verify()
+                }
             }
         }
     }

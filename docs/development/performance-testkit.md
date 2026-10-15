@@ -595,6 +595,8 @@ Preserve every CPU/allocation/control row and regression; quick, smoke and selec
 Synthetic CPU fonts make native engine timing inapplicable to this corpus; current full JVM/browser/shared and all 22 supported Minecraft/native parity jobs still gate final correctness.
 
 The optional `operationReport()` adapter retains all 149 original boundaries through the shared owner-thread meter.
+Its live input mapping includes the same registered font and API controls as the JMH runner, through the existing component input resolver.
+The untimed whole-work gate also repeats completed operations before rechecking every case's oracle and ownership, matching the report's post-sample contract.
 Each lookup report samples its complete 512-query trace, and each slice report samples all 32 detached results; other reports retain the complete original operation and restoring frames.
 Prepared resources, independent before/after oracles and surviving-owner cleanup remain outside samples.
 Report actual owner-thread CPU, owner/all-thread allocation and wall time separately from JMH, preserving clean-frame controls and unavailable counters.

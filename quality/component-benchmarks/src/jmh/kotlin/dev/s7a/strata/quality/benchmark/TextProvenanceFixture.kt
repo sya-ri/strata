@@ -260,25 +260,31 @@ internal class TextProvenanceFixture(
             previous = font
         }
         val expectedFonts = if (access.usesRunStarts()) runs else reference.value.length
+        val firstExplicitBoundary = expectedStarts.indices.firstOrNull { expectedStarts[it] != it + 1 }
+        val storedStarts = if (access.usesRunStarts() && firstExplicitBoundary != null) expectedStarts.toIntArray() else IntArray(0)
         check(access.retainedFontSlots(content) == expectedFonts)
-        check(access.retainedBoundarySlots(content) == if (access.usesRunStarts()) (runs - 1).coerceAtLeast(0) else 0)
+        check(access.retainedBoundarySlots(content) == storedStarts.size)
         val actualStarts = access.retainedStarts(content)
-        check(actualStarts.contentEquals(if (access.usesRunStarts()) expectedStarts.toIntArray() else IntArray(0)))
+        check(actualStarts.contentEquals(storedStarts))
         val lookupComparisons = lookupComparisonCount(reference, expectedStarts)
-        val boundaryCount = (runs - 1).coerceAtLeast(0)
+        val boundaryCount = if (firstExplicitBoundary == null) 0 else expectedStarts.size
         var boundaryCapacity = 0L
         var boundaryGrowthCopied = 0L
         var boundaryAllocated = boundaryCount.toLong()
-        while (boundaryCapacity < boundaryCount) {
-            boundaryGrowthCopied += boundaryCapacity
-            boundaryCapacity = maxOf(8L, boundaryCapacity * 2L).coerceAtMost(Int.MAX_VALUE.toLong())
-            boundaryAllocated += boundaryCapacity
+        if (firstExplicitBoundary != null) {
+            for (index in firstExplicitBoundary until boundaryCount) {
+                if (boundaryCapacity <= index) {
+                    boundaryGrowthCopied += boundaryCapacity
+                    boundaryCapacity = maxOf(8L, boundaryCapacity * 2L, index.toLong() + 1L).coerceAtMost(Int.MAX_VALUE.toLong())
+                    boundaryAllocated += boundaryCapacity
+                }
+            }
         }
         val literalRuns = nonemptyLiteralCount(assets.texts[0])
         println("text-provenance-construction=" + case.name + ",sourceOnly=true,denseFontWrites=" + reference.value.length + ",denseFontSnapshotMembership=" + reference.value.length + ",runFontWrites=" + runs + ",runFontSnapshotMembership=" + runs + ",runSelectionCalls=" + literalRuns + ",runCoalescingComparisons=" + (literalRuns - 1).coerceAtLeast(0) + ",boundaryWrites=" + boundaryCount + ",boundaryGrowthCopied=" + boundaryGrowthCopied + ",boundarySnapshotCopied=" + boundaryCount + ",boundaryAllocatedSlots=" + boundaryAllocated + ",fontListGrowthAndVmAllocation=requires-gc-profiler")
         val sourceSliceScalars = slices.sumOf { (first, last) -> reference.value.codePointCount(first, last) }
         val sourceSliceRuns = slices.sumOf { (first, last) -> if (first == last) 0 else 1 + expectedStarts.count { first < it && it < last } }
-        println("text-provenance-work=" + case.name + ",codeUnitMembership=" + reference.value.length + ",runMembership=" + runs + ",boundaryMembership=" + expectedStarts.size + ",lookupTrace=" + lookups.size + ",independentLookupComparisons=" + lookupComparisons + ",denseSliceScalars=" + sourceSliceScalars + ",intersectedSliceRuns=" + sourceSliceRuns + ",temporaryAllocation=requires-gc-profiler")
+        println("text-provenance-work=" + case.name + ",codeUnitMembership=" + reference.value.length + ",runMembership=" + runs + ",boundaryMembership=" + storedStarts.size + ",logicalBoundaryCount=" + expectedStarts.size + ",lookupTrace=" + lookups.size + ",independentLookupComparisons=" + lookupComparisons + ",denseSliceScalars=" + sourceSliceScalars + ",intersectedSliceRuns=" + sourceSliceRuns + ",temporaryAllocation=requires-gc-profiler")
     }
 
     private fun lookupComparisonCount(
@@ -286,8 +292,10 @@ internal class TextProvenanceFixture(
         expectedStarts: ArrayList<Int>,
     ): Int {
         var lookupComparisons = 0
+        val explicitStarts = expectedStarts.indices.any { expectedStarts[it] != it + 1 }
         for (offset in lookups) {
             if (access.usesRunStarts()) {
+                if (explicitStarts.not()) continue
                 var first = 0
                 var last = expectedStarts.size
                 while (first < last) {

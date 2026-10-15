@@ -9,9 +9,10 @@ import dev.s7a.strata.text.withFont
  *
  * Construction resolves only literal composition, never translations or platform payloads.
  * Every scalar keeps its innermost font selection; slicing cannot split a surrogate pair or change that selection.
- * Equal adjacent selections share one run, with scalar-aligned starts for all runs after the first.
+ * Equal adjacent selections share one run; consecutive code-unit starts are implicit.
  * At most one font per nonempty run and one fewer start offsets belong to this immutable current value.
- * Lookups use invocation-local binary search; independent readers share no mutable cursor.
+ * Implicit starts resolve directly; other lookups use invocation-local binary search.
+ * Independent readers share no mutable cursor.
  * Private construction buffers are copied before publication and are not retained by the content.
  * Replacement and node disposal release their current references; previously returned values remain independent.
  * The value owns no renderer, profile, native resource, or historical text.
@@ -90,7 +91,12 @@ internal class MinecraftTextContent private constructor(
         var run = runIndex(start)
         while (first < end) {
             val font = fonts[run]
-            val last = if (run < runStarts.size) minOf(end, runStarts[run]) else end
+            val last =
+                when {
+                    runStarts.isEmpty() && run < fonts.lastIndex -> minOf(end, run + 1)
+                    run < runStarts.size -> minOf(end, runStarts[run])
+                    else -> end
+                }
             val literal = UiText.Literal(value.substring(first, last))
             parts.add(if (font == MinecraftTextRenderer.defaultFont) literal else literal.withFont(font))
             first = last
@@ -100,6 +106,7 @@ internal class MinecraftTextContent private constructor(
     }
 
     private fun runIndex(offset: Int): Int {
+        if (runStarts.isEmpty()) return minOf(offset, fonts.lastIndex)
         var first = 0
         var last = runStarts.size
         while (first < last) {
@@ -209,11 +216,15 @@ internal class MinecraftTextContent private constructor(
                 start: Int,
             ) {
                 if (fonts.isNotEmpty() && fonts.last() == font) return
-                if (fonts.isNotEmpty()) {
+                if (fonts.isNotEmpty() && (starts.isNotEmpty() || start != fonts.size)) {
                     val index = fonts.size - 1
-                    if (starts.size == index) {
-                        val capacity = maxOf(8L, starts.size.toLong() * 2L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                    if (index >= starts.size) {
+                        val implicit = starts.isEmpty()
+                        val capacity = maxOf(8L, starts.size.toLong() * 2L, index.toLong() + 1L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
                         starts = starts.copyOf(capacity)
+                        if (implicit) {
+                            for (previous in 0 until index) starts[previous] = previous + 1
+                        }
                     }
                     starts[index] = start
                 }
@@ -227,7 +238,7 @@ internal class MinecraftTextContent private constructor(
                 text: UiText,
                 value: String,
                 inherited: ResourceId,
-            ): MinecraftTextContent = MinecraftTextContent(text, value, starts.copyOf((fonts.size - 1).coerceAtLeast(0)), fonts.toList(), inherited)
+            ): MinecraftTextContent = MinecraftTextContent(text, value, starts.copyOf(if (starts.isEmpty()) 0 else fonts.size - 1), fonts.toList(), inherited)
         }
     }
 }

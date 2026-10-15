@@ -48,6 +48,17 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Standard component notification membership
+
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
+The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
+The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
+Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.
+Callback failures still stop delivery after committing the value.
+No value, callback result or historical plan is cached.
+Common publication controls preserve order, mutation, reentry, normalization and failure behavior; JVM storage controls verify warm identity and immediate release without garbage-collection timing.
+Stable changed writes can avoid repeated membership copies; equal/unobserved writes, first admission, churn and completed-frame operations require separate measurements before claiming an improvement.
+
 ### Current CycleButton selection
 
 Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
@@ -791,13 +802,17 @@ Independent forward Float accumulation, original-index shaping traces and public
 Complete malformed, formatting and unresolved tails must fail before hidden lines or glyph preparation can conceal them.
 Replacement, independent owners and terminal release must preserve returned content, slices, runs and frames while releasing current renderer and observer ownership.
 
-The proposed current-value representation stores R font references and R-1 scalar-aligned starts for R nonempty coalesced runs.
-The first start and final end are implicit, and empty values retain only their original inherited selection.
+The proposed current-value representation stores R font references and at most R-1 scalar-aligned starts for R nonempty coalesced runs.
+The first start and final end are implicit; consecutive code-unit starts also remain implicit, including an extended last run.
+An explicit boundary array is created only at the first nonconsecutive start, materializing earlier implicit starts once.
+Empty values retain only their original inherited selection.
 Construction buffers and published arrays are independent, with no mutable query cursor, history cache, renderer or native owner.
 Full Unicode validation remains scalar based, and the representation adds no maximum text length or dense-input rejection.
 Actual retained font/start membership is checked separately from independent source-work counts for construction, binary lookup and intersected slices.
+Implicit starts resolve by clamping the validated scalar offset to the last run, covering single-font values and dense unit runs with an optional extended tail.
+Other run configurations retain binary search; neither direct path introduces a cursor or another lookup table.
 GC measurements must include temporary builder capacity, growth copies, final snapshots, boundary/index storage and all remaining text/run work.
-Dense font changes can increase primitive membership and lookup cost compared with the original per-code-unit list; this control and every slower result remain visible.
+Nonconsecutive dense starts can still increase primitive membership and construction allocation compared with the original per-code-unit list; this control and every slower result remain visible.
 Admit the implementation only after three independent Standard repetitions per side with the same frozen fixture, collector, harness, assets and actual class-tree/archive provenance.
 The CPU corpus uses synthetic font metrics; loaded-client/native parity is a separate correctness gate, and these results establish no native frame-rate claim.
 

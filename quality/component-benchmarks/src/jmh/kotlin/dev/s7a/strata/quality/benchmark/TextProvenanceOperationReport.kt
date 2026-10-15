@@ -9,6 +9,7 @@ import dev.s7a.strata.performance.JvmPerformanceRunner
 import dev.s7a.strata.performance.PerformancePlan
 import dev.s7a.strata.quality.benchmark.TextProvenanceBenchmark.Case
 import dev.s7a.strata.quality.benchmark.TextProvenanceBenchmark.Operation
+import java.nio.file.Path
 
 /**
  * Reports owner-thread CPU, owner/all-thread allocation and wall time for all original 149 complete operations.
@@ -16,6 +17,9 @@ import dev.s7a.strata.quality.benchmark.TextProvenanceBenchmark.Operation
  * Lookup and slice samples retain their original 512-query and 32-slice batches without per-scalar normalization.
  */
 public object TextProvenanceOperationReport : JvmOperationReportAdapter {
+    override val inputs: Map<String, Path>
+        get() = cleanupOperationInputs()
+
     override val rows: List<JvmOperationReportRow> =
         Case.entries.map { case ->
             JvmOperationReportRow(
