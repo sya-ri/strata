@@ -22,7 +22,7 @@ import org.openjdk.jmh.annotations.TearDown
  * Separates a public Minecraft host's declaration cutoff from its complete retained frame.
  * Synthetic immutable ASCII assets exclude resource acquisition, native fonts and GPU work from collection.
  */
-public class StatefulControlBenchmark {
+public open class StatefulControlBenchmark {
     /**
      * Commits fresh descriptions and reconciliation, including the existing declaration snapshot projection.
      */
