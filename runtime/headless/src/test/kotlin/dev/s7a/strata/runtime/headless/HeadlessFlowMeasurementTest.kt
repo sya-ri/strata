@@ -81,17 +81,25 @@ internal class HeadlessFlowMeasurementTest {
                 for (x in 0 until frame.image.size.width) {
                     val logicalX = x / density
                     val logicalY = y / density
-                    val expected =
-                        when {
-                            logicalX < 2 && logicalY == redTop -> colors[0].value
-                            3 <= logicalX && logicalY < 2 -> colors[1].value
-                            blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
-                            else -> 0
-                        }
+                    val expected = expectedColor(logicalX, logicalY, redTop, blueLeft, colors)
                     assertEquals(expected, frame.image.argbAt(x, y), "$arrangement/$alignment/$overridden/$density at ($x,$y)")
                 }
             }
             assertEquals(true, frame.semantics.isEmpty())
         }
     }
+
+    private fun expectedColor(
+        logicalX: Int,
+        logicalY: Int,
+        redTop: Int,
+        blueLeft: Int,
+        colors: List<ArgbColor>,
+    ): Int =
+        when {
+            logicalX < 2 && logicalY == redTop -> colors[0].value
+            3 <= logicalX && logicalY < 2 -> colors[1].value
+            blueLeft <= logicalX && logicalX < blueLeft + 2 && logicalY == 3 -> colors[2].value
+            else -> 0
+        }
 }
