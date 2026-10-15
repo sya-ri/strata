@@ -14,6 +14,14 @@ spec.loader.exec_module(planner)
 
 
 class PlanCiTest(unittest.TestCase):
+    def test_workflow_isolates_selected_client_concurrency_and_paired_intent(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/jvm.yml").read_text(encoding="utf-8")
+        group = next(line.removeprefix("  group: ") for line in workflow.splitlines() if line.startswith("  group: "))
+        self.assertEqual("${{ github.workflow }}-${{ github.ref }}"
+                         "${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}", group)
+        self.assertIn("  cancel-in-progress: true\n", workflow)
+        self.assertIn("    - name: Select opt-in paired JVM measurement\n      if: inputs.subject_ref == ''\n", workflow)
+
     def test_default_full_plan_keeps_every_existing_gate(self):
         result = planner.plan([], full=True)
         self.assertEqual([], result.pop("minecraft"))

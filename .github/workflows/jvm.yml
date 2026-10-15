@@ -26,7 +26,7 @@ name: JVM checks
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.subject_ref != '' && format('-clients-{0}-{1}-{2}', inputs.subject_ref, inputs.minecraft_backend, inputs.minecraft_versions) || '' }}
   cancel-in-progress: true
 jobs:
   plan:
@@ -74,10 +74,13 @@ jobs:
         path: subject
         persist-credentials: false
     - uses: ./.github/actions/setup-strata-java
+      if: inputs.subject_ref == ''
     - uses: gradle/actions/setup-gradle@v6
+      if: inputs.subject_ref == ''
       with:
         gradle-home-cache-excludes: caches/fabric-loom
     - name: Select opt-in paired JVM measurement
+      if: inputs.subject_ref == ''
       id: paired
       shell: bash
       env:
