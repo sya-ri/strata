@@ -22,9 +22,11 @@ public object NativeLifetimePollingEvidence {
         val mode = Mode.deepValueOf(System.getProperty("strata.performance.mode", "avgt"))
         val expected = JmhWorkloadInventory.capture(fixtures, setOf(mode.shortLabel()))
         check(expected.size == 117)
+        val includes = JmhFixtureSelection.includes(fixtures)
+        JmhFixtureSelection.verifyIncludes(expected, includes)
         JmhFixtureSelection.verifyWork(fixtures)
         JmhPerformanceRunner.run(
-            args.drop(2).toTypedArray(),
+            (includes + args.drop(3)).toTypedArray(),
             fixtures,
             mapOf(
                 "api" to "dev.s7a.strata.render.DrawImage",
