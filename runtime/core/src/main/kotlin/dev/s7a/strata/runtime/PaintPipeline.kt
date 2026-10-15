@@ -297,7 +297,10 @@ internal class PaintPipeline(
             get() = delegate.size
 
         override val anchorBounds: IntRect
-            get() = anchor
+            get() {
+                delegate.size // Preserve the collector's owner/lifetime check before exposing anchor geometry.
+                return anchor
+            }
 
         override fun withClip(
             localBounds: IntRect,

@@ -113,7 +113,9 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
     /**
      * Pure client-owned immutable image pairs and one current revision; no native texture or frame history is retained.
      */
-    private class Scene(private val scrollImages: ScrollImages) {
+    private class Scene(
+        private val scrollImages: ScrollImages,
+    ) {
         val revision = mutableStateOf(0)
         val scroll = ScrollState()
         private val images = Case.entries.associateWith { case -> List(2) { phase -> image(case, phase) } }
@@ -182,7 +184,9 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
                                 MinecraftTileBackgroundReference.fitted(image, IntSize(63, 31), panel, offset)
                             }
 
-                            Mapping.Scroll -> error("Scroll commands include their profile decoration and child clip separately")
+                            Mapping.Scroll -> {
+                                error("Scroll commands include their profile decoration and child clip separately")
+                            }
 
                             Mapping.Stretch -> {
                                 listOf(DrawCommand.BlitImage(image, IntRect(0, 0, image.size.width, image.size.height), IntRect(0, 0, case.extent.width, case.extent.height)))
@@ -215,7 +219,10 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
          * Models the profile-backed ScrollArea independently: doubled phase tiles, integer child offset, child-only clip and outside separators.
          * Assets come from the immutable input profile; no candidate node, collector, command frame or rasterizer supplies expected pixels.
          */
-        private fun originalScroll(image: DrawImage, offset: IntOffset): List<DrawCommand> =
+        private fun originalScroll(
+            image: DrawImage,
+            offset: IntOffset,
+        ): List<DrawCommand> =
             buildList {
                 val scrollOffset = scroll.metrics.offset.toInt()
                 val backdrop =
@@ -270,12 +277,18 @@ internal object MinecraftSingleAxisImageBackgroundGameTest {
      * Reads only the three immutable profile input images at the fixture boundary, without widening the production SPI.
      * Reflection is limited to the established profile getters; missing assets or dimensions fail this loaded fixture.
      */
-    private class ScrollImages(profile: MinecraftUiProfile) {
+    private class ScrollImages(
+        profile: MinecraftUiProfile,
+    ) {
         val background = image(profile, "getListBackground", IntSize(16, 16))
         val header = image(profile, "getListHeaderSeparator", IntSize(32, 2))
         val footer = image(profile, "getListFooterSeparator", IntSize(32, 2))
 
-        private fun image(profile: MinecraftUiProfile, getter: String, expectedSize: IntSize): DrawImage {
+        private fun image(
+            profile: MinecraftUiProfile,
+            getter: String,
+            expectedSize: IntSize,
+        ): DrawImage {
             val method = profile.javaClass.getDeclaredMethod(getter).apply { check(trySetAccessible()) }
             return (method.invoke(profile) as DrawImage).also { require(it.size == expectedSize) }
         }
