@@ -75,7 +75,7 @@ public object ComponentWorkEvidence {
             val methods = JmhFixtureSelection.methods(listOf(fixture), null)
             JmhFixtureSelection.verifyIncludes(expected, methods.map { "^${Regex.escape(it)}$" })
         }
-        JmhFixtureSelection.verifyWork(fixtures)
+        JmhFixtureSelection.verifyWork(JmhFixtureSelection.select(fixtures))
     }
 
     private fun verifyJmhInventory() {

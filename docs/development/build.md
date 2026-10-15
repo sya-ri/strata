@@ -76,6 +76,12 @@ For isolated JVM tests, fixture verification, benchmark preparation and collecti
 Scoped models reject complete acceptance requests instead of silently narrowing them; component benchmark `check` and published inventory acceptance also require the complete model when using `strata.webOnly`.
 IDE/Qodana imports always require the complete project model, including every versioned runtime and integration project.
 
+For local Fabric source preparation, opt into `-Pstrata.minecraftSourceOnly=true -Pstrata.minecraftVersions=26.3` with the original module test, compilation, lint and ABI tasks.
+This source model retains the selected runtime/integration projects and common dependencies; it does not replace full acceptance or change the selected tasks, compiler toolchains, native fixtures or resource limits.
+Exact nonempty distinct supported versions are required, and ordinary Gradle task options retain their normal meaning.
+Do not combine it with the JVM/Web models or IDE/Qodana; complete checks, publication, Kover and loaded clients require their existing complete/native route.
+The ordinary version flag alone keeps the complete model for mixed source requests.
+
 Every Kotlin compilation uses explicit API mode and treats warnings as errors.
 Canvas GUI-consumption hooks compile against the Mixin and MixinExtras versions already supplied by the configured Fabric Loader.
 Those dependencies are compile-only, remain in the version catalog, and add neither a nested runtime library nor a Fabric rendering API requirement.

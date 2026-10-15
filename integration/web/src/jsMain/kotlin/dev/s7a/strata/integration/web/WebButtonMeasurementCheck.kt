@@ -429,6 +429,8 @@ internal object WebButtonMeasurementCheck {
          * Generated HTML is adopted by identity, while mismatches preserve the caller's markup.
          */
         fun adoption(control: WebButtonMeasurementControl) {
+            if (control == WebButtonMeasurementControl.InitialHtmlAdoption) inlineStyleOracle()
+
             fun definition(label: String = "Initial"): UiDefinition = UiDefinition { Column { Button(label) } }
             val root = root()
             root.innerHTML = work(1) { renderWebHtml(definition(), viewport, theme) }
@@ -448,6 +450,33 @@ internal object WebButtonMeasurementCheck {
                     close(host, root)
                 }
             }
+        }
+
+        /**
+         * Declaration order is immaterial, while changed values, priorities and custom-property contents remain observable.
+         */
+        private fun inlineStyleOracle() {
+            val current = document.createElement("div") as HTMLElement
+            val reference = document.createElement("div") as HTMLElement
+            val left = document.createElement("div") as HTMLElement
+            val right = document.createElement("div") as HTMLElement
+            current.appendChild(left)
+            reference.appendChild(right)
+            left.style.cssText = "color: red; --strata-oracle: \"start;a;b;end\"; width: 1px;"
+            right.style.cssText = "width: 1px; --strata-oracle: \"start;a;b;end\"; color: red;"
+            check(properties(current) == properties(reference)) { "Inline style order changed the parity oracle" }
+            right.style.setProperty("--strata-oracle", "\"start;b;a;end\"")
+            check(properties(current) != properties(reference)) { "Inline style oracle ignored custom-property content" }
+            right.style.setProperty("--strata-oracle", "\"start;a;b;end\"")
+            right.style.setProperty("color", "red", "important")
+            check(properties(current) != properties(reference)) { "Inline style oracle ignored declaration priority" }
+            right.style.setProperty("color", "red")
+            right.style.width = "2px"
+            check(properties(current) != properties(reference)) { "Inline style oracle ignored declaration value" }
+            left.style.cssText = "margin: 1px; margin-top: 2px;"
+            right.style.cssText = "margin-top: 2px; margin: 1px;"
+            check(properties(current) != properties(reference)) { "Inline style oracle ignored changed shorthand state" }
+            checks["complete_inline_style_oracle"] = true
         }
 
         /**
@@ -611,7 +640,7 @@ internal object WebButtonMeasurementCheck {
                     val current = properties(root)
                     val expected = properties(reference)
                     check(current == expected) {
-                        "Button state differs from independent rendering: $phase; current=$current; reference=$expected; currentDeclarations=${inlineStyles(root)}; referenceDeclarations=${inlineStyles(reference)}"
+                        "Button state differs from independent rendering: $phase; current=$current; reference=$expected; currentCssText=${inlineCssText(root)}; referenceCssText=${inlineCssText(reference)}"
                     }
                     val styles = document.querySelectorAll("style")
                     val css = (0 until styles.length).joinToString("") { (checkNotNull(styles.item(it)) as HTMLElement).outerHTML }
@@ -625,13 +654,30 @@ internal object WebButtonMeasurementCheck {
         }
 
         /**
-         * Compares all rendered styles/native properties while identity remains a separate live oracle.
+         * Compares every serialized CSS token and declaration value/priority along with native properties.
+         * Identity remains a separate live oracle, and CSS serialization order does not constitute a state difference.
          */
-        private fun properties(root: HTMLElement): List<List<Any?>> =
-            (0 until root.children.length).map { index ->
+        private fun properties(root: HTMLElement): List<List<Any?>> {
+            val declarations = inlineStyles(root)
+            val serialized =
+                inlineCssText(root).map { css ->
+                    css
+                        .split(';')
+                        .map(String::trim)
+                        .filter(String::isNotEmpty)
+                        .sorted()
+                }
+            return (0 until root.children.length).map { index ->
                 val element = element(root, index)
-                listOf(element.tagName, element.textContent, element.style.cssText, element.getAttribute("data-strata-theme"), (element as? HTMLButtonElement)?.type, (element as? HTMLButtonElement)?.disabled)
+                listOf(element.tagName, element.textContent, serialized[index], declarations[index], element.getAttribute("data-strata-theme"), (element as? HTMLButtonElement)?.type, (element as? HTMLButtonElement)?.disabled)
             }
+        }
+
+        /**
+         * Retains all serialized CSS, including browser font subproperties absent from declaration enumeration.
+         * Exact declaration values separately preserve custom-property contents containing semicolons.
+         */
+        private fun inlineCssText(root: HTMLElement): List<String> = (0 until root.children.length).map { element(root, it).style.cssText }
 
         /**
          * Captures every inline declaration value and priority for mismatch diagnostics.
