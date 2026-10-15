@@ -23,16 +23,17 @@ final class FabricMinecraftInventoryOverlays {
      * @param renderCarried native carried-item presenter, invoked before the tooltip presenter.
      */
     static void render(Supplier<ItemStack> carriedSource, Supplier<ItemStack> hoveredSource, BiConsumer<ItemStack, ItemStack> renderTooltip, Consumer<ItemStack> renderCarried) {
-        ItemStack carried = carriedSource.get();
-        if (carried != null && carried.isEmpty() == false) {
-            renderCarried.accept(carried.copy());
-        }
+        presentCarried(carriedSource.get(), renderCarried);
         ItemStack hovered = hoveredSource.get();
-        if (hovered != null && hovered.isEmpty() == false) {
-            ItemStack currentCarried = carriedSource.get();
-            if (currentCarried != null) {
-                renderTooltip.accept(hovered.copy(), currentCarried);
-            }
+        if (hovered == null || hovered.isEmpty()) return;
+        ItemStack currentCarried = carriedSource.get();
+        if (currentCarried != null) {
+            renderTooltip.accept(hovered.copy(), currentCarried);
         }
+    }
+
+    private static void presentCarried(ItemStack carried, Consumer<ItemStack> renderCarried) {
+        if (carried == null || carried.isEmpty()) return;
+        renderCarried.accept(carried.copy());
     }
 }
