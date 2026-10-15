@@ -3,7 +3,8 @@ package dev.s7a.strata.runtime
 import dev.s7a.strata.geometry.IntRect
 import dev.s7a.strata.geometry.IntSize
 import dev.s7a.strata.render.DrawImage
-import dev.s7a.strata.render.createDrawImage
+import dev.s7a.strata.render.createOwnedDrawImage
+import dev.s7a.strata.spi.InternalStrataRuntimeApi
 
 /**
  * Retains dense image-only paint for lazy owner-thread pattern compaction.
@@ -98,7 +99,7 @@ private fun isBlitGrid(
 }
 
 /**
- * Uses tile-aligned templates only when their two pixel arrays fit the removed command allocation.
+ * Keeps the existing two-array allowance against removed command allocation, even though private pixels now transfer directly.
  * Stretched, sparse, and large source groups keep the original validated commands.
  */
 private fun compactBlitGroup(
@@ -152,8 +153,10 @@ private fun boundedTemplateSize(
 
 /**
  * Copies unblended source pixels into one bounded tile-aligned repeating template.
+ * The fully initialized private buffer transfers exclusively to the returned image; no mutable alias escapes or is used afterward.
  * No global cache or source-sized snapshot is retained.
  */
+@OptIn(InternalStrataRuntimeApi::class)
 private fun repeatedBlitImage(
     command: LocalDrawCommand.BlitImage,
     size: IntSize,
@@ -175,5 +178,5 @@ private fun repeatedBlitImage(
             }
         }
     }
-    return createDrawImage(size, pixels)
+    return createOwnedDrawImage(size, pixels)
 }

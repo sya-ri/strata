@@ -48,6 +48,17 @@ Reviewers should compare runs made on the same controlled host and investigate s
 
 ## Deterministic structural gates
 
+### Standard component notification membership
+
+The shared observable implementation for Checkbox, Slider and CycleButton lazily retains one derived ordered callback snapshot under its construction execution owner.
+The authoritative registration set remains unchanged; every successful admission or removal immediately clears the snapshot, including last release.
+The bound is one list of current callbacks, while a synchronous publication retains its selected list locally until it unwinds.
+Selection happens after the value update and its declarative invalidations, so callback-time mutations affect later or nested writes without changing the current publication's membership or value.
+Callback failures still stop delivery after committing the value.
+No value, callback result or historical plan is cached.
+Common publication controls preserve order, mutation, reentry, normalization and failure behavior; JVM storage controls verify warm identity and immediate release without garbage-collection timing.
+Stable changed writes can avoid repeated membership copies; equal/unobserved writes, first admission, churn and completed-frame operations require separate measurements before claiming an improvement.
+
 ### Current CycleButton selection
 
 Each retained CycleButton borrows at most one immutable live selected-value reference and its derived first matching index.
@@ -196,7 +207,9 @@ Grid validation uses sequential edges without per-tile division or a coverage ar
 Clips, mixed images or primitives, overlaps, gaps, and invalid grids preserve the original commands.
 
 Each admitted unstretched pattern uses one immutable template of at most 64 by 64 pixels, repeated with tile-aligned offsets and cropped final chunks.
-Template admission also bounds its two pixel arrays against the removed command allocation; larger or stretched source groups retain their original blits.
+Template admission retains its existing two-array allowance against the removed command allocation; larger or stretched source groups retain their original blits.
+The fully initialized private repeating buffer transfers directly through the existing owned-image bridge, with no mutable alias used after transfer.
+Public image construction still defensively copies application buffers, and extracted pixel arrays remain detached.
 Templates preserve unblended source ARGB, including transparent RGB, and use no source-sized snapshot or global cache.
 The original commands remain the sampling oracle for all fractional, scaled, or reflected tree transforms.
 
@@ -796,6 +809,21 @@ Pointer hit testing also accumulates rounded prefix widths once, applying each s
 A deterministic uncached-font test requires exactly one glyph lookup per scalar for a 16,384-unit zero-width value, rather than using elapsed time as a threshold.
 This adds no cache and preserves caret, composition, pointer midpoint and visible pixel behavior.
 The separate stress corpus records initial ownership, clean frames and real updates for short and 16,384-unit fields through the shared testkit.
+
+### Current text-line array ownership
+
+`MinecraftTextLineBreaker` exclusively transfers its completed original scalar-offset and rounded-position arrays into each current detached line.
+Untruncated lines transfer the original offsets directly; an ellipsis cut first trims offsets to exactly the admitted visible boundaries.
+Positions are constructed at their final visible length, and neither array is mutated or retained by the producer after transfer.
+The privileged factory exposes no array or mutable view; the existing six-argument constructor still snapshots arbitrary caller arrays.
+The general constructor copies caller arrays before delegating to private admission, which directly retains the two exclusive arrays.
+
+Every line keeps only its detached run, private current metrics and derived admission/ink data.
+Layout replacement releases the owner's old reference; editor detach clears current composition/layout, and terminal component disposal clears borrowed input/service references.
+The handoff introduces no string, renderer, backend, source-state or historical-layout cache.
+Scalar offsets, forward Float accumulation, native signed rounding, nearest-boundary ties, range extrema and glyph ordering remain defined by their existing contracts.
+The `TextLineLayoutBenchmark` corpus exercises actual construction and clean/editing controls with independent boundaries, bounded reference pixels and release checks; its complete frozen paired evidence is defined by [the testkit contract](performance-testkit.md).
+Removed source copy sites are separate from normalized VM allocation and do not establish measured CPU, native input or FPS gains.
 
 ### Logical multiline insertion lookup
 
