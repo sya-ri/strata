@@ -174,9 +174,24 @@ internal class QodanaJmhModelFunctionalTest {
         }
         val auxiliaryIml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(directory.resolve(auxiliary["iml"] as String).toFile())
         val auxiliaryFolders = auxiliaryIml.getElementsByTagName("sourceFolder")
-        val shared = (0 until auxiliaryFolders.length).map { auxiliaryFolders.item(it) }.filter { it.attributes.getNamedItem("url").nodeValue.endsWith("/shared-production") }
+        val shared =
+            (0 until auxiliaryFolders.length)
+                .map { auxiliaryFolders.item(it) }
+                .filter {
+                    it.attributes
+                        .getNamedItem("url")
+                        .nodeValue
+                        .endsWith("/shared-production")
+                }
         assertEquals(1, shared.size)
-        assertEquals("false", shared.single().attributes.getNamedItem("isTestSource").nodeValue)
+        assertEquals(
+            "false",
+            shared
+                .single()
+                .attributes
+                .getNamedItem("isTestSource")
+                .nodeValue,
+        )
         assertTrue((auxiliary["outputs"] as List<*>).any { ((it as Map<*, *>)["files"] as Map<*, *>).isNotEmpty() })
         val reused = runner().build()
         assertEquals(TaskOutcome.SUCCESS, reused.task(":qodanaDeclarationInventory")?.outcome)
