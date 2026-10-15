@@ -133,14 +133,7 @@ internal class RetainedNode(
         val changed =
             oldContent != hasContentParticipants || oldFocus != hasFocusTargets ||
                 oldSemantics != hasSemantics || oldAttachments != hasPendingAttachments
-        val parent = logicalParent
-        if (changed && parent != null && parent.cleanupStarted.not()) {
-            if (propagate) {
-                parent.refreshTraversalSummary()
-            } else {
-                parent.traversalSummaryDirty = true
-            }
-        }
+        if (changed) refreshParentSummary(propagate)
     }
 
     /**
@@ -157,6 +150,19 @@ internal class RetainedNode(
         hasSemantics = false
         hasPendingAttachments = false
         traversalSummaryDirty = false
+    }
+
+    /**
+     * Publishes changed capabilities immediately or leaves one rebuild for the enclosing owner walk.
+     */
+    private fun refreshParentSummary(propagate: Boolean) {
+        val parent = logicalParent ?: return
+        if (parent.cleanupStarted) return
+        if (propagate) {
+            parent.refreshTraversalSummary()
+        } else {
+            parent.traversalSummaryDirty = true
+        }
     }
 
     private fun localContentParticipant(): Boolean =
