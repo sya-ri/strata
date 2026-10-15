@@ -104,6 +104,8 @@ public object IndexedFontCpuEvidence {
         PerformanceJson.writeNew(
             output,
             JsonObject().apply {
+                addProperty("schema_version", 1)
+                addProperty("workload_id", IndexedFontCpuComparison.workloadId)
                 addProperty("contract", "indexed-font-supplemental-cpu-v1")
                 addProperty("status", "passed")
                 addProperty("run_id", UUID.randomUUID().toString())
@@ -124,14 +126,23 @@ public object IndexedFontCpuEvidence {
     private fun measure(
         name: String,
         operation: () -> Any,
-    ): JsonObject = JvmPerformanceRunner.measure(name, operation = { operation() }).evidence
+    ): JsonObject {
+        val plan = PerformancePlan()
+        return JvmPerformanceRunner.measure(name, plan, operation = { operation() }).evidence.apply {
+            addProperty("warmup", plan.warmup)
+        }
+    }
 
     private fun lifetime(
         reports: JsonArray,
         name: String,
         operation: () -> Unit,
     ) {
-        reports.add(JvmPerformanceRunner.measure(name, PerformancePlan(warmup = 0, samples = 1), operation = { operation() }).evidence)
+        reports.add(
+            JvmPerformanceRunner.measure(name, PerformancePlan(warmup = 0, samples = 1), operation = { operation() }).evidence.apply {
+                addProperty("warmup", 0)
+            },
+        )
     }
 
     private fun portable(
