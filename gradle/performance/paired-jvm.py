@@ -1112,7 +1112,7 @@ def verify_test_gate(directory, gate):
 def test_classpath_preparation(data):
     """Resolve every declared complete Test gate's libraries before validating frozen dependency pins."""
     tasks = sorted({gate["task"] for suite in data["suites"] for gate in suite.get("test_gates", [])})
-    return ["-Pstrata.paired.prepareTestClasspaths=" + ",".join(tasks)] if tasks else []
+    return [":strataPairedPrepareTestClasspaths", "-Pstrata.paired.prepareTestClasspaths=" + ",".join(tasks)] if tasks else []
 
 
 def verify_jmh_completion(data, invocation_ids, comparisons, completed):

@@ -37,7 +37,7 @@ class PairedJvmTest(unittest.TestCase):
                             {"task": ":runtime:core:jvmTest", "required_tests": ["dev.example.Core#whole"]}]},
             {},
         ]}
-        self.assertEqual(["-Pstrata.paired.prepareTestClasspaths=:runtime:core:jvmTest,:runtime:headless:test"],
+        self.assertEqual([":strataPairedPrepareTestClasspaths", "-Pstrata.paired.prepareTestClasspaths=:runtime:core:jvmTest,:runtime:headless:test"],
                          PAIRED.test_classpath_preparation(data))
         self.assertEqual([], PAIRED.test_classpath_preparation({"suites": [{}]}))
         self.assertEqual(["dev.example.Core#whole"], data["suites"][0]["test_gates"][0]["required_tests"])
@@ -1127,7 +1127,9 @@ class PairedJvmTest(unittest.TestCase):
                 cache = self.root / (mode + "-cache")
                 output = self.root / (mode + "-attempt")
                 events, validated = [], []
-                property_arguments = PAIRED.test_classpath_preparation(data)
+                preparation_arguments = PAIRED.test_classpath_preparation(data)
+                property_arguments = [arg for arg in preparation_arguments if arg.startswith("-P")]
+                preparation_tasks = [arg for arg in preparation_arguments if arg.startswith(":")]
                 expected_tasks = sorted({gate["task"] for suite in data["suites"] for gate in suite.get("test_gates", [])})
 
                 def resolve_dependencies():
@@ -1164,11 +1166,11 @@ class PairedJvmTest(unittest.TestCase):
                     name, args = terminal_path.parent.name, request["arguments"]
                     events.append(("invoke", name))
                     if name.startswith("prepare-"):
-                        self.assertEqual([arg for arg in args if arg.startswith("-Pstrata.paired.prepareTestClasspaths=")], property_arguments)
+                        self.assertEqual([arg for arg in args if arg == ":strataPairedPrepareTestClasspaths" or arg.startswith("-Pstrata.paired.prepareTestClasspaths=")], preparation_arguments)
                         tasks = [PAIRED.archive_task(project) for project in data["runtime_projects"]]
                         if name == "prepare-candidate":
                             tasks += [":performance-testkit:jvmJar", ":quality:benchmarks:jmhCompileGeneratedClasses"]
-                        self.assertEqual([arg for arg in args if arg.startswith(":")], tasks)
+                        self.assertEqual([arg for arg in args if arg.startswith(":")], tasks + preparation_tasks)
                         self.assertFalse(any(task in args for task in expected_tasks))
                         self.assertEqual(validated, [])
                         if property_arguments:

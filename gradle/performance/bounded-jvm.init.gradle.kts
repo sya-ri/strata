@@ -336,13 +336,21 @@ gradle.projectsEvaluated {
         rootProject.providers.gradleProperty("strata.paired.prepareTestClasspaths").orNull?.let { requested ->
             val paths = requested.split(',')
             check(paths.isNotEmpty() && paths.size <= 16_384 && paths.distinct().size == paths.size)
-            paths.forEach { path ->
+            val preparations = paths.map { path ->
                 check(path.matches(Regex(":[A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)+")))
                 val owner = rootProject.project(path.substringBeforeLast(':'))
-                val gate = owner.tasks.named(path.substringAfterLast(':'), Test::class.java).get()
-                check(gate.path == path)
-                // Resolve libraries in bounded preparation; the unchanged full Test task runs only after all pins pass.
-                logger.lifecycle("paired.test.preparedClasspath {} {}", path, gate.classpath.files.size)
+                val name = path.substringAfterLast(':')
+                owner.tasks.register("strataPairedPrepare${name.replaceFirstChar { it.uppercaseChar() }}Classpath") {
+                    doLast {
+                        val gate = owner.tasks.named(name, Test::class.java).get()
+                        check(gate.path == path)
+                        // Resolve under the owning project's execution lock; the full Test still runs after pins pass.
+                        logger.lifecycle("paired.test.preparedClasspath {} {}", path, gate.classpath.files.size)
+                    }
+                }
+            }
+            rootProject.tasks.register("strataPairedPrepareTestClasspaths") {
+                dependsOn(preparations)
             }
         }
     }
