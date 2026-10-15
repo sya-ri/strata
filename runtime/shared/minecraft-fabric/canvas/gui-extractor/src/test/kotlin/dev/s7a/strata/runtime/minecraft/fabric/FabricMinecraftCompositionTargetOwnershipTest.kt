@@ -24,22 +24,24 @@ internal class FabricMinecraftCompositionTargetOwnershipTest {
         for (passes in 1..17) {
             var closes = 0
             var acknowledged = false
-            val storage = FabricMinecraftNativeStorage { objects ->
-                assertEquals(6, objects.size)
-                assertFalse(objects.any { it === scratch.first || it === scratch.second })
-                FabricNativeCanvasDestruction { acknowledged }
-            }
-            val targets = FabricMinecraftCompositionTargets.create(
-                storage,
-                IntSize(64, 64),
-                IntSize(64, passes * 3),
-                IntSize(1536, 1),
-                { AutoCloseable { closes += 1 } },
-                { _, _ -> AutoCloseable { closes += 1 } },
-                { AutoCloseable { closes += 1 } },
-                scratch,
-                passes,
-            )
+            val storage =
+                FabricMinecraftNativeStorage { objects ->
+                    assertEquals(6, objects.size)
+                    assertFalse(objects.any { it === scratch.first || it === scratch.second })
+                    FabricNativeCanvasDestruction { acknowledged }
+                }
+            val targets =
+                FabricMinecraftCompositionTargets.create(
+                    storage,
+                    IntSize(64, 64),
+                    IntSize(64, passes * 3),
+                    IntSize(1536, 1),
+                    { AutoCloseable { closes += 1 } },
+                    { _, _ -> AutoCloseable { closes += 1 } },
+                    { AutoCloseable { closes += 1 } },
+                    scratch,
+                    passes,
+                )
             assertSame(scratch, targets.destinations[(passes + 1) % 2])
             val final = targets.destinations[passes % 2]
             assertNotSame(scratch.first, final.first)
@@ -66,12 +68,14 @@ internal class FabricMinecraftCompositionTargetOwnershipTest {
                 val calls = IntArray(failed)
                 var allocation = 0
                 var acknowledged = false
-                val storage = FabricMinecraftNativeStorage { objects ->
-                    assertEquals(failed, objects.size)
-                    assertFalse(objects.any { it === scratch.first || it === scratch.second })
-                    FabricNativeCanvasDestruction { acknowledged }
-                }
+                val storage =
+                    FabricMinecraftNativeStorage { objects ->
+                        assertEquals(failed, objects.size)
+                        assertFalse(objects.any { it === scratch.first || it === scratch.second })
+                        FabricNativeCanvasDestruction { acknowledged }
+                    }
                 val failure = IllegalStateException("shared allocation failed")
+
                 fun allocate(): AutoCloseable {
                     val index = allocation
                     allocation += 1
