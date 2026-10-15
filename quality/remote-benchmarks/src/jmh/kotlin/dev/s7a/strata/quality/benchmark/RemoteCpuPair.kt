@@ -42,6 +42,8 @@ internal class RemoteCpuPair(
     private val hashes = listOf(receiptFile, resultFile, collectorFile, harnessFile, sourceFile, executable).associateWith(ArtifactIdentity::file).toMutableMap()
     private val environment = environment()
     private val jvmArguments = Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments)
+    private val inputPaths = inputs.mapValues { it.value.toAbsolutePath().normalize() }
+    private val selectedInventory = System.getProperty("strata.performance.remoteInventory")
 
     /**
      * Detached run IDs, exact receipt/result paths and hashes, actual environment and validated source/launch identities.
@@ -57,6 +59,7 @@ internal class RemoteCpuPair(
         require(receipt.get("results_sha256").asString == hashes.getValue(resultFile))
         require(receipt.get("harness_sha256").asString == hashes.getValue(harnessFile) && hashes.getValue(harnessFile) == ArtifactIdentity.fullCodeSource(Runner::class.java))
         verifyArchives(receipt, runtime, inputs)
+        val inventoryArguments = RemoteInventoryArguments.capture(ManagementFactory.getRuntimeMXBean().inputArguments, selectedInventory, inputPaths)
         val fixture = fixtureClass.name
         val fixtureIdentity = ArtifactIdentity.applicationTrees(listOf(fixtureClass))
         require(receipt.getAsJsonObject("fixture_identity").get(fixture).asString == fixtureIdentity.getValue(fixture))
@@ -103,6 +106,9 @@ internal class RemoteCpuPair(
                 add("source_archive_plan", plan.deepCopy())
                 add("environment", environment.deepCopy())
                 add("cpu_jvm_arguments", jvmArguments.deepCopy())
+                add("comparison_jvm_arguments", Gson().toJsonTree(inventoryArguments.first))
+                add("inventory_argument", inventoryArguments.second)
+                add("input_paths", Gson().toJsonTree(inputPaths.mapValues { it.value.toString() }))
                 addProperty("cpu_executable", executable.toString())
                 addProperty("cpu_executable_sha256", hashes.getValue(executable))
                 addProperty("cpu_command", System.getProperty("sun.java.command"))
@@ -120,6 +126,7 @@ internal class RemoteCpuPair(
     fun verify() {
         require(hashes.all { (path, hash) -> ArtifactIdentity.file(path) == hash })
         require(environment() == environment)
+        require(System.getProperty("strata.performance.remoteInventory") == selectedInventory)
         require(Gson().toJsonTree(ManagementFactory.getRuntimeMXBean().inputArguments) == jvmArguments)
     }
 
